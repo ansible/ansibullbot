@@ -75,17 +75,24 @@ for page in range(1,2):
                     pyfilecounter += 1
         # if multiple .py files are included in the diff, complain.
         if pyfilecounter == 0:
-           print "  WARN: no python files in this PR"
+            print "  WARN: no python files in this PR"
         if pyfilecounter > 1:
-           print "  WARN: multiple python files in this PR"
+            print "  WARN: multiple python files in this PR"
         if pyfilecounter == 1:
-           print "  Filename:", filename
+            print "  Filename:", filename
 
         #----------------------------------------------------------------------------
         # NEXT: Look up the file in the DB to see who owns it.
         # (Warn if there's more than one; we can't handle that case yet.)
         #----------------------------------------------------------------------------
-
+        if ghrepo == "core":
+            f = open('MAINTAINERS-CORE.txt')
+        elif ghrepo == "extras":
+            f = open('MAINTAINERS-EXTRAS.txt')
+        for line in f:
+            if filename in line:
+                print "  ", line
+        f.close()
 
 
 ######################################################################################
