@@ -10,9 +10,7 @@ import requests, json, yaml, sys
 
 ghuser=sys.argv[1]
 ghpass=sys.argv[2]
-
-print ghuser, ghpass
-debugging = True
+ghrepo=sys.argv[3]
 
 #------------------------------------------------------------------------------------
 # Go get all open PRs.
@@ -21,7 +19,8 @@ debugging = True
 # FIXME: terrible pagination hack for now
 for page in range(1,2):
     args = {'state':'open', 'page':page}
-    r = requests.get('https://api.github.com/repos/ansible/ansible-modules-core/pulls', params=args, auth=(ghuser,ghpass))
+    repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
+    r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
 
     #--------------------------------------------------------------------------------
     # For every open PR:
@@ -86,6 +85,7 @@ for page in range(1,2):
         # NEXT: Look up the file in the DB to see who owns it.
         # (Warn if there's more than one; we can't handle that case yet.)
         #----------------------------------------------------------------------------
+
 
 
 ######################################################################################
