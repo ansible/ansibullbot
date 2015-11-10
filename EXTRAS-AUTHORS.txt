@@ -1,10 +1,10 @@
-./cloud/amazon/cloudtrail.py: @ansible
+./cloud/amazon/cloudtrail.py: NONE
 ./cloud/amazon/dynamodb_table.py: @loia
 ./cloud/amazon/ec2_ami_copy.py: @amir343
 ./cloud/amazon/ec2_elb_facts.py: @mjschultz
 ./cloud/amazon/ec2_eni.py: @wimnat
 ./cloud/amazon/ec2_eni_facts.py: @wimnat
-./cloud/amazon/ec2_remote_facts.py: FIXME
+./cloud/amazon/ec2_remote_facts.py: @michaeljs1990
 ./cloud/amazon/ec2_vpc_igw.py: @erydo
 ./cloud/amazon/ec2_vpc_route_table.py: @erydo @wimnat
 ./cloud/amazon/ec2_vpc_route_table_facts.py: @wimnat
@@ -38,10 +38,10 @@
 ./cloud/cloudstack/cs_firewall.py: @resmo
 ./cloud/cloudstack/cs_instance.py: @resmo
 ./cloud/cloudstack/cs_instancegroup.py: @resmo
-./cloud/cloudstack/cs_ip_address.py: "@dazworrall"
+./cloud/cloudstack/cs_ip_address.py: @dazworrall
 ./cloud/cloudstack/cs_iso.py: @resmo
-./cloud/cloudstack/cs_loadbalancer_rule.py: FIXME
-./cloud/cloudstack/cs_loadbalancer_rule_member.py: FIXME
+./cloud/cloudstack/cs_loadbalancer_rule.py: @dazworrall @resmo
+./cloud/cloudstack/cs_loadbalancer_rule_member.py: @dazworrall @resmo
 ./cloud/cloudstack/cs_network.py: @resmo
 ./cloud/cloudstack/cs_portforward.py: @resmo
 ./cloud/cloudstack/cs_project.py: @resmo
@@ -58,7 +58,7 @@
 ./cloud/misc/ovirt.py: @vincentvdk
 ./cloud/misc/proxmox.py: @UnderGreen
 ./cloud/misc/proxmox_template.py: @UnderGreen
-./cloud/misc/virt.py: FIXME
+./cloud/misc/virt.py: NONE
 ./cloud/misc/virt_net.py: @drybjed
 ./cloud/misc/virt_pool.py: @drybjed
 ./cloud/profitbricks/profitbricks.py: @baldwinSPC
@@ -97,7 +97,7 @@
 ./cloud/webfaction/webfaction_domain.py: @quentinsf
 ./cloud/webfaction/webfaction_mailbox.py: @quentinsf
 ./cloud/webfaction/webfaction_site.py: @quentinsf
-./cloud/xenserver_facts.py: FIXME
+./cloud/xenserver_facts.py: @andyhky
 ./clustering/consul.py: @sgargan
 ./clustering/consul_acl.py: @sgargan
 ./clustering/consul_kv.py: @sgargan
@@ -106,7 +106,7 @@
 ./commands/expect.py: @sivel
 ./database/misc/mongodb_user.py: @elliotttf
 ./database/misc/redis.py: @slok
-./database/misc/riak.py: FIXME
+./database/misc/riak.py: @jsmartin @drewkerrigan
 ./database/mysql/mysql_replication.py: @banyek 
 ./database/postgresql/postgresql_ext.py: @dschep
 ./database/postgresql/postgresql_lang.py: @jensdepuydt
@@ -115,7 +115,7 @@
 ./database/vertica/vertica_role.py: @dareko
 ./database/vertica/vertica_schema.py: @dareko
 ./database/vertica/vertica_user.py: @dareko
-./files/patch.py: FIXME
+./files/patch.py: @jirutka @luisperlaz
 ./messaging/rabbitmq_binding.py: @manuel-sousa
 ./messaging/rabbitmq_exchange.py: @manuel-sousa
 ./messaging/rabbitmq_parameter.py: @chrishoffman
@@ -134,20 +134,20 @@
 ./monitoring/librato_annotation.py: @sedward
 ./monitoring/logentries.py: @ivanvanderbyl
 ./monitoring/monit.py: @dstoflet 
-./monitoring/nagios.py: FIXME 
+./monitoring/nagios.py: @tbielawa
 ./monitoring/newrelic_deployment.py: @mcodd
-./monitoring/pagerduty.py: FIXME
-./monitoring/pagerduty_alert.py: FIXME
-./monitoring/pingdom.py: FIXME
+./monitoring/pagerduty.py: @suprememoocow @thaumos
+./monitoring/pagerduty_alert.py: @aps-sids
+./monitoring/pingdom.py: @thaumos
 ./monitoring/rollbar_deployment.py: @kavu
 ./monitoring/sensu_check.py: @andsens
 ./monitoring/stackdriver.py: @bwhaley
 ./monitoring/uptimerobot.py: @nate-kingsley
-./monitoring/zabbix_group.py: FIXME
-./monitoring/zabbix_host.py: FIXME
-./monitoring/zabbix_hostmacro.py: FIXME
+./monitoring/zabbix_group.py: @cove @harrisongu
+./monitoring/zabbix_host.py: @cove @harrisongu
+./monitoring/zabbix_hostmacro.py: @cove
 ./monitoring/zabbix_maintenance.py: @abulimov
-./monitoring/zabbix_screen.py: FIXME
+./monitoring/zabbix_screen.py: @cove @harrisongu
 ./network/a10/a10_server.py: @mischapeters
 ./network/a10/a10_service_group.py: @mischapeters
 ./network/a10/a10_virtual_server.py: @mischapeters
@@ -174,12 +174,12 @@
 ./notification/grove.py: @zimbatm
 ./notification/hall.py: @bkimble
 ./notification/hipchat.py: @pb8226
-./notification/irc.py: FIXME
+./notification/irc.py: @jpmens @sivel
 ./notification/jabber.py: @bcoca
 ./notification/mail.py: @dagwieers 
 ./notification/mqtt.py: @jpmens 
 ./notification/nexmo.py: @sivel
-./notification/osx_say.py: FIXME
+./notification/osx_say.py: NONE
 ./notification/pushbullet.py: @willybarro
 ./notification/pushover.py: @weaselkeeper
 ./notification/sendgrid.py: @makaimc
@@ -191,28 +191,28 @@
 ./packaging/elasticsearch_plugin.py: @ThePixelDeveloper
 ./packaging/language/bower.py: @mwarkentin
 ./packaging/language/bundler.py: @thoiberg
-./packaging/language/composer.py: FIXME
+./packaging/language/composer.py: @dmtrs @resmo
 ./packaging/language/cpanm.py: @franckcuny
 ./packaging/language/maven_artifact.py: @chrisisbeef
 ./packaging/language/npm.py: @chrishoffman
-./packaging/language/pear.py: FIXME
-./packaging/os/dnf.py: FIXME
-./packaging/os/homebrew.py: FIXME
+./packaging/language/pear.py: @gentledevil
+./packaging/os/dnf.py: @ignatenkobrain @DJMuggs
+./packaging/os/homebrew.py: @indrajitr @danieljaouen
 ./packaging/os/homebrew_cask.py: @danieljaouen
 ./packaging/os/homebrew_tap.py: @danieljaouen
 ./packaging/os/layman.py: @jirutka
 ./packaging/os/macports.py: @jcftang
 ./packaging/os/openbsd_pkg.py: @eest
 ./packaging/os/opkg.py: @skinp
-./packaging/os/pacman.py: FIXME
+./packaging/os/pacman.py: @indrajitr
 ./packaging/os/pkg5.py: @mavit
 ./packaging/os/pkg5_publisher.py: @mavit
-./packaging/os/pkgin.py: FIXME
+./packaging/os/pkgin.py: @L2G @szinck
 ./packaging/os/pkgng.py: @bleader 
 ./packaging/os/pkgutil.py: @dermute
-./packaging/os/portage.py: FIXME
+./packaging/os/portage.py: @sayap
 ./packaging/os/portinstall.py: @berenddeboer
-./packaging/os/slackpkg.py: Kim Nørgaard (@KimNorgaard)
+./packaging/os/slackpkg.py: @KimNorgaard
 ./packaging/os/svr4pkg.py: @brontitall
 ./packaging/os/swdepot.py: @melodous
 ./packaging/os/urpmi.py: @pmakowski
@@ -220,13 +220,13 @@
 ./packaging/os/zypper_repository.py: @matze
 ./source_control/bzr.py: @andreparames
 ./source_control/github_hooks.py: @pcgentry
-./system/alternatives.py: FIXME
+./system/alternatives.py: @DavidWittman @mulby
 ./system/at.py: @risaacson
 ./system/capabilities.py: @natefoo
 ./system/cronvar.py: @dougluce
 ./system/crypttab.py: @groks
 ./system/debconf.py: @bcoca
-./system/facter.py: FIXME
+./system/facter.py: NONE
 ./system/filesystem.py: @abulimov
 ./system/firewalld.py: @maxamillion
 ./system/getent.py: @bcoca
@@ -236,9 +236,9 @@
 ./system/known_hosts.py: @mcv21
 ./system/locale_gen.py: @AugustusKling
 ./system/lvg.py: @abulimov
-./system/lvol.py: FIXME
-./system/modprobe.py: FIXME
-./system/ohai.py: FIXME
+./system/lvol.py: @jhoekx @abulimov
+./system/modprobe.py: @stygstra
+./system/ohai.py: NONE
 ./system/open_iscsi.py: @srvg
 ./system/osx_defaults.py: @frenck
 ./system/puppet.py: @emonty
@@ -246,7 +246,7 @@
 ./system/seport.py: @dankeder
 ./system/solaris_zone.py: @pmarkham
 ./system/svc.py: @bcoca
-./system/ufw.py: FIXME
+./system/ufw.py: @ovcharenko @pyykkis
 ./system/zfs.py: @johanwiren
 ./web_infrastructure/deploy_helper.py: @ramondelafuente
 ./web_infrastructure/ejabberd_user.py: @privateip
@@ -262,7 +262,7 @@
 ./windows/win_iis_webapppool.py: @whenrik
 ./windows/win_iis_webbinding.py: @whenrik
 ./windows/win_iis_website.py: @whenrik
-./windows/win_nssm.py: FIXME
+./windows/win_nssm.py: @smadam813 @georgefrank @h0nIg
 ./windows/win_package.py: @trondhindenes
 ./windows/win_package.py: @trondhindenes
 ./windows/win_regedit.py: @joshludwig
