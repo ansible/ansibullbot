@@ -1,0 +1,172 @@
+#!/usr/bin/python
+
+# THIS IS A VERY BAD SCRIPT
+# (maybe one day it will be a good one)
+
+# Useful! https://developer.github.com/v3/pulls/
+# Useful! https://developer.github.com/v3/issues/comments/
+
+import requests, json, yaml, sys
+
+ghuser=sys.argv[1]
+ghpass=sys.argv[2]
+
+print ghuser, ghpass
+debugging = True
+
+#------------------------------------------------------------------------------------
+# Go get all open PRs.
+#------------------------------------------------------------------------------------
+
+# FIXME: terrible pagination hack for now
+for page in range(1,2):
+    args = {'state':'open', 'page':page}
+    r = requests.get('https://api.github.com/repos/ansible/ansible-modules-core/pulls', params=args, auth=(ghuser,ghpass))
+
+    #--------------------------------------------------------------------------------
+    # For every open PR:
+    #--------------------------------------------------------------------------------
+    for pull in r.json():
+
+        #----------------------------------------------------------------------------
+        # Get the number ID of the PR.
+        #----------------------------------------------------------------------------
+        pr_number = pull['number']
+        print pr_number 
+        
+        #----------------------------------------------------------------------------
+        # Get the ID of the submitter of the PR.
+        #----------------------------------------------------------------------------
+        pr_submitter = pull['user']['login']
+        print "  Submitter: ", pr_submitter
+
+        #----------------------------------------------------------------------------
+        # Now pull the list of labels on this PR.
+        #----------------------------------------------------------------------------
+        pr_issueurl = pull['issue_url']
+        issue = requests.get(pr_issueurl, auth=(ghuser,ghpass)).json()
+        for label in issue['labels']:
+            print "  Label: ", label['name']
+            
+            # FIXME: do things based on the label
+            # if label['name'] == 'new_plugin':
+            #     do new_plugin stuff
+            # if label['name'] == 'community_review':
+            #     do community_review stuff
+                 
+        #----------------------------------------------------------------------------
+        # Now pull the list of files being edited.
+        # (Warn if there's more than one; we can't handle that case yet.)
+        #----------------------------------------------------------------------------
+        pr_diffurl = pull['diff_url']
+
+        # Now pull the text of the diff.
+        diff = requests.get(pr_diffurl, auth=(ghuser,ghpass), verify=False).text
+
+        # Grep the diff for affected files.
+        pyfilecounter = 0
+        for line in diff.split('\n'):
+            # The 'diff --git' line contains the file name.
+            if 'diff --git' in line:
+                # This split gives us the file name.
+                filename = line.split(' b/')[1]
+                # Another split gives us the extension.
+                fileextension = filename.split('.')[-1]
+                if fileextension == 'py':
+                    pyfilecounter += 1
+        # if multiple .py files are included in the diff, complain.
+        if pyfilecounter == 0:
+           print "  WARN: no python files in this PR"
+        if pyfilecounter > 1:
+           print "  WARN: multiple python files in this PR"
+        if pyfilecounter == 1:
+           print "  Filename:", filename
+
+        #----------------------------------------------------------------------------
+        # NEXT: Look up the file in the DB to see who owns it.
+        # (Warn if there's more than one; we can't handle that case yet.)
+        #----------------------------------------------------------------------------
+
+
+######################################################################################
+
+
+#PSEUDOCODE: COMMUNITY_REVIEW 
+#for each PR found:
+#	find all maintainers for this module
+#	foreach comment, counting back from the bottom:
+#	if you find a comment with a recognizable tag from an authorized maintainer:
+#apply the tag
+#apply the boilerplate (include the author of the PR)
+#(FIXME: handle case of no comments for 2 weeks and other timeout cases)
+#send email with the results.
+#
+#PSEUDOCODE: NEEDS_REVISION
+#for each PR found:
+#	foreach comment, counting back from the bottom:
+#	if the contributor commented 'ready_for_review'
+#		put it in (community_review) or (core_review)
+#		# this is library that we call to pick out maintainer
+#		attach boilerplate
+#	(handle timeout)
+#	(handle email)
+#
+#PSEUDOCODE: NEEDS_REBASE
+#for each PR found:
+#	is it rebased? (how does the API determine if it merges cleanly)
+#	if so, move to (community_review) or (core_review)
+#	(handle timeout)
+#	(handle email)
+#
+
+exit()
+print "NOT HERE"
+
+# We're just setting the pagination arbitrarily high for now. 9 for running, 2 for testing.
+for page in range(1,2):
+    args = {'state':'open', 'page':page}
+    r = requests.get('https://api.github.com/repos/ansible/ansible-modules-core/pulls', params=args, auth=(ghuser,ghpass))
+
+    # For every Pull Request in this list...
+    for pull in r.json():
+
+        # First get the number and the user who made it.
+        pr_number = pull['number']
+        pr_userlogin = pull['user']['login']
+
+        # Is it a new plugin request? If so, skip and continue.
+        new_module = 0
+        pr_issueurl = pull['issue_url']
+        issue = requests.get(pr_issueurl, auth=(ghuser,ghpass)).json()
+        # print pr_number
+        for label in issue['labels']:
+            if label['name'] == 'new_plugin':
+                new_module = 1
+        if new_module == 1:
+            print pr_number, pr_userlogin, "none (new module)"
+            continue
+
+        # Get the URL for diff file.
+        pr_diffurl = pull['diff_url']
+
+        # Now pull the text of the diff.
+        diff = requests.get(pr_diffurl, auth=(ghuser,ghpass), verify=False).text
+
+        # Grep the diff for affected files.
+        pyfilecounter = 0
+        for line in diff.split('\n'):
+            # The 'diff --git' line contains the file name.
+            if 'diff --git' in line:
+                # This split gives us the file name.
+                filename = line.split(' b/')[1]
+                # Another split gives us the extension.
+                fileextension = filename.split('.')[-1]
+                if fileextension == 'py':
+                    pyfilecounter += 1
+        # if multiple .py files are included in the diff, complain.
+        if pyfilecounter == 0:
+           print pr_number, pr_userlogin, "warn: no python files in this PR"
+        if pyfilecounter > 1:
+           print pr_number, pr_userlogin, "warn: multiple python files in this PR"
+        if pyfilecounter == 1:
+           print "  ", filename
