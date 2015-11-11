@@ -23,6 +23,8 @@ args = {'state':'open', 'page':1}
 r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
 lastpage = int(str(r.links['last']['url']).split('=')[-1])
 
+# Set range for 1..2 for testing only
+# for page in range(1,2):
 for page in range(1,lastpage):
     args = {'state':'open', 'page':page}
     r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
@@ -44,20 +46,6 @@ for page in range(1,lastpage):
         pr_submitter = pull['user']['login']
         print "  Submitter: ", pr_submitter
 
-        #----------------------------------------------------------------------------
-        # Now pull the list of labels on this PR.
-        #----------------------------------------------------------------------------
-        pr_issueurl = pull['issue_url']
-        issue = requests.get(pr_issueurl, auth=(ghuser,ghpass)).json()
-        for label in issue['labels']:
-            print "  Label: ", label['name']
-            
-            # FIXME: do things based on the label
-            # if label['name'] == 'new_plugin':
-            #     do new_plugin stuff
-            # if label['name'] == 'community_review':
-            #     do community_review stuff
-                 
         #----------------------------------------------------------------------------
         # Now pull the list of files being edited.
         # (Warn if there's more than one; we can't handle that case yet.)
@@ -96,9 +84,25 @@ for page in range(1,lastpage):
             f = open('MAINTAINERS-EXTRAS.txt')
         for line in f:
             if filename in line:
-                print "  ", line
+                pr_maintainer = line.split(': ')[-1] 
+                print "  Maintainer: ", pr_maintainer
+                break
         f.close()
 
+        #----------------------------------------------------------------------------
+        # OK, now we know who submitted the PR, and who owns it. Now we pull the 
+        # list of labels on this PR, and take the appropriate action.
+        #----------------------------------------------------------------------------
+        pr_issueurl = pull['issue_url']
+        issue = requests.get(pr_issueurl, auth=(ghuser,ghpass)).json()
+        for label in issue['labels']:
+            print "  Label: ", label['name']
+            
+            # FIXME: do things based on the label
+            # if label['name'] == 'new_plugin':
+            #     do new_plugin stuff
+            # if label['name'] == 'community_review':
+            #     do community_review stuff
 
 ######################################################################################
 
