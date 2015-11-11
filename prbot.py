@@ -11,15 +11,20 @@ import requests, json, yaml, sys
 ghuser=sys.argv[1]
 ghpass=sys.argv[2]
 ghrepo=sys.argv[3]
+repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
+args = {'state':'open', 'page':1}
 
 #------------------------------------------------------------------------------------
 # Go get all open PRs.
 #------------------------------------------------------------------------------------
 
-# FIXME: terrible pagination hack for now
-for page in range(1,2):
+# First, get number of pages using pagination in Link Headers. Thanks 
+# requests library for making this relatively easy!
+r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
+lastpage = int(str(r.links['last']['url']).split('=')[-1])
+
+for page in range(1,lastpage):
     args = {'state':'open', 'page':page}
-    repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
     r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
 
     #--------------------------------------------------------------------------------
