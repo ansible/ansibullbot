@@ -34,6 +34,12 @@ for page in range(1,lastpage):
     #--------------------------------------------------------------------------------
     for pull in r.json():
 
+        
+        #----------------------------------------------------------------------------
+        # Initialize empty list of PR labels; we'll need it later.
+        #----------------------------------------------------------------------------
+        pr_labels = []
+
         #----------------------------------------------------------------------------
         # Get the number ID of the PR.
         #----------------------------------------------------------------------------
@@ -50,10 +56,8 @@ for page in range(1,lastpage):
         # Now pull the list of files being edited.
         # (Warn if there's more than one; we can't handle that case yet.)
         #----------------------------------------------------------------------------
-        pr_diffurl = pull['diff_url']
-
         # Now pull the text of the diff.
-        diff = requests.get(pr_diffurl, auth=(ghuser,ghpass), verify=False).text
+        diff = requests.get(pull['diff_url'], auth=(ghuser,ghpass), verify=False).text
 
         # Grep the diff for affected files.
         pyfilecounter = 0
@@ -90,19 +94,40 @@ for page in range(1,lastpage):
         f.close()
 
         #----------------------------------------------------------------------------
+        # NEXT: Pull the comments from this PR and put them into an array
+        # we can search.
+        #----------------------------------------------------------------------------
+        print "  Comments URL: ", pull['comments_url']
+        # comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False).text
+        # Print comments for now, so we know whether we're doing the right things
+        #for comment in issue['labels']:
+        #    pr_labels.append(label['name'])
+        #    print "  Label: ", label['name']
+
+        #----------------------------------------------------------------------------
         # OK, now we know who submitted the PR, and who owns it. Now we pull the 
         # list of labels on this PR, and take the appropriate action.
         #----------------------------------------------------------------------------
-        pr_issueurl = pull['issue_url']
-        issue = requests.get(pr_issueurl, auth=(ghuser,ghpass)).json()
+        issue = requests.get(pull['issue_url'], auth=(ghuser,ghpass)).json()
+
+        # Print labels for now, so we know whether we're doing the right things
         for label in issue['labels']:
+            pr_labels.append(label['name'])
             print "  Label: ", label['name']
+
+        # No labels? New issue!
+        if len(pr_labels) == 0:
+            print "  Status: New PR"
             
-            # FIXME: do things based on the label
-            # if label['name'] == 'new_plugin':
-            #     do new_plugin stuff
-            # if label['name'] == 'community_review':
-            #     do community_review stuff
+        #----------------------------------------------------------------------------
+        # Community review? Look for comments for the reviews and take action.
+        #----------------------------------------------------------------------------
+        if 'community_review' in pr_labels:
+            print "  Status: In community review"
+
+        # Find needs_revision
+        if 'needs_revision' in pr_labels:
+            print "  Status: Needs revision"
 
 ######################################################################################
 
