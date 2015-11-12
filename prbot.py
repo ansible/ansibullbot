@@ -6,7 +6,7 @@
 # Useful! https://developer.github.com/v3/pulls/
 # Useful! https://developer.github.com/v3/issues/comments/
 
-import requests, json, yaml, sys
+import requests, json, yaml, sys, pprint
 
 ghuser=sys.argv[1]
 ghpass=sys.argv[2]
@@ -98,11 +98,10 @@ for page in range(1,lastpage):
         # we can search.
         #----------------------------------------------------------------------------
         print "  Comments URL: ", pull['comments_url']
-        # comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False).text
+        comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
         # Print comments for now, so we know whether we're doing the right things
-        #for comment in issue['labels']:
-        #    pr_labels.append(label['name'])
-        #    print "  Label: ", label['name']
+        for comment in comments.json():
+             print "  Comment by: ", comment['user']['login']
 
         #----------------------------------------------------------------------------
         # OK, now we know who submitted the PR, and who owns it. Now we pull the 
