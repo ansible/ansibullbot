@@ -120,7 +120,7 @@ network/basics/uri.py: @romeotheriault
 packaging/language/easy_install.py: @mattupstate
 packaging/language/gem.py: FIXME
 packaging/language/pip.py: @mattupstate
-packaging/os/apt.py: @mgwilliams
+packaging/os/apt.py: @ansible
 packaging/os/apt_key.py: @jvantuyl
 packaging/os/apt_repository.py: @sashka
 packaging/os/apt_rpm.py: @evgkrsk
