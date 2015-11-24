@@ -149,6 +149,7 @@ utilities/helper/accelerate.py: @jimi-c
 utilities/helper/fireball.py: FIXME
 utilities/logic/assert.py: FIXME
 utilities/logic/async_status.py: FIXME 
+utilities/logic/async_wrapper.py: @ansible
 utilities/logic/debug.py: FIXME
 utilities/logic/fail.py: @dagwieers
 utilities/logic/include_vars.py: @bennojoy
