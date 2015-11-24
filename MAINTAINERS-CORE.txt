@@ -137,7 +137,7 @@ system/authorized_key.py: @ansible
 system/cron.py: FIXME
 system/group.py: @sfromm
 system/hostname.py: FIXME
-system/mount.py: FIXME
+system/mount.py: @ansible
 system/ping.py: FIXME
 system/seboolean.py: @sfromm
 system/selinux.py: @goozbach
