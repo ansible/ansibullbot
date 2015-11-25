@@ -109,59 +109,59 @@ files/lineinfile.py: dhozac ahtik
 files/replace.py: EvanK
 files/stat.py: bpennypacker
 files/synchronize.py: tima
-files/template.py: FIXME
+files/template.py: ansible
 files/unarchive.py: pileofrogs
 files/xattr.py: bcoca
-inventory/add_host.py: FIXME
+inventory/add_host.py: ansible
 inventory/group_by.py: jhoekx
 network/basics/get_url.py: jpmens
-network/basics/slurp.py: FIXME
+network/basics/slurp.py: ansible
 network/basics/uri.py: romeotheriault
 packaging/language/easy_install.py: mattupstate
-packaging/language/gem.py: FIXME
+packaging/language/gem.py: ansible
 packaging/language/pip.py: mattupstate
 packaging/os/apt.py: ansible
 packaging/os/apt_key.py: jvantuyl
 packaging/os/apt_repository.py: sashka
 packaging/os/apt_rpm.py: evgkrsk
-packaging/os/package.py: FIXME
+packaging/os/package.py: ansible
 packaging/os/redhat_subscription.py: barnabycourt
 packaging/os/rhn_channel.py: vincentvdk
 packaging/os/rhn_register.py: barnabycourt vritant flossware
 packaging/os/rpm_key.py: hacosta
-packaging/os/yum.py: FIXME
-source_control/git.py: FIXME
+packaging/os/yum.py: ansible
+source_control/git.py: ansible
 source_control/hg.py: yeukhon
 source_control/subversion.py: dsummersl
 system/authorized_key.py: ansible
 system/cron.py: dsummersl EvanK
 system/group.py: sfromm
-system/hostname.py: FIXME
+system/hostname.py: hnakamur saito-hideki
 system/mount.py: ansible
-system/ping.py: FIXME
+system/ping.py: ansible
 system/seboolean.py: sfromm
 system/selinux.py: goozbach
-system/service.py: FIXME
-system/setup.py: FIXME
+system/service.py: ansible
+system/setup.py: ansible
 system/sysctl.py: davixx
 system/user.py: sfromm
 utilities/helper/accelerate.py: jimi-c
-utilities/helper/fireball.py: FIXME
-utilities/logic/assert.py: FIXME
+utilities/helper/fireball.py: ansible
+utilities/logic/assert.py: ansible
 utilities/logic/async_status.py: ansible
 utilities/logic/async_wrapper.py: ansible
-utilities/logic/debug.py: FIXME
+utilities/logic/debug.py: dagwieers
 utilities/logic/fail.py: dagwieers
 utilities/logic/include_vars.py: bennojoy
 utilities/logic/pause.py: tbielawa
 utilities/logic/set_fact.py: dagwieers
-utilities/logic/wait_for.py: FIXME
+utilities/logic/wait_for.py: jhoekx jarv AnderEnder
 web_infrastructure/apache2_module.py: berendt
 web_infrastructure/django_manage.py: tastychutney
 web_infrastructure/htpasswd.py: ansible
-web_infrastructure/supervisorctl.py: FIXME
+web_infrastructure/supervisorctl.py: mattupstate inetfuture
 windows/win_copy.py: jhawkesworth
-windows/win_feature.py: FIXME
+windows/win_feature.py: angstwad trondhindenes
 windows/win_file.py: jhawkesworth
 windows/win_get_url.py: angstwad
 windows/win_group.py: chrishoffman
@@ -171,4 +171,4 @@ windows/win_ping.py: cchurch
 windows/win_service.py: chrishoffman
 windows/win_stat.py: cchurch
 windows/win_template.py: jhawkesworth
-windows/win_user.py: FIXME
+windows/win_user.py: angstwad cchurch
