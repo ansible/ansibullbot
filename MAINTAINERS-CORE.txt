@@ -1,12 +1,12 @@
 cloud/amazon/_ec2_ami_search.py: DEPRECATED
 cloud/amazon/cloudformation.py: jsmartin
-cloud/amazon/ec2.py: FIXME
+cloud/amazon/ec2.py: tgerla lwade
 cloud/amazon/ec2_ami.py: scicoin-project
 cloud/amazon/ec2_ami_find.py: tombamford
 cloud/amazon/ec2_asg.py: garethr
 cloud/amazon/ec2_eip.py: rickmendes
 cloud/amazon/ec2_elb.py: jarv
-cloud/amazon/ec2_elb_lb.py: FIXME
+cloud/amazon/ec2_elb_lb.py: jsdalton rickmendes
 cloud/amazon/ec2_facts.py: silviud
 cloud/amazon/ec2_group.py: adq
 cloud/amazon/ec2_key.py: zbal
@@ -20,14 +20,14 @@ cloud/amazon/ec2_vpc.py: carsongee
 cloud/amazon/ec2_vpc_net.py: defionscode
 cloud/amazon/elasticache.py: jsdalton
 cloud/amazon/elasticache_subnet_group.py: timmahoney
-cloud/amazon/iam.py: FIXME
+cloud/amazon/iam.py: defionscode seiffert
 cloud/amazon/iam_cert.py: defionscode
 cloud/amazon/iam_policy.py: defionscode
-cloud/amazon/rds.py: FIXME
+cloud/amazon/rds.py: bpennypacker willthames
 cloud/amazon/rds_param_group.py: tastychutney
 cloud/amazon/rds_subnet_group.py: tastychutney
 cloud/amazon/route53.py: bpennypacker
-cloud/amazon/s3.py: FIXME
+cloud/amazon/s3.py: lwade
 cloud/azure/azure.py: jwhitbeck
 cloud/digital_ocean/digital_ocean.py: zbal
 cloud/digital_ocean/digital_ocean_domain.py: mgregson
@@ -67,45 +67,45 @@ cloud/openstack/os_server_volume.py: emonty
 cloud/openstack/os_subnet.py: emonty
 cloud/openstack/os_subnets_facts.py: dagnello
 cloud/openstack/os_volume.py: emonty
-cloud/rackspace/rax.py: FIXME
-cloud/rackspace/rax_cbs.py: FIXME
-cloud/rackspace/rax_cbs_attachments.py: FIXME
+cloud/rackspace/rax.py: j2sol sivel
+cloud/rackspace/rax_cbs.py: claco sivel
+cloud/rackspace/rax_cbs_attachments.py: claco sivel
 cloud/rackspace/rax_cdb.py: jails
 cloud/rackspace/rax_cdb_database.py: jails
 cloud/rackspace/rax_cdb_user.py: jails
-cloud/rackspace/rax_clb.py: FIXME
+cloud/rackspace/rax_clb.py: claco sivel
 cloud/rackspace/rax_clb_nodes.py: neuroid
 cloud/rackspace/rax_dns.py: sivel
 cloud/rackspace/rax_dns_record.py: sivel
 cloud/rackspace/rax_facts.py: sivel
 cloud/rackspace/rax_files.py: angstwad
 cloud/rackspace/rax_files_objects.py: angstwad
-cloud/rackspace/rax_identity.py: FIXME
+cloud/rackspace/rax_identity.py: claco sivel
 cloud/rackspace/rax_keypair.py: sivel
 cloud/rackspace/rax_meta.py: sivel
-cloud/rackspace/rax_network.py: FIXME
-cloud/rackspace/rax_queue.py: FIXME
+cloud/rackspace/rax_network.py: claco j2sol
+cloud/rackspace/rax_queue.py: claco sivel
 cloud/rackspace/rax_scaling_group.py: sivel
 cloud/rackspace/rax_scaling_policy.py: sivel
 cloud/vmware/vsphere_guest.py: rhoop
-commands/command.py: FIXME
-commands/raw.py: FIXME
-commands/script.py: FIXME
-commands/shell.py: FIXME
+commands/command.py: ansible
+commands/raw.py: ansible
+commands/script.py: ansible
+commands/shell.py: ansible
 database/mysql/mysql_db.py: marktheunissen
 database/mysql/mysql_user.py: marktheunissen
 database/mysql/mysql_variables.py: banyek
 database/postgresql/postgresql_db.py: ansible
 database/postgresql/postgresql_privs.py: b6d
 database/postgresql/postgresql_user.py: ansible
-files/acl.py: FIXME
+files/acl.py: bcoca astorije
 files/assemble.py: sfromm
-files/copy.py: FIXME
-files/fetch.py: FIXME
-files/file.py: FIXME
+files/copy.py: ansible
+files/fetch.py: ansible
+files/file.py: ansible
 files/find.py: bcoca
-files/ini_file.py: FIXME
-files/lineinfile.py: FIXME
+files/ini_file.py: jpmens noseka1
+files/lineinfile.py: dhozac ahtik
 files/replace.py: EvanK
 files/stat.py: bpennypacker
 files/synchronize.py: tima
@@ -134,7 +134,7 @@ source_control/git.py: FIXME
 source_control/hg.py: yeukhon
 source_control/subversion.py: dsummersl
 system/authorized_key.py: ansible
-system/cron.py: FIXME
+system/cron.py: dsummersl EvanK
 system/group.py: sfromm
 system/hostname.py: FIXME
 system/mount.py: ansible
