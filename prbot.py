@@ -13,6 +13,7 @@ ghpass=sys.argv[2]
 ghrepo=sys.argv[3]
 repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
 args = {'state':'open', 'page':1}
+botlist = ['gregdek','robynbergeron']
 
 #------------------------------------------------------------------------------------
 # Go get all open PRs.
@@ -24,16 +25,29 @@ r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
 lastpage = int(str(r.links['last']['url']).split('=')[-1])
 
 # Set range for 1..2 for testing only
-# for page in range(1,2):
-for page in range(1,lastpage):
+for page in range(1,2):
+# for page in range(1,lastpage):
     args = {'state':'open', 'page':page}
     r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
 
     #--------------------------------------------------------------------------------
     # For every open PR:
     #--------------------------------------------------------------------------------
-    for pull in r.json():
+    for shortpull in r.json():
 
+        #----------------------------------------------------------------------------
+        # Get the more detailed PR data from the API:
+        #----------------------------------------------------------------------------
+        pull = requests.get(shortpull['url'], auth=(ghuser,ghpass)).json()
+
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # DEBUG: Dump JSON to /tmp for analysis if needed
+        #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        # debugfileid = '/tmp/' + str(pull['number'])
+        # debugfile = open(debugfileid, 'w')
+        # debugstring = str(pull)
+        # print >>debugfile, debugstring
+        # debugfile.close()
         
         #----------------------------------------------------------------------------
         # Initialize empty list of PR labels; we'll need it later.
@@ -45,6 +59,11 @@ for page in range(1,lastpage):
         #----------------------------------------------------------------------------
         pr_number = pull['number']
         print pr_number 
+        print "  Created at: ", pull['created_at']
+        print "  Changed files: ", pull['changed_files']
+        print "  Mergeable: ", pull['mergeable'] 
+        pr_merged = pull['merged']
+        print "  Merged: ", pr_merged
         
         #----------------------------------------------------------------------------
         # Get the ID of the submitter of the PR.
@@ -79,7 +98,7 @@ for page in range(1,lastpage):
             print "  Filename:", filename
 
         #----------------------------------------------------------------------------
-        # NEXT: Look up the file in the DB to see who owns it.
+        # NEXT: Look up the file in the DB to see who maintains it.
         # (Warn if there's more than one; we can't handle that case yet.)
         #----------------------------------------------------------------------------
         if ghrepo == "core":
@@ -94,18 +113,7 @@ for page in range(1,lastpage):
         f.close()
 
         #----------------------------------------------------------------------------
-        # NEXT: Pull the comments from this PR and put them into an array
-        # we can search.
-        #----------------------------------------------------------------------------
-        print "  Comments URL: ", pull['comments_url']
-        comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
-        # Print comments for now, so we know whether we're doing the right things
-        for comment in comments.json():
-             print "  Comment by: ", comment['user']['login']
-
-        #----------------------------------------------------------------------------
-        # OK, now we know who submitted the PR, and who owns it. Now we pull the 
-        # list of labels on this PR, and take the appropriate action.
+        # Pull the list of labels on this PR and shove them into pr_labels.
         #----------------------------------------------------------------------------
         issue = requests.get(pull['issue_url'], auth=(ghuser,ghpass)).json()
 
@@ -119,14 +127,49 @@ for page in range(1,lastpage):
             print "  Status: New PR"
             
         #----------------------------------------------------------------------------
-        # Community review? Look for comments for the reviews and take action.
+        # NOW: We have everything we need to do actual triage. Walk through the 
+        # comments to this PR, starting with most recent. If we find text in the
+        # body of the PR, we take appropriate action and break.
         #----------------------------------------------------------------------------
-        if 'community_review' in pr_labels:
-            print "  Status: In community review"
+        print "  Comments URL: ", pull['comments_url']
+        comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
+        # Print comments for now, so we know whether we're doing the right things
+        for comment in reversed(comments.json()):
+            print "  Comment by: ", comment['user']['login']
+            print "    Snippet: ", comment['body'][:40]
+             
+            #-----------------------------------------------------------------------
+            # OK, now we start walking through cases. 
+            #-----------------------------------------------------------------------
 
-        # Find needs_revision
-        if 'needs_revision' in pr_labels:
-            print "  Status: Needs revision"
+            if (comment['user']['login'] in botlist):
+                print "STATUS: no useful state change since last bot pass"
+                print "  (bot:) ", comment['user']['login']
+                break
+
+            # if pull['mergeable'] == false:
+            #    print "ACTION: set state to needs_revision"
+	    #    break
+
+            if ((comment['user']['login'] == pr_maintainer)
+              and ('shipit' in comment['body'])):
+                print "ACTION: change state to 'shipit'"
+                break
+
+            if ((comment['user']['login'] == pr_maintainer)
+              and ('needs_revision' in comment['body'])):
+                print "ACTION: change state to needs_revision"
+                break
+
+            if ((comment['user']['login'] == pr_submitter)
+              and ('ready_for_review' in comment['body'])):
+                print "ACTION: change state to community_review (or core_review)"
+                break
+
+            if ((comment['user']['login'] == pr_submitter)
+              and ('ready_for_review' in comment['body'])):
+                print "ACTION: change state to community_review (or core_review)"
+                break
 
 ######################################################################################
 
