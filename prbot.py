@@ -1,7 +1,11 @@
 #!/usr/bin/python
 
-# THIS IS A VERY BAD SCRIPT
+# THIS IS STILL NOT A GREAT SCRIPT
 # (maybe one day it will be a good one)
+
+# TODOs:
+#   * Fix handling of multi-file PRs (and decide policy)
+#   * Simplify to only the useful output
 
 # Useful! https://developer.github.com/v3/pulls/
 # Useful! https://developer.github.com/v3/issues/comments/
@@ -58,12 +62,8 @@ for page in range(1,2):
         # Get the number ID of the PR.
         #----------------------------------------------------------------------------
         pr_number = pull['number']
+        print " "
         print pr_number 
-        print "  Created at: ", pull['created_at']
-        print "  Changed files: ", pull['changed_files']
-        print "  Mergeable: ", pull['mergeable'] 
-        pr_merged = pull['merged']
-        print "  Merged: ", pr_merged
         
         #----------------------------------------------------------------------------
         # Get the ID of the submitter of the PR.
@@ -101,16 +101,21 @@ for page in range(1,2):
         # NEXT: Look up the file in the DB to see who maintains it.
         # (Warn if there's more than one; we can't handle that case yet.)
         #----------------------------------------------------------------------------
+        maintainer_found = 0
         if ghrepo == "core":
             f = open('MAINTAINERS-CORE.txt')
         elif ghrepo == "extras":
             f = open('MAINTAINERS-EXTRAS.txt')
         for line in f:
             if filename in line:
-                pr_maintainer = line.split(': ')[-1] 
+                pr_maintainer = (line.split(': ')[-1]).rstrip()
                 print "  Maintainer: ", pr_maintainer
+                maintainer_found = 1
                 break
         f.close()
+        if (maintainer_found == 0):
+            print "  WARN: No Maintainer Found"
+            pr_maintainer = ''
 
         #----------------------------------------------------------------------------
         # Pull the list of labels on this PR and shove them into pr_labels.
@@ -120,85 +125,86 @@ for page in range(1,2):
         # Print labels for now, so we know whether we're doing the right things
         for label in issue['labels']:
             pr_labels.append(label['name'])
-            print "  Label: ", label['name']
+        print "  Labels: ", pr_labels
 
-        # No labels? New issue!
-        if len(pr_labels) == 0:
-            print "  Status: New PR"
-            
-        #----------------------------------------------------------------------------
-        # NOW: We have everything we need to do actual triage. Walk through the 
-        # comments to this PR, starting with most recent. If we find text in the
-        # body of the PR, we take appropriate action and break.
-        #----------------------------------------------------------------------------
-        print "  Comments URL: ", pull['comments_url']
         comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
-        # Print comments for now, so we know whether we're doing the right things
-        for comment in reversed(comments.json()):
-            print "  Comment by: ", comment['user']['login']
-            print "    Snippet: ", comment['body'][:40]
-             
-            #-----------------------------------------------------------------------
-            # OK, now we start walking through cases. 
-            #-----------------------------------------------------------------------
 
+        #----------------------------------------------------------------------------
+        # NOW: We have everything we need to do actual triage. In triage, we 
+        # assess the actions that need to be taken and push them into a list.
+        #
+        # First, we handle the "no labels at all" case, which means "totally new".
+        #----------------------------------------------------------------------------
+
+        # Set an empty list of actions
+        actions = []
+
+        if len(pr_labels) == 0:
+            if (pr_maintainer == 'ansible'):
+                actions.append("label: core_review")
+                actions.append("boilerplate: core_review_existing_module")
+            elif (pr_maintainer == ''):
+                # We assume that no maintainer means new module
+                actions.append("label: community_review")
+                actions.append("label: new_plugin")
+                actions.append("boilerplate: community_review_new_module")
+            elif (pr_submitter in pr_maintainer):
+                actions.append("label: shipit")
+                actions.append("label: owner_pr")
+                actions.append("boilerplate: shipit_owner_pr")
+            else:
+                actions.append("label: community_review")
+                actions.append("boilerplate: community_review_existing_module")
+
+        #----------------------------------------------------------------------------
+        # OK, now we start walking through comment-based actions, and push them 
+        # into the list.
+        #----------------------------------------------------------------------------
+        for comment in reversed(comments.json()):
+            
+            print "  Commenter: ", comment['user']['login']
             if (comment['user']['login'] in botlist):
-                print "STATUS: no useful state change since last bot pass"
-                print "  (bot:) ", comment['user']['login']
+                print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
                 break
 
-            # if pull['mergeable'] == false:
-            #    print "ACTION: set state to needs_revision"
-	    #    break
+            if pull['mergeable'] == 'false':
+                actions.append("label: needs_rebase")
+                actions.append("boilerplate: needs_rebase")
+                break
 
             if ((comment['user']['login'] == pr_maintainer)
               and ('shipit' in comment['body'])):
-                print "ACTION: change state to 'shipit'"
+                actions.append("label: shipit")
+                actions.append("boilerplate: shipit")
                 break
 
             if ((comment['user']['login'] == pr_maintainer)
               and ('needs_revision' in comment['body'])):
-                print "ACTION: change state to needs_revision"
+                actions.append("label: needs_revision")
+                actions.append("boilerplate: needs_revision")
                 break
 
             if ((comment['user']['login'] == pr_submitter)
               and ('ready_for_review' in comment['body'])):
-                print "ACTION: change state to community_review (or core_review)"
+                if (pr_mainainer == 'ansible'):
+                    actions.append("label: core_review")
+                    actions.append("boilerplate: back_to_core_review")
+                else:
+                    actions.append("label: community_review")
+                    actions.append("boilerplate: back_to_community_review")
                 break
 
-            if ((comment['user']['login'] == pr_submitter)
-              and ('ready_for_review' in comment['body'])):
-                print "ACTION: change state to community_review (or core_review)"
-                break
+        #----------------------------------------------------------------------------
+        # Done. Now let's print out the list of actions we tallied.
+        # (Next step will be to use these actions to write to the PRs
+        # via the Github API.)
+        #----------------------------------------------------------------------------
+
+        print "Actions:"
+        if actions == []:
+            print "  None required"
+        else:
+            for action in actions:
+                print "  ", action
 
 ######################################################################################
-
-
-#PSEUDOCODE: COMMUNITY_REVIEW 
-#for each PR found:
-#	find all maintainers for this module
-#	foreach comment, counting back from the bottom:
-#	if you find a comment with a recognizable tag from an authorized maintainer:
-#apply the tag
-#apply the boilerplate (include the author of the PR)
-#(FIXME: handle case of no comments for 2 weeks and other timeout cases)
-#send email with the results.
-#
-#PSEUDOCODE: NEEDS_REVISION
-#for each PR found:
-#	foreach comment, counting back from the bottom:
-#	if the contributor commented 'ready_for_review'
-#		put it in (community_review) or (core_review)
-#		# this is library that we call to pick out maintainer
-#		attach boilerplate
-#	(handle timeout)
-#	(handle email)
-#
-#PSEUDOCODE: NEEDS_REBASE
-#for each PR found:
-#	is it rebased? (how does the API determine if it merges cleanly)
-#	if so, move to (community_review) or (core_review)
-#	(handle timeout)
-#	(handle email)
-#
-
