@@ -150,13 +150,19 @@ for page in range(1,2):
         # NOW: We have everything we need to do actual triage. In triage, we 
         # assess the actions that need to be taken and push them into a list.
         #
-        # First, we handle the "no labels at all" case, which means "totally new".
+        # First, we handle the "no triaged labels" case: i.e. if none of the 
+        # following labels are present: community_review, core_review, needs_revision,
+        # needs_rebase.
         #----------------------------------------------------------------------------
 
         # Set an empty list of actions
         actions = []
 
-        if len(pr_labels) == 0:
+        # if (len(pr_labels) == 0):
+        if (('community_review' not in pr_labels)
+          and ('core_review' not in pr_labels)
+          and ('needs_revision' not in pr_labels)
+          and ('needs_rebase' not in pr_labels)):
             if (pr_maintainer == 'ansible'):
                 actions.append("label: core_review")
                 actions.append("boilerplate: core_review_existing")
