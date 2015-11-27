@@ -221,7 +221,7 @@ for page in range(1,2):
                 break
 
         #----------------------------------------------------------------------------
-        # Done. Now let's print out the list of actions we tallied.
+        # OK, this PR is done! Now let's print out the list of actions we tallied.
         # (Next step will be to use these actions to write to the PRs
         # via the Github API.)
         #----------------------------------------------------------------------------
@@ -233,9 +233,9 @@ for page in range(1,2):
             for action in actions:
                 print "  ", action
                 if "boilerplate" in action:
-                    mtext = pr_maintainer
-                    # A hack to make the @ signs line up for multiple submitters
-                    stext = pr_submitter.replace(' ', ' @')
+                    # A hack to make the @ signs line up for multiple maintainers
+                    mtext = pr_maintainer.replace(' ', ' @')
+                    stext = pr_submitter
                     boilerout = action.split(': ')[-1]
                     print boilerplate[boilerout].format(m=mtext,s=stext)
 
