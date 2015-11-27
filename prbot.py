@@ -71,25 +71,12 @@ for page in range(1,2):
         # debugfile.close()
         
         #----------------------------------------------------------------------------
-        # Initialize empty list of PR labels; we'll need it later.
+        # Initialize an empty local list of PR labels; we'll need it later.
         #----------------------------------------------------------------------------
         pr_labels = []
-
-        #----------------------------------------------------------------------------
-        # Get the number ID of the PR.
-        #----------------------------------------------------------------------------
-        pr_number = pull['number']
-        print " "
-        print pr_number 
         
         #----------------------------------------------------------------------------
-        # Get the ID of the submitter of the PR.
-        #----------------------------------------------------------------------------
-        pr_submitter = pull['user']['login']
-        print "  Submitter: ", pr_submitter
-
-        #----------------------------------------------------------------------------
-        # Now pull the list of files being edited.
+        # Pull the list of files being edited so we can find maintainers.
         # (Warn if there's more than one; we can't handle that case yet.)
         #----------------------------------------------------------------------------
         # Now pull the text of the diff.
@@ -101,21 +88,21 @@ for page in range(1,2):
             # The 'diff --git' line contains the file name.
             if 'diff --git' in line:
                 # This split gives us the file name.
-                filename = line.split(' b/')[1]
+                pr_filename = line.split(' b/')[1]
                 # Another split gives us the extension.
-                fileextension = filename.split('.')[-1]
-                if fileextension == 'py':
+                pr_fileextension = pr_filename.split('.')[-1]
+                if pr_fileextension == 'py':
                     pyfilecounter += 1
         # if multiple .py files are included in the diff, complain.
         if pyfilecounter == 0:
             print "  WARN: no python files in this PR"
         if pyfilecounter > 1:
             print "  WARN: multiple python files in this PR"
-        if pyfilecounter == 1:
-            print "  Filename:", filename
+        # if pyfilecounter == 1:
+        #    print "  Filename:", pr_filename
 
         #----------------------------------------------------------------------------
-        # NEXT: Look up the file in the DB to see who maintains it.
+        # Look up the files in the local DB to see who maintains them.
         # (Warn if there's more than one; we can't handle that case yet.)
         #----------------------------------------------------------------------------
         maintainer_found = 0
@@ -124,14 +111,12 @@ for page in range(1,2):
         elif ghrepo == "extras":
             f = open('MAINTAINERS-EXTRAS.txt')
         for line in f:
-            if filename in line:
+            if pr_filename in line:
                 pr_maintainer = (line.split(': ')[-1]).rstrip()
-                print "  Maintainer: ", pr_maintainer
                 maintainer_found = 1
                 break
         f.close()
         if (maintainer_found == 0):
-            print "  WARN: No Maintainer Found"
             pr_maintainer = ''
 
         #----------------------------------------------------------------------------
@@ -142,8 +127,20 @@ for page in range(1,2):
         # Print labels for now, so we know whether we're doing the right things
         for label in issue['labels']:
             pr_labels.append(label['name'])
-        print "  Labels: ", pr_labels
 
+        #----------------------------------------------------------------------------
+        # Get and print key info about the PR.
+        #----------------------------------------------------------------------------
+        print " "
+        print "****************************************************"
+        print pull['number'], '---', pull['title']
+        pr_submitter = pull['user']['login']
+        print "  Labels: ", pr_labels
+        print "  Submitter: ", pr_submitter
+        print "  Maintainer(s): ", pr_maintainer
+        print "  Filename(s): ", pr_filename
+        print " "
+        print pull['body']
         comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
 
         #----------------------------------------------------------------------------
@@ -185,7 +182,9 @@ for page in range(1,2):
         #----------------------------------------------------------------------------
         for comment in reversed(comments.json()):
             
-            print "  Commenter: ", comment['user']['login']
+            print " " 
+            print "==========>  Comment at ", comment['created_at'], " from: ", comment['user']['login']
+            print comment['body']
             if (comment['user']['login'] in botlist):
                 print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
                 break
@@ -226,7 +225,8 @@ for page in range(1,2):
         # via the Github API.)
         #----------------------------------------------------------------------------
 
-        print "Actions:"
+        print " "
+        print "RECOMMENDED ACTIONS:"
         if actions == []:
             print "  None required"
         else:
@@ -239,6 +239,7 @@ for page in range(1,2):
                     boilerout = action.split(': ')[-1]
                     print boilerplate[boilerout].format(m=mtext,s=stext)
 
+        print " "
         cont = raw_input("Enter to continue.")
 
 ######################################################################################
