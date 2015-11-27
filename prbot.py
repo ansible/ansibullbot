@@ -12,12 +12,29 @@
 
 import requests, json, yaml, sys, pprint
 
+
+#------------------------------------------------------------------------------------
+# Initialize various things. FIXME: better parameter handling.
+#------------------------------------------------------------------------------------
 ghuser=sys.argv[1]
 ghpass=sys.argv[2]
 ghrepo=sys.argv[3]
 repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
 args = {'state':'open', 'page':1}
 botlist = ['gregdek','robynbergeron']
+
+#------------------------------------------------------------------------------------
+# Boilerplate text.
+#------------------------------------------------------------------------------------
+boilerplate = {
+    'shipit': "Thanks again to @{s} for this PR, and thanks @{m} for reviewing. Marking for inclusion.",
+    'community_review_existing': "Thanks @{s}. @{m} please review according to guidelines (LINK) and comment with text 'shipit' or 'needs_revision' as appropriate.",
+    'core_review_existing': "Thanks @{s} for this PR. This module is maintained by the Ansible core team, so it can take a while for patches to be reviewed. Thanks for your patience.",
+    'community_review_new': "Thanks @{s} for this new module. When this module receives 'shipit' comments from two community members and any 'needs_revision' comments have been resolved, we will mark for inclusion.",
+    'shipit_owner_pr': "Thanks @{s}. Since you are the owner of this module, we are marking this PR for immediate inclusion.",
+    'needs_rebase': "Thanks @{s} for this PR. Unfortunately, it is not mergeable in its current state due to merge conflicts. Please rebase your PR. When you are done, please comment with text 'ready_for_review' and we will put this PR back into review.",
+    'needs_revision': "Thanks @{s} for this PR. The maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text 'ready_for_review' and we will put this PR back into review."
+}
 
 #------------------------------------------------------------------------------------
 # Go get all open PRs.
@@ -142,19 +159,19 @@ for page in range(1,2):
         if len(pr_labels) == 0:
             if (pr_maintainer == 'ansible'):
                 actions.append("label: core_review")
-                actions.append("boilerplate: core_review_existing_module")
+                actions.append("boilerplate: core_review_existing")
             elif (pr_maintainer == ''):
                 # We assume that no maintainer means new module
                 actions.append("label: community_review")
                 actions.append("label: new_plugin")
-                actions.append("boilerplate: community_review_new_module")
+                actions.append("boilerplate: community_review_new")
             elif (pr_submitter in pr_maintainer):
                 actions.append("label: shipit")
                 actions.append("label: owner_pr")
                 actions.append("boilerplate: shipit_owner_pr")
             else:
                 actions.append("label: community_review")
-                actions.append("boilerplate: community_review_existing_module")
+                actions.append("boilerplate: community_review_existing")
 
         #----------------------------------------------------------------------------
         # OK, now we start walking through comment-based actions, and push them 
@@ -186,12 +203,15 @@ for page in range(1,2):
 
             if ((comment['user']['login'] == pr_submitter)
               and ('ready_for_review' in comment['body'])):
-                if (pr_mainainer == 'ansible'):
+                if (pr_maintainer == 'ansible'):
                     actions.append("label: core_review")
-                    actions.append("boilerplate: back_to_core_review")
+                    actions.append("boilerplate: core_review")
+                elif (pr_maintainer == ''):
+                    actions.append("label: community_review")
+                    actions.append("boilerplate: community_review_new")
                 else:
                     actions.append("label: community_review")
-                    actions.append("boilerplate: back_to_community_review")
+                    actions.append("boilerplate: community_review_existing")
                 break
 
         #----------------------------------------------------------------------------
@@ -206,5 +226,13 @@ for page in range(1,2):
         else:
             for action in actions:
                 print "  ", action
+                if "boilerplate" in action:
+                    mtext = pr_maintainer
+                    # A hack to make the @ signs line up for multiple submitters
+                    stext = pr_submitter.replace(' ', ' @')
+                    boilerout = action.split(': ')[-1]
+                    print boilerplate[boilerout].format(m=mtext,s=stext)
+
+        cont = raw_input("Enter to continue.")
 
 ######################################################################################
