@@ -166,19 +166,19 @@ for page in range(1,lastpage):
           and ('needs_rebase' not in pr_labels)
           and ('shipit' not in pr_labels)):
             if (pr_maintainer == 'ansible'):
-                actions.append("label: core_review")
+                actions.append("newlabel: core_review")
                 actions.append("boilerplate: core_review_existing")
             elif (pr_maintainer == ''):
                 # We assume that no maintainer means new module
-                actions.append("label: community_review")
-                actions.append("label: new_plugin")
+                actions.append("newlabel: community_review")
+                actions.append("newlabel: new_plugin")
                 actions.append("boilerplate: community_review_new")
             elif (pr_submitter in pr_maintainer):
-                actions.append("label: shipit")
-                actions.append("label: owner_pr")
+                actions.append("newlabel: shipit")
+                actions.append("newlabel: owner_pr")
                 actions.append("boilerplate: shipit_owner_pr")
             else:
-                actions.append("label: community_review")
+                actions.append("newlabel: community_review")
                 actions.append("boilerplate: community_review_existing")
  
         #------------------------------------------------------------------------
@@ -186,7 +186,7 @@ for page in range(1,lastpage):
         #------------------------------------------------------------------------
         if ((pull['mergeable'] == 'false')
           and ('needs_rebase' not in pr_labels)):
-            actions.append("label: needs_rebase")
+            actions.append("newlabel: needs_rebase")
             actions.append("boilerplate: needs_rebase")
 
         #------------------------------------------------------------------------
@@ -197,13 +197,13 @@ for page in range(1,lastpage):
           and ('needs_rebase' in pr_labels)):
             actions.append("unlabel: needs_rebase")
             if (pr_maintainer == 'ansible'):
-                actions.append("label: core_review")
+                actions.append("newlabel: core_review")
                 actions.append("boilerplate: core_review")
             elif (pr_maintainer == ''):
-                actions.append("label: community_review")
+                actions.append("newlabel: community_review")
                 actions.append("boilerplate: community_review_new")
             else:
-                actions.append("label: community_review")
+                actions.append("newlabel: community_review")
                 actions.append("boilerplate: community_review_existing")
 
         #----------------------------------------------------------------------------
@@ -211,11 +211,11 @@ for page in range(1,lastpage):
         # label and put into the appropriate review state.
         #----------------------------------------------------------------------------
         if (pr_filename.split('/')[0] == 'cloud') and ('cloud' not in pr_labels):
-            actions.append("label: cloud")
+            actions.append("newlabel: cloud")
         if (pr_filename.split('/')[0] == 'network') and ('network' not in pr_labels):
-            actions.append("label: networking")
+            actions.append("newlabel: networking")
         if (pr_filename.split('/')[0] == 'windows') and ('windows' not in pr_labels):
-            actions.append("label: windows")
+            actions.append("newlabel: windows")
 
         #----------------------------------------------------------------------------
         # OK, now we start walking through comment-based actions, and push them 
@@ -241,11 +241,11 @@ for page in range(1,lastpage):
             #------------------------------------------------------------------------
             if ((comment['user']['login'] == pr_maintainer)
               and ('shipit' in comment['body'])):
-                actions.append("unlabel: community_review")
-                actions.append("unlabel: core_review")
-                actions.append("unlabel: needs_info")
-                actions.append("unlabel: needs_revision")
-                actions.append("label: shipit")
+                actions.append("newlabel: community_review")
+                actions.append("newlabel: core_review")
+                actions.append("newlabel: needs_info")
+                actions.append("newlabel: needs_revision")
+                actions.append("newlabel: shipit")
                 actions.append("boilerplate: shipit")
                 break
 
@@ -258,7 +258,7 @@ for page in range(1,lastpage):
                 actions.append("unlabel: core_review")
                 actions.append("unlabel: needs_info")
                 actions.append("unlabel: shipit")
-                actions.append("label: needs_revision")
+                actions.append("newlabel: needs_revision")
                 actions.append("boilerplate: needs_revision")
                 break
 
@@ -270,13 +270,13 @@ for page in range(1,lastpage):
                 actions.append("unlabel: needs_revision")
                 actions.append("unlabel: needs_info")
                 if (pr_maintainer == 'ansible'):
-                    actions.append("label: core_review")
+                    actions.append("newlabel: core_review")
                     actions.append("boilerplate: core_review")
                 elif (pr_maintainer == ''):
-                    actions.append("label: community_review")
+                    actions.append("newlabel: community_review")
                     actions.append("boilerplate: community_review_new")
                 else:
-                    actions.append("label: community_review")
+                    actions.append("newlabel: community_review")
                     actions.append("boilerplate: community_review_existing")
                 break
 
@@ -322,7 +322,7 @@ for page in range(1,lastpage):
                             print e
                             sys.exit(1)
 
-                if "label" in action:
+                if "newlabel" in action:
                     newlabel = action.split(': ')[-1]
                     if newlabel not in pr_labels:
                         pr_actionurl = issue['labels_url'].split("{")[0]
