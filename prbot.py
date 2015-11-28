@@ -28,12 +28,12 @@ botlist = ['gregdek','robynbergeron']
 #------------------------------------------------------------------------------------
 boilerplate = {
     'shipit': "Thanks again to @{s} for this PR, and thanks @{m} for reviewing. Marking for inclusion.",
-    'community_review_existing': "Thanks @{s}. @{m} please review according to guidelines (LINK) and comment with text 'shipit' or 'needs_revision' as appropriate.",
-    'core_review_existing': "Thanks @{s} for this PR. This module is maintained by the Ansible core team, so it can take a while for patches to be reviewed. Thanks for your patience.",
-    'community_review_new': "Thanks @{s} for this new module. When this module receives 'shipit' comments from two community members and any 'needs_revision' comments have been resolved, we will mark for inclusion.",
-    'shipit_owner_pr': "Thanks @{s}. Since you are the owner of this module, we are marking this PR for immediate inclusion.",
-    'needs_rebase': "Thanks @{s} for this PR. Unfortunately, it is not mergeable in its current state due to merge conflicts. Please rebase your PR. When you are done, please comment with text 'ready_for_review' and we will put this PR back into review.",
-    'needs_revision': "Thanks @{s} for this PR. The maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text 'ready_for_review' and we will put this PR back into review."
+    'community_review_existing': 'Thanks @{s}. @{m} please review according to guidelines (http://docs.ansible.com/ansible/developing_modules.html#module-checklist) and comment with text \'shipit\' or \'needs_revision\' as appropriate.',
+    'core_review_existing': 'Thanks @{s} for this PR. This module is maintained by the Ansible core team, so it can take a while for patches to be reviewed. Thanks for your patience.',
+    'community_review_new': 'Thanks @{s} for this new module. When this module receives \'shipit\' comments from two community members and any \'needs_revision\' comments have been resolved, we will mark for inclusion.',
+    'shipit_owner_pr': 'Thanks @{s}. Since you are the owner of this module, we are marking this PR for immediate inclusion.',
+    'needs_rebase': 'Thanks @{s} for this PR. Unfortunately, it is not mergeable in its current state due to merge conflicts. Please rebase your PR. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.',
+    'needs_revision': 'Thanks @{s} for this PR. The maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.'
 }
 
 #------------------------------------------------------------------------------------
@@ -178,6 +178,7 @@ for page in range(1,2):
                 actions.append("boilerplate: shipit_owner_pr")
             else:
                 actions.append("label: community_review")
+                actions.append("boilerplate: community_review_existing")
  
         #------------------------------------------------------------------------
         # Does this PR need to be (newly) rebased? If so, label and boilerplate.
@@ -288,7 +289,7 @@ for page in range(1,2):
         #----------------------------------------------------------------------------
 
         print " "
-        print "RECOMMENDED ACTIONS:"
+        print "RECOMMENDED ACTIONS for ", pull['html_url']
         if actions == []:
             print "  None required"
         else:
@@ -297,24 +298,42 @@ for page in range(1,2):
 
         print " "
 
-        cont = raw_input("Take recommended action (y/N)?")
+        cont = raw_input("Take recommended actions (y/N)?")
         if cont in ('Y','y'):
 
             #------------------------------------------------------------------------
             # Now we start actually writing to the issue itself.
             #------------------------------------------------------------------------
-            pr_labelurl = issue['labels_url']
+            print "LABELS_URL: ", issue['labels_url']
+            print "COMMENTS_URL: ", pull['comments_url']
             for action in actions:
 
                 if "unlabel" in action:
                     oldlabel = action.split(': ')[-1]
                     # Don't remove it if it isn't there
                     if oldlabel in pr_labels:
-                        print "Unlabelling: ", oldlabel
+                        pr_actionurl = issue['labels_url'].split("{")[0] + "/" + oldlabel
+                        print "URL for DELETE: ", pr_actionurl
+                        try:
+                            r = requests.delete(pr_actionurl, auth=(ghuser,ghpass))
+                            print r.text
+                        except requests.exceptions.RequestException as e:
+                            print e
+                            sys.exit(1)
 
                 if "label" in action:
                     newlabel = action.split(': ')[-1]
-                    print "Labelling: ", newlabel
+                    if newlabel not in pr_labels:
+                        pr_actionurl = issue['labels_url'].split("{")[0]
+                        payload = '["' + newlabel +'"]'
+                        print "URL for POST: ", pr_actionurl
+                        print "  PAYLOAD: ", payload
+                        try:
+                            r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
+                            print r.text
+                        except requests.exceptions.RequestException as e:
+                            print e
+                            sys.exit(1)
 
                 if "boilerplate" in action:
                     # A hack to make the @ signs line up for multiple maintainers
@@ -322,10 +341,16 @@ for page in range(1,2):
                     stext = pr_submitter
                     boilerout = action.split(': ')[-1]
                     newcomment = boilerplate[boilerout].format(m=mtext,s=stext)
-                    print "Commenting: "
-                    print newcomment
-                    
-                # requests.delete(pr_labelurl, auth=(ghuser,ghpass)).json()         
+                    payload = '{"body": "' + newcomment + '"}'
+                    pr_actionurl = issue['comments_url']
+                    print "URL for POST: ", pr_actionurl
+                    print "  PAYLOAD: ", payload
+                    try:
+                        r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
+                        print r.text
+                    except requests.exceptions.RequestException as e:
+                        print e
+                        sys.exit(1)
                         
         else:
             print "nah!"
