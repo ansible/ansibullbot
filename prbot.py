@@ -46,8 +46,8 @@ r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
 lastpage = int(str(r.links['last']['url']).split('=')[-1])
 
 # Set range for 1..2 for testing only
-for page in range(1,2):
-# for page in range(1,lastpage):
+# for page in range(1,2):
+for page in range(1,lastpage):
     args = {'state':'open', 'page':page}
     r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
 
