@@ -155,7 +155,7 @@ for page in range(1,2):
         #
         # First, we handle the "no triaged labels" case: i.e. if none of the 
         # following labels are present: community_review, core_review, needs_revision,
-        # needs_rebase.
+        # needs_rebase, shipit.
         #----------------------------------------------------------------------------
 
         # if (len(pr_labels) == 0):
@@ -163,7 +163,8 @@ for page in range(1,2):
           and ('core_review' not in pr_labels)
           and ('needs_revision' not in pr_labels)
           and ('needs_info' not in pr_labels)
-          and ('needs_rebase' not in pr_labels)):
+          and ('needs_rebase' not in pr_labels)
+          and ('shipit' not in pr_labels)):
             if (pr_maintainer == 'ansible'):
                 actions.append("label: core_review")
                 actions.append("boilerplate: core_review_existing")
@@ -209,11 +210,11 @@ for page in range(1,2):
         # Now let's add filename-based labels: cloud, windows, networking.
         # label and put into the appropriate review state.
         #----------------------------------------------------------------------------
-        if pr_filename.split('/')[0] == 'cloud':
+        if (pr_filename.split('/')[0] == 'cloud') and ('cloud' not in pr_labels):
             actions.append("label: cloud")
-        if pr_filename.split('/')[0] == 'network':
+        if (pr_filename.split('/')[0] == 'network') and ('network' not in pr_labels):
             actions.append("label: networking")
-        if pr_filename.split('/')[0] == 'windows':
+        if (pr_filename.split('/')[0] == 'windows') and ('windows' not in pr_labels):
             actions.append("label: windows")
 
         #----------------------------------------------------------------------------
