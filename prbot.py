@@ -212,7 +212,7 @@ for page in range(1,lastpage):
         #----------------------------------------------------------------------------
         if (pr_filename.split('/')[0] == 'cloud') and ('cloud' not in pr_labels):
             actions.append("newlabel: cloud")
-        if (pr_filename.split('/')[0] == 'network') and ('network' not in pr_labels):
+        if (pr_filename.split('/')[0] == 'network') and ('networking' not in pr_labels):
             actions.append("newlabel: networking")
         if (pr_filename.split('/')[0] == 'windows') and ('windows' not in pr_labels):
             actions.append("newlabel: windows")
