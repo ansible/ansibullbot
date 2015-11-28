@@ -241,10 +241,10 @@ for page in range(1,lastpage):
             #------------------------------------------------------------------------
             if ((comment['user']['login'] == pr_maintainer)
               and ('shipit' in comment['body'])):
-                actions.append("newlabel: community_review")
-                actions.append("newlabel: core_review")
-                actions.append("newlabel: needs_info")
-                actions.append("newlabel: needs_revision")
+                actions.append("unlabel: community_review")
+                actions.append("unlabel: core_review")
+                actions.append("unlabel: needs_info")
+                actions.append("unlabel: needs_revision")
                 actions.append("newlabel: shipit")
                 actions.append("boilerplate: shipit")
                 break
