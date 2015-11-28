@@ -144,6 +144,12 @@ for page in range(1,2):
         comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
 
         #----------------------------------------------------------------------------
+        # Set our empty list of actions. At the conclusion of triage, this list will
+        # contain the set of actions that we forward to the Github API.
+        #----------------------------------------------------------------------------
+        actions = []
+
+        #----------------------------------------------------------------------------
         # NOW: We have everything we need to do actual triage. In triage, we 
         # assess the actions that need to be taken and push them into a list.
         #
@@ -152,13 +158,11 @@ for page in range(1,2):
         # needs_rebase.
         #----------------------------------------------------------------------------
 
-        # Set an empty list of actions
-        actions = []
-
         # if (len(pr_labels) == 0):
         if (('community_review' not in pr_labels)
           and ('core_review' not in pr_labels)
           and ('needs_revision' not in pr_labels)
+          and ('needs_info' not in pr_labels)
           and ('needs_rebase' not in pr_labels)):
             if (pr_maintainer == 'ansible'):
                 actions.append("label: core_review")
@@ -174,40 +178,95 @@ for page in range(1,2):
                 actions.append("boilerplate: shipit_owner_pr")
             else:
                 actions.append("label: community_review")
+ 
+        #------------------------------------------------------------------------
+        # Does this PR need to be (newly) rebased? If so, label and boilerplate.
+        #------------------------------------------------------------------------
+        if ((pull['mergeable'] == 'false')
+          and ('needs_rebase' not in pr_labels)):
+            actions.append("label: needs_rebase")
+            actions.append("boilerplate: needs_rebase")
+
+        #------------------------------------------------------------------------
+        # Has PR been rebased at our request? If so, remove needs_rebase
+        # label and put into the appropriate review state.
+        #------------------------------------------------------------------------
+        if ((pull['mergeable'] == 'true')
+          and ('needs_rebase' in pr_labels)):
+            actions.append("unlabel: needs_rebase")
+            if (pr_maintainer == 'ansible'):
+                actions.append("label: core_review")
+                actions.append("boilerplate: core_review")
+            elif (pr_maintainer == ''):
+                actions.append("label: community_review")
+                actions.append("boilerplate: community_review_new")
+            else:
+                actions.append("label: community_review")
                 actions.append("boilerplate: community_review_existing")
 
         #----------------------------------------------------------------------------
+        # Now let's add filename-based labels: cloud, windows, networking.
+        # label and put into the appropriate review state.
+        #----------------------------------------------------------------------------
+        if pr_filename.split('/')[0] == 'cloud':
+            actions.append("label: cloud")
+        if pr_filename.split('/')[0] == 'network':
+            actions.append("label: networking")
+        if pr_filename.split('/')[0] == 'windows':
+            actions.append("label: windows")
+
+        #----------------------------------------------------------------------------
         # OK, now we start walking through comment-based actions, and push them 
-        # into the list.
+        # into the list. 
+        #
+        # NOTE: we walk through comments MOST RECENT FIRST.
         #----------------------------------------------------------------------------
         for comment in reversed(comments.json()):
             
             print " " 
             print "==========>  Comment at ", comment['created_at'], " from: ", comment['user']['login']
             print comment['body']
+
+            #------------------------------------------------------------------------
+            # Is the last comment from a bot user?  Then break.
+            #------------------------------------------------------------------------
             if (comment['user']['login'] in botlist):
                 print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
                 break
 
-            if pull['mergeable'] == 'false':
-                actions.append("label: needs_rebase")
-                actions.append("boilerplate: needs_rebase")
-                break
-
+            #------------------------------------------------------------------------
+            # Has maintainer said 'shipit'? Then label/boilerplate/break.
+            #------------------------------------------------------------------------
             if ((comment['user']['login'] == pr_maintainer)
               and ('shipit' in comment['body'])):
+                actions.append("unlabel: community_review")
+                actions.append("unlabel: core_review")
+                actions.append("unlabel: needs_info")
+                actions.append("unlabel: needs_revision")
                 actions.append("label: shipit")
                 actions.append("boilerplate: shipit")
                 break
 
+            #------------------------------------------------------------------------
+            # Has maintainer said 'needs_revision'? Then label/boilerplate/break.
+            #------------------------------------------------------------------------
             if ((comment['user']['login'] == pr_maintainer)
               and ('needs_revision' in comment['body'])):
+                actions.append("unlabel: community_review")
+                actions.append("unlabel: core_review")
+                actions.append("unlabel: needs_info")
+                actions.append("unlabel: shipit")
                 actions.append("label: needs_revision")
                 actions.append("boilerplate: needs_revision")
                 break
 
+            #------------------------------------------------------------------------
+            # Has submitter said 'ready_for_review'? Then label/boilerplate/break.
+            #------------------------------------------------------------------------
             if ((comment['user']['login'] == pr_submitter)
               and ('ready_for_review' in comment['body'])):
+                actions.append("unlabel: needs_revision")
+                actions.append("unlabel: needs_info")
                 if (pr_maintainer == 'ansible'):
                     actions.append("label: core_review")
                     actions.append("boilerplate: core_review")
@@ -221,8 +280,11 @@ for page in range(1,2):
 
         #----------------------------------------------------------------------------
         # OK, this PR is done! Now let's print out the list of actions we tallied.
-        # (Next step will be to use these actions to write to the PRs
-        # via the Github API.)
+        #
+        # In assisted mode, we will ask the user whether we want to take the 
+        # recommended actions.
+        #
+        # In autonomous mode (future), we will take the actions automatically.
         #----------------------------------------------------------------------------
 
         print " "
@@ -232,14 +294,40 @@ for page in range(1,2):
         else:
             for action in actions:
                 print "  ", action
+
+        print " "
+
+        cont = raw_input("Take recommended action (y/N)?")
+        if cont in ('Y','y'):
+
+            #------------------------------------------------------------------------
+            # Now we start actually writing to the issue itself.
+            #------------------------------------------------------------------------
+            pr_labelurl = issue['labels_url']
+            for action in actions:
+
+                if "unlabel" in action:
+                    oldlabel = action.split(': ')[-1]
+                    # Don't remove it if it isn't there
+                    if oldlabel in pr_labels:
+                        print "Unlabelling: ", oldlabel
+
+                if "label" in action:
+                    newlabel = action.split(': ')[-1]
+                    print "Labelling: ", newlabel
+
                 if "boilerplate" in action:
                     # A hack to make the @ signs line up for multiple maintainers
                     mtext = pr_maintainer.replace(' ', ' @')
                     stext = pr_submitter
                     boilerout = action.split(': ')[-1]
-                    print boilerplate[boilerout].format(m=mtext,s=stext)
-
-        print " "
-        cont = raw_input("Enter to continue.")
+                    newcomment = boilerplate[boilerout].format(m=mtext,s=stext)
+                    print "Commenting: "
+                    print newcomment
+                    
+                # requests.delete(pr_labelurl, auth=(ghuser,ghpass)).json()         
+                        
+        else:
+            print "nah!"
 
 ######################################################################################
