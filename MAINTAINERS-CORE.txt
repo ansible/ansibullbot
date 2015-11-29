@@ -160,15 +160,29 @@ web_infrastructure/apache2_module.py: berendt
 web_infrastructure/django_manage.py: tastychutney
 web_infrastructure/htpasswd.py: ansible
 web_infrastructure/supervisorctl.py: mattupstate inetfuture
+windows/setup.ps1: ansible
+windows/slurp.ps1: ansible
 windows/win_copy.py: jhawkesworth
+windows/win_copy.ps1: jhawkesworth
 windows/win_feature.py: angstwad trondhindenes
+windows/win_feature.ps1: angstwad trondhindenes
 windows/win_file.py: jhawkesworth
+windows/win_file.ps1: jhawkesworth
 windows/win_get_url.py: angstwad
+windows/win_get_url.ps1: angstwad
 windows/win_group.py: chrishoffman
+windows/win_group.ps1: chrishoffman
 windows/win_lineinfile.py: brianlloyd
+windows/win_lineinfile.ps1: brianlloyd
 windows/win_msi.py: sivel
+windows/win_msi.ps1: sivel
 windows/win_ping.py: cchurch
+windows/win_ping.ps1: cchurch
 windows/win_service.py: chrishoffman
+windows/win_service.ps1: chrishoffman
 windows/win_stat.py: cchurch
+windows/win_stat.ps1: cchurch
 windows/win_template.py: jhawkesworth
+windows/win_template.ps1: jhawkesworth
 windows/win_user.py: angstwad cchurch
+windows/win_user.ps1: angstwad cchurch
