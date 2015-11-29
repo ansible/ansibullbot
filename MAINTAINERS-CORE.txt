@@ -87,7 +87,7 @@ cloud/rackspace/rax_network.py: claco j2sol
 cloud/rackspace/rax_queue.py: claco sivel
 cloud/rackspace/rax_scaling_group.py: sivel
 cloud/rackspace/rax_scaling_policy.py: sivel
-cloud/vmware/vsphere_guest.py: rhoop
+cloud/vmware/vsphere_guest.py: chrrrles rhoop
 commands/command.py: ansible
 commands/raw.py: ansible
 commands/script.py: ansible

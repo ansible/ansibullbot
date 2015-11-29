@@ -31,7 +31,7 @@ boilerplate = {
     'community_review_existing': 'Thanks @{s}. @{m} please review according to guidelines (http://docs.ansible.com/ansible/developing_modules.html#module-checklist) and comment with text \'shipit\' or \'needs_revision\' as appropriate.',
     'core_review_existing': 'Thanks @{s} for this PR. This module is maintained by the Ansible core team, so it can take a while for patches to be reviewed. Thanks for your patience.',
     'community_review_new': 'Thanks @{s} for this new module. When this module receives \'shipit\' comments from two community members and any \'needs_revision\' comments have been resolved, we will mark for inclusion.',
-    'shipit_owner_pr': 'Thanks @{s}. Since you are the owner of this module, we are marking this PR for immediate inclusion.',
+    'shipit_owner_pr': 'Thanks @{s}. Since you are the owner of this module, we are marking this PR for inclusion.',
     'needs_rebase': 'Thanks @{s} for this PR. Unfortunately, it is not mergeable in its current state due to merge conflicts. Please rebase your PR. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.',
     'needs_revision': 'Thanks @{s} for this PR. The maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.'
 }
@@ -184,10 +184,11 @@ for page in range(1,lastpage):
         #------------------------------------------------------------------------
         # Does this PR need to be (newly) rebased? If so, label and boilerplate.
         #------------------------------------------------------------------------
-        if ((pull['mergeable'] == 'false')
-          and ('needs_rebase' not in pr_labels)):
-            actions.append("newlabel: needs_rebase")
-            actions.append("boilerplate: needs_rebase")
+        if (pull['mergeable'] == 'false'):
+            print "WARN: not mergeable!"
+            if ('needs_rebase' not in pr_labels):
+                actions.append("newlabel: needs_rebase")
+                actions.append("boilerplate: needs_rebase")
 
         #------------------------------------------------------------------------
         # Has PR been rebased at our request? If so, remove needs_rebase

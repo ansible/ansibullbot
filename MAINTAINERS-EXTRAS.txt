@@ -72,26 +72,26 @@ cloud/rackspace/rax_mon_check.py: smashwilson
 cloud/rackspace/rax_mon_entity.py: smashwilson
 cloud/rackspace/rax_mon_notification.py: smashwilson
 cloud/rackspace/rax_mon_notification_plan.py: smashwilson
-cloud/vmware/vca_fw.py: privateip
-cloud/vmware/vca_nat.py: privateip
-cloud/vmware/vca_vapp.py: privateip
-cloud/vmware/vmware_cluster.py: jcpowermac
-cloud/vmware/vmware_datacenter.py: jcpowermac
-cloud/vmware/vmware_dns_config.py: jcpowermac
-cloud/vmware/vmware_dvs_host.py: jcpowermac
-cloud/vmware/vmware_dvs_portgroup.py: jcpowermac
-cloud/vmware/vmware_dvswitch.py: jcpowermac
-cloud/vmware/vmware_host.py: mtnbikenc
-cloud/vmware/vmware_migrate_vmk.py: mtnbikenc
-cloud/vmware/vmware_portgroup.py: mtnbikenc
-cloud/vmware/vmware_target_canonical_facts.py: jcpowermac
-cloud/vmware/vmware_vm_facts.py: jcpowermac
-cloud/vmware/vmware_vm_vss_dvs_migrate.py: jcpowermac
-cloud/vmware/vmware_vmkernel.py: mtnbikenc
-cloud/vmware/vmware_vmkernel_ip_config.py: mtnbikenc
-cloud/vmware/vmware_vsan_cluster.py: mtnbikenc
-cloud/vmware/vmware_vswitch.py: mtnbikenc
-cloud/vmware/vsphere_copy.py: dagwieers
+cloud/vmware/vca_fw.py: privateip chrrrles
+cloud/vmware/vca_nat.py: privateip chrrrles
+cloud/vmware/vca_vapp.py: privateip chrrrles
+cloud/vmware/vmware_cluster.py: jcpowermac chrrrles
+cloud/vmware/vmware_datacenter.py: jcpowermac chrrrles
+cloud/vmware/vmware_dns_config.py: jcpowermac chrrrles
+cloud/vmware/vmware_dvs_host.py: jcpowermac chrrrles
+cloud/vmware/vmware_dvs_portgroup.py: jcpowermac chrrrles
+cloud/vmware/vmware_dvswitch.py: jcpowermac chrrrles
+cloud/vmware/vmware_host.py: mtnbikenc chrrrles
+cloud/vmware/vmware_migrate_vmk.py: mtnbikenc chrrrles
+cloud/vmware/vmware_portgroup.py: mtnbikenc chrrrles
+cloud/vmware/vmware_target_canonical_facts.py: jcpowermac chrrrles
+cloud/vmware/vmware_vm_facts.py: jcpowermac chrrrles
+cloud/vmware/vmware_vm_vss_dvs_migrate.py: jcpowermac chrrrles
+cloud/vmware/vmware_vmkernel.py: mtnbikenc chrrrles
+cloud/vmware/vmware_vmkernel_ip_config.py: mtnbikenc chrrrles
+cloud/vmware/vmware_vsan_cluster.py: mtnbikenc chrrrles
+cloud/vmware/vmware_vswitch.py: mtnbikenc chrrrles
+cloud/vmware/vsphere_copy.py: dagwieers chrrrles
 cloud/webfaction/webfaction_app.py: quentinsf
 cloud/webfaction/webfaction_db.py: quentinsf
 cloud/webfaction/webfaction_domain.py: quentinsf
