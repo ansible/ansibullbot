@@ -16,9 +16,23 @@ parser = argparse.ArgumentParser(description='Triage various PR queues for Ansib
 parser.add_argument("ghuser", type=str, help="Github username of triager")
 parser.add_argument("ghpass", type=str, help="Github password of triager")
 parser.add_argument("ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
-parser.add_argument('--verbose', '-v', action='store_true', help="verbose flag")
-parser.add_argument('--pr', type=int, help="triage only a specific pr")
+parser.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
+parser.add_argument('--pr', type=str, help="Triage only the specified pr")
 args=parser.parse_args()
+
+#------------------------------------------------------------------------------------
+# Here's initialization of various things. 
+#------------------------------------------------------------------------------------
+ghuser=args.ghuser
+ghpass=args.ghpass
+ghrepo=args.ghrepo
+repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
+if args.pr:
+    single_pr = args.pr
+else:
+    single_pr = ''
+args = {'state':'open', 'page':1}
+botlist = ['gregdek','robynbergeron']
 
 #------------------------------------------------------------------------------------
 # Here's the boilerplate text.
@@ -42,16 +56,17 @@ def triage(urlstring):
     #----------------------------------------------------------------------------
     # Get the more detailed PR data from the API:
     #----------------------------------------------------------------------------
-    pull = requests.get(shortpull['url'], auth=(ghuser,ghpass)).json()
+    print "URLSTRING: ", urlstring
+    pull = requests.get(urlstring, auth=(ghuser,ghpass)).json()
 
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # DEBUG: Dump JSON to /tmp for analysis if needed
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    # debugfileid = '/tmp/' + str(pull['number'])
-    # debugfile = open(debugfileid, 'w')
-    # debugstring = str(pull)
-    # print >>debugfile, debugstring
-    # debugfile.close()
+    #debugfileid = '/tmp/' + str(pull['number'])
+    #debugfile = open(debugfileid, 'w')
+    #debugstring = str(pull)
+    #print >>debugfile, debugstring
+    #debugfile.close()
         
     #----------------------------------------------------------------------------
     # Initialize an empty local list of PR labels; we'll need it later.
@@ -344,38 +359,39 @@ def triage(urlstring):
 # MAIN CODE START, EH?
 #====================================================================================
 
-#------------------------------------------------------------------------------------
-# Initialize various things. 
-#------------------------------------------------------------------------------------
-ghuser=args.ghuser
-ghpass=args.ghpass
-ghrepo=args.ghrepo
-repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
-args = {'state':'open', 'page':1}
-botlist = ['gregdek','robynbergeron']
 
 #------------------------------------------------------------------------------------
-# Go get all open PRs.
+# If we're running in single PR mode, run triage on the single PR.
 #------------------------------------------------------------------------------------
+if single_pr:
+    single_pr_url = "https://api.github.com/repos/ansible/ansible-modules-" + ghrepo + "/pulls/" + single_pr
+    triage(single_pr_url)
 
-# First, get number of pages using pagination in Link Headers. Thanks 
-# requests library for making this relatively easy!
-r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
-lastpage = int(str(r.links['last']['url']).split('=')[-1])
+#------------------------------------------------------------------------------------
+# Otherwise, go get all open PRs and run through them.
+#------------------------------------------------------------------------------------
+else:
+    # First, get number of pages using pagination in Link Headers. Thanks 
+    # requests library for making this relatively easy!
+    r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
+    lastpage = int(str(r.links['last']['url']).split('=')[-1])
 
-# Set range for 1..2 for testing only
-# for page in range(1,2):
+    # Set range for 1..2 for testing only
+    # for page in range(1,2):
 
-for page in range(1,lastpage):
-    pull_args = {'state':'open', 'page':page}
-    r = requests.get(repo_url, params=pull_args, auth=(ghuser,ghpass))
+    for page in range(1,lastpage):
+        pull_args = {'state':'open', 'page':page}
+        r = requests.get(repo_url, params=pull_args, auth=(ghuser,ghpass))
 
-    #--------------------------------------------------------------------------------
-    # For every open PR:
-    #--------------------------------------------------------------------------------
-    for shortpull in r.json():
+        #----------------------------------------------------------------------------
+        # For every open PR:
+        #----------------------------------------------------------------------------
+        for shortpull in r.json():
+ 
+            # Do some nifty triage!
+            triage(shortpull['url'])
 
-        # Do some nifty triage!
-        triage(shortpull['url'])
 
-######################################################################################
+#====================================================================================
+# That's all, folks!
+#====================================================================================
