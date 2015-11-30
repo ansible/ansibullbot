@@ -10,15 +10,21 @@
 # Useful! https://developer.github.com/v3/pulls/
 # Useful! https://developer.github.com/v3/issues/comments/
 
-import requests, json, yaml, sys, pprint
+import requests, json, yaml, sys, pprint, argparse
 
+parser = argparse.ArgumentParser(description='Triage various PR queues for Ansible.')
+parser.add_argument("ghuser", type=str, help="Github username of triager")
+parser.add_argument("ghpass", type=str, help="Github password of triager")
+parser.add_argument("ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
+parser.add_argument('--verbose', '-v', action='store_true', help="verbose flag")
+args=parser.parse_args()
 
 #------------------------------------------------------------------------------------
-# Initialize various things. FIXME: better parameter handling.
+# Initialize various things. 
 #------------------------------------------------------------------------------------
-ghuser=sys.argv[1]
-ghpass=sys.argv[2]
-ghrepo=sys.argv[3]
+ghuser=args.ghuser
+ghpass=args.ghpass
+ghrepo=args.ghrepo
 repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
 args = {'state':'open', 'page':1}
 botlist = ['gregdek','robynbergeron']
@@ -48,8 +54,8 @@ lastpage = int(str(r.links['last']['url']).split('=')[-1])
 # Set range for 1..2 for testing only
 # for page in range(1,2):
 for page in range(1,lastpage):
-    args = {'state':'open', 'page':page}
-    r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
+    pull_args = {'state':'open', 'page':page}
+    r = requests.get(repo_url, params=pull_args, auth=(ghuser,ghpass))
 
     #--------------------------------------------------------------------------------
     # For every open PR:
