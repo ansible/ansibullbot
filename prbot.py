@@ -31,6 +31,10 @@ if args.pr:
     single_pr = args.pr
 else:
     single_pr = ''
+if args.verbose:
+    verbose = true
+else:
+    verbose = ''
 args = {'state':'open', 'page':1}
 botlist = ['gregdek','robynbergeron']
 
@@ -56,7 +60,8 @@ def triage(urlstring):
     #----------------------------------------------------------------------------
     # Get the more detailed PR data from the API:
     #----------------------------------------------------------------------------
-    print "URLSTRING: ", urlstring
+    if verbose:
+        print "URLSTRING: ", urlstring
     pull = requests.get(urlstring, auth=(ghuser,ghpass)).json()
 
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -93,10 +98,13 @@ def triage(urlstring):
                 pyfilecounter += 1
     # if multiple .py files are included in the diff, complain.
     if pyfilecounter == 0:
-        print "  WARN: no python files in this PR"
+        if verbose:
+            print "  WARN: no python files in this PR"
     if pyfilecounter > 1:
-        print "  WARN: multiple python files in this PR"
-    print "  Filename:", pr_filename
+        if verbose:
+            print "  WARN: multiple python files in this PR"
+    if verbose:
+        print "  Filename:", pr_filename
 
     #----------------------------------------------------------------------------
     # Look up the files in the local DB to see who maintains them.
@@ -137,8 +145,8 @@ def triage(urlstring):
     print "  Maintainer(s): ", pr_maintainer
     print "  Filename(s): ", pr_filename
     print " "
-    print pull['body']
-    comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
+    if verbose:
+        print pull['body']
 
     #----------------------------------------------------------------------------
     # Set our empty list of actions. At the conclusion of triage, this list will
@@ -154,6 +162,8 @@ def triage(urlstring):
     # following labels are present: community_review, core_review, needs_revision,
     # needs_rebase, shipit.
     #----------------------------------------------------------------------------
+
+    comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
 
     # if (len(pr_labels) == 0):
     if (('community_review' not in pr_labels)
@@ -223,15 +233,17 @@ def triage(urlstring):
     #----------------------------------------------------------------------------
     for comment in reversed(comments.json()):
             
-        print " " 
-        print "==========>  Comment at ", comment['created_at'], " from: ", comment['user']['login']
-        print comment['body']
+        if verbose:
+            print " " 
+            print "==========>  Comment at ", comment['created_at'], " from: ", comment['user']['login']
+            print comment['body']
 
         #------------------------------------------------------------------------
         # Is the last comment from a bot user?  Then break.
         #------------------------------------------------------------------------
         if (comment['user']['login'] in botlist):
-            print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
+            if verbose:
+                print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
             break
 
         #------------------------------------------------------------------------
@@ -297,7 +309,12 @@ def triage(urlstring):
 
     print " "
 
-    cont = raw_input("Take recommended actions (y/N)?")
+    cont = ''
+
+    # If there are actions, ask if we should take them. Otherwise, skip.
+    if not (actions == []):
+        cont = raw_input("Take recommended actions (y/N)?")
+
     if cont in ('Y','y'):
 
         #------------------------------------------------------------------------
@@ -312,10 +329,10 @@ def triage(urlstring):
                 # Don't remove it if it isn't there
                 if oldlabel in pr_labels:
                     pr_actionurl = issue['labels_url'].split("{")[0] + "/" + oldlabel
-                    print "URL for DELETE: ", pr_actionurl
+                    # print "URL for DELETE: ", pr_actionurl
                     try:
                         r = requests.delete(pr_actionurl, auth=(ghuser,ghpass))
-                        print r.text
+                        # print r.text
                     except requests.exceptions.RequestException as e:
                         print e
                         sys.exit(1)
@@ -325,11 +342,11 @@ def triage(urlstring):
                 if newlabel not in pr_labels:
                     pr_actionurl = issue['labels_url'].split("{")[0]
                     payload = '["' + newlabel +'"]'
-                    print "URL for POST: ", pr_actionurl
-                    print "  PAYLOAD: ", payload
+                    # print "URL for POST: ", pr_actionurl
+                    # print "  PAYLOAD: ", payload
                     try:
                         r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
-                        print r.text
+                        # print r.text
                     except requests.exceptions.RequestException as e:
                         print e
                         sys.exit(1)
@@ -342,17 +359,17 @@ def triage(urlstring):
                 newcomment = boilerplate[boilerout].format(m=mtext,s=stext)
                 payload = '{"body": "' + newcomment + '"}'
                 pr_actionurl = issue['comments_url']
-                print "URL for POST: ", pr_actionurl
-                print "  PAYLOAD: ", payload
+                # print "URL for POST: ", pr_actionurl
+                # print "  PAYLOAD: ", payload
                 try:
                     r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
-                    print r.text
+                    # print r.text
                 except requests.exceptions.RequestException as e:
                     print e
                     sys.exit(1)
                         
     else:
-        print "nah!"
+        print "Skipping."
 
 
 #====================================================================================
