@@ -241,6 +241,7 @@ system/modprobe.py: stygstra
 system/ohai.py: NONE
 system/open_iscsi.py: srvg
 system/osx_defaults.py: frenck
+system/pam_limits.py: usawa
 system/puppet.py: emonty
 system/selinux_permissive.py: mscherer
 system/seport.py: dankeder
