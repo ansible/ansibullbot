@@ -53,7 +53,7 @@ boilerplate = {
     'community_review_new': 'Thanks @{s} for this new module. When this module receives \'shipit\' comments from two community members and any \'needs_revision\' comments have been resolved, we will mark for inclusion.',
     'shipit_owner_pr': 'Thanks @{s}. Since you are the owner of this module, we are marking this PR for inclusion.',
     'needs_rebase': 'Thanks @{s} for this PR. Unfortunately, it is not mergeable in its current state due to merge conflicts. Please rebase your PR. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.',
-    'needs_revision': 'Thanks @{s} for this PR. The maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.'
+    'needs_revision': 'Thanks @{s} for this PR. A maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.'
 }
 
 #------------------------------------------------------------------------------------
@@ -141,12 +141,12 @@ def triage(urlstring):
         f = open('MAINTAINERS-EXTRAS.txt')
     for line in f:
         if pr_filename in line:
-            pr_maintainer = (line.split(': ')[-1]).rstrip()
+            pr_maintainers = (line.split(': ')[-1]).rstrip()
             maintainer_found = 'True'
             break
     f.close()
     if not maintainer_found:
-        pr_maintainer = ''
+        pr_maintainers = ''
 
     #----------------------------------------------------------------------------
     # Pull the list of labels on this PR and shove them into pr_labels.
@@ -166,7 +166,7 @@ def triage(urlstring):
     pr_submitter = pull['user']['login']
     print "  Labels: ", pr_labels
     print "  Submitter: ", pr_submitter
-    print "  Maintainer(s): ", pr_maintainer
+    print "  Maintainer(s): ", pr_maintainers
     print "  Filename(s): ", pr_filename
     print " "
     if verbose:
@@ -196,17 +196,17 @@ def triage(urlstring):
       and ('needs_info' not in pr_labels)
       and ('needs_rebase' not in pr_labels)
       and ('shipit' not in pr_labels)):
-        if (pr_maintainer == 'ansible'):
+        if ('ansible' in pr_maintainers):
             actions.append("newlabel: core_review")
             actions.append("boilerplate: core_review_existing")
-        elif (pr_maintainer == '') and (pr_contains_new_file):
+        elif (pr_maintainers == '') and (pr_contains_new_file):
             actions.append("newlabel: community_review")
             actions.append("newlabel: new_plugin")
             actions.append("boilerplate: community_review_new")
-        elif (pr_maintainer == '') and (not pr_contains_new_file):
+        elif (pr_maintainers == '') and (not pr_contains_new_file):
             print "FATAL: existing file without reviewer found! Please add to CONTRIBUTORS file."
             sys.exit(1)
-        elif (pr_submitter in pr_maintainer):
+        elif (pr_submitter in pr_maintainers):
             actions.append("newlabel: shipit")
             actions.append("newlabel: owner_pr")
             actions.append("boilerplate: shipit_owner_pr")
@@ -230,10 +230,10 @@ def triage(urlstring):
     if ((pull['mergeable'] == True)
       and ('needs_rebase' in pr_labels)):
         actions.append("unlabel: needs_rebase")
-        if (pr_maintainer == 'ansible'):
+        if ('ansible' in pr_maintainers):
             actions.append("newlabel: core_review")
             actions.append("boilerplate: core_review")
-        elif (pr_maintainer == '') and (pr_contains_new_file):
+        elif (pr_maintainers == '') and (pr_contains_new_file):
             actions.append("newlabel: community_review")
             actions.append("boilerplate: community_review_new")
         else:
@@ -275,7 +275,7 @@ def triage(urlstring):
         #------------------------------------------------------------------------
         # Has maintainer said 'shipit'? Then label/boilerplate/break.
         #------------------------------------------------------------------------
-        if ((comment['user']['login'] == pr_maintainer)
+        if ((comment['user']['login'] in pr_maintainers)
           and ('shipit' in comment['body'])):
             actions.append("unlabel: community_review")
             actions.append("unlabel: core_review")
@@ -288,7 +288,7 @@ def triage(urlstring):
         #------------------------------------------------------------------------
         # Has maintainer said 'needs_revision'? Then label/boilerplate/break.
         #------------------------------------------------------------------------
-        if ((comment['user']['login'] == pr_maintainer)
+        if ((comment['user']['login'] in pr_maintainers)
           and ('needs_revision' in comment['body'])):
             actions.append("unlabel: community_review")
             actions.append("unlabel: core_review")
@@ -305,10 +305,10 @@ def triage(urlstring):
           and ('ready_for_review' in comment['body'])):
             actions.append("unlabel: needs_revision")
             actions.append("unlabel: needs_info")
-            if (pr_maintainer == 'ansible'):
+            if ('ansible' in pr_maintainers):
                 actions.append("newlabel: core_review")
                 actions.append("boilerplate: core_review")
-            elif (pr_maintainer == ''):
+            elif (pr_maintainers == ''):
                 actions.append("newlabel: community_review")
                 actions.append("boilerplate: community_review_new")
             else:
@@ -379,7 +379,7 @@ def triage(urlstring):
 
             if "boilerplate" in action:
                 # A hack to make the @ signs line up for multiple maintainers
-                mtext = pr_maintainer.replace(' ', ' @')
+                mtext = pr_maintainers.replace(' ', ' @')
                 stext = pr_submitter
                 boilerout = action.split(': ')[-1]
                 newcomment = boilerplate[boilerout].format(m=mtext,s=stext)
