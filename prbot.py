@@ -208,7 +208,7 @@ def triage(urlstring):
     # Has PR been rebased at our request? If so, remove needs_rebase
     # label and put into the appropriate review state.
     #------------------------------------------------------------------------
-    if ((pull['mergeable'] == 'true')
+    if ((pull['mergeable'] == True)
       and ('needs_rebase' in pr_labels)):
         actions.append("unlabel: needs_rebase")
         if (pr_maintainer == 'ansible'):
