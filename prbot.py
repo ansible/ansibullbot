@@ -17,6 +17,7 @@ parser.add_argument("ghuser", type=str, help="Github username of triager")
 parser.add_argument("ghpass", type=str, help="Github password of triager")
 parser.add_argument("ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
 parser.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
+parser.add_argument('--debug', '-d', action='store_true', help="Debug output")
 parser.add_argument('--pr', type=str, help="Triage only the specified pr")
 args=parser.parse_args()
 
@@ -32,9 +33,13 @@ if args.pr:
 else:
     single_pr = ''
 if args.verbose:
-    verbose = true
+    verbose = 'true'
 else:
     verbose = ''
+if args.debug:
+    debug = 'true'
+else:
+    debug = ''
 args = {'state':'open', 'page':1}
 botlist = ['gregdek','robynbergeron']
 
@@ -67,11 +72,13 @@ def triage(urlstring):
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # DEBUG: Dump JSON to /tmp for analysis if needed
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-    #debugfileid = '/tmp/' + str(pull['number'])
-    #debugfile = open(debugfileid, 'w')
-    #debugstring = str(pull)
-    #print >>debugfile, debugstring
-    #debugfile.close()
+    if debug:
+        debugfileid = '/tmp/' + str(pull['number'])
+        print "DEBUG JSON TO: ", debugfileid
+        debugfile = open(debugfileid, 'w')
+        debugstring = str(pull)
+        print >>debugfile, debugstring
+        debugfile.close()
         
     #----------------------------------------------------------------------------
     # Initialize an empty local list of PR labels; we'll need it later.
@@ -191,7 +198,7 @@ def triage(urlstring):
     #------------------------------------------------------------------------
     # Does this PR need to be (newly) rebased? If so, label and boilerplate.
     #------------------------------------------------------------------------
-    if (pull['mergeable'] == 'false'):
+    if (pull['mergeable'] == False):
         print "WARN: not mergeable!"
         if ('needs_rebase' not in pr_labels):
             actions.append("newlabel: needs_rebase")
