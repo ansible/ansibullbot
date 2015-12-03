@@ -10,7 +10,7 @@
 # Useful! https://developer.github.com/v3/pulls/
 # Useful! https://developer.github.com/v3/issues/comments/
 
-import requests, json, yaml, sys, pprint, argparse
+import requests, json, yaml, sys, argparse
 
 parser = argparse.ArgumentParser(description='Triage various PR queues for Ansible.')
 parser.add_argument("ghuser", type=str, help="Github username of triager")
@@ -48,6 +48,7 @@ botlist = ['gregdek','robynbergeron']
 #------------------------------------------------------------------------------------
 boilerplate = {
     'shipit': "Thanks again to @{s} for this PR, and thanks @{m} for reviewing. Marking for inclusion.",
+    'backport': "Thanks @{s}. All backport requests must be reviewed by the core team, and this can take time. We appreciate your patience.",
     'community_review_existing': 'Thanks @{s}. @{m} please review according to guidelines (http://docs.ansible.com/ansible/developing_modules.html#module-checklist) and comment with text \'shipit\' or \'needs_revision\' as appropriate.',
     'core_review_existing': 'Thanks @{s} for this PR. This module is maintained by the Ansible core team, so it can take a while for patches to be reviewed. Thanks for your patience.',
     'community_review_new': 'Thanks @{s} for this new module. When this module receives \'shipit\' comments from two community members and any \'needs_revision\' comments have been resolved, we will mark for inclusion.',
@@ -76,8 +77,7 @@ def triage(urlstring):
         debugfileid = '/tmp/pull-' + str(pull['number'])
         print "DEBUG JSON TO: ", debugfileid
         debugfile = open(debugfileid, 'w')
-        debugstring = str(pull)
-        print >>debugfile, debugstring
+        print >>debugfile, json.dumps(pull, ensure_ascii=True, indent=4, separators=(',', ': '))
         debugfile.close()
         
     #----------------------------------------------------------------------------
@@ -96,8 +96,7 @@ def triage(urlstring):
         debugfileid = '/tmp/diff-' + str(pull['number'])
         print "DEBUG DIFF TO: ", debugfileid
         debugfile = open(debugfileid, 'w')
-        debugstring = str(diff)
-        print >>debugfile, debugstring
+        print >>debugfile, json.dumps(diff, ensure_ascii=True, indent=4, separators=(',', ': '))
         debugfile.close()
  
     # Grep the diff for affected files.
@@ -196,7 +195,11 @@ def triage(urlstring):
       and ('needs_info' not in pr_labels)
       and ('needs_rebase' not in pr_labels)
       and ('shipit' not in pr_labels)):
-        if ('ansible' in pr_maintainers):
+        if ('stable' in pull['base']['ref']):
+            actions.append("newlabel: core_review")
+            actions.append("newlabel: backport")
+            actions.append("boilerplate: backport")
+        elif ('ansible' in pr_maintainers):
             actions.append("newlabel: core_review")
             actions.append("boilerplate: core_review_existing")
         elif (pr_maintainers == '') and (pr_contains_new_file):
