@@ -73,7 +73,7 @@ def triage(urlstring):
     # DEBUG: Dump JSON to /tmp for analysis if needed
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     if debug:
-        debugfileid = '/tmp/' + str(pull['number'])
+        debugfileid = '/tmp/pull-' + str(pull['number'])
         print "DEBUG JSON TO: ", debugfileid
         debugfile = open(debugfileid, 'w')
         debugstring = str(pull)
@@ -92,10 +92,27 @@ def triage(urlstring):
     # Now pull the text of the diff.
     diff = requests.get(pull['diff_url'], auth=(ghuser,ghpass), verify=False).text
 
+    if debug:
+        debugfileid = '/tmp/diff-' + str(pull['number'])
+        print "DEBUG DIFF TO: ", debugfileid
+        debugfile = open(debugfileid, 'w')
+        debugstring = str(diff)
+        print >>debugfile, debugstring
+        debugfile.close()
+ 
     # Grep the diff for affected files.
+    pr_contains_new_file = ''
     pyfilecounter = 0
     for line in diff.split('\n'):
-        # The 'diff --git' line contains the file name.
+        #------------------------------------------------------------------------
+        # If there's a line that contains "--- /dev/null" then we know this PR
+        # contains a new file. Set that so we can handle properly later.
+        #------------------------------------------------------------------------
+        if '--- /dev/null' in line:
+            pr_contains_new_file = 'True'
+        #------------------------------------------------------------------------
+        # If there's a "diff git", that contains the file name being edited.
+        #------------------------------------------------------------------------
         if 'diff --git' in line:
             # This split gives us the file name.
             pr_filename = line.split(' b/')[1]
@@ -117,7 +134,7 @@ def triage(urlstring):
     # Look up the files in the local DB to see who maintains them.
     # (Warn if there's more than one; we can't handle that case yet.)
     #----------------------------------------------------------------------------
-    maintainer_found = 0
+    maintainer_found = ''
     if ghrepo == "core":
         f = open('MAINTAINERS-CORE.txt')
     elif ghrepo == "extras":
@@ -125,10 +142,10 @@ def triage(urlstring):
     for line in f:
         if pr_filename in line:
             pr_maintainer = (line.split(': ')[-1]).rstrip()
-            maintainer_found = 1
+            maintainer_found = 'True'
             break
     f.close()
-    if (maintainer_found == 0):
+    if not maintainer_found:
         pr_maintainer = ''
 
     #----------------------------------------------------------------------------
@@ -182,11 +199,13 @@ def triage(urlstring):
         if (pr_maintainer == 'ansible'):
             actions.append("newlabel: core_review")
             actions.append("boilerplate: core_review_existing")
-        elif (pr_maintainer == ''):
-            # We assume that no maintainer means new module
+        elif (pr_maintainer == '') and (pr_contains_new_file):
             actions.append("newlabel: community_review")
             actions.append("newlabel: new_plugin")
             actions.append("boilerplate: community_review_new")
+        elif (pr_maintainer == '') and (not pr_contains_new_file):
+            print "FATAL: existing file without reviewer found! Please add to CONTRIBUTORS file."
+            sys.exit(1)
         elif (pr_submitter in pr_maintainer):
             actions.append("newlabel: shipit")
             actions.append("newlabel: owner_pr")
@@ -214,7 +233,7 @@ def triage(urlstring):
         if (pr_maintainer == 'ansible'):
             actions.append("newlabel: core_review")
             actions.append("boilerplate: core_review")
-        elif (pr_maintainer == ''):
+        elif (pr_maintainer == '') and (pr_contains_new_file):
             actions.append("newlabel: community_review")
             actions.append("boilerplate: community_review_new")
         else:
