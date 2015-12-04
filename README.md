@@ -1,12 +1,17 @@
-# ansibullbot
+# Ansibull PR Bot
 
-Invoke it thusly:
+usage: prbot.py [-h] [--verbose] [--debug] [--pr PR]
+                ghuser ghpass {core,extras}
 
-./prbot.py gh-username gh-password repo
+Triage various PR queues for Ansible.
 
-Where:
-* gh-username is your Github username
-* gh-password is your Github password
-* repo is either "core" or "extras"
+positional arguments:
+  ghuser         Github username of triager
+  ghpass         Github password of triager
+  {core,extras}  Repo to be triaged
 
-And don't expect too much just yet.
+optional arguments:
+  -h, --help     show this help message and exit
+  --verbose, -v  Verbose output
+  --debug, -d    Debug output
+  --pr PR        Triage only the specified pr
