@@ -1,5 +1,6 @@
 # Ansibull PR Bot
 
+```
 usage: prbot.py [-h] [--verbose] [--debug] [--pr PR]
                 ghuser ghpass {core,extras}
 
@@ -15,3 +16,4 @@ optional arguments:
   --verbose, -v  Verbose output
   --debug, -d    Debug output
   --pr PR        Triage only the specified pr
+```
