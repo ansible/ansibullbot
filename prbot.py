@@ -224,6 +224,8 @@ def triage(urlstring):
         print "WARN: not mergeable!"
         if ('needs_rebase' not in pr_labels):
             actions.append("newlabel: needs_rebase")
+            actions.append("unlabel: community_review")
+            actions.append("unlabel: core_review")
             actions.append("boilerplate: needs_rebase")
 
     #------------------------------------------------------------------------
@@ -235,7 +237,7 @@ def triage(urlstring):
         actions.append("unlabel: needs_rebase")
         if ('ansible' in pr_maintainers):
             actions.append("newlabel: core_review")
-            actions.append("boilerplate: core_review")
+            actions.append("boilerplate: core_review_existing")
         elif (pr_maintainers == '') and (pr_contains_new_file):
             actions.append("newlabel: community_review")
             actions.append("boilerplate: community_review_new")
@@ -310,7 +312,7 @@ def triage(urlstring):
             actions.append("unlabel: needs_info")
             if ('ansible' in pr_maintainers):
                 actions.append("newlabel: core_review")
-                actions.append("boilerplate: core_review")
+                actions.append("boilerplate: core_review_existing")
             elif (pr_maintainers == ''):
                 actions.append("newlabel: community_review")
                 actions.append("boilerplate: community_review_new")
