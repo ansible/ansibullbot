@@ -133,7 +133,7 @@ monitoring/datadog_event.py: arturaz
 monitoring/datadog_monitor.py: skornehl 
 monitoring/librato_annotation.py: sedward
 monitoring/logentries.py: ivanvanderbyl
-monitoring/monit.py: dstoflet 
+monitoring/monit.py: brian-brazil dstoflet 
 monitoring/nagios.py: tbielawa
 monitoring/newrelic_deployment.py: mcodd
 monitoring/pagerduty.py: suprememoocow thaumos
