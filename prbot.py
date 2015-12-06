@@ -10,14 +10,15 @@
 # Useful! https://developer.github.com/v3/pulls/
 # Useful! https://developer.github.com/v3/issues/comments/
 
-import requests, json, yaml, sys, argparse
+import requests, json, yaml, sys, argparse, time
 
-parser = argparse.ArgumentParser(description='Triage various PR queues for Ansible.')
+parser = argparse.ArgumentParser(description='Triage various PR queues for Ansible. (NOTE: only useful if you have commit access to the repo in question.)')
 parser.add_argument("ghuser", type=str, help="Github username of triager")
 parser.add_argument("ghpass", type=str, help="Github password of triager")
 parser.add_argument("ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
 parser.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
 parser.add_argument('--debug', '-d', action='store_true', help="Debug output")
+parser.add_argument('--pause', '-p', action='store_true', help="Always pause between PRs")
 parser.add_argument('--pr', type=str, help="Triage only the specified pr")
 args=parser.parse_args()
 
@@ -40,6 +41,10 @@ if args.debug:
     debug = 'true'
 else:
     debug = ''
+if args.pause:
+    always_pause = 'true'
+else:
+    always_pause = ''
 args = {'state':'open', 'page':1}
 botlist = ['gregdek','robynbergeron']
 
@@ -52,9 +57,13 @@ boilerplate = {
     'community_review_existing': 'Thanks @{s}. @{m} please review according to guidelines (http://docs.ansible.com/ansible/developing_modules.html#module-checklist) and comment with text \'shipit\' or \'needs_revision\' as appropriate.',
     'core_review_existing': 'Thanks @{s} for this PR. This module is maintained by the Ansible core team, so it can take a while for patches to be reviewed. Thanks for your patience.',
     'community_review_new': 'Thanks @{s} for this new module. When this module receives \'shipit\' comments from two community members and any \'needs_revision\' comments have been resolved, we will mark for inclusion.',
-    'shipit_owner_pr': 'Thanks @{s}. Since you are the owner of this module, we are marking this PR for inclusion.',
+    'shipit_owner_pr': 'Thanks @{s}. Since you are a maintainer of this module, we are marking this PR for inclusion.',
     'needs_rebase': 'Thanks @{s} for this PR. Unfortunately, it is not mergeable in its current state due to merge conflicts. Please rebase your PR. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.',
-    'needs_revision': 'Thanks @{s} for this PR. A maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.'
+    'needs_revision': 'Thanks @{s} for this PR. A maintainer of this module has asked for revisions to this PR. Please make the suggested revisions. When you are done, please comment with text \'ready_for_review\' and we will put this PR back into review.',
+    'maintainer_first_warning': '@{m} This change is still pending your review; do you have time to take a look and comment? Please comment with text \'shipit\' or \'needs_revision\' as appropriate.',
+    'maintainer_second_warning': '@{m} still waiting on your review.  Please comment with text \'shipit\' or \'needs_revision\' as appropriate. If we don\'t hear from you within 14 days, we will start to look for additional maintainers for this module.',
+    'submitter_first_warning': '@{s} A friendly reminder: this pull request has been marked as needing your action. If you still believe that this PR applies, and you intend to address the issues with this PR, just let us know in the PR itself and we will keep it open pending your changes.',
+    'submitter_second_warning': '@{s} Another friendly reminder: this pull request has been marked as needing your action. If you still believe that this PR applies, and you intend to address the issues with this PR, just let us know in the PR itself and we will keep it open. If we don\'t hear from you within another 14 days, we will close this pull request.'
 }
 
 #------------------------------------------------------------------------------------
@@ -172,21 +181,19 @@ def triage(urlstring):
         print pull['body']
 
     #----------------------------------------------------------------------------
-    # Set our empty list of actions. At the conclusion of triage, this list will
-    # contain the set of actions that we forward to the Github API.
+    # NOW: We have everything we need to do actual triage. In triage, we 
+    # assess the actions that need to be taken and push them into a list. 
+    # Get our comments, and set our empty actions list.
     #----------------------------------------------------------------------------
+  
+    comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
     actions = []
 
     #----------------------------------------------------------------------------
-    # NOW: We have everything we need to do actual triage. In triage, we 
-    # assess the actions that need to be taken and push them into a list.
-    #
     # First, we handle the "no triaged labels" case: i.e. if none of the 
     # following labels are present: community_review, core_review, needs_revision,
     # needs_rebase, shipit.
     #----------------------------------------------------------------------------
-
-    comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
 
     # if (len(pr_labels) == 0):
     if (('community_review' not in pr_labels)
@@ -257,10 +264,13 @@ def triage(urlstring):
         actions.append("newlabel: windows")
 
     #----------------------------------------------------------------------------
-    # OK, now we start walking through comment-based actions, and push them 
-    # into the list. 
+    # OK, now we start walking through comment-based actions, and push whatever
+    # we find into the action list. 
     #
-    # NOTE: we walk through comments MOST RECENT FIRST.
+    # NOTE: we walk through comments MOST RECENT FIRST. Whenever we find a
+    # meaningful state change from the comments, we break; thus, we are always
+    # acting on what we perceive to be the most recent meaningful comment, and
+    # we ignore all older comments.
     #----------------------------------------------------------------------------
     for comment in reversed(comments.json()):
             
@@ -270,11 +280,83 @@ def triage(urlstring):
             print comment['body']
 
         #------------------------------------------------------------------------
-        # Is the last comment from a bot user?  Then break.
+        # Is the last useful comment from a bot user?  Then we've got a potential 
+        # timeout case.  Let's explore!
         #------------------------------------------------------------------------
         if (comment['user']['login'] in botlist):
+
+            #--------------------------------------------------------------------
+            # Let's figure out how old this comment is, exactly.
+            #--------------------------------------------------------------------
+            comment_time = time.mktime((time.strptime(comment['created_at'], "%Y-%m-%dT%H:%M:%SZ")))
+            comment_days_old = (time.time()-comment_time)/86400
+
+            #--------------------------------------------------------------------
+            # Is it more than 14 days old? That kinda sucks; we should do
+            # something about it!
+            #--------------------------------------------------------------------
+
+            if comment_days_old > 14:
+
+                #----------------------------------------------------------------
+                # We know we've hit a timeout threshhold. Which one? 
+                #----------------------------------------------------------------
+
+                #----------------------------------------------------------------
+                # If it's in core review, we just leave it be and break.
+                # (We'll set a different threshhold for core_review PRs
+                # in the future.)
+                #----------------------------------------------------------------
+                if 'core_review' in pr_labels:
+                    break
+             
+                #----------------------------------------------------------------
+                # If it's in needs_review or needs_rebase and no previous 
+                # warnings have been issued, warn committer and break.
+                #----------------------------------------------------------------
+                elif (('pending' not in comment['body']) 
+                  and (('needs_review' in pr_labels) or ('needs_rebase' in pr_labels))):
+                    actions.append("boilerplate: committer_first_warning")
+                    break 
+
+                #----------------------------------------------------------------
+                # If it's in community_review and no previous # warnings have 
+                # been issued, and it's not a new module (we let new modules
+                # stay in review indefinitely), warn maintainer and break.
+                #----------------------------------------------------------------
+                elif (('pending' not in comment['body']) 
+                  and ('community_review' in pr_labels)
+                  and ('new_plugin' not in pr_labels)):
+                    actions.append("boilerplate: maintainer_first_warning")
+                    break 
+                
+                #----------------------------------------------------------------
+                # If it's in needs_review or needs_rebase and a previous 
+                # warning has been issued, place in pending_action, give the
+                # committer a second warning, and break.
+                #----------------------------------------------------------------
+                elif (('pending' in comment['body']) 
+                  and (('needs_review' in pr_labels) or ('needs_rebase' in pr_labels))):
+                    actions.append("boilerplate: committer_second_warning")
+                    actions.append("label: pending_action")
+                    break 
+
+                #----------------------------------------------------------------
+                # If it's in community_review, not new_plugin, and a previous 
+                # warning has been issued, place in pending_action, give the 
+                # maintainer a second warning, and break.
+                #----------------------------------------------------------------
+                elif (('pending' in comment['body']) 
+                  and ('community_review' in pr_labels)
+                  and ('new_plugin' not in pr_labels)):
+                    actions.append("boilerplate: maintainer_second_warning")
+                    actions.append("label: pending_action")
+                    break 
+                        
             if verbose:
                 print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
+                print "  Days since last bot comment: ", comment_days_old
+
             break
 
         #------------------------------------------------------------------------
@@ -286,6 +368,7 @@ def triage(urlstring):
             actions.append("unlabel: core_review")
             actions.append("unlabel: needs_info")
             actions.append("unlabel: needs_revision")
+            actions.append("unlabel: pending_action")
             actions.append("newlabel: shipit")
             actions.append("boilerplate: shipit")
             break
@@ -299,6 +382,7 @@ def triage(urlstring):
             actions.append("unlabel: core_review")
             actions.append("unlabel: needs_info")
             actions.append("unlabel: shipit")
+            actions.append("unlabel: pending_action")
             actions.append("newlabel: needs_revision")
             actions.append("boilerplate: needs_revision")
             break
@@ -310,6 +394,7 @@ def triage(urlstring):
           and ('ready_for_review' in comment['body'])):
             actions.append("unlabel: needs_revision")
             actions.append("unlabel: needs_info")
+            actions.append("unlabel: pending_action")
             if ('ansible' in pr_maintainers):
                 actions.append("newlabel: core_review")
                 actions.append("boilerplate: core_review_existing")
@@ -319,6 +404,18 @@ def triage(urlstring):
             else:
                 actions.append("newlabel: community_review")
                 actions.append("boilerplate: community_review_existing")
+            break
+
+        #------------------------------------------------------------------------
+        # Have submitter or maintainer said something else? Then they're 
+        # likely discussing issues with the PR; that makes this comment 
+        # "useful", so we'll break here so as not to trigger the timeout
+        # workflow.
+        #------------------------------------------------------------------------
+        if ((comment['user']['login'] in pr_maintainers)
+          or (comment['user']['login'] == pr_submitter)):
+            if verbose:
+                print "  Conversation about this PR onging"
             break
 
     #----------------------------------------------------------------------------
@@ -343,7 +440,7 @@ def triage(urlstring):
     cont = ''
 
     # If there are actions, ask if we should take them. Otherwise, skip.
-    if not (actions == []):
+    if (not (actions == [])) or (always_pause):
         cont = raw_input("Take recommended actions (y/N)?")
 
     if cont in ('Y','y'):
