@@ -315,7 +315,7 @@ def triage(urlstring):
                 # warnings have been issued, warn submitter and break.
                 #----------------------------------------------------------------
                 elif (('pending' not in comment['body']) 
-                  and (('needs_review' in pr_labels) or ('needs_rebase' in pr_labels))):
+                  and (('needs_revision' in pr_labels) or ('needs_rebase' in pr_labels))):
                     actions.append("boilerplate: submitter_first_warning")
                     break 
 
@@ -331,12 +331,12 @@ def triage(urlstring):
                     break 
                 
                 #----------------------------------------------------------------
-                # If it's in needs_review or needs_rebase and a previous 
+                # If it's in needs_revision or needs_rebase and a previous 
                 # warning has been issued, place in pending_action, give the
                 # submitter a second warning, and break.
                 #----------------------------------------------------------------
                 elif (('pending' in comment['body']) 
-                  and (('needs_review' in pr_labels) or ('needs_rebase' in pr_labels))):
+                  and (('needs_revision' in pr_labels) or ('needs_rebase' in pr_labels))):
                     actions.append("boilerplate: submitter_second_warning")
                     actions.append("label: pending_action")
                     break 
