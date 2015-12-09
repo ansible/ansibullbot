@@ -11,7 +11,7 @@ cloud/amazon/ec2_facts.py: silviud
 cloud/amazon/ec2_group.py: adq
 cloud/amazon/ec2_key.py: zbal
 cloud/amazon/ec2_lc.py: garethr
-cloud/amazon/ec2_metric_alarm.py: zeekin
+cloud/amazon/ec2_metric_alarm.py: ansible
 cloud/amazon/ec2_scaling_policy.py: zeekin
 cloud/amazon/ec2_snapshot.py: willthames
 cloud/amazon/ec2_tag.py: lwade
