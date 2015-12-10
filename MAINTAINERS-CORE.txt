@@ -47,26 +47,26 @@ cloud/openstack/_quantum_floating_ip_associate.py: DEPRECATED
 cloud/openstack/_quantum_router.py: DEPRECATED
 cloud/openstack/_quantum_router_gateway.py: DEPRECATED
 cloud/openstack/_quantum_router_interface.py: DEPRECATED
-cloud/openstack/os_auth.py: emonty
-cloud/openstack/os_client_config.py: emonty
-cloud/openstack/os_floating_ip.py: dguerri
-cloud/openstack/os_image.py: emonty
-cloud/openstack/os_image_facts.py: dagnello
-cloud/openstack/os_ironic.py: emonty
-cloud/openstack/os_ironic_node.py: emonty
-cloud/openstack/os_network.py: emonty
-cloud/openstack/os_networks_facts.py: dagnello
-cloud/openstack/os_nova_flavor.py: Shrews
-cloud/openstack/os_object.py: emonty
-cloud/openstack/os_port.py: dagnello
-cloud/openstack/os_router.py: Shrews
-cloud/openstack/os_security_group.py: emonty
-cloud/openstack/os_server.py: emonty
-cloud/openstack/os_server_actions.py: j2sol
-cloud/openstack/os_server_volume.py: emonty
-cloud/openstack/os_subnet.py: emonty
-cloud/openstack/os_subnets_facts.py: dagnello
-cloud/openstack/os_volume.py: emonty
+cloud/openstack/os_auth.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_client_config.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_floating_ip.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_image.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_image_facts.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_ironic.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_ironic_node.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_network.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_networks_facts.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_nova_flavor.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_object.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_port.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_router.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_security_group.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_server.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_server_actions.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_server_volume.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_subnet.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_subnets_facts.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
+cloud/openstack/os_volume.py: emonty shrews dguerri juliakreger j2sol rcarrillocruz
 cloud/rackspace/rax.py: j2sol sivel
 cloud/rackspace/rax_cbs.py: claco sivel
 cloud/rackspace/rax_cbs_attachments.py: claco sivel
