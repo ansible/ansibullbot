@@ -188,14 +188,23 @@ def triage(urlstring):
   
     comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
     actions = []
+ 
+    #----------------------------------------------------------------------------
+    # Kill all P3-P5 tags, every time. No more low priority tags.
+    #----------------------------------------------------------------------------
+    if ('P3') in pr_labels:
+        actions.append("unlabel: P3")
+    if ('P4') in pr_labels:
+        actions.append("unlabel: P4")
+    if ('P5') in pr_labels:
+        actions.append("unlabel: P5")
 
     #----------------------------------------------------------------------------
-    # First, we handle the "no triaged labels" case: i.e. if none of the 
+    # Now, we handle the "no triaged labels" case: i.e. if none of the 
     # following labels are present: community_review, core_review, needs_revision,
     # needs_rebase, shipit.
     #----------------------------------------------------------------------------
 
-    # if (len(pr_labels) == 0):
     if (('community_review' not in pr_labels)
       and ('core_review' not in pr_labels)
       and ('needs_revision' not in pr_labels)
