@@ -92,8 +92,8 @@ commands/command.py: ansible
 commands/raw.py: ansible
 commands/script.py: ansible
 commands/shell.py: ansible
-database/mysql/mysql_db.py: marktheunissen
-database/mysql/mysql_user.py: marktheunissen
+database/mysql/mysql_db.py: Jmainguy
+database/mysql/mysql_user.py: Jmainguy
 database/mysql/mysql_variables.py: banyek
 database/postgresql/postgresql_db.py: ansible
 database/postgresql/postgresql_privs.py: b6d
