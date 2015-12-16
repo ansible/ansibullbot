@@ -64,7 +64,7 @@ botlist = ['gregdek','robynbergeron']
 # Here's the boilerplate text.
 #------------------------------------------------------------------------------------
 boilerplate = {
-    'triage_needed': "Could someone help us out by identifying the file in question, so we can assign it to a maintainer? Please use the syntax [module: module.py]. Thanks!"
+    'triage_needed': "Could someone help us out by identifying the file in question, so we can assign it to a maintainer? Please use the syntax [module: module.py]. Thanks!",
     'ping': "Pinging @{m} to let you know about this issue. Thanks!"
 }
 
