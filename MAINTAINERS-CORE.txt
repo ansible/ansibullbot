@@ -8,7 +8,7 @@ cloud/amazon/ec2_eip.py: rickmendes
 cloud/amazon/ec2_elb.py: jarv
 cloud/amazon/ec2_elb_lb.py: jsdalton rickmendes
 cloud/amazon/ec2_facts.py: silviud
-cloud/amazon/ec2_group.py: adq
+cloud/amazon/ec2_group.py: ansible
 cloud/amazon/ec2_key.py: zbal
 cloud/amazon/ec2_lc.py: garethr
 cloud/amazon/ec2_metric_alarm.py: ansible

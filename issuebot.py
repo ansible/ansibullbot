@@ -19,6 +19,8 @@
 # THEN: did a bot ping the maintainer? If not, ping the maintainer.
 # 
 # IF BOTH THESE THINGS ARE TRUE, IGNORE.
+#
+# (Note: we can add timeouts later.)
 
 import requests, json, yaml, sys, argparse, time
 
@@ -87,6 +89,17 @@ def triage(urlstring):
         debugfile = open(debugfileid, 'w')
         print >>debugfile, json.dumps(issue, ensure_ascii=True, indent=4, separators=(',', ': '))
         debugfile.close()
+
+    #----------------------------------------------------------------------------
+    # Are we a pull request? If so, then break. We don't do pull requests.
+    #----------------------------------------------------------------------------
+    try:
+        if issue['pull_request']:
+            print "Ignoring Pull Request ", issue['number']
+            return
+    except:
+        # noop
+        pass
         
     #----------------------------------------------------------------------------
     # Pull the list of labels.
@@ -95,29 +108,6 @@ def triage(urlstring):
     for label in issue['labels']:
         issue_labels.append(label['name'])
     
-    #----------------------------------------------------------------------------
-    # Look up the files in the local DB to see who maintains them.
-    # (Warn if there's more than one; we can't handle that case yet.)
-    #----------------------------------------------------------------------------
-    
-    # FIXME: HANDLE THIS CORRECTLY, BUT FOR NOW, JUST IGNORE
-    issue_filename = 'NOPENOPENOPE'
-    # END FIXME
-
-    maintainer_found = ''
-    if ghrepo == "core":
-        f = open('MAINTAINERS-CORE.txt')
-    elif ghrepo == "extras":
-        f = open('MAINTAINERS-EXTRAS.txt')
-    for line in f:
-        if issue_filename in line:
-            issue_maintainers = (line.split(': ')[-1]).rstrip()
-            maintainer_found = 'True'
-            break
-    f.close()
-    if not maintainer_found:
-        issue_maintainers = ''
-
     #----------------------------------------------------------------------------
     # Get and print key info about the issue.
     #----------------------------------------------------------------------------
@@ -160,7 +150,25 @@ def triage(urlstring):
     # meaningful state change from the comments, we break; thus, we are always
     # acting on what we perceive to be the most recent meaningful comment, and
     # we ignore all older comments.
+    #
+    # In this case, we're looking to figure out four things:
+    #   - issue_filename. What file is this issue being reported against?
+    #   - issue_maintainer. Which we can only determine from issue_filename.
+    #   - maintainer_pinged. Have we reached out to the maintainer yet?
+    #   - maintainer_active. If we have reached out, is the maintainer
+    #     actively handling the issue?
+    # 
+    # This requires multiple passes through each set of comments to figure out.
+    # (At least it does for me.)
     #----------------------------------------------------------------------------
+
+    #----------------------------------------------------------------------------
+    # First pass: look for the presence of issue_filename. If not found, 
+    # ask for help triaging and tag with "needs_triage". Note that most
+    # recent *always* wins, and it doesn't matter who entered it.
+    #----------------------------------------------------------------------------
+
+    issue_filename = ''
     for comment in reversed(comments.json()):
             
         if verbose:
@@ -168,42 +176,65 @@ def triage(urlstring):
             print "==========>  Comment at ", comment['created_at'], " from: ", comment['user']['login']
             print comment['body']
 
-        #------------------------------------------------------------------------
-        # Is the last useful comment from a bot user?  Then we've got a potential 
-        # timeout case.  Let's explore!
-        #------------------------------------------------------------------------
-        if (comment['user']['login'] in botlist):
-
-            #--------------------------------------------------------------------
-            # Let's figure out how old this comment is, exactly.
-            #--------------------------------------------------------------------
-            comment_time = time.mktime((time.strptime(comment['created_at'], "%Y-%m-%dT%H:%M:%SZ")))
-            comment_days_old = (time.time()-comment_time)/86400
-
-            #--------------------------------------------------------------------
-            # Is it more than 14 days old? That kinda sucks; we should do
-            # something about it!
-            #--------------------------------------------------------------------
-
-            if verbose:
-                print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
-                print "  Days since last bot comment: ", comment_days_old
-
-            # break
-            # FIXME: ordinarily we would break here, but we won't because we don't want to 
-            # do bot exclusions yet
-
-        #------------------------------------------------------------------------
-        # Do we find a filename? Great! Add the action "ping maintainer".
-        #------------------------------------------------------------------------
         if ('[module' in comment['body']):
-            issue_modulename = comment['body'].split(':')[-1]
-            actions.append("boilerplate: ping")
-            print "MODULE FOUND: ", issue_modulename
+            # FIXME: this should be changed to a regex. We can't assume
+            # long-term that this text is alone in the comment.
+            issue_filename = (comment['body'].split(':')[-1]).rstrip()
+            print "  Filename found: ", issue_filename 
             break
 
     #----------------------------------------------------------------------------
-    # OK, this PR is done! Now let's print out the list of actions we tallied.
+    # No filename found? That means it needs to be triaged.
+    #----------------------------------------------------------------------------
+
+    if (issue_filename == ''):
+        actions.append('boilerplate: triage_needed')
+        actions.append('label: triage_needed')    
+
+    #----------------------------------------------------------------------------
+    # Filename found? Good. Now try to find the maintainer in the lookup.
+    #----------------------------------------------------------------------------
+
+    else:   
+
+        # Identify maintainers 
+
+        maintainers_found = ''
+        if ghrepo == "core":
+            f = open('MAINTAINERS-CORE.txt')
+        elif ghrepo == "extras":
+            f = open('MAINTAINERS-EXTRAS.txt')
+        for line in f:
+            if issue_filename in line:
+                issue_maintainers = (line.split(': ')[-1]).rstrip()
+                maintainers_found = 'True'
+                break
+        f.close()
+
+        if not maintainers_found:
+            print "  WARNING: no maintainers found for this file"
+            issue_maintainers = ''
+
+        else:
+
+            #--------------------------------------------------------------------
+            # OK, we have a filename and a maintainer. Now let's look to see if
+            # at least one maintainer has been pinged by a bot. If yes, we're 
+            # done! If not, ping the maintainers!
+            #--------------------------------------------------------------------
+
+            maintainer_pinged = ''
+            for comment in reversed(comments.json()):
+                if (comment['user']['login'] in botlist):
+                    for maintainer in issue_maintainers:
+                        if maintainer in comment['body']:
+                            maintainer_pinged = 'yes'
+
+            if maintainer_pinged:
+                actions.append('boilerplate: ping_maintainer')    
+
+    #----------------------------------------------------------------------------
+    # OK, triage is done! Now let's print out the list of actions we tallied.
     #
     # In assisted mode, we will ask the user whether we want to take the 
     # recommended actions.
