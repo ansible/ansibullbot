@@ -3,6 +3,23 @@
 # THIS IS ALSO NOT A GREAT SCRIPT
 # (copied and pasted from prbot!)
 
+# REQUIREMENTS:
+# * What should this actually do?
+# 
+# First, what is BASIC BASIC TRIAGE? It's "where's the bug and who owns it?"
+# 
+# Which means: name of file. We can infer the maintainer from that, and then
+# the maintainer can ask the necessary questions.
+# 
+# IF: nothing found in [module: foo] or [filename: foo] 
+# THEN boilerplate should be "can someone help by entering the name of file or module 
+#   affected in this format [filename: foo.py]? This is to determine maintainer to ping."
+# 
+# IF: [module: foo.py] is found
+# THEN: did a bot ping the maintainer? If not, ping the maintainer.
+# 
+# IF BOTH THESE THINGS ARE TRUE, IGNORE.
+
 import requests, json, yaml, sys, argparse, time
 
 parser = argparse.ArgumentParser(description='Triage various PR queues for Ansible. (NOTE: only useful if you have commit access to the repo in question.)')
@@ -172,13 +189,17 @@ def triage(urlstring):
                 print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
                 print "  Days since last bot comment: ", comment_days_old
 
-            break
+            # break
+            # FIXME: ordinarily we would break here, but we won't because we don't want to 
+            # do bot exclusions yet
 
         #------------------------------------------------------------------------
         # Do we find a filename? Great! Add the action "ping maintainer".
         #------------------------------------------------------------------------
-        if ('filename' in comment['body']):
+        if ('[module' in comment['body']):
+            issue_modulename = comment['body'].split(':')[-1]
             actions.append("boilerplate: ping")
+            print "MODULE FOUND: ", issue_modulename
             break
 
     #----------------------------------------------------------------------------
