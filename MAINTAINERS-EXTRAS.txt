@@ -58,7 +58,7 @@ cloud/lxc/lxc_container.py: cloudnull
 cloud/misc/ovirt.py: vincentvdk
 cloud/misc/proxmox.py: UnderGreen
 cloud/misc/proxmox_template.py: UnderGreen
-cloud/misc/virt.py: NONE
+cloud/misc/virt.py: ansible
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
 cloud/profitbricks/profitbricks.py: baldwinSPC
