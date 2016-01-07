@@ -125,9 +125,9 @@ packaging/os/apt_key.py: jvantuyl
 packaging/os/apt_repository.py: sashka
 packaging/os/apt_rpm.py: evgkrsk
 packaging/os/package.py: ansible
-packaging/os/redhat_subscription.py: barnabycourt
-packaging/os/rhn_channel.py: vincentvdk
-packaging/os/rhn_register.py: barnabycourt vritant flossware
+packaging/os/redhat_subscription.py: barnabycourt alikins
+packaging/os/rhn_channel.py: vincentvdk alikins
+packaging/os/rhn_register.py: barnabycourt vritant flossware alikins
 packaging/os/rpm_key.py: hacosta
 packaging/os/yum.py: ansible
 source_control/git.py: ansible
