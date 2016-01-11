@@ -1,6 +1,6 @@
 cloud/amazon/_ec2_ami_search.py: DEPRECATED
 cloud/amazon/cloudformation.py: jsmartin
-cloud/amazon/ec2.py: tgerla lwade
+cloud/amazon/ec2.py: ansible
 cloud/amazon/ec2_ami.py: scicoin-project
 cloud/amazon/ec2_ami_find.py: tombamford
 cloud/amazon/ec2_asg.py: garethr
