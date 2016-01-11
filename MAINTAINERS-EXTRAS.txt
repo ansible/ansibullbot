@@ -278,8 +278,8 @@ windows/win_nssm.py: smadam813 georgefrank h0nIg
 windows/win_nssm.ps1: smadam813 georgefrank h0nIg
 windows/win_package.py: trondhindenes
 windows/win_package.ps1: trondhindenes
-windows/win_regedit.py: joshludwig
-windows/win_regedit.ps1: joshludwig
+windows/win_regedit.py: joshludwig smadam813
+windows/win_regedit.ps1: joshludwig smadam813
 windows/win_unzip.py: schwartzmx
 windows/win_unzip.ps1: schwartzmx
 windows/win_updates.py: mattdavispdx
