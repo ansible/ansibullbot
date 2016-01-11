@@ -98,12 +98,12 @@ database/mysql/mysql_variables.py: banyek
 database/postgresql/postgresql_db.py: ansible
 database/postgresql/postgresql_privs.py: b6d
 database/postgresql/postgresql_user.py: ansible
-files/acl.py: bcoca astorije
+files/acl.py: ansible
 files/assemble.py: ansible
 files/copy.py: ansible
 files/fetch.py: ansible
 files/file.py: ansible
-files/find.py: bcoca
+files/find.py: ansible
 files/ini_file.py: jpmens noseka1
 files/lineinfile.py: dhozac ahtik
 files/replace.py: EvanK
@@ -111,7 +111,7 @@ files/stat.py: bpennypacker
 files/synchronize.py: tima
 files/template.py: ansible
 files/unarchive.py: pileofrogs
-files/xattr.py: bcoca
+files/xattr.py: ansible
 inventory/add_host.py: ansible
 inventory/group_by.py: jhoekx
 network/basics/get_url.py: jpmens
