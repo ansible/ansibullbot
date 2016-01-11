@@ -14,6 +14,7 @@ cloud/amazon/ec2_win_password.py: rickmendes
 cloud/amazon/ecs_cluster.py: Java1Guy
 cloud/amazon/ecs_task.py: Java1Guy
 cloud/amazon/ecs_taskdefinition.py: Java1Guy
+cloud/amazon/route53_facts.py: Etherdaemon
 cloud/amazon/route53_health_check.py: zimbatm
 cloud/amazon/route53_zone.py: minichate
 cloud/amazon/s3_bucket.py: wimnat
