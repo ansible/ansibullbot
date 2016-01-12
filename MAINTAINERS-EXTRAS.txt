@@ -10,6 +10,7 @@ cloud/amazon/ec2_vpc_route_table.py: erydo wimnat
 cloud/amazon/ec2_vpc_route_table_facts.py: wimnat
 cloud/amazon/ec2_vpc_subnet.py: erydo
 cloud/amazon/ec2_vpc_subnet_facts.py: wimnat
+cloud/amazon/GUIDELINES.md: willthames wimnat
 cloud/amazon/ec2_win_password.py: rickmendes
 cloud/amazon/ecs_cluster.py: Java1Guy
 cloud/amazon/ecs_task.py: Java1Guy
