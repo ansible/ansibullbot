@@ -30,6 +30,7 @@ parser.add_argument('--verbose', '-v', action='store_true', help="Verbose output
 parser.add_argument('--debug', '-d', action='store_true', help="Debug output")
 parser.add_argument('--pause', '-p', action='store_true', help="Always pause between PRs")
 parser.add_argument('--pr', type=str, help="Triage only the specified pr")
+parser.add_argument('--startat', type=str, help="Start triage at the specified pr")
 args=parser.parse_args()
 
 #------------------------------------------------------------------------------------
@@ -39,6 +40,10 @@ ghuser=args.ghuser
 ghpass=args.ghpass
 ghrepo=args.ghrepo
 repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
+if args.startat:
+    startat = args.startat
+else:
+    startat = 99999
 if args.pr:
     single_pr = args.pr
 else:
@@ -589,7 +594,10 @@ else:
         for shortpull in r.json():
  
             # Do some nifty triage!
-            triage(shortpull['url'])
+            if (int(shortpull['number']) <= int(startat)):
+                triage(shortpull['url'])
+            else:
+                print "SKIPPING ", shortpull['number']
 
 
 #====================================================================================
