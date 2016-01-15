@@ -122,7 +122,7 @@ packaging/language/gem.py: ansible
 packaging/language/pip.py: mattupstate
 packaging/os/apt.py: ansible
 packaging/os/apt_key.py: jvantuyl
-packaging/os/apt_repository.py: sashka
+packaging/os/apt_repository.py: ansible
 packaging/os/apt_rpm.py: evgkrsk
 packaging/os/package.py: ansible
 packaging/os/redhat_subscription.py: barnabycourt alikins
