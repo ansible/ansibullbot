@@ -168,8 +168,8 @@ windows/win_feature.py: angstwad trondhindenes
 windows/win_feature.ps1: angstwad trondhindenes
 windows/win_file.py: jhawkesworth
 windows/win_file.ps1: jhawkesworth
-windows/win_get_url.py: angstwad
-windows/win_get_url.ps1: angstwad
+windows/win_get_url.py: jhawkesworth
+windows/win_get_url.ps1: jhawkesworth
 windows/win_group.py: chrishoffman
 windows/win_group.ps1: chrishoffman
 windows/win_lineinfile.py: brianlloyd
