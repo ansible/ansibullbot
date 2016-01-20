@@ -199,9 +199,9 @@ packaging/language/maven_artifact.py: chrisisbeef
 packaging/language/npm.py: chrishoffman
 packaging/language/pear.py: gentledevil
 packaging/os/dnf.py: ignatenkobrain DJMuggs
-packaging/os/homebrew.py: indrajitr danieljaouen
-packaging/os/homebrew_cask.py: danieljaouen
-packaging/os/homebrew_tap.py: danieljaouen
+packaging/os/homebrew.py: indrajitr 
+packaging/os/homebrew_cask.py: indrajitr
+packaging/os/homebrew_tap.py: indrajitr
 packaging/os/layman.py: jirutka
 packaging/os/macports.py: jcftang
 packaging/os/openbsd_pkg.py: eest
