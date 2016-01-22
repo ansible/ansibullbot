@@ -3,7 +3,7 @@ cloud/amazon/cloudformation.py: jsmartin
 cloud/amazon/ec2.py: ansible
 cloud/amazon/ec2_ami.py: scicoin-project
 cloud/amazon/ec2_ami_find.py: tombamford
-cloud/amazon/ec2_asg.py: garethr
+cloud/amazon/ec2_asg.py: ansible
 cloud/amazon/ec2_eip.py: rickmendes
 cloud/amazon/ec2_elb.py: jarv
 cloud/amazon/ec2_elb_lb.py: jsdalton rickmendes
