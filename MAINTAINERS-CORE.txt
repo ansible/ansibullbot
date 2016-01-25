@@ -24,8 +24,8 @@ cloud/amazon/iam.py: defionscode seiffert
 cloud/amazon/iam_cert.py: defionscode
 cloud/amazon/iam_policy.py: defionscode
 cloud/amazon/rds.py: bpennypacker willthames
-cloud/amazon/rds_param_group.py: tastychutney
-cloud/amazon/rds_subnet_group.py: tastychutney
+cloud/amazon/rds_param_group.py: tastychutney scottanderson42
+cloud/amazon/rds_subnet_group.py: tastychutney scottanderson42
 cloud/amazon/route53.py: bpennypacker
 cloud/amazon/s3.py: lwade
 cloud/azure/azure.py: nitzmahome
@@ -157,7 +157,7 @@ utilities/logic/pause.py: tbielawa
 utilities/logic/set_fact.py: dagwieers
 utilities/logic/wait_for.py: ansible
 web_infrastructure/apache2_module.py: berendt
-web_infrastructure/django_manage.py: tastychutney
+web_infrastructure/django_manage.py: tastychutney scottanderson42
 web_infrastructure/htpasswd.py: ansible
 web_infrastructure/supervisorctl.py: mattupstate inetfuture
 windows/setup.ps1: ansible
