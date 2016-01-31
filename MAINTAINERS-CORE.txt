@@ -14,8 +14,8 @@ cloud/amazon/ec2_lc.py: ansible
 cloud/amazon/ec2_metric_alarm.py: ansible
 cloud/amazon/ec2_scaling_policy.py: zeekin
 cloud/amazon/ec2_snapshot.py: willthames
-cloud/amazon/ec2_tag.py: lwade
-cloud/amazon/ec2_vol.py: lwade
+cloud/amazon/ec2_tag.py: ansible
+cloud/amazon/ec2_vol.py: ansible
 cloud/amazon/ec2_vpc.py: carsongee
 cloud/amazon/ec2_vpc_net.py: defionscode
 cloud/amazon/elasticache.py: jsdalton
@@ -27,7 +27,7 @@ cloud/amazon/rds.py: bpennypacker willthames
 cloud/amazon/rds_param_group.py: tastychutney scottanderson42
 cloud/amazon/rds_subnet_group.py: tastychutney scottanderson42
 cloud/amazon/route53.py: bpennypacker
-cloud/amazon/s3.py: lwade
+cloud/amazon/s3.py: ansible
 cloud/azure/azure.py: nitzmahome
 cloud/digital_ocean/digital_ocean.py: ansible
 cloud/digital_ocean/digital_ocean_domain.py: mgregson
