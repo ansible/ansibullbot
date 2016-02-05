@@ -21,6 +21,7 @@ cloud/amazon/route53_zone.py: minichate
 cloud/amazon/s3_bucket.py: wimnat
 cloud/amazon/s3_lifecycle.py: wimnat
 cloud/amazon/s3_logging.py: wimnat
+cloud/amazon/sns_topic.py: joelthompson
 cloud/amazon/sqs_queue.py: loia
 cloud/amazon/sts_assume_role.py: bekelchik
 cloud/centurylink/clc_aa_policy.py: clc-runner
@@ -168,7 +169,7 @@ network/ipify_facts.py: resmo
 network/lldp.py: andyhky
 network/nmcli.py: alcamie101
 network/openvswitch_bridge.py: stygstra
-network/openvswitch_db.py: NONE
+network/openvswitch_db.py: ansible
 network/openvswitch_port.py: stygstra
 network/snmp_facts.py: ogenstad
 notification/campfire.py: fabulops
@@ -181,7 +182,7 @@ notification/jabber.py: bcoca
 notification/mail.py: dagwieers 
 notification/mqtt.py: jpmens 
 notification/nexmo.py: sivel
-notification/osx_say.py: NONE
+notification/osx_say.py: ansible
 notification/pushbullet.py: willybarro
 notification/pushover.py: weaselkeeper
 notification/sendgrid.py: makaimc
@@ -218,6 +219,7 @@ packaging/os/slackpkg.py: KimNorgaard
 packaging/os/svr4pkg.py: brontitall
 packaging/os/swdepot.py: melodous
 packaging/os/urpmi.py: pmakowski
+packaging/os/yumrepo.py: jtyr
 packaging/os/zypper.py: dirtyharrycallahan
 packaging/os/zypper_repository.py: matze
 source_control/bzr.py: andreparames
@@ -228,7 +230,7 @@ system/capabilities.py: natefoo
 system/cronvar.py: dougluce
 system/crypttab.py: groks
 system/debconf.py: bcoca
-system/facter.py: NONE
+system/facter.py: ansible
 system/filesystem.py: abulimov
 system/firewalld.py: maxamillion
 system/getent.py: bcoca
@@ -240,9 +242,9 @@ system/locale_gen.py: AugustusKling
 system/lvg.py: abulimov
 system/lvol.py: jhoekx abulimov
 system/modprobe.py: stygstra
-system/ohai.py: NONE
+system/ohai.py: ansible
 system/open_iscsi.py: srvg
-system/osx_defaults.py: frenck
+system/osx_defaults.py: ansible
 system/pam_limits.py: usawa
 system/puppet.py: emonty
 system/selinux_permissive.py: mscherer

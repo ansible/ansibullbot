@@ -177,13 +177,13 @@ windows/win_lineinfile.py: brianlloyd
 windows/win_lineinfile.ps1: brianlloyd
 windows/win_msi.py: sivel
 windows/win_msi.ps1: sivel
-windows/win_ping.py: cchurch
-windows/win_ping.ps1: cchurch
+windows/win_ping.py: nitzmahone
+windows/win_ping.ps1: nitzmahone
 windows/win_service.py: chrishoffman
 windows/win_service.ps1: chrishoffman
-windows/win_stat.py: cchurch
-windows/win_stat.ps1: cchurch
+windows/win_stat.py: nitzmahone
+windows/win_stat.ps1: nitzmahone
 windows/win_template.py: jhawkesworth
 windows/win_template.ps1: jhawkesworth
-windows/win_user.py: angstwad cchurch
-windows/win_user.ps1: angstwad cchurch
+windows/win_user.py: angstwad nitzmahone
+windows/win_user.ps1: angstwad nitzmahone
