@@ -106,7 +106,7 @@ files/fetch.py: ansible
 files/file.py: ansible
 files/find.py: ansible
 files/ini_file.py: jpmens noseka1
-files/lineinfile.py: dhozac ahtik
+files/lineinfile.py: ansible
 files/replace.py: EvanK
 files/stat.py: bpennypacker
 files/synchronize.py: tima
