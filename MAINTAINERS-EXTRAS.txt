@@ -5,6 +5,7 @@ cloud/amazon/ec2_elb_facts.py: mjschultz
 cloud/amazon/ec2_eni.py: wimnat
 cloud/amazon/ec2_eni_facts.py: wimnat
 cloud/amazon/ec2_remote_facts.py: michaeljs1990
+cloud/amazon/ec2_vpc_dhcp_options.py: joelthompson
 cloud/amazon/ec2_vpc_igw.py: erydo
 cloud/amazon/ec2_vpc_route_table.py: erydo wimnat
 cloud/amazon/ec2_vpc_route_table_facts.py: wimnat
