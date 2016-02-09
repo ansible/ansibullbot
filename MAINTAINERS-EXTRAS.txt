@@ -268,8 +268,8 @@ windows/win_environment.py: jhawkesworth
 windows/win_environment.ps1: jhawkesworth
 windows/win_firewall_rule.py: TimothyVandenbrande
 windows/win_firewall_rule.ps1: TimothyVandenbrande
-windows/win_iis_virtualdirectory.py: whenrik
-windows/win_iis_virtualdirectory.ps1: whenrik
+windows/win_iis_virtualdirectory.py: ansible
+windows/win_iis_virtualdirectory.ps1: ansible
 windows/win_iis_webapplication.py: whenrik
 windows/win_iis_webapplication.ps1: whenrik
 windows/win_iis_webapppool.py: whenrik

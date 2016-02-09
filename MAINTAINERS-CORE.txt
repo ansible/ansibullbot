@@ -79,8 +79,8 @@ cloud/rackspace/rax_clb_nodes.py: neuroid
 cloud/rackspace/rax_dns.py: sivel
 cloud/rackspace/rax_dns_record.py: sivel
 cloud/rackspace/rax_facts.py: sivel
-cloud/rackspace/rax_files.py: angstwad
-cloud/rackspace/rax_files_objects.py: angstwad
+cloud/rackspace/rax_files.py: sivel
+cloud/rackspace/rax_files_objects.py: sivel
 cloud/rackspace/rax_identity.py: claco sivel
 cloud/rackspace/rax_keypair.py: sivel
 cloud/rackspace/rax_meta.py: sivel
@@ -165,8 +165,8 @@ windows/setup.ps1: ansible
 windows/slurp.ps1: ansible
 windows/win_copy.py: jhawkesworth
 windows/win_copy.ps1: jhawkesworth
-windows/win_feature.py: angstwad trondhindenes
-windows/win_feature.ps1: angstwad trondhindenes
+windows/win_feature.py: trondhindenes
+windows/win_feature.ps1: trondhindenes
 windows/win_file.py: jhawkesworth
 windows/win_file.ps1: jhawkesworth
 windows/win_get_url.py: jhawkesworth
@@ -185,5 +185,5 @@ windows/win_stat.py: nitzmahone
 windows/win_stat.ps1: nitzmahone
 windows/win_template.py: jhawkesworth
 windows/win_template.ps1: jhawkesworth
-windows/win_user.py: angstwad nitzmahone
-windows/win_user.ps1: angstwad nitzmahone
+windows/win_user.py: nitzmahone
+windows/win_user.ps1: nitzmahone
