@@ -4,6 +4,7 @@ cloud/amazon/ec2_ami_copy.py: amir343
 cloud/amazon/ec2_elb_facts.py: mjschultz
 cloud/amazon/ec2_eni.py: wimnat
 cloud/amazon/ec2_eni_facts.py: wimnat
+cloud/amazon/ec2_vpc_net_facts.py: whiter
 cloud/amazon/ec2_remote_facts.py: michaeljs1990
 cloud/amazon/ec2_vpc_dhcp_options.py: joelthompson
 cloud/amazon/ec2_vpc_igw.py: erydo
