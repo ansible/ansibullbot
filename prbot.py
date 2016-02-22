@@ -23,9 +23,10 @@ def handler(signum, frame):
 signal.signal(signal.SIGALRM, handler)
 
 parser = argparse.ArgumentParser(description='Triage various PR queues for Ansible. (NOTE: only useful if you have commit access to the repo in question.)')
-parser.add_argument("ghuser", type=str, help="Github username of triager")
-parser.add_argument("ghpass", type=str, help="Github password of triager")
-parser.add_argument("ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
+parser.add_argument("--ghuser", type=str, help="Github username of triager")
+parser.add_argument("--ghpass", type=str, help="Github password of triager. Mutually exclusive with ghtoken")
+parser.add_argument("--ghtoken", type=str, help="Github token of triager. Mutually exclusive with ghpass")
+parser.add_argument("--ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
 parser.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
 parser.add_argument('--debug', '-d', action='store_true', help="Debug output")
 parser.add_argument('--pause', '-p', action='store_true', help="Always pause between PRs")
@@ -34,11 +35,20 @@ parser.add_argument('--startat', type=str, help="Start triage at the specified p
 args=parser.parse_args()
 
 #------------------------------------------------------------------------------------
-# Here's initialization of various things. 
+# Here's initialization of various things.
 #------------------------------------------------------------------------------------
 ghuser=args.ghuser
 ghpass=args.ghpass
+ghtoken=args.ghtoken
 ghrepo=args.ghrepo
+
+http_headers = {}
+http_auth = None
+if ghtoken:
+    http_headers = { 'Authorization': 'token ' + ghtoken }
+else:
+    http_auth = ( ghuser, ghpass )
+
 repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
 if args.startat:
     startat = args.startat
@@ -81,6 +91,18 @@ boilerplate = {
     'submitter_second_warning': '@{s} Another friendly reminder: this pull request has been marked as needing your action. If you still believe that this PR applies, and you intend to address the issues with this PR, just let us know in the PR itself and we will keep it open. If we don\'t hear from you within another 14 days, we will close this pull request.'
 }
 
+def handle_url(urlstring, params=None, verify=False):
+    signal.alarm(5)
+    while True:
+        try:
+            result = requests.get(urlstring, headers=http_headers, params=params, auth=http_auth, verify=verify)
+            break # because pull worked
+        except:
+            print "Timeout, retrying..."
+    signal.alarm(0)
+    return result
+
+
 #------------------------------------------------------------------------------------
 # Here's the triage function. It takes a PR id and does all of the necessary triage
 # stuff.
@@ -93,14 +115,7 @@ def triage(urlstring):
     if verbose:
         print "URLSTRING: ", urlstring
 
-    signal.alarm(5)
-    while True:
-        try:
-            pull = requests.get(urlstring, auth=(ghuser,ghpass)).json()
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    pull = handle_url(urlstring).json()
 
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # DEBUG: Dump JSON to /tmp for analysis if needed
@@ -111,26 +126,19 @@ def triage(urlstring):
         debugfile = open(debugfileid, 'w')
         print >>debugfile, json.dumps(pull, ensure_ascii=True, indent=4, separators=(',', ': '))
         debugfile.close()
-        
+
     #----------------------------------------------------------------------------
     # Initialize an empty local list of PR labels; we'll need it later.
     #----------------------------------------------------------------------------
     pr_labels = []
-    
+
     #----------------------------------------------------------------------------
     # Pull the list of files being edited so we can find maintainers.
     # (Warn if there's more than one; we can't handle that case yet.)
     #----------------------------------------------------------------------------
     # Now pull the text of the diff.
 
-    signal.alarm(5)
-    while True:
-        try:
-            diff = requests.get(pull['diff_url'], auth=(ghuser,ghpass), verify=False).text
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    diff = handle_url(pull['diff_url']).text
 
     if debug:
         debugfileid = '/tmp/diff-' + str(pull['number'])
@@ -138,7 +146,7 @@ def triage(urlstring):
         debugfile = open(debugfileid, 'w')
         print >>debugfile, json.dumps(diff, ensure_ascii=True, indent=4, separators=(',', ': '))
         debugfile.close()
- 
+
     # Grep the diff for affected files.
     pr_contains_new_file = ''
     pyfilecounter = 0
@@ -173,31 +181,23 @@ def triage(urlstring):
     # Look up the files in the local DB to see who maintains them.
     # (Warn if there's more than one; we can't handle that case yet.)
     #----------------------------------------------------------------------------
-    maintainer_found = ''
+    pr_maintainers = []
     if ghrepo == "core":
         f = open('MAINTAINERS-CORE.txt')
     elif ghrepo == "extras":
         f = open('MAINTAINERS-EXTRAS.txt')
     for line in f:
-        if pr_filename in line:
-            pr_maintainers = (line.split(': ')[-1]).rstrip()
-            maintainer_found = 'True'
-            break
+        owner_space = (line.split(': ')[0]).strip()
+        if owner_space in pr_filename:
+            maintainers_string = (line.split(': ')[-1]).strip()
+            for maintainer in maintainers_string.split(' '):
+                pr_maintainers.append(maintainer)
     f.close()
-    if not maintainer_found:
-        pr_maintainers = ''
 
     #----------------------------------------------------------------------------
     # Pull the list of labels on this PR and shove them into pr_labels.
     #----------------------------------------------------------------------------
-    signal.alarm(5)
-    while True:
-        try:
-            issue = requests.get(pull['issue_url'], auth=(ghuser,ghpass)).json()
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    issue = handle_url(pull['issue_url']).json()
 
     # Print labels for now, so we know whether we're doing the right things
     for label in issue['labels']:
@@ -212,28 +212,21 @@ def triage(urlstring):
     pr_submitter = pull['user']['login']
     print "  Labels: ", pr_labels
     print "  Submitter: ", pr_submitter
-    print "  Maintainer(s): ", pr_maintainers
+    print "  Maintainer(s): %s" % (', '.join(pr_maintainers))
     print "  Filename(s): ", pr_filename
     print " "
     if verbose:
         print pull['body']
 
     #----------------------------------------------------------------------------
-    # NOW: We have everything we need to do actual triage. In triage, we 
-    # assess the actions that need to be taken and push them into a list. 
+    # NOW: We have everything we need to do actual triage. In triage, we
+    # assess the actions that need to be taken and push them into a list.
     # Get our comments, and set our empty actions list.
     #----------------------------------------------------------------------------
-    signal.alarm(5)
-    while True:
-        try:
-            comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    comments = handle_url(pull['comments_url'])
 
     actions = []
- 
+
     #----------------------------------------------------------------------------
     # Kill all P3-P5 tags, every time. No more low priority tags.
     #----------------------------------------------------------------------------
@@ -245,7 +238,7 @@ def triage(urlstring):
         actions.append("unlabel: P5")
 
     #----------------------------------------------------------------------------
-    # Now, we handle the "no triaged labels" case: i.e. if none of the 
+    # Now, we handle the "no triaged labels" case: i.e. if none of the
     # following labels are present: community_review, core_review, needs_revision,
     # needs_rebase, shipit.
     #----------------------------------------------------------------------------
@@ -277,7 +270,7 @@ def triage(urlstring):
         else:
             actions.append("newlabel: community_review")
             actions.append("boilerplate: community_review_existing")
- 
+
     #------------------------------------------------------------------------
     # Does this PR need to be (newly) rebased? If so, label and boilerplate.
     #------------------------------------------------------------------------
@@ -319,7 +312,7 @@ def triage(urlstring):
 
     #----------------------------------------------------------------------------
     # OK, now we start walking through comment-based actions, and push whatever
-    # we find into the action list. 
+    # we find into the action list.
     #
     # NOTE: we walk through comments MOST RECENT FIRST. Whenever we find a
     # meaningful state change from the comments, we break; thus, we are always
@@ -327,14 +320,14 @@ def triage(urlstring):
     # we ignore all older comments.
     #----------------------------------------------------------------------------
     for comment in reversed(comments.json()):
-            
+
         if verbose:
-            print " " 
+            print " "
             print "==========>  Comment at ", comment['created_at'], " from: ", comment['user']['login']
             print comment['body']
 
         #------------------------------------------------------------------------
-        # Is the last useful comment from a bot user?  Then we've got a potential 
+        # Is the last useful comment from a bot user?  Then we've got a potential
         # timeout case.  Let's explore!
         #------------------------------------------------------------------------
         if (comment['user']['login'] in botlist):
@@ -353,7 +346,7 @@ def triage(urlstring):
             if comment_days_old > 14:
 
                 #----------------------------------------------------------------
-                # We know we've hit a timeout threshhold. Which one? 
+                # We know we've hit a timeout threshhold. Which one?
                 #----------------------------------------------------------------
 
                 #----------------------------------------------------------------
@@ -363,50 +356,50 @@ def triage(urlstring):
                 #----------------------------------------------------------------
                 if 'core_review' in pr_labels:
                     break
-             
-                #----------------------------------------------------------------
-                # If it's in needs_review or needs_rebase and no previous 
-                # warnings have been issued, warn submitter and break.
-                #----------------------------------------------------------------
-                elif (('pending' not in comment['body']) 
-                  and (('needs_revision' in pr_labels) or ('needs_rebase' in pr_labels))):
-                    actions.append("boilerplate: submitter_first_warning")
-                    break 
 
                 #----------------------------------------------------------------
-                # If it's in community_review and no previous # warnings have 
+                # If it's in needs_review or needs_rebase and no previous
+                # warnings have been issued, warn submitter and break.
+                #----------------------------------------------------------------
+                elif (('pending' not in comment['body'])
+                  and (('needs_revision' in pr_labels) or ('needs_rebase' in pr_labels))):
+                    actions.append("boilerplate: submitter_first_warning")
+                    break
+
+                #----------------------------------------------------------------
+                # If it's in community_review and no previous # warnings have
                 # been issued, and it's not a new module (we let new modules
                 # stay in review indefinitely), warn maintainer and break.
                 #----------------------------------------------------------------
-                elif (('pending' not in comment['body']) 
+                elif (('pending' not in comment['body'])
                   and ('community_review' in pr_labels)
                   and ('new_plugin' not in pr_labels)):
                     actions.append("boilerplate: maintainer_first_warning")
-                    break 
-                
+                    break
+
                 #----------------------------------------------------------------
-                # If it's in needs_revision or needs_rebase and a previous 
+                # If it's in needs_revision or needs_rebase and a previous
                 # warning has been issued, place in pending_action, give the
                 # submitter a second warning, and break.
                 #----------------------------------------------------------------
-                elif (('pending' in comment['body']) 
+                elif (('pending' in comment['body'])
                   and (('needs_revision' in pr_labels) or ('needs_rebase' in pr_labels))):
                     actions.append("boilerplate: submitter_second_warning")
                     actions.append("label: pending_action")
-                    break 
+                    break
 
                 #----------------------------------------------------------------
-                # If it's in community_review, not new_plugin, and a previous 
-                # warning has been issued, place in pending_action, give the 
+                # If it's in community_review, not new_plugin, and a previous
+                # warning has been issued, place in pending_action, give the
                 # maintainer a second warning, and break.
                 #----------------------------------------------------------------
-                elif (('pending' in comment['body']) 
+                elif (('pending' in comment['body'])
                   and ('community_review' in pr_labels)
                   and ('new_plugin' not in pr_labels)):
                     actions.append("boilerplate: maintainer_second_warning")
                     actions.append("label: pending_action")
-                    break 
-                        
+                    break
+
             if verbose:
                 print "  STATUS: no useful state change since last pass (", comment['user']['login'], ")"
                 print "  Days since last bot comment: ", comment_days_old
@@ -461,8 +454,8 @@ def triage(urlstring):
             break
 
         #------------------------------------------------------------------------
-        # Have submitter or maintainer said something else? Then they're 
-        # likely discussing issues with the PR; that makes this comment 
+        # Have submitter or maintainer said something else? Then they're
+        # likely discussing issues with the PR; that makes this comment
         # "useful", so we'll break here so as not to trigger the timeout
         # workflow.
         #------------------------------------------------------------------------
@@ -475,7 +468,7 @@ def triage(urlstring):
     #----------------------------------------------------------------------------
     # OK, this PR is done! Now let's print out the list of actions we tallied.
     #
-    # In assisted mode, we will ask the user whether we want to take the 
+    # In assisted mode, we will ask the user whether we want to take the
     # recommended actions.
     #
     # In autonomous mode (future), we will take the actions automatically.
@@ -513,7 +506,7 @@ def triage(urlstring):
                     pr_actionurl = issue['labels_url'].split("{")[0] + "/" + oldlabel
                     # print "URL for DELETE: ", pr_actionurl
                     try:
-                        r = requests.delete(pr_actionurl, auth=(ghuser,ghpass))
+                        r = requests.delete(pr_actionurl, auth=http_auth, headers=http_headers)
                         # print r.text
                     except requests.exceptions.RequestException as e:
                         print e
@@ -527,7 +520,7 @@ def triage(urlstring):
                     # print "URL for POST: ", pr_actionurl
                     # print "  PAYLOAD: ", payload
                     try:
-                        r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
+                        r = requests.post(pr_actionurl, data=payload, auth=http_auth, headers=http_headers)
                         # print r.text
                     except requests.exceptions.RequestException as e:
                         print e
@@ -545,13 +538,13 @@ def triage(urlstring):
                 # print "  PAYLOAD: ", payload
                 try:
                     signal.alarm(5)
-                    r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
+                    r = requests.post(pr_actionurl, data=payload, auth=http_auth, headers=http_headers)
                     signal.alarm(0)
                     # print r.text
                 except requests.exceptions.RequestException as e:
                     print e
                     sys.exit(1)
-                        
+
     else:
         print "Skipping."
 
@@ -572,11 +565,9 @@ if single_pr:
 # Otherwise, go get all open PRs and run through them.
 #------------------------------------------------------------------------------------
 else:
-    # First, get number of pages using pagination in Link Headers. Thanks 
+    # First, get number of pages using pagination in Link Headers. Thanks
     # requests library for making this relatively easy!
-    signal.alarm(5)
-    r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
-    signal.alarm(0)
+    r = handle_url(repo_url)
     lastpage = int(str(r.links['last']['url']).split('=')[-1])
 
     # Set range for 1..2 for testing only
@@ -584,15 +575,13 @@ else:
 
     for page in range(1,lastpage):
         pull_args = {'state':'open', 'page':page}
-        signal.alarm(5)
-        r = requests.get(repo_url, params=pull_args, auth=(ghuser,ghpass))
-        signal.alarm(0)
+        handle_url(repo_url, params=pull_args)
 
         #----------------------------------------------------------------------------
         # For every open PR:
         #----------------------------------------------------------------------------
         for shortpull in r.json():
- 
+
             # Do some nifty triage!
             if (int(shortpull['number']) <= int(startat)):
                 triage(shortpull['url'])
