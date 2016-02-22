@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/ansibull/ansibullbot.png?label=ready&title=Ready)](https://waffle.io/ansibull/ansibullbot)
 # Ansibull PR Bot
 
 ```
