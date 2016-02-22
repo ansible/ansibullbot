@@ -180,19 +180,18 @@ def triage(urlstring):
     # Look up the files in the local DB to see who maintains them.
     # (Warn if there's more than one; we can't handle that case yet.)
     #----------------------------------------------------------------------------
-    maintainer_found = ''
+    pr_maintainers = []
     if ghrepo == "core":
         f = open('MAINTAINERS-CORE.txt')
     elif ghrepo == "extras":
         f = open('MAINTAINERS-EXTRAS.txt')
     for line in f:
-        if pr_filename in line:
-            pr_maintainers = (line.split(': ')[-1]).rstrip()
-            maintainer_found = 'True'
-            break
+        owner_space = (line.split(': ')[0]).strip()
+        if owner_space in pr_filename:
+            maintainers_string = (line.split(': ')[-1]).strip()
+            for maintainer in maintainers_string.split(' '):
+                pr_maintainers.append(maintainer)
     f.close()
-    if not maintainer_found:
-        pr_maintainers = ''
 
     #----------------------------------------------------------------------------
     # Pull the list of labels on this PR and shove them into pr_labels.
@@ -212,7 +211,7 @@ def triage(urlstring):
     pr_submitter = pull['user']['login']
     print "  Labels: ", pr_labels
     print "  Submitter: ", pr_submitter
-    print "  Maintainer(s): ", pr_maintainers
+    print "  Maintainer(s): %s" % (', '.join(pr_maintainers))
     print "  Filename(s): ", pr_filename
     print " "
     if verbose:
