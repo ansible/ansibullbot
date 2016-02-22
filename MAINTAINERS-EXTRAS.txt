@@ -67,6 +67,8 @@ cloud/misc/proxmox_template.py: UnderGreen
 cloud/misc/virt.py: ansible
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
+cloud/openstack/os_keystone_domain.py: emonty shrews juliakreger j2sol rcarrillocruz
+cloud/openstack/os_project.py: emonty shrews juliakreger j2sol rcarrillocruz
 cloud/profitbricks/profitbricks.py: baldwinSPC
 cloud/profitbricks/profitbricks_datacenter.py: baldwinSPC
 cloud/profitbricks/profitbricks_nic.py: baldwinSPC
@@ -249,7 +251,7 @@ system/ohai.py: ansible
 system/open_iscsi.py: srvg
 system/osx_defaults.py: ansible
 system/pam_limits.py: usawa
-system/puppet.py: emonty
+system/puppet.py: emonty nibalizer
 system/selinux_permissive.py: mscherer
 system/seport.py: dankeder
 system/solaris_zone.py: pmarkham
