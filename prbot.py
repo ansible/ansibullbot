@@ -23,9 +23,10 @@ def handler(signum, frame):
 signal.signal(signal.SIGALRM, handler)
 
 parser = argparse.ArgumentParser(description='Triage various PR queues for Ansible. (NOTE: only useful if you have commit access to the repo in question.)')
-parser.add_argument("ghuser", type=str, help="Github username of triager")
-parser.add_argument("ghpass", type=str, help="Github password of triager")
-parser.add_argument("ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
+parser.add_argument("--ghuser", type=str, help="Github username of triager")
+parser.add_argument("--ghpass", type=str, help="Github password of triager. Mutually exclusive with ghtoken")
+parser.add_argument("--ghtoken", type=str, help="Github token of triager. Mutually exclusive with ghpass")
+parser.add_argument("--ghrepo", type=str, choices=['core','extras'], help="Repo to be triaged")
 parser.add_argument('--verbose', '-v', action='store_true', help="Verbose output")
 parser.add_argument('--debug', '-d', action='store_true', help="Debug output")
 parser.add_argument('--pause', '-p', action='store_true', help="Always pause between PRs")
@@ -38,7 +39,16 @@ args=parser.parse_args()
 #------------------------------------------------------------------------------------
 ghuser=args.ghuser
 ghpass=args.ghpass
+ghtoken=args.ghtoken
 ghrepo=args.ghrepo
+
+http_headers = {}
+http_auth = None
+if ghtoken:
+    http_headers = { 'Authorization': 'token ' + ghtoken }
+else:
+    http_auth = ( ghuser, ghpass )
+
 repo_url = 'https://api.github.com/repos/ansible/ansible-modules-' + ghrepo + '/pulls'
 if args.startat:
     startat = args.startat
@@ -81,6 +91,17 @@ boilerplate = {
     'submitter_second_warning': '@{s} Another friendly reminder: this pull request has been marked as needing your action. If you still believe that this PR applies, and you intend to address the issues with this PR, just let us know in the PR itself and we will keep it open. If we don\'t hear from you within another 14 days, we will close this pull request.'
 }
 
+def handle_url(urlstring, params=None, verify=False):
+    signal.alarm(5)
+    while True:
+        try:
+            result = requests.get(urlstring, headers=http_headers, params=params, auth=http_auth, verify=verify)
+            break # because pull worked
+        except:
+            print "Timeout, retrying..."
+    signal.alarm(0)
+    return result
+
 #------------------------------------------------------------------------------------
 # Here's the triage function. It takes a PR id and does all of the necessary triage
 # stuff.
@@ -93,14 +114,7 @@ def triage(urlstring):
     if verbose:
         print "URLSTRING: ", urlstring
 
-    signal.alarm(5)
-    while True:
-        try:
-            pull = requests.get(urlstring, auth=(ghuser,ghpass)).json()
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    pull = handle_url(urlstring).json()
 
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     # DEBUG: Dump JSON to /tmp for analysis if needed
@@ -123,14 +137,7 @@ def triage(urlstring):
     #----------------------------------------------------------------------------
     # Now pull the text of the diff.
 
-    signal.alarm(5)
-    while True:
-        try:
-            diff = requests.get(pull['diff_url'], auth=(ghuser,ghpass), verify=False).text
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    diff = handle_url(pull['diff_url']).text
 
     if debug:
         debugfileid = '/tmp/diff-' + str(pull['number'])
@@ -190,14 +197,7 @@ def triage(urlstring):
     #----------------------------------------------------------------------------
     # Pull the list of labels on this PR and shove them into pr_labels.
     #----------------------------------------------------------------------------
-    signal.alarm(5)
-    while True:
-        try:
-            issue = requests.get(pull['issue_url'], auth=(ghuser,ghpass)).json()
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    issue = handle_url(pull['issue_url']).json()
 
     # Print labels for now, so we know whether we're doing the right things
     for label in issue['labels']:
@@ -223,14 +223,7 @@ def triage(urlstring):
     # assess the actions that need to be taken and push them into a list. 
     # Get our comments, and set our empty actions list.
     #----------------------------------------------------------------------------
-    signal.alarm(5)
-    while True:
-        try:
-            comments = requests.get(pull['comments_url'], auth=(ghuser,ghpass), verify=False)
-            break # because pull worked
-        except:
-            print "Timeout, retrying..."
-    signal.alarm(0)
+    comments = handle_url(pull['comments_url'])
 
     actions = []
  
@@ -513,7 +506,7 @@ def triage(urlstring):
                     pr_actionurl = issue['labels_url'].split("{")[0] + "/" + oldlabel
                     # print "URL for DELETE: ", pr_actionurl
                     try:
-                        r = requests.delete(pr_actionurl, auth=(ghuser,ghpass))
+                        r = requests.delete(pr_actionurl, auth=http_auth, headers=http_headers)
                         # print r.text
                     except requests.exceptions.RequestException as e:
                         print e
@@ -527,7 +520,7 @@ def triage(urlstring):
                     # print "URL for POST: ", pr_actionurl
                     # print "  PAYLOAD: ", payload
                     try:
-                        r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
+                        r = requests.post(pr_actionurl, data=payload, auth=http_auth, headers=http_headers)
                         # print r.text
                     except requests.exceptions.RequestException as e:
                         print e
@@ -545,7 +538,7 @@ def triage(urlstring):
                 # print "  PAYLOAD: ", payload
                 try:
                     signal.alarm(5)
-                    r = requests.post(pr_actionurl, data=payload, auth=(ghuser, ghpass))
+                    r = requests.post(pr_actionurl, data=payload, auth=http_auth, headers=http_headers)
                     signal.alarm(0)
                     # print r.text
                 except requests.exceptions.RequestException as e:
@@ -574,9 +567,7 @@ if single_pr:
 else:
     # First, get number of pages using pagination in Link Headers. Thanks 
     # requests library for making this relatively easy!
-    signal.alarm(5)
-    r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
-    signal.alarm(0)
+    r = handle_url(repo_url)
     lastpage = int(str(r.links['last']['url']).split('=')[-1])
 
     # Set range for 1..2 for testing only
@@ -584,9 +575,7 @@ else:
 
     for page in range(1,lastpage):
         pull_args = {'state':'open', 'page':page}
-        signal.alarm(5)
-        r = requests.get(repo_url, params=pull_args, auth=(ghuser,ghpass))
-        signal.alarm(0)
+        handle_url(repo_url, params=pull_args)
 
         #----------------------------------------------------------------------------
         # For every open PR:
