@@ -151,11 +151,11 @@ monitoring/rollbar_deployment.py: kavu
 monitoring/sensu_check.py: andsens
 monitoring/stackdriver.py: bwhaley
 monitoring/uptimerobot.py: nate-kingsley
-monitoring/zabbix_group.py: cove harrisongu
-monitoring/zabbix_host.py: cove harrisongu
-monitoring/zabbix_hostmacro.py: ansible
-monitoring/zabbix_maintenance.py: abulimov
-monitoring/zabbix_screen.py: cove harrisongu
+monitoring/zabbix_group.py: eikef
+monitoring/zabbix_host.py: eikef
+monitoring/zabbix_hostmacro.py: eikef
+monitoring/zabbix_maintenance.py: eikef
+monitoring/zabbix_screen.py: eikef
 network/a10/a10_server.py: mischapeters
 network/a10/a10_service_group.py: mischapeters
 network/a10/a10_virtual_server.py: mischapeters
