@@ -122,6 +122,10 @@ inventory/group_by.py: jhoekx
 network/basics/get_url.py: jpmens
 network/basics/slurp.py: ansible
 network/basics/uri.py: romeotheriault
+network/eos/eos_command.py: privateip
+network/eos/eos_config.py: privateip
+network/eos/eos_eapi.py: chouseknecht
+network/eos/eos_template.py: privateip
 packaging/language/easy_install.py: mattupstate
 packaging/language/gem.py: ansible
 packaging/language/pip.py: mattupstate
