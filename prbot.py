@@ -577,10 +577,7 @@ else:
     signal.alarm(5)
     r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
     signal.alarm(0)
-    print "------->REPO_URL: ", repo_url #FIXME
-    print "------->STR R.LINKS: ", str(r.links) #FIXME
     lastpage = int(str(r.links['last']['url']).split('=')[-1])
-    exit (0) #FIXME
 
     # Set range for 1..2 for testing only
     # for page in range(1,2):
