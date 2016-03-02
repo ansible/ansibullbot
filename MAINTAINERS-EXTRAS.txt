@@ -15,6 +15,7 @@ cloud/amazon/ec2_vpc_subnet_facts.py: wimnat
 cloud/amazon/GUIDELINES.md: willthames wimnat
 cloud/amazon/ec2_win_password.py: rickmendes
 cloud/amazon/ecs_cluster.py: Java1Guy
+cloud/amazon/ecs_service_facts.py: Java1Guy
 cloud/amazon/ecs_task.py: Java1Guy
 cloud/amazon/ecs_taskdefinition.py: Java1Guy
 cloud/amazon/ecs_service.py: Java1Guy
@@ -37,27 +38,10 @@ cloud/centurylink/clc_modify_server.py: clc-runner
 cloud/centurylink/clc_publicip.py: clc-runner
 cloud/centurylink/clc_server.py: clc-runner
 cloud/centurylink/clc_server_snapshot.py: clc-runner
-cloud/cloudstack/cs_account.py: resmo
-cloud/cloudstack/cs_affinitygroup.py: resmo
-cloud/cloudstack/cs_domain.py: resmo
-cloud/cloudstack/cs_facts.py: resmo
-cloud/cloudstack/cs_firewall.py: resmo
-cloud/cloudstack/cs_instance.py: resmo
-cloud/cloudstack/cs_instancegroup.py: resmo
+cloud/cloudstack/: resmo
 cloud/cloudstack/cs_ip_address.py: dazworrall
-cloud/cloudstack/cs_iso.py: resmo
-cloud/cloudstack/cs_loadbalancer_rule.py: dazworrall resmo
-cloud/cloudstack/cs_loadbalancer_rule_member.py: dazworrall resmo
-cloud/cloudstack/cs_network.py: resmo
-cloud/cloudstack/cs_portforward.py: resmo
-cloud/cloudstack/cs_project.py: resmo
-cloud/cloudstack/cs_securitygroup.py: resmo
-cloud/cloudstack/cs_securitygroup_rule.py: resmo
-cloud/cloudstack/cs_sshkeypair.py: resmo
-cloud/cloudstack/cs_staticnat.py: resmo
-cloud/cloudstack/cs_template.py: resmo
-cloud/cloudstack/cs_user.py: resmo
-cloud/cloudstack/cs_vmsnapshot.py: resmo
+cloud/cloudstack/cs_loadbalancer_rule.py: dazworrall
+cloud/cloudstack/cs_loadbalancer_rule_member.py: dazworrall
 cloud/google/gce_img.py: tanpeter
 cloud/google/gce_tag.py: dohoangkhiemgmail.com
 cloud/lxc/lxc_container.py: cloudnull
