@@ -115,7 +115,7 @@ files/replace.py: EvanK
 files/stat.py: bpennypacker
 files/synchronize.py: tima
 files/template.py: ansible
-files/unarchive.py: pileofrogs
+files/unarchive.py: ansible
 files/xattr.py: ansible
 inventory/add_host.py: ansible
 inventory/group_by.py: jhoekx
