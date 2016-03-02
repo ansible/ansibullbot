@@ -235,7 +235,7 @@ system/modprobe.py: stygstra
 system/ohai.py: ansible
 system/open_iscsi.py: srvg
 system/osx_defaults.py: ansible
-system/pam_limits.py: usawa
+system/pam_limits.py: ansible
 system/puppet.py: emonty nibalizer
 system/selinux_permissive.py: mscherer
 system/seport.py: dankeder
