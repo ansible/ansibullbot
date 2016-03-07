@@ -96,7 +96,7 @@ clustering/consul_kv.py: sgargan
 clustering/consul_session.py: sgargan
 clustering/znode.py: treyperry
 commands/expect.py: sivel
-database/misc/mongodb_user.py: elliotttf
+database/misc/mongodb_user.py: lujeni elliotttf
 database/misc/redis.py: slok
 database/misc/riak.py: jsmartin drewkerrigan
 database/mysql/mysql_replication.py: banyek 
