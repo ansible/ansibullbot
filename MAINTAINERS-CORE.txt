@@ -28,7 +28,7 @@ cloud/amazon/rds_param_group.py: tastychutney scottanderson42
 cloud/amazon/rds_subnet_group.py: tastychutney scottanderson42
 cloud/amazon/route53.py: bpennypacker
 cloud/amazon/s3.py: ansible
-cloud/azure/azure.py: nitzmahome
+cloud/azure/azure.py: nitzmahone
 cloud/digital_ocean/digital_ocean.py: ansible
 cloud/digital_ocean/digital_ocean_domain.py: mgregson
 cloud/digital_ocean/digital_ocean_sshkey.py: mgregson
