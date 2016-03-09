@@ -153,6 +153,7 @@ network/f5/bigip_monitor_tcp.py: srvg
 network/f5/bigip_node.py: mhite
 network/f5/bigip_pool.py: mhite
 network/f5/bigip_pool_member.py: mhite
+network/f5/bigip_virtual_server.py: Etienne-Carriere
 network/haproxy.py: ravibhure
 network/ipify_facts.py: resmo
 network/lldp.py: andyhky
