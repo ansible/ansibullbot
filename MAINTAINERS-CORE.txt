@@ -20,7 +20,7 @@ cloud/amazon/ec2_vpc.py: carsongee
 cloud/amazon/ec2_vpc_net.py: ansible
 cloud/amazon/elasticache.py: jsdalton
 cloud/amazon/elasticache_subnet_group.py: timmahoney
-cloud/amazon/iam.py: seiffert
+cloud/amazon/iam.py: ansible
 cloud/amazon/iam_cert.py: ansible
 cloud/amazon/iam_policy.py: ansible
 cloud/amazon/rds.py: bpennypacker willthames
