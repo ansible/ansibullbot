@@ -385,6 +385,9 @@ class Triage:
                     self.debug(msg="...said needs_revision!")
                     self.pull_request.unlabeling_forced = True
                     self.pull_request.add_desired_label(name="needs_revision")
+                    self.pull_request.add_desired_comment(
+                        boilerplate="needs_revision"
+                    )
                     break
 
             if comment.user.login == self.pull_request.get_pr_submitter():
