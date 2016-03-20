@@ -57,17 +57,21 @@ MODULE_NAMESPACE_LABELS = {
 }
 
 # We don't remove any of these labels unless forced
-SKIP_UNLABELING_FOR_LABELS = [
+MUTUALLY_EXCLUSIVE_LABELS = [
     "shipit",
     "needs_revision",
     "needs_info",
+    "needs_rebase",
+    "community_review",
+    "core_review",
 ]
 
 # Static labels, manually added
 IGNORE_LABELS = [
     "feature_pull_request",
     "bugfix_pull_request",
-    "in progress"
+    "in progress",
+    "docs_pull_request",
 ]
 
 # We warn for human interaction
@@ -78,7 +82,8 @@ MANUAL_INTERACTION_LABELS = [
 
 BOTLIST = [
     'gregdek',
-    'robynbergeron'
+    'robynbergeron',
+    'resmo',
 ]
 
 
@@ -98,9 +103,6 @@ class PullRequest:
         self.pr_filenames = []
         self.current_pr_labels = []
         self.desired_pr_labels = []
-
-        # we have a few labels we don't touch unless forced
-        self.unlabeling_forced = False
 
         self.current_comments = []
         self.desired_comments = []
@@ -160,9 +162,27 @@ class PullRequest:
             self.current_comments = self.instance.get_issue_comments().reversed
         return self.current_comments
 
+    def resolve_desired_pr_labels(self, desired_pr_label):
+        """Resolves boilerplate the key labels to labels using an
+        alias dict
+        """
+        for resolved_desired_pr_label, aliases in ALIAS_LABELS.iteritems():
+            if desired_pr_label in aliases:
+                return resolved_desired_pr_label
+        return desired_pr_label
+
+    def process_mutually_exlusive_labels(self, name=None):
+        resolved_name = self.resolve_desired_pr_labels(name)
+        if resolved_name in MUTUALLY_EXCLUSIVE_LABELS:
+            for label in self.desired_pr_labels:
+                resolved_label = self.resolve_desired_pr_labels(label)
+                if resolved_label in MUTUALLY_EXCLUSIVE_LABELS:
+                    self.desired_pr_labels.remove(label)
+
     def add_desired_label(self, name=None):
         """Adds a label to the desired labels list"""
         if name and name not in self.desired_pr_labels:
+            self.process_mutually_exlusive_labels(name=name)
             self.desired_pr_labels.append(name)
 
     def add_desired_comment(self, boilerplate=None):
@@ -240,9 +260,14 @@ class Triage:
                             self.module_maintainers.extend(maintainers)
         return self.module_maintainers
 
+    def keep_current_main_labels(self):
+        current_labels = self.pull_request.get_current_labels()
+        for current_label in current_labels:
+            if current_label in MUTUALLY_EXCLUSIVE_LABELS:
+                self.pull_request.add_desired_label(name=current_label)
+
     def add_desired_labels_for_not_mergeable(self):
         """Adds labels for not mergeable conditions"""
-        self.pull_request.unlabeling_forced = True
         self.pull_request.add_desired_label(name="needs_rebase")
 
     def add_desired_labels_by_namespace(self):
@@ -276,6 +301,10 @@ class Triage:
 
         if "needs_revision" in self.pull_request.get_current_labels():
             self.debug(msg="needs revision labeled, skipping maintainer")
+            return
+
+        if "core_review" in self.pull_request.get_current_labels():
+            self.debug(msg="Forced core review, skipping maintainer")
             return
 
         if self.pull_request.get_pr_submitter() in module_maintainers:
@@ -376,14 +405,10 @@ class Triage:
                     self.debug(msg="...said shipit!")
                     self.pull_request.unlabeling_forced = True
                     self.pull_request.add_desired_label(name="shipit")
-                    self.pull_request.add_desired_comment(
-                        boilerplate="shipit"
-                    )
                     break
 
                 elif "needs_revision" in comment.body:
                     self.debug(msg="...said needs_revision!")
-                    self.pull_request.unlabeling_forced = True
                     self.pull_request.add_desired_label(name="needs_revision")
                     break
 
@@ -392,7 +417,6 @@ class Triage:
                            (comment.user.login, comment.created_at))
                 if "ready_for_review" in comment.body:
                     self.debug(msg="...ready for review!")
-                    self.pull_request.unlabeling_forced = True
                     if "ansible" in module_maintainers:
                         self.debug(msg="core does the review!")
                         self.pull_request.add_desired_label(
@@ -411,15 +435,6 @@ class Triage:
                         )
                     break
         self.debug(msg="--- END Processing Comments")
-
-    def resolve_desired_pr_labels(self, desired_pr_label):
-        """Resolves boilerplate the key labels to labels using an
-        alias dict
-        """
-        for resolved_desired_pr_label, aliases in ALIAS_LABELS.iteritems():
-            if desired_pr_label in aliases:
-                return resolved_desired_pr_label
-        return desired_pr_label
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
@@ -450,7 +465,7 @@ class Triage:
             # back or alternatively the label we gave as input
             # e.g. label: community_review_existing -> community_review
             # e.g. label: community_review -> community_review
-            resolved_desired_pr_label = self.resolve_desired_pr_labels(
+            resolved_desired_pr_label = self.pull_request.resolve_desired_pr_labels(
                 desired_pr_label
             )
 
@@ -468,24 +483,21 @@ class Triage:
                     # Use the previous label as key for the boilerplate dict
                     self.pull_request.add_desired_comment(desired_pr_label)
                     self.actions['newlabel'].append(resolved_desired_pr_label)
-
-            # it is a real label, no comment needs to be added
+            # it is a real label
             else:
                 resolved_desired_pr_labels.append(desired_pr_label)
                 if (desired_pr_label not in
                         self.pull_request.get_current_labels()):
                     self.actions['newlabel'].append(desired_pr_label)
+                    # how about a boilerplate with that label name?
+                    if os.path.exists("templates/" + desired_pr_label + ".j2"):
+                        self.pull_request.add_desired_comment(desired_pr_label)
 
         # unlabel action
         for current_pr_label in self.pull_request.get_current_labels():
 
             # some labels we just ignore
             if current_pr_label in IGNORE_LABELS:
-                continue
-
-            # some of them we ignore unless forced
-            if (not self.pull_request.unlabeling_forced and
-                    current_pr_label in SKIP_UNLABELING_FOR_LABELS):
                 continue
 
             # now check if we need to unlabel
@@ -513,11 +525,12 @@ class Triage:
         print("Created at %s" % self.pull_request.instance.created_at)
         print("Updated at %s" % self.pull_request.instance.updated_at)
 
-        # add desired labels
+        self.keep_current_main_labels()
+        self.add_desired_labels_by_namespace()
+        self.add_desired_labels_by_gitref()
+
         if self.pull_request.is_mergeable():
             self.debug(msg="PR is mergeable")
-            self.add_desired_labels_by_namespace()
-            self.add_desired_labels_by_gitref()
             self.add_desired_labels_by_maintainers()
             # process comments after labels
             self.process_comments()
