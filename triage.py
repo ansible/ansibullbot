@@ -72,6 +72,7 @@ IGNORE_LABELS = [
     "bugfix_pull_request",
     "in progress",
     "docs_pull_request",
+    "easyfix"
 ]
 
 # We warn for human interaction
