@@ -403,7 +403,7 @@ class Triage:
                            "( %s )" % comment.user.login)
                 break
 
-            if comment.user.login in module_maintainers:
+            if comment.user.login.lower() in module_maintainers:
                 self.debug(msg="%s is module maintainer commented on %s." %
                            (comment.user.login, comment.created_at))
 
