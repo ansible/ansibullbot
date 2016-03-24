@@ -116,6 +116,21 @@ class PullRequest:
                 self.pr_filenames.append(pr_file.filename)
         return self.pr_filenames
 
+    def get_last_commit(self):
+        """Returns last commit"""
+        commits = self.instance.get_commits().reversed
+        for commit in commits:
+            return commit
+
+    def get_build_status(self):
+        """Return build status object"""
+        last_commit = self.get_last_commit()
+        if last_commit:
+            build_statuses = last_commit.get_statuses()
+            for build_status in build_statuses:
+                return build_status
+        return None
+
     def get_pr_submitter(self):
         """Returns the PR submitter"""
         return self.instance.user.login
@@ -291,6 +306,16 @@ class Triage:
             self.debug(msg="backport requested")
             self.pull_request.add_desired_label(name="core_review")
             self.pull_request.add_desired_label(name="backport")
+
+    def add_desired_label_by_build_state(self):
+        """Adds label regarding build state of last commit"""
+        build_status = self.pull_request.get_build_status()
+        if build_status:
+            self.debug(msg="Build state is %s" % build_status.state)
+            if build_status.state == "failure":
+                self.pull_request.add_desired_label(name="needs_revision")
+        else:
+            self.debug(msg="No build state")
 
     def add_desired_labels_by_maintainers(self):
         """Adds labels regarding maintainer infos"""
@@ -547,6 +572,8 @@ class Triage:
         else:
             self.debug(msg="PR is not mergeable")
             self.add_desired_labels_for_not_mergeable()
+
+        self.add_desired_label_by_build_state()
 
         self.create_actions()
 
