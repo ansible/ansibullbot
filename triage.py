@@ -20,6 +20,7 @@ from __future__ import print_function
 import argparse
 import os
 import sys
+import time
 from datetime import datetime
 
 from github import Github
@@ -135,6 +136,11 @@ class PullRequest:
 
     def is_mergeable(self):
         """Return True if PR is mergeable"""
+        while self.instance.mergeable_state == "unknown":
+            print("Mergeable state is unknown, trying again...")
+            time.sleep(1)
+            self.instance = self.repo.get_pull(self.pr_number)
+            time.sleep(1)
         return self.instance.mergeable_state != "dirty"
 
     def get_base_ref(self):
