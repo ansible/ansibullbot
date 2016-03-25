@@ -436,7 +436,6 @@ class Triage:
                 if ("shipit" in comment.body or "+1" in comment.body
                     or "LGTM" in comment.body):
                     self.debug(msg="...said shipit!")
-                    self.pull_request.unlabeling_forced = True
                     self.pull_request.add_desired_label(name="shipit")
                     break
 
