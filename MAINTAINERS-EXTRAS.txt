@@ -120,13 +120,10 @@ network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
-network/f5/bigip_facts.py: mhite 
+network/f5/: mhite
 network/f5/bigip_gtm_wide_ip.py: perzizzle
 network/f5/bigip_monitor_http.py: srvg
 network/f5/bigip_monitor_tcp.py: srvg
-network/f5/bigip_node.py: mhite
-network/f5/bigip_pool.py: mhite
-network/f5/bigip_pool_member.py: mhite
 network/f5/bigip_virtual_server.py: Etienne-Carriere
 network/haproxy.py: ravibhure
 network/ipify_facts.py: resmo
