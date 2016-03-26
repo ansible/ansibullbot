@@ -83,11 +83,7 @@ monitoring/rollbar_deployment.py: kavu
 monitoring/sensu_check.py: andsens
 monitoring/stackdriver.py: bwhaley
 monitoring/uptimerobot.py: nate-kingsley
-monitoring/zabbix_group.py: eikef
-monitoring/zabbix_host.py: eikef
-monitoring/zabbix_hostmacro.py: eikef
-monitoring/zabbix_maintenance.py: eikef
-monitoring/zabbix_screen.py: eikef
+monitoring/zabbix_: eikef
 network/a10/: mischapeters
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
