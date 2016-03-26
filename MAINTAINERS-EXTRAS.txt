@@ -48,11 +48,7 @@ cloud/profitbricks/profitbricks_nic.py: baldwinSPC
 cloud/profitbricks/profitbricks_volume.py: baldwinSPC
 cloud/profitbricks/profitbricks_volume_attachments.py: baldwinSPC
 cloud/rackspace/rax_clb_ssl.py: smashwilson
-cloud/rackspace/rax_mon_alarm.py: smashwilson
-cloud/rackspace/rax_mon_check.py: smashwilson
-cloud/rackspace/rax_mon_entity.py: smashwilson
-cloud/rackspace/rax_mon_notification.py: smashwilson
-cloud/rackspace/rax_mon_notification_plan.py: smashwilson
+cloud/rackspace/: smashwilson
 cloud/vmware/: chrrrles
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: jcpowermac mtnbikenc
