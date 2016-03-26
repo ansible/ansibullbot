@@ -97,9 +97,7 @@ monitoring/zabbix_host.py: eikef
 monitoring/zabbix_hostmacro.py: eikef
 monitoring/zabbix_maintenance.py: eikef
 monitoring/zabbix_screen.py: eikef
-network/a10/a10_server.py: mischapeters
-network/a10/a10_service_group.py: mischapeters
-network/a10/a10_virtual_server.py: mischapeters
+network/a10/: mischapeters
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
