@@ -89,11 +89,7 @@ database/misc/riak.py: jsmartin drewkerrigan
 database/mysql/mysql_replication.py: banyek 
 database/postgresql/postgresql_ext.py: dschep
 database/postgresql/postgresql_lang.py: jensdepuydt
-database/vertica/vertica_configuration.py: dareko
-database/vertica/vertica_facts.py: dareko
-database/vertica/vertica_role.py: dareko
-database/vertica/vertica_schema.py: dareko
-database/vertica/vertica_user.py: dareko
+database/vertica/: dareko
 files/patch.py: jirutka luisperlaz
 messaging/rabbitmq_binding.py: manuel-sousa
 messaging/rabbitmq_exchange.py: manuel-sousa
