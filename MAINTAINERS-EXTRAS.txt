@@ -80,10 +80,7 @@ cloud/webfaction/webfaction_domain.py: quentinsf
 cloud/webfaction/webfaction_mailbox.py: quentinsf
 cloud/webfaction/webfaction_site.py: quentinsf
 cloud/xenserver_facts.py: andyhky
-clustering/consul.py: sgargan
-clustering/consul_acl.py: sgargan
-clustering/consul_kv.py: sgargan
-clustering/consul_session.py: sgargan
+clustering/consul: sgargan
 clustering/znode.py: treyperry
 commands/expect.py: sivel
 database/misc/mongodb_user.py: lujeni 
