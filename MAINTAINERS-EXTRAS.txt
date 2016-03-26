@@ -28,16 +28,7 @@ cloud/amazon/s3_logging.py: wimnat
 cloud/amazon/sns_topic.py: joelthompson
 cloud/amazon/sqs_queue.py: loia
 cloud/amazon/sts_assume_role.py: bekelchik
-cloud/centurylink/clc_aa_policy.py: clc-runner
-cloud/centurylink/clc_alert_policy.py: clc-runner
-cloud/centurylink/clc_blueprint_package.py: clc-runner
-cloud/centurylink/clc_firewall_policy.py: clc-runner
-cloud/centurylink/clc_group.py: clc-runner
-cloud/centurylink/clc_loadbalancer.py: clc-runner
-cloud/centurylink/clc_modify_server.py: clc-runner
-cloud/centurylink/clc_publicip.py: clc-runner
-cloud/centurylink/clc_server.py: clc-runner
-cloud/centurylink/clc_server_snapshot.py: clc-runner
+cloud/centurylink/: clc-runner
 cloud/cloudstack/: resmo dazworrall
 cloud/docker/docker_login.py: olsaki
 cloud/google/gce_img.py: tanpeter
