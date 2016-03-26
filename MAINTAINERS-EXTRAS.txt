@@ -87,14 +87,8 @@ database/postgresql/postgresql_ext.py: dschep
 database/postgresql/postgresql_lang.py: jensdepuydt
 database/vertica/: dareko
 files/patch.py: jirutka luisperlaz
-messaging/rabbitmq_binding.py: manuel-sousa
-messaging/rabbitmq_exchange.py: manuel-sousa
-messaging/rabbitmq_parameter.py: chrishoffman
-messaging/rabbitmq_plugin.py: chrishoffman
+messaging/rabbitmq: manuel-sousa chrishoffman
 messaging/rabbitmq_policy.py: retr0h
-messaging/rabbitmq_queue.py: manuel-sousa 
-messaging/rabbitmq_user.py: chrishoffman
-messaging/rabbitmq_vhost.py: chrishoffman
 monitoring/airbrake_deployment.py: bpennypacker
 monitoring/bigpanda.py: hkariti
 monitoring/boundary_meter.py: ccollicutt
