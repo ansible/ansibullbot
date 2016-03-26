@@ -53,36 +53,20 @@ cloud/rackspace/rax_mon_check.py: smashwilson
 cloud/rackspace/rax_mon_entity.py: smashwilson
 cloud/rackspace/rax_mon_notification.py: smashwilson
 cloud/rackspace/rax_mon_notification_plan.py: smashwilson
-cloud/vmware/vca_fw.py: privateip chrrrles
-cloud/vmware/vca_nat.py: privateip chrrrles
-cloud/vmware/vca_vapp.py: privateip chrrrles
-cloud/vmware/vmware_cluster.py: jcpowermac chrrrles
-cloud/vmware/vmware_datacenter.py: jcpowermac chrrrles
-cloud/vmware/vmware_dns_config.py: jcpowermac chrrrles
-cloud/vmware/vmware_dvs_host.py: jcpowermac chrrrles
-cloud/vmware/vmware_dvs_portgroup.py: jcpowermac chrrrles
-cloud/vmware/vmware_dvswitch.py: jcpowermac chrrrles
-cloud/vmware/vmware_host.py: mtnbikenc chrrrles
-cloud/vmware/vmware_migrate_vmk.py: mtnbikenc chrrrles
-cloud/vmware/vmware_portgroup.py: mtnbikenc chrrrles
-cloud/vmware/vmware_target_canonical_facts.py: jcpowermac chrrrles
-cloud/vmware/vmware_vm_facts.py: jcpowermac chrrrles
+cloud/vmware/: chrrrles
+cloud/vmware/vca_: privateip
+cloud/vmware/vmware_: jcpowermac mtnbikenc
 cloud/vmware/vmware_vm_shell.py: ritzk chrrrles
-cloud/vmware/vmware_vm_vss_dvs_migrate.py: jcpowermac chrrrles
-cloud/vmware/vmware_vmkernel.py: mtnbikenc chrrrles
-cloud/vmware/vmware_vmkernel_ip_config.py: mtnbikenc chrrrles
-cloud/vmware/vmware_vsan_cluster.py: mtnbikenc chrrrles
-cloud/vmware/vmware_vswitch.py: mtnbikenc chrrrles
-cloud/vmware/vsphere_copy.py: dagwieers chrrrles
+cloud/vmware/vsphere_copy.py: dagwieers
 cloud/webfaction/: quentinsf
 cloud/xenserver_facts.py: andyhky
 clustering/consul: sgargan
 clustering/znode.py: treyperry
 commands/expect.py: sivel
-database/misc/mongodb_user.py: lujeni 
+database/misc/mongodb_user.py: lujeni
 database/misc/redis.py: slok
 database/misc/riak.py: jsmartin drewkerrigan
-database/mysql/mysql_replication.py: banyek 
+database/mysql/mysql_replication.py: banyek
 database/postgresql/postgresql_ext.py: dschep
 database/postgresql/postgresql_lang.py: jensdepuydt
 database/vertica/: dareko
@@ -95,10 +79,10 @@ monitoring/boundary_meter.py: ccollicutt
 monitoring/circonus_annotation.py: NickatEpic
 monitoring/datadog_event.py:# Author: arturaz
 monitoring/datadog_event.py: arturaz
-monitoring/datadog_monitor.py: skornehl 
+monitoring/datadog_monitor.py: skornehl
 monitoring/librato_annotation.py: sedward
 monitoring/logentries.py: ivanvanderbyl
-monitoring/monit.py: brian-brazil dstoflet 
+monitoring/monit.py: brian-brazil dstoflet
 monitoring/nagios.py: tbielawa
 monitoring/newrelic_deployment.py: mcodd
 monitoring/pagerduty.py: suprememoocow thaumos
@@ -134,21 +118,21 @@ network/openvswitch_db.py: ansible
 network/openvswitch_port.py: stygstra
 network/snmp_facts.py: ogenstad
 notification/campfire.py: fabulops
-notification/flowdock.py: mcodd 
+notification/flowdock.py: mcodd
 notification/grove.py: zimbatm
 notification/hall.py: bkimble
 notification/hipchat.py: pb8226
 notification/irc.py: jpmens sivel
 notification/jabber.py: bcoca
-notification/mail.py: dagwieers 
-notification/mqtt.py: jpmens 
+notification/mail.py: dagwieers
+notification/mqtt.py: jpmens
 notification/nexmo.py: sivel
 notification/osx_say.py: ansible
 notification/pushbullet.py: willybarro
 notification/pushover.py: weaselkeeper
 notification/sendgrid.py: makaimc
 notification/slack.py: ramondelafuente
-notification/sns.py: mjschultz 
+notification/sns.py: mjschultz
 notification/twilio.py: makaimc
 notification/typetalk.py: tksmd
 packaging/dpkg_selections.py: brian-brazil
@@ -161,7 +145,7 @@ packaging/language/maven_artifact.py: chrisisbeef
 packaging/language/npm.py: chrishoffman
 packaging/language/pear.py: gentledevil
 packaging/os/dnf.py: ignatenkobrain DJMuggs
-packaging/os/homebrew.py: indrajitr 
+packaging/os/homebrew.py: indrajitr
 packaging/os/homebrew_cask.py: indrajitr
 packaging/os/homebrew_tap.py: indrajitr
 packaging/os/layman.py: jirutka
@@ -172,7 +156,7 @@ packaging/os/pacman.py: indrajitr
 packaging/os/pkg5.py: mavit
 packaging/os/pkg5_publisher.py: mavit
 packaging/os/pkgin.py: L2G szinck
-packaging/os/pkgng.py: bleader 
+packaging/os/pkgng.py: bleader
 packaging/os/pkgutil.py: dermute
 packaging/os/portage.py: sayap
 packaging/os/portinstall.py: berenddeboer
