@@ -42,12 +42,7 @@ cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
 cloud/openstack/os_keystone_domain.py: emonty shrews juliakreger j2sol rcarrillocruz
 cloud/openstack/os_project.py: emonty shrews juliakreger j2sol rcarrillocruz
-cloud/profitbricks/profitbricks.py: baldwinSPC
-cloud/profitbricks/profitbricks_datacenter.py: baldwinSPC
-cloud/profitbricks/profitbricks_nic.py: baldwinSPC
-cloud/profitbricks/profitbricks_volume.py: baldwinSPC
-cloud/profitbricks/profitbricks_volume_attachments.py: baldwinSPC
-cloud/rackspace/rax_clb_ssl.py: smashwilson
+cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson
 cloud/vmware/: chrrrles
 cloud/vmware/vca_: privateip
