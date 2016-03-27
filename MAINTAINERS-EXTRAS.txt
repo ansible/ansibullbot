@@ -40,8 +40,7 @@ cloud/misc/proxmox_template.py: UnderGreen
 cloud/misc/virt.py: ansible
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
-cloud/openstack/os_keystone_domain.py: emonty shrews juliakreger j2sol rcarrillocruz
-cloud/openstack/os_project.py: emonty shrews juliakreger j2sol rcarrillocruz
+cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz
 cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson
 cloud/vmware/: chrrrles
