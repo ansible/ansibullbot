@@ -79,6 +79,7 @@ cloud/vmware/vmware_migrate_vmk.py: mtnbikenc chrrrles
 cloud/vmware/vmware_portgroup.py: mtnbikenc chrrrles
 cloud/vmware/vmware_target_canonical_facts.py: jcpowermac chrrrles
 cloud/vmware/vmware_vm_facts.py: jcpowermac chrrrles
+cloud/vmware/vmware_vm_shell.py: ritzk chrrrles
 cloud/vmware/vmware_vm_vss_dvs_migrate.py: jcpowermac chrrrles
 cloud/vmware/vmware_vmkernel.py: mtnbikenc chrrrles
 cloud/vmware/vmware_vmkernel_ip_config.py: mtnbikenc chrrrles
