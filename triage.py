@@ -379,6 +379,8 @@ class Triage:
 
         self.debug(msg="--- START Processing Comments:")
 
+        last_commit_date = self.pull_request.get_build_status().updated_at
+
         for comment in comments:
 
             # Is the last useful comment from a bot user?  Then we've got a
@@ -386,6 +388,11 @@ class Triage:
             if comment.user.login in BOTLIST:
 
                 self.debug(msg="%s is in botlist: " % comment.user.login)
+
+                if last_commit_date > comment.updated_at:
+                    self.debug(msg="Newer commits then last comment of %s, continuing" %
+                               comment.user.login)
+                    continue
 
                 today = datetime.today()
                 time_delta = today - comment.created_at
@@ -452,13 +459,24 @@ class Triage:
                     # if maintainer was the submitter:
                     if comment.user.login == self.pull_request.get_pr_submitter():
                         self.pull_request.add_desired_label(name="shipit_owner_pr")
+                    elif last_commit_date > comment.updated_at:
+                        self.debug(msg="...but we have newer commits. Ignoring!")
+                        self.pull_request.add_desired_label(
+                            name="community_review_existing"
+                        )
                     else:
                         self.pull_request.add_desired_label(name="shipit")
                     break
 
                 elif "needs_revision" in comment.body:
                     self.debug(msg="...said needs_revision!")
-                    self.pull_request.add_desired_label(name="needs_revision")
+                    if last_commit_date > comment.updated_at:
+                        self.debug(msg="...but we have newer commits. Ignoring!")
+                        self.pull_request.add_desired_label(
+                            name="community_review_existing"
+                        )
+                    else:
+                        self.pull_request.add_desired_label(name="needs_revision")
                     break
 
             if comment.user.login == self.pull_request.get_pr_submitter():
