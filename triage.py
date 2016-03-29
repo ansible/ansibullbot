@@ -428,23 +428,20 @@ class Triage:
                            "( %s )" % comment.user.login)
                 break
 
-            if comment.user.login.lower() in module_maintainers:
+            if (comment.user.login in module_maintainers
+                or comment.user.login.lower() in module_maintainers):
                 self.debug(msg="%s is module maintainer commented on %s." %
                            (comment.user.login, comment.created_at))
 
                 if ("shipit" in comment.body or "+1" in comment.body
                     or "LGTM" in comment.body):
                     self.debug(msg="...said shipit!")
-                    self.pull_request.unlabeling_forced = True
                     self.pull_request.add_desired_label(name="shipit")
                     break
 
                 elif "needs_revision" in comment.body:
                     self.debug(msg="...said needs_revision!")
                     self.pull_request.add_desired_label(name="needs_revision")
-                    self.pull_request.add_desired_comment(
-                        boilerplate="needs_revision"
-                    )
                     break
 
             if comment.user.login == self.pull_request.get_pr_submitter():
