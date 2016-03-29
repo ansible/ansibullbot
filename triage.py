@@ -553,7 +553,7 @@ class Triage:
         self.module_maintainers = []
         # print some general infos about the PR to be processed
         print("\nPR #%s: %s" % (self.pull_request.pr_number,
-                                self.pull_request.instance.title))
+                                (self.pull_request.instance.title).encode('ascii','ignore')))
         print("Created at %s" % self.pull_request.instance.created_at)
         print("Updated at %s" % self.pull_request.instance.updated_at)
 
