@@ -327,9 +327,8 @@ class Triage:
             self.debug(msg="plugin is new")
             self.pull_request.add_desired_label(name="new_plugin")
 
-        if "ansible" in module_maintainers:
-            self.debug(msg="ansible in module maintainers")
-            self.pull_request.add_desired_label(name="core_review_existing")
+        if "needs_info" in self.pull_request.get_current_labels():
+            self.debug(msg="needs info labeled, skipping maintainer")
             return
 
         if "needs_revision" in self.pull_request.get_current_labels():
@@ -338,6 +337,11 @@ class Triage:
 
         if "core_review" in self.pull_request.get_current_labels():
             self.debug(msg="Forced core review, skipping maintainer")
+            return
+
+        if "ansible" in module_maintainers:
+            self.debug(msg="ansible in module maintainers")
+            self.pull_request.add_desired_label(name="core_review_existing")
             return
 
         if self.pull_request.get_pr_submitter() in module_maintainers:
