@@ -346,7 +346,7 @@ class Triage:
             return
 
         if self.pull_request.get_pr_submitter() in module_maintainers:
-            self.debug(msg="plugin by owner, communtiy review as owner_pr")
+            self.debug(msg="plugin by owner, community review as owner_pr")
             self.pull_request.add_desired_label(name="owner_pr")
             self.pull_request.add_desired_label(name="community_review_owner_pr")
             return
