@@ -38,7 +38,8 @@ ALIAS_LABELS = {
     ],
     'community_review': [
         'community_review_existing',
-        'community_review_new'
+        'community_review_new',
+        'community_review_owner_pr',
     ],
     'shipit': [
         'shipit_owner_pr'
@@ -345,9 +346,9 @@ class Triage:
             return
 
         if self.pull_request.get_pr_submitter() in module_maintainers:
-            self.debug(msg="plugin by owner, shipit as owner_pr")
+            self.debug(msg="plugin by owner, communtiy review as owner_pr")
             self.pull_request.add_desired_label(name="owner_pr")
-            self.pull_request.add_desired_label(name="shipit_owner_pr")
+            self.pull_request.add_desired_label(name="community_review_owner_pr")
             return
 
         if "shipit" in self.pull_request.get_current_labels():
@@ -441,7 +442,11 @@ class Triage:
                 if ("shipit" in comment.body or "+1" in comment.body
                     or "LGTM" in comment.body):
                     self.debug(msg="...said shipit!")
-                    self.pull_request.add_desired_label(name="shipit")
+                    # if maintainer was the submitter:
+                    if comment.user.login == self.pull_request.get_pr_submitter():
+                        self.pull_request.add_desired_label(name="shipit_owner_pr")
+                    else:
+                        self.pull_request.add_desired_label(name="shipit")
                     break
 
                 elif "needs_revision" in comment.body:
