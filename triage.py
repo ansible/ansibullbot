@@ -362,6 +362,11 @@ class Triage:
             self.pull_request.add_desired_label(name="community_review_owner_pr")
             return
 
+        if not module_maintainers and not pr_contains_new_file:
+            self.debug(msg="unknown maintainer.")
+            self.pull_request.add_desired_comment(boilerplate="maintainer_unknown")
+            return
+
         if not module_maintainers and pr_contains_new_file:
             self.debug(msg="New plugin, no module maintainer yet")
             self.pull_request.add_desired_label(name="community_review_new")
