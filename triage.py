@@ -569,11 +569,11 @@ class Triage:
 
         self.keep_current_main_labels()
         self.add_desired_labels_by_namespace()
-        self.add_desired_labels_by_gitref()
 
         if self.pull_request.is_mergeable():
             self.debug(msg="PR is mergeable")
             self.add_desired_labels_by_maintainers()
+            self.add_desired_labels_by_gitref()
             # process comments after labels
             self.process_comments()
         else:
