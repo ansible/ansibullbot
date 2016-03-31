@@ -160,6 +160,12 @@ class PullRequest:
             time.sleep(1)
         return self.instance.mergeable_state != "dirty"
 
+    def is_a_wip(self):
+        """Return True if PR start with [WIP] in title"""
+        return (self.instance.title.startswith("[WIP]")
+                or self.instance.title.startswith("WIP:")
+                or self.instance.title.startswith("WIP "))
+
     def get_base_ref(self):
         """Returns base ref of PR"""
         return self.instance.base.ref
@@ -571,7 +577,10 @@ class Triage:
         self.add_desired_labels_by_namespace()
         self.add_desired_labels_by_gitref()
 
-        if self.pull_request.is_mergeable():
+        if self.pull_request.is_a_wip():
+            self.debug(msg="PR is a work-in-progress")
+            self.pull_request.add_desired_label(name="work_in_progress")
+        elif self.pull_request.is_mergeable():
             self.debug(msg="PR is mergeable")
             self.add_desired_labels_by_maintainers()
             # process comments after labels
