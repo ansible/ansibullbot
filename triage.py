@@ -324,6 +324,10 @@ class Triage:
         module_maintainers = self.get_module_maintainers()
         pr_contains_new_file = self.pull_request.pr_contains_new_file()
 
+        if "shipit" in self.pull_request.get_current_labels():
+            self.debug(msg="shipit labeled, skipping maintainer")
+            return
+
         if pr_contains_new_file:
             self.debug(msg="plugin is new")
             self.pull_request.add_desired_label(name="new_plugin")
@@ -350,10 +354,6 @@ class Triage:
             self.debug(msg="plugin by owner, community review as owner_pr")
             self.pull_request.add_desired_label(name="owner_pr")
             self.pull_request.add_desired_label(name="community_review_owner_pr")
-            return
-
-        if "shipit" in self.pull_request.get_current_labels():
-            self.debug(msg="shipit labeled, skipping maintainer")
             return
 
         if not module_maintainers and pr_contains_new_file:
