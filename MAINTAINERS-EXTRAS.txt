@@ -139,7 +139,7 @@ packaging/os/opkg.py: skinp
 packaging/os/pacman.py: indrajitr
 packaging/os/pkg5.py: mavit
 packaging/os/pkg5_publisher.py: mavit
-packaging/os/pkgin.py: L2G szinck
+packaging/os/pkgin.py: L2G szinck troy2914
 packaging/os/pkgng.py: JoergFiedler 
 packaging/os/pkgutil.py: dermute
 packaging/os/portage.py: sayap
