@@ -23,9 +23,10 @@ try:
 except:
     lastpage = 1
 
-# Iterate through pages
-
 total_prs = 0
+latest_module_string = ''
+oldest_module_string = ''
+oldest_module_time = time.time()
 
 for page in range(1,lastpage):
     pull_args = {'state':'open', 'page':page}
@@ -33,7 +34,18 @@ for page in range(1,lastpage):
 
     for issue in r.json():
         total_prs += 1
+        issue_time = time.mktime((time.strptime(issue['created_at'], "%Y-%m-%dT%H:%M:%SZ")))
+        issue_age = int((time.time()-issue_time)/86400)
+        if issue_age < 7:
+            latest_module_string += issue['title'] + "\n"
+            latest_module_string += issue['html_url'] + "\n\n"
+        if issue_time < oldest_module_time:
+            oldest_module_time = issue_time
+            oldest_module_string = issue['title'] + " (" + str(issue_age) + " days old)\n" + issue['html_url']+ "\n\n"
+            
 
 # Final report
 print "Total PRs: ", total_prs
+print "Latest new module PRs this week: \n", latest_module_string
+print "Oldest new module PR: \n", oldest_module_string
 
