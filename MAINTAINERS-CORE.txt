@@ -143,7 +143,7 @@ utilities/logic/include_vars.py: bennojoy
 utilities/logic/pause.py: tbielawa
 utilities/logic/set_fact.py: dagwieers
 utilities/logic/wait_for.py: gregswift
-web_infrastructure/apache2_module.py: berendt
+web_infrastructure/apache2_module.py: robinro
 web_infrastructure/django_manage.py: tastychutney scottanderson42
 web_infrastructure/htpasswd.py: ansible
 web_infrastructure/supervisorctl.py: mattupstate inetfuture
