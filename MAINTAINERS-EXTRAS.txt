@@ -150,7 +150,7 @@ packaging/os/swdepot.py: melodous
 packaging/os/urpmi.py: pmakowski
 packaging/os/yumrepo.py: jtyr
 packaging/os/yum_repository.py: jtyr
-packaging/os/zypper.py: dirtyharrycallahan
+packaging/os/zypper.py: ansible
 packaging/os/zypper_repository.py: matze
 source_control/bzr.py: andreparames
 source_control/github_hooks.py: pcgentry
