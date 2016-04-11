@@ -87,7 +87,6 @@ MANUAL_INTERACTION_LABELS = [
 BOTLIST = [
     'gregdek',
     'robynbergeron',
-    'resmo',
 ]
 
 
