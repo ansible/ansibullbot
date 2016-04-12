@@ -87,7 +87,6 @@ MANUAL_INTERACTION_LABELS = [
 BOTLIST = [
     'gregdek',
     'robynbergeron',
-    'resmo',
 ]
 
 
@@ -360,6 +359,11 @@ class Triage:
             self.debug(msg="plugin by owner, community review as owner_pr")
             self.pull_request.add_desired_label(name="owner_pr")
             self.pull_request.add_desired_label(name="community_review_owner_pr")
+            return
+
+        if not module_maintainers and not pr_contains_new_file:
+            self.debug(msg="unknown maintainer.")
+            self.pull_request.add_desired_comment(boilerplate="maintainer_unknown")
             return
 
         if not module_maintainers and pr_contains_new_file:
