@@ -11,7 +11,12 @@
 #  * In loop: Pick out oldest unreviewed PRs by issue['created_at'] (in community review)
 #  * Be sure to include individual URLs ['pull_request']['html_url']
 
-import requests, json, sys, argparse, time
+import os, requests, json, sys, argparse, time
+
+from jinja2 import Environment, FileSystemLoader
+
+loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
+environment = Environment(loader=loader, trim_blocks=True)
 
 repo_url = 'https://api.github.com/repos/ansible/ansible-modules-extras/issues?labels=new_plugin'
 args = {'state':'open', 'page':1}
@@ -48,4 +53,8 @@ for page in range(1,lastpage):
 print "Total PRs: ", total_prs
 print "Latest new module PRs this week: \n", latest_module_string
 print "Oldest new module PR: \n", oldest_module_string
+
+template = environment.get_template('new_issue_alert.j2')
+comment = template.render(total_prs=total_prs, latest_module_string=latest_module_string, oldest_module_string = oldest_module_string)
+print comment
 
