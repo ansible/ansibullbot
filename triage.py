@@ -34,7 +34,8 @@ environment = Environment(loader=loader, trim_blocks=True)
 # label.
 ALIAS_LABELS = {
     'core_review': [
-        'core_review_existing'
+        'core_review_existing',
+        'core_review_adopt_me'
     ],
     'community_review': [
         'community_review_existing',
@@ -360,6 +361,11 @@ class Triage:
             self.pull_request.add_desired_label(name="core_review_existing")
             return
 
+        if "adopt_me" in module_maintainers:
+            self.debug(msg="module has adopt_me as maintainer")
+            self.pull_request.add_desired_label(name="core_review_adopt_me")
+            return
+
         if (self.pull_request.get_pr_submitter() in module_maintainers
             or self.pull_request.get_pr_submitter().lower() in module_maintainers):
             self.debug(msg="plugin by owner, community review as owner_pr")
@@ -486,6 +492,11 @@ class Triage:
                         self.pull_request.add_desired_label(
                             name="core_review_existing"
                         )
+                    elif "adopt_me" in module_maintainers:
+                        self.debug(msg="core does the review!")
+                        self.pull_request.add_desired_label(
+                            name="core_review_adopt_me"
+                        )
                     elif not module_maintainers:
                         self.debug(msg="community does the review!")
                         self.pull_request.add_desired_label(
@@ -498,6 +509,11 @@ class Triage:
                             name="community_review_existing"
                         )
                     break
+
+            if "adopt_me" in module_maintainers and "adopt_me" in comment.body:
+                self.debug(msg="%s commented with adopt_me" % comment.user.login)
+                self.pull_request.add_desired_label(name="pending_action")
+
         self.debug(msg="--- END Processing Comments")
 
     def render_comment(self, boilerplate=None):
