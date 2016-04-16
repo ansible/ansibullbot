@@ -596,8 +596,7 @@ class Triage:
             # process comments after labels
             self.process_comments()
             self.add_desired_labels_for_not_mergeable()
-
-        self.add_desired_label_by_build_state()
+            self.add_desired_label_by_build_state()
 
         self.create_actions()
 
