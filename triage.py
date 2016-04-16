@@ -44,6 +44,9 @@ ALIAS_LABELS = {
     'shipit': [
         'shipit_owner_pr'
     ],
+    'needs_revision': [
+        'needs_revision_not_mergeable'
+    ]
 }
 
 MAINTAINERS_FILES = {
@@ -63,7 +66,6 @@ MUTUALLY_EXCLUSIVE_LABELS = [
     "shipit",
     "needs_revision",
     "needs_info",
-    "needs_rebase",
     "community_review",
     "core_review",
 ]
@@ -297,7 +299,11 @@ class Triage:
 
     def add_desired_labels_for_not_mergeable(self):
         """Adds labels for not mergeable conditions"""
-        self.pull_request.add_desired_label(name="needs_rebase")
+        if not self.pull_request.is_mergeable():
+            self.debug(msg="PR is not mergeable")
+            self.pull_request.add_desired_label(name="needs_revision_not_mergeable")
+        else:
+            self.debug(msg="PR is mergeable")
 
     def add_desired_labels_by_namespace(self):
         """Adds labels regarding module namespaces"""
@@ -584,14 +590,11 @@ class Triage:
         if self.pull_request.is_a_wip():
             self.debug(msg="PR is a work-in-progress")
             self.pull_request.add_desired_label(name="work_in_progress")
-        elif self.pull_request.is_mergeable():
-            self.debug(msg="PR is mergeable")
+        else:
             self.add_desired_labels_by_maintainers()
             self.add_desired_labels_by_gitref()
             # process comments after labels
             self.process_comments()
-        else:
-            self.debug(msg="PR is not mergeable")
             self.add_desired_labels_for_not_mergeable()
 
         self.add_desired_label_by_build_state()
