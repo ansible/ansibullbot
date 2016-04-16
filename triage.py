@@ -329,13 +329,13 @@ class Triage:
         module_maintainers = self.get_module_maintainers()
         pr_contains_new_file = self.pull_request.pr_contains_new_file()
 
-        if "shipit" in self.pull_request.get_current_labels():
-            self.debug(msg="shipit labeled, skipping maintainer")
-            return
-
         if pr_contains_new_file:
             self.debug(msg="plugin is new")
             self.pull_request.add_desired_label(name="new_plugin")
+
+        if "shipit" in self.pull_request.get_current_labels():
+            self.debug(msg="shipit labeled, skipping maintainer")
+            return
 
         if "needs_info" in self.pull_request.get_current_labels():
             self.debug(msg="needs info labeled, skipping maintainer")
