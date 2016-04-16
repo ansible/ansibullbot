@@ -465,6 +465,11 @@ class Triage:
                     self.pull_request.add_desired_label(name="needs_revision")
                     break
 
+                elif "needs_info" in comment.body:
+                    self.debug(msg="...said needs_info!")
+                    self.pull_request.add_desired_label(name="needs_info")
+                    break
+
             if comment.user.login == self.pull_request.get_pr_submitter():
                 self.debug(msg="%s is PR submitter commented on %s." %
                            (comment.user.login, comment.created_at))
