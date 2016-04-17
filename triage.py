@@ -46,6 +46,9 @@ ALIAS_LABELS = {
     ],
     'needs_revision': [
         'needs_revision_not_mergeable'
+    ],
+    'pending_action': [
+        'pending_action_close_me'
     ]
 }
 
@@ -494,6 +497,10 @@ class Triage:
                 elif "needs_info" in comment.body:
                     self.debug(msg="...said needs_info!")
                     self.pull_request.add_desired_label(name="needs_info")
+
+                elif "close_me" in comment_body:
+                    self.debug(msg="...said close_me!")
+                    self.pull_request.add_desired_label(name="pending_action_close_me")
                     break
 
             if comment.user.login == self.pull_request.get_pr_submitter():
