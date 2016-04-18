@@ -316,26 +316,6 @@ class Triage:
                 if key == namespace:
                     self.pull_request.add_desired_label(value)
 
-    def add_labels_by_issue_type(self):
-        """Adds labels by issue type"""
-        body = self.pull_request.instance.body
-        if ("New Module Pull Request" in body
-            or "new_plugin" in self.pull_request.desired_pr_labels):
-            self.debug(msg="New Module Pull Request")
-            return
-
-        if "Bugfix Pull Request" in body:
-            self.debug(msg="Bugfix Pull Request")
-            self.pull_request.add_desired_label(name="bugfix_pull_request")
-
-        if "Docs Pull Request" in body:
-            self.debug(msg="Docs Pull Request")
-            self.pull_request.add_desired_label(name="docs_pull_request")
-
-        if "Feature Pull Request" in body:
-            self.debug(msg="Feature Pull Request")
-            self.pull_request.add_desired_label(name="feature_pull_request")
-
     def add_desired_labels_by_gitref(self):
         """Adds labels regarding gitref"""
         if "stable" in self.pull_request.get_base_ref():
@@ -629,7 +609,6 @@ class Triage:
             self.process_comments()
             self.add_desired_labels_for_not_mergeable()
             self.add_desired_label_by_build_state()
-            self.add_labels_by_issue_type()
 
         self.create_actions()
 
