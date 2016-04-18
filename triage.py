@@ -498,7 +498,7 @@ class Triage:
                     self.debug(msg="...said needs_info!")
                     self.pull_request.add_desired_label(name="needs_info")
 
-                elif "close_me" in comment_body:
+                elif "close_me" in comment.body:
                     self.debug(msg="...said close_me!")
                     self.pull_request.add_desired_label(name="pending_action_close_me")
                     break
