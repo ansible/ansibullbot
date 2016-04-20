@@ -1,4 +1,4 @@
-cloud/amazon/cloudtrail.py: ansible
+cloud/amazon/cloudtrail.py: adopt_me
 cloud/amazon/dynamodb_table.py: loia
 cloud/amazon/ec2_ami_copy.py: amir343
 cloud/amazon/ec2_elb_facts.py: mjschultz
@@ -37,7 +37,7 @@ cloud/lxc/lxc_container.py: cloudnull
 cloud/misc/ovirt.py: karmab
 cloud/misc/proxmox.py: UnderGreen
 cloud/misc/proxmox_template.py: UnderGreen
-cloud/misc/virt.py: ansible
+cloud/misc/virt.py: adopt_me
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
 cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz
@@ -84,7 +84,7 @@ monitoring/stackdriver.py: bwhaley
 monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
 network/a10/: mischapeters
-network/citrix/netscaler.py: ansible
+network/citrix/netscaler.py: adopt_me
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
@@ -98,7 +98,7 @@ network/ipify_facts.py: resmo
 network/lldp.py: andyhky
 network/nmcli.py: alcamie101
 network/openvswitch_bridge.py: stygstra
-network/openvswitch_db.py: ansible
+network/openvswitch_db.py: adopt_me
 network/openvswitch_port.py: stygstra
 network/snmp_facts.py: ogenstad
 notification/campfire.py: fabulops
@@ -111,7 +111,7 @@ notification/jabber.py: bcoca
 notification/mail.py: dagwieers
 notification/mqtt.py: jpmens
 notification/nexmo.py: sivel
-notification/osx_say.py: ansible
+notification/osx_say.py: adopt_me
 notification/pushbullet.py: willybarro
 notification/pushover.py: weaselkeeper
 notification/sendgrid.py: makaimc
@@ -140,7 +140,7 @@ packaging/os/pacman.py: indrajitr
 packaging/os/pkg5.py: mavit
 packaging/os/pkg5_publisher.py: mavit
 packaging/os/pkgin.py: L2G szinck troy2914
-packaging/os/pkgng.py: JoergFiedler 
+packaging/os/pkgng.py: JoergFiedler
 packaging/os/pkgutil.py: dermute
 packaging/os/portage.py: sayap
 packaging/os/portinstall.py: berenddeboer
@@ -150,7 +150,7 @@ packaging/os/swdepot.py: melodous
 packaging/os/urpmi.py: pmakowski
 packaging/os/yumrepo.py: jtyr
 packaging/os/yum_repository.py: jtyr
-packaging/os/zypper.py: ansible
+packaging/os/zypper.py: adopt_me
 packaging/os/zypper_repository.py: matze
 source_control/bzr.py: andreparames
 source_control/github_hooks.py: pcgentry
@@ -161,7 +161,7 @@ system/capabilities.py: natefoo
 system/cronvar.py: dougluce
 system/crypttab.py: groks
 system/debconf.py: bcoca
-system/facter.py: ansible
+system/facter.py: adopt_me
 system/filesystem.py: abulimov
 system/firewalld.py: maxamillion
 system/getent.py: bcoca
@@ -173,10 +173,10 @@ system/locale_gen.py: AugustusKling
 system/lvg.py: abulimov
 system/lvol.py: jhoekx abulimov
 system/modprobe.py: stygstra
-system/ohai.py: ansible
+system/ohai.py: adopt_me
 system/open_iscsi.py: srvg
-system/osx_defaults.py: ansible
-system/pam_limits.py: ansible
+system/osx_defaults.py: adopt_me
+system/pam_limits.py: adopt_me
 system/puppet.py: emonty nibalizer
 system/selinux_permissive.py: mscherer
 system/seport.py: dankeder
@@ -198,8 +198,8 @@ windows/win_environment.py: jhawkesworth
 windows/win_environment.ps1: jhawkesworth
 windows/win_firewall_rule.py: TimothyVandenbrande
 windows/win_firewall_rule.ps1: TimothyVandenbrande
-windows/win_iis_virtualdirectory.py: ansible
-windows/win_iis_virtualdirectory.ps1: ansible
+windows/win_iis_virtualdirectory.py: adopt_me
+windows/win_iis_virtualdirectory.ps1: adopt_me
 windows/win_iis_webapplication.py: whenrik
 windows/win_iis_webapplication.ps1: whenrik
 windows/win_iis_webapppool.py: whenrik
