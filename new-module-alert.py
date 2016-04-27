@@ -50,11 +50,11 @@ for page in range(1,lastpage):
             
 
 # Final report
-print "Total PRs: ", total_prs
-print "Latest new module PRs this week: \n", latest_module_string
-print "Oldest new module PR: \n", oldest_module_string
+#print "Total PRs: ", total_prs
+#print "Latest new module PRs this week: \n", latest_module_string
+#print "Oldest new module PR: \n", oldest_module_string
 
 template = environment.get_template('new_issue_alert.j2')
 comment = template.render(total_prs=total_prs, latest_module_string=latest_module_string, oldest_module_string = oldest_module_string)
-print comment
+print comment.encode('ascii','ignore')
 
