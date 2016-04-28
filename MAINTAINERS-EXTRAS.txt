@@ -88,7 +88,7 @@ network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
-network/f5/: mhite
+network/f5/: mhite caphrim007
 network/f5/bigip_gtm_wide_ip.py: perzizzle
 network/f5/bigip_monitor_http.py: srvg
 network/f5/bigip_monitor_tcp.py: srvg
