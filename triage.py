@@ -48,7 +48,8 @@ ALIAS_LABELS = {
         'needs_revision_not_mergeable'
     ],
     'pending_action': [
-        'pending_action_close_me'
+        'pending_action_close_me',
+        'pending_maintainer_unknown'
     ]
 }
 
@@ -397,7 +398,7 @@ class Triage:
 
         if not module_maintainers and not pr_contains_new_file:
             self.debug(msg="unknown maintainer.")
-            self.pull_request.add_desired_comment(boilerplate="maintainer_unknown")
+            self.pull_request.add_desired_label(name="pending_maintainer_unknown")
             return
 
         if not module_maintainers and pr_contains_new_file:
