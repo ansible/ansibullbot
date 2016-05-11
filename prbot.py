@@ -1,7 +1,8 @@
 #!/usr/bin/python
 
-# THIS IS STILL NOT A GREAT SCRIPT
-# (maybe one day it will be a good one)
+# THIS IS NOW DEPRECATED
+# Use triage.py instead
+# (In fact, I should throw this out)
 
 # TODOs:
 #   * Fix handling of multi-file PRs (and decide policy)
