@@ -43,7 +43,7 @@ cloud/misc/virt_pool.py: drybjed
 cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz
 cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson
-cloud/softlwayer/sl_vm: mcltn
+cloud/softlwayer/sl_vm.py: mcltn
 cloud/vmware/: chrrrles
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: jcpowermac mtnbikenc
