@@ -301,6 +301,10 @@ class Triage:
             if current_label in MUTUALLY_EXCLUSIVE_LABELS:
                 self.pull_request.add_desired_label(name=current_label)
 
+    def is_ansible_member(self, login):
+        user = self._connect().get_user(login)
+        return self._connect().get_organization("ansible").has_in_members(user)
+
     def add_desired_labels_for_not_mergeable(self):
         """Adds labels for not mergeable conditions"""
         if not self.pull_request.is_mergeable():
@@ -531,6 +535,28 @@ class Triage:
                             name="community_review_existing"
                         )
                     break
+
+            if (comment.user.login not in BOTLIST
+                and self.is_ansible_member(comment.user.login)):
+
+                self.debug(msg="%s is a ansible member" % comment.user.login)
+
+                if ("shipit" in comment.body or "+1" in comment.body
+                    or "LGTM" in comment.body):
+                    self.debug(msg="...said shipit!")
+                    self.pull_request.add_desired_label(name="shipit")
+                    break
+
+                elif "needs_revision" in comment.body:
+                    self.debug(msg="...said needs_revision!")
+                    self.pull_request.add_desired_label(name="needs_revision")
+                    break
+
+                elif "needs_info" in comment.body:
+                    self.debug(msg="...said needs_info!")
+                    self.pull_request.add_desired_label(name="needs_info")
+                    break
+
         self.debug(msg="--- END Processing Comments")
 
     def render_comment(self, boilerplate=None):
