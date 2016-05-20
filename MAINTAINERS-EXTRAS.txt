@@ -68,8 +68,7 @@ monitoring/airbrake_deployment.py: bpennypacker
 monitoring/bigpanda.py: hkariti
 monitoring/boundary_meter.py: ccollicutt
 monitoring/circonus_annotation.py: NickatEpic
-monitoring/datadog_event.py:# Author: arturaz
-monitoring/datadog_event.py: arturaz
+monitoring/datadog_event.py: n0ts
 monitoring/datadog_monitor.py: skornehl
 monitoring/librato_annotation.py: sedward
 monitoring/logentries.py: ivanvanderbyl
