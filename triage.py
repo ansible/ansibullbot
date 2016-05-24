@@ -118,15 +118,15 @@ BOTLIST = [
 class TriageError(Exception):
     pass
 
-# class PullRequest:
+# TODO: There should probably be a base class here that
+#       Issue and PullRequest subclass
 
 class Issue(object):
-    # FIXME: need a issue specific map
+    issue_type_name = 'Issue'
     alias_labels = ISSUE_ALIAS_LABELS
     mutually_exclusive_labels = ISSUE_MUTUALLY_EXCLUSIVE_LABELS
     manual_interaction_labels = ISSUE_MANUAL_INTERACTION_LABELS
     module_namespace_labels = MODULE_NAMESPACE_LABELS
-    issue_type_name = 'Issue'
 
     def __init__(self, repo, number=None, issue=None):
         self.repo = repo
@@ -259,8 +259,10 @@ class Issue(object):
 
 
 class PullRequest(Issue):
-    alias_labels = PR_ALIAS_LABELS
     issue_type_name = 'Pull Request'
+    alias_labels = PR_ALIAS_LABELS
+    mutually_exclusive_labels = PR_MUTUALLY_EXCLUSIVE_LABELS
+    manual_interaction_labels = PR_MANUAL_INTERACTION_LABELS
 
     def __init__(self, repo, number=None, issue=None):
         super(PullRequest, self).__init__(repo=repo, number=number, issue=issue)
@@ -314,6 +316,7 @@ class PullRequest(Issue):
         """Returns base ref of PR"""
         return self.instance.base.ref
 
+# TODO: Could also use a base super class here
 
 class TriageIssue:
     issue_type_class = Issue
@@ -343,6 +346,7 @@ class TriageIssue:
 
     def _connect(self):
         """Connects to GitHub's API"""
+        # TODO: support getting token from os.environ or a config file.
         return Github(login_or_token=self.github_token or self.github_user,
                       password=self.github_pass)
 
@@ -365,6 +369,8 @@ class TriageIssue:
 
     # TODO: once we can guess at which files/modules are involved in an issue
     #       we could implement this like TriagePullRequest
+    #       The guessing would like involved parsing any playbook snippets, tracebacks,
+    #       and possibly any quoted ansible-playbook output.
     def get_module_maintainers(self):
         return []
 
@@ -375,6 +381,10 @@ class TriageIssue:
         return self.issue.get_comments()
 
     def find_tracebacks(self, body):
+        # TODO: add a body wrapper object that will convert embedded new lines
+        #       to real new lines, so tbgrep has a better chance of finding them.
+        #       -or- patch tbgrep to do the same
+
         tracebacks = tbgrep.tracebacks_from_lines(body.splitlines())
         for traceback in tracebacks:
             log.debug('TRACEBACK=%s', traceback)
@@ -604,6 +614,20 @@ class TriageIssue:
         print("Actions: %s" % self.actions)
 
     def apply_actions(self):
+        # TODO: maybe change to a functional style approach?
+        #       iterate over the actions, filter away dry-run and skipped.
+        #       Maybe provide a callback for the interactive prompting?
+        #
+        #       def confirm_execute_action_callback(self, action, label):
+        #           if self.dry_run:
+        #              return False
+        #           if self.force:
+        #              return True
+        #           confirm_actions = ('newlabel', 'unlabel', 'comments')
+        #           if label in confirm_actions:
+        #              confirmed = self.do_action_prompt()
+        #              return confirmed
+        #
         if self.dry_run:
             print('--dry-run is set so skipping actions')
             log.debug("Would have run the following actions:")
@@ -648,17 +672,19 @@ class TriageIssue:
         repo = self._connect().get_repo("ansible/ansible-modules-%s" %
                                         self.github_repo)
 
-        issue_type_class = self.issue_type_class
+        # TODO: a 'issue_builder' method that does the right thing likely
+        #       makes more sense that self.issue_type_class pointing to the
+        #       right associated issue class
         if self.number:
-            self.issue = issue_type_class(repo=repo,
-                                          number=self.number)
+            self.issue = self.issue_type_class(repo=repo,
+                                               number=self.number)
             self.process()
         else:
             issues = self.get_all(repo)
             for issue in issues:
                 if self.start_at and issue.number > self.start_at:
                     continue
-                self.issue = issue_type_class(repo=repo, issue=issue)
+                self.issue = self.issue_type_class(repo=repo, issue=issue)
                 self.process()
 
 
@@ -787,6 +813,11 @@ class TriagePullRequest(TriageIssue):
 
         for comment in comments:
 
+            # TODO: move all of this into a process_comment method and
+            #       quite possibly it's own class. Maybe multiple classes
+            #       The classes would take a comment and return a list of actions
+            #       to perform. Maybe even split 'figure out current state' and 'build
+            #       the actions to move to the next state'.
             # Is the last useful comment from a bot user?  Then we've got a
             # potential timeout case. Let's explore!
             if comment.user.login in BOTLIST:
@@ -927,6 +958,9 @@ class TriagePullRequest(TriageIssue):
         """Adds labels by issue type"""
         body = self.issue.instance.body
 
+        # TODO: similar to process_comment, this takes the issue body
+        #       and figures out current state and the actions needed to
+        #       get it to the desired state.
         if not body:
             self.debug(msg="PR has no description")
             return
