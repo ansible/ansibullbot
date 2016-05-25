@@ -104,6 +104,7 @@ network/eos/eos_eapi.py: chouseknecht
 network/eos/eos_template.py: privateip
 network/ios/: privateip
 network/junos/: privateip
+network/nxos/: privateip GGabriele
 network/openswitch/: privateip
 packaging/language/easy_install.py: mattupstate
 packaging/language/gem.py: ansible
