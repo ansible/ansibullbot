@@ -214,6 +214,8 @@ windows/win_package.py: trondhindenes
 windows/win_package.ps1: trondhindenes
 windows/win_regedit.py: joshludwig smadam813
 windows/win_regedit.ps1: joshludwig smadam813
+windows/win_regmerge.py: jhawkesworth
+windows/win_regmerge.ps1: jhawkesworth
 windows/win_scheduled_task.ps1: petemounce
 windows/win_scheduled_task.py: petemounce
 windows/win_unzip.py: schwartzmx
