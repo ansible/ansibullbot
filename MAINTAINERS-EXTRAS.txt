@@ -96,6 +96,7 @@ network/f5/bigip_virtual_server.py: Etienne-Carriere
 network/haproxy.py: ravibhure
 network/ipify_facts.py: resmo
 network/lldp.py: andyhky
+network/netconf/netconf_config.py: lpenz
 network/nmcli.py: alcamie101
 network/openvswitch_bridge.py: stygstra
 network/openvswitch_db.py: ansible
@@ -188,6 +189,7 @@ web_infrastructure/deploy_helper.py: ramondelafuente
 web_infrastructure/ejabberd_user.py: privateip
 web_infrastructure/jboss.py: jhoekx
 web_infrastructure/jira.py: tarka
+web_infrastructure/letsencrypt.py: mgruener
 windows/win_acl.py: schwartzmx trondhindenes
 windows/win_acl.ps1: schwartzmx trondhindenes
 windows/win_chocolatey.py: smadam813
