@@ -82,6 +82,7 @@ IGNORE_LABELS = [
     "docs_pull_request",
     "easyfix",
     "pending_action",
+    "gce",
 ]
 
 # We warn for human interaction
