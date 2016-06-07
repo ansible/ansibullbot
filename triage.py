@@ -83,6 +83,7 @@ IGNORE_LABELS = [
     "easyfix",
     "pending_action",
     "gce",
+    "python3",
 ]
 
 # We warn for human interaction
