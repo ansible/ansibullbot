@@ -23,6 +23,7 @@ import sys
 import time
 from datetime import datetime
 
+# remember to pip install PyGithub, kids!
 from github import Github
 
 from jinja2 import Environment, FileSystemLoader
