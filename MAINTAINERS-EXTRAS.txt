@@ -34,7 +34,7 @@ cloud/docker/docker_login.py: olsaki
 cloud/google/gce_img.py: tanpeter
 cloud/google/gce_tag.py: dohoangkhiemgmail.com
 cloud/lxc/lxc_container.py: cloudnull
-cloud/misc/ovirt.py: karmab
+cloud/misc/ovirt.py: joshainglis karmab
 cloud/misc/proxmox.py: UnderGreen
 cloud/misc/proxmox_template.py: UnderGreen
 cloud/misc/virt.py: ansible
