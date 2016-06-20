@@ -62,6 +62,7 @@ MAINTAINERS_FILES = {
 # modules having files starting like the key, will get the value label
 MODULE_NAMESPACE_LABELS = {
     'cloud': "cloud",
+    'cloud/google': "gce",
     'windows': "windows",
     'network': "networking"
 }
