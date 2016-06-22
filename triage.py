@@ -63,6 +63,9 @@ MAINTAINERS_FILES = {
 MODULE_NAMESPACE_LABELS = {
     'cloud': "cloud",
     'cloud/google': "gce",
+    'cloud/amazon': "aws",
+    'cloud/azure': "azure",
+    'cloud/digital_ocean': "digital_ocean",
     'windows': "windows",
     'network': "networking"
 }
