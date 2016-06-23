@@ -1,6 +1,7 @@
 cloud/amazon/cloudtrail.py: ansible
 cloud/amazon/dynamodb_table.py: loia
 cloud/amazon/ec2_ami_copy.py: amir343
+cloud/amazon/ec2_customer_gateway.py: michaelbaydoun
 cloud/amazon/ec2_elb_facts.py: mjschultz
 cloud/amazon/ec2_eni.py: wimnat
 cloud/amazon/ec2_eni_facts.py: wimnat
