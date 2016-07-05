@@ -54,6 +54,7 @@ cloud/xenserver_facts.py: andyhky
 clustering/consul: sgargan
 clustering/znode.py: treyperry
 commands/expect.py: sivel
+database/influxdb/: kamsz
 database/misc/mongodb_user.py: lujeni
 database/misc/redis.py: slok
 database/misc/riak.py: jsmartin drewkerrigan
