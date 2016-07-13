@@ -213,7 +213,7 @@ class PullRequest:
                 return resolved_desired_pr_label
         return desired_pr_label
 
-    def process_mutually_exlusive_labels(self, name=None):
+    def process_mutually_exclusive_labels(self, name=None):
         resolved_name = self.resolve_desired_pr_labels(name)
         if resolved_name in MUTUALLY_EXCLUSIVE_LABELS:
             for label in self.desired_pr_labels:
@@ -224,7 +224,7 @@ class PullRequest:
     def add_desired_label(self, name=None):
         """Adds a label to the desired labels list"""
         if name and name not in self.desired_pr_labels:
-            self.process_mutually_exlusive_labels(name=name)
+            self.process_mutually_exclusive_labels(name=name)
             self.desired_pr_labels.append(name)
 
     def add_desired_comment(self, boilerplate=None):
