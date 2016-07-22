@@ -3,8 +3,8 @@
 
 ```
 usage: triage.py [-h] [--gh-user GH_USER] [--gh-pass GH_PASS]
-                 [--gh-token GH_TOKEN] [--verbose] [--force] [--debug]
-                 [--pause] [--pr PR] [--start-at START_AT]
+                 [--gh-token GH_TOKEN] [--dry-run] [--verbose] [--force]
+                 [--debug] [--pause] [--pr PR] [--start-at START_AT]
                  {core,extras}
 
 Triage various PR queues for Ansible. (NOTE: only useful if you have commit
@@ -21,6 +21,7 @@ optional arguments:
                         Github password of triager
   --gh-token GH_TOKEN, -T GH_TOKEN
                         Github token of triager
+  --dry-run, -n         Do not apply any changes.
   --verbose, -v         Verbose output
   --force, -f           Do not ask questions
   --debug, -d           Debug output

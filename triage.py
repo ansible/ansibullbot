@@ -248,7 +248,7 @@ class PullRequest:
 class Triage:
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, pr_number=None,
-                 start_at_pr=None, always_pause=False, force=False):
+                 start_at_pr=None, always_pause=False, force=False, dry_run=False):
         self.verbose = verbose
         self.github_user = github_user
         self.github_pass = github_pass
@@ -258,6 +258,7 @@ class Triage:
         self.start_at_pr = start_at_pr
         self.always_pause = always_pause
         self.force = force
+        self.dry_run = dry_run
 
         self.pull_request = None
         self.maintainers = {}
@@ -681,15 +682,18 @@ class Triage:
 
         if (self.actions['newlabel'] or self.actions['unlabel'] or
                 self.actions['comments']):
-            if self.force:
-                print("Running actions non-interactive as you forced.")
-                self.execute_actions()
-                return
-            cont = raw_input("Take recommended actions (y/N/a)? ")
-            if cont in ('a', 'A'):
-                sys.exit(0)
-            if cont in ('Y', 'y'):
-                self.execute_actions()
+            if self.dry_run:
+                print("Dry-run specified, skipping execution of actions")
+            else:
+                if self.force:
+                    print("Running actions non-interactive as you forced.")
+                    self.execute_actions()
+                    return
+                cont = raw_input("Take recommended actions (y/N/a)? ")
+                if cont in ('a', 'A'):
+                    sys.exit(0)
+                if cont in ('Y', 'y'):
+                    self.execute_actions()
         elif self.always_pause:
             print("Skipping, but pause.")
             cont = raw_input("Continue (Y/n/a)? ")
@@ -742,6 +746,8 @@ def main():
                         help="Github password of triager")
     parser.add_argument("--gh-token", "-T", type=str,
                         help="Github token of triager")
+    parser.add_argument("--dry-run", "-n", action="store_true",
+                        help="Do not apply any changes.")
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output")
     parser.add_argument("--force", "-f", action="store_true",
@@ -776,6 +782,7 @@ def main():
         start_at_pr=args.start_at,
         always_pause=args.pause,
         force=args.force,
+        dry_run=args.dry_run,
     )
     triage.run()
 
