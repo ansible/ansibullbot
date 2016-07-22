@@ -2,19 +2,29 @@
 # Ansibull PR Bot
 
 ```
-usage: prbot.py [-h] [--verbose] [--debug] [--pr PR]
-                ghuser ghpass {core,extras}
+usage: triage.py [-h] [--gh-user GH_USER] [--gh-pass GH_PASS]
+                 [--gh-token GH_TOKEN] [--verbose] [--force] [--debug]
+                 [--pause] [--pr PR] [--start-at START_AT]
+                 {core,extras}
 
-Triage various PR queues for Ansible.
+Triage various PR queues for Ansible. (NOTE: only useful if you have commit
+access to the repo in question.)
 
 positional arguments:
-  ghuser         Github username of triager
-  ghpass         Github password of triager
-  {core,extras}  Repo to be triaged
+  {core,extras}         Repo to be triaged
 
 optional arguments:
-  -h, --help     show this help message and exit
-  --verbose, -v  Verbose output
-  --debug, -d    Debug output
-  --pr PR        Triage only the specified pr
+  -h, --help            show this help message and exit
+  --gh-user GH_USER, -u GH_USER
+                        Github username or token of triager
+  --gh-pass GH_PASS, -P GH_PASS
+                        Github password of triager
+  --gh-token GH_TOKEN, -T GH_TOKEN
+                        Github token of triager
+  --verbose, -v         Verbose output
+  --force, -f           Do not ask questions
+  --debug, -d           Debug output
+  --pause, -p           Always pause between PRs
+  --pr PR               Triage only the specified pr
+  --start-at START_AT   Start triage at the specified pr
 ```
