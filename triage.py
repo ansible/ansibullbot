@@ -28,6 +28,9 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from utils.moduletools import ModuleIndexer
+from utils.extractors import extract_template_data
+
 loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
 
@@ -245,7 +248,7 @@ class PullRequest:
         self.get_issue().create_comment(comment)
 
 
-class Triage:
+class TriagePullRequests:
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, pr_number=None,
                  start_at_pr=None, always_pause=False, force=False, dry_run=False):
@@ -732,6 +735,205 @@ class Triage:
                 self.process()
 
 
+class IssueWrapper(object):
+
+    def __init__(self, repo=None, issue=None):
+        self.repo = repo
+        self.instance = issue
+        self.number = self.instance.number
+        self.current_labels = []
+        self.desired_labels = []
+        self.current_comments = []
+        self.desired_comments = []
+
+    def get_submitter(self):
+        """Returns the submitter"""
+        return self.instance.user.login
+
+    def get_current_labels(self):
+        """Pull the list of labels on this Issue"""
+        if not self.current_labels:
+            labels = self.instance.labels
+            for label in labels:
+                self.current_labels.append(label.name)
+        return self.current_labels
+
+    def get_template_data(self):
+        """Extract templated data from an issue body"""
+        tdict = extract_template_data(self.instance.body)
+        return tdict
+
+
+class TriageIssues:
+
+    def __init__(self, verbose=None, github_user=None, github_pass=None,
+                 github_token=None, github_repo=None, number=None,
+                 start_at=None, always_pause=False, force=False, dry_run=False):
+        self.verbose = verbose
+        self.github_user = github_user
+        self.github_pass = github_pass
+        self.github_token = github_token
+        self.github_repo = github_repo
+        self.number = number
+        self.start_at = start_at
+        self.always_pause = always_pause
+        self.force = force
+        self.dry_run = dry_run
+
+        self.issue = None
+        self.maintainers = {}
+        self.module_maintainers = []
+        self.actions = {
+            'newlabel': [],
+            'unlabel':  [],
+            'comments': [],
+        }
+
+        self.module_indexer = ModuleIndexer()
+        self.module_indexer.get_ansible_modules()
+
+    def _connect(self):
+        """Connects to GitHub's API"""
+        return Github(login_or_token=self.github_token or self.github_user,
+                      password=self.github_pass)
+
+    def is_pr(self, issue):
+        if '/pull/' in issue.html_url:
+            return True
+        else:
+            return False
+
+    def _get_maintainers(self):
+        """Reads all known maintainers from files and their owner namespace"""
+        if not self.maintainers:
+            f = open(MAINTAINERS_FILES[self.github_repo])
+            for line in f:
+                owner_space = (line.split(': ')[0]).strip()
+                maintainers_string = (line.split(': ')[-1]).strip()
+                self.maintainers[owner_space] = maintainers_string.split(' ')
+            f.close()
+        return self.maintainers
+
+    def debug(self, msg=""):
+        """Prints debug message if verbosity is given"""
+        if self.verbose:
+            print("Debug: " + msg)
+
+    def get_module_maintainers(self):
+        """Returns the dict of maintainers using the key as owner namespace"""
+        if self.module_maintainers:
+            return self.module_maintainers
+        module = self.template_data.get('component name', None)
+        if not module:
+            self.module_maintainers = []
+            return self.module_maintainers
+
+        if not self.module_indexer.is_valid(module):
+            self.module_maintainers = []
+            return self.module_maintainers
+
+        mdata = self.module_indexer.find_match(module)
+        if mdata['repository'] != self.github_repo:
+            # this was detected and handled in the process loop
+            pass
+
+        maintainers = self._get_maintainers()
+        if mdata['repo_filename'] in maintainers:
+            self.module_maintainers = maintainers[mdata['repo_filename']]
+        elif mdata['namespaced_module'] in maintainers:
+            self.module_maintainers = maintainers[mdata['namespaced_module']]
+        elif mdata['fulltopic'] in maintainers:
+            self.module_maintainers = maintainers[mdata['fulltopic']]
+        elif (mdata['topic'] + '/') in maintainers:
+            self.module_maintainers = maintainers[mdata['topic'] + '/']
+        else:
+            #import pprint; pprint.pprint(mdata)
+            #import epdb; epdb.st()
+            pass
+
+        return self.module_maintainers
+
+    def get_current_labels(self):
+        """Pull the list of labels on this Issue"""
+        if not self.current_labels:
+            labels = self.issue.instance.labels
+            for label in labels:
+                self.current_labels.append(label.name)
+        return self.current_labels
+
+    def run(self):
+        """Starts a triage run"""
+        repo = self._connect().get_repo("ansible/ansible-modules-%s" %
+                                        self.github_repo)
+
+        if self.number:
+            self.issue = Issue(repo=repo, number=self.number)
+            self.process()
+        else:
+            issues = repo.get_issues()
+            for issue in issues:
+                if self.start_at and issue.number > self.start_at:
+                    continue
+                if self.is_pr(issue):
+                    continue
+                self.issue = IssueWrapper(repo=repo, issue=issue)
+                self.process()
+
+    def process(self):
+        """Processes the Issue"""
+        # clear all actions
+        self.actions = {
+            'newlabel': [],
+            'unlabel':  [],
+            'comments': [],
+        }
+
+        # clear module maintainers
+        self.module_maintainers = []
+
+        # print some general info about the Issue to be processed
+        print("\nIssue #%s: %s" % (self.issue.number,
+                                (self.issue.instance.title).encode('ascii','ignore')))
+        print("Created at %s" % self.issue.instance.created_at)
+        print("Updated at %s" % self.issue.instance.updated_at)
+
+        # get the template data
+        self.template_data = self.issue.get_template_data()
+        # was component specified?
+        component_defined = 'component name' in self.template_data
+        # extract the component
+        component = self.template_data.get('component name', None)
+        # check if component is a known module
+        isvalid = self.module_indexer.is_valid(component)
+        # filed under the correct repository?
+        this_repo = False
+        correct_repo = None
+        # who maintains this?
+        maintainers = []
+
+        if not isvalid:
+            pass
+        else:
+            correct_repo = self.module_indexer.\
+                            get_repository_for_module(component)
+            if correct_repo == self.github_repo:
+                this_repo = True
+                maintainers = self.get_module_maintainers()
+
+        # Print the things we processed
+        print("Submitter: %s" % self.issue.get_submitter())
+        print("Issue Type: %s" % self.template_data.get('issue type', None))
+        print("Component Defined: %s" % component_defined)
+        print("Component Name: %s" % component)
+        print("Component is Valid Module: %s" % isvalid)
+        print("Component in this repo: %s" % this_repo)
+        print("Maintainers: %s" % ', '.join(maintainers))
+        print("Current Labels: %s" % ', '.join(self.issue.current_labels))
+        print("Actions: %s" % self.actions)
+
+        if not isvalid:
+            import epdb; epdb.st()
+
 def main():
     parser = argparse.ArgumentParser(description="Triage various PR queues "
                                                  "for Ansible. (NOTE: only "
@@ -748,6 +950,12 @@ def main():
                         help="Github token of triager")
     parser.add_argument("--dry-run", "-n", action="store_true",
                         help="Do not apply any changes.")
+
+    parser.add_argument("--only_prs", action="store_true",
+                        help="Triage pullrequests only")
+    parser.add_argument("--only_issues", action="store_true",
+                        help="Triage issues only")
+
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output")
     parser.add_argument("--force", "-f", action="store_true",
@@ -756,10 +964,10 @@ def main():
                         help="Debug output")
     parser.add_argument("--pause", "-p", action="store_true",
                         help="Always pause between PRs")
-    parser.add_argument("--pr", type=int,
-                        help="Triage only the specified pr")
+    parser.add_argument("--pr", "--id", type=int,
+                        help="Triage only the specified pr|issue")
     parser.add_argument("--start-at", type=int,
-                        help="Start triage at the specified pr")
+                        help="Start triage at the specified pr|issue")
     args = parser.parse_args()
 
     if args.pr and args.start_at:
@@ -772,19 +980,39 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    triage = Triage(
-        verbose=args.verbose,
-        github_user=args.gh_user,
-        github_pass=args.gh_pass,
-        github_token=args.gh_token,
-        github_repo=args.repo,
-        pr_number=args.pr,
-        start_at_pr=args.start_at,
-        always_pause=args.pause,
-        force=args.force,
-        dry_run=args.dry_run,
-    )
-    triage.run()
+    if args.only_prs and args.only_issues:
+        print("Error: Mutually exclusive: --only_issues and --only_prs",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if args.only_prs or not args.only_issues:
+        triage = TriagePullRequests(
+            verbose=args.verbose,
+            github_user=args.gh_user,
+            github_pass=args.gh_pass,
+            github_token=args.gh_token,
+            github_repo=args.repo,
+            pr_number=args.pr,
+            start_at_pr=args.start_at,
+            always_pause=args.pause,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+        triage.run()
+    elif args.only_issues or not args.only_prs:
+        triage = TriageIssues(
+            verbose=args.verbose,
+            github_user=args.gh_user,
+            github_pass=args.gh_pass,
+            github_token=args.gh_token,
+            github_repo=args.repo,
+            number=args.pr,
+            start_at=args.start_at,
+            always_pause=args.pause,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+        triage.run()
 
 if __name__ == "__main__":
     main()
