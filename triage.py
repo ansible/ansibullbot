@@ -911,6 +911,8 @@ class TriageIssues:
         # who maintains this?
         maintainers = []
 
+        ## FIXME - what if there is a comment like: [module: packaging/os/zypper.py] ... ?
+
         if not isvalid:
             pass
         else:
