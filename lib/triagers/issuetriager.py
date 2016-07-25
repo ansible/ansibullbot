@@ -46,7 +46,8 @@ class TriageIssues(DefaultTriager):
                                         self.github_repo)
 
         if self.number:
-            self.issue = Issue(repo=self.repo, number=self.number)
+            issue = self.repo.get_issue(int(self.number))
+            self.issue = IssueWrapper(repo=self.repo, issue=issue)
             self.issue.get_comments()
             self.process()
         else:
