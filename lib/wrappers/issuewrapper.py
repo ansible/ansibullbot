@@ -27,8 +27,8 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
-from utils.moduletools import ModuleIndexer
-from utils.extractors import extract_template_data
+from lib.utils.moduletools import ModuleIndexer
+from lib.utils.extractors import extract_template_data
 
 class IssueWrapper(object):
 
