@@ -741,7 +741,7 @@ class IssueWrapper(object):
         self.repo = repo
         self.instance = issue
         self.number = self.instance.number
-        self.current_labels = []
+        self.current_labels = self.get_current_labels()
         self.desired_labels = []
         self.current_comments = []
         self.desired_comments = []
@@ -760,11 +760,10 @@ class IssueWrapper(object):
 
     def get_current_labels(self):
         """Pull the list of labels on this Issue"""
-        if not self.current_labels:
-            labels = self.instance.labels
-            for label in labels:
-                self.current_labels.append(label.name)
-        return self.current_labels
+        labels = []
+        for label in self.instance.labels:
+            labels.append(label.name)
+        return labels
 
     def get_template_data(self):
         """Extract templated data from an issue body"""
@@ -801,6 +800,7 @@ class TriageIssues:
 
         self.module_indexer = ModuleIndexer()
         self.module_indexer.get_ansible_modules()
+        self.ansible_members = self.get_ansible_members()
 
     def _connect(self):
         """Connects to GitHub's API"""
@@ -812,6 +812,14 @@ class TriageIssues:
             return True
         else:
             return False
+
+    def get_ansible_members(self):
+        ansible_members = []
+        org = self._connect().get_organization("ansible")
+        members = org.get_members()
+        ansible_members = [x.login for x in members]
+        #import epdb; epdb.st()
+        return ansible_members
 
     def _get_maintainers(self):
         """Reads all known maintainers from files and their owner namespace"""
@@ -833,7 +841,8 @@ class TriageIssues:
         """Returns the list of maintainers for the current module"""
         if self.module_maintainers:
             return self.module_maintainers
-        module = self.template_data.get('component name', None)
+        #module = self.template_data.get('component name', None)
+        module = self.module
         if not module:
             self.module_maintainers = []
             return self.module_maintainers
@@ -873,21 +882,21 @@ class TriageIssues:
 
     def run(self):
         """Starts a triage run"""
-        repo = self._connect().get_repo("ansible/ansible-modules-%s" %
+        self.repo = self._connect().get_repo("ansible/ansible-modules-%s" %
                                         self.github_repo)
 
         if self.number:
-            self.issue = Issue(repo=repo, number=self.number)
+            self.issue = Issue(repo=self.repo, number=self.number)
             self.issue.get_comments()
             self.process()
         else:
-            issues = repo.get_issues()
+            issues = self.repo.get_issues()
             for issue in issues:
                 if self.start_at and issue.number > self.start_at:
                     continue
                 if self.is_pr(issue):
                     continue
-                self.issue = IssueWrapper(repo=repo, issue=issue)
+                self.issue = IssueWrapper(repo=self.repo, issue=issue)
                 self.issue.get_comments()
                 self.process()
 
@@ -925,6 +934,9 @@ class TriageIssues:
         component_defined = 'component name' in self.template_data
         # extract the component
         component = self.template_data.get('component name', None)
+        # save the real name
+        self.match = self.module_indexer.find_match(component) or {}
+        self.module = self.match.get('name', None)
         # check if component is a known module
         component_isvalid = self.module_indexer.is_valid(component)
 
@@ -943,21 +955,47 @@ class TriageIssues:
                 this_repo = True
                 maintainers = self.get_module_maintainers()
 
-        # older issues sometimes had a component in the comments
-        comment_component = None
-        comment_component_isvalid = False
-        comment_component_thisrepo = False
-        if not component:
-            # comments like: [module: packaging/os/zypper.py] ... ?
-            comment_component = self.component_from_comments()
-            comment_component_isvalid = self.module_indexer.\
-                        is_valid(comment_component)
-            comment_component_repo = self.module_indexer.\
-                        get_repository_for_module(comment_component)
-            comment_component_correct_repo = \
-                        (comment_component_repo == comment_component_repo)
+        # Has the maintainer -ever- commented?
+        maintainer_commented = False
+        if component_isvalid:
+            maintainer_commented = self.has_maintainer_commented()
 
-        # Print the things we processed
+        waiting_on_maintainer = False
+        if component_isvalid:
+            waiting_on_maintainer = self.is_waiting_on_maintainer()
+
+        # How long ago did the maintainer last comment?
+        maintainer_last_comment_age = -1
+        if component_isvalid:
+            maintainer_last_comment_age = self.age_of_last_maintainer_comment()
+
+
+        ###########################################################
+        #                   Enumerate Actions
+        ###########################################################
+
+        self.actions = [] #hackaround
+        if not issue_type_defined:
+            self.actions.append('NEEDSINFO: please use template')        
+        elif not issue_type_valid:
+            self.actions.append('NEEDSINFO: please use valid issue type')        
+
+        if not component_defined:
+            self.actions.append('NEEDSINFO: please use template')        
+        elif not component_isvalid:
+            self.actions.append('NEEDSINFO: please specify a valid module name')        
+        if component_isvalid and not this_repo:
+            self.actions.append('MOVEREPO: please file under %s repo' % correct_repo)
+
+        if not maintainer_commented:
+            self.actions.append("WOM: ping maintainer(s)")
+
+
+
+
+        ###########################################################
+        #                        LOG 
+        ###########################################################
         print("Submitter: %s" % self.issue.get_submitter())
         print("Issue Type Defined: %s" % issue_type_defined)
         print("Issue Type Valid: %s" % issue_type_valid)
@@ -966,7 +1004,11 @@ class TriageIssues:
         print("Component Name: %s" % component)
         print("Component is Valid Module: %s" % component_isvalid)
         print("Component in this repo: %s" % this_repo)
-        print("Maintainers: %s" % ', '.join(maintainers))
+        print("Module: %s" % self.module)
+        print("Maintainer(s): %s" % ', '.join(maintainers))
+        print("Maintainer(s) Have Commented: %s" % maintainer_commented)
+        print("Maintainer(s) Comment Age: %s days" % maintainer_last_comment_age)
+        print("Waiting on Maintainer(s): %s" % waiting_on_maintainer)
         print("Current Labels: %s" % ', '.join(self.issue.current_labels))
         print("Actions: %s" % self.actions)
 
@@ -975,6 +1017,13 @@ class TriageIssues:
         
         #if not issue_type_valid and 'issue type' in self.issue.instance.body.lower():
         #    import epdb; epdb.st()
+
+        #if 'ansible' in self.module_maintainers and maintainer_commented:
+        #    import epdb; epdb.st()
+
+        if waiting_on_maintainer and maintainer_commented:
+            import epdb; epdb.st()
+
 
     def component_from_comments(self):
         # https://github.com/ansible/ansible-modules/core/issues/2618
@@ -986,6 +1035,93 @@ class TriageIssues:
                     component = x.body.split()[-1]
                     component = component.replace('[', '')
         return component
+
+    def has_maintainer_commented(self):
+        commented = False
+        if self.module_maintainers:
+                
+            for comment in self.issue.current_comments:
+                # ignore comments from submitter
+                if comment.user.login == self.issue.get_submitter():
+                    continue
+
+                # "ansible" is special ...
+                if 'ansible' in self.module_maintainers \
+                    and comment.user.login in self.ansible_members:
+                    commented = True
+                elif comment.user.login in self.module_maintainers:
+                    commented = True
+
+        return commented
+
+    def age_of_last_maintainer_comment(self):
+        last_comment = None
+        if self.module_maintainers:
+            for idx,comment in enumerate(self.issue.current_comments):
+                # "ansible" is special ...
+                is_maintainer = False
+                if 'ansible' in self.module_maintainers \
+                    and comment.user.login in self.ansible_members:
+                    is_maintainer = True
+                elif comment.user.login in self.module_maintainers:
+                    is_maintainer = True
+
+                if is_maintainer:
+                    last_comment = comment
+                    break
+
+        if not last_comment:
+            return -1
+        else:
+            now = datetime.now()
+            diff = now - last_comment.created_at
+            age = diff.days
+            return age
+
+    def is_waiting_on_maintainer(self):
+        waiting = False
+        if self.module_maintainers:
+            if not self.issue.current_comments:
+                return True            
+
+            creator_last_index = -1
+            maintainer_last_index = -1
+            for idx,comment in enumerate(self.issue.current_comments):
+                if comment.user.login == self.issue.get_submitter():
+                    if creator_last_index == -1 or idx < creator_last_index:
+                        creator_last_index = idx
+
+                # "ansible" is special ...
+                is_maintainer = False
+                if 'ansible' in self.module_maintainers \
+                    and comment.user.login in self.ansible_members:
+                    is_maintainer = True
+                elif comment.user.login in self.module_maintainers:
+                    is_maintainer = True
+
+                if is_maintainer and \
+                    (maintainer_last_index == -1 or idx < maintainer_last_index):
+                    maintainer_last_index = idx
+
+            if creator_last_index == -1 and maintainer_last_index == -1:
+                waiting = True
+            elif creator_last_index == -1 and maintainer_last_index > -1:
+                waiting = False
+            elif creator_last_index < maintainer_last_index:
+                waiting = True
+
+        #if self.issue.instance.number == 4200:
+        #    import epdb; epdb.st()
+        return waiting                
+            
+
+    def maintainer_commented_last(self):
+        pass
+
+    def creator_commented_last(self):
+        pass
+
+
 
 def main():
     parser = argparse.ArgumentParser(description="Triage various PR queues "
