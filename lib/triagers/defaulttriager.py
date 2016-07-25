@@ -68,14 +68,12 @@ BOTLIST = [
 
 class DefaultTriager(object):
 
+    BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
+    VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
+
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
                  start_at=None, always_pause=False, force=False, dry_run=False):
-
-        self.valid_issue_types = ['bug report', 'feature idea', 'documentation report']
-        self.topic_map = {'amazon': 'aws',
-                          'google': 'gce',
-                          'network': 'networking'}
 
         self.verbose = verbose
         self.github_user = github_user
@@ -208,6 +206,26 @@ class DefaultTriager(object):
                 self.issue.get_comments()
                 self.process()
 
+    def create_actions(self):
+        """Create actions from the desired label/unlabel/comment actions"""
+        resolved_desired_labels = []
+        for desired_label in self.issue.desired_labels:
+            resolved_desired_label = self.issue.resolve_desired_labels(
+                desired_label
+            )
+            if desired_label != resolved_desired_label:
+                resolved_desired_labels.append(resolved_desired_label)
+                if (resolved_desired_label not in self.issue.get_current_labels()):
+                    self.issue.add_desired_comment(desired_label)
+                    self.actions['newlabel'].append(resolved_desired_label)
+            else:
+                resolved_desired_labels.append(desired_label)
+                if desired_label not in self.issue.get_current_labels():
+                    self.actions['newlabel'].append(desired_label)
+                    if os.path.exists("templates/" + desired_label + ".j2"):
+                        self.issue.add_desired_comment(desired_label)
+
+
     def component_from_comments(self):
         """Extracts a component name from special comments"""
         # https://github.com/ansible/ansible-modules/core/issues/2618
@@ -306,6 +324,131 @@ class DefaultTriager(object):
             if current_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
                 self.issue.add_desired_label(name=current_label)
 
+    def add_desired_labels_by_issue_type(self):
+        """Adds labels by defined issue type"""
+        issue_type = self.template_data.get('issue type', False)
 
+        if issue_type is False:
+            self.issue.add_desired_label('needs_info')
+            return
 
+        if not issue_type.lower() in self.VALID_ISSUE_TYPES:
+            self.issue.add_desired_label('needs_info')
+            return
 
+        desired_label = issue_type.replace(' ', '_')        
+        desired_label = desired_label.replace('documentation', 'docs')
+        if desired_label not in self.issue.get_current_labels():
+            self.issue.add_desired_label(name=desired_label)
+
+    def add_desired_labels_by_namespace(self):
+        """Adds labels regarding module namespaces"""
+
+        if not self.match:
+            return False        
+        for key in ['topic', 'subtopic']:            
+            if self.match[key]:
+                thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
+                if thislabel not in self.issue.current_labels \
+                    and thislabel in self.valid_labels:
+                    self.issue.add_desired_label(thislabel)
+
+    def add_desired_labels_by_maintainers(self):
+        """Ads labels regarding maintainer info"""
+        module_maintainers = self.module_maintainers
+
+        if 'needs_info' in self.issue.get_current_labels():
+            self.debug(msg="needs info labeled, skipping maintainer")
+            return
+
+        # FIXME - what?
+        if 'ansible' in module_maintainers:
+            self.debug(msg="ansible in module maintainers")
+            return
+
+        if self.issue.get_submitter() in module_maintainers \
+            or ('ansible' in module_maintainers and self.issue.get_submitter() in self.ansible_members):
+            self.debug(msg="creator owns this module")
+
+        if not module_maintainers:
+            self.debug(msg="unknown maintainer.")
+            self.issue.add_desired_label(name="pending_maintainer_unknown")
+            return            
+
+    def process_comments(self):
+        """ Processes ISSUE comments for matching criteria to add labels"""
+        if not self.github_user in self.BOTLIST:
+            BOTLIST.append(self.github_user)
+        module_maintainers = self.get_module_maintainers()
+        comments = self.issue.get_comments()
+        today = datetime.today()
+
+        self.debug(msg="--- START Processing Comments:")
+
+        for idc,comment in enumerate(comments):
+
+            if comment.user.login in self.BOTLIST:
+                self.debug(msg="%s is in botlist: " % comment.user.login)
+                time_delta = today - comment.created_at
+                comment_days_old = time_delta.days
+
+                self.debug(msg="Days since last bot comment: %s" % comment_days_old)
+                if comment_days_old > 14:
+                    labels = self.issue.desired_labels
+
+                    if 'pending' not in comment.body:
+
+                        if self.issue.is_labeled_for_interaction():
+                            self.debug(msg="submitter_first_warning")
+                            self.issue.add_desired_comment(
+                                boilerplate="submitter_first_warning"
+                            )
+                            break
+
+                        if "maintainer_review" not in labels:
+                            self.debug(msg="maintainer_first_warning")
+                            self.issue.add_desired_comment(
+                                boilerplate="maintainer_first_warning"
+                            )
+                            break
+
+                    # pending in comment.body                           
+                    else:
+                        if self.issue.is_labeled_for_interaction():
+                            self.debug(msg="submitter_second_warning")
+                            self.issue.add_desired_comment(
+                                boilerplate="submitter_second_warning"
+                            )
+                            break
+
+                        if "maintainer_review" in labels:
+                            self.debug(msg="maintainer_second_warning")
+                            self.issue.add_desired_comment(
+                                boilerplate="maintainer_second_warning"
+                            )
+                            break
+
+                self.debug(msg="STATUS: no useful state change since last pass"
+                            "( %s )" % comment.user.login)
+                break
+
+            if comment.user.login in module_maintainers \
+                or comment.user.login.lower() in module_maintainers\
+                or ('ansible' in module_maintainers and comment.user.login in self.ansible_members):
+
+                self.debug(msg="%s is module maintainer commented on %s." % (comment.user.login, comment.created_at))
+                if 'needs_info' in comment.body:
+                    self.debug(msg="...said needs_info!")
+                    self.issue.add_desired_label(name="needs_info")
+                elif "close_me" in comment.body:
+                    self.debug(msg="...said close_me!")
+                    self.issue.add_desired_label(name="pending_action_close_me")
+                    break
+
+            if comment.user.login == self.issue.get_submitter():
+                self.debug(msg="submitter %s, commented on %s." % (comment.user.login, comment.created_at))
+
+            if comment.user.login not in self.BOTLIST and comment.user.login in self.ansible_members:
+                self.debug(msg="%s is a ansible member" % comment.user.login)
+
+        self.debug(msg="--- END Processing Comments")

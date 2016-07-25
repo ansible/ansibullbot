@@ -88,7 +88,7 @@ class TriageIssues(DefaultTriager):
         if 'issue type' in self.template_data:
             issue_type_defined = True
             issue_type = self.template_data['issue type']
-            if issue_type.lower() in self.valid_issue_types:
+            if issue_type.lower() in self.VALID_ISSUE_TYPES:
                 issue_type_valid = True
 
         # was component specified?
@@ -136,7 +136,13 @@ class TriageIssues(DefaultTriager):
         ###########################################################
 
         self.keep_current_main_labels()
+        self.add_desired_labels_by_issue_type()
+        self.add_desired_labels_by_namespace()
+        self.add_desired_labels_by_maintainers()
+        self.process_comments()
+        self.create_actions()
 
+        '''
         self.actions = [] #hackaround
         if not issue_type_defined:
             self.actions.append('ENOTEMPLATE: please use template')        
@@ -178,13 +184,13 @@ class TriageIssues(DefaultTriager):
             for key in ['topic', 'subtopic']:            
                 if self.match[key]:
 
-                    thislabel = self.topic_map.get(self.match[key], self.match[key])
+                    thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
 
                     if thislabel not in self.issue.current_labels \
                         and thislabel in self.valid_labels:
                         self.actions.append("ALABEL: add %s" % thislabel)
             #import epdb; epdb.st()
-
+        '''
 
         ###########################################################
         #                        LOG 
@@ -214,8 +220,10 @@ class TriageIssues(DefaultTriager):
         #if 'ansible' in self.module_maintainers and maintainer_commented:
         #    import epdb; epdb.st()
 
-        if waiting_on_maintainer and maintainer_commented:
-            import epdb; epdb.st()
+        #if waiting_on_maintainer and maintainer_commented:
+        #    import epdb; epdb.st()
 
+        if self.always_pause:
+            import epdb; epdb.st()
 
 

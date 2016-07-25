@@ -3,7 +3,7 @@
 import operator
 import shlex
 
-def extract_template_data(body):
+def extract_template_data(body, issue_number=None):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME', 
                 'ANSIBLE VERSION', 'CONFIGURATION', 
                 'OS / ENVIRONMENT', 'SUMMARY', 
@@ -57,6 +57,9 @@ def extract_template_data(body):
         # remove markdown comments from the sections
         v = remove_markdown_comments(v)
 
+        #if issue_number == 4238 and k == 'component name':
+        #    import epdb; epdb.st()
+
         # remove non-ascii chars
         v = v.encode('ascii',errors='ignore')
 
@@ -109,6 +112,13 @@ def extract_template_data(body):
                 if '/' in v:
                     v = v.split('/')[0]
                     v = v.strip()
+
+            # https://github.com/ansible/ansible-modules-core/issues/4201
+            if k == 'component name' and ' ' in v:
+                v = shlex.split(v)[0]
+
+            #if k == 'component name' and issue_number == 4138:
+            #    import epdb; epdb.st()
 
             if k == 'issue type' and v != 'bug report' and 'bug' in v.lower():
                 v = 'bug report'
@@ -343,7 +353,6 @@ def remove_markdown_comments(rawtext):
     loopcount = 0
     while cleaned.find('<!-') > -1 and loopcount <= 20:
         loopcount += 1
-        #print("LOOPING!")
         start = cleaned.find('<!-')
         if start > -1:
             end = cleaned.find('->', start)
@@ -354,8 +363,6 @@ def remove_markdown_comments(rawtext):
                 cleaned = cleaned[0:start] + cleaned[end:]
         else:
             break
-    #if loopcount >= 20:
-    #    import epdb; epdb.st()
     return cleaned
 
 def _remove_markdown_comments(rawtext):

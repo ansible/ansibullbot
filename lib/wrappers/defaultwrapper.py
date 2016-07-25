@@ -53,13 +53,26 @@ class DefaultWrapper(object):
         ]
     }
 
+    MANUAL_INTERACTION_LABELS = [
+        "needs_revision",
+        "needs_info",
+    ]
+
     MUTUALLY_EXCLUSIVE_LABELS = [
 	"shipit",
 	"needs_revision",
 	"needs_info",
 	"community_review",
 	"core_review",
+        "bug_report",
+        "feature_idea",
+        "docs_report"
     ]
+
+    TOPIC_MAP = {'amazon': 'aws',
+                 'google': 'gce',
+                 'network': 'networking'}
+
 
     def __init__(self, repo=None, issue=None):
         self.repo = repo
@@ -91,13 +104,13 @@ class DefaultWrapper(object):
 
     def get_template_data(self):
         """Extract templated data from an issue body"""
-        tdict = extract_template_data(self.instance.body)
+        tdict = extract_template_data(self.instance.body, issue_number=self.number)
         return tdict
 
     def resolve_desired_labels(self, desired_label):
         for resolved_label, aliases in self.ALIAS_LABELS.iteritems():
             if desired_label in aliases:
-                return resolve_label
+                return resolved_label
         return desired_label
 
     def process_mutually_exclusive_labels(self, name=None):
@@ -105,7 +118,7 @@ class DefaultWrapper(object):
         if resolved_name in self.MUTUALLY_EXCLUSIVE_LABELS:
             for label in self.desired_labels:
                 resolved_label = self.resolve_desired_labels(label)
-                if resolved_label in MUTUALLY_EXCLUSIVE_LABELS:
+                if resolved_label in self.MUTUALLY_EXCLUSIVE_LABELS:
                     self.desired_labels.remove(label)        
 
     def add_desired_label(self, name=None):
@@ -114,5 +127,16 @@ class DefaultWrapper(object):
             self.process_mutually_exclusive_labels(name=name)
             self.desired_labels.append(name)
 
+    def is_labeled_for_interaction(self):
+        """Returns True if issue is labeld for interaction"""
+        for current_label in self.get_current_labels():
+            if current_label in self.MANUAL_INTERACTION_LABELS:
+                return True
+        return False
+
+    def add_desired_comment(self, boilerplate=None):
+        """Adds a boilerplate key to the desired comments list"""
+        if boilerplate and boilerplate not in self.desired_comments:
+            self.desired_comments.append(boilerplate)
 
 
