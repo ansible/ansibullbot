@@ -341,6 +341,22 @@ class DefaultTriager(object):
         if desired_label not in self.issue.get_current_labels():
             self.issue.add_desired_label(name=desired_label)
 
+    def add_desired_labels_by_ansible_version(self):
+        if not 'ansible version' in self.template_data:
+            self.debug(msg="no ansible version section")
+            self.issue.add_desired_label(name="needs_info")
+            self.issue.add_desired_comment(
+                boilerplate="need_ansible_version"
+            )            
+            return
+        if not self.template_data['ansible version']:
+            self.debug(msg="no ansible version defined")
+            self.issue.add_desired_label(name="needs_info")
+            self.issue.add_desired_comment(
+                boilerplate="need_ansible_version"
+            )            
+            return
+
     def add_desired_labels_by_namespace(self):
         """Adds labels regarding module namespaces"""
 

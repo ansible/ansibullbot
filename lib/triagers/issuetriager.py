@@ -137,6 +137,7 @@ class TriageIssues(DefaultTriager):
 
         self.keep_current_main_labels()
         self.add_desired_labels_by_issue_type()
+        self.add_desired_labels_by_ansible_version()
         self.add_desired_labels_by_namespace()
         self.add_desired_labels_by_maintainers()
         self.process_comments()
