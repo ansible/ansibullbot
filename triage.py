@@ -746,6 +746,14 @@ class IssueWrapper(object):
         self.current_comments = []
         self.desired_comments = []
 
+    def get_comments(self):
+        """Returns all current comments of the PR"""
+        if not self.current_comments:
+            #self.current_comments = self.instance.get_comments().reversed
+            self.current_comments = \
+                [x for x in self.instance.get_comments().reversed]
+        return self.current_comments
+
     def get_submitter(self):
         """Returns the submitter"""
         return self.instance.user.login
@@ -870,6 +878,7 @@ class TriageIssues:
 
         if self.number:
             self.issue = Issue(repo=repo, number=self.number)
+            self.issue.get_comments()
             self.process()
         else:
             issues = repo.get_issues()
@@ -879,6 +888,7 @@ class TriageIssues:
                 if self.is_pr(issue):
                     continue
                 self.issue = IssueWrapper(repo=repo, issue=issue)
+                self.issue.get_comments()
                 self.process()
 
     def process(self):
@@ -908,22 +918,26 @@ class TriageIssues:
         if 'issue type' in self.template_data:
             issue_type_defined = True
             issue_type = self.template_data['issue type']
-            if issue_type in self.valid_issue_types:
+            if issue_type.lower() in self.valid_issue_types:
                 issue_type_valid = True
 
         # was component specified?
         component_defined = 'component name' in self.template_data
         # extract the component
         component = self.template_data.get('component name', None)
+        if not component:
+            # comments like: [module: packaging/os/zypper.py] ... ?
+            component = self.component_from_comments()
+
         # check if component is a known module
         component_isvalid = self.module_indexer.is_valid(component)
+
         # filed under the correct repository?
         this_repo = False
         correct_repo = None
         # who maintains this?
         maintainers = []
 
-        ## FIXME - what if there is a comment like: [module: packaging/os/zypper.py] ... ?
         if not component_isvalid:
             pass
         else:
@@ -952,6 +966,16 @@ class TriageIssues:
         #if not issue_type_valid and 'issue type' in self.issue.instance.body.lower():
         #    import epdb; epdb.st()
 
+    def component_from_comments(self):
+        # https://github.com/ansible/ansible-modules/core/issues/2618
+        # comments like: [module: packaging/os/zypper.py] ... ?
+        component = None
+        for idx, x in enumerate(self.issue.current_comments):
+            if '[' in x.body and ']' in x.body and ('module' in x.body or 'component' in x.body or 'plugin' in x.body):
+                if x.user.login in BOTLIST:
+                    component = x.body.split()[-1]
+                    component = component.replace('[', '')
+        return component
 
 def main():
     parser = argparse.ArgumentParser(description="Triage various PR queues "
