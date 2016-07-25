@@ -42,25 +42,6 @@ MAINTAINERS_FILES = {
     'extras': "MAINTAINERS-EXTRAS.txt",
 }
 
-# modules having files starting like the key, will get the value label
-MODULE_NAMESPACE_LABELS = {
-    'cloud': "cloud",
-    'cloud/google': "gce",
-    'cloud/amazon': "aws",
-    'cloud/azure': "azure",
-    'cloud/digital_ocean': "digital_ocean",
-    'windows': "windows",
-    'network': "networking"
-}
-
-# We don't remove any of these labels unless forced
-MUTUALLY_EXCLUSIVE_LABELS = [
-    "shipit",
-    "needs_revision",
-    "needs_info",
-    "community_review",
-    "core_review",
-]
 
 # Static labels, manually added
 IGNORE_LABELS = [
