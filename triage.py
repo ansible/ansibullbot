@@ -769,6 +769,8 @@ class TriageIssues:
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
                  start_at=None, always_pause=False, force=False, dry_run=False):
+
+        self.valid_issue_types = ['bug report', 'feature idea', 'documentation report']
         self.verbose = verbose
         self.github_user = github_user
         self.github_pass = github_pass
@@ -820,7 +822,7 @@ class TriageIssues:
             print("Debug: " + msg)
 
     def get_module_maintainers(self):
-        """Returns the dict of maintainers using the key as owner namespace"""
+        """Returns the list of maintainers for the current module"""
         if self.module_maintainers:
             return self.module_maintainers
         module = self.template_data.get('component name', None)
@@ -899,12 +901,22 @@ class TriageIssues:
 
         # get the template data
         self.template_data = self.issue.get_template_data()
+        # was the issue type defined correctly?
+        issue_type_defined = False
+        issue_type_valid = False
+        issue_type = False
+        if 'issue type' in self.template_data:
+            issue_type_defined = True
+            issue_type = self.template_data['issue type']
+            if issue_type in self.valid_issue_types:
+                issue_type_valid = True
+
         # was component specified?
         component_defined = 'component name' in self.template_data
         # extract the component
         component = self.template_data.get('component name', None)
         # check if component is a known module
-        isvalid = self.module_indexer.is_valid(component)
+        component_isvalid = self.module_indexer.is_valid(component)
         # filed under the correct repository?
         this_repo = False
         correct_repo = None
@@ -912,8 +924,7 @@ class TriageIssues:
         maintainers = []
 
         ## FIXME - what if there is a comment like: [module: packaging/os/zypper.py] ... ?
-
-        if not isvalid:
+        if not component_isvalid:
             pass
         else:
             correct_repo = self.module_indexer.\
@@ -924,17 +935,23 @@ class TriageIssues:
 
         # Print the things we processed
         print("Submitter: %s" % self.issue.get_submitter())
-        print("Issue Type: %s" % self.template_data.get('issue type', None))
+        print("Issue Type Defined: %s" % issue_type_defined)
+        print("Issue Type Valid: %s" % issue_type_valid)
+        print("Issue Type: %s" % issue_type)
         print("Component Defined: %s" % component_defined)
         print("Component Name: %s" % component)
-        print("Component is Valid Module: %s" % isvalid)
+        print("Component is Valid Module: %s" % component_isvalid)
         print("Component in this repo: %s" % this_repo)
         print("Maintainers: %s" % ', '.join(maintainers))
         print("Current Labels: %s" % ', '.join(self.issue.current_labels))
         print("Actions: %s" % self.actions)
 
-        if not isvalid:
-            import epdb; epdb.st()
+        #if not component_isvalid:
+        #    import epdb; epdb.st()
+        
+        #if not issue_type_valid and 'issue type' in self.issue.instance.body.lower():
+        #    import epdb; epdb.st()
+
 
 def main():
     parser = argparse.ArgumentParser(description="Triage various PR queues "
