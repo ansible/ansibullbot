@@ -70,6 +70,21 @@ class DefaultTriager(object):
 
     BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
     VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
+    IGNORE_LABELS = [
+        "feature_pull_request",
+        "feature_idea",
+        "bugfix_pull_request",
+        "bug_report",
+        "docs_pull_request",
+        "docs_report",
+        "in progress",
+        "docs_pull_request",
+        "easyfix",
+        "pending_action",
+        "gce",
+        "python3",
+    ]
+
 
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
@@ -225,6 +240,18 @@ class DefaultTriager(object):
                     if os.path.exists("templates/" + desired_label + ".j2"):
                         self.issue.add_desired_comment(desired_label)
 
+        for current_label in self.issue.get_current_labels():
+            if current_label in self.IGNORE_LABELS:
+                continue
+            if current_label not in resolved_desired_labels:
+                self.actions['unlabel'].append(current_label)
+
+        for boilerplate in self.issue.desired_comments:
+            comment = self.render_comment(boilerplate=boilerplate)
+            self.debug(msg=comment)
+            self.actions['comments'].append(comment)
+            import epdb; epdb.st()
+
 
     def component_from_comments(self):
         """Extracts a component name from special comments"""
@@ -365,8 +392,7 @@ class DefaultTriager(object):
         for key in ['topic', 'subtopic']:            
             if self.match[key]:
                 thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
-                if thislabel not in self.issue.current_labels \
-                    and thislabel in self.valid_labels:
+                if thislabel in self.valid_labels:
                     self.issue.add_desired_label(thislabel)
 
     def add_desired_labels_by_maintainers(self):
