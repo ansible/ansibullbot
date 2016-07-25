@@ -85,6 +85,7 @@ IGNORE_LABELS = [
     "bugfix_pull_request",
     "in progress",
     "docs_pull_request",
+    "needs_rebase",
     "easyfix",
     "pending_action",
     "gce",
