@@ -925,10 +925,6 @@ class TriageIssues:
         component_defined = 'component name' in self.template_data
         # extract the component
         component = self.template_data.get('component name', None)
-        if not component:
-            # comments like: [module: packaging/os/zypper.py] ... ?
-            component = self.component_from_comments()
-
         # check if component is a known module
         component_isvalid = self.module_indexer.is_valid(component)
 
@@ -946,6 +942,20 @@ class TriageIssues:
             if correct_repo == self.github_repo:
                 this_repo = True
                 maintainers = self.get_module_maintainers()
+
+        # older issues sometimes had a component in the comments
+        comment_component = None
+        comment_component_isvalid = False
+        comment_component_thisrepo = False
+        if not component:
+            # comments like: [module: packaging/os/zypper.py] ... ?
+            comment_component = self.component_from_comments()
+            comment_component_isvalid = self.module_indexer.\
+                        is_valid(comment_component)
+            comment_component_repo = self.module_indexer.\
+                        get_repository_for_module(comment_component)
+            comment_component_correct_repo = \
+                        (comment_component_repo == comment_component_repo)
 
         # Print the things we processed
         print("Submitter: %s" % self.issue.get_submitter())
