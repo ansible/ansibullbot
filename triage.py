@@ -778,6 +778,10 @@ class TriageIssues:
                  start_at=None, always_pause=False, force=False, dry_run=False):
 
         self.valid_issue_types = ['bug report', 'feature idea', 'documentation report']
+        self.topic_map = {'amazon': 'aws',
+                          'google': 'gce',
+                          'network': 'networking'}
+
         self.verbose = verbose
         self.github_user = github_user
         self.github_pass = github_pass
@@ -801,6 +805,7 @@ class TriageIssues:
         self.module_indexer = ModuleIndexer()
         self.module_indexer.get_ansible_modules()
         self.ansible_members = self.get_ansible_members()
+        self.valid_labels = self.get_valid_labels()
 
     def _connect(self):
         """Connects to GitHub's API"""
@@ -820,6 +825,14 @@ class TriageIssues:
         ansible_members = [x.login for x in members]
         #import epdb; epdb.st()
         return ansible_members
+
+    def get_valid_labels(self):
+        vlabels = []
+        self.repo = self._connect().get_repo("ansible/ansible-modules-%s" %
+                                        self.github_repo)
+        for vl in self.repo.get_labels():
+            vlabels.append(vl.name)
+        return vlabels
 
     def _get_maintainers(self):
         """Reads all known maintainers from files and their owner namespace"""
@@ -976,21 +989,51 @@ class TriageIssues:
 
         self.actions = [] #hackaround
         if not issue_type_defined:
-            self.actions.append('NEEDSINFO: please use template')        
+            self.actions.append('ENOTEMPLATE: please use template')        
         elif not issue_type_valid:
-            self.actions.append('NEEDSINFO: please use valid issue type')        
+            self.actions.append('ENOISSUETYPE: please use valid issue type')        
+        elif issue_type_valid:
+            thislabel = issue_type.lower().replace(' ', '_')
+            thislabel = thislabel.replace('documentation', 'docs')
+            if thislabel in self.valid_labels \
+                and thislabel not in self.issue.current_labels:
+                self.actions.append("ALABEL: add %s" % thislabel)
+            elif thislabel not in self.valid_labels:
+                print('%s NOT VALID!' % thislabel)
+                import epdb; epdb.st()
 
         if not component_defined:
-            self.actions.append('NEEDSINFO: please use template')        
+            self.actions.append('ENOTEMPLATE: please use template')        
         elif not component_isvalid:
-            self.actions.append('NEEDSINFO: please specify a valid module name')        
+            self.actions.append('ENOMODULE: please specify a valid module name')        
         if component_isvalid and not this_repo:
-            self.actions.append('MOVEREPO: please file under %s repo' % correct_repo)
+            self.actions.append('EWRONGREPO: please file under %s' % correct_repo)
 
-        if not maintainer_commented:
-            self.actions.append("WOM: ping maintainer(s)")
+        if component_isvalid and this_repo and not maintainers:
+            self.actions.append('ENOMAINTAINER: module has no maintainer')
 
+        if component_isvalid:
+            if maintainers and not 'needs_info' in self.issue.current_labels:
+                if not maintainer_commented:
+                    self.actions.append("WOM: ping maintainer(s)")
+                if maintainer_commented \
+                    and waiting_on_maintainer \
+                    and maintainer_last_comment_age > 14:
+                    self.actions.append("WOM: -remind- maintainer(s)")
+            if maintainers \
+                and 'needs_info' in self.issue.current_labels \
+                and not waiting_on_maintainer:
+                    self.actions.append("RLABEL: remove needs_info")
 
+            for key in ['topic', 'subtopic']:            
+                if self.match[key]:
+
+                    thislabel = self.topic_map.get(self.match[key], self.match[key])
+
+                    if thislabel not in self.issue.current_labels \
+                        and thislabel in self.valid_labels:
+                        self.actions.append("ALABEL: add %s" % thislabel)
+            #import epdb; epdb.st()
 
 
         ###########################################################
