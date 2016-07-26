@@ -257,7 +257,7 @@ class TriageIssues(DefaultTriager):
         missing_sections = self.issue.get_missing_sections()
         self.meta['missing_sections'] = missing_sections
 
-        # Did anyone ping the maintainer(s)?
+        # Who are the maintainers?
         maintainers = self.get_module_maintainers()
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
@@ -281,6 +281,8 @@ class TriageIssues(DefaultTriager):
         # Has the maintainer ever responded?
         maintainer_commented = self.history.has_commented(maintainers)
         self.meta['maintainer_commented'] = maintainer_commented
+        maintainer_last_commented = self.history.last_commented_at(maintainers)
+        self.meta['maintainer_last_commented'] = maintainer_last_commented
 
         # Has the maintainer ever subscribed?
         maintainer_subscribed = self.history.has_subscribed(maintainers)
@@ -335,29 +337,55 @@ class TriageIssues(DefaultTriager):
         maintainer_waiting_on = False
         if needsinfo_remove or not was_needs_info and not missing_sections:
             maintainer_waiting_on = True
-        self.meta['maintainer_waiting_on'] = maintainer_to_reping
+        self.meta['maintainer_waiting_on'] = maintainer_waiting_on
 
         # Should we [re]notify the submitter?
+        submitter_waiting_on = False
+        submitter_to_ping = False
+        submitter_to_reping = False
+        needsinfo_add = False
+        if not maintainer_waiting_on:
+            submitter_waiting_on = True
+            if needsinfo_stale or needsinfo_expired:
+                submitter_to_reping = True
+            else:                                                        
+                submitter_to_ping = True
+            if missing_sections:
+                needsinfo_add = True
+
+        self.meta['submitter_waiting_on'] = submitter_waiting_on
+        self.meta['submitter_to_ping'] = submitter_to_ping
+        self.meta['submitter_to_reping'] = submitter_to_reping
+        self.meta['needsinfo_add'] = needsinfo_add
+
+        #issue_bug_report, issue_docs_report, issue_feature_idea
+        issue_type = self.template_data.get('issue type', None)
+        issue_type = self.issue_type_to_label(issue_type)
+        self.meta['issue_type'] = issue_type
 
         #################################################
         # FINAL LOGIC LOOP
         #################################################
+
         if maintainer_waiting_on:
             self.issue.add_desired_label('waiting_on_maintainer')
             if len(self.issue.current_comments) == 0:
-                #issue_bug_report, issue_docs_report, issue_feature_idea
-                issue_type = self.template_data.get('issue type', None)
-                issue_type = self.issue_type_to_label(issue_type)
                 if issue_type:
-                    issue_type = 'issue_' + issue_type
-                    self.issue.add_desired_comment(issue_type)
+                    self.issue.add_desired_comment('issue_' + issue_type)
             elif maintainer_to_ping:
-                self.issue.add_desired_comment("issue_notifiy_maintainer")
+                self.issue.add_desired_comment("issue_notify_maintainer")
             elif maintainer_to_reping:
-                self.issue.add_desired_comment("issue_renotifiy_maintainer")
+                self.issue.add_desired_comment("issue_renotify_maintainer")
 
-        elif 'waiting_on_maintainer' in self.issue.desired_labels:
-            self.issue.desired_labels.remove('waiting_on_maintainer')
-            self.issue.add_desired_label('needs_info')
+        elif submitter_waiting_on:
+
+            if 'waiting_on_maintainer' in self.issue.desired_labels:
+                self.issue.desired_labels.remove('waiting_on_maintainer')
+
+            if needsinfo_add:
+                self.issue.add_desired_label('needs_info')
+
+            if submitter_to_ping or submitter_to_reping:
+                self.issue.add_desired_comment("issue_needs_info")
             
 
