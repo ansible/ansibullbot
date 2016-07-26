@@ -21,6 +21,7 @@ import os
 import sys
 import time
 from datetime import datetime
+from operator import itemgetter
 
 # remember to pip install PyGithub, kids!
 from github import Github
@@ -28,6 +29,7 @@ from github import Github
 from jinja2 import Environment, FileSystemLoader
 
 from lib.wrappers.issuewrapper import IssueWrapper
+from lib.wrappers.historywrapper import HistoryWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
 
@@ -48,6 +50,7 @@ class TriageIssues(DefaultTriager):
         if self.number:
             issue = self.repo.get_issue(int(self.number))
             self.issue = IssueWrapper(repo=self.repo, issue=issue)
+            self.issue.get_events()
             self.issue.get_comments()
             self.process()
         else:
@@ -58,6 +61,7 @@ class TriageIssues(DefaultTriager):
                 if self.is_pr(issue):
                     continue
                 self.issue = IssueWrapper(repo=self.repo, issue=issue)
+                self.issue.get_events()
                 self.issue.get_comments()
                 self.process()
 
@@ -137,18 +141,26 @@ class TriageIssues(DefaultTriager):
         ###########################################################
 
         self.keep_current_main_labels()
-        print('desired_comments: %s' % self.issue.desired_comments)
+        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+
         self.add_desired_labels_by_issue_type()
-        print('desired_comments: %s' % self.issue.desired_comments)
+        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+
         self.add_desired_labels_by_ansible_version()
-        print('desired_comments: %s' % self.issue.desired_comments)
+        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+
         self.add_desired_labels_by_namespace()
-        print('desired_comments: %s' % self.issue.desired_comments)
+        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+
         self.add_desired_labels_by_maintainers()
-        print('desired_comments: %s' % self.issue.desired_comments)
+        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+
         #self.process_comments()
+        self.process_history()
+        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+
         self.create_actions()
-        print('desired_comments: %s' % self.issue.desired_comments)
+        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
         '''
         self.actions = [] #hackaround
@@ -268,4 +280,7 @@ class TriageIssues(DefaultTriager):
             self.actions['comments'].append(comment)
             #import epdb; epdb.st()
 
-
+    def process_history(self):
+        self.history = HistoryWrapper(self.issue)
+        had_needs_info = self.history.was_labeled(label='needs_info')
+        import epdb; epdb.st()

@@ -77,16 +77,22 @@ class DefaultWrapper(object):
         self.number = self.instance.number
         self.current_labels = self.get_current_labels()
         self.desired_labels = []
+        self.current_events = []
         self.current_comments = []
         self.desired_comments = []
 
     def get_comments(self):
         """Returns all current comments of the PR"""
         if not self.current_comments:
-            #self.current_comments = self.instance.get_comments().reversed
             self.current_comments = \
                 [x for x in self.instance.get_comments().reversed]
         return self.current_comments
+
+    def get_events(self):
+        if not self.current_events:
+            self.current_events = \
+                [x for x in self.instance.get_events()]
+        return self.current_events
 
     def get_submitter(self):
         """Returns the submitter"""

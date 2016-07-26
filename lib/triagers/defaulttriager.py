@@ -205,24 +205,7 @@ class DefaultTriager(object):
         return self.current_labels
 
     def run(self):
-        """Starts a triage run"""
-        self.repo = self._connect().get_repo("ansible/ansible-modules-%s" %
-                                        self.github_repo)
-
-        if self.number:
-            self.issue = Issue(repo=self.repo, number=self.number)
-            self.issue.get_comments()
-            self.process()
-        else:
-            issues = self.repo.get_issues()
-            for issue in issues:
-                if self.start_at and issue.number > self.start_at:
-                    continue
-                if self.is_pr(issue):
-                    continue
-                self.issue = IssueWrapper(repo=self.repo, issue=issue)
-                self.issue.get_comments()
-                self.process()
+        pass
 
     def create_actions(self):
         pass
