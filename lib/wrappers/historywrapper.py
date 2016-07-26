@@ -143,6 +143,7 @@ class HistoryWrapper(object):
     def process(self):
         events = self.issue.get_events()
         comments = self.issue.get_comments()
+        reactions = self.issue.get_reactions()
         today = datetime.today()
 
         processed_events = []
@@ -175,6 +176,7 @@ class HistoryWrapper(object):
             else:
                 import pprint; pprint.pprint(edict)
                 import epdb; epdb.st()
+
 
         # sort by created_at
         sorted_events = sorted(processed_events, key=itemgetter('created_at')) 

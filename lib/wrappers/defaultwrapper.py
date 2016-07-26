@@ -17,6 +17,7 @@
 
 from __future__ import print_function
 
+import json
 import os
 import sys
 import time
@@ -94,6 +95,23 @@ class DefaultWrapper(object):
             self.current_events = \
                 [x for x in self.instance.get_events()]
         return self.current_events
+
+    def get_reactions(self):
+        # https://developer.github.com/v3/reactions/
+        baseurl = self.instance.url
+        reactions_url = baseurl + '/reactions'
+        headers = {}
+        headers['Accept'] = 'application/vnd.github.squirrel-girl-preview'
+
+        jdata = {}
+        try:
+            resp = self.instance._requester.requestJson('GET', 
+                                    reactions_url, headers=headers)
+            data = resp[2]
+            jdata = json.loads(data)
+        except Exception as e:
+            pass
+        return jdata
 
     def get_submitter(self):
         """Returns the submitter"""
