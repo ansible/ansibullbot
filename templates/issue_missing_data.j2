@@ -1,0 +1,8 @@
+@{{ submitter }}: Greetings! Thanks for taking the time to open this issue. In order to handle your issue effectively, we need a bit more information. 
+
+Here are the items we could not find in your description:
+{% for item in missing_sections %}
+{{ '- ' + item }}
+{% endfor %}
+
+Please ensure that you have properly selected ONE issue type, and that you have added the module name, spelled correctly, in the appropriate field.

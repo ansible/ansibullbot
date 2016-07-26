@@ -59,11 +59,7 @@ class DefaultWrapper(object):
     ]
 
     MUTUALLY_EXCLUSIVE_LABELS = [
-	"shipit",
-	"needs_revision",
 	"needs_info",
-	"community_review",
-	"core_review",
         "bug_report",
         "feature_idea",
         "docs_report"
@@ -73,6 +69,7 @@ class DefaultWrapper(object):
                  'google': 'gce',
                  'network': 'networking'}
 
+    REQUIRED_SECTIONS = []
 
     def __init__(self, repo=None, issue=None):
         self.repo = repo

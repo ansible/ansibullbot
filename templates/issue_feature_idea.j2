@@ -1,0 +1,13 @@
+@{{ submitter }}: Thanks for creating an issue for this feature idea!
+
+If you haven't already done so, please ensure that you have completed as many details as possible regarding your feature idea in the provided template. If the maintainer is unable to determine the scope of your request or has further questions, they may request for you to provide additional information.
+
+{% for item in maintainers %}{{ '@' + item }}{% endfor %}: Pinging you to bring this feature request to your attention. Please note that you are under no particular obligation to add this feature.
+
+For both @{{ submitter }} {% for item in maintainers %}{{ '& @' + item }}{% endfor %}: Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed, as well as let us know if the issue can be closed.
+
+For both @{{ submitter }} {% for item in maintainers %}{{ '& @' + item }}{% endfor %}:
+* If, after further investigation, either of you belive this is not an appropriate feature idea, or otherwise feel that this issue can be closed, please leave a comment stating bug_resolved, and we will close this issue. 
+* If you believe this feature idea has been resolved by a pull request, please leave a comment stating resolved_by_pr, and reference the pull request # if possible.
+
+To Everyone: We encourage all Ansible community members to submit pull requests to satisfy feature requests. Consult the module guidelines (http://docs.ansible.com/ansible/developing_modules.html) for more information.

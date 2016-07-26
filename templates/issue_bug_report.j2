@@ -1,0 +1,14 @@
+@{{ submitter }}: Thanks for filing this bug report! 
+
+If the maintainer needs further information, please respond to their request, so that you can help them to help you! 
+
+Please note that if you have a question about how to use this module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question ."
+
+{% for item in maintainers %}{{ '@' + item }}{% endfor %}: Thanks in advance for taking a look at this bug report and for your ongoing work in maintaining this module. If you are unable to troubleshoot this issue with the information provided, please ping the submitter of the issue in a comment to let them know. If this is a bug that you can't or won't fix, please leave a comment including the word wontfix, along with any reasons why.
+
+For both @{{ submitter }} {% for item in maintainers %}{{ '& @' + item }}{% endfor %}: Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed, as well as let us know if the issue can be closed.
+* If, after further investigation, either of you belive this is not a bug, please leave a comment stating notabug, along with any additional information as to why it is not, and we will close this issue.
+* When either of you believe this issue is resolved, please leave a comment stating bug_resolved, and we will close this issue. 
+* If you believe this issue has been resolved by a pull request, please leave a comment stating resolved_by_pr, and reference the pull request # if possible. 
+
+For anyone else also experiencing this issue: Please leave a +1 reaction so we can determine if this issue is affecting a number of people. Any additional details you can provide, such as your environment, steps to reproduce, or workarounds you have found, can help out with resolving this issue.

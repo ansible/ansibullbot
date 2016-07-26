@@ -31,7 +31,10 @@ from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
 
-loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
+basepath = os.path.dirname(__file__).split('/')
+libindex = basepath.index('lib')
+basepath = '/'.join(basepath[0:libindex])
+loader = FileSystemLoader(os.path.join(basepath, 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
 
 # A dict of alias labels. It is used for coupling a template (comment) with a
@@ -61,10 +64,6 @@ MANUAL_INTERACTION_LABELS = [
     "needs_info",
 ]
 
-BOTLIST = [
-    'gregdek',
-    'robynbergeron',
-]
 
 class DefaultTriager(object):
 
@@ -125,6 +124,9 @@ class DefaultTriager(object):
             return True
         else:
             return False
+
+    def is_issue(self, issue):
+        return not self.is_pr(issue)
 
     def get_ansible_members(self):
         ansible_members = []
@@ -248,9 +250,10 @@ class DefaultTriager(object):
 
         for boilerplate in self.issue.desired_comments:
             comment = self.render_comment(boilerplate=boilerplate)
-            self.debug(msg=comment)
+            #self.debug(msg=comment)
+            self.debug(msg=boilerplate)
             self.actions['comments'].append(comment)
-            import epdb; epdb.st()
+            #import epdb; epdb.st()
 
 
     def component_from_comments(self):
@@ -283,6 +286,24 @@ class DefaultTriager(object):
                     commented = True
 
         return commented
+
+    def is_maintainer_mentioned(self):
+        mentioned = False
+        if self.module_maintainers:
+            for comment in self.issue.current_comments:
+                # "ansible" is special ...
+                if 'ansible' in self.module_maintainers:
+                    for x in self.ansible_members:
+                        if ('@%s' % x) in comment.body:
+                            mentioned = True
+                            break
+                else:
+                    for x in self.module_maintainers:
+                        if ('@%s' % x) in comment.body:
+                            mentioned = True
+                            break
+        return mentioned
+       
 
     def age_of_last_maintainer_comment(self):
         """How long ago did the maintainer comment?"""
@@ -357,30 +378,40 @@ class DefaultTriager(object):
 
         if issue_type is False:
             self.issue.add_desired_label('needs_info')
+            self.issue.add_desired_comment(
+                boilerplate="issue_missing_data"
+            )            
             return
 
         if not issue_type.lower() in self.VALID_ISSUE_TYPES:
             self.issue.add_desired_label('needs_info')
+            self.issue.add_desired_comment(
+                boilerplate="issue_missing_data"
+            )            
             return
 
         desired_label = issue_type.replace(' ', '_')        
+        desired_label = desired_label.lower()
         desired_label = desired_label.replace('documentation', 'docs')
         if desired_label not in self.issue.get_current_labels():
             self.issue.add_desired_label(name=desired_label)
+        if len(self.issue.current_comments) == 0:
+            # only set this if no other comments
+            self.issue.add_desired_comment(boilerplate='issue_%s' % desired_label)
 
     def add_desired_labels_by_ansible_version(self):
         if not 'ansible version' in self.template_data:
             self.debug(msg="no ansible version section")
             self.issue.add_desired_label(name="needs_info")
             self.issue.add_desired_comment(
-                boilerplate="need_ansible_version"
+                boilerplate="issue_missing_data"
             )            
             return
         if not self.template_data['ansible version']:
             self.debug(msg="no ansible version defined")
             self.issue.add_desired_label(name="needs_info")
             self.issue.add_desired_comment(
-                boilerplate="need_ansible_version"
+                boilerplate="issue_missing_data"
             )            
             return
 
@@ -399,9 +430,33 @@ class DefaultTriager(object):
         """Ads labels regarding maintainer info"""
         module_maintainers = self.module_maintainers
 
+        '''
         if 'needs_info' in self.issue.get_current_labels():
             self.debug(msg="needs info labeled, skipping maintainer")
             return
+        '''
+
+        if not module_maintainers and self.module_indexer.is_valid(self.module):
+            self.debug(msg="no maintainer for %s" % self.module)
+            self.issue.add_desired_label(name="waiting_on_maintainer")
+            self.issue.add_desired_comment(boilerplate="issue_module_no_maintainer")
+            return
+        else:
+            if not self.has_maintainer_commented() \
+                and (not 'needs_info' in self.issue.get_current_labels()):
+
+                if len(self.issue.current_comments) > 0:
+                    self.debug(msg="pinging maintainer")
+                    self.issue.add_desired_label(name="waiting_on_maintainer")
+                    if not module_maintainers == ['ansible']:
+                        self.issue.add_desired_comment(boilerplate="issue_notifiy_maintainer")
+                else:
+                    self.debug(msg="pinging maintainer")
+                    self.issue.add_desired_label(name="waiting_on_maintainer")
+                    if not module_maintainers == ['ansible']:
+                        self.issue.add_desired_comment(boilerplate="issue_friendly_maintainer_reminder")
+                return
+            #import epdb; epdb.st()
 
         # FIXME - what?
         if 'ansible' in module_maintainers:
@@ -412,15 +467,30 @@ class DefaultTriager(object):
             or ('ansible' in module_maintainers and self.issue.get_submitter() in self.ansible_members):
             self.debug(msg="creator owns this module")
 
-        if not module_maintainers:
-            self.debug(msg="unknown maintainer.")
-            self.issue.add_desired_label(name="pending_maintainer_unknown")
-            return            
+    def render_comment(self, boilerplate=None):
+        """Renders templates into comments using the boilerplate as filename"""
+        maintainers = self.module_maintainers
+        if not maintainers:
+            maintainers = ['ansible/core']
+        submitter = self.issue.get_submitter()
+        missing_sections = [x for x in self.issue.REQUIRED_SECTIONS if not x in self.template_data]
+
+        issue_type = self.template_data.get('issue type', None)
+        if issue_type:
+            issue_type = issue_type.lower()
+
+        template = environment.get_template('%s.j2' % boilerplate)
+        comment = template.render(maintainers=maintainers, 
+                                  submitter=submitter, 
+                                  issue_type=issue_type,
+                                  missing_sections=missing_sections)
+        return comment
+
 
     def process_comments(self):
         """ Processes ISSUE comments for matching criteria to add labels"""
         if not self.github_user in self.BOTLIST:
-            BOTLIST.append(self.github_user)
+            self.BOTLIST.append(self.github_user)
         module_maintainers = self.get_module_maintainers()
         comments = self.issue.get_comments()
         today = datetime.today()

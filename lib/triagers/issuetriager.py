@@ -141,7 +141,7 @@ class TriageIssues(DefaultTriager):
         self.add_desired_labels_by_ansible_version()
         self.add_desired_labels_by_namespace()
         self.add_desired_labels_by_maintainers()
-        self.process_comments()
+        #self.process_comments()
         self.create_actions()
 
         '''
@@ -211,7 +211,8 @@ class TriageIssues(DefaultTriager):
         print("Maintainer(s) Comment Age: %s days" % maintainer_last_comment_age)
         print("Waiting on Maintainer(s): %s" % waiting_on_maintainer)
         print("Current Labels: %s" % ', '.join(self.issue.current_labels))
-        print("Actions: %s" % self.actions)
+        print("Actions: ...")
+        import pprint; pprint.pprint(self.actions)
 
         #if not component_isvalid:
         #    import epdb; epdb.st()
