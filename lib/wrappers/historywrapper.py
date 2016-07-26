@@ -3,9 +3,9 @@
 import os
 import sys
 import time
-import dateutil.parser
 from datetime import datetime
 from operator import itemgetter
+from github import GithubObject
 
 # historywrapper.py
 #
@@ -184,11 +184,14 @@ class HistoryWrapper(object):
             edict['event'] = 'reacted'
             edict['created_at'] = reaction['created_at']
             edict['actor'] = reaction['user']['login']
-            edict['conent'] = reaction['content']
+            edict['content'] = reaction['content']
 
-            # use dateutil to make this easy
+            # convert the timestamp the same way the lib does it
             if type(edict['created_at']) in [unicode, str]:
-                edict['created_at'] = dateutil.parser.parse(edict['created_at'])
+                dt = GithubObject.GithubObject.\
+                        _makeDatetimeAttribute(edict['created_at'])
+                edict['created_at'] = dt.value
+                #import epdb; epdb.st()
 
             processed_events.append(edict)
 
@@ -197,4 +200,3 @@ class HistoryWrapper(object):
 
         # return ...
         return sorted_events
-

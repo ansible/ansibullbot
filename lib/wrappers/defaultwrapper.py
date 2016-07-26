@@ -81,6 +81,7 @@ class DefaultWrapper(object):
         self.desired_labels = []
         self.current_events = []
         self.current_comments = []
+        self.current_reactions = []
         self.desired_comments = []
 
     def get_comments(self):
@@ -98,20 +99,21 @@ class DefaultWrapper(object):
 
     def get_reactions(self):
         # https://developer.github.com/v3/reactions/
-        baseurl = self.instance.url
-        reactions_url = baseurl + '/reactions'
-        headers = {}
-        headers['Accept'] = 'application/vnd.github.squirrel-girl-preview'
-
-        jdata = {}
-        try:
-            resp = self.instance._requester.requestJson('GET', 
-                                    reactions_url, headers=headers)
-            data = resp[2]
-            jdata = json.loads(data)
-        except Exception as e:
-            pass
-        return jdata
+        if not self.current_reactions:
+            baseurl = self.instance.url
+            reactions_url = baseurl + '/reactions'
+            headers = {}
+            headers['Accept'] = 'application/vnd.github.squirrel-girl-preview'
+            jdata = []
+            try:
+                resp = self.instance._requester.requestJson('GET', 
+                                        reactions_url, headers=headers)
+                data = resp[2]
+                jdata = json.loads(data)
+            except Exception as e:
+                pass
+            self.current_reactions = jdata
+        return self.current_reactions
 
     def get_submitter(self):
         """Returns the submitter"""
