@@ -137,12 +137,18 @@ class TriageIssues(DefaultTriager):
         ###########################################################
 
         self.keep_current_main_labels()
+        print('desired_comments: %s' % self.issue.desired_comments)
         self.add_desired_labels_by_issue_type()
+        print('desired_comments: %s' % self.issue.desired_comments)
         self.add_desired_labels_by_ansible_version()
+        print('desired_comments: %s' % self.issue.desired_comments)
         self.add_desired_labels_by_namespace()
+        print('desired_comments: %s' % self.issue.desired_comments)
         self.add_desired_labels_by_maintainers()
+        print('desired_comments: %s' % self.issue.desired_comments)
         #self.process_comments()
         self.create_actions()
+        print('desired_comments: %s' % self.issue.desired_comments)
 
         '''
         self.actions = [] #hackaround
@@ -228,5 +234,38 @@ class TriageIssues(DefaultTriager):
 
         if self.always_pause:
             import epdb; epdb.st()
+
+    def create_actions(self):
+        """Create actions from the desired label/unlabel/comment actions"""
+        resolved_desired_labels = []
+        for desired_label in self.issue.desired_labels:
+            resolved_desired_label = self.issue.resolve_desired_labels(
+                desired_label
+            )
+            if desired_label != resolved_desired_label:
+                resolved_desired_labels.append(resolved_desired_label)
+                if (resolved_desired_label not in self.issue.get_current_labels()):
+                    self.issue.add_desired_comment(desired_label)
+                    self.actions['newlabel'].append(resolved_desired_label)
+            else:
+                #import epdb; epdb.st()
+                resolved_desired_labels.append(desired_label)
+                if desired_label not in self.issue.get_current_labels():
+                    self.actions['newlabel'].append(desired_label)
+                    if os.path.exists("templates/" + 'issue_' + desired_label + ".j2"):
+                        self.issue.add_desired_comment('issue_' + desired_label)
+
+        for current_label in self.issue.get_current_labels():
+            if current_label in self.IGNORE_LABELS:
+                continue
+            if current_label not in resolved_desired_labels:
+                self.actions['unlabel'].append(current_label)
+
+        for boilerplate in self.issue.desired_comments:
+            comment = self.render_comment(boilerplate=boilerplate)
+            #self.debug(msg=comment)
+            self.debug(msg=boilerplate)
+            self.actions['comments'].append(comment)
+            #import epdb; epdb.st()
 
 
