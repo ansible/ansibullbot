@@ -420,11 +420,17 @@ class DefaultTriager(object):
 
         if not self.match:
             return False        
+        
+        if self.match['repository'] != self.github_repo:
+            self.issue.add_desired_comment(boilerplate='issue_wrong_repo')
+
         for key in ['topic', 'subtopic']:            
             if self.match[key]:
                 thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
                 if thislabel in self.valid_labels:
                     self.issue.add_desired_label(thislabel)
+
+        
 
     def add_desired_labels_by_maintainers(self):
         """Ads labels regarding maintainer info"""
@@ -436,7 +442,7 @@ class DefaultTriager(object):
             return
         '''
 
-        if not module_maintainers and self.module_indexer.is_valid(self.module):
+        if not module_maintainers and self.match and self.match['repository'] == self.github_repo:
             self.debug(msg="no maintainer for %s" % self.module)
             self.issue.add_desired_label(name="waiting_on_maintainer")
             self.issue.add_desired_comment(boilerplate="issue_module_no_maintainer")
@@ -479,10 +485,13 @@ class DefaultTriager(object):
         if issue_type:
             issue_type = issue_type.lower()
 
+        correct_repo = self.match.get('repository', None)
+
         template = environment.get_template('%s.j2' % boilerplate)
         comment = template.render(maintainers=maintainers, 
                                   submitter=submitter, 
                                   issue_type=issue_type,
+                                  correct_repo=correct_repo,
                                   missing_sections=missing_sections)
         return comment
 
