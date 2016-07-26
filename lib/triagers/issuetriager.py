@@ -297,7 +297,7 @@ class TriageIssues(DefaultTriager):
         missing_sections = self.issue.get_missing_sections()
 
         # Did anyone ping the maintainer(s)?
-        maintainers = self.module_maintainers
+        maintainers = self.get_module_maintainers()
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
             maintainers += self.ansible_members

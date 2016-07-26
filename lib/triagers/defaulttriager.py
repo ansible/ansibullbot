@@ -148,12 +148,13 @@ class DefaultTriager(object):
     def _get_maintainers(self):
         """Reads all known maintainers from files and their owner namespace"""
         if not self.maintainers:
-            f = open(MAINTAINERS_FILES[self.github_repo])
-            for line in f:
-                owner_space = (line.split(': ')[0]).strip()
-                maintainers_string = (line.split(': ')[-1]).strip()
-                self.maintainers[owner_space] = maintainers_string.split(' ')
-            f.close()
+            for repo in ['core', 'extras']:
+                f = open(MAINTAINERS_FILES[repo])
+                for line in f:
+                    owner_space = (line.split(': ')[0]).strip()
+                    maintainers_string = (line.split(': ')[-1]).strip()
+                    self.maintainers[owner_space] = maintainers_string.split(' ')
+                f.close()
         return self.maintainers
 
     def debug(self, msg=""):
