@@ -82,6 +82,7 @@ class DefaultTriager(object):
         "pending_action",
         "gce",
         "python3",
+        "P1","P2","P3","P4",
     ]
 
 
@@ -390,15 +391,17 @@ class DefaultTriager(object):
 
         if not self.match:
             return False        
-        
-        if self.match['repository'] != self.github_repo:
-            self.issue.add_desired_comment(boilerplate='issue_wrong_repo')
 
-        for key in ['topic', 'subtopic']:            
-            if self.match[key]:
-                thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
-                if thislabel in self.valid_labels:
-                    self.issue.add_desired_label(thislabel)
+        if 'component name' in self.template_data and self.match:
+            #import epdb; epdb.st()        
+            if self.match['repository'] != self.github_repo:
+                self.issue.add_desired_comment(boilerplate='issue_wrong_repo')
+
+            for key in ['topic', 'subtopic']:            
+                if self.match[key]:
+                    thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
+                    if thislabel in self.valid_labels:
+                        self.issue.add_desired_label(thislabel)
 
         
 
