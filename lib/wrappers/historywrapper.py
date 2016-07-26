@@ -3,6 +3,7 @@
 import os
 import sys
 import time
+import dateutil.parser
 from datetime import datetime
 from operator import itemgetter
 
@@ -141,10 +142,13 @@ class HistoryWrapper(object):
         return labeled
 
     def process(self):
+        """Merge all events into chronological order"""
+
+        processed_events = []
+
         events = self.issue.get_events()
         comments = self.issue.get_comments()
         reactions = self.issue.get_reactions()
-        today = datetime.today()
 
         processed_events = []
         for ide,event in enumerate(events):
@@ -171,12 +175,22 @@ class HistoryWrapper(object):
             edict['actor'] = comment.user.login
             edict['created_at'] = comment.created_at
             edict['body'] = comment.body
-            if edict not in processed_events:
-                processed_events.append(edict)
-            else:
-                import pprint; pprint.pprint(edict)
-                import epdb; epdb.st()
+            processed_events.append(edict)
 
+        for reaction in reactions:
+            # 2016-07-26T20:08:20Z
+            edict = {}
+            edict['id'] = reaction['id']
+            edict['event'] = 'reacted'
+            edict['created_at'] = reaction['created_at']
+            edict['actor'] = reaction['user']['login']
+            edict['conent'] = reaction['content']
+
+            # use dateutil to make this easy
+            if type(edict['created_at']) in [unicode, str]:
+                edict['created_at'] = dateutil.parser.parse(edict['created_at'])
+
+            processed_events.append(edict)
 
         # sort by created_at
         sorted_events = sorted(processed_events, key=itemgetter('created_at')) 
