@@ -31,7 +31,7 @@ class HistoryWrapper(object):
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
         for event in self.history:
-            if event['event'] == eventname:
+            if event['event'] == eventname or not eventname:
                 # allow actor to be a list or a string
                 if type(actor) != list and event['actor'] == actor:
                     matching_events.append(event)
@@ -52,6 +52,14 @@ class HistoryWrapper(object):
     def is_mentioned(self, username):
         """Has person X ever been mentioned in this issue?"""
         matching_events = self._find_events_by_actor('mentioned', username)
+        if len(matching_events) > 0:
+            return True
+        else:
+            return False
+
+    def has_viewed(self, username):
+        """Has person X ever interacted with issue in any way?"""
+        matching_events = self._find_events_by_actor(None, username)
         if len(matching_events) > 0:
             return True
         else:
