@@ -281,6 +281,64 @@ class TriageIssues(DefaultTriager):
             #import epdb; epdb.st()
 
     def process_history(self):
+        today = datetime.today()
+
+        # Build the history
         self.history = HistoryWrapper(self.issue)
+
+        # test ...
+        self.history.has_subscribed('marcelloromani')
+
+        # who made this and when did they last comment?
+        submitter = self.issue.get_submitter()
+        submitter_last_commented = self.history.last_commented_at(submitter)
+
+        # what did they not provide?
+        missing_sections = self.issue.get_missing_sections()
+
+        # Did anyone ping the maintainer(s)?
+        maintainers = self.module_maintainers
+        if 'ansible' in maintainers:
+            maintainers.remove('ansible')
+            maintainers += self.ansible_members
+        maintainer_mentioned = self.history.is_mentioned(maintainers)
+        print('maintainer(s) mentioned: %s' % maintainer_mentioned)               
+
+        # Has the maintainer ever responded?
+        maintainer_commented = self.history.has_commented(maintainers)
+
+        # Has the maintainer ever subscribed?
+        maintainer_subscribed = self.history.has_subscribed(maintainers)
+
+        # Was it ever needs_info?
         had_needs_info = self.history.was_labeled(label='needs_info')
-        import epdb; epdb.st()
+
+        # Still needs_info?
+        needsinfo_remove = False
+        needsinfo_last_applied = None
+        if 'needs_info' in self.issue.current_labels:
+            needsinfo_last_applied = self.history.label_last_applied('needs_info')
+            if submitter_last_commented:
+                if submitter_last_commented > needsinfo_last_applied \
+                    and not missing_sections:
+                    needsinfo_remove = True                
+
+        # Is needs_info stale or expired?
+        needsinfo_stale = False
+        needsinfo_expired = False
+        if not needsinfo_remove and needsinfo_last_applied:
+            time_delta = today - needsinfo_last_applied
+            needsinfo_age = time_delta.days
+            if needsinfo_age > 14:
+                needsinfo_stale = True
+            if needsinfo_age > 30:
+                needsinfo_expired = True
+
+        if needsinfo_stale or needsinfo_expired:
+            print("TIME TO REPING NEEDS_INFO!")
+            import epdb; epdb.st()
+
+        if needsinfo_remove:
+            print("TIME TO REMOVE NEEDS_INFO!")
+            import epdb; epdb.st()
+    

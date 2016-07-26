@@ -76,6 +76,7 @@ class DefaultWrapper(object):
         self.instance = issue
         self.number = self.instance.number
         self.current_labels = self.get_current_labels()
+        self.template_data = {}
         self.desired_labels = []
         self.current_events = []
         self.current_comments = []
@@ -107,8 +108,10 @@ class DefaultWrapper(object):
 
     def get_template_data(self):
         """Extract templated data from an issue body"""
-        tdict = extract_template_data(self.instance.body, issue_number=self.number)
-        return tdict
+        if not self.template_data:
+            self.template_data = \
+                extract_template_data(self.instance.body, issue_number=self.number)
+        return self.template_data
 
     def resolve_desired_labels(self, desired_label):
         for resolved_label, aliases in self.ALIAS_LABELS.iteritems():
@@ -142,4 +145,9 @@ class DefaultWrapper(object):
         if boilerplate and boilerplate not in self.desired_comments:
             self.desired_comments.append(boilerplate)
 
+    def get_missing_sections(self):
+        missing_sections = [x for x in self.REQUIRED_SECTIONS \
+                            if not x in self.template_data \
+                            or not self.template_data.get(x)]
+        return missing_sections
 

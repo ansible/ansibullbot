@@ -27,16 +27,21 @@ class HistoryWrapper(object):
         self.issue = issue
         self.history = self.process()
 
-    def _find_events_by_actor(self, event, actor, maxcount=1):
+    def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
         for event in self.history:
-            if event['event'] == 'referenced' and event['actor'] == username:
-                matching_events.append(event)
+            if event['event'] == eventname:
+                # allow actor to be a list or a string
+                if type(actor) != list and event['actor'] == actor:
+                    matching_events.append(event)
+                elif type(actor) == list and event['actor'] in actor:
+                    matching_events.append(event)
                 if len(matching_events) == maxcount:
                     break
         return matching_events
 
     def is_referenced(self, username):
+        """Has this issue ever been referenced by another issue|PR?"""
         matching_events = self._find_events_by_actor('referenced', username)
         if len(matching_events) > 0:
             return True
@@ -44,41 +49,72 @@ class HistoryWrapper(object):
             return False
 
     def is_mentioned(self, username):
+        """Has person X ever been mentioned in this issue?"""
         matching_events = self._find_events_by_actor('mentioned', username)
         if len(matching_events) > 0:
             return True
         else:
             return False
 
+    def has_commented(self, username):
+        """Has person X ever commented on this issue?"""
+        matching_events = self._find_events_by_actor('commented', username)
+        if len(matching_events) > 0:
+            return True
+        else:
+            return False
+
     def has_subscribed(self, username):
+        """Has person X ever subscribed to this issue?"""
         matching_events = self._find_events_by_actor('subscribed', username)
         if len(matching_events) > 0:
             return True
         else:
             return False
 
-   def was_assigned(self, username):
+    def was_assigned(self, username):
+        """Has person X ever been assigned to this issue?"""
         matching_events = self._find_events_by_actor('assigned', username)
         if len(matching_events) > 0:
             return True
         else:
             return False
 
-   def was_unassigned(self, username):
+    def was_unassigned(self, username):
+        """Has person X ever been unassigned from this issue?"""
         matching_events = self._find_events_by_actor('unassigned', username)
         if len(matching_events) > 0:
             return True
         else:
             return False
 
-   def was_subscribed(self, username):
+    def was_subscribed(self, username):
+        """Has person X ever been subscribed to this issue?"""
         matching_events = self._find_events_by_actor('subscribed', username)
         if len(matching_events) > 0:
             return True
         else:
             return False
 
-   def was_labeled(self, label=None):
+    def last_commented_at(self, username):
+        """When did person X last comment?"""
+        last_date = None
+        for event in reversed(self.history):
+            if event['event'] == 'commented':
+                if event['actor'] == username:
+                    last_date = event['created_at']
+        return last_date
+
+    def label_last_applied(self, label):
+        """What date was a label last applied?"""
+        last_date = None
+        for event in reversed(self.history):
+            if event['event'] == 'labeled':
+                if event['label'] == 'needs_info':
+                    last_date = event['created_at']
+        return last_date
+
+    def was_labeled(self, label=None):
         """Were labels -ever- applied to this issue?"""
         labeled = False
         for event in self.history:
@@ -91,7 +127,7 @@ class HistoryWrapper(object):
                     break
         return labeled
 
-   def was_unlabeled(self, label=None):
+    def was_unlabeled(self, label=None):
         """Were labels -ever- unapplied from this issue?"""
         labeled = False
         for event in self.history:
@@ -128,6 +164,7 @@ class HistoryWrapper(object):
             processed_events.append(edict)
 
         for idc,comment in enumerate(comments):
+            edict = {}
             edict['id'] = comment.id
             edict['event'] = 'commented'
             edict['actor'] = comment.user.login
@@ -135,6 +172,9 @@ class HistoryWrapper(object):
             edict['body'] = comment.body
             if edict not in processed_events:
                 processed_events.append(edict)
+            else:
+                import pprint; pprint.pprint(edict)
+                import epdb; epdb.st()
 
         # sort by created_at
         sorted_events = sorted(processed_events, key=itemgetter('created_at')) 
