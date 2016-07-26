@@ -115,6 +115,9 @@ class DefaultTriager(object):
         self.ansible_members = self.get_ansible_members()
         self.valid_labels = self.get_valid_labels()
 
+        # processed metadata
+        self.meta = {}
+
     def _connect(self):
         """Connects to GitHub's API"""
         return Github(login_or_token=self.github_token or self.github_user,
@@ -534,3 +537,11 @@ class DefaultTriager(object):
                 self.debug(msg="%s is a ansible member" % comment.user.login)
 
         self.debug(msg="--- END Processing Comments")
+
+
+    def issue_type_to_label(self, issue_type):
+        if issue_type:
+            issue_type = issue_type.lower()
+            issue_type = issue_type.replace(' ', '_')
+            issue_type = issue_type.replace('documentation', 'docs')
+        return issue_type

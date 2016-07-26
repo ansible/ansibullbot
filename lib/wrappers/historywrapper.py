@@ -105,6 +105,18 @@ class HistoryWrapper(object):
         else:
             return False
 
+    def last_viewed_at(self, username):
+        """When did person X last comment?"""
+        last_date = None
+        for event in reversed(self.history):
+            if type(username) != list:
+                if event['actor'] == username:
+                    last_date = event['created_at']
+            else:
+                if event['actor'] in username:
+                    last_date = event['created_at']
+        return last_date
+
     def last_commented_at(self, username):
         """When did person X last comment?"""
         last_date = None

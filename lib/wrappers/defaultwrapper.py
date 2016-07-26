@@ -55,12 +55,9 @@ class DefaultWrapper(object):
     }
 
     MANUAL_INTERACTION_LABELS = [
-        "needs_revision",
-        "needs_info",
     ]
 
     MUTUALLY_EXCLUSIVE_LABELS = [
-	"needs_info",
         "bug_report",
         "feature_idea",
         "docs_report"

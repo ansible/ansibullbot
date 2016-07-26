@@ -152,65 +152,18 @@ class TriageIssues(DefaultTriager):
         self.add_desired_labels_by_namespace()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
+        '''
         self.add_desired_labels_by_maintainers()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+        '''
 
         #self.process_comments()
         self.process_history()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-
+        
         self.create_actions()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
-        '''
-        self.actions = [] #hackaround
-        if not issue_type_defined:
-            self.actions.append('ENOTEMPLATE: please use template')        
-        elif not issue_type_valid:
-            self.actions.append('ENOISSUETYPE: please use valid issue type')        
-        elif issue_type_valid:
-            thislabel = issue_type.lower().replace(' ', '_')
-            thislabel = thislabel.replace('documentation', 'docs')
-            if thislabel in self.valid_labels \
-                and thislabel not in self.issue.current_labels:
-                self.actions.append("ALABEL: add %s" % thislabel)
-            elif thislabel not in self.valid_labels:
-                print('%s NOT VALID!' % thislabel)
-                import epdb; epdb.st()
-
-        if not component_defined:
-            self.actions.append('ENOTEMPLATE: please use template')        
-        elif not component_isvalid:
-            self.actions.append('ENOMODULE: please specify a valid module name')        
-        if component_isvalid and not this_repo:
-            self.actions.append('EWRONGREPO: please file under %s' % correct_repo)
-
-        if component_isvalid and this_repo and not maintainers:
-            self.actions.append('ENOMAINTAINER: module has no maintainer')
-
-        if component_isvalid:
-            if maintainers and not 'needs_info' in self.issue.current_labels:
-                if not maintainer_commented:
-                    self.actions.append("WOM: ping maintainer(s)")
-                if maintainer_commented \
-                    and waiting_on_maintainer \
-                    and maintainer_last_comment_age > 14:
-                    self.actions.append("WOM: -remind- maintainer(s)")
-            if maintainers \
-                and 'needs_info' in self.issue.current_labels \
-                and not waiting_on_maintainer:
-                    self.actions.append("RLABEL: remove needs_info")
-
-            for key in ['topic', 'subtopic']:            
-                if self.match[key]:
-
-                    thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
-
-                    if thislabel not in self.issue.current_labels \
-                        and thislabel in self.valid_labels:
-                        self.actions.append("ALABEL: add %s" % thislabel)
-            #import epdb; epdb.st()
-        '''
 
         ###########################################################
         #                        LOG 
@@ -225,12 +178,18 @@ class TriageIssues(DefaultTriager):
         print("Component in this repo: %s" % this_repo)
         print("Module: %s" % self.module)
         print("Maintainer(s): %s" % ', '.join(maintainers))
-        print("Maintainer(s) Have Commented: %s" % maintainer_commented)
-        print("Maintainer(s) Comment Age: %s days" % maintainer_last_comment_age)
-        print("Waiting on Maintainer(s): %s" % waiting_on_maintainer)
-        print("Current Labels: %s" % ', '.join(self.issue.current_labels))
+        #print("Maintainer(s) Have Commented: %s" % maintainer_commented)
+        #print("Maintainer(s) Comment Age: %s days" % maintainer_last_comment_age)
+        #print("Waiting on Maintainer(s): %s" % waiting_on_maintainer)
+        print("Current Labels: %s" % ', '.join(sorted(self.issue.current_labels)))
+        print("Desired Labels: %s" % ', '.join(sorted(self.issue.desired_labels)))
+        print("Current Comments: %s" % len(self.issue.current_comments))
+        print("Desired Comments: %s" % ', '.join(self.issue.desired_comments))
         print("Actions: ...")
-        import pprint; pprint.pprint(self.actions)
+        print("NEWLABEL:")
+        import pprint; pprint.pprint(self.actions['newlabel'])
+        print("UNLABEL:")
+        import pprint; pprint.pprint(self.actions['unlabel'])
 
         #if not component_isvalid:
         #    import epdb; epdb.st()
@@ -281,47 +240,67 @@ class TriageIssues(DefaultTriager):
             #import epdb; epdb.st()
 
     def process_history(self):
+        self.meta = {}
         today = datetime.today()
 
         # Build the history
         self.history = HistoryWrapper(self.issue)
-
-        # test ...
-        self.history.has_subscribed('marcelloromani')
+        self.meta['event_count'] = len(self.history.history)
 
         # who made this and when did they last comment?
         submitter = self.issue.get_submitter()
+        self.meta['submitter'] = submitter
         submitter_last_commented = self.history.last_commented_at(submitter)
+        self.meta['submitter_last_commented'] = submitter_last_commented
 
         # what did they not provide?
         missing_sections = self.issue.get_missing_sections()
+        self.meta['missing_sections'] = missing_sections
 
         # Did anyone ping the maintainer(s)?
         maintainers = self.get_module_maintainers()
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
             maintainers += self.ansible_members
+        self.meta['maintainers'] = maintainers
+
+        # Has maintainer viewed issue?
+        maintainer_viewed = self.history.has_viewed(maintainers)
+        self.meta['maintainer_viewed'] = maintainer_viewed
+        maintainer_last_viewed = self.history.last_viewed_at(maintainers)
+        self.meta['maintainer_last_viewed'] = maintainer_last_viewed
+
+        # Has maintainer been mentioned?
         maintainer_mentioned = self.history.is_mentioned(maintainers)
-        print('maintainer(s) mentioned: %s' % maintainer_mentioned)               
+        self.meta['maintainer_mentioned'] = maintainer_mentioned
+
+        # Has maintainer viewed issue?
+        maintainer_viewed = self.history.has_viewed(maintainers)
+        self.meta['maintainer_viewed'] = maintainer_viewed
 
         # Has the maintainer ever responded?
         maintainer_commented = self.history.has_commented(maintainers)
+        self.meta['maintainer_commented'] = maintainer_commented
 
         # Has the maintainer ever subscribed?
         maintainer_subscribed = self.history.has_subscribed(maintainers)
+        self.meta['maintainer_subscribed'] = maintainer_subscribed
 
         # Was it ever needs_info?
-        had_needs_info = self.history.was_labeled(label='needs_info')
+        was_needs_info = self.history.was_labeled(label='needs_info')
+        needsinfo_last_applied = self.history.label_last_applied('needs_info')
+        self.meta['was_needs_info'] = was_needs_info
+        self.meta['needsinfo_last_applied'] = needsinfo_last_applied
 
         # Still needs_info?
         needsinfo_remove = False
         needsinfo_last_applied = None
         if 'needs_info' in self.issue.current_labels:
-            needsinfo_last_applied = self.history.label_last_applied('needs_info')
             if submitter_last_commented:
                 if submitter_last_commented > needsinfo_last_applied \
                     and not missing_sections:
                     needsinfo_remove = True                
+        self.meta['needsinfo_remove'] = needsinfo_remove
 
         # Is needs_info stale or expired?
         needsinfo_stale = False
@@ -333,12 +312,52 @@ class TriageIssues(DefaultTriager):
                 needsinfo_stale = True
             if needsinfo_age > 30:
                 needsinfo_expired = True
+        self.meta['needsinfo_stale'] = needsinfo_stale
+        self.meta['needsinfo_expired'] = needsinfo_expired
 
-        if needsinfo_stale or needsinfo_expired:
-            print("TIME TO REPING NEEDS_INFO!")
-            import epdb; epdb.st()
+        # Time to [re]ping maintainer?
+        maintainer_to_ping = False
+        maintainer_to_reping = False
+        if (needsinfo_remove or not needsinfo_last_applied)\
+            and not missing_sections:
 
-        if needsinfo_remove:
-            print("TIME TO REMOVE NEEDS_INFO!")
-            import epdb; epdb.st()
-    
+            if maintainer_viewed:
+                time_delta = today - maintainer_last_viewed
+                view_age = time_delta.days
+                if view_age > 14:
+                    maintainer_to_reping = True
+            else:
+                maintainer_to_ping = True
+        self.meta['maintainer_to_ping'] = maintainer_to_ping
+        self.meta['maintainer_to_reping'] = maintainer_to_reping
+
+        # Should we be in waiting_on_maintainer mode?
+        maintainer_waiting_on = False
+        if needsinfo_remove or not was_needs_info and not missing_sections:
+            maintainer_waiting_on = True
+        self.meta['maintainer_waiting_on'] = maintainer_to_reping
+
+        # Should we [re]notify the submitter?
+
+        #################################################
+        # FINAL LOGIC LOOP
+        #################################################
+        if maintainer_waiting_on:
+            self.issue.add_desired_label('waiting_on_maintainer')
+            if len(self.issue.current_comments) == 0:
+                #issue_bug_report, issue_docs_report, issue_feature_idea
+                issue_type = self.template_data.get('issue type', None)
+                issue_type = self.issue_type_to_label(issue_type)
+                if issue_type:
+                    issue_type = 'issue_' + issue_type
+                    self.issue.add_desired_comment(issue_type)
+            elif maintainer_to_ping:
+                self.issue.add_desired_comment("issue_notifiy_maintainer")
+            elif maintainer_to_reping:
+                self.issue.add_desired_comment("issue_renotifiy_maintainer")
+
+        elif 'waiting_on_maintainer' in self.issue.desired_labels:
+            self.issue.desired_labels.remove('waiting_on_maintainer')
+            self.issue.add_desired_label('needs_info')
+            
+
