@@ -122,9 +122,28 @@ class HistoryWrapper(object):
         last_date = None
         for event in reversed(self.history):
             if event['event'] == 'commented':
-                if event['actor'] == username:
+                if type(username) == list:
+                    if event['actor'] in username:
+                        last_date = event['created_at']
+                elif event['actor'] == username:
                     last_date = event['created_at']
+            if last_date:
+                break
         return last_date
+
+    def last_comment(self, username):
+        last_comment = None
+        for event in reversed(self.history):
+            if event['event'] == 'commented':
+                if type(username) == list:
+                    if event['actor'] in username:
+                        last_comment = event['body']
+                elif event['actor'] == username:
+                    last_comment = event['body']
+            if last_comment:
+                break
+        #import epdb; epdb.st()
+        return last_comment
 
     def label_last_applied(self, label):
         """What date was a label last applied?"""
