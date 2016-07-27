@@ -399,48 +399,6 @@ class DefaultTriager(object):
                     if thislabel in self.valid_labels:
                         self.issue.add_desired_label(thislabel)
 
-        
-
-    def add_desired_labels_by_maintainers(self):
-        """Ads labels regarding maintainer info"""
-        module_maintainers = self.module_maintainers
-
-        '''
-        if 'needs_info' in self.issue.get_current_labels():
-            self.debug(msg="needs info labeled, skipping maintainer")
-            return
-        '''
-
-        if not module_maintainers and self.match and self.match['repository'] == self.github_repo:
-            self.debug(msg="no maintainer for %s" % self.module)
-            self.issue.add_desired_label(name="waiting_on_maintainer")
-            self.issue.add_desired_comment(boilerplate="issue_module_no_maintainer")
-            return
-        else:
-            if not self.has_maintainer_commented() \
-                and (not 'needs_info' in self.issue.get_current_labels()):
-
-                if len(self.issue.current_comments) > 0:
-                    self.debug(msg="pinging maintainer")
-                    self.issue.add_desired_label(name="waiting_on_maintainer")
-                    if not module_maintainers == ['ansible'] and len(self.issue.desired_comments) == 0:
-                        self.issue.add_desired_comment(boilerplate="issue_notifiy_maintainer")
-                else:
-                    self.debug(msg="pinging maintainer")
-                    self.issue.add_desired_label(name="waiting_on_maintainer")
-                    if not module_maintainers == ['ansible'] and len(self.issue.desired_comments) == 0:
-                        self.issue.add_desired_comment(boilerplate="issue_friendly_maintainer_reminder")
-                return
-            #import epdb; epdb.st()
-
-        # FIXME - what?
-        if 'ansible' in module_maintainers:
-            self.debug(msg="ansible in module maintainers")
-            return
-
-        if self.issue.get_submitter() in module_maintainers \
-            or ('ansible' in module_maintainers and self.issue.get_submitter() in self.ansible_members):
-            self.debug(msg="creator owns this module")
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
@@ -465,6 +423,7 @@ class DefaultTriager(object):
                                   submitter=submitter, 
                                   issue_type=issue_type,
                                   correct_repo=correct_repo,
+                                  component_name=self.template_data.get('component name', 'NULL'),
                                   missing_sections=missing_sections)
         #import epdb; epdb.st()
         return comment

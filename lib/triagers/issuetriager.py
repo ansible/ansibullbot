@@ -235,7 +235,9 @@ class TriageIssues(DefaultTriager):
 
         # should only make one comment at a time
         if len(self.issue.desired_comments) > 1:
-            if 'issue_needs_info' in self.issue.desired_comments \
+            if 'issue_invalid_module' in self.issue.desired_comments:
+                self.issue.desired_comments = ['issue_invalid_module']
+            elif 'issue_needs_info' in self.issue.desired_comments \
                 and 'needs_info' in self.issue.desired_labels:
                 self.issue.desired_comments = ['issue_needs_info']
             elif 'issue_needs_info' in self.issue.desired_comments \
@@ -285,6 +287,11 @@ class TriageIssues(DefaultTriager):
         missing_sections = self.issue.get_missing_sections()
         self.meta['missing_sections'] = missing_sections
 
+        # Is this a valid module?
+        valid_module = False
+        if self.match:
+            valid_module = True
+
         # Who are the maintainers?
         maintainers = self.get_module_maintainers()
         if 'ansible' in maintainers:
@@ -318,7 +325,7 @@ class TriageIssues(DefaultTriager):
         last_commentor_ismaintainer = False
         last_commentor_issubmitter = False
         last_commentor = self.history.last_commentor()
-        if last_commentor in maintainers:
+        if last_commentor in maintainers and last_commentor != self.github_user:
             last_commentor_ismaintainer = True
         elif last_commentor == submitter:
             last_commentor_issubmitter = True
@@ -389,6 +396,7 @@ class TriageIssues(DefaultTriager):
         self.meta['needsinfo_remove'] = needsinfo_remove
         self.meta['needsinfo_add'] = needsinfo_add
 
+        '''
         # Is needs_info stale or expired?
         needsinfo_stale = False
         needsinfo_expired = False
@@ -401,7 +409,9 @@ class TriageIssues(DefaultTriager):
                 needsinfo_expired = True
         self.meta['needsinfo_stale'] = needsinfo_stale
         self.meta['needsinfo_expired'] = needsinfo_expired
+        '''
 
+        '''
         # Time to [re]ping maintainer?
         maintainer_to_ping = False
         maintainer_to_reping = False
@@ -415,8 +425,12 @@ class TriageIssues(DefaultTriager):
                     maintainer_to_reping = True
             else:
                 maintainer_to_ping = True
+
+            import epdb; epdb.st()
+
         self.meta['maintainer_to_ping'] = maintainer_to_ping
         self.meta['maintainer_to_reping'] = maintainer_to_reping
+        '''
 
         # Should we be in waiting_on_maintainer mode?
         maintainer_waiting_on = False
@@ -465,6 +479,21 @@ class TriageIssues(DefaultTriager):
             needsinfo_add = True
             needsinfo_remove = False
 
+        # Time to [re]ping maintainer?
+        maintainer_to_ping = False
+        maintainer_to_reping = False
+        if maintainer_waiting_on:
+            if maintainer_viewed:
+                time_delta = today - maintainer_last_viewed
+                view_age = time_delta.days
+                if view_age > 14:
+                    maintainer_to_reping = True
+            else:
+                maintainer_to_ping = True
+            #import epdb; epdb.st()
+        self.meta['maintainer_to_ping'] = maintainer_to_ping
+        self.meta['maintainer_to_reping'] = maintainer_to_reping
+
         #issue_bug_report, issue_docs_report, issue_feature_idea
         issue_type = self.template_data.get('issue type', None)
         issue_type = self.issue_type_to_label(issue_type)
@@ -474,22 +503,46 @@ class TriageIssues(DefaultTriager):
         # FINAL LOGIC LOOP
         #################################################
 
-        if maintainer_command_close:
+        if not valid_module:
+            self.debug(msg='invalid module stanza')
+
+            self.issue.add_desired_label('needs_info')
+
+            if 'issue_invalid_module' not in self.issue.current_bot_comments:
+                self.issue.desired_comments = ['issue_invalid_module']
+
+        elif not maintainers:
+
+            self.debug(msg='no maintainer stanza')
+
+            self.issue.add_desired_label('waiting_on_maintainer')
+            self.issue.add_desired_comment("issue_module_no_maintainer")
+
+        elif maintainer_command_close:
+
+            self.debug(msg='maintainer closure stanza')
 
             # Need to close the issue ...
             self.issue.set_desired_state('closed')
 
         elif maintainer_waiting_on:
+
+            self.debug(msg='maintainer wait stanza')
+
             self.issue.add_desired_label('waiting_on_maintainer')
             if len(self.issue.current_comments) == 0:
                 if issue_type:
                     self.issue.add_desired_comment('issue_new')
-            elif maintainer_to_ping and maintainers:
-                self.issue.add_desired_comment("issue_notify_maintainer")
-            elif maintainer_to_reping and maintainers:
-                self.issue.add_desired_comment("issue_renotify_maintainer")
+            else:
+                if maintainer_to_ping and maintainers:
+                    self.issue.add_desired_comment("issue_notify_maintainer")
+                elif maintainer_to_reping and maintainers:
+                    self.issue.add_desired_comment("issue_renotify_maintainer")
+                #import epdb; epdb.st()
 
         elif submitter_waiting_on:
+
+            self.debug(msg='submitter wait stanza')
 
             if 'waiting_on_maintainer' in self.issue.desired_labels:
                 self.issue.desired_labels.remove('waiting_on_maintainer')
@@ -503,6 +556,5 @@ class TriageIssues(DefaultTriager):
             if submitter_to_ping or submitter_to_reping:
                 self.issue.add_desired_comment("issue_needs_info")
             '''
-
-                    
-        import epdb; epdb.st()
+              
+        #import epdb; epdb.st()
