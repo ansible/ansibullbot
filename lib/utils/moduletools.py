@@ -126,6 +126,19 @@ class ModuleIndexer(object):
             mname = mname.replace('.ps1', '')
             mdict['name'] = mname
 
+            # deprecated modules
+            if mname.startswith('_'):
+                deprecated_filename = \
+                    os.path.dirname(mdict['namespaced_module'])
+                deprecated_filename = \
+                    os.path.join(deprecated_filename, mname[1:] + '.py')
+                mdict['deprecated_filename'] = deprecated_filename
+            else:
+                mdict['deprecated_filename'] = mdict['repo_filename']
+
+            #if 'fireball' in match:
+            #    import epdb; epdb.st()
+
             mkey = mdict['filepath']
             self.modules[mkey] = mdict
 

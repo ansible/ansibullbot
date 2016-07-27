@@ -184,6 +184,9 @@ class DefaultTriager(object):
             # this was detected and handled in the process loop
             pass
 
+        if module.startswith('_'):
+            module = module[1:]
+
         maintainers = self._get_maintainers()
         if mdata['repo_filename'] in maintainers:
             self.module_maintainers = maintainers[mdata['repo_filename']]
@@ -193,9 +196,9 @@ class DefaultTriager(object):
             self.module_maintainers = maintainers[mdata['fulltopic']]
         elif (mdata['topic'] + '/') in maintainers:
             self.module_maintainers = maintainers[mdata['topic'] + '/']
+        elif (mdata['deprecated_filename']) in maintainers:
+            self.module_maintainers = maintainers[mdata['deprecated_filename']]
         else:
-            #import pprint; pprint.pprint(mdata)
-            #import epdb; epdb.st()
             pass
 
         return self.module_maintainers
