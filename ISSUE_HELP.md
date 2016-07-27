@@ -21,6 +21,7 @@ Please note that if you have a question about how to use this module with Ansibl
 Thanks in advance for taking a look at this bug report and for your ongoing work in maintaining this module. If you are unable to troubleshoot this issue with the information provided, please ping the submitter of the issue in a comment to let them know. 
 
 * If you need more information from the submitter, leave a comment stating needs_info and we will notify the submitter and apply the needs_info label.
+* If you do not need any more information and just need time to work the issue, leave a comment with !needs_info and the needs_info label will be removed and waiting_on_maintainer will be applied.
 * If, after further investigation, you believe this is not a bug, please leave a comment stating notabug, along with any additional information as to why it is not, and we will close this issue.
 * If you believe this issue is resolved, please leave a comment stating bug_resolved, and we will close this issue. 
 * If you believe this issue has been resolved by a pull request, please leave a comment stating resolved_by_pr, and reference the pull request # if possible. 
