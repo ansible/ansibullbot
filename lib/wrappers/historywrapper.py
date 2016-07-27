@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import pickle
 import sys
 import time
 from datetime import datetime
@@ -24,9 +25,55 @@ from github import GithubObject
 
 class HistoryWrapper(object):
 
-    def __init__(self, issue):
+    def __init__(self, issue, usecache=True):
         self.issue = issue
-        self.history = self.process()
+        if not usecache:
+            self.history = self.process()
+        else:
+            """Building history is expensive and slow"""
+            cache = self._load_cache()
+            if not cache:
+                self.history = self.process()
+                self._dump_cache()
+            else:
+                if cache['updated_at'] >= self.issue.instance.updated_at:
+                    self.history = cache['history']
+                else:
+                    self.history = self.process()
+                    self._dump_cache()
+
+    def _load_cache(self):
+        cachedir = os.path.expanduser('~/.ansibullbot/cache/')
+        cachedir = os.path.join(cachedir, self.issue.instance.html_url.replace('https://github.com/', ''))
+        if not os.path.isdir(cachedir):
+            os.makedirs(cachedir)
+        cachefile = os.path.join(cachedir, 'history.pickle')
+        if not os.path.isfile(cachefile):
+            return None            
+        try:
+            with open(cachefile, 'rb') as f:
+                cachedata = pickle.load(f)
+        except Exception as e:
+            cachedata = None
+        return cachedata
+
+    def _dump_cache(self):
+        cachedir = os.path.expanduser('~/.ansibullbot/cache/')
+        cachedir = os.path.join(cachedir, self.issue.instance.html_url.replace('https://github.com/', ''))
+        if not os.path.isdir(cachedir):
+            os.makedirs(cachedir)
+        cachefile = os.path.join(cachedir, 'history.pickle')
+
+        # keep the timestamp
+        cachedata = {'updated_at': self.issue.instance.updated_at,
+                     'history': self.history}
+
+        try:
+            with open(cachefile, 'wb') as f:
+                pickle.dump(cachedata, f)
+        except Exception as e:
+            import epdb; epdb.st()
+            pass
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
