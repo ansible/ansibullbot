@@ -2,6 +2,8 @@
 
 Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed.
 
+If at anytime you think this bot is misbehaving, please leave a comment of "bot_broken" and an Ansible staff member will intervene.
+
 ## For issue submitters
 If the module maintainer or ansibot needs further information, please respond to the request, so that you can help us to help you! 
 
@@ -24,5 +26,5 @@ Thanks in advance for taking a look at this bug report and for your ongoing work
 * If you believe this issue has been resolved by a pull request, please leave a comment stating resolved_by_pr, and reference the pull request # if possible. 
 * If this is a bug that you can't or won't fix, please leave a comment including the word wontfix, along with any reasons why.
 
-## For else also experiencing this issue
+## For anyone else also experiencing this issue
 Please leave a +1 reaction so we can determine if this issue is affecting a number of people. Any additional details you can provide, such as your environment, steps to reproduce, or workarounds you have found, can help out with resolving this issue.
