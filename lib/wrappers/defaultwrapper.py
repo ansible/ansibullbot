@@ -80,6 +80,8 @@ class DefaultWrapper(object):
         self.current_comments = []
         self.current_reactions = []
         self.desired_comments = []
+        self.current_state = 'open'
+        self.desired_state = 'open'
 
     def get_comments(self):
         """Returns all current comments of the PR"""
@@ -168,3 +170,22 @@ class DefaultWrapper(object):
                             or not self.template_data.get(x)]
         return missing_sections
 
+    def get_issue(self):
+        """Gets the issue from the GitHub API"""
+        return self.instance
+
+    def add_label(self, label=None):
+        """Adds a label to the Issue using the GitHub API"""
+        self.get_issue().add_to_labels(label)
+
+    def remove_label(self, label=None):
+        """Removes a label from the Issue using the GitHub API"""
+        self.get_issue().remove_from_labels(label)
+
+    def add_comment(self, comment=None):
+        """Adds a comment to the Issue using the GitHub API"""
+        self.get_issue().create_comment(comment)
+
+    def set_desired_state(self, state):
+        assert state in ['open', 'closed']
+        self.desired_state = state

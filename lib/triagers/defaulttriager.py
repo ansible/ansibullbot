@@ -108,6 +108,7 @@ class DefaultTriager(object):
             'newlabel': [],
             'unlabel':  [],
             'comments': [],
+            'close': False,
         }
 
         self.module_indexer = ModuleIndexer()
@@ -148,9 +149,9 @@ class DefaultTriager(object):
             vlabels.append(vl.name)
         return vlabels
 
-    def _get_maintainers(self):
+    def _get_maintainers(self, usecache=True):
         """Reads all known maintainers from files and their owner namespace"""
-        if not self.maintainers:
+        if not self.maintainers or not usecache:
             for repo in ['core', 'extras']:
                 f = open(MAINTAINERS_FILES[repo])
                 for line in f:
@@ -165,11 +166,12 @@ class DefaultTriager(object):
         if self.verbose:
             print("Debug: " + msg)
 
-    def get_module_maintainers(self):
+    def get_module_maintainers(self, expand=True):
         """Returns the list of maintainers for the current module"""
-        if self.module_maintainers:
+        # expand=False means don't use cache and don't expand the 'ansible' group
+
+        if self.module_maintainers and expand:
             return self.module_maintainers
-        #module = self.template_data.get('component name', None)
         module = self.module
         if not module:
             self.module_maintainers = []
@@ -184,23 +186,26 @@ class DefaultTriager(object):
             # this was detected and handled in the process loop
             pass
 
-        if module.startswith('_'):
-            module = module[1:]
+        # get cached or non-cached maintainers list
+        if not expand:
+            maintainers = self._get_maintainers(usecache=False)
+        else:
+            maintainers = self._get_maintainers()
 
-        maintainers = self._get_maintainers()
         if mdata['repo_filename'] in maintainers:
             self.module_maintainers = maintainers[mdata['repo_filename']]
+        elif (mdata['deprecated_filename']) in maintainers:
+            self.module_maintainers = maintainers[mdata['deprecated_filename']]
         elif mdata['namespaced_module'] in maintainers:
             self.module_maintainers = maintainers[mdata['namespaced_module']]
         elif mdata['fulltopic'] in maintainers:
             self.module_maintainers = maintainers[mdata['fulltopic']]
         elif (mdata['topic'] + '/') in maintainers:
             self.module_maintainers = maintainers[mdata['topic'] + '/']
-        elif (mdata['deprecated_filename']) in maintainers:
-            self.module_maintainers = maintainers[mdata['deprecated_filename']]
         else:
             pass
-
+        #if not expand:
+        #    import epdb; epdb.st()
         return self.module_maintainers
 
     def get_current_labels(self):
@@ -358,7 +363,8 @@ class DefaultTriager(object):
             self.issue.add_desired_label(name=desired_label)
         if len(self.issue.current_comments) == 0:
             # only set this if no other comments
-            self.issue.add_desired_comment(boilerplate='issue_%s' % desired_label)
+            #self.issue.add_desired_comment(boilerplate='issue_%s' % desired_label)
+            self.issue.add_desired_comment(boilerplate='issue_new')
 
     def add_desired_labels_by_ansible_version(self):
         if not 'ansible version' in self.template_data:
@@ -438,15 +444,15 @@ class DefaultTriager(object):
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
-        maintainers = self.module_maintainers
+        #maintainers = self.module_maintainers
+        maintainers = self.get_module_maintainers(expand=False)
+        #import epdb; epdb.st()
         if not maintainers:
-            maintainers = ['ansible'] #FIXME - why?
+            maintainers = ['NO_MAINTAINER_FOUND'] #FIXME - why?
         submitter = self.issue.get_submitter()
         missing_sections = [x for x in self.issue.REQUIRED_SECTIONS \
                             if not x in self.template_data \
                             or not self.template_data.get(x)]
-
-        #import epdb; epdb.st()
 
         issue_type = self.template_data.get('issue type', None)
         if issue_type:
@@ -460,6 +466,7 @@ class DefaultTriager(object):
                                   issue_type=issue_type,
                                   correct_repo=correct_repo,
                                   missing_sections=missing_sections)
+        #import epdb; epdb.st()
         return comment
 
 
@@ -548,3 +555,49 @@ class DefaultTriager(object):
             issue_type = issue_type.replace(' ', '_')
             issue_type = issue_type.replace('documentation', 'docs')
         return issue_type
+
+
+    def apply_actions(self):
+        if (self.actions['newlabel'] or self.actions['unlabel'] or
+                self.actions['comments'] or self.actions['close']):
+            if self.dry_run:
+                print("Dry-run specified, skipping execution of actions")
+            else:
+                if self.force:
+                    print("Running actions non-interactive as you forced.")
+                    self.execute_actions()
+                    return
+                cont = raw_input("Take recommended actions (y/N/a)? ")
+                if cont in ('a', 'A'):
+                    sys.exit(0)
+                if cont in ('Y', 'y'):
+                    self.execute_actions()
+                if cont == 'DEBUG':
+                    import epdb; epdb.st()
+        elif self.always_pause:
+            print("Skipping, but pause.")
+            cont = raw_input("Continue (Y/n/a)? ")
+            if cont in ('a', 'A', 'n', 'N'):
+                sys.exit(0)
+            elif cont == 'DEBUG':
+                import epdb; epdb.st()
+        else:
+            print("Skipping.")
+
+    def execute_actions(self):
+        """Turns the actions into API calls"""
+        if self.actions['close']:
+            # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
+            self.issue.instance.edit(state='closed')
+            return
+        for unlabel in self.actions['unlabel']:
+            self.debug(msg="API Call unlabel: " + unlabel)
+            self.issue.remove_label(label=unlabel)
+        for newlabel in self.actions['newlabel']:
+            self.debug(msg="API Call newlabel: " + newlabel)
+            self.issue.add_label(label=newlabel)
+        for comment in self.actions['comments']:
+            self.debug(msg="API Call comment: " + comment)
+            self.issue.add_comment(comment=comment)
+
+

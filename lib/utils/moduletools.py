@@ -45,6 +45,11 @@ class ModuleIndexer(object):
             bname = os.path.basename(pattern)
             match = self._find_match(bname)
 
+            if not match:
+                # check for deprecated name
+                #   _fireball -> fireball
+                match = self._find_match('_' + bname)
+
         return match
 
     def is_valid(self, mname):

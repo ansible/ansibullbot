@@ -145,6 +145,15 @@ class HistoryWrapper(object):
         #import epdb; epdb.st()
         return last_comment
 
+    def last_commentor(self):
+        """Who commented last?"""
+        last_commentor = None
+        for event in reversed(self.history):
+            if event['event'] == 'commented':
+                last_commentor = event['actor']
+                break
+        return last_commentor
+
     def label_last_applied(self, label):
         """What date was a label last applied?"""
         last_date = None
