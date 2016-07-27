@@ -78,6 +78,7 @@ class DefaultWrapper(object):
         self.desired_labels = []
         self.current_events = []
         self.current_comments = []
+        self.current_bot_comments = []
         self.current_reactions = []
         self.desired_comments = []
         self.current_state = 'open'
@@ -88,6 +89,17 @@ class DefaultWrapper(object):
         if not self.current_comments:
             self.current_comments = \
                 [x for x in self.instance.get_comments().reversed]
+            for x in self.current_comments:
+                body = x.body
+                lines = body.split('\n')
+                if lines[-1].startswith('<!---') \
+                    and lines[-1].endswith('--->') \
+                    and 'boilerplate:' in lines[-1]:
+                    parts = lines[-1].split()
+                    boilerplate = parts[2]
+                    self.current_bot_comments.append(boilerplate)
+                else:
+                    self.current_bot_comments.append('')
         return self.current_comments
 
     def get_events(self):
