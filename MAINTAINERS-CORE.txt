@@ -89,7 +89,7 @@ files/ini_file.py: jpmens noseka1
 files/lineinfile.py: ansible
 files/replace.py: EvanK
 files/stat.py: bpennypacker
-files/synchronize.py: tima
+files/synchronize.py: ansible
 files/template.py: ansible
 files/unarchive.py: dagwieers pileofrogs
 files/xattr.py: ansible
