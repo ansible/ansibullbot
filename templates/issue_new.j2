@@ -1,6 +1,6 @@
 <!-- @{{ submitter }}: Thanks for filing this {{ issue_type }}! -->
 {% if maintainers|length > 1 %}
-{% for item in maintainers %}{{ '& @' + item }}{% endfor %} this {{ issue_type }} is waiting for your interaction.
+@{{ maintainers|join(', @') }}, ping. This issue is waiting on your response.
 {% else %}
 {% for item in maintainers %}{{ '@' + item }}{% endfor %} ping, this issue is waiting for your response.
 {% endif %}

@@ -1,2 +1,3 @@
-{% for item in maintainers %}{{ '@' + item }}{% endfor %} this issue is waiting on your response.
+@{{ maintainers|join(', @') }}, ping. This issue is still waiting on your response.
+[click here for bot help](https://github.com/jctanner/ansibullbot/blob/ISSUE_TRIAGE_CLASS/ISSUE_HELP.md)
 <!--- boilerplate: issue_renotify_maintainer --->

@@ -26,6 +26,7 @@ Thanks in advance for taking a look at this bug report and for your ongoing work
 * If you believe this issue is resolved, please leave a comment stating bug_resolved, and we will close this issue. 
 * If you believe this issue has been resolved by a pull request, please leave a comment stating resolved_by_pr, and reference the pull request # if possible. 
 * If this is a bug that you can't or won't fix, please leave a comment including the word wontfix, along with any reasons why.
+* If this bug or feature request is something that you want implemented but do not have the time or expertise to do, comment with needs_contributor and the issue will be but into a waiting_on_contributor state.
 
 ## For anyone else also experiencing this issue
 Please leave a +1 reaction so we can determine if this issue is affecting a number of people. Any additional details you can provide, such as your environment, steps to reproduce, or workarounds you have found, can help out with resolving this issue.

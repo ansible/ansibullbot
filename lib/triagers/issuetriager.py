@@ -338,6 +338,7 @@ class TriageIssues(DefaultTriager):
         maintainer_command_wontfix = False
         maintainer_command_resolved_bug = False
         maintainer_command_resolved_pr = False
+        maintainer_command_needscontributor = False
         if maintainer_commented and not maintainer_last_comment:
             print('ERROR: should have a comment from maintainer')
             import epdb; epdb.st()
@@ -360,12 +361,15 @@ class TriageIssues(DefaultTriager):
             elif 'resolved_by_pr' in maintainer_last_comment:
                 maintainer_command_resolved_pr = True
                 maintainer_command_close = True
+            elif 'needs_contributor' in maintainer_last_comment:
+                maintainer_command_needscontributor = True
         self.meta['maintainer_command_close'] = maintainer_command_close
         self.meta['maintainer_command_needsinfo'] = maintainer_command_needsinfo
         self.meta['maintainer_command_notabug'] = maintainer_command_notabug 
         self.meta['maintainer_command_wontfix'] = maintainer_command_wontfix
         self.meta['maintainer_command_resolved_bug'] = maintainer_command_resolved_bug
         self.meta['maintainer_command_resolved_pr'] = maintainer_command_resolved_pr
+        self.meta['maintainer_needscontributor'] = maintainer_command_needscontributor
 
         # Has the maintainer ever subscribed?
         maintainer_subscribed = self.history.has_subscribed(maintainers)
@@ -525,6 +529,13 @@ class TriageIssues(DefaultTriager):
             # Need to close the issue ...
             self.issue.set_desired_state('closed')
 
+        elif maintainer_command_needscontributor:
+
+            # maintainer can't or won't fix this, but would like someone else to
+            self.debug(msg='maintainer needs contributor stanza')
+            self.issue.add_desired_label('waiting_on_contributor')
+            #import epdb; epdb.st()            
+
         elif maintainer_waiting_on:
 
             self.debug(msg='maintainer wait stanza')
@@ -534,10 +545,11 @@ class TriageIssues(DefaultTriager):
                 if issue_type:
                     self.issue.add_desired_comment('issue_new')
             else:
-                if maintainer_to_ping and maintainers:
-                    self.issue.add_desired_comment("issue_notify_maintainer")
-                elif maintainer_to_reping and maintainers:
-                    self.issue.add_desired_comment("issue_renotify_maintainer")
+                if maintainers != ['DEPRECATED']:
+                    if maintainer_to_ping and maintainers:
+                        self.issue.add_desired_comment("issue_notify_maintainer")
+                    elif maintainer_to_reping and maintainers:
+                        self.issue.add_desired_comment("issue_renotify_maintainer")
                 #import epdb; epdb.st()
 
         elif submitter_waiting_on:
