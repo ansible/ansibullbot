@@ -41,6 +41,9 @@ environment = Environment(loader=loader, trim_blocks=True)
 
 class TriageIssues(DefaultTriager):
 
+    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
+                      'wontfix', 'bug_resolved', 'resolved_by_pr', 
+                      'needs_contributor']
 
     def run(self):
         """Starts a triage run"""
@@ -337,6 +340,9 @@ class TriageIssues(DefaultTriager):
         self.meta['maintainer_last_commented'] = maintainer_last_commented
         maintainer_last_comment = self.history.last_comment(maintainers)
         self.meta['maintainer_last_comment'] = maintainer_last_comment
+        maintainer_comments = self.history.get_user_comments(maintainers)
+        self.meta['maintainer_comments'] = maintainer_comments
+        #import epdb; epdb.st()
 
         # Was the maintainer the last commentor?
         last_commentor_ismaintainer = False
@@ -348,6 +354,8 @@ class TriageIssues(DefaultTriager):
             last_commentor_issubmitter = True
 
         # Did the maintainer issue a command?
+        maintainer_commands = self.history.get_commands(maintainers, 
+                                                        self.VALID_COMMANDS)
         maintainer_command_close = False
         maintainer_command_needsinfo = False
         maintainer_command_not_needsinfo = False
@@ -380,6 +388,13 @@ class TriageIssues(DefaultTriager):
                 maintainer_command_close = True
             elif 'needs_contributor' in maintainer_last_comment:
                 maintainer_command_needscontributor = True
+        elif maintainer_commands:
+            # are there any persistant commands?
+            if 'needs_contributor' in maintainer_commands:
+                maintainer_command_needscontributor = True
+            #import epdb; epdb.st()
+
+            
         self.meta['maintainer_command_close'] = maintainer_command_close
         self.meta['maintainer_command_needsinfo'] = maintainer_command_needsinfo
         self.meta['maintainer_command_notabug'] = maintainer_command_notabug 
@@ -468,10 +483,12 @@ class TriageIssues(DefaultTriager):
         if not maintainer_waiting_on:
             submitter_waiting_on = True
 
+            '''FIXME
             if needsinfo_stale or needsinfo_expired:
                 submitter_to_reping = True
             else:                                                        
                 submitter_to_ping = True
+            '''
             if missing_sections:
                 needsinfo_add = True
 

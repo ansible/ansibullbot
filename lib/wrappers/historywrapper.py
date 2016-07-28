@@ -88,6 +88,26 @@ class HistoryWrapper(object):
                     break
         return matching_events
 
+    def get_user_comments(self, username):
+        """Get all the comments from a user"""
+        matching_events = self._find_events_by_actor('commented', 
+                                                    username, 
+                                                    maxcount=999)
+        comments = [x['body'] for x in matching_events]
+        return comments
+
+    def get_commands(self, username, command_keys):
+        """Given a list of phrase keys, return a list of phrases used"""
+        comments = self.get_user_comments(username)
+        commands = []
+        for x in comments:
+            for y in command_keys:
+                if y in x:
+                    commands.append(y)
+                    break        
+        #import epdb; epdb.st()
+        return commands
+
     def is_referenced(self, username):
         """Has this issue ever been referenced by another issue|PR?"""
         matching_events = self._find_events_by_actor('referenced', username)
