@@ -5,6 +5,8 @@ Making progress in resolving issues for modules depends upon your interaction! P
 If at anytime you think this bot is misbehaving, please leave a comment of "bot_broken" and an Ansible staff member will intervene.
 
 ## For issue submitters
+Please note that if you have a question about how to use this module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question ."
+
 If the module maintainer or ansibot needs further information, please respond to the request, so that you can help us to help you! 
 
 The bot requires a minimal subset of information from the issue template 
@@ -13,9 +15,8 @@ The bot requires a minimal subset of information from the issue template
 * ansible version
 * summary
 
-If any of those items are missing or empty, ansibot will keep the issue in a "needs info" state until the data is provided in the issue's description.
+If any of those items are missing or empty, ansibot will keep the issue in a "needs info" state until the data is provided in the issue's description. The bot is expecting a structor similar to the issue template, so please use that whenever possible.
 
-Please note that if you have a question about how to use this module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question ."
 
 ## For module maintainers
 Thanks in advance for taking a look at this bug report and for your ongoing work in maintaining this module. If you are unable to troubleshoot this issue with the information provided, please ping the submitter of the issue in a comment to let them know. 
