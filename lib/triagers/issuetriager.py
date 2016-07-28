@@ -202,6 +202,16 @@ class TriageIssues(DefaultTriager):
     def create_actions(self):
         """Create actions from the desired label/unlabel/comment actions"""
 
+        if 'bot_broken' in self.issue.desired_labels:
+            # If the bot is broken, do nothing other than set the broken label
+            self.actions['comments'] = []
+            self.actions['newlabel'] = []
+            self.actions['unlabel'] = []
+            self.actions['close'] = False
+            if not 'bot_broken' in self.issue.current_labels:
+                self.actions['newlabel'] = ['bot_broken']                
+            return
+
         if self.issue.desired_state != self.issue.instance.state:
             if self.issue.desired_state == 'closed':
                 # close the issue ...
@@ -274,6 +284,13 @@ class TriageIssues(DefaultTriager):
         self.debug(msg="Building event history ...")
         self.history = HistoryWrapper(self.issue)
         self.meta['event_count'] = len(self.history.history)
+
+        # what was the last commment?
+        bot_broken = False
+        if self.issue.current_comments:
+            for comment in self.issue.current_comments:
+                if 'bot_broken' in comment.body:
+                    bot_broken = True
 
         # who made this and when did they last comment?
         submitter = self.issue.get_submitter()
@@ -507,7 +524,11 @@ class TriageIssues(DefaultTriager):
         # FINAL LOGIC LOOP
         #################################################
 
-        if not valid_module:
+        if bot_broken:
+            self.debug(msg='broken bot stanza')
+            self.issue.add_desired_label('bot_broken')
+
+        elif not valid_module:
             self.debug(msg='invalid module stanza')
 
             self.issue.add_desired_label('needs_info')
