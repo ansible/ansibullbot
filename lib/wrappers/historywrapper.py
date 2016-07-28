@@ -226,7 +226,16 @@ class HistoryWrapper(object):
         last_date = None
         for event in reversed(self.history):
             if event['event'] == 'labeled':
-                if event['label'] == 'needs_info':
+                if event['label'] == label:
+                    last_date = event['created_at']
+        return last_date
+
+    def label_last_removed(self, label):
+        """What date was a label last removed?"""
+        last_date = None
+        for event in reversed(self.history):
+            if event['event'] == 'unlabeled':
+                if event['label'] == label:
                     last_date = event['created_at']
         return last_date
 
