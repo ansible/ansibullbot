@@ -72,4 +72,59 @@ class TestIssueTriage(unittest.TestCase):
         assert triage.actions['unlabel'] == []
         assert len(triage.actions['comments']) == 1
 
+    def test_basic_step_3(self):
+        """Maintainer has finally responded with needs_info"""
+        # load it ...
+        triage = self._get_triager_for_datafile('tests/fixtures/000_3.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == ['needs_info']
+        assert triage.actions['unlabel'] == ['waiting_on_maintainer']
+        assert len(triage.actions['comments']) == 0
+
+    def test_basic_step_4(self):
+        """needs_info still but not timeout"""
+        # load it ...
+        triage = self._get_triager_for_datafile('tests/fixtures/000_4.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == []
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 0
+
+    def test_basic_step_5(self):
+        """needs_info still and TIMEOUT 1"""
+        # load it ...
+        triage = self._get_triager_for_datafile('tests/fixtures/000_5.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == []
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 1
+        assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_closure --->')
+        submitter = triage.issue.get_submitter()
+        submitter = '@' + submitter
+        assert submitter in triage.actions['comments'][0]
+
+    def test_basic_step_6(self):
+        """needs_info still and TIMEOUT 2 + CLOSE!"""
+        # load it ...
+        triage = self._get_triager_for_datafile('tests/fixtures/000_6.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == True
+        assert triage.actions['newlabel'] == []
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 1
+        assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_closure --->')
+        submitter = triage.issue.get_submitter()
+        submitter = '@' + submitter
+        assert submitter in triage.actions['comments'][0]
 

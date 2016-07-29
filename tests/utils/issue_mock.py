@@ -112,11 +112,18 @@ class IssueMock(object):
                     label = LabelMock()
                     label.name = ev['label']['name']
                     event.label = label
-                    if ev['event'] == 'labeled' and not label in self.labels:
-                        self.labels.append(label)
-                    if ev['event'] == 'unlabeled' and label in self.labels:
-                        self.labels.append(remove)
-                    
+                    if ev['event'] == 'labeled':
+                        current = [x.name for x in self.labels if x.name == label.name]
+                        if not current:
+                            self.labels.append(label)
+                    elif ev['event'] == 'unlabeled':
+                        current = [x.name for x in self.labels if x.name == label.name]
+                        if current:
+                            for idx,x in enumerate(self.labels):
+                                if x.name == label.name:
+                                    del self.labels[idx]
+                                    break
+                        #import epdb; epdb.st()
                 else:
                     import epdb; epdb.st()
 
