@@ -87,8 +87,8 @@ class DefaultWrapper(object):
     def get_comments(self):
         """Returns all current comments of the PR"""
         if not self.current_comments:
-            self.current_comments = \
-                [x for x in self.instance.get_comments().reversed]
+            self.current_comments = [x for x in self.instance.get_comments()]
+            self.current_comments.reverse()
             for x in self.current_comments:
                 body = x.body
                 lines = body.split('\n')
