@@ -61,6 +61,7 @@ class TriageIssuesMock(TriageIssues):
                              'cloud', 'waiting_on_maintainer', 'waiting_on_contributor']
         self.meta = {}
 
+        self._now = None              #set by test
         self._module = None           #set by test
         self.module = None            #do not set
         self.match = {}               #do not set?
@@ -75,3 +76,5 @@ class TriageIssuesMock(TriageIssues):
     def get_module_maintainers(self, expand=True):
         return self._module_maintainers
 
+    def get_current_time(self):
+        return self._now

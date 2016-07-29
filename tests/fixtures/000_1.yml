@@ -30,3 +30,33 @@ events:
       id: 1
       actor:
         login: joeschmoe
+    - event: labeled
+      label:
+        name: bug_report
+      created_at: 2016-07-15T17:24:01Z
+      id: 2
+      actor:
+        login: ansibot
+    - event: labeled
+      label:
+        name: cloud
+      created_at: 2016-07-15T17:24:02Z
+      id: 3
+      actor:
+        login: ansibot
+    - event: labeled
+      label:
+        name: waiting_on_maintainer
+      created_at: 2016-07-15T17:24:03Z
+      id: 4
+      actor:
+        login: ansibot
+    - event: commented
+      body: |
+            @belladonna
+            <!--- boilerplate: issue_notify_maintainer --->
+      created_at: 2016-07-15T17:24:04Z
+      id: 5
+      actor:
+        login: ansibot
+

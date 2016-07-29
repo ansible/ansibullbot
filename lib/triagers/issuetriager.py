@@ -69,7 +69,7 @@ class TriageIssues(DefaultTriager):
                 self.process()
 
 
-    def process(self):
+    def process(self, usecache=True):
         """Processes the Issue"""
         # clear all actions
         self.actions = {
@@ -162,13 +162,13 @@ class TriageIssues(DefaultTriager):
         '''
 
         #self.process_comments()
-        self.process_history()
+        self.process_history(usecache=usecache)
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
         
         self.create_actions()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
-
+        '''
         ###########################################################
         #                        LOG 
         ###########################################################
@@ -197,6 +197,8 @@ class TriageIssues(DefaultTriager):
         import pprint; pprint.pprint(self.actions['unlabel'])
         for comment in self.actions['comments']:
             print('ADD_COMMENT: %s' % comment[:80])
+        '''
+        import pprint; pprint.pprint(self.actions)
 
         # invoke the wizard
         self.apply_actions()
@@ -284,13 +286,13 @@ class TriageIssues(DefaultTriager):
         #import epdb; epdb.st()
 
 
-    def process_history(self):
+    def process_history(self, usecache=True):
         self.meta = {}
-        today = datetime.today()
+        today = self.get_current_time()
 
         # Build the history
         self.debug(msg="Building event history ...")
-        self.history = HistoryWrapper(self.issue)
+        self.history = HistoryWrapper(self.issue, usecache=usecache)
         self.meta['event_count'] = len(self.history.history)
 
         # what was the last commment?
@@ -327,8 +329,13 @@ class TriageIssues(DefaultTriager):
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
         maintainers += self.ansible_members
+        if 'ansibot' in maintainers:
+            maintainers.remove('ansibot')
         maintainers = sorted(set(maintainers))
         #import epdb; epdb.st()
+
+        # Has maintainer been notified? When?
+        maintainer_last_notified = self.history.last_notified(maintainers)
 
         # Has maintainer viewed issue?
         maintainer_viewed = self.history.has_viewed(maintainers)
@@ -544,6 +551,11 @@ class TriageIssues(DefaultTriager):
                 view_age = time_delta.days
                 if view_age > 14:
                     maintainer_to_reping = True
+            elif maintainer_last_notified:
+                time_delta = today - maintainer_last_notified
+                ping_age = time_delta.days
+                if ping_age > 14:
+                    maintainer_to_reping = True
             else:
                 maintainer_to_ping = True
             #import epdb; epdb.st()
@@ -635,4 +647,4 @@ class TriageIssues(DefaultTriager):
                     self.issue.add_desired_comment("issue_pending_closure")
                 #import epdb; epdb.st()
               
-        #import epdb; epdb.st()
+        import epdb; epdb.st()

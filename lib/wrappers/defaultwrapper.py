@@ -89,6 +89,7 @@ class DefaultWrapper(object):
         if not self.current_comments:
             self.current_comments = [x for x in self.instance.get_comments()]
             self.current_comments.reverse()
+            #print("GOT %s COMMENTS" % len(self.current_comments))
             for x in self.current_comments:
                 body = x.body
                 lines = body.split('\n')

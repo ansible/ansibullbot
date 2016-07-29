@@ -184,6 +184,20 @@ class HistoryWrapper(object):
                     last_date = event['created_at']
         return last_date
 
+    def last_notified(self, username):
+        """When was this person pinged last in a comment?"""
+        if type(username) != list:
+            username = [username]
+        username = ['@' + x for x in username]
+        last_notification = None
+        comments = [x for x in self.history if x['event'] == 'commented']
+        for comment in comments:
+            for un in username:
+                if un in comment['body']:
+                    last_notification = comment['created_at']
+        #import epdb; epdb.st()
+        return last_notification
+
     def last_commented_at(self, username):
         """When did person X last comment?"""
         last_date = None

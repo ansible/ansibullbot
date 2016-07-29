@@ -271,6 +271,9 @@ class DefaultTriager(object):
         return mentioned
        
 
+    def get_current_time(self):
+        return datetime.now()
+
     def age_of_last_maintainer_comment(self):
         """How long ago did the maintainer comment?"""
         last_comment = None
@@ -291,7 +294,7 @@ class DefaultTriager(object):
         if not last_comment:
             return -1
         else:
-            now = datetime.now()
+            now = self.get_current_time()
             diff = now - last_comment.created_at
             age = diff.days
             return age

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import unittest
+from datetime import datetime
 
 from lib.wrappers.issuewrapper import IssueWrapper
 
@@ -20,6 +21,7 @@ class TestIssueTriage(unittest.TestCase):
 
         # add additional mock data from fixture
         triage.force = True
+        triage._now = im.ydata.get('_now', datetime.now())
         triage.number = im.ydata.get('number', 1)
         triage.github_repo = im.ydata.get('github_repo', 'core')
         triage.match = im.ydata.get('_match')
@@ -30,13 +32,12 @@ class TestIssueTriage(unittest.TestCase):
 
         return triage
 
-    def test_good_issue_with_no_comments_or_labels(self):
-
+    def test_basic_step_0(self):
+        """New issue with all the data, just needs label and intro comment"""
         # load it ...
         triage = self._get_triager_for_datafile('tests/fixtures/000.yml')
-
         # let it rip ...
-        triage.process()
+        triage.process(usecache=False)
 
         assert triage.actions['close'] == False
         assert triage.actions['newlabel'] == ['bug_report', 'cloud', 'waiting_on_maintainer']
@@ -46,5 +47,17 @@ class TestIssueTriage(unittest.TestCase):
         for maintainer in triage._module_maintainers:
             assert maintainer in triage.actions['comments'][0]
 
+
+    def test_basic_step_1(self):
+        """Issue was previously triaged and awaits maintainer"""
+        # load it ...
+        triage = self._get_triager_for_datafile('tests/fixtures/000_1.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == []
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 0
 
 

@@ -15,6 +15,7 @@ class CommentMock(object):
     created_at = None
 
 class EventMock(object):
+    raw_data = {}
     id = None
     event = None # labeled, renamed, closed, etc ...
     actor = None
@@ -100,9 +101,27 @@ class IssueMock(object):
                 comment.created_at = ev['created_at']
                 self.comments.append(comment)
             else:
-                import epdb; epdb.st()
-        #import epdb; epdb.st()
+                event = EventMock()
+                event.raw_data = ev.copy()
+                event.actor = actor
+                event.id = ev['id']
+                event.event = ev['event']
+                event.created_at = ev['created_at']
 
+                if ev['event'] == 'labeled' or ev['event'] == 'unlabeled':
+                    label = LabelMock()
+                    label.name = ev['label']['name']
+                    event.label = label
+                    if ev['event'] == 'labeled' and not label in self.labels:
+                        self.labels.append(label)
+                    if ev['event'] == 'unlabeled' and label in self.labels:
+                        self.labels.append(remove)
+                    
+                else:
+                    import epdb; epdb.st()
+
+                self.events.append(event)
+        #import epdb; epdb.st()
 
     def add_to_labels(self, *labels):
         self.calls.append(('add_to_labels', labels))
