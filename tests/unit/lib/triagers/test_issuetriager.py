@@ -9,8 +9,8 @@ from tests.utils.issuetriager_mock import TriageIssuesMock
 
 class TestIssueTriage(unittest.TestCase):
 
-    def test_noop(self):
-        im = IssueMock('tests/fixtures/000.yml')
+    def _get_triager_for_datafile(self, datafile):
+        im = IssueMock(datafile)
         iw = IssueWrapper(repo=None, issue=im)
         triage = TriageIssuesMock(verbose=True)
 
@@ -28,11 +28,23 @@ class TestIssueTriage(unittest.TestCase):
         triage._ansible_members = im.ydata.get('_ansible_members', [])
         triage._module_maintainers = im.ydata.get('_module_maintainers', [])
 
+        return triage
+
+    def test_good_issue_with_no_comments_or_labels(self):
+
+        # load it ...
+        triage = self._get_triager_for_datafile('tests/fixtures/000.yml')
+
         # let it rip ...
         triage.process()
 
-        assert triage.actons['close'] == False
-        assert triage.actons['newlabel'] == ['bug_report', 'cloud', 'waiting_on_maintainer']
-        assert triage.actons['unlabel'] == []
-        assert len(triage.actons['comments']) == 1
-        #import epdb; epdb.st()
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == ['bug_report', 'cloud', 'waiting_on_maintainer']
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 1
+        assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_notify_maintainer --->')
+        for maintainer in triage._module_maintainers:
+            assert maintainer in triage.actions['comments'][0]
+
+
+
