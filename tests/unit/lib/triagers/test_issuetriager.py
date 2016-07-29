@@ -60,4 +60,16 @@ class TestIssueTriage(unittest.TestCase):
         assert triage.actions['unlabel'] == []
         assert len(triage.actions['comments']) == 0
 
+    def test_basic_step_2(self):
+        """Issue was previously triaged and maintainer response timeout"""
+        # load it ...
+        triage = self._get_triager_for_datafile('tests/fixtures/000_2.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == []
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 1
+
 
