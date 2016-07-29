@@ -21,7 +21,10 @@ def get_triagermock_for_datafile(datafile):
     triage.github_repo = im.ydata.get('github_repo', 'core')
     triage.match = im.ydata.get('_match')
     triage.module_indexer.match = im.ydata.get('_match')
-    triage._module = triage.match['name']
+    if im.ydata.get('_match'):
+        triage._module = triage.match.get('name')
+    else:
+        triage._module = None
     triage._ansible_members = im.ydata.get('_ansible_members', [])
     triage._module_maintainers = im.ydata.get('_module_maintainers', [])
 

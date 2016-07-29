@@ -5,7 +5,7 @@ from datetime import datetime
 
 from tests.utils.loaders import  get_triagermock_for_datafile
 
-class TestIssueTriage(unittest.TestCase):
+class TestIssueTriageWorkflow1(unittest.TestCase):
 
 
     def test_basic_step_0(self):
@@ -104,3 +104,39 @@ class TestIssueTriage(unittest.TestCase):
         submitter = '@' + submitter
         assert submitter in triage.actions['comments'][0]
 
+
+class TestIssueTriageBadUsers(unittest.TestCase):
+
+    """Assert that bad submitters are handled appropriately"""
+
+    def test_issue_no_template(self):
+        """New issue with no data"""
+        # load it ...
+        triage = get_triagermock_for_datafile('tests/fixtures/001_bad_template.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == ['needs_info']
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 1
+        assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_invalid_module --->')
+        submitter = triage.issue.get_submitter()
+        submitter = '@' + submitter
+        assert submitter in triage.actions['comments'][0]
+
+    def test_issue_no_ansible_version(self):
+        """New issue with no data"""
+        # load it ...
+        triage = get_triagermock_for_datafile('tests/fixtures/001_no_ansible_version.yml')
+        # let it rip ...
+        triage.process(usecache=False)
+
+        assert triage.actions['close'] == False
+        assert triage.actions['newlabel'] == ['bug_report', 'needs_info', 'cloud']
+        assert triage.actions['unlabel'] == []
+        assert len(triage.actions['comments']) == 1
+        assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_needs_info --->')
+        submitter = triage.issue.get_submitter()
+        submitter = '@' + submitter
+        assert submitter in triage.actions['comments'][0]
