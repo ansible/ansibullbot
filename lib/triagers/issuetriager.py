@@ -219,6 +219,9 @@ class TriageIssues(DefaultTriager):
             if self.issue.desired_state == 'closed':
                 # close the issue ...
                 self.actions['close'] = True
+                if 'issue_closure' in self.issue.desired_comments:
+                    comment = self.render_comment(boilerplate='issue_closure')
+                    self.actions['comments'].append(comment)
                 return
 
         resolved_desired_labels = []
@@ -250,6 +253,8 @@ class TriageIssues(DefaultTriager):
         if len(self.issue.desired_comments) > 1:
             if 'issue_invalid_module' in self.issue.desired_comments:
                 self.issue.desired_comments = ['issue_invalid_module']
+            elif 'issue_module_no_maintainer' in self.issue.desired_comments:
+                self.issue.desired_comments = ['issue_module_no_maintainer']
             elif 'issue_needs_info' in self.issue.desired_comments \
                 and 'needs_info' in self.issue.desired_labels:
                 self.issue.desired_comments = ['issue_needs_info']
@@ -313,11 +318,17 @@ class TriageIssues(DefaultTriager):
             valid_module = True
 
         # Who are the maintainers?
-        maintainers = self.get_module_maintainers()
+        maintainers = [x for x in self.get_module_maintainers()]
+        #if 'ansible' in maintainers:
+        #    maintainers.remove('ansible')
+        #    maintainers += self.ansible_members
+
+        #print("MAINTAINERS: %s" % maintainers)
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
-            maintainers += self.ansible_members
-        self.meta['maintainers'] = maintainers
+        maintainers += self.ansible_members
+        maintainers = sorted(set(maintainers))
+        #import epdb; epdb.st()
 
         # Has maintainer viewed issue?
         maintainer_viewed = self.history.has_viewed(maintainers)
@@ -392,7 +403,12 @@ class TriageIssues(DefaultTriager):
             # are there any persistant commands?
             if 'needs_contributor' in maintainer_commands:
                 maintainer_command_needscontributor = True
+            elif not missing_sections and not submitter_last_commented and maintainer_commands[-1] == 'needs_info':
+                maintainer_command_needsinfo = True
+            elif not missing_sections and not submitter_last_commented and maintainer_commands[-1] == '!needs_info':
+                maintainer_command_not_needsinfo = True
             #import epdb; epdb.st()
+        #import epdb; epdb.st()
 
             
         self.meta['maintainer_command_close'] = maintainer_command_close
@@ -410,8 +426,11 @@ class TriageIssues(DefaultTriager):
         # Was it ever needs_info?
         was_needs_info = self.history.was_labeled(label='needs_info')
         needsinfo_last_applied = self.history.label_last_applied('needs_info')
+        needsinfo_last_removed = self.history.label_last_removed('needs_info')
         self.meta['was_needs_info'] = was_needs_info
         self.meta['needsinfo_last_applied'] = needsinfo_last_applied
+        self.meta['needsinfo_last_removed'] = needsinfo_last_removed
+        #import epdb; epdb.st()
 
         # Still needs_info?
         needsinfo_add = False
@@ -432,20 +451,19 @@ class TriageIssues(DefaultTriager):
         self.meta['needsinfo_remove'] = needsinfo_remove
         self.meta['needsinfo_add'] = needsinfo_add
 
-        '''
         # Is needs_info stale or expired?
+        needsinfo_age = None
         needsinfo_stale = False
         needsinfo_expired = False
-        if not needsinfo_remove and needsinfo_last_applied:
+        if 'needs_info' in self.issue.current_labels: 
             time_delta = today - needsinfo_last_applied
             needsinfo_age = time_delta.days
             if needsinfo_age > 14:
                 needsinfo_stale = True
-            if needsinfo_age > 30:
+            if needsinfo_age > 56:
                 needsinfo_expired = True
         self.meta['needsinfo_stale'] = needsinfo_stale
         self.meta['needsinfo_expired'] = needsinfo_expired
-        '''
 
         '''
         # Time to [re]ping maintainer?
@@ -541,6 +559,10 @@ class TriageIssues(DefaultTriager):
         # FINAL LOGIC LOOP
         #################################################
 
+        # reset the maintainers
+        maintainers = self.get_module_maintainers()
+        self.meta['maintainers'] = maintainers
+
         if bot_broken:
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
@@ -597,14 +619,20 @@ class TriageIssues(DefaultTriager):
             if 'waiting_on_maintainer' in self.issue.desired_labels:
                 self.issue.desired_labels.remove('waiting_on_maintainer')
 
-            if needsinfo_add or missing_sections:
+            if (needsinfo_add or missing_sections) \
+                or (not needsinfo_remove and missing_sections) \
+                or (needsinfo_add and not missing_sections): 
+
                 self.issue.add_desired_label('needs_info')
                 if len(self.issue.current_comments) == 0:
                     self.issue.add_desired_comment("issue_needs_info")
 
-            '''
-            if submitter_to_ping or submitter_to_reping:
-                self.issue.add_desired_comment("issue_needs_info")
-            '''
+                # needs_info: warn if stale, close if expired
+                elif needsinfo_expired:
+                    self.issue.add_desired_comment("issue_closure")
+                    self.issue.set_desired_state('closed')
+                elif needsinfo_stale:
+                    self.issue.add_desired_comment("issue_pending_closure")
+                #import epdb; epdb.st()
               
         #import epdb; epdb.st()

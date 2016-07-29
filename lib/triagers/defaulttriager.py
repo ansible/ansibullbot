@@ -385,17 +385,20 @@ class DefaultTriager(object):
     def add_desired_labels_by_namespace(self):
         """Adds labels regarding module namespaces"""
 
+        SKIPTOPICS = ['network/basics']
+
         if not self.match:
             return False        
 
         if 'component name' in self.template_data and self.match:
-            #import epdb; epdb.st()        
             if self.match['repository'] != self.github_repo:
                 self.issue.add_desired_comment(boilerplate='issue_wrong_repo')
 
             for key in ['topic', 'subtopic']:            
-                if self.match[key]:
-                    thislabel = self.issue.TOPIC_MAP.get(self.match[key], self.match[key])
+                # ignore networking/basics
+                if self.match[key] and not self.match['fulltopic'] in SKIPTOPICS:
+                    thislabel = self.issue.TOPIC_MAP.\
+                                    get(self.match[key], self.match[key])
                     if thislabel in self.valid_labels:
                         self.issue.add_desired_label(thislabel)
 
@@ -545,6 +548,9 @@ class DefaultTriager(object):
 
     def execute_actions(self):
         """Turns the actions into API calls"""
+        for comment in self.actions['comments']:
+            self.debug(msg="API Call comment: " + comment)
+            self.issue.add_comment(comment=comment)
         if self.actions['close']:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             self.issue.instance.edit(state='closed')
@@ -555,8 +561,5 @@ class DefaultTriager(object):
         for newlabel in self.actions['newlabel']:
             self.debug(msg="API Call newlabel: " + newlabel)
             self.issue.add_label(label=newlabel)
-        for comment in self.actions['comments']:
-            self.debug(msg="API Call comment: " + comment)
-            self.issue.add_comment(comment=comment)
 
 
