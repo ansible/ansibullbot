@@ -159,6 +159,8 @@ class DefaultTriager(object):
                     maintainers_string = (line.split(': ')[-1]).strip()
                     self.maintainers[owner_space] = maintainers_string.split(' ')
                 f.close()
+            # meta is special
+            self.maintainers['meta'] = ['ansible']
         return self.maintainers
 
     def debug(self, msg=""):
@@ -388,7 +390,7 @@ class DefaultTriager(object):
     def add_desired_labels_by_namespace(self):
         """Adds labels regarding module namespaces"""
 
-        SKIPTOPICS = ['network/basics']
+        SKIPTOPICS = ['network/basics/']
 
         if not self.match:
             return False        
@@ -404,7 +406,6 @@ class DefaultTriager(object):
                                     get(self.match[key], self.match[key])
                     if thislabel in self.valid_labels:
                         self.issue.add_desired_label(thislabel)
-
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""

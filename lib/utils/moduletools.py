@@ -38,6 +38,8 @@ class ModuleIndexer(object):
         return match
 
     def find_match(self, pattern):
+        if not pattern:
+            return None
         match = self._find_match(pattern)
         if not match:
             # check for just the basename
@@ -146,6 +148,20 @@ class ModuleIndexer(object):
 
             mkey = mdict['filepath']
             self.modules[mkey] = mdict
+
+        # meta is a special module
+        self.modules['meta'] = {}
+        self.modules['meta']['name'] = 'meta'
+        self.modules['meta']['namespaced_module'] = None
+        self.modules['meta']['deprecated_filename'] = None
+        self.modules['meta']['dirpath'] = None
+        self.modules['meta']['filename'] = None
+        self.modules['meta']['filepath'] = None
+        self.modules['meta']['fulltopic'] = None
+        self.modules['meta']['repo_filename'] = 'meta'
+        self.modules['meta']['repository'] = 'core'
+        self.modules['meta']['subtopic'] = None
+        self.modules['meta']['topic'] = None
 
         return self.modules
 

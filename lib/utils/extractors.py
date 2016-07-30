@@ -79,6 +79,15 @@ def extract_template_data(body, issue_number=None):
         # clean more on critical sections
         if k != 'summary' and not 'step' in k and not 'result' in k:
 
+            # https://github.com/ansible/ansible-modules-extras/issues/2262
+            if k == 'component name':
+                v = v.lower()
+
+            # https://github.com/ansible/ansible-modules-core/issues/4159
+            if k == 'component name' and 'module' in v:
+                v = v.replace('module', ' ')
+                #import epdb; epdb.st()
+
             # remove useless chars
             badchars = ['#', ':', ';', '*', "'", '"', '`', '---', '__']
             for bc in badchars:
@@ -110,7 +119,11 @@ def extract_template_data(body, issue_number=None):
             # https://github.com/ansible/ansible-modules-core/issues/4060
             if k in ['issue type', 'component name']:
                 if '/' in v:
-                    v = v.split('/')[0]
+                    v = v.split('/')
+                    if k == ['issue type']:
+                        v = v[0]
+                    else:
+                        v = v[-1]
                     v = v.strip()
 
             # https://github.com/ansible/ansible-modules-core/issues/4201
@@ -119,10 +132,6 @@ def extract_template_data(body, issue_number=None):
 
             #if k == 'component name' and issue_number == 4138:
             #    import epdb; epdb.st()
-
-            # https://github.com/ansible/ansible-modules-extras/issues/2262
-            if k == 'component name':
-                v = v.lower()
 
             if k == 'issue type' and v != 'bug report' and 'bug' in v.lower():
                 v = 'bug report'

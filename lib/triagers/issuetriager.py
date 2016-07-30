@@ -180,8 +180,11 @@ class TriageIssues(DefaultTriager):
         print("Component Name: %s" % component)
         print("Component is Valid Module: %s" % component_isvalid)
         print("Component in this repo: %s" % this_repo)
+        '''
         print("Module: %s" % self.module)
-        print("Maintainer(s): %s" % ', '.join(maintainers))
+        print("Maintainer(s): %s" \
+            % ', '.join(self.get_module_maintainers()))
+        '''
         #print("Maintainer(s) Have Commented: %s" % maintainer_commented)
         #print("Maintainer(s) Comment Age: %s days" % maintainer_last_comment_age)
         #print("Waiting on Maintainer(s): %s" % waiting_on_maintainer)
@@ -293,7 +296,6 @@ class TriageIssues(DefaultTriager):
         # Build the history
         self.debug(msg="Building event history ...")
         self.history = HistoryWrapper(self.issue, usecache=usecache)
-        self.meta['event_count'] = len(self.history.history)
 
         # what was the last commment?
         bot_broken = False
@@ -304,15 +306,12 @@ class TriageIssues(DefaultTriager):
 
         # who made this and when did they last comment?
         submitter = self.issue.get_submitter()
-        self.meta['submitter'] = submitter
         submitter_last_commented = self.history.last_commented_at(submitter)
-        self.meta['submitter_last_commented'] = submitter_last_commented
         submitter_last_comment = self.history.last_comment(submitter)
-        self.meta['submitter_last_comment'] = submitter_last_comment
+        submitter_last_notified = self.history.last_notified(submitter)
 
         # what did they not provide?
         missing_sections = self.issue.get_missing_sections()
-        self.meta['missing_sections'] = missing_sections
 
         # Is this a valid module?
         valid_module = False
@@ -336,30 +335,27 @@ class TriageIssues(DefaultTriager):
 
         # Has maintainer been notified? When?
         maintainer_last_notified = self.history.last_notified(maintainers)
+        # we ping @ansible, so need to check that too
+        if not maintainer_last_notified:
+            maintainer_last_notified = \
+                self.history.last_notified(self.get_module_maintainers())
+        
 
         # Has maintainer viewed issue?
         maintainer_viewed = self.history.has_viewed(maintainers)
-        self.meta['maintainer_viewed'] = maintainer_viewed
         maintainer_last_viewed = self.history.last_viewed_at(maintainers)
-        self.meta['maintainer_last_viewed'] = maintainer_last_viewed
 
         # Has maintainer been mentioned?
         maintainer_mentioned = self.history.is_mentioned(maintainers)
-        self.meta['maintainer_mentioned'] = maintainer_mentioned
 
         # Has maintainer viewed issue?
         maintainer_viewed = self.history.has_viewed(maintainers)
-        self.meta['maintainer_viewed'] = maintainer_viewed
 
         # Has the maintainer ever responded?
         maintainer_commented = self.history.has_commented(maintainers)
-        self.meta['maintainer_commented'] = maintainer_commented
         maintainer_last_commented = self.history.last_commented_at(maintainers)
-        self.meta['maintainer_last_commented'] = maintainer_last_commented
         maintainer_last_comment = self.history.last_comment(maintainers)
-        self.meta['maintainer_last_comment'] = maintainer_last_comment
         maintainer_comments = self.history.get_user_comments(maintainers)
-        self.meta['maintainer_comments'] = maintainer_comments
         #import epdb; epdb.st()
 
         # Was the maintainer the last commentor?
@@ -417,26 +413,13 @@ class TriageIssues(DefaultTriager):
             #import epdb; epdb.st()
         #import epdb; epdb.st()
 
-            
-        self.meta['maintainer_command_close'] = maintainer_command_close
-        self.meta['maintainer_command_needsinfo'] = maintainer_command_needsinfo
-        self.meta['maintainer_command_notabug'] = maintainer_command_notabug 
-        self.meta['maintainer_command_wontfix'] = maintainer_command_wontfix
-        self.meta['maintainer_command_resolved_bug'] = maintainer_command_resolved_bug
-        self.meta['maintainer_command_resolved_pr'] = maintainer_command_resolved_pr
-        self.meta['maintainer_needscontributor'] = maintainer_command_needscontributor
-
         # Has the maintainer ever subscribed?
         maintainer_subscribed = self.history.has_subscribed(maintainers)
-        self.meta['maintainer_subscribed'] = maintainer_subscribed
 
         # Was it ever needs_info?
         was_needs_info = self.history.was_labeled(label='needs_info')
         needsinfo_last_applied = self.history.label_last_applied('needs_info')
         needsinfo_last_removed = self.history.label_last_removed('needs_info')
-        self.meta['was_needs_info'] = was_needs_info
-        self.meta['needsinfo_last_applied'] = needsinfo_last_applied
-        self.meta['needsinfo_last_removed'] = needsinfo_last_removed
         #import epdb; epdb.st()
 
         # Still needs_info?
@@ -455,8 +438,6 @@ class TriageIssues(DefaultTriager):
             else:
                 needsinfo_add = True
                 needsinfo_remove = False
-        self.meta['needsinfo_remove'] = needsinfo_remove
-        self.meta['needsinfo_add'] = needsinfo_add
 
         # Is needs_info stale or expired?
         needsinfo_age = None
@@ -469,8 +450,6 @@ class TriageIssues(DefaultTriager):
                 needsinfo_stale = True
             if needsinfo_age > 56:
                 needsinfo_expired = True
-        self.meta['needsinfo_stale'] = needsinfo_stale
-        self.meta['needsinfo_expired'] = needsinfo_expired
 
         '''
         # Time to [re]ping maintainer?
@@ -488,9 +467,6 @@ class TriageIssues(DefaultTriager):
                 maintainer_to_ping = True
 
             import epdb; epdb.st()
-
-        self.meta['maintainer_to_ping'] = maintainer_to_ping
-        self.meta['maintainer_to_reping'] = maintainer_to_reping
         '''
 
         # Should we be in waiting_on_maintainer mode?
@@ -499,7 +475,6 @@ class TriageIssues(DefaultTriager):
             or not was_needs_info \
             and not missing_sections:
             maintainer_waiting_on = True
-        self.meta['maintainer_waiting_on'] = maintainer_waiting_on
 
         # Should we [re]notify the submitter?
         submitter_waiting_on = False
@@ -507,6 +482,11 @@ class TriageIssues(DefaultTriager):
         submitter_to_reping = False
         if not maintainer_waiting_on:
             submitter_waiting_on = True
+
+            """
+            print("foo")
+            import epdb; epdb.st()
+            print("bar")
 
             '''FIXME
             if needsinfo_stale or needsinfo_expired:
@@ -516,11 +496,7 @@ class TriageIssues(DefaultTriager):
             '''
             if missing_sections:
                 needsinfo_add = True
-
-        self.meta['submitter_waiting_on'] = submitter_waiting_on
-        self.meta['submitter_to_ping'] = submitter_to_ping
-        self.meta['submitter_to_reping'] = submitter_to_reping
-        self.meta['needsinfo_add'] = needsinfo_add
+            """
 
         if missing_sections:
             submitter_waiting_on = True
@@ -546,7 +522,7 @@ class TriageIssues(DefaultTriager):
         maintainer_to_ping = False
         maintainer_to_reping = False
         if maintainer_waiting_on:
-            if maintainer_viewed:
+            if maintainer_viewed and not maintainer_last_notified:
                 time_delta = today - maintainer_last_viewed
                 view_age = time_delta.days
                 if view_age > 14:
@@ -558,11 +534,21 @@ class TriageIssues(DefaultTriager):
                     maintainer_to_reping = True
             else:
                 maintainer_to_ping = True
-            #import epdb; epdb.st()
-        self.meta['maintainer_to_ping'] = maintainer_to_ping
-        self.meta['maintainer_to_reping'] = maintainer_to_reping
 
-        #issue_bug_report, issue_docs_report, issue_feature_idea
+        # Time to [re]ping the submitter?
+        if submitter_waiting_on:
+            if submitter_last_notified:
+                time_delta = today - submitter_last_notified
+                notification_age = time_delta.days
+                if notification_age > 14:
+                    submitter_to_reping = True
+                else:
+                    submitter_to_reping = False
+                submitter_to_ping = False
+            else:
+                submitter_to_ping = True
+                submitter_to_reping = False
+
         issue_type = self.template_data.get('issue type', None)
         issue_type = self.issue_type_to_label(issue_type)
         self.meta['issue_type'] = issue_type
@@ -573,21 +559,21 @@ class TriageIssues(DefaultTriager):
 
         # reset the maintainers
         maintainers = self.get_module_maintainers()
-        self.meta['maintainers'] = maintainers
 
         if bot_broken:
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
 
-        elif not valid_module:
+        elif not valid_module and not maintainer_command_needsinfo:
             self.debug(msg='invalid module stanza')
 
+            #import epdb; epdb.st()
             self.issue.add_desired_label('needs_info')
-
-            if 'issue_invalid_module' not in self.issue.current_bot_comments:
+            if 'issue_invalid_module' not in self.issue.current_bot_comments \
+                and not 'issue_needs_info' in self.issue.current_bot_comments:
                 self.issue.desired_comments = ['issue_invalid_module']
 
-        elif not maintainers:
+        elif not maintainers and not maintainer_command_needsinfo:
 
             self.debug(msg='no maintainer stanza')
 
@@ -611,6 +597,7 @@ class TriageIssues(DefaultTriager):
         elif maintainer_waiting_on:
 
             self.debug(msg='maintainer wait stanza')
+            #import epdb; epdb.st()
 
             self.issue.add_desired_label('waiting_on_maintainer')
             if len(self.issue.current_comments) == 0:
@@ -646,5 +633,4 @@ class TriageIssues(DefaultTriager):
                 elif needsinfo_stale:
                     self.issue.add_desired_comment("issue_pending_closure")
                 #import epdb; epdb.st()
-              
         #import epdb; epdb.st()
