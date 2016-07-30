@@ -179,9 +179,13 @@ class HistoryWrapper(object):
             if type(username) != list:
                 if event['actor'] == username:
                     last_date = event['created_at']
+                    print("LAST DATE: %s" % last_date)
             else:
                 if event['actor'] in username:
                     last_date = event['created_at']
+                    print("LAST DATE: %s" % last_date)
+            if last_date:
+                break
         return last_date
 
     def last_notified(self, username):
@@ -194,7 +198,11 @@ class HistoryWrapper(object):
         for comment in comments:
             for un in username:
                 if un in comment['body']:
-                    last_notification = comment['created_at']
+                    if not last_notification:
+                        last_notification = comment['created_at']
+                    else:
+                        if comment['created_at'] > last_notification:
+                            last_notification = comment['created_at']
         #import epdb; epdb.st()
         return last_notification
 
