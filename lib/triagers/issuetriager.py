@@ -18,6 +18,7 @@
 from __future__ import print_function
 
 import os
+import pickle
 import sys
 import time
 from datetime import datetime
@@ -32,6 +33,7 @@ from lib.wrappers.issuewrapper import IssueWrapper
 from lib.wrappers.historywrapper import HistoryWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
+from lib.utils.descriptionfixer import DescriptionFixer
 
 from defaulttriager import DefaultTriager
 
@@ -57,7 +59,26 @@ class TriageIssues(DefaultTriager):
             self.issue.get_comments()
             self.process()
         else:
-            issues = self.repo.get_issues()
+
+            last_run = None
+            now = self.get_current_time()
+            last_run_file = '~/.ansibullbot/cache'
+            last_run_file += '/ansible/ansible-modules-%s/' % self.github_repo
+            last_run_file += 'issues/last_run.pickle'
+            last_run_file = os.path.expanduser(last_run_file)
+            if os.path.isfile(last_run_file):
+                try:
+                    with open(last_run_file, 'rb') as f:
+                        last_run = pickle.load(f)
+                except Exception as e:
+                    print(e)
+            #import epdb; epdb.st()
+
+            if last_run:
+                issues = self.repo.get_issues(since=last_run)
+            else:
+                issues = self.repo.get_issues()
+
             for issue in issues:
                 if self.start_at and issue.number > self.start_at:
                     continue
@@ -66,7 +87,22 @@ class TriageIssues(DefaultTriager):
                 self.issue = IssueWrapper(repo=self.repo, issue=issue)
                 self.issue.get_events()
                 self.issue.get_comments()
-                self.process()
+                action_res = self.process()
+                if action_res:
+                    while action_res['REDO']:
+                        issue = self.repo.get_issue(int(issue.number))
+                        self.issue = IssueWrapper(repo=self.repo, issue=issue)
+                        self.issue.get_events()
+                        self.issue.get_comments()
+                        action_res = self.process()
+                        if not action_res:
+                            action_res = {'REDO': False}
+
+            # save this run time
+            with open(last_run_file, 'wb') as f:
+                pickle.dump(now, f)
+            #import epdb; epdb.st()
+
 
 
     def process(self, usecache=True):
@@ -110,6 +146,18 @@ class TriageIssues(DefaultTriager):
         # check if component is a known module
         component_isvalid = self.module_indexer.is_valid(component)
 
+        # smart match modules
+        if not component_isvalid:
+            smatch = self.smart_match_module()
+            if self.module_indexer.is_valid(smatch):
+                self.module = smatch
+                component = smatch
+                self.match = self.module_indexer.find_match(smatch)
+
+        DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
+        self.issue.new_description = DF.new_description
+        #import epdb; epdb.st()
+
         # filed under the correct repository?
         this_repo = False
         correct_repo = None
@@ -147,6 +195,7 @@ class TriageIssues(DefaultTriager):
         self.keep_current_main_labels()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
+        '''
         self.add_desired_labels_by_issue_type()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
@@ -155,6 +204,7 @@ class TriageIssues(DefaultTriager):
 
         self.add_desired_labels_by_namespace()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+        '''
 
         '''
         self.add_desired_labels_by_maintainers()
@@ -182,8 +232,20 @@ class TriageIssues(DefaultTriager):
         print("Component in this repo: %s" % this_repo)
         '''
         print("Module: %s" % self.module)
+        if self.match:
+            print("MModule: %s" % self.match['name'])
+        else:
+            print("MModule: %s" % self.match)
         print("Maintainer(s): %s" \
-            % ', '.join(self.get_module_maintainers()))
+            % ', '.join(self.get_module_maintainers(expand=False)))
+        print("Submitter: %s" % self.issue.get_submitter())
+        print("Total Comments: %s" % len(self.issue.current_comments))
+        for x in self.issue.current_comments:
+            print("\t%s %s %s" % (x.created_at.isoformat(),
+                        x.user.login,
+                        [y for y in self.VALID_COMMANDS if y in x.body \
+                        and not '!' + y in x.body] or ''))
+        print("Current Labels: %s" % ', '.join(sorted(self.issue.current_labels)))
         '''
         #print("Maintainer(s) Have Commented: %s" % maintainer_commented)
         #print("Maintainer(s) Comment Age: %s days" % maintainer_last_comment_age)
@@ -204,7 +266,8 @@ class TriageIssues(DefaultTriager):
         import pprint; pprint.pprint(self.actions)
 
         # invoke the wizard
-        self.apply_actions()
+        action_meta = self.apply_actions()
+        return action_meta
 
 
     def create_actions(self):
@@ -256,7 +319,9 @@ class TriageIssues(DefaultTriager):
 
         # should only make one comment at a time
         if len(self.issue.desired_comments) > 1:
-            if 'issue_invalid_module' in self.issue.desired_comments:
+            if 'issue_wrong_repo' in self.issue.desired_comments:
+                self.issue.desired_comments = ['issue_wrong_repo']
+            elif 'issue_invalid_module' in self.issue.desired_comments:
                 self.issue.desired_comments = ['issue_invalid_module']
             elif 'issue_module_no_maintainer' in self.issue.desired_comments:
                 self.issue.desired_comments = ['issue_module_no_maintainer']
@@ -312,11 +377,28 @@ class TriageIssues(DefaultTriager):
 
         # what did they not provide?
         missing_sections = self.issue.get_missing_sections()
+        if 'ansible version' in missing_sections:
+            missing_sections.remove('ansible version')
+
+        # DEBUG + FIXME - speeds up bulk triage
+        if 'component name' in missing_sections and self.match:
+            missing_sections.remove('component name')
+        #import epdb; epdb.st()
 
         # Is this a valid module?
         valid_module = False
         if self.match:
             valid_module = True
+
+        # Do these after evaluating the module
+        self.add_desired_labels_by_issue_type()
+        if 'ansible version' in missing_sections:
+            #self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+            self.add_desired_labels_by_ansible_version()
+        #self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+        self.add_desired_labels_by_namespace()
+        #self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
+
 
         # Who are the maintainers?
         maintainers = [x for x in self.get_module_maintainers()]
@@ -327,23 +409,27 @@ class TriageIssues(DefaultTriager):
         #print("MAINTAINERS: %s" % maintainers)
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
-        maintainers += self.ansible_members
+        maintainers.extend(self.ansible_members)
         if 'ansibot' in maintainers:
             maintainers.remove('ansibot')
+        if submitter in maintainers:
+            maintainers.remove(submitter)
         maintainers = sorted(set(maintainers))
-        #import epdb; epdb.st()
 
         # Has maintainer been notified? When?
-        maintainer_last_notified = self.history.last_notified(maintainers)
-        # we ping @ansible, so need to check that too
-        if not maintainer_last_notified:
-            maintainer_last_notified = \
-                self.history.last_notified(self.get_module_maintainers())
-        
+        notification_maintainers = self.get_module_maintainers()
+        if 'ansible' in notification_maintainers:
+            notification_maintainers.extend(self.ansible_members)
+        if 'ansibot' in notification_maintainers:
+            notification_maintainers.remove('ansibot')
+        maintainer_last_notified = self.history.\
+                    last_notified(notification_maintainers)
+        #import epdb; epdb.st()
 
         # Has maintainer viewed issue?
         maintainer_viewed = self.history.has_viewed(maintainers)
         maintainer_last_viewed = self.history.last_viewed_at(maintainers)
+        #import epdb; epdb.st()
 
         # Has maintainer been mentioned?
         maintainer_mentioned = self.history.is_mentioned(maintainers)
@@ -370,6 +456,7 @@ class TriageIssues(DefaultTriager):
         # Did the maintainer issue a command?
         maintainer_commands = self.history.get_commands(maintainers, 
                                                         self.VALID_COMMANDS)
+        #import epdb; epdb.st()
         maintainer_command_close = False
         maintainer_command_needsinfo = False
         maintainer_command_not_needsinfo = False
@@ -451,24 +538,6 @@ class TriageIssues(DefaultTriager):
             if needsinfo_age > 56:
                 needsinfo_expired = True
 
-        '''
-        # Time to [re]ping maintainer?
-        maintainer_to_ping = False
-        maintainer_to_reping = False
-        if (needsinfo_remove or not needsinfo_last_applied)\
-            and not missing_sections:
-
-            if maintainer_viewed:
-                time_delta = today - maintainer_last_viewed
-                view_age = time_delta.days
-                if view_age > 14:
-                    maintainer_to_reping = True
-            else:
-                maintainer_to_ping = True
-
-            import epdb; epdb.st()
-        '''
-
         # Should we be in waiting_on_maintainer mode?
         maintainer_waiting_on = False
         if (needsinfo_remove or not needsinfo_add) \
@@ -482,21 +551,6 @@ class TriageIssues(DefaultTriager):
         submitter_to_reping = False
         if not maintainer_waiting_on:
             submitter_waiting_on = True
-
-            """
-            print("foo")
-            import epdb; epdb.st()
-            print("bar")
-
-            '''FIXME
-            if needsinfo_stale or needsinfo_expired:
-                submitter_to_reping = True
-            else:                                                        
-                submitter_to_ping = True
-            '''
-            if missing_sections:
-                needsinfo_add = True
-            """
 
         if missing_sections:
             submitter_waiting_on = True
@@ -522,6 +576,7 @@ class TriageIssues(DefaultTriager):
         maintainer_to_ping = False
         maintainer_to_reping = False
         if maintainer_waiting_on:
+            #import epdb; epdb.st()
             if maintainer_viewed and not maintainer_last_notified:
                 time_delta = today - maintainer_last_viewed
                 view_age = time_delta.days
@@ -563,6 +618,11 @@ class TriageIssues(DefaultTriager):
         if bot_broken:
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
+
+        elif 'issue_wrong_repo' in self.issue.desired_comments:
+
+            self.debug(msg='wrong repo stanza')
+            self.actions['close'] = True
 
         elif not valid_module and not maintainer_command_needsinfo:
             self.debug(msg='invalid module stanza')
@@ -614,6 +674,7 @@ class TriageIssues(DefaultTriager):
         elif submitter_waiting_on:
 
             self.debug(msg='submitter wait stanza')
+            #import epdb; epdb.st()
 
             if 'waiting_on_maintainer' in self.issue.desired_labels:
                 self.issue.desired_labels.remove('waiting_on_maintainer')
@@ -630,7 +691,8 @@ class TriageIssues(DefaultTriager):
                 elif needsinfo_expired:
                     self.issue.add_desired_comment("issue_closure")
                     self.issue.set_desired_state('closed')
-                elif needsinfo_stale:
+                elif needsinfo_stale \
+                    and (submitter_to_ping or submitter_to_reping):
                     self.issue.add_desired_comment("issue_pending_closure")
                 #import epdb; epdb.st()
         #import epdb; epdb.st()

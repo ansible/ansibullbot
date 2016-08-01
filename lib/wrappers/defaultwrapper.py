@@ -202,3 +202,8 @@ class DefaultWrapper(object):
     def set_desired_state(self, state):
         assert state in ['open', 'closed']
         self.desired_state = state
+
+    def set_description(self, description):
+        # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
+        self.instance.edit(body=description)
+

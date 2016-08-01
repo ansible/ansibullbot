@@ -30,6 +30,7 @@ from jinja2 import Environment, FileSystemLoader
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
+from lib.utils.descriptionfixer import DescriptionFixer
 
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath.index('lib')
@@ -395,17 +396,19 @@ class DefaultTriager(object):
         if not self.match:
             return False        
 
+        '''
         if 'component name' in self.template_data and self.match:
             if self.match['repository'] != self.github_repo:
                 self.issue.add_desired_comment(boilerplate='issue_wrong_repo')
+        '''
 
-            for key in ['topic', 'subtopic']:            
-                # ignore networking/basics
-                if self.match[key] and not self.match['fulltopic'] in SKIPTOPICS:
-                    thislabel = self.issue.TOPIC_MAP.\
-                                    get(self.match[key], self.match[key])
-                    if thislabel in self.valid_labels:
-                        self.issue.add_desired_label(thislabel)
+        for key in ['topic', 'subtopic']:            
+            # ignore networking/basics
+            if self.match[key] and not self.match['fulltopic'] in SKIPTOPICS:
+                thislabel = self.issue.TOPIC_MAP.\
+                                get(self.match[key], self.match[key])
+                if thislabel in self.valid_labels:
+                    self.issue.add_desired_label(thislabel)
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
@@ -524,8 +527,42 @@ class DefaultTriager(object):
 
 
     def apply_actions(self):
+
+        action_meta = {'REDO': False}
+
+        '''
+        # smart pausing ...
+        if not self.module:
+            print("NO module ... skipping")
+            return action_meta
+        if not self.module in self.issue.instance.title.lower():
+            print("module match not in title ... skipping")
+        if self.actions['close']:
+            print("closure requested ... skipping")
+            return action_meta
+        if self.actions['comments']:
+            print("commenting ... skipping")
+            return action_meta
+        if self.actions['unlabel']:
+            print("unlabeling ... skipping")
+            return action_meta
+        '''
+
+        if self.module:
+            if self.module in self.issue.instance.title.lower():
+                self.force = True
+            else:
+                self.force = False
+        else:
+            self.force = False
+
+        #self.force = True
+        #import pprint; pprint.pprint(self.actions)
+        #import epdb; epdb.st()
+
         if (self.actions['newlabel'] or self.actions['unlabel'] or
                 self.actions['comments'] or self.actions['close']):
+            #time.sleep(1)
             if self.dry_run:
                 print("Dry-run specified, skipping execution of actions")
             else:
@@ -533,25 +570,50 @@ class DefaultTriager(object):
                     print("Running actions non-interactive as you forced.")
                     self.execute_actions()
                     return
-                cont = raw_input("Take recommended actions (y/N/a)? ")
+                cont = raw_input("Take recommended actions (y/N/a/R/T)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
                 if cont in ('Y', 'y'):
                     self.execute_actions()
+                if cont == 'T':
+                    self.template_wizard()
+                    action_meta['REDO'] = True
+                if cont == 'r' or cont == 'R':
+                    action_meta['REDO'] = True
                 if cont == 'DEBUG':
                     import epdb; epdb.st()
         elif self.always_pause:
             print("Skipping, but pause.")
-            cont = raw_input("Continue (Y/n/a)? ")
+            cont = raw_input("Continue (Y/n/a/R/T)? ")
             if cont in ('a', 'A', 'n', 'N'):
                 sys.exit(0)
+            if cont == 'T':
+                self.template_wizard()
+                action_meta['REDO'] = True
+            elif cont == 'REDO':
+                action_meta['REDO'] = True
             elif cont == 'DEBUG':
                 import epdb; epdb.st()
+                action_meta['REDO'] = True
         else:
             print("Skipping.")
+    
+        # let the upper level code redo this issue
+        return action_meta
+
+    def template_wizard(self):
+        print('################################################')
+        print(self.issue.new_description)
+        print('################################################')
+        cont = raw_input("Apply this new description? (Y/N)")
+        if cont == 'Y':
+            self.issue.set_description(self.issue.new_description)
+        #import epdb; epdb.st() 
+
 
     def execute_actions(self):
         """Turns the actions into API calls"""
+        #time.sleep(1)
         for comment in self.actions['comments']:
             self.debug(msg="API Call comment: " + comment)
             self.issue.add_comment(comment=comment)
@@ -567,3 +629,49 @@ class DefaultTriager(object):
             self.issue.add_label(label=newlabel)
 
 
+    def smart_match_module(self):
+        match = None
+        known_modules = []
+        for k,v in self.module_indexer.modules.iteritems():
+            known_modules.append(v['name'])
+
+        title = self.issue.instance.title.lower()
+        title = title.replace(':', '')
+        title_matches = [x for x in known_modules if x + ' module' in title]
+        if not title_matches:
+            title_matches = [x for x in known_modules if title.startswith(x + ' ')]
+            if not title_matches:
+                title_matches = [x for x in known_modules if  ' ' + x + ' ' in title]
+            
+
+        cmatches = None
+        if self.template_data.get('component name'):        
+            component = self.template_data.get('component name')
+            cmatches = [x for x in known_modules if x in component]
+            cmatches = [x for x in cmatches if not '_' + x in component]
+
+            # use title ... ?
+            if title_matches:
+                cmatches = [x for x in cmatches if x in title_matches]
+
+            if cmatches:
+                if len(cmatches) >= 1:
+                    match = cmatches[0]
+                if not match:
+                    if 'docs.ansible.com' in component:
+                        #import epdb; epdb.st()
+                        pass
+                    else:
+                        #import epdb; epdb.st()
+                        pass
+
+        if not match:
+            if len(title_matches) == 1:
+                match = title_matches[0]
+            else:
+                print("TITLE MATCHES: %s" % title_matches)
+                print("COMPONENT MATCHES: %s" % cmatches)
+                #import epdb; epdb.st()
+
+        #import epdb; epdb.st()
+        return match

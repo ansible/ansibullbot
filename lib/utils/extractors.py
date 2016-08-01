@@ -89,7 +89,7 @@ def extract_template_data(body, issue_number=None):
                 #import epdb; epdb.st()
 
             # remove useless chars
-            badchars = ['#', ':', ';', '*', "'", '"', '`', '---', '__']
+            badchars = ['#', ',', ':', ';', '*', "'", '"', '`', '---', '__']
             for bc in badchars:
                 v = v.replace(bc, '')
 
@@ -117,7 +117,7 @@ def extract_template_data(body, issue_number=None):
                 v = vlines[0]
 
             # https://github.com/ansible/ansible-modules-core/issues/4060
-            if k in ['issue type', 'component name']:
+            if k in ['issue type']:
                 if '/' in v:
                     v = v.split('/')
                     if k == ['issue type']:
@@ -126,9 +126,11 @@ def extract_template_data(body, issue_number=None):
                         v = v[-1]
                     v = v.strip()
 
+            '''
             # https://github.com/ansible/ansible-modules-core/issues/4201
             if k == 'component name' and ' ' in v:
                 v = shlex.split(v)[0]
+            '''
 
             #if k == 'component name' and issue_number == 4138:
             #    import epdb; epdb.st()

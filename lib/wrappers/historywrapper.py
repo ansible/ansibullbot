@@ -102,7 +102,7 @@ class HistoryWrapper(object):
         commands = []
         for x in comments:
             for y in command_keys:
-                if y in x:
+                if y in x and not '!' + y in x:
                     commands.append(y)
                     break        
         #import epdb; epdb.st()
@@ -300,7 +300,10 @@ class HistoryWrapper(object):
         for ide,event in enumerate(events):
             edict = {}
             edict['id'] = event.id
-            edict['actor'] = event.actor.login
+            if not hasattr(event.actor, 'login'):
+                edict['actor'] = None
+            else:
+                edict['actor'] = event.actor.login
             edict['event'] = event.event
             edict['created_at'] = event.created_at
             raw_data = event.raw_data.copy()
@@ -312,6 +315,7 @@ class HistoryWrapper(object):
                 pass
             elif edict['event'] == 'referenced':
                 edict['commit_id'] = event.commit_id
+                #edict['body'] = event.body
             processed_events.append(edict)
 
         for idc,comment in enumerate(comments):

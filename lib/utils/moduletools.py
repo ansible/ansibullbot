@@ -24,20 +24,37 @@ class ModuleIndexer(object):
         print str(so) + str(se)
 
     def _find_match(self, pattern):
+        '''
+        if pattern == 'docker':
+            pattern = 'lib/ansible/modules/core/cloud/docker/_docker.py'
+            return self.modules[pattern]
+        '''
+
         match = None
         for k,v in self.modules.iteritems():
-            if k == pattern:
+            if v['name'] == pattern:
                 match = v
                 break
-            for subkey in v.keys():
-                if v[subkey] == pattern:
+        if not match:
+            # search by key ... aka the filepath
+            for k,v in self.modules.iteritems():
+                if k == pattern:
                     match = v
                     break
-            if match:
-                break
+        if not match:
+            # search by properties
+            for k,v in self.modules.iteritems():
+                for subkey in v.keys():
+                    if v[subkey] == pattern:
+                        match = v
+                        break
+                if match:
+                    break
         return match
 
     def find_match(self, pattern):
+        #if pattern == 'docker':
+        #    import epdb; epdb.st()
         if not pattern:
             return None
         match = self._find_match(pattern)
@@ -162,6 +179,20 @@ class ModuleIndexer(object):
         self.modules['meta']['repository'] = 'core'
         self.modules['meta']['subtopic'] = None
         self.modules['meta']['topic'] = None
+
+        # deprecated modules are annoying
+        newitems = []
+        for k,v in self.modules.iteritems():
+            if v['name'].startswith('_'):
+                dkey = os.path.dirname(v['filepath'])
+                dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
+                if not dkey in self.modules:
+                    nd = v.copy()
+                    nd['name'] = nd['name'].replace('_', '', 1)
+                    newitems.append((dkey, nd))
+        for ni in newitems:
+            self.modules[ni[0]] = ni[1]
+        #import epdb; epdb.st()
 
         return self.modules
 
