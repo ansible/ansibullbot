@@ -608,16 +608,35 @@ class TriageIssues(DefaultTriager):
         issue_type = self.issue_type_to_label(issue_type)
         self.meta['issue_type'] = issue_type
 
-        #################################################
-        # FINAL LOGIC LOOP
-        #################################################
+        # new module requests need to disable everything
+        #   https://github.com/ansible/ansible-modules-core/issues/4112
+        #   https://github.com/ansible/ansible-modules-core/issues/2267
+        #   https://github.com/ansible/ansible-modules-core/issues/2626
+        #   https://github.com/ansible/ansible-modules-core/issues/645
+        new_module_request = False
+        if 'feature_idea' in self.issue.desired_labels:
+            if self.template_data['component name'] == 'new':
+                new_module_request = True
 
         # reset the maintainers
         maintainers = self.get_module_maintainers()
 
+        #################################################
+        # FINAL LOGIC LOOP
+        #################################################
+
         if bot_broken:
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
+
+        elif new_module_request:
+
+            self.debug(msg='new module request stanza')
+            self.issue.desired_comments = []
+            for label in self.issue.current_labels:
+                if not label in self.issue.desired_labels:
+                    self.issue.desired_labels.append(label)
+            #import epdb; epdb.st()
 
         elif 'issue_wrong_repo' in self.issue.desired_comments:
 
