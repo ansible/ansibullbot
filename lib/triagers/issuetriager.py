@@ -465,6 +465,7 @@ class TriageIssues(DefaultTriager):
         maintainer_command_resolved_bug = False
         maintainer_command_resolved_pr = False
         maintainer_command_needscontributor = False
+        maintainer_command_duplicateof = False
         if maintainer_commented and not maintainer_last_comment:
             print('ERROR: should have a comment from maintainer')
             import epdb; epdb.st()
@@ -489,6 +490,9 @@ class TriageIssues(DefaultTriager):
                 maintainer_command_close = True
             elif 'needs_contributor' in maintainer_last_comment:
                 maintainer_command_needscontributor = True
+            elif 'duplicate_of' in maintainer_last_comment:
+                maintainer_command_duplicateof = True
+                maintainer_command_close = True
         elif maintainer_commands:
             # are there any persistant commands?
             if 'needs_contributor' in maintainer_commands:
