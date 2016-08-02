@@ -45,7 +45,7 @@ class TriageIssues(DefaultTriager):
 
     VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
-                      'needs_contributor']
+                      'needs_contributor', 'duplicate_of']
 
     def run(self):
         """Starts a triage run"""
@@ -62,6 +62,7 @@ class TriageIssues(DefaultTriager):
 
             last_run = None
             now = self.get_current_time()
+            #import epdb; epdb.st()
             last_run_file = '~/.ansibullbot/cache'
             last_run_file += '/ansible/ansible-modules-%s/' % self.github_repo
             last_run_file += 'issues/last_run.pickle'
@@ -633,6 +634,14 @@ class TriageIssues(DefaultTriager):
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
 
+        elif maintainer_command_close:
+
+            self.debug(msg='maintainer closure stanza')
+
+            # Need to close the issue ...
+            self.issue.set_desired_state('closed')
+
+
         elif new_module_request:
 
             self.debug(msg='new module request stanza')
@@ -662,13 +671,6 @@ class TriageIssues(DefaultTriager):
 
             self.issue.add_desired_label('waiting_on_maintainer')
             self.issue.add_desired_comment("issue_module_no_maintainer")
-
-        elif maintainer_command_close:
-
-            self.debug(msg='maintainer closure stanza')
-
-            # Need to close the issue ...
-            self.issue.set_desired_state('closed')
 
         elif maintainer_command_needscontributor:
 

@@ -20,6 +20,7 @@ from __future__ import print_function
 import os
 import sys
 import time
+import pytz
 from datetime import datetime
 
 # remember to pip install PyGithub, kids!
@@ -275,7 +276,10 @@ class DefaultTriager(object):
        
 
     def get_current_time(self):
-        return datetime.now()
+        now = datetime.now()
+        #now = datetime.now(pytz.timezone('US/Pacific'))
+        #import epdb; epdb.st()
+        return now
 
     def age_of_last_maintainer_comment(self):
         """How long ago did the maintainer comment?"""
