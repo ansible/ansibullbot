@@ -246,7 +246,7 @@ class PullRequest:
         self.get_issue().create_comment(comment)
 
 
-class Triage:
+class TriagePullRequests:
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, pr_number=None,
                  start_at_pr=None, always_pause=False, force=False, dry_run=False):
@@ -749,6 +749,12 @@ def main():
                         help="Github token of triager")
     parser.add_argument("--dry-run", "-n", action="store_true",
                         help="Do not apply any changes.")
+
+    parser.add_argument("--only_prs", action="store_true",
+                        help="Triage pullrequests only")
+    parser.add_argument("--only_issues", action="store_true",
+                        help="Triage issues only")
+
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output")
     parser.add_argument("--force", "-f", action="store_true",
@@ -773,19 +779,27 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    triage = Triage(
-        verbose=args.verbose,
-        github_user=args.gh_user,
-        github_pass=args.gh_pass,
-        github_token=args.gh_token,
-        github_repo=args.repo,
-        pr_number=args.pr,
-        start_at_pr=args.start_at,
-        always_pause=args.pause,
-        force=args.force,
-        dry_run=args.dry_run,
-    )
-    triage.run()
+    if args.only_prs and args.only_issues:
+        print("Error: Mutually exclusive: --only_issues and --only_prs",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if args.only_prs or not args.only_issues:
+        triage = TriagePullRequests(
+            verbose=args.verbose,
+            github_user=args.gh_user,
+            github_pass=args.gh_pass,
+            github_token=args.gh_token,
+            github_repo=args.repo,
+            pr_number=args.pr,
+            start_at_pr=args.start_at,
+            always_pause=args.pause,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+        triage.run()
+    elif args.only_issues or not args.only_prs:
+        pass
 
 if __name__ == "__main__":
     main()
