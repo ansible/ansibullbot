@@ -788,6 +788,12 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
+    # THIS IS TO FORCE THE OLD BEHAVIOR BY DEFAULT
+    ANSIBULLBOT_VERSION = int(os.environ.get('ANSIBULLBOT_VERSION', 1))
+    if not ANSIBULLBOT_VERSION == 2:
+        args.only_prs = True
+        args.only_issues = False
+
     if args.only_prs or not args.only_issues:
         triage = TriagePullRequests(
             verbose=args.verbose,
