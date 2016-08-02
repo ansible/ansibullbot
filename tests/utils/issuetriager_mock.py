@@ -26,7 +26,12 @@ from lib.triagers.issuetriager import TriageIssues
 from tests.utils.repo_mock import RepoMock
 
 class ModuleIndexerMock(object):
+    modules = {}
     match = {'name': 'THISISNOTREAL', 'repository': 'NOREPO', 'topic': '', 'subtopic': ''}
+
+    def set_modules(self, modules):
+        self.modules = {}
+
     def find_match(self, name):
         return self.match
     def is_valid(self, name):

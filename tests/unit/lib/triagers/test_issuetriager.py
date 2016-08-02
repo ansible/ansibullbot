@@ -133,10 +133,13 @@ class TestIssueTriageBadUsers(unittest.TestCase):
         triage.process(usecache=False)
 
         assert triage.actions['close'] == False
-        assert triage.actions['newlabel'] == ['bug_report', 'needs_info', 'cloud']
+        #assert triage.actions['newlabel'] == ['bug_report', 'needs_info', 'cloud']
+        assert triage.actions['newlabel'] == ['bug_report', 'cloud', 'waiting_on_maintainer']
         assert triage.actions['unlabel'] == []
         assert len(triage.actions['comments']) == 1
-        assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_needs_info --->')
+        
+        #assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_needs_info --->')
+        assert triage.actions['comments'][0].endswith('<!--- boilerplate: issue_bug_new --->')
         submitter = triage.issue.get_submitter()
         submitter = '@' + submitter
         assert submitter in triage.actions['comments'][0]

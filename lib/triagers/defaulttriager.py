@@ -550,8 +550,8 @@ class DefaultTriager(object):
         if self.actions['unlabel']:
             print("unlabeling ... skipping")
             return action_meta
-        '''
 
+        ##### SEMI-AUTO TRIAGE
         if self.module:
             if self.module in self.issue.instance.title.lower():
                 self.force = True
@@ -559,6 +559,7 @@ class DefaultTriager(object):
                 self.force = False
         else:
             self.force = False
+        '''
 
         #self.force = True
         #import pprint; pprint.pprint(self.actions)
@@ -636,6 +637,8 @@ class DefaultTriager(object):
     def smart_match_module(self):
         match = None
         known_modules = []
+        #if not self.module_indexer.modules:
+        #    import epdb; epdb.st()
         for k,v in self.module_indexer.modules.iteritems():
             known_modules.append(v['name'])
 

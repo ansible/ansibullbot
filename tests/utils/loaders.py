@@ -5,6 +5,8 @@ from lib.wrappers.issuewrapper import IssueWrapper
 from tests.utils.issue_mock import IssueMock
 from tests.utils.issuetriager_mock import TriageIssuesMock
 
+SAMPLE_MODULE = {'name': 'xyz'}
+
 def get_triagermock_for_datafile(datafile):
     im = IssueMock(datafile)
     iw = IssueWrapper(repo=None, issue=im)
@@ -21,6 +23,10 @@ def get_triagermock_for_datafile(datafile):
     triage.github_repo = im.ydata.get('github_repo', 'core')
     triage.match = im.ydata.get('_match')
     triage.module_indexer.match = im.ydata.get('_match')
+    if not im.ydata.get('_match'):
+        triage.module_indexer.modules = {'xyz': SAMPLE_MODULE}
+    else:
+        triage.module_indexer.modules = {'NULL': triage.module_indexer.match}
     if im.ydata.get('_match'):
         triage._module = triage.match.get('name')
     else:
