@@ -98,14 +98,17 @@ inventory/group_by.py: jhoekx
 network/basics/get_url.py: jpmens
 network/basics/slurp.py: ansible
 network/basics/uri.py: romeotheriault
-network/eos/eos_command.py: privateip
-network/eos/eos_config.py: privateip
-network/eos/eos_eapi.py: chouseknecht
-network/eos/eos_template.py: privateip
-network/ios/: privateip
-network/junos/: privateip
-network/nxos/: privateip GGabriele
-network/openswitch/: privateip
+network/cumulus/: CumulusNetworks privateip gundalow
+network/eos/eos_command.py: privateip gundalow
+network/eos/eos_config.py: privateip  gundalow
+network/eos/eos_eapi.py: chouseknecht privateip gundalow
+network/eos/eos_template.py: privateip gundalow
+network/ios/: privateip gundalow
+network/iosxr/: privateip gundalow
+network/junos/: privateip gundalow
+network/nxos/: privateip GGabriele gundalow
+network/openswitch/: privateip gundalow
+network/vyos/: privateip gundalow
 packaging/language/easy_install.py: mattupstate
 packaging/language/gem.py: ansible
 packaging/language/pip.py: mattupstate
