@@ -29,11 +29,16 @@ cloud/amazon/rds_subnet_group.py: tastychutney scottanderson42
 cloud/amazon/route53.py: bpennypacker
 cloud/amazon/s3.py: ansible
 cloud/azure/azure.py: nitzmahone
+cloud/azure/azure_rm_virtualmachine.py: ansible
 cloud/digital_ocean/digital_ocean.py: alukovenko
 cloud/digital_ocean/digital_ocean_domain.py: mgregson alukovenko
 cloud/digital_ocean/digital_ocean_sshkey.py: mgregson alukovenko
 cloud/docker/docker.py: cove softzilla zfil ThomasSteinbach
+cloud/docker/docker_container.py: ansible
 cloud/docker/docker_image.py: ansible
+cloud/docker/docker_image_facts.py: ansible
+cloud/docker/docker_login.py: ansible
+cloud/docker/docker_service.py: ansible
 cloud/google/gc_storage.py: bennojoy
 cloud/google/gce.py: supertom
 cloud/google/gce_lb.py: supertom
@@ -89,7 +94,7 @@ files/ini_file.py: jpmens noseka1
 files/lineinfile.py: ansible
 files/replace.py: EvanK
 files/stat.py: bpennypacker
-files/synchronize.py: tima
+files/synchronize.py: ansible
 files/template.py: ansible
 files/unarchive.py: dagwieers pileofrogs
 files/xattr.py: ansible

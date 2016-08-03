@@ -1,0 +1,8 @@
+<!-- @{{ submitter }}: Thanks for filing this {{ issue_type }}! -->
+{% if maintainers|length > 1 %}
+@{{ maintainers|join(', @') }}, ping. This issue is waiting on your response.
+{% else %}
+{% for item in maintainers %}{{ '@' + item }}{% endfor %} ping, this issue is waiting for your response.
+{% endif %}
+[click here for bot help](https://github.com/jctanner/ansibullbot/blob/ISSUE_TRIAGE_CLASS/ISSUE_HELP.md)
+<!--- boilerplate: issue_bug_new --->

@@ -1,0 +1,13 @@
+@{{ submitter }}, we need more information to resolve this issue. For that reason, we put this Issue into the 'needs_info' state.
+
+{% if missing_sections %}
+Here are the required items we could not find in your description:
+{% for item in missing_sections %}
+{{ '- ' + item }}
+{% endfor %} 
+When you have filled in the missing data, we will notify the module maintainer for further action.
+{% else %}
+When you have answered the questions or filled in the missing data, please comment with text 'ready_for_review' and we will put this Issue back into review.
+{% endif %}
+[click here for bot help](https://github.com/jctanner/ansibullbot/blob/ISSUE_TRIAGE_CLASS/ISSUE_HELP.md)
+<!--- boilerplate: issue_needs_info --->

@@ -28,6 +28,10 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from lib.triagers.issuetriager import TriageIssues
+from lib.utils.moduletools import ModuleIndexer
+from lib.utils.extractors import extract_template_data
+
 loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
 
@@ -246,7 +250,7 @@ class PullRequest:
         self.get_issue().create_comment(comment)
 
 
-class Triage:
+class TriagePullRequests:
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, pr_number=None,
                  start_at_pr=None, always_pause=False, force=False, dry_run=False):
@@ -749,6 +753,12 @@ def main():
                         help="Github token of triager")
     parser.add_argument("--dry-run", "-n", action="store_true",
                         help="Do not apply any changes.")
+
+    parser.add_argument("--only_prs", action="store_true",
+                        help="Triage pullrequests only")
+    parser.add_argument("--only_issues", action="store_true",
+                        help="Triage issues only")
+
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output")
     parser.add_argument("--force", "-f", action="store_true",
@@ -757,10 +767,11 @@ def main():
                         help="Debug output")
     parser.add_argument("--pause", "-p", action="store_true",
                         help="Always pause between PRs")
-    parser.add_argument("--pr", type=int,
-                        help="Triage only the specified pr")
+    parser.add_argument("--pr", "--id", type=int,
+                        help="Triage only the specified pr|issue")
     parser.add_argument("--start-at", type=int,
-                        help="Start triage at the specified pr")
+                        help="Start triage at the specified pr|issue")
+
     args = parser.parse_args()
 
     if args.pr and args.start_at:
@@ -773,19 +784,45 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    triage = Triage(
-        verbose=args.verbose,
-        github_user=args.gh_user,
-        github_pass=args.gh_pass,
-        github_token=args.gh_token,
-        github_repo=args.repo,
-        pr_number=args.pr,
-        start_at_pr=args.start_at,
-        always_pause=args.pause,
-        force=args.force,
-        dry_run=args.dry_run,
-    )
-    triage.run()
+    if args.only_prs and args.only_issues:
+        print("Error: Mutually exclusive: --only_issues and --only_prs",
+              file=sys.stderr)
+        sys.exit(1)
+
+    # THIS IS TO FORCE THE OLD BEHAVIOR BY DEFAULT
+    ANSIBULLBOT_VERSION = int(os.environ.get('ANSIBULLBOT_VERSION', 1))
+    if not ANSIBULLBOT_VERSION == 2:
+        args.only_prs = True
+        args.only_issues = False
+
+    if args.only_prs or not args.only_issues:
+        triage = TriagePullRequests(
+            verbose=args.verbose,
+            github_user=args.gh_user,
+            github_pass=args.gh_pass,
+            github_token=args.gh_token,
+            github_repo=args.repo,
+            pr_number=args.pr,
+            start_at_pr=args.start_at,
+            always_pause=args.pause,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+        triage.run()
+    elif args.only_issues or not args.only_prs:
+        triage = TriageIssues(
+            verbose=args.verbose,
+            github_user=args.gh_user,
+            github_pass=args.gh_pass,
+            github_token=args.gh_token,
+            github_repo=args.repo,
+            number=args.pr,
+            start_at=args.start_at,
+            always_pause=args.pause,
+            force=args.force,
+            dry_run=args.dry_run,
+        )
+        triage.run()
 
 if __name__ == "__main__":
     main()
