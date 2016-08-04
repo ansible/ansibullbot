@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import yaml
 from lib.utils.systemtools import *
 
 class ModuleIndexer(object):
@@ -114,6 +115,7 @@ class ModuleIndexer(object):
         # figure out the names
         for match in matches:
             mdict = {}
+            mdict['authors'] = []
 
             mdict['filename'] = os.path.basename(match)
 
@@ -160,14 +162,19 @@ class ModuleIndexer(object):
             else:
                 mdict['deprecated_filename'] = mdict['repo_filename']
 
-            #if 'fireball' in match:
-            #    import epdb; epdb.st()
 
             mkey = mdict['filepath']
             self.modules[mkey] = mdict
 
+        # grep the authors:
+        for k,v in self.modules.iteritems():
+            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            authors = self.get_module_authors(mfile)
+            self.modules[k]['authors'] = authors
+
         # meta is a special module
         self.modules['meta'] = {}
+        self.modules['meta']['authors'] = []
         self.modules['meta']['name'] = 'meta'
         self.modules['meta']['namespaced_module'] = None
         self.modules['meta']['deprecated_filename'] = None
@@ -179,6 +186,7 @@ class ModuleIndexer(object):
         self.modules['meta']['repository'] = 'core'
         self.modules['meta']['subtopic'] = None
         self.modules['meta']['topic'] = None
+        self.modules['meta']['authors'] = []
 
         # deprecated modules are annoying
         newitems = []
@@ -192,8 +200,81 @@ class ModuleIndexer(object):
                     newitems.append((dkey, nd))
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
-        #import epdb; epdb.st()
 
         return self.modules
 
 
+    def get_module_authors(self, module_file):
+        """Grep the authors out of the module docstrings"""
+
+        authors = []
+        if not os.path.exists(module_file):
+            return authors
+
+        documentation = ''
+        inphase = False
+
+        with open(module_file, 'rb') as f:
+            for line in f:
+                if 'DOCUMENTATION' in line:
+                    inphase = True 
+                    continue                
+                if line.strip().endswith("'''") or line.strip().endswith('"""'):
+                    phase = None
+                    break 
+                if inphase:
+                    documentation += line
+
+        if not documentation:
+            return authors
+
+        # clean out any other yaml besides author to save time
+        inphase = False
+        author_lines = ''
+        doc_lines = documentation.split('\n')
+        for idx,x in enumerate(doc_lines):
+            if x.startswith('author'):
+                #print("START ON %s" % x)
+                inphase = True
+                #continue
+            if inphase and not x.strip().startswith('-') and not x.strip().startswith('author'):
+                #print("BREAK ON %s" % x)
+                inphase = False
+                break
+            if inphase:
+                author_lines += x + '\n'
+
+        if not author_lines:
+            return authors            
+
+        ydata = {}
+        try:
+            ydata = yaml.load(author_lines)
+        except Exception as e:
+            print e
+            #import epdb; epdb.st()
+            return authors
+
+        if not ydata:
+            return authors
+
+        if not 'author' in ydata:
+            return authors
+
+        if type(ydata['author']) != list:
+            ydata['author'] = [ydata['author']]
+
+        for author in ydata['author']:
+            if '@' in author:
+                words = author.split()
+                for word in words:
+                    if '@' in word and '(' in word and ')' in word:
+                        if '(' in word:
+                            word = word.split('(')[-1]
+                        if ')' in word:
+                            word = word.split(')')[0]
+                        word = word.strip()
+                        if word.startswith('@'):
+                            word = word.replace('@', '', 1)
+                            authors.append(word)
+        return authors
