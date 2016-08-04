@@ -786,7 +786,7 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    if args.force and args.smart_force:
+    if args.force and args.safe_force:
         print("Error: Mutually exclusive: --force and --safe_force",
               file=sys.stderr)
         sys.exit(1)
