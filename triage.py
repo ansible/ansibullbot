@@ -763,6 +763,8 @@ def main():
                         help="Verbose output")
     parser.add_argument("--force", "-f", action="store_true",
                         help="Do not ask questions")
+    parser.add_argument("--safe_force", action="store_true",
+                        help="Ask questions only if a precise match not made.")
     parser.add_argument("--debug", "-d", action="store_true",
                         help="Debug output")
     parser.add_argument("--pause", "-p", action="store_true",
@@ -781,6 +783,11 @@ def main():
 
     if args.force and args.pause:
         print("Error: Mutually exclusive: --force and --pause",
+              file=sys.stderr)
+        sys.exit(1)
+
+    if args.force and args.smart_force:
+        print("Error: Mutually exclusive: --force and --safe_force",
               file=sys.stderr)
         sys.exit(1)
 
@@ -820,6 +827,7 @@ def main():
             start_at=args.start_at,
             always_pause=args.pause,
             force=args.force,
+            safe_force=args.safe_force,
             dry_run=args.dry_run,
         )
         triage.run()
