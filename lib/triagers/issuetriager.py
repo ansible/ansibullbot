@@ -388,8 +388,12 @@ class TriageIssues(DefaultTriager):
 
         # Is this a valid module?
         valid_module = False
+        correct_repo = True
         if self.match:
             valid_module = True
+            if self.match['repository'] != self.github_repo:
+                correct_repo = False
+            #import epdb; epdb.st()
 
         # Do these after evaluating the module
         self.add_desired_labels_by_issue_type()
@@ -649,12 +653,13 @@ class TriageIssues(DefaultTriager):
             for label in self.issue.current_labels:
                 if not label in self.issue.desired_labels:
                     self.issue.desired_labels.append(label)
-            #import epdb; epdb.st()
 
-        elif 'issue_wrong_repo' in self.issue.desired_comments:
+        elif not correct_repo:
 
             self.debug(msg='wrong repo stanza')
+            self.issue.desired_comments = ['issue_wrong_repo']
             self.actions['close'] = True
+            #import epdb; epdb.st()
 
         elif not valid_module and not maintainer_command_needsinfo:
             self.debug(msg='invalid module stanza')
