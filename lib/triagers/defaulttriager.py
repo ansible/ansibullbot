@@ -208,8 +208,11 @@ class DefaultTriager(object):
             self.module_maintainers = maintainers[mdata['topic'] + '/']
         else:
             pass
-        #if not expand:
-        #    import epdb; epdb.st()
+
+        if not self.module_maintainers and self.match:
+            if self.match['authors']:
+                self.module_maintainers = self.match['authors']
+
         return self.module_maintainers
 
     def get_current_labels(self):
