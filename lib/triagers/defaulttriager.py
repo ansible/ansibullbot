@@ -536,16 +536,28 @@ class DefaultTriager(object):
 
     def check_safe_match(self):
         """ Turn force on or off depending on match characteristics """
-        safe_match = False
 
-        if self.module:
-            if self.module in self.issue.instance.title.lower():
-                safe_match = True
-
-        if safe_match:
+        if self.action_count() == 0:
             self.force = True
         else:
-            self.force = False
+            safe_match = False
+            if self.module:
+                if self.module in self.issue.instance.title.lower():
+                    safe_match = True
+            if safe_match:
+                self.force = True
+            else:
+                self.force = False
+
+    def action_count(self):
+        """ Return the number of actions that are to be performed """
+        count = 0
+        for k,v in self.actions.iteritems():
+            if k == 'close' and v:
+                count += 1
+            elif k != 'close':
+                count += len(v)
+        return count
 
     def apply_actions(self):
 
@@ -554,9 +566,7 @@ class DefaultTriager(object):
         if self.safe_force:
             self.check_safe_match()
 
-        if (self.actions['newlabel'] or self.actions['unlabel'] or
-                self.actions['comments'] or self.actions['close']):
-            #time.sleep(1)
+        if self.action_count() > 0:
             if self.dry_run:
                 print("Dry-run specified, skipping execution of actions")
             else:
