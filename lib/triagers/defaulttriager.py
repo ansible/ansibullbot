@@ -90,7 +90,7 @@ class DefaultTriager(object):
 
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
-                 start_at=None, always_pause=False, force=False, dry_run=False):
+                 start_at=None, always_pause=False, force=False, safe_force=False, dry_run=False):
 
         self.verbose = verbose
         self.github_user = github_user
@@ -101,6 +101,7 @@ class DefaultTriager(object):
         self.start_at = start_at
         self.always_pause = always_pause
         self.force = force
+        self.safe_force = safe_force
         self.dry_run = dry_run
 
         self.issue = None
@@ -533,40 +534,25 @@ class DefaultTriager(object):
         return issue_type
 
 
+    def check_safe_match(self):
+        """ Turn force on or off depending on match characteristics """
+        safe_match = False
+
+        if self.module:
+            if self.module in self.issue.instance.title.lower():
+                safe_match = True
+
+        if safe_match:
+            self.force = True
+        else:
+            self.force = False
+
     def apply_actions(self):
 
         action_meta = {'REDO': False}
 
-        '''
-        # smart pausing ...
-        if not self.module:
-            print("NO module ... skipping")
-            return action_meta
-        if not self.module in self.issue.instance.title.lower():
-            print("module match not in title ... skipping")
-        if self.actions['close']:
-            print("closure requested ... skipping")
-            return action_meta
-        if self.actions['comments']:
-            print("commenting ... skipping")
-            return action_meta
-        if self.actions['unlabel']:
-            print("unlabeling ... skipping")
-            return action_meta
-
-        ##### SEMI-AUTO TRIAGE
-        if self.module:
-            if self.module in self.issue.instance.title.lower():
-                self.force = True
-            else:
-                self.force = False
-        else:
-            self.force = False
-        '''
-
-        #self.force = True
-        #import pprint; pprint.pprint(self.actions)
-        #import epdb; epdb.st()
+        if self.safe_force:
+            self.check_safe_match()
 
         if (self.actions['newlabel'] or self.actions['unlabel'] or
                 self.actions['comments'] or self.actions['close']):
