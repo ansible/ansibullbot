@@ -133,7 +133,7 @@ packaging/language/bundler.py: thoiberg
 packaging/language/composer.py: dmtrs resmo
 packaging/language/cpanm.py: franckcuny
 packaging/language/maven_artifact.py: chrisisbeef
-packaging/language/npm.py: chrishoffman
+packaging/language/npm.py: shane-walker
 packaging/language/pear.py: gentledevil
 packaging/os/apk.py: kbrebanov
 packaging/os/dnf.py: ignatenkobrain DJMuggs
