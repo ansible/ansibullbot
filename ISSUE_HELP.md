@@ -24,7 +24,6 @@ Thanks in advance for taking a look at this bug report and for your ongoing work
 
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
-<<<<<<< HEAD
 * **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
 * **needs_info** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
 * **!needs_info** - If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
@@ -33,8 +32,7 @@ To streamline the maintenance process, we've added some commands to the ansibot 
 * **resolved_by_pr** - If you believe this issue has been resolved by a pull request, please leave a comment stating `resolved_by_pr` followed by the pull request number. 
 * **wontfix** - If this is a bug that you can't or won't fix, please leave a comment including the word `wontfix`, along with an explanation for why it won't be fixed.
 * **needs_contributor** - If this bug or feature request is something that you want implemented but do not have the time or **expertise** to do, comment with `needs_contributor`, and the issue will be put into a `waiting_on_contributor` state.
-* **dupicate_of**** - If this bug or feature request is a duplicate of another issue, comment with `dupicate_of` followed by the issue number that it duplicates, and the issue will be closed.
-=======
-* **`bot_broken`** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
-* **`needs_info`** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
-* **`!is issue.
+* **dupicate_of** - If this bug or feature request is a duplicate of another issue, comment with `dupicate_of` followed by the issue number that it duplicates, and the issue will be closed.
+
+## For anyone else also experiencing this issue
+Please leave a +1 reaction so we can determine if this issue is affecting a number of people. Any additional details you can provide, such as your environment, steps to reproduce, or workarounds you have found, can help out with resolving this issue.
