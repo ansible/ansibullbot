@@ -83,7 +83,7 @@ MUTUALLY_EXCLUSIVE_LABELS = [
     "core_review",
 ]
 
-# Static labels, manually added
+# Static labels, may be added manually
 IGNORE_LABELS = [
     "feature_pull_request",
     "bugfix_pull_request",
@@ -94,6 +94,8 @@ IGNORE_LABELS = [
     "pending_action",
     "gce",
     "python3",
+    "bot_broken",
+    "owner_pr",
 ]
 
 # We warn for human interaction
@@ -502,6 +504,10 @@ class TriagePullRequests:
                 self.debug(msg="%s is module maintainer commented on %s." %
                            (comment.user.login, comment.created_at))
 
+                if "bot_broken" in comment.body:
+                    self.debug(msg="...said bot_broken!")
+                    self.pull_request.add_desired_label(name="bot_broken")
+
                 if ("shipit" in comment.body or "+1" in comment.body
                     or "LGTM" in comment.body):
                     self.debug(msg="...said shipit!")
@@ -529,6 +535,11 @@ class TriagePullRequests:
             if comment.user.login == self.pull_request.get_pr_submitter():
                 self.debug(msg="%s is PR submitter commented on %s." %
                            (comment.user.login, comment.created_at))
+
+                if "bot_broken" in comment.body:
+                    self.debug(msg="...said bot_broken!")
+                    self.pull_request.add_desired_label(name="bot_broken")
+
                 if "ready_for_review" in comment.body:
                     self.debug(msg="...ready for review!")
                     if "ansible" in module_maintainers:
@@ -553,6 +564,10 @@ class TriagePullRequests:
                 and self.is_ansible_member(comment.user.login)):
 
                 self.debug(msg="%s is a ansible member" % comment.user.login)
+
+                if "bot_broken" in comment.body:
+                    self.debug(msg="...said bot_broken!")
+                    self.pull_request.add_desired_label(name="bot_broken")
 
                 if ("shipit" in comment.body or "+1" in comment.body
                     or "LGTM" in comment.body):
@@ -660,6 +675,10 @@ class TriagePullRequests:
                                 (self.pull_request.instance.title).encode('ascii','ignore')))
         print("Created at %s" % self.pull_request.instance.created_at)
         print("Updated at %s" % self.pull_request.instance.updated_at)
+
+        if "bot_broken" in self.pull_request.get_current_labels():
+            print("bot_broken labeled, skipping. Needs to be removed manually.")
+            return
 
         self.keep_current_main_labels()
         self.add_desired_labels_by_namespace()
