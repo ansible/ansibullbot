@@ -228,6 +228,8 @@ windows/win_regmerge.py: jhawkesworth
 windows/win_regmerge.ps1: jhawkesworth
 windows/win_scheduled_task.ps1: petemounce
 windows/win_scheduled_task.py: petemounce
+windows/win_uri.ps1: blakfeld
+windows/win_uri.py: blakfeld
 windows/win_unzip.py: schwartzmx
 windows/win_unzip.ps1: schwartzmx
 windows/win_updates.py: mattdavispdx
