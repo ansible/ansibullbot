@@ -55,6 +55,7 @@ cloud/vmware/vsphere_copy.py: dagwieers
 cloud/webfaction/: quentinsf
 cloud/xenserver_facts.py: andyhky
 clustering/consul: sgargan
+clustering/kubernetes.py: supertom
 clustering/znode.py: treyperry
 commands/expect.py: sivel
 database/influxdb/: kamsz
