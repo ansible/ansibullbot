@@ -106,7 +106,7 @@ network/basics/uri.py: romeotheriault
 network/cumulus/: CumulusNetworks privateip gundalow
 network/eos/eos_command.py: privateip gundalow
 network/eos/eos_config.py: privateip gundalow
-network/eos/eos_eapi.py: chouseknecht privateip gundalow
+network/eos/eos_eapi.py: privateip gundalow
 network/eos/eos_template.py: privateip gundalow
 network/ios/: privateip gundalow
 network/iosxr/: privateip gundalow
