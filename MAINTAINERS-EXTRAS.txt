@@ -14,6 +14,7 @@ cloud/amazon/ec2_vpc_route_table.py: erydo wimnat
 cloud/amazon/ec2_vpc_route_table_facts.py: wimnat
 cloud/amazon/ec2_vpc_subnet.py: erydo
 cloud/amazon/ec2_vpc_subnet_facts.py: wimnat
+cloud/amazon/ec2_vpc_dhcp_options_facts.py: naslanidis
 cloud/amazon/GUIDELINES.md: willthames wimnat
 cloud/amazon/ec2_win_password.py: rickmendes
 cloud/amazon/ecs_cluster.py: Java1Guy
@@ -40,6 +41,7 @@ cloud/lxd/: hnakamur
 cloud/misc/ovirt.py: joshainglis karmab
 cloud/misc/proxmox.py: UnderGreen
 cloud/misc/proxmox_template.py: UnderGreen
+cloud/misc/rhevm.py: TimothyVandenbrande
 cloud/misc/virt.py: ansible
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
@@ -94,12 +96,14 @@ network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
+network/exoscale/: resmo
 network/f5/: mhite caphrim007
 network/f5/bigip_gtm_wide_ip.py: perzizzle
 network/f5/bigip_monitor_http.py: srvg
 network/f5/bigip_monitor_tcp.py: srvg
 network/f5/bigip_virtual_server.py: Etienne-Carriere
 network/haproxy.py: ravibhure
+network/illumos/: xen0l
 network/ipify_facts.py: resmo
 network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
@@ -193,6 +197,8 @@ system/solaris_zone.py: pmarkham
 system/svc.py: bcoca
 system/ufw.py: ovcharenko pyykkis
 system/zfs.py: johanwiren
+univention/: 2-B
+web_infrastructure/apache2_mod_proxy.py: oboukili
 web_infrastructure/deploy_helper.py: ramondelafuente
 web_infrastructure/ejabberd_user.py: privateip
 web_infrastructure/jboss.py: jhoekx
