@@ -187,6 +187,7 @@ system/open_iscsi.py: srvg
 system/osx_defaults.py: ansible
 system/pam_limits.py: ansible
 system/puppet.py: emonty nibalizer
+system/sefcontext: dagwieers
 system/selinux_permissive.py: mscherer
 system/seport.py: dankeder
 system/solaris_zone.py: pmarkham
