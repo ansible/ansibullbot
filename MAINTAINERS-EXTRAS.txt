@@ -48,6 +48,7 @@ cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz
 cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson
 cloud/softlayer/sl_vm.py: mcltn
+cloud/smartos/: xen0l
 cloud/vmware/: chrrrles
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: jcpowermac mtnbikenc
@@ -101,6 +102,7 @@ network/f5/bigip_monitor_http.py: srvg
 network/f5/bigip_monitor_tcp.py: srvg
 network/f5/bigip_virtual_server.py: Etienne-Carriere
 network/haproxy.py: ravibhure
+network/illumos/: xen0l
 network/ipify_facts.py: resmo
 network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
