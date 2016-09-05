@@ -125,7 +125,7 @@ notification/nexmo.py: sivel
 notification/osx_say.py: ansible
 notification/pushbullet.py: willybarro
 notification/pushover.py: weaselkeeper
-notification/rocketchat.py: ramondelafuente
+notification/rocketchat.py: Deepakkothandan
 notification/sendgrid.py: makaimc
 notification/slack.py: ramondelafuente
 notification/sns.py: mjschultz
