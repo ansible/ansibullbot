@@ -113,7 +113,7 @@ network/eos/eos_template.py: privateip gundalow
 network/ios/: privateip gundalow
 network/iosxr/: privateip gundalow
 network/junos/: privateip gundalow
-network/nxos/: privateip GGabriele gundalow
+network/nxos/: jedelman8 GGabriele privateip gundalow
 network/openswitch/: privateip gundalow
 network/vyos/: privateip gundalow
 packaging/language/easy_install.py: mattupstate
