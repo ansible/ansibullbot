@@ -72,6 +72,7 @@ database/postgresql/postgresql_lang.py: jensdepuydt
 database/vertica/: dareko
 files/archive.py: bendoh
 files/patch.py: jirutka luisperlaz
+identity/opendj/: dj-wasabi 
 messaging/rabbitmq: manuel-sousa chrishoffman romanek-adam
 messaging/rabbitmq_policy.py: retr0h
 monitoring/airbrake_deployment.py: bpennypacker
