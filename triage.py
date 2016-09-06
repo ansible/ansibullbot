@@ -29,6 +29,7 @@ from github import Github
 from jinja2 import Environment, FileSystemLoader
 
 from lib.triagers.issuetriager import TriageIssues
+from lib.triagers.ansible_ansible_issuetriager import AnsibleAnsibleTriageIssues
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
 
@@ -762,7 +763,7 @@ def main():
                                                  "useful if you have commit "
                                                  "access to the repo in "
                                                  "question.)")
-    parser.add_argument("repo", type=str, choices=['core', 'extras'],
+    parser.add_argument("repo", type=str, choices=['core', 'extras', 'ansible'],
                         help="Repo to be triaged")
     parser.add_argument("--gh-user", "-u", type=str,
                         help="Github username or token of triager")
@@ -836,19 +837,23 @@ def main():
         )
         triage.run()
     elif args.only_issues or not args.only_prs:
-        triage = TriageIssues(
-            verbose=args.verbose,
-            github_user=args.gh_user,
-            github_pass=args.gh_pass,
-            github_token=args.gh_token,
-            github_repo=args.repo,
-            number=args.pr,
-            start_at=args.start_at,
-            always_pause=args.pause,
-            force=args.force,
-            safe_force=args.safe_force,
-            dry_run=args.dry_run,
-        )
+        kwargs = dict(
+                    verbose=args.verbose,
+                    github_user=args.gh_user,
+                    github_pass=args.gh_pass,
+                    github_token=args.gh_token,
+                    github_repo=args.repo,
+                    number=args.pr,
+                    start_at=args.start_at,
+                    always_pause=args.pause,
+                    force=args.force,
+                    safe_force=args.safe_force,
+                    dry_run=args.dry_run
+                )
+        if args.repo == 'ansible':
+            triage = AnsibleAnsibleTriageIssues(**kwargs)
+        else:
+            triage = TriageIssues(**kwargs)
         triage.run()
 
 if __name__ == "__main__":

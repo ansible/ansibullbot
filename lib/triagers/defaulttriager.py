@@ -114,18 +114,94 @@ class DefaultTriager(object):
             'close': False,
         }
 
+        print("Initializing ModuleIndexer")
         self.module_indexer = ModuleIndexer()
         self.module_indexer.get_ansible_modules()
+        print("Getting ansible members")
         self.ansible_members = self.get_ansible_members()
+        print("Getting valid labels")
         self.valid_labels = self.get_valid_labels()
 
         # processed metadata
         self.meta = {}
 
+    def _process(self, usecache=True):
+        '''Does the real work on the issue'''
+
+        # clear all actions
+        self.actions = {
+            'newlabel': [],
+            'unlabel':  [],
+            'comments': [],
+            'close': False,
+        }
+
+        # clear module maintainers
+        self.module_maintainers = []
+
+        # print some general info about the Issue to be processed
+        print("\n")
+        print("Issue #%s: %s" % (self.issue.number,
+                                (self.issue.instance.title).encode('ascii','ignore')))
+        print("Created at %s" % self.issue.instance.created_at)
+        print("Updated at %s" % self.issue.instance.updated_at)
+
+        # get the template data
+        self.template_data = self.issue.get_template_data()
+
+        # was the issue type defined correctly?
+        issue_type_defined = False
+        issue_type_valid = False
+        issue_type = False
+        if 'issue type' in self.template_data:
+            issue_type_defined = True
+            issue_type = self.template_data['issue type']
+            if issue_type.lower() in self.VALID_ISSUE_TYPES:
+                issue_type_valid = True
+        self.meta['issue_type_defined'] = issue_type_defined
+        self.meta['issue_type_valid'] = issue_type_valid
+        self.meta['issue_type'] = issue_type
+
+        # was component specified?
+        component_defined = 'component name' in self.template_data
+        self.meta['component_defined'] = component_defined
+
+        # extract the component
+        component = self.template_data.get('component name', None)
+
+        # save the real name
+        self.match = self.module_indexer.find_match(component) or {}
+        self.module = self.match.get('name', None)
+
+        # check if component is a known module
+        component_isvalid = self.module_indexer.is_valid(component)
+        self.meta['component_valid'] = component_isvalid
+
+        # smart match modules
+        if not component_isvalid:
+            smatch = self.smart_match_module()
+            if self.module_indexer.is_valid(smatch):
+                self.module = smatch
+                component = smatch
+                self.match = self.module_indexer.find_match(smatch)
+                component_isvalid = self.module_indexer.is_valid(component)
+                self.meta['component_valid'] = component_isvalid
+
+        # Helper to fix issue descriptions ...
+        DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
+        self.issue.new_description = DF.new_description
+
+
     def _connect(self):
         """Connects to GitHub's API"""
         return Github(login_or_token=self.github_token or self.github_user,
                       password=self.github_pass)
+
+    def _get_repo_path(self):
+        if self.github_repo in ['core', 'extras']:
+            return "ansible/ansible-modules-%s" % self.github_repo
+        else:
+            return "ansible/%s" % self.github_repo
 
     def is_pr(self, issue):
         if '/pull/' in issue.html_url:
@@ -141,13 +217,11 @@ class DefaultTriager(object):
         org = self._connect().get_organization("ansible")
         members = org.get_members()
         ansible_members = [x.login for x in members]
-        #import epdb; epdb.st()
         return ansible_members
 
     def get_valid_labels(self):
         vlabels = []
-        self.repo = self._connect().get_repo("ansible/ansible-modules-%s" %
-                                        self.github_repo)
+        self.repo = self._connect().get_repo(self._get_repo_path())
         for vl in self.repo.get_labels():
             vlabels.append(vl.name)
         return vlabels
@@ -229,6 +303,41 @@ class DefaultTriager(object):
 
     def create_actions(self):
         pass
+
+    def create_label_actions(self):
+        """Create actions from the desired label/unlabel/comment actions"""
+
+        if 'bot_broken' in self.issue.desired_labels:
+            # If the bot is broken, do nothing other than set the broken label
+            self.actions['comments'] = []
+            self.actions['newlabel'] = []
+            self.actions['unlabel'] = []
+            self.actions['close'] = False
+            if not 'bot_broken' in self.issue.current_labels:
+                self.actions['newlabel'] = ['bot_broken']                
+            return
+
+        resolved_desired_labels = []
+        for desired_label in self.issue.desired_labels:
+            resolved_desired_label = self.issue.resolve_desired_labels(
+                desired_label
+            )
+            if desired_label != resolved_desired_label:
+                resolved_desired_labels.append(resolved_desired_label)
+                if (resolved_desired_label not in self.issue.get_current_labels()):
+                    self.issue.add_desired_comment(desired_label)
+                    self.actions['newlabel'].append(resolved_desired_label)
+            else:
+                resolved_desired_labels.append(desired_label)
+                if desired_label not in self.issue.get_current_labels():
+                    self.actions['newlabel'].append(desired_label)
+
+        for current_label in self.issue.get_current_labels():
+            if current_label in self.IGNORE_LABELS:
+                continue
+            if current_label not in resolved_desired_labels:
+                self.actions['unlabel'].append(current_label)
+
 
     def component_from_comments(self):
         """Extracts a component name from special comments"""

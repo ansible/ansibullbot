@@ -49,8 +49,13 @@ class TriageIssues(DefaultTriager):
 
     def run(self):
         """Starts a triage run"""
-        self.repo = self._connect().get_repo("ansible/ansible-modules-%s" %
-                                        self.github_repo)
+
+        # Create the api connection
+        self.repo = self._connect().get_repo(self._get_repo_path())
+
+        # extend the ignored labels by repo
+        if hasattr(self, 'IGNORE_LABELS_ADD'):
+            self.IGNORE_LABELS.extend(self.IGNORE_LABELS_ADD)
 
         if self.number:
             issue = self.repo.get_issue(int(self.number))
@@ -726,3 +731,212 @@ class TriageIssues(DefaultTriager):
                     self.issue.add_desired_comment("issue_pending_closure")
                 #import epdb; epdb.st()
         #import epdb; epdb.st()
+
+
+    def get_history_facts(self):
+
+        hfacts = {}
+        today = self.get_current_time()
+
+        # what was the last commment?
+        bot_broken = False
+        if self.issue.current_comments:
+            for comment in self.issue.current_comments:
+                if 'bot_broken' in comment.body:
+                    bot_broken = True
+
+        # who made this and when did they last comment?
+        submitter = self.issue.get_submitter()
+        submitter_last_commented = self.history.last_commented_at(submitter)
+        submitter_last_comment = self.history.last_comment(submitter)
+        submitter_last_notified = self.history.last_notified(submitter)
+
+        # what did they not provide?
+        missing_sections = self.issue.get_missing_sections()
+        if 'ansible version' in missing_sections:
+            missing_sections.remove('ansible version')
+
+        # DEBUG + FIXME - speeds up bulk triage
+        if 'component name' in missing_sections and self.match:
+            missing_sections.remove('component name')
+        #import epdb; epdb.st()
+
+        # Who are the maintainers?
+        maintainers = [x for x in self.get_module_maintainers()]
+
+        if 'ansible' in maintainers:
+            maintainers.remove('ansible')
+        maintainers.extend(self.ansible_members)
+        if 'ansibot' in maintainers:
+            maintainers.remove('ansibot')
+        if submitter in maintainers:
+            maintainers.remove(submitter)
+        maintainers = sorted(set(maintainers))
+
+        # Has maintainer been notified? When?
+        notification_maintainers = self.get_module_maintainers()
+        if 'ansible' in notification_maintainers:
+            notification_maintainers.extend(self.ansible_members)
+        if 'ansibot' in notification_maintainers:
+            notification_maintainers.remove('ansibot')
+        maintainer_last_notified = self.history.\
+                    last_notified(notification_maintainers)
+
+        # Has maintainer viewed issue?
+        maintainer_viewed = self.history.has_viewed(maintainers)
+        maintainer_last_viewed = self.history.last_viewed_at(maintainers)
+        #import epdb; epdb.st()
+
+        # Has maintainer been mentioned?
+        maintainer_mentioned = self.history.is_mentioned(maintainers)
+
+        # Has maintainer viewed issue?
+        maintainer_viewed = self.history.has_viewed(maintainers)
+
+        # Has the maintainer ever responded?
+        maintainer_commented = self.history.has_commented(maintainers)
+        maintainer_last_commented = self.history.last_commented_at(maintainers)
+        maintainer_last_comment = self.history.last_comment(maintainers)
+        maintainer_comments = self.history.get_user_comments(maintainers)
+        #import epdb; epdb.st()
+
+        # Was the maintainer the last commentor?
+        last_commentor_ismaintainer = False
+        last_commentor_issubmitter = False
+        last_commentor = self.history.last_commentor()
+        if last_commentor in maintainers and last_commentor != self.github_user:
+            last_commentor_ismaintainer = True
+        elif last_commentor == submitter:
+            last_commentor_issubmitter = True
+
+        # Did the maintainer issue a command?
+        maintainer_commands = self.history.get_commands(maintainers, 
+                                                        self.VALID_COMMANDS)
+
+        # Has the maintainer ever subscribed?
+        maintainer_subscribed = self.history.has_subscribed(maintainers)
+        
+        # Was it ever needs_info?
+        maintainer_command_needs_info = False
+        was_needs_info = self.history.was_labeled(label='needs_info')
+        needsinfo_last_applied = self.history.label_last_applied('needs_info')
+        needsinfo_last_removed = self.history.label_last_removed('needs_info')
+
+        # Still needs_info?
+        needsinfo_add = False
+        needsinfo_remove = False
+        if 'needs_info' in self.issue.current_labels:
+            if submitter_last_commented and needsinfo_last_applied:
+                if submitter_last_commented > needsinfo_last_applied \
+                    and not missing_sections:
+                    needsinfo_remove = True
+        if 'needs_info' in maintainer_commands and maintainer_last_commented:
+            if submitter_last_commented and maintainer_last_commented:
+                if submitter_last_commented > maintainer_last_commented:
+                    needsinfo_add = False
+                    needsinfo_remove = True
+            else:
+                needsinfo_add = True
+                needsinfo_remove = False
+
+        # Is needs_info stale or expired?
+        needsinfo_age = None
+        needsinfo_stale = False
+        needsinfo_expired = False
+        if 'needs_info' in self.issue.current_labels: 
+            time_delta = today - needsinfo_last_applied
+            needsinfo_age = time_delta.days
+            if needsinfo_age > 14:
+                needsinfo_stale = True
+            if needsinfo_age > 56:
+                needsinfo_expired = True
+
+        # Should we be in waiting_on_maintainer mode?
+        maintainer_waiting_on = False
+        if (needsinfo_remove or not needsinfo_add) \
+            or not was_needs_info \
+            and not missing_sections:
+            maintainer_waiting_on = True
+
+        # Should we [re]notify the submitter?
+        submitter_waiting_on = False
+        submitter_to_ping = False
+        submitter_to_reping = False
+        if not maintainer_waiting_on:
+            submitter_waiting_on = True
+
+        if missing_sections:
+            submitter_waiting_on = True
+            maintainer_waiting_on = False
+        else:
+            if 'needs_info' in self.issue.current_labels \
+                and not maintainer_command_not_needsinfo:
+                needsinfo_remove = True                
+                submitter_waiting_on = False
+                maintainer_waiting_on = True
+
+        if '!needs_info' in maintainer_commands:
+            submitter_waiting_on = False
+            maintainer_waiting_on = True
+
+        if 'needs_info' in maintainer_commands:
+            submitter_waiting_on = True
+            maintainer_waiting_on = False
+            needsinfo_add = True
+            needsinfo_remove = False
+
+        # Time to [re]ping maintainer?
+        maintainer_to_ping = False
+        maintainer_to_reping = False
+        if maintainer_waiting_on:
+            #import epdb; epdb.st()
+            if maintainer_viewed and not maintainer_last_notified:
+                time_delta = today - maintainer_last_viewed
+                view_age = time_delta.days
+                if view_age > 14:
+                    maintainer_to_reping = True
+            elif maintainer_last_notified:
+                time_delta = today - maintainer_last_notified
+                ping_age = time_delta.days
+                if ping_age > 14:
+                    maintainer_to_reping = True
+            else:
+                maintainer_to_ping = True
+
+        # Time to [re]ping the submitter?
+        if submitter_waiting_on:
+            if submitter_last_notified:
+                time_delta = today - submitter_last_notified
+                notification_age = time_delta.days
+                if notification_age > 14:
+                    submitter_to_reping = True
+                else:
+                    submitter_to_reping = False
+                submitter_to_ping = False
+            else:
+                submitter_to_ping = True
+                submitter_to_reping = False
+
+        hfacts['bot_broken'] = bot_broken
+        hfacts['was_needsinfo'] = was_needs_info
+        hfacts['needsinfo_age'] = needsinfo_age
+        hfacts['needsinfo_expired'] = needsinfo_expired
+        hfacts['needsinfo_add'] = needsinfo_add
+        hfacts['needsinfo_remove'] = needsinfo_remove
+        hfacts['maintainer_last_notified'] = maintainer_last_notified
+        hfacts['maintainer_viewed'] = maintainer_viewed
+        hfacts['maintainer_subscribed'] = maintainer_subscribed
+        hfacts['maintainer_command_needsinfo'] = 'needs_info' in maintainer_commands
+        hfacts['maintainer_command_not_needsinfo'] = '!needs_info' in maintainer_commands
+        hfacts['maintainer_waiting_on'] = maintainer_waiting_on
+        hfacts['maintainer_to_ping'] = maintainer_to_ping
+        hfacts['maintainer_to_reping'] = maintainer_to_reping
+        hfacts['submitter_waiting_on'] = submitter_waiting_on
+        hfacts['submitter_to_ping'] = submitter_to_ping
+        hfacts['submitter_to_reping'] = submitter_to_reping
+
+        hfacts['last_commentor_ismaintainer'] = last_commentor_ismaintainer
+        hfacts['last_commentor_issubmitter'] = last_commentor_issubmitter
+        hfacts['last_commentor'] = last_commentor
+
+        return hfacts
