@@ -63,6 +63,7 @@ class TriageIssuesMock(TriageIssues):
         self.start_at = start_at
         self.always_pause = always_pause
         self.force = force
+        self.safe_force = False
         self.dry_run = dry_run
 
         self.repo = RepoMock()
