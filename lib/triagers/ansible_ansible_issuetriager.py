@@ -64,6 +64,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self.create_label_actions() # creates the label actions
 
         # do the actions ...
+        self.debug('current labels: %s' % ' '.join(self.issue.current_labels))
         import pprint; pprint.pprint(self.actions)
         import epdb; epdb.st()
         action_meta = self.apply_actions()
@@ -76,53 +77,55 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         # Build the history
         self.debug(msg="Building event history ...")
         self.history = HistoryWrapper(self.issue, usecache=usecache)
-        self.hfacts = self.get_history_facts()
-        import epdb; epdb.st()
+        self.meta.update(self.get_history_facts())
 
         #################################################
-        # FINAL LOGIC LOOP
+        # FINAL LOGIC LOOP TO SET STATE
         #################################################
 
-        if bot_broken:
+        if self.meta['bot_broken']:
+
             self.debug(msg='broken bot stanza')
+
             self.issue.add_desired_label('bot_broken')
 
-        elif maintainer_waiting_on:
+        elif self.github_repo != self.match.get('repository', 'ansible'):
+
+            self.debug(msg='wrong repo stanza')
+
+            self.issue.desired_comments = ['issue_wrong_repo']
+            self.actions['close'] = True
+
+        elif self.meta['maintainer_waiting_on']:
 
             self.debug(msg='maintainer wait stanza')
-            #import epdb; epdb.st()
+
+            # FIXME - apply the triage label if needed
 
             self.issue.add_desired_label('waiting_on_maintainer')
             if len(self.issue.current_comments) == 0:
-                if issue_type:
-                    self.issue.add_desired_comment('issue_new')
+                self.issue.add_desired_comment('issue_new')
             else:
-                if maintainers != ['DEPRECATED']:
-                    if maintainer_to_ping and maintainers:
-                        self.issue.add_desired_comment('issue_notify_maintainer')
-                    elif maintainer_to_reping and maintainers:
-                        self.issue.add_desired_comment('issue_renotify_maintainer')
+                # maintainers in ansible/ansible are not a a real thing -yet-
+                pass
 
-        elif submitter_waiting_on:
+        elif self.meta['submitter_waiting_on']:
 
             self.debug(msg='submitter wait stanza')
-            #import epdb; epdb.st()
 
             if 'waiting_on_maintainer' in self.issue.desired_labels:
                 self.issue.desired_labels.remove('waiting_on_maintainer')
 
-            if (needsinfo_add or missing_sections) \
-                or (not needsinfo_remove and missing_sections) \
-                or (needsinfo_add and not missing_sections): 
+            if self.meta['needsinfo_add']:
 
                 self.issue.add_desired_label('needs_info')
                 if len(self.issue.current_comments) == 0:
                     self.issue.add_desired_comment('issue_needs_info')
 
                 # needs_info: warn if stale, close if expired
-                elif needsinfo_expired:
+                elif self.meta['needsinfo_expired']:
                     self.issue.add_desired_comment('issue_closure')
                     self.issue.set_desired_state('closed')
-                elif needsinfo_stale \
-                    and (submitter_to_ping or submitter_to_reping):
+                elif self.meta['needsinfo_stale'] \
+                    and (self.meta['submitter_to_ping'] or self.meta['submitter_to_reping']):
                     self.issue.add_desired_comment('issue_pending_closure')

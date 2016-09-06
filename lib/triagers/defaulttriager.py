@@ -745,8 +745,7 @@ class DefaultTriager(object):
     def smart_match_module(self):
         match = None
         known_modules = []
-        #if not self.module_indexer.modules:
-        #    import epdb; epdb.st()
+
         for k,v in self.module_indexer.modules.iteritems():
             known_modules.append(v['name'])
 
@@ -784,9 +783,7 @@ class DefaultTriager(object):
             if len(title_matches) == 1:
                 match = title_matches[0]
             else:
-                print("TITLE MATCHES: %s" % title_matches)
-                print("COMPONENT MATCHES: %s" % cmatches)
-                #import epdb; epdb.st()
+                print("module - title matches: %s" % title_matches)
+                print("module - component matches: %s" % cmatches)
 
-        #import epdb; epdb.st()
         return match

@@ -179,11 +179,11 @@ class HistoryWrapper(object):
             if type(username) != list:
                 if event['actor'] == username:
                     last_date = event['created_at']
-                    print("LAST DATE: %s" % last_date)
+                    #print("history - LAST DATE: %s" % last_date)
             else:
                 if event['actor'] in username:
                     last_date = event['created_at']
-                    print("LAST DATE: %s" % last_date)
+                    #print("history - LAST DATE: %s" % last_date)
             if last_date:
                 break
         return last_date

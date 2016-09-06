@@ -920,9 +920,11 @@ class TriageIssues(DefaultTriager):
         hfacts['bot_broken'] = bot_broken
         hfacts['was_needsinfo'] = was_needs_info
         hfacts['needsinfo_age'] = needsinfo_age
+        hfacts['needsinfo_stale'] = needsinfo_stale
         hfacts['needsinfo_expired'] = needsinfo_expired
         hfacts['needsinfo_add'] = needsinfo_add
         hfacts['needsinfo_remove'] = needsinfo_remove
+        hfacts['notification_maintainers'] = self.get_module_maintainers() or 'ansible'
         hfacts['maintainer_last_notified'] = maintainer_last_notified
         hfacts['maintainer_viewed'] = maintainer_viewed
         hfacts['maintainer_subscribed'] = maintainer_subscribed
