@@ -69,7 +69,10 @@ class TriageIssues(DefaultTriager):
             now = self.get_current_time()
             #import epdb; epdb.st()
             last_run_file = '~/.ansibullbot/cache'
-            last_run_file += '/ansible/ansible-modules-%s/' % self.github_repo
+            if self.github_repo == 'ansible':
+                last_run_file += '/ansible/ansible/'
+            else:
+                last_run_file += '/ansible/ansible-modules-%s/' % self.github_repo
             last_run_file += 'issues/last_run.pickle'
             last_run_file = os.path.expanduser(last_run_file)
             if os.path.isfile(last_run_file):
