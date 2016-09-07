@@ -825,6 +825,9 @@ class TriageIssues(DefaultTriager):
         # who made this and when did they last comment?
         submitter = self.issue.get_submitter()
         submitter_last_commented = self.history.last_commented_at(submitter)
+        if not submitter_last_commented:
+            submitter_last_commented = self.issue.instance.created_at
+            #import epdb; epdb.st()
         submitter_last_comment = self.history.last_comment(submitter)
         submitter_last_notified = self.history.last_notified(submitter)
 
@@ -906,12 +909,14 @@ class TriageIssues(DefaultTriager):
         # Still needs_info?
         needsinfo_add = False
         needsinfo_remove = False
+
+        
         if 'needs_info' in self.issue.current_labels:
-            if submitter_last_commented and needsinfo_last_applied:
-                if submitter_last_commented > needsinfo_last_applied \
-                    and not missing_sections:
-                    needsinfo_add = False
-                    needsinfo_remove = True
+            if not needsinfo_last_applied or not submitter_last_commented:
+                import epdb; epdb.st()
+            if submitter_last_commented > needsinfo_last_applied:
+                needsinfo_add = False
+                needsinfo_remove = True
 
         #if 'needs_info' in maintainer_commands and maintainer_last_commented:
         if ni_commands and maintainer_last_commented:
@@ -933,6 +938,15 @@ class TriageIssues(DefaultTriager):
             and not needsinfo_add \
             and not needsinfo_remove:
             needsinfo_add = True
+
+        if ni_commands and maintainer_last_commented:
+            if maintainer_last_commented > submitter_last_commented:
+                if ni_commands[-1] == 'needs_info':
+                    needsinfo_add = True
+                    needsinfo_remove = False
+                else:
+                    needsinfo_add = False
+                    needsinfo_remove = True
         #import epdb; epdb.st()
 
         # Is needs_info stale or expired?

@@ -45,7 +45,9 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
-    IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware', 'windows', 'openstack']
+    IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware', 'windows', 'openstack', 'backport']
+    MANAGED_LABELS = ['bot_broken', 'needs_info', 'triage', 
+                      'feature_idea', 'bug_report', 'docs_report']
 
     def process(self, usecache=True):
         '''Does the real work on the issue'''
@@ -54,12 +56,14 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self._process()
 
         # unique processing workflow for this repo ...
-        #self.debug('des.labels.1: %s' % ' '.join(self.issue.desired_labels))
+        self.debug('des.labels.1: %s' % ' '.join(self.issue.desired_labels))
         self.process_history(usecache=usecache) # use events to add desired labels or comments
-        #self.debug('des.labels.2: %s' % ' '.join(self.issue.desired_labels))
+        self.debug('des.labels.2: %s' % ' '.join(self.issue.desired_labels))
         self.add_desired_labels_by_issue_type(comments=False) # only adds desired labels
-        #self.debug('des.labels.3: %s' % ' '.join(self.issue.desired_labels))
+        self.debug('des.labels.3: %s' % ' '.join(self.issue.desired_labels))
+        self.keep_unmanaged_labels() # persists manual labels
         self.create_label_actions() # creates the label actions
+        self.debug('des.labels.4: %s' % ' '.join(self.issue.desired_labels))
         self.create_commment_actions() # renders the desired comments
 
         # do the actions ...
@@ -70,11 +74,35 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self.debug('submitter: %s' % self.issue.get_submitter())
         self.debug('assignee: %s' % self.issue.get_assignee())
         self.debug('comments: %s' % len(self.issue.current_comments))
+        self.debug('state: %s' % self.get_current_state())
         import pprint; pprint.pprint(self.actions)
         #import epdb; epdb.st()
         action_meta = self.apply_actions()
         return action_meta
 
+    def get_current_state(self):
+        '''Generate a synthetic state based on desired labels'''
+        choices = ['triage', 'needs_info']
+        choices = [x for x in choices if x in self.issue.desired_labels]
+        choices = [x for x in choices if x not in self.actions['unlabel']]
+
+        state = None
+        if not choices or choices == ['triage']:
+            state = 'waiting on ansible'
+        elif choices == ['needs_info']:
+            state = 'waiting on submitter'
+        else:
+            # should not happen ...
+            import epdb; epdb.st()
+        return state
+        
+
+    def keep_unmanaged_labels(self):
+        '''Persists labels that were added manually and not bot managed'''
+        for label in self.issue.current_labels:
+            if label not in self.MANAGED_LABELS:
+                self.debug('keeping %s label' % label)
+                self.issue.add_desired_label(name=label)
 
     def process_history(self, usecache=True):
 
@@ -143,4 +171,22 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                     and (self.meta['submitter_to_ping'] or self.meta['submitter_to_reping']):
                     self.issue.add_desired_comment('issue_pending_closure')
 
+
+    def check_safe_match(self):
+        """ Turn force on or off depending on match characteristics """
+
+        if self.action_count() == 0:
+            self.force = True
+        else:
+            safe_match = False
+
+            if not self.actions['close'] and \
+                (not self.actions['unlabel'] or self.actions['unlabel'] == ['needs_info']):
+                safe_match = True
+
+            if safe_match:
+                self.force = True
+            else:
+                self.force = False
+            #import epdb; epdb.st()
 

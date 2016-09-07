@@ -517,6 +517,13 @@ class DefaultTriager(object):
                             if not x in self.template_data \
                             or not self.template_data.get(x)]
 
+        if not self.match and missing_sections:
+            # be lenient on component name for ansible/ansible
+            if self.github_repo == 'ansible' and 'component name' in missing_sections:
+                missing_sections.remove('component name')
+            #if missing_sections:
+            #    import epdb; epdb.st()
+
         issue_type = self.template_data.get('issue type', None)
         if issue_type:
             issue_type = issue_type.lower()
