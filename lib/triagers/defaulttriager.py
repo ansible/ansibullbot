@@ -72,6 +72,7 @@ class DefaultTriager(object):
     BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
     VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
     IGNORE_LABELS = [
+        "aws","azure","cloud",
         "feature_pull_request",
         "feature_idea",
         "bugfix_pull_request",
@@ -86,7 +87,6 @@ class DefaultTriager(object):
         "python3",
         "P1","P2","P3","P4",
     ]
-
 
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
@@ -170,16 +170,27 @@ class DefaultTriager(object):
         component = self.template_data.get('component name', None)
 
         # save the real name
-        self.match = self.module_indexer.find_match(component) or {}
+        if self.github_repo != 'ansible':
+            self.match = self.module_indexer.find_match(component) or {}
+        else:
+            self.match = self.module_indexer.find_match(component, exact=True) or {}
         self.module = self.match.get('name', None)
 
         # check if component is a known module
         component_isvalid = self.module_indexer.is_valid(component)
         self.meta['component_valid'] = component_isvalid
 
-        # smart match modules
-        if not component_isvalid:
-            smatch = self.smart_match_module()
+        # smart match modules (only on module repos)
+        if not component_isvalid and self.github_repo != 'ansible':
+            #smatch = self.smart_match_module()
+            if hasattr(self, 'meta'):
+                self.meta['fuzzy_match_called'] = True
+            kwargs = dict(
+                        repo=self.github_repo, 
+                        title=self.issue.instance.title, 
+                        component=self.template_data.get('component name')
+                     )
+            smatch = self.module_indexer.fuzzy_match(**kwargs)
             if self.module_indexer.is_valid(smatch):
                 self.module = smatch
                 component = smatch
@@ -304,40 +315,6 @@ class DefaultTriager(object):
     def create_actions(self):
         pass
 
-    def create_label_actions(self):
-        """Create actions from the desired label/unlabel/comment actions"""
-
-        if 'bot_broken' in self.issue.desired_labels:
-            # If the bot is broken, do nothing other than set the broken label
-            self.actions['comments'] = []
-            self.actions['newlabel'] = []
-            self.actions['unlabel'] = []
-            self.actions['close'] = False
-            if not 'bot_broken' in self.issue.current_labels:
-                self.actions['newlabel'] = ['bot_broken']                
-            return
-
-        resolved_desired_labels = []
-        for desired_label in self.issue.desired_labels:
-            resolved_desired_label = self.issue.resolve_desired_labels(
-                desired_label
-            )
-            if desired_label != resolved_desired_label:
-                resolved_desired_labels.append(resolved_desired_label)
-                if (resolved_desired_label not in self.issue.get_current_labels()):
-                    self.issue.add_desired_comment(desired_label)
-                    self.actions['newlabel'].append(resolved_desired_label)
-            else:
-                resolved_desired_labels.append(desired_label)
-                if desired_label not in self.issue.get_current_labels():
-                    self.actions['newlabel'].append(desired_label)
-
-        for current_label in self.issue.get_current_labels():
-            if current_label in self.IGNORE_LABELS:
-                continue
-            if current_label not in resolved_desired_labels:
-                self.actions['unlabel'].append(current_label)
-
 
     def component_from_comments(self):
         """Extracts a component name from special comments"""
@@ -461,32 +438,33 @@ class DefaultTriager(object):
             if current_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
                 self.issue.add_desired_label(name=current_label)
 
-    def add_desired_labels_by_issue_type(self):
+    def add_desired_labels_by_issue_type(self, comments=True):
         """Adds labels by defined issue type"""
         issue_type = self.template_data.get('issue type', False)
 
         if issue_type is False:
             self.issue.add_desired_label('needs_info')
-            #self.issue.add_desired_comment(
-            #    boilerplate="issue_missing_data"
-            #)            
             return
 
         if not issue_type.lower() in self.VALID_ISSUE_TYPES:
             self.issue.add_desired_label('needs_info')
-            #self.issue.add_desired_comment(
-            #    boilerplate="issue_missing_data"
-            #)            
             return
 
         desired_label = issue_type.replace(' ', '_')        
         desired_label = desired_label.lower()
         desired_label = desired_label.replace('documentation', 'docs')
+
+        # is there a mutually exclusive label already?
+        if desired_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
+            mel = [x for x in self.issue.MUTUALLY_EXCLUSIVE_LABELS \
+                   if x in self.issue.current_labels]
+            if len(mel) > 0:
+                return
+
         if desired_label not in self.issue.get_current_labels():
             self.issue.add_desired_label(name=desired_label)
-        if len(self.issue.current_comments) == 0:
+        if len(self.issue.current_comments) == 0 and comments:
             # only set this if no other comments
-            #self.issue.add_desired_comment(boilerplate='issue_%s' % desired_label)
             self.issue.add_desired_comment(boilerplate='issue_new')
 
     def add_desired_labels_by_ansible_version(self):
@@ -743,6 +721,11 @@ class DefaultTriager(object):
 
 
     def smart_match_module(self):
+        '''Fuzzy matching for modules'''
+
+        if hasattr(self, 'meta'):
+            self.meta['smart_match_module_called'] = True
+
         match = None
         known_modules = []
 
@@ -764,6 +747,8 @@ class DefaultTriager(object):
             cmatches = [x for x in known_modules if x in component]
             cmatches = [x for x in cmatches if not '_' + x in component]
 
+            import epdb; epdb.st()
+
             # use title ... ?
             if title_matches:
                 cmatches = [x for x in cmatches if x in title_matches]
@@ -779,6 +764,7 @@ class DefaultTriager(object):
                         #import epdb; epdb.st()
                         pass
 
+        #import epdb; epdb.st()
         if not match:
             if len(title_matches) == 1:
                 match = title_matches[0]

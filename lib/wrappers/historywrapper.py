@@ -98,13 +98,33 @@ class HistoryWrapper(object):
 
     def get_commands(self, username, command_keys):
         """Given a list of phrase keys, return a list of phrases used"""
-        comments = self.get_user_comments(username)
         commands = []
+
+        '''
+        comments = self.get_user_comments(username)
         for x in comments:
             for y in command_keys:
                 if y in x and not '!' + y in x:
                     commands.append(y)
                     break        
+        '''
+
+        comments = self._find_events_by_actor('commented', username, maxcount=999)
+        labels = self._find_events_by_actor('labeled', username, maxcount=999)
+        unlabels = self._find_events_by_actor('unlabeled', username, maxcount=999)
+        events = comments + labels + unlabels
+        events = sorted(events, key=itemgetter('created_at')) 
+        for event in events:
+            if event['event'] == 'commented':
+                for y in command_keys:
+                    if y in event['body'] and not '!' + y in event['body']:
+                        commands.append(y)
+            elif event['event'] == 'labeled':
+                if event['label'] in command_keys:
+                    commands.append(event['label'])
+            elif event['event'] == 'unlabeled':
+                if event['label'] in command_keys:
+                    commands.append('!' + event['label'])
         #import epdb; epdb.st()
         return commands
 

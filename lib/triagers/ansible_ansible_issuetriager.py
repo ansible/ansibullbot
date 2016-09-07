@@ -31,10 +31,6 @@ from jinja2 import Environment, FileSystemLoader
 
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.wrappers.historywrapper import HistoryWrapper
-from lib.utils.moduletools import ModuleIndexer
-from lib.utils.extractors import extract_template_data
-from lib.utils.descriptionfixer import DescriptionFixer
-
 from issuetriager import TriageIssues
 
 loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
@@ -49,22 +45,27 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
-    IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware']
-
+    IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware', 'windows']
 
     def process(self, usecache=True):
         '''Does the real work on the issue'''
 
-        # baseline processing
+        # baseline processing [creates no actions]
         self._process()
 
         # unique processing workflow for this repo ...
         self.process_history(usecache=usecache) # use events to add desired labels or comments
-        self.add_desired_labels_by_issue_type() # only adds desired labels
+        self.add_desired_labels_by_issue_type(comments=False) # only adds desired labels
         self.create_label_actions() # creates the label actions
+        self.create_commment_actions() # renders the desired comments
 
         # do the actions ...
-        self.debug('current labels: %s' % ' '.join(self.issue.current_labels))
+        self.debug('cur.labels: %s' % ' '.join(self.issue.current_labels))
+        self.debug('component: %s' % self.template_data.get('component name'))
+        self.debug('match: %s' % self.match)
+        self.debug('module: %s' % self.module)
+        self.debug('submitter: %s' % self.issue.get_submitter())
+        self.debug('assignee: %s' % self.issue.get_assignee())
         import pprint; pprint.pprint(self.actions)
         import epdb; epdb.st()
         action_meta = self.apply_actions()
@@ -72,27 +73,31 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
 
     def process_history(self, usecache=True):
-        today = self.get_current_time()
 
-        # Build the history
+        #################################################
+        #           SET STATE FROM HISTORY              #
+        #################################################
+
+        ## Build the history
         self.debug(msg="Building event history ...")
-        self.history = HistoryWrapper(self.issue, usecache=usecache)
-        self.meta.update(self.get_history_facts())
+        self.meta.update(self.get_history_facts(usecache=usecache))
 
-        #################################################
-        # FINAL LOGIC LOOP TO SET STATE
-        #################################################
-
+        ## state workflow ...
         if self.meta['bot_broken']:
 
             self.debug(msg='broken bot stanza')
 
             self.issue.add_desired_label('bot_broken')
 
-        elif self.github_repo != self.match.get('repository', 'ansible'):
+        elif (self.match and (self.github_repo != self.match.get('repository', 'ansible')))\
+            or 'needs_to_be_moved' in self.issue.current_labels:
 
             self.debug(msg='wrong repo stanza')
 
+            if not self.match:
+                import epdb; epdb.st()
+
+            self.issue.add_desired_comment('issue_wrong_repo')
             self.issue.desired_comments = ['issue_wrong_repo']
             self.actions['close'] = True
 
@@ -100,21 +105,21 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
             self.debug(msg='maintainer wait stanza')
 
-            # FIXME - apply the triage label if needed
-
-            self.issue.add_desired_label('waiting_on_maintainer')
-            if len(self.issue.current_comments) == 0:
-                self.issue.add_desired_comment('issue_new')
+            # A) no [admin?] comments + no assingee == triage
+            # B) [admin] comments or assignee == !triage
+            if not self.meta['maintainer_commented'] and not self.issue.instance.assignee:
+                self.issue.add_desired_label(name='triage')
             else:
-                # maintainers in ansible/ansible are not a a real thing -yet-
-                pass
+                self.issue.pop_desired_label(name='triage')
 
         elif self.meta['submitter_waiting_on']:
 
             self.debug(msg='submitter wait stanza')
 
+            self.issue.pop_desired_label(name='triage')
+
             if 'waiting_on_maintainer' in self.issue.desired_labels:
-                self.issue.desired_labels.remove('waiting_on_maintainer')
+                self.issue.pop_desired_labels('waiting_on_maintainer')
 
             if self.meta['needsinfo_add']:
 

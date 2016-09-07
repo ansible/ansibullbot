@@ -360,6 +360,81 @@ class TriageIssues(DefaultTriager):
         #import epdb; epdb.st()
 
 
+    def create_commment_actions(self):
+        '''Render desired comment templates'''
+
+        # should only make one comment at a time
+        if len(self.issue.desired_comments) > 1:
+            if 'issue_wrong_repo' in self.issue.desired_comments:
+                self.issue.desired_comments = ['issue_wrong_repo']
+            elif 'issue_invalid_module' in self.issue.desired_comments:
+                self.issue.desired_comments = ['issue_invalid_module']
+            elif 'issue_module_no_maintainer' in self.issue.desired_comments:
+                self.issue.desired_comments = ['issue_module_no_maintainer']
+            elif 'issue_needs_info' in self.issue.desired_comments \
+                and 'needs_info' in self.issue.desired_labels:
+                self.issue.desired_comments = ['issue_needs_info']
+            elif 'issue_needs_info' in self.issue.desired_comments \
+                and 'needs_info' not in self.issue.desired_labels:
+                self.issue.desired_comments.remove('issue_needs_info')
+            else:
+                import epdb; epdb.st()        
+
+        # Do not comment needs_info if it's not a label
+        if 'issue_needs_info' in self.issue.desired_comments \
+            and not 'needs_info' in self.issue.desired_labels:
+            self.issue.desired_comments.remove('issue_needs_info')    
+
+        # render the comments
+        for boilerplate in self.issue.desired_comments:
+            comment = self.render_comment(boilerplate=boilerplate)
+            self.debug(msg=boilerplate)
+            self.actions['comments'].append(comment)
+
+        # do not re-comment
+        for idx,comment in enumerate(self.actions['comments']):
+            if self.issue.current_comments:
+                if self.issue.current_comments[-1].body == comment:
+                    self.debug(msg="Removing repeat comment from actions")
+                    self.actions['comments'].remove(comment)
+
+
+    def create_label_actions(self):
+        """Create actions from the desired label/unlabel/comment actions"""
+
+        if 'bot_broken' in self.issue.desired_labels:
+            # If the bot is broken, do nothing other than set the broken label
+            self.actions['comments'] = []
+            self.actions['newlabel'] = []
+            self.actions['unlabel'] = []
+            self.actions['close'] = False
+            if not 'bot_broken' in self.issue.current_labels:
+                self.actions['newlabel'] = ['bot_broken']                
+            return
+
+        resolved_desired_labels = []
+        for desired_label in self.issue.desired_labels:
+            resolved_desired_label = self.issue.resolve_desired_labels(
+                desired_label
+            )
+            if desired_label != resolved_desired_label:
+                resolved_desired_labels.append(resolved_desired_label)
+                if (resolved_desired_label not in self.issue.get_current_labels()):
+                    self.issue.add_desired_comment(desired_label)
+                    self.actions['newlabel'].append(resolved_desired_label)
+            else:
+                resolved_desired_labels.append(desired_label)
+                if desired_label not in self.issue.get_current_labels():
+                    self.actions['newlabel'].append(desired_label)
+
+        for current_label in self.issue.get_current_labels():
+            if current_label in self.IGNORE_LABELS:
+                continue
+            if current_label not in resolved_desired_labels:
+                self.actions['unlabel'].append(current_label)
+
+
+
     def process_history(self, usecache=True):
         self.meta = {}
         today = self.get_current_time()
@@ -733,10 +808,12 @@ class TriageIssues(DefaultTriager):
         #import epdb; epdb.st()
 
 
-    def get_history_facts(self):
+    def get_history_facts(self, usecache=True):
 
         hfacts = {}
         today = self.get_current_time()
+        
+        self.history = HistoryWrapper(self.issue, usecache=usecache)
 
         # what was the last commment?
         bot_broken = False
@@ -812,12 +889,14 @@ class TriageIssues(DefaultTriager):
         # Did the maintainer issue a command?
         maintainer_commands = self.history.get_commands(maintainers, 
                                                         self.VALID_COMMANDS)
+        # needs_info toggles
+        ni_commands = [x for x in maintainer_commands if 'needs_info' in x]
 
         # Has the maintainer ever subscribed?
         maintainer_subscribed = self.history.has_subscribed(maintainers)
         
         # Was it ever needs_info?
-        maintainer_command_needs_info = False
+        #maintainer_command_needs_info = False
         was_needs_info = self.history.was_labeled(label='needs_info')
         needsinfo_last_applied = self.history.label_last_applied('needs_info')
         needsinfo_last_removed = self.history.label_last_removed('needs_info')
@@ -830,14 +909,21 @@ class TriageIssues(DefaultTriager):
                 if submitter_last_commented > needsinfo_last_applied \
                     and not missing_sections:
                     needsinfo_remove = True
-        if 'needs_info' in maintainer_commands and maintainer_last_commented:
-            if submitter_last_commented and maintainer_last_commented:
-                if submitter_last_commented > maintainer_last_commented:
-                    needsinfo_add = False
-                    needsinfo_remove = True
+
+        #if 'needs_info' in maintainer_commands and maintainer_last_commented:
+        if ni_commands and maintainer_last_commented:
+            if ni_commands[-1] == 'needs_info':            
+                import epdb; epdb.st()
+                if submitter_last_commented and maintainer_last_commented:
+                    if submitter_last_commented > maintainer_last_commented:
+                        needsinfo_add = False
+                        needsinfo_remove = True
+                else:
+                    needsinfo_add = True
+                    needsinfo_remove = False
             else:
-                needsinfo_add = True
-                needsinfo_remove = False
+                needsinfo_add = False
+                needsinfo_remove = True
 
         # Is needs_info stale or expired?
         needsinfo_age = None
@@ -875,15 +961,14 @@ class TriageIssues(DefaultTriager):
                 submitter_waiting_on = False
                 maintainer_waiting_on = True
 
-        if '!needs_info' in maintainer_commands:
-            submitter_waiting_on = False
-            maintainer_waiting_on = True
-
-        if 'needs_info' in maintainer_commands:
-            submitter_waiting_on = True
-            maintainer_waiting_on = False
-            needsinfo_add = True
-            needsinfo_remove = False
+        # use [!]needs_info to set final state
+        if ni_commands:
+            if ni_commands[-1] == '!needs_info':
+                submitter_waiting_on = False
+                maintainer_waiting_on = True
+            elif ni_commands[-1] == 'needs_info':
+                submitter_waiting_on = True
+                maintainer_waiting_on = False
 
         # Time to [re]ping maintainer?
         maintainer_to_ping = False
@@ -926,6 +1011,7 @@ class TriageIssues(DefaultTriager):
         hfacts['needsinfo_remove'] = needsinfo_remove
         hfacts['notification_maintainers'] = self.get_module_maintainers() or 'ansible'
         hfacts['maintainer_last_notified'] = maintainer_last_notified
+        hfacts['maintainer_commented'] = maintainer_commented
         hfacts['maintainer_viewed'] = maintainer_viewed
         hfacts['maintainer_subscribed'] = maintainer_subscribed
         hfacts['maintainer_command_needsinfo'] = 'needs_info' in maintainer_commands

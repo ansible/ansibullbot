@@ -109,6 +109,19 @@ class DefaultWrapper(object):
                 [x for x in self.instance.get_events()]
         return self.current_events
 
+    def get_assignee(self):
+        assignee = None
+        if self.instance.assignee == None:
+            pass
+        elif type(self.instance.assignee) != list:
+            assignee = self.instance.assignee.login
+        else:
+            assignee = []
+            for x in self.instance.assignee:
+                assignee.append(x.login)
+            import epdb; epdb.st()
+        return assignee
+
     def get_reactions(self):
         # https://developer.github.com/v3/reactions/
         if not self.current_reactions:
@@ -164,6 +177,12 @@ class DefaultWrapper(object):
         if name and name not in self.desired_labels:
             self.process_mutually_exclusive_labels(name=name)
             self.desired_labels.append(name)
+
+    def pop_desired_label(self, name=None):
+        """Deletes a label to the desired labels list"""
+        if name in self.desired_labels:
+            self.desired_labels.remove(name)
+
 
     def is_labeled_for_interaction(self):
         """Returns True if issue is labeld for interaction"""
