@@ -45,7 +45,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
-    IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware', 'windows']
+    IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware', 'windows', 'openstack']
 
     def process(self, usecache=True):
         '''Does the real work on the issue'''
@@ -69,6 +69,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self.debug('module: %s' % self.module)
         self.debug('submitter: %s' % self.issue.get_submitter())
         self.debug('assignee: %s' % self.issue.get_assignee())
+        self.debug('comments: %s' % len(self.issue.current_comments))
         import pprint; pprint.pprint(self.actions)
         #import epdb; epdb.st()
         action_meta = self.apply_actions()
