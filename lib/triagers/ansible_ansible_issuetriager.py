@@ -157,19 +157,23 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                 self.issue.pop_desired_label('needs_info')
             else:
 
-                if self.meta['needsinfo_add']:
-                    self.issue.add_desired_label('needs_info')
-
-                if self.meta['missing_sections'] and not self.meta['last_commentor_ismaintainer']:
-                    self.issue.add_desired_comment('issue_needs_info')
-
                 # needs_info: warn if stale, close if expired
                 if self.meta['needsinfo_expired']:
                     self.issue.add_desired_comment('issue_closure')
                     self.issue.set_desired_state('closed')
+                    self.actions['close'] = True
                 elif self.meta['needsinfo_stale'] \
                     and (self.meta['submitter_to_ping'] or self.meta['submitter_to_reping']):
                     self.issue.add_desired_comment('issue_pending_closure')
+
+                if not self.actions['close']:
+
+                    if self.meta['needsinfo_add']:
+                        self.issue.add_desired_label('needs_info')
+
+                    if self.meta['missing_sections'] and not self.meta['last_commentor_ismaintainer']:
+                        self.issue.add_desired_comment('issue_needs_info')
+
 
 
     def check_safe_match(self):
