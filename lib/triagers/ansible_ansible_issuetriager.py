@@ -54,8 +54,11 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self._process()
 
         # unique processing workflow for this repo ...
+        #self.debug('des.labels.1: %s' % ' '.join(self.issue.desired_labels))
         self.process_history(usecache=usecache) # use events to add desired labels or comments
+        #self.debug('des.labels.2: %s' % ' '.join(self.issue.desired_labels))
         self.add_desired_labels_by_issue_type(comments=False) # only adds desired labels
+        #self.debug('des.labels.3: %s' % ' '.join(self.issue.desired_labels))
         self.create_label_actions() # creates the label actions
         self.create_commment_actions() # renders the desired comments
 
@@ -67,7 +70,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self.debug('submitter: %s' % self.issue.get_submitter())
         self.debug('assignee: %s' % self.issue.get_assignee())
         import pprint; pprint.pprint(self.actions)
-        import epdb; epdb.st()
+        #import epdb; epdb.st()
         action_meta = self.apply_actions()
         return action_meta
 
@@ -116,21 +119,27 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
             self.debug(msg='submitter wait stanza')
 
+            # it's not triage if it's WOS
             self.issue.pop_desired_label(name='triage')
+            # do not use WOM for ansible/ansible
+            self.issue.pop_desired_label(name='waiting_on_maintainer')
 
-            if 'waiting_on_maintainer' in self.issue.desired_labels:
-                self.issue.pop_desired_labels('waiting_on_maintainer')
+            if self.meta['needsinfo_remove']:
+                self.issue.pop_desired_label('needs_info')
+            else:
 
-            if self.meta['needsinfo_add']:
+                if self.meta['needsinfo_add']:
+                    self.issue.add_desired_label('needs_info')
 
-                self.issue.add_desired_label('needs_info')
-                if len(self.issue.current_comments) == 0:
+                if self.meta['missing_sections'] and not self.meta['last_commentor_ismaintainer']:
                     self.issue.add_desired_comment('issue_needs_info')
 
                 # needs_info: warn if stale, close if expired
-                elif self.meta['needsinfo_expired']:
+                if self.meta['needsinfo_expired']:
                     self.issue.add_desired_comment('issue_closure')
                     self.issue.set_desired_state('closed')
                 elif self.meta['needsinfo_stale'] \
                     and (self.meta['submitter_to_ping'] or self.meta['submitter_to_reping']):
                     self.issue.add_desired_comment('issue_pending_closure')
+
+

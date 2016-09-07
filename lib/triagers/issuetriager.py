@@ -830,11 +830,13 @@ class TriageIssues(DefaultTriager):
 
         # what did they not provide?
         missing_sections = self.issue.get_missing_sections()
-        if 'ansible version' in missing_sections:
-            missing_sections.remove('ansible version')
+
+        #if 'ansible version' in missing_sections:
+        #    missing_sections.remove('ansible version')
 
         # DEBUG + FIXME - speeds up bulk triage
-        if 'component name' in missing_sections and self.match:
+        if 'component name' in missing_sections \
+            and (self.match or self.github_repo == 'ansible'):
             missing_sections.remove('component name')
         #import epdb; epdb.st()
 
@@ -908,12 +910,13 @@ class TriageIssues(DefaultTriager):
             if submitter_last_commented and needsinfo_last_applied:
                 if submitter_last_commented > needsinfo_last_applied \
                     and not missing_sections:
+                    needsinfo_add = False
                     needsinfo_remove = True
 
         #if 'needs_info' in maintainer_commands and maintainer_last_commented:
         if ni_commands and maintainer_last_commented:
             if ni_commands[-1] == 'needs_info':            
-                import epdb; epdb.st()
+                #import epdb; epdb.st()
                 if submitter_last_commented and maintainer_last_commented:
                     if submitter_last_commented > maintainer_last_commented:
                         needsinfo_add = False
@@ -924,6 +927,13 @@ class TriageIssues(DefaultTriager):
             else:
                 needsinfo_add = False
                 needsinfo_remove = True
+
+        # Save existing needs_info if not time to remove ...        
+        if 'needs_info' in self.issue.current_labels \
+            and not needsinfo_add \
+            and not needsinfo_remove:
+            needsinfo_add = True
+        #import epdb; epdb.st()
 
         # Is needs_info stale or expired?
         needsinfo_age = None
@@ -954,12 +964,6 @@ class TriageIssues(DefaultTriager):
         if missing_sections:
             submitter_waiting_on = True
             maintainer_waiting_on = False
-        else:
-            if 'needs_info' in self.issue.current_labels \
-                and not maintainer_command_not_needsinfo:
-                needsinfo_remove = True                
-                submitter_waiting_on = False
-                maintainer_waiting_on = True
 
         # use [!]needs_info to set final state
         if ni_commands:
@@ -1003,6 +1007,7 @@ class TriageIssues(DefaultTriager):
                 submitter_to_reping = False
 
         hfacts['bot_broken'] = bot_broken
+        hfacts['missing_sections'] = missing_sections
         hfacts['was_needsinfo'] = was_needs_info
         hfacts['needsinfo_age'] = needsinfo_age
         hfacts['needsinfo_stale'] = needsinfo_stale
@@ -1027,4 +1032,5 @@ class TriageIssues(DefaultTriager):
         hfacts['last_commentor_issubmitter'] = last_commentor_issubmitter
         hfacts['last_commentor'] = last_commentor
 
+        #import epdb; epdb.st()
         return hfacts
