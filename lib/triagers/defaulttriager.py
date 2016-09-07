@@ -143,6 +143,7 @@ class DefaultTriager(object):
         print("\n")
         print("Issue #%s: %s" % (self.issue.number,
                                 (self.issue.instance.title).encode('ascii','ignore')))
+        print("%s" % self.issue.instance.html_url)
         print("Created at %s" % self.issue.instance.created_at)
         print("Updated at %s" % self.issue.instance.updated_at)
 
