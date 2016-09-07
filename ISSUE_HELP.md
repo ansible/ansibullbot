@@ -31,7 +31,7 @@ To streamline the maintenance process, we've added some commands to the ansibot 
 * **bug_resolved** - If you believe this issue is resolved, please leave a comment stating bug_resolved, and we will close this issue. 
 * **resolved_by_pr** - If you believe this issue has been resolved by a pull request, please leave a comment stating `resolved_by_pr` followed by the pull request number. 
 * **wontfix** - If this is a bug that you can't or won't fix, please leave a comment including the word `wontfix`, along with an explanation for why it won't be fixed.
-* **needs_contributor** - If this bug or feature request is something that you want implemented but do not have the time or **expertise** to do, comment with `needs_contributor`, and the issue will be put into a `waiting_on_contributor` state.
+* **needs_contributor** - If this bug or feature request is something that you want implemented but do not have the time or expertise to do, comment with `needs_contributor`, and the issue will be put into a `waiting_on_contributor` state.
 * **duplicate_of** - If this bug or feature request is a duplicate of another issue, comment with `duplicate_of` followed by the issue number that it duplicates, and the issue will be closed.
 
 ## For anyone else also experiencing this issue
