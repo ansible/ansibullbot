@@ -270,6 +270,7 @@ class HistoryWrapper(object):
             if event['event'] == 'labeled':
                 if event['label'] == label:
                     last_date = event['created_at']
+                    break
         return last_date
 
     def label_last_removed(self, label):
@@ -279,6 +280,7 @@ class HistoryWrapper(object):
             if event['event'] == 'unlabeled':
                 if event['label'] == label:
                     last_date = event['created_at']
+                    break
         return last_date
 
     def was_labeled(self, label=None):
