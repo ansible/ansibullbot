@@ -904,7 +904,6 @@ class TriageIssues(DefaultTriager):
         maintainer_subscribed = self.history.has_subscribed(maintainers)
         
         # Was it ever needs_info?
-        #maintainer_command_needs_info = False
         was_needs_info = self.history.was_labeled(label='needs_info')
         needsinfo_last_applied = self.history.label_last_applied('needs_info')
         needsinfo_last_removed = self.history.label_last_removed('needs_info')
@@ -912,7 +911,6 @@ class TriageIssues(DefaultTriager):
         # Still needs_info?
         needsinfo_add = False
         needsinfo_remove = False
-
         
         if 'needs_info' in self.issue.current_labels:
             if not needsinfo_last_applied or not submitter_last_commented:
