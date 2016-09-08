@@ -30,6 +30,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
+from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.extractors import extract_template_data
 from lib.utils.descriptionfixer import DescriptionFixer
 
@@ -116,6 +117,10 @@ class DefaultTriager(object):
             'close': False,
         }
 
+
+        print("Initializing AnsibleVersionIndexer")
+        self.version_indexer = AnsibleVersionIndexer()
+        #import epdb; epdb.st()
         print("Initializing ModuleIndexer")
         self.module_indexer = ModuleIndexer()
         self.module_indexer.get_ansible_modules()
@@ -164,6 +169,13 @@ class DefaultTriager(object):
         self.meta['issue_type_defined'] = issue_type_defined
         self.meta['issue_type_valid'] = issue_type_valid
         self.meta['issue_type'] = issue_type
+
+
+        # What is the ansible version?
+        self.ansible_version = self.get_ansible_version()
+        self.debug('version: %s' % self.ansible_version)
+        self.ansible_label_version = self.get_ansible_version_major_minor()
+        self.debug('lversion: %s' % self.ansible_label_version)
 
         # was component specified?
         component_defined = 'component name' in self.template_data
@@ -258,6 +270,39 @@ class DefaultTriager(object):
         """Prints debug message if verbosity is given"""
         if self.verbose:
             print("Debug: " + msg)
+
+    def get_ansible_version(self):
+        aversion = None
+
+        rawdata = self.template_data.get('ansible version', '')
+        if rawdata:
+            aversion = self.version_indexer.strip_ansible_version(rawdata)
+
+        if not aversion or aversion == 'devel':
+            aversion = self.version_indexer.ansible_version_by_date(self.issue.instance.created_at)
+
+        if aversion:
+            if aversion.endswith('.'):
+                aversion += '0'
+
+        # re-run for versions ending with .x
+        if aversion:
+            if aversion.endswith('.x'):
+                aversion = self.version_indexer.strip_ansible_version(aversion)
+                #import epdb; epdb.st()
+
+        #import epdb; epdb.st()
+        if self.version_indexer.is_valid_version(aversion) and aversion != None:
+            return aversion
+        else:
+            print('INVALID: %s' % aversion)
+            import epdb; epdb.st()
+
+        import epdb; epdb.st()
+        return aversion
+
+    def get_ansible_version_major_minor(self):
+        return self.version_indexer.get_major_minor(self.ansible_version)
 
     def get_module_maintainers(self, expand=True):
         """Returns the list of maintainers for the current module"""

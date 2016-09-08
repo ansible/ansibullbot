@@ -56,12 +56,14 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self._process()
 
         # unique processing workflow for this repo ...
-        self.debug('des.labels.1: %s' % ' '.join(self.issue.desired_labels))
+        #self.debug('des.labels.1: %s' % ' '.join(self.issue.desired_labels))
         self.process_history(usecache=usecache) # use events to add desired labels or comments
-        self.debug('des.labels.2: %s' % ' '.join(self.issue.desired_labels))
+        #self.debug('des.labels.2: %s' % ' '.join(self.issue.desired_labels))
         self.add_desired_labels_by_issue_type(comments=False) # only adds desired labels
-        self.debug('des.labels.3: %s' % ' '.join(self.issue.desired_labels))
+        #self.debug('des.labels.3: %s' % ' '.join(self.issue.desired_labels))
         self.keep_unmanaged_labels() # persists manual labels
+        #self.create_label_actions() # creates the label actions
+        self.create_label_version_actions() # adds label for ansible version
         self.create_label_actions() # creates the label actions
         self.debug('des.labels.4: %s' % ' '.join(self.issue.desired_labels))
         self.create_commment_actions() # renders the desired comments
@@ -103,6 +105,26 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             if label not in self.MANAGED_LABELS:
                 self.debug('keeping %s label' % label)
                 self.issue.add_desired_label(name=label)
+
+    def create_label_version_actions(self):
+        if not self.ansible_label_version:
+            return
+        expected = 'affects_%s' % self.ansible_label_version
+        if expected not in self.valid_labels:
+            print("NEED NEW LABEL: %s" % expected)
+            import epdb; epdb.st()
+
+        candidates = [x for x in self.issue.current_labels]
+        candidates = [x for x in candidates if x.startswith('affects_')]
+        candidates = [x for x in candidates if x != expected]
+        if len(candidates) > 0:
+            #for cand in candidates:
+            #    self.issue.pop_desired_label(name=cand)
+            return
+
+        if expected not in self.issue.current_labels:
+            self.issue.add_desired_label(name=expected)
+        #import epdb; epdb.st()
 
     def process_history(self, usecache=True):
 

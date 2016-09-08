@@ -6,7 +6,7 @@ import shlex
 def extract_template_data(body, issue_number=None):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME', 
                 'ANSIBLE VERSION', 'CONFIGURATION', 
-                'OS / ENVIRONMENT', 'SUMMARY', 
+                'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT', 
                 'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
                 'ACTUAL RESULTS']
 
