@@ -90,7 +90,8 @@ class DefaultTriager(object):
 
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
-                 start_at=None, always_pause=False, force=False, safe_force=False, dry_run=False):
+                 start_at=None, always_pause=False, force=False, safe_force=False, 
+                 dry_run=False, no_since=False):
 
         self.verbose = verbose
         self.github_user = github_user
@@ -103,6 +104,7 @@ class DefaultTriager(object):
         self.force = force
         self.safe_force = safe_force
         self.dry_run = dry_run
+        self.no_since = no_since
 
         self.issue = None
         self.maintainers = {}
@@ -141,7 +143,7 @@ class DefaultTriager(object):
 
         # print some general info about the Issue to be processed
         print("\n")
-        print("Issue #%s: %s" % (self.issue.number,
+        print("Issue #%s [%s]: %s" % (self.issue.number, self.icount,
                                 (self.issue.instance.title).encode('ascii','ignore')))
         print("%s" % self.issue.instance.html_url)
         print("Created at %s" % self.issue.instance.created_at)

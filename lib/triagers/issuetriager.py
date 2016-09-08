@@ -50,6 +50,9 @@ class TriageIssues(DefaultTriager):
     def run(self):
         """Starts a triage run"""
 
+        # how many issues have been processed
+        self.icount = 0
+
         # Create the api connection
         self.repo = self._connect().get_repo(self._get_repo_path())
 
@@ -81,14 +84,15 @@ class TriageIssues(DefaultTriager):
                         last_run = pickle.load(f)
                 except Exception as e:
                     print(e)
-            #import epdb; epdb.st()
 
-            if last_run:
+            #import epdb; epdb.st()
+            if last_run and not self.no_since:
                 issues = self.repo.get_issues(since=last_run)
             else:
                 issues = self.repo.get_issues()
 
             for issue in issues:
+                self.icount += 1
                 if self.start_at and issue.number > self.start_at:
                     continue
                 if self.is_pr(issue):

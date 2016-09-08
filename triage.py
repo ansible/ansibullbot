@@ -793,7 +793,8 @@ def main():
                         help="Triage only the specified pr|issue")
     parser.add_argument("--start-at", type=int,
                         help="Start triage at the specified pr|issue")
-
+    parser.add_argument("--no_since", action="store_true",
+                        help="Do not use the since keyword to fetch issues")
     args = parser.parse_args()
 
     if args.pr and args.start_at:
@@ -848,7 +849,8 @@ def main():
                     always_pause=args.pause,
                     force=args.force,
                     safe_force=args.safe_force,
-                    dry_run=args.dry_run
+                    dry_run=args.dry_run,
+                    no_since=args.no_since
                 )
         if args.repo == 'ansible':
             triage = AnsibleAnsibleTriageIssues(**kwargs)
