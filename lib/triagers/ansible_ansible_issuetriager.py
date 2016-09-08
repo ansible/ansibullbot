@@ -106,6 +106,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                 self.debug('keeping %s label' % label)
                 self.issue.add_desired_label(name=label)
 
+    ''' moved to issuetriager.py
     def create_label_version_actions(self):
         if not self.ansible_label_version:
             return
@@ -125,6 +126,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         if expected not in self.issue.current_labels:
             self.issue.add_desired_label(name=expected)
         #import epdb; epdb.st()
+    '''
 
     def process_history(self, usecache=True):
 

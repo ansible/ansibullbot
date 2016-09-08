@@ -196,7 +196,7 @@ class DefaultTriager(object):
         self.meta['component_valid'] = component_isvalid
 
         # smart match modules (only on module repos)
-        if not component_isvalid and self.github_repo != 'ansible':
+        if not component_isvalid and self.github_repo != 'ansible' and not self.match:
             #smatch = self.smart_match_module()
             if hasattr(self, 'meta'):
                 self.meta['fuzzy_match_called'] = True
@@ -212,6 +212,9 @@ class DefaultTriager(object):
                 self.match = self.module_indexer.find_match(smatch)
                 component_isvalid = self.module_indexer.is_valid(component)
                 self.meta['component_valid'] = component_isvalid
+
+        # set the maintainer
+        self.module_maintainer = [x for x in self.get_module_maintainers()]
 
         # Helper to fix issue descriptions ...
         DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
@@ -254,6 +257,7 @@ class DefaultTriager(object):
 
     def _get_maintainers(self, usecache=True):
         """Reads all known maintainers from files and their owner namespace"""
+        #import epdb; epdb.st()
         if not self.maintainers or not usecache:
             for repo in ['core', 'extras']:
                 f = open(MAINTAINERS_FILES[repo])
@@ -262,8 +266,9 @@ class DefaultTriager(object):
                     maintainers_string = (line.split(': ')[-1]).strip()
                     self.maintainers[owner_space] = maintainers_string.split(' ')
                 f.close()
-            # meta is special
-            self.maintainers['meta'] = ['ansible']
+        # meta is special
+        self.maintainers['meta'] = ['ansible']
+
         return self.maintainers
 
     def debug(self, msg=""):
@@ -298,7 +303,7 @@ class DefaultTriager(object):
             print('INVALID: %s' % aversion)
             import epdb; epdb.st()
 
-        import epdb; epdb.st()
+        #import epdb; epdb.st()
         return aversion
 
     def get_ansible_version_major_minor(self):
@@ -319,7 +324,11 @@ class DefaultTriager(object):
             self.module_maintainers = []
             return self.module_maintainers
 
-        mdata = self.module_indexer.find_match(module)
+        if self.match:
+            mdata = self.match
+        else:
+            mdata = self.module_indexer.find_match(module)
+
         if mdata['repository'] != self.github_repo:
             # this was detected and handled in the process loop
             pass
@@ -330,7 +339,9 @@ class DefaultTriager(object):
         else:
             maintainers = self._get_maintainers()
 
-        if mdata['repo_filename'] in maintainers:
+        if mdata['name'] in maintainers:
+            self.module_maintainers = maintainers[mdata['name']]
+        elif mdata['repo_filename'] in maintainers:
             self.module_maintainers = maintainers[mdata['repo_filename']]
         elif (mdata['deprecated_filename']) in maintainers:
             self.module_maintainers = maintainers[mdata['deprecated_filename']]
@@ -679,17 +690,34 @@ class DefaultTriager(object):
     def check_safe_match(self):
         """ Turn force on or off depending on match characteristics """
 
+        safe_match = False
+
         if self.action_count() == 0:
-            self.force = True
+            #self.force = True
+            safe_match = True
+
+        elif not self.actions['close'] and not self.actions['unlabel']:
+            if len(self.actions['newlabel']) == 1:
+                if self.actions['newlabel'][0].startswith('affects_'):
+                    safe_match = True
+
+            #if not safe_match:
+            #    print("add labels only")
+            #    import epdb; epdb.st()
+
         else:
             safe_match = False
             if self.module:
                 if self.module in self.issue.instance.title.lower():
                     safe_match = True
-            if safe_match:
-                self.force = True
-            else:
-                self.force = False
+
+        if safe_match:
+            self.force = True
+        else:
+            self.force = False
+
+        if not safe_match:
+            import epdb; epdb.st()
 
     def action_count(self):
         """ Return the number of actions that are to be performed """

@@ -70,7 +70,6 @@ class TriageIssues(DefaultTriager):
 
             last_run = None
             now = self.get_current_time()
-            #import epdb; epdb.st()
             last_run_file = '~/.ansibullbot/cache'
             if self.github_repo == 'ansible':
                 last_run_file += '/ansible/ansible/'
@@ -260,6 +259,9 @@ class TriageIssues(DefaultTriager):
                 self.actions['newlabel'] = ['bot_broken']                
             return
 
+        # add the version labels
+        self.create_label_version_actions()
+
         if self.issue.desired_state != self.issue.instance.state:
             if self.issue.desired_state == 'closed':
                 # close the issue ...
@@ -328,6 +330,29 @@ class TriageIssues(DefaultTriager):
                 if self.issue.current_comments[-1].body == comment:
                     self.debug(msg="Removing repeat comment from actions")
                     self.actions['comments'].remove(comment)
+        #import epdb; epdb.st()
+
+
+    def create_label_version_actions(self):
+        if not self.ansible_label_version:
+            return
+        expected = 'affects_%s' % self.ansible_label_version
+        if expected not in self.valid_labels:
+            print("NEED NEW LABEL: %s" % expected)
+            import epdb; epdb.st()
+
+        candidates = [x for x in self.issue.current_labels]
+        candidates = [x for x in candidates if x.startswith('affects_')]
+        candidates = [x for x in candidates if x != expected]
+        if len(candidates) > 0:
+            #for cand in candidates:
+            #    self.issue.pop_desired_label(name=cand)
+            #return
+            pass
+        else:
+            if expected not in self.issue.current_labels \
+                or expected not in self.issue.desired_labels:
+                self.issue.add_desired_label(name=expected)
         #import epdb; epdb.st()
 
 
