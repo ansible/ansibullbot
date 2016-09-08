@@ -133,7 +133,7 @@ class DefaultTriager(object):
         self.meta = {}
 
     def _process(self, usecache=True):
-        '''Does the real work on the issue'''
+        '''Do some initial processing of the issue'''
 
         # clear all actions
         self.actions = {

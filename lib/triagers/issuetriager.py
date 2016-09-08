@@ -120,6 +120,11 @@ class TriageIssues(DefaultTriager):
 
     def process(self, usecache=True):
         """Processes the Issue"""
+
+        # basic processing
+        self._process()
+
+        '''
         # clear all actions
         self.actions = {
             'newlabel': [],
@@ -170,13 +175,18 @@ class TriageIssues(DefaultTriager):
         DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
         self.issue.new_description = DF.new_description
         #import epdb; epdb.st()
+        '''
+
+        #import epdb; epdb.st()
 
         # filed under the correct repository?
         this_repo = False
         correct_repo = None
+
         # who maintains this?
         maintainers = []
 
+        component_isvalid = self.meta.get('component_isvalid', False)
         if not component_isvalid:
             pass
         else:
@@ -208,42 +218,12 @@ class TriageIssues(DefaultTriager):
         self.keep_current_main_labels()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
-        '''
-        self.add_desired_labels_by_issue_type()
-        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-
-        self.add_desired_labels_by_ansible_version()
-        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-
-        self.add_desired_labels_by_namespace()
-        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-        '''
-
-        '''
-        self.add_desired_labels_by_maintainers()
-        self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-        '''
-
-        #self.process_comments()
         self.process_history(usecache=usecache)
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
         
         self.create_actions()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
-        '''
-        ###########################################################
-        #                        LOG 
-        ###########################################################
-        print("Submitter: %s" % self.issue.get_submitter())
-        print("Issue Type Defined: %s" % issue_type_defined)
-        print("Issue Type Valid: %s" % issue_type_valid)
-        print("Issue Type: %s" % issue_type)
-        print("Component Defined: %s" % component_defined)
-        print("Component Name: %s" % component)
-        print("Component is Valid Module: %s" % component_isvalid)
-        print("Component in this repo: %s" % this_repo)
-        '''
         print("Module: %s" % self.module)
         if self.match:
             print("MModule: %s" % self.match['name'])
@@ -259,23 +239,7 @@ class TriageIssues(DefaultTriager):
                         [y for y in self.VALID_COMMANDS if y in x.body \
                         and not '!' + y in x.body] or ''))
         print("Current Labels: %s" % ', '.join(sorted(self.issue.current_labels)))
-        '''
-        #print("Maintainer(s) Have Commented: %s" % maintainer_commented)
-        #print("Maintainer(s) Comment Age: %s days" % maintainer_last_comment_age)
-        #print("Waiting on Maintainer(s): %s" % waiting_on_maintainer)
-        print("Current Labels: %s" % ', '.join(sorted(self.issue.current_labels)))
-        print("Desired Labels: %s" % ', '.join(sorted(self.issue.desired_labels)))
-        print("Current Comments: %s" % len(self.issue.current_comments))
-        print("Desired Comments: %s" % ', '.join(self.issue.desired_comments))
-        print("Actions: ...")
-        print("CLOSE: %s" % self.actions['close'])
-        print("NEWLABEL:")
-        import pprint; pprint.pprint(self.actions['newlabel'])
-        print("UNLABEL:")
-        import pprint; pprint.pprint(self.actions['unlabel'])
-        for comment in self.actions['comments']:
-            print('ADD_COMMENT: %s' % comment[:80])
-        '''
+
         import pprint; pprint.pprint(self.actions)
 
         # invoke the wizard
