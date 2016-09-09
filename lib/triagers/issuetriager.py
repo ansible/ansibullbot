@@ -763,12 +763,16 @@ class TriageIssues(DefaultTriager):
         elif maintainer_waiting_on:
 
             self.debug(msg='maintainer wait stanza')
-            #import epdb; epdb.st()
 
             self.issue.add_desired_label('waiting_on_maintainer')
             if len(self.issue.current_comments) == 0:
                 if issue_type:
-                    self.issue.add_desired_comment('issue_new')
+                    if submitter not in self.module_maintainers:
+                        self.issue.add_desired_comment('issue_new')
+                    else:
+                        if 'issue_new' in self.issue.desired_comments:
+                            self.issue.desired_comments.remove('issue_new')
+                        #import epdb; epdb.st()
             else:
                 if maintainers != ['DEPRECATED']:
                     if maintainer_to_ping and maintainers:
@@ -790,7 +794,8 @@ class TriageIssues(DefaultTriager):
                 or (needsinfo_add and not missing_sections): 
 
                 self.issue.add_desired_label('needs_info')
-                if len(self.issue.current_comments) == 0:
+                #import epdb; epdb.st()
+                if len(self.issue.current_comments) == 0 or not maintainer_commented:
                     self.issue.add_desired_comment("issue_needs_info")
 
                 # needs_info: warn if stale, close if expired
@@ -1032,6 +1037,7 @@ class TriageIssues(DefaultTriager):
         hfacts['maintainer_waiting_on'] = maintainer_waiting_on
         hfacts['maintainer_to_ping'] = maintainer_to_ping
         hfacts['maintainer_to_reping'] = maintainer_to_reping
+        hfacts['submitter'] = submitter
         hfacts['submitter_waiting_on'] = submitter_waiting_on
         hfacts['submitter_to_ping'] = submitter_to_ping
         hfacts['submitter_to_reping'] = submitter_to_reping
