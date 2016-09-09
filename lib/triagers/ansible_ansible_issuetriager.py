@@ -46,7 +46,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                       'needs_contributor', 'duplicate_of']
 
     IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware', 'windows', 'openstack', 'backport']
-    MANAGED_LABELS = ['bot_broken', 'needs_info', 'triage', 
+    MANAGED_LABELS = ['bot_broken', 'needs_info',
                       'feature_idea', 'bug_report', 'docs_report']
 
     def process(self, usecache=True):
@@ -161,21 +161,25 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
             self.debug(msg='maintainer wait stanza')
 
+            '''
             # A) no [admin?] comments + no assingee == triage
             # B) [admin] comments or assignee == !triage
             if not self.meta['maintainer_commented'] and not self.issue.instance.assignee:
                 self.issue.add_desired_label(name='triage')
             else:
                 self.issue.pop_desired_label(name='triage')
+            '''
 
         elif self.meta['submitter_waiting_on']:
 
             self.debug(msg='submitter wait stanza')
 
+            '''
             # it's not triage if it's WOS
             self.issue.pop_desired_label(name='triage')
             # do not use WOM for ansible/ansible
             self.issue.pop_desired_label(name='waiting_on_maintainer')
+            '''
 
             if self.meta['needsinfo_remove']:
                 self.issue.pop_desired_label('needs_info')
