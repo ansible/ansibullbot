@@ -17,9 +17,11 @@
 
 from __future__ import print_function
 
+import glob
 import os
 import sys
 import time
+import pickle
 import pytz
 from datetime import datetime
 
@@ -117,6 +119,16 @@ class DefaultTriager(object):
             'close': False,
         }
 
+        # set the cache dir
+        self.cachedir = '~/.ansibullbot/cache'
+        if self.github_repo == 'ansible':
+            self.cachedir += '/ansible/ansible/'
+        else:
+            self.cachedir += '/ansible/ansible-modules-%s/' % self.github_repo
+        self.cachedir += 'issues'
+        self.cachedir = os.path.expanduser(self.cachedir)
+        if not os.path.isdir(self.cachedir):
+            os.makedirs(self.cachedir)
 
         print("Initializing AnsibleVersionIndexer")
         self.version_indexer = AnsibleVersionIndexer()
@@ -856,3 +868,27 @@ class DefaultTriager(object):
                 print("module - component matches: %s" % cmatches)
 
         return match
+
+    def cache_issue(self, issue):
+        iid = issue.instance.number
+        fpath = os.path.join(self.cachedir, str(iid))
+        if not os.path.isdir(fpath):
+            os.makedirs(fpath)
+        fpath = os.path.join(fpath, 'iwrapper.pickle')
+        with open(fpath, 'wb') as f:
+            pickle.dump(issue, f)
+        #import epdb; epdb.st()
+
+    def load_cached_issues(self, state='open'):
+        issues = []
+        idirs = glob.glob('%s/*' % self.cachedir)
+        idirs = [x for x in idirs if not x.endswith('.pickle')]
+        for idir in idirs:
+            wfile = os.path.join(idir, 'iwrapper.pickle')
+            if os.path.isfile(wfile):
+                with open(wfile, 'rb') as f:
+                    wrapper = pickle.load(f)
+                    issues.append(wrapper.instance)
+        return issues
+
+
