@@ -728,9 +728,6 @@ class DefaultTriager(object):
         else:
             self.force = False
 
-        if not safe_match:
-            import epdb; epdb.st()
-
     def action_count(self):
         """ Return the number of actions that are to be performed """
         count = 0
