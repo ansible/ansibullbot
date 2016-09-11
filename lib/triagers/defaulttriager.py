@@ -30,6 +30,7 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
@@ -237,6 +238,10 @@ class DefaultTriager(object):
         """Connects to GitHub's API"""
         return Github(login_or_token=self.github_token or self.github_user,
                       password=self.github_pass)
+        #return GithubWrapper(
+        #        login_or_token=self.github_token or self.github_user,
+        #        password=self.github_pass
+        #       )
 
     def _get_repo_path(self):
         if self.github_repo in ['core', 'extras']:
@@ -437,7 +442,8 @@ class DefaultTriager(object):
        
 
     def get_current_time(self):
-        now = datetime.now()
+        #now = datetime.now()
+        now = datetime.utcnow()
         #now = datetime.now(pytz.timezone('US/Pacific'))
         #import epdb; epdb.st()
         return now

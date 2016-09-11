@@ -29,6 +29,8 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from lib.wrappers.ghapiwrapper import GithubWrapper
+from lib.wrappers.ghapiwrapper import RepoWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.wrappers.historywrapper import HistoryWrapper
 from lib.utils.moduletools import ModuleIndexer
@@ -47,14 +49,21 @@ class TriageIssues(DefaultTriager):
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
-    def run(self):
+    def run(self, useapiwrapper=True):
         """Starts a triage run"""
 
         # how many issues have been processed
         self.icount = 0
 
         # Create the api connection
-        self.repo = self._connect().get_repo(self._get_repo_path())
+        if not useapiwrapper:
+            # use the default non-caching connection
+            self.repo = self._connect().get_repo(self._get_repo_path())
+        else:
+            # make use of the special caching wrapper for the api
+            self.gh = self._connect()
+            self.ghw = GithubWrapper(self.gh)
+            self.repo = self.ghw.get_repo(self._get_repo_path())
 
         # extend the ignored labels by repo
         if hasattr(self, 'IGNORE_LABELS_ADD'):
@@ -84,7 +93,6 @@ class TriageIssues(DefaultTriager):
                 except Exception as e:
                     print(e)
 
-            #import epdb; epdb.st()
             if last_run and not self.no_since:
                 issues = self.repo.get_issues(since=last_run)
             else:
