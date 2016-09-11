@@ -71,7 +71,7 @@ class TriageIssues(DefaultTriager):
 
         if self.number:
             issue = self.repo.get_issue(int(self.number))
-            self.issue = IssueWrapper(repo=self.repo, issue=issue)
+            self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
             self.issue.get_events()
             self.issue.get_comments()
             self.process()
@@ -104,7 +104,7 @@ class TriageIssues(DefaultTriager):
                     continue
                 if self.is_pr(issue):
                     continue
-                self.issue = IssueWrapper(repo=self.repo, issue=issue)
+                self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
                 self.issue.get_events()
                 self.issue.get_comments()
                 action_res = self.process()

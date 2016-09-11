@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import json
 import os
+import pickle
 import sys
 import time
 from datetime import datetime
@@ -69,7 +70,8 @@ class DefaultWrapper(object):
 
     REQUIRED_SECTIONS = []
 
-    def __init__(self, repo=None, issue=None):
+    def __init__(self, repo=None, issue=None, cachedir=None):
+        self.cachedir = cachedir
         self.repo = repo
         self.instance = issue
         self.number = self.instance.number
@@ -83,6 +85,9 @@ class DefaultWrapper(object):
         self.desired_comments = []
         self.current_state = 'open'
         self.desired_state = 'open'
+
+    def get_current_time(self):
+        return datetime.utcnow()
 
     def get_comments(self):
         """Returns all current comments of the PR"""
@@ -104,9 +109,48 @@ class DefaultWrapper(object):
         return self.current_comments
 
     def get_events(self):
-        if not self.current_events:
-            self.current_events = \
-                [x for x in self.instance.get_events()]
+
+        edata = None
+        events = []
+        updated = None
+        update = False
+        write_cache = False
+
+        pfile = os.path.join(self.cachedir, str(self.instance.number), 'events.pickle')
+        pdir = os.path.dirname(pfile)
+
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
+        if os.path.isfile(pfile):
+            try:
+                with open(pfile, 'rb') as f:
+                    edata = pickle.load(f)
+            except Exception as e:
+                update = True
+                write_cache = True
+
+        # check the timestamp on the cache
+        if edata:
+            updated = edata[0]
+            events = edata[1]
+            if updated < self.instance.updated_at:
+                update = True
+                write_cache = True
+
+        # pull all events if timestamp is behind or no events cached
+        if update or not events:        
+            write_cache = True
+            updated = self.get_current_time()
+            events = [x for x in self.instance.get_events()]
+
+        if write_cache:
+            # need to dump the pickle back to disk
+            edata = [updated, events]
+            with open(pfile, 'wb') as f:
+                pickle.dump(edata, f)
+
+        #import epdb; epdb.st()
+        self.current_events = [x for x in events]
         return self.current_events
 
     def get_assignee(self):
