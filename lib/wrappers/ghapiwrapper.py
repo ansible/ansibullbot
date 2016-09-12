@@ -13,6 +13,19 @@ import sys
 import time
 from datetime import datetime
 
+def ratecheck():
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            result = None
+            try:
+                result = func(*args, **kwargs)
+            except GithubException as ge:
+                print(ge)
+                import epdb; epdb.st()
+            return result
+        return wrapper
+    return decorator
+
 class GithubWrapper(object):
     def __init__(self, gh):
         self.gh = gh
@@ -55,6 +68,9 @@ class RepoWrapper(object):
         self.save_issue(issue)
         #import epdb; epdb.st()
         return issue
+
+    def get_labels(self):
+        return self.load_update_fetch('labels')
     
     def get_issues(self, since=None, state='open'):
 
@@ -186,5 +202,61 @@ class RepoWrapper(object):
         with open(cfile, 'wb') as f:
             pickle.dump(issue, f)
 
+
+    def load_update_fetch(self, property_name):
+        '''Fetch a get() property for an object'''
+
+        edata = None
+        events = []
+        updated = None
+        update = False
+        write_cache = False
+        self.repo.update()
+
+        #import epdb; epdb.st()
+        pfile = os.path.join(self.cachedir, '%s.pickle' % property_name)
+        pdir = os.path.dirname(pfile)
+
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
+
+        if os.path.isfile(pfile):
+            try:
+                with open(pfile, 'rb') as f:
+                    edata = pickle.load(f)
+            except Exception as e:
+                update = True
+                write_cache = True
+
+            # check the timestamp on the cache
+            if edata:
+                updated = edata[0]
+                events = edata[1]
+                if updated < self.repo.updated_at:
+                    update = True
+                    write_cache = True
+
+        # pull all events if timestamp is behind or no events cached
+        if update or not events:        
+            write_cache = True
+            updated = self.get_current_time()
+            try:
+                methodToCall = getattr(self.repo, 'get_' + property_name)
+            except Exception as e:
+                print(e)
+                import epdb; epdb.st()
+            events = [x for x in methodToCall()]
+
+        if write_cache or not os.path.isfile(pfile):
+            # need to dump the pickle back to disk
+            edata = [updated, events]
+            with open(pfile, 'wb') as f:
+                pickle.dump(edata, f)
+
+        return events
+
+
+    def get_current_time(self):
+        return datetime.utcnow()
 
 

@@ -30,6 +30,7 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from lib.wrappers.ghapiwrapper import ratecheck
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
@@ -258,16 +259,55 @@ class DefaultTriager(object):
     def is_issue(self, issue):
         return not self.is_pr(issue)
 
+    @ratecheck()
     def get_ansible_members(self):
+
         ansible_members = []
+        update = False
+        write_cache = False
+        now = self.get_current_time()
         org = self._connect().get_organization("ansible")
-        members = org.get_members()
-        ansible_members = [x.login for x in members]
+
+        cachedir = self.cachedir
+        if cachedir.endswith('/issues'):
+            cachedir = os.path.dirname(cachedir)
+        cachefile = os.path.join(cachedir, 'members.pickle')
+
+        if not os.path.isdir(cachedir):
+            os.makedirs(cachedir)
+
+        if os.path.isfile(cachefile):
+            with open(cachefile, 'rb') as f:
+                mdata = pickle.load(f)
+            ansible_members = mdata[1]
+            if mdata[0] < org.updated_at:
+                update = True
+        else:
+            update = True
+            write_cache = True
+
+        if update:
+            members = org.get_members()
+            ansible_members = [x.login for x in members]
+
+        # save the data
+        if write_cache:
+            mdata = [now, ansible_members]
+            with open(cachefile, 'wb') as f:
+                pickle.dump(mdata, f)
+
+        #import epdb; epdb.st()
         return ansible_members
 
+    @ratecheck()
     def get_valid_labels(self):
+
+        # use the repo wrapper to enable caching+updating
+        self.gh = self._connect()
+        self.ghw = GithubWrapper(self.gh)
+        self.repo = self.ghw.get_repo(self._get_repo_path())
+
         vlabels = []
-        self.repo = self._connect().get_repo(self._get_repo_path())
         for vl in self.repo.get_labels():
             vlabels.append(vl.name)
         return vlabels

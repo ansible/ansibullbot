@@ -93,10 +93,11 @@ class TriageIssues(DefaultTriager):
                 except Exception as e:
                     print(e)
 
-            #import epdb; epdb.st()
             if last_run and not self.no_since:
+                self.debug('Getting issues updated/created since %s' % last_run)
                 issues = self.repo.get_issues(since=last_run)
             else:
+                self.debug('Getting ALL issues')
                 issues = self.repo.get_issues()
 
             for issue in issues:
