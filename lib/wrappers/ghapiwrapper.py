@@ -72,7 +72,7 @@ class RepoWrapper(object):
     def get_labels(self):
         return self.load_update_fetch('labels')
     
-    def get_issues(self, since=None, state='open'):
+    def get_issues(self, since=None, state='open', itype='issue'):
 
         if since:
             issues = self.repo.get_issues(since=since)
@@ -93,6 +93,13 @@ class RepoWrapper(object):
                 if self.is_missing(exp):
                     continue
                 ci = next((i for i in issues if i.number == exp), None)
+
+                # skip pull requests if requested
+                if itype == 'issue' and ci:
+                    if ci.pull_request:
+                        #print('skipping %s' % ci.html_url)
+                        continue
+                #import epdb; epdb.st()
 
                 retry = True
                 while retry:                
@@ -145,6 +152,9 @@ class RepoWrapper(object):
                         import epdb; epdb.st()
 
             self.save_repo()
+
+            if itype == 'issue':
+                issues = [x for x in issues if not x.pull_request]
 
             if state == 'open':
                 issues = [x for x in issues if x.state == 'open']

@@ -135,7 +135,11 @@ class DefaultWrapper(object):
         update = False
         write_cache = False
 
-        pfile = os.path.join(self.cachedir, 'issues', str(self.instance.number), '%s.pickle' % property_name)
+        try:
+            pfile = os.path.join(self.cachedir, 'issues', str(self.instance.number), '%s.pickle' % property_name)
+        except Exception as e:
+            print(e)
+            import epdb; epdb.st()
         pdir = os.path.dirname(pfile)
 
         if not os.path.isdir(pdir):

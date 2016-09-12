@@ -113,7 +113,7 @@ class TriageIssues(DefaultTriager):
                 if action_res:
                     while action_res['REDO']:
                         issue = self.repo.get_issue(int(issue.number))
-                        self.issue = IssueWrapper(repo=self.repo, issue=issue)
+                        self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
                         self.issue.get_events()
                         self.issue.get_comments()
                         action_res = self.process()
