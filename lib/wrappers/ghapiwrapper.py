@@ -58,101 +58,95 @@ class RepoWrapper(object):
     
     def get_issues(self, since=None, state='open'):
 
-        issues = self.load_issues()
-        '''
-        for idx,x in enumerate(cached):
-            if x.update():
-                print('%s was updated' % x.number)
-                import epdb; epdb.st()
-        '''
+        if since:
+            issues = self.repo.get_issues(since=since)
+            issues = [x for x in issues]
+            for issue in issues:
+                self.save_issue(issue)
+        else:
 
-        ## HOW DO I GET THE DELTA FROM CACHED TO CURRENT?
-        rissues = self.repo.get_issues()
-        last_issue = rissues[0]
+            # load all cached issues then update or fetch missing ...
 
-        fetched = []
-        expected = xrange(1, last_issue.number)
-        for exp in expected:
-            if self.is_missing(exp):
-                continue
-            ci = next((i for i in issues if i.number == exp), None)
+            issues = self.load_issues()
+            rissues = self.repo.get_issues()
+            last_issue = rissues[0]
 
-            retry = True
-            while retry:                
-                try:
-                    if not ci:
-                        print('%s was not cached' % exp)
-                        issue = self.repo.get_issue(exp)
-                        issues.append(issue)
-                        self.save_issue(issue)
-                        retry = False
-                    else:
-                        # update and save [only if open]
-                        if ci.state == 'open':
-                            if ci.update():
-                                self.save_issue(ci)
-                        retry = False
+            fetched = []
+            expected = xrange(1, last_issue.number)
+            for exp in expected:
+                if self.is_missing(exp):
+                    continue
+                ci = next((i for i in issues if i.number == exp), None)
 
-                except socket.timeout as e:
-                    #import epdb; epdb.st()
-                    print('socket timeout, sleeping 10s')
-                    time.sleep(10)
+                retry = True
+                while retry:                
+                    try:
+                        if not ci:
+                            print('%s was not cached' % exp)
+                            issue = self.repo.get_issue(exp)
+                            issues.append(issue)
+                            self.save_issue(issue)
+                            retry = False
+                        else:
+                            # update and save [only if open]
+                            if ci.state == 'open':
+                                if ci.update():
+                                    self.save_issue(ci)
+                            retry = False
 
-                except IndexError as e:
-                    #self.set_missing(exp)
-                    print('index error, sleeping 10s')
-                    time.sleep(10)
-
-                except GithubException as e:
-                    if 'rate limit exceeded' in e[1]['message']:
-                        retry = True
-                        print('rate limit exceeded, sleeping Xs')
-                        rl = self.gh.get_rate_limit()
-                        reset = rl.rate.reset
-                        now = datetime.now()
-                        wait = (reset - datetime.utcnow())
-                        wait = wait.total_seconds()
-                        print('rate limit exceeded, sleeping %s minutes' \
-                              % (wait / 60))
-                        time.sleep(wait)
+                    except socket.timeout as e:
                         #import epdb; epdb.st()
-                    elif e[1]['message'] == 'Not Found':
-                        self.set_missing(exp)
-                        retry = False
-                    else:
+                        print('socket timeout, sleeping 10s')
+                        time.sleep(10)
+
+                    except IndexError as e:
+                        #self.set_missing(exp)
+                        print('index error, sleeping 10s')
+                        time.sleep(10)
+
+                    except GithubException as e:
+                        if 'rate limit exceeded' in e[1]['message']:
+                            retry = True
+                            print('rate limit exceeded, sleeping Xs')
+                            rl = self.gh.get_rate_limit()
+                            reset = rl.rate.reset
+                            now = datetime.now()
+                            wait = (reset - datetime.utcnow())
+                            wait = wait.total_seconds()
+                            print('rate limit exceeded, sleeping %s minutes' \
+                                  % (wait / 60))
+                            time.sleep(wait)
+                        elif e[1]['message'] == 'Not Found':
+                            self.set_missing(exp)
+                            retry = False
+                        else:
+                            print(e)
+                            import epdb; epdb.st()
+
+                    except Exception as e:
                         print(e)
+                        print("could not fetch %s" % exp)
                         import epdb; epdb.st()
 
-                except Exception as e:
-                    print(e)
-                    print("could not fetch %s" % exp)
-                    import epdb; epdb.st()
-                    #self.set_missing(exp)
-                    #retry = False
+            self.save_repo()
 
-        self.save_repo()
+            if state == 'open':
+                issues = [x for x in issues if x.state == 'open']
 
-        if state == 'open':
-            issues = [x for x in issues if x.state == 'open']
-
-        if since:
-            # filter issues opened or updated since ...
-            pass
-
-        # sort in reverse numerical order
-        issues.sort(key = lambda x: x.number, reverse=True)
+            # sort in reverse numerical order
+            issues.sort(key = lambda x: x.number, reverse=True)
 
         return issues
 
     def is_missing(self, number):
-        mfile = os.path.join(self.cachedir, str(number), 'missing')
+        mfile = os.path.join(self.cachedir, 'issues', str(number), 'missing')
         if os.path.isfile(mfile):
             return True
         else:
             return False
 
     def set_missing(self, number):
-        mfile = os.path.join(self.cachedir, str(number), 'missing')
+        mfile = os.path.join(self.cachedir, 'issues', str(number), 'missing')
         mdir = os.path.dirname(mfile)
         if not os.path.isdir(mdir):
             os.makedirs(mdir)
@@ -161,7 +155,7 @@ class RepoWrapper(object):
 
     def load_issues(self, state='open'):
         issues = []
-        gfiles = glob.glob('%s/*/issue.pickle' % self.cachedir)
+        gfiles = glob.glob('%s/issues/*/issue.pickle' % self.cachedir)
         for gf in gfiles:
             with open(gf, 'rb') as f:
                 issue = pickle.load(f)
@@ -171,7 +165,7 @@ class RepoWrapper(object):
         return issues
 
     def load_issue(self, number):
-        pfile = os.path.join(self.cachedir, str(number), 'issue.pickle')
+        pfile = os.path.join(self.cachedir, 'issues', str(number), 'issue.pickle')
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
                 issue = pickle.load(f)
@@ -185,7 +179,7 @@ class RepoWrapper(object):
             self.save_issue(issue)
 
     def save_issue(self, issue):
-        cfile = os.path.join(self.cachedir, str(issue.number), 'issue.pickle')
+        cfile = os.path.join(self.cachedir, 'issues', str(issue.number), 'issue.pickle')
         cdir = os.path.dirname(cfile)
         if not os.path.isdir(cdir):
             os.makedirs(cdir)

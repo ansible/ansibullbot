@@ -93,6 +93,7 @@ class TriageIssues(DefaultTriager):
                 except Exception as e:
                     print(e)
 
+            #import epdb; epdb.st()
             if last_run and not self.no_since:
                 issues = self.repo.get_issues(since=last_run)
             else:
@@ -445,7 +446,7 @@ class TriageIssues(DefaultTriager):
 
         # Build the history
         self.debug(msg="Building event history ...")
-        self.history = HistoryWrapper(self.issue, usecache=usecache)
+        self.history = HistoryWrapper(self.issue, usecache=usecache, cachedir=self.cachedir)
 
         # what was the last commment?
         bot_broken = False
@@ -822,7 +823,7 @@ class TriageIssues(DefaultTriager):
         hfacts = {}
         today = self.get_current_time()
         
-        self.history = HistoryWrapper(self.issue, usecache=usecache)
+        self.history = HistoryWrapper(self.issue, usecache=usecache, cachedir=self.cachedir)
 
         # what was the last commment?
         bot_broken = False

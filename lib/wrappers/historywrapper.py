@@ -25,8 +25,11 @@ from github import GithubObject
 
 class HistoryWrapper(object):
 
-    def __init__(self, issue, usecache=True):
+    def __init__(self, issue, usecache=True, cachedir=None):
         self.issue = issue
+        self.maincache = cachedir
+        self.cachefile = os.path.join(self.maincache, str(issue.instance.number), 'history.pickle')
+        self.cachedir = os.path.dirname(self.cachefile)
         if not usecache:
             self.history = self.process()
         else:
@@ -43,33 +46,28 @@ class HistoryWrapper(object):
                     self._dump_cache()
 
     def _load_cache(self):
-        cachedir = os.path.expanduser('~/.ansibullbot/cache/')
-        cachedir = os.path.join(cachedir, self.issue.instance.html_url.replace('https://github.com/', ''))
-        if not os.path.isdir(cachedir):
-            os.makedirs(cachedir)
-        cachefile = os.path.join(cachedir, 'history.pickle')
-        if not os.path.isfile(cachefile):
+        if not os.path.isdir(self.cachedir):
+            os.makedirs(self.cachedir)
+        if not os.path.isfile(self.cachefile):
             return None            
         try:
-            with open(cachefile, 'rb') as f:
+            with open(self.cachefile, 'rb') as f:
                 cachedata = pickle.load(f)
         except Exception as e:
             cachedata = None
         return cachedata
 
     def _dump_cache(self):
-        cachedir = os.path.expanduser('~/.ansibullbot/cache/')
-        cachedir = os.path.join(cachedir, self.issue.instance.html_url.replace('https://github.com/', ''))
-        if not os.path.isdir(cachedir):
-            os.makedirs(cachedir)
-        cachefile = os.path.join(cachedir, 'history.pickle')
+        if not os.path.isdir(self.cachedir):
+            os.makedirs(self.cachedir)
+        cachefile = os.path.join(self.cachedir, 'history.pickle')
 
         # keep the timestamp
         cachedata = {'updated_at': self.issue.instance.updated_at,
                      'history': self.history}
 
         try:
-            with open(cachefile, 'wb') as f:
+            with open(self.cachefile, 'wb') as f:
                 pickle.dump(cachedata, f)
         except Exception as e:
             import epdb; epdb.st()

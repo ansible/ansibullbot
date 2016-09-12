@@ -161,7 +161,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
             self.debug(msg='maintainer wait stanza')
 
-            '''
+            ''' TOO CONTROVERSIAL ...
             # A) no [admin?] comments + no assingee == triage
             # B) [admin] comments or assignee == !triage
             if not self.meta['maintainer_commented'] and not self.issue.instance.assignee:
