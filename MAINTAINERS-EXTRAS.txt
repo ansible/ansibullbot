@@ -229,8 +229,8 @@ windows/win_iis_webbinding.py: whenrik
 windows/win_iis_webbinding.ps1: whenrik
 windows/win_iis_website.py: whenrik
 windows/win_iis_website.ps1: whenrik
-windows/win_nssm.py: smadam813 georgefrank h0nIg
-windows/win_nssm.ps1: smadam813 georgefrank h0nIg
+windows/win_nssm.py: smadam813 h0nIg
+windows/win_nssm.ps1: smadam813 h0nIg
 windows/win_package.py: trondhindenes
 windows/win_package.ps1: trondhindenes
 windows/win_regedit.py: joshludwig smadam813
