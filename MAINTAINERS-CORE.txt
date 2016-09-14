@@ -110,6 +110,7 @@ network/eos/: privateip gundalow
 network/ios/: privateip gundalow
 network/iosxr/: privateip gundalow
 network/junos/: privateip gundalow
+network/netvisor/: amitsi privateip gundalow
 network/nxos/: jedelman8 GGabriele privateip gundalow
 network/openswitch/: privateip gundalow
 network/vyos/: privateip gundalow
