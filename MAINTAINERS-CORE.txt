@@ -113,6 +113,7 @@ network/junos/: privateip gundalow
 network/netvisor/: amitsi privateip gundalow
 network/nxos/: jedelman8 GGabriele privateip gundalow
 network/openswitch/: privateip gundalow
+network/sros/: privateip gundalow
 network/vyos/: privateip gundalow
 packaging/language/easy_install.py: mattupstate
 packaging/language/gem.py: ansible
