@@ -6,7 +6,7 @@ import shlex
 def extract_template_data(body, issue_number=None):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME', 
                 'ANSIBLE VERSION', 'CONFIGURATION', 
-                'OS / ENVIRONMENT', 'SUMMARY', 
+                'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT', 
                 'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
                 'ACTUAL RESULTS']
 
@@ -86,7 +86,6 @@ def extract_template_data(body, issue_number=None):
             # https://github.com/ansible/ansible-modules-core/issues/4159
             if k == 'component name' and 'module' in v:
                 v = v.replace('module', ' ')
-                #import epdb; epdb.st()
 
             # remove useless chars
             badchars = ['#', ',', ':', ';', '*', "'", '"', '`', '---', '__']
@@ -101,20 +100,18 @@ def extract_template_data(body, issue_number=None):
 
             # remove pre-ceding special chars
             for bc in ['-', '*']:
-                if not v:
-                    continue
-                if v[0] == bc:
-                    v = v[1:]
-                v = v.strip()
+                if v:
+                    if v[0] == bc:
+                        v = v[1:]
+                    v = v.strip()
 
             # keep just the first line for types and components
             if k in ['issue type', 'component name']:
-                if not v:
-                    continue
-                vlines = v.split('\n')
-                # https://github.com/ansible/ansible-modules-core/issues/3085
-                vlines = [x for x in vlines if not 'pick one' in x]
-                v = vlines[0]
+                if v:
+                    vlines = v.split('\n')
+                    # https://github.com/ansible/ansible-modules-core/issues/3085
+                    vlines = [x for x in vlines if not 'pick one' in x]
+                    v = vlines[0]
 
             # https://github.com/ansible/ansible-modules-core/issues/4060
             if k in ['issue type']:
@@ -125,15 +122,6 @@ def extract_template_data(body, issue_number=None):
                     else:
                         v = v[-1]
                     v = v.strip()
-
-            '''
-            # https://github.com/ansible/ansible-modules-core/issues/4201
-            if k == 'component name' and ' ' in v:
-                v = shlex.split(v)[0]
-            '''
-
-            #if k == 'component name' and issue_number == 4138:
-            #    import epdb; epdb.st()
 
             if k == 'issue type' and v != 'bug report' and 'bug' in v.lower():
                 v = 'bug report'

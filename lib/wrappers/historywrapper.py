@@ -25,8 +25,11 @@ from github import GithubObject
 
 class HistoryWrapper(object):
 
-    def __init__(self, issue, usecache=True):
+    def __init__(self, issue, usecache=True, cachedir=None):
         self.issue = issue
+        self.maincache = cachedir
+        self.cachefile = os.path.join(self.maincache, str(issue.instance.number), 'history.pickle')
+        self.cachedir = os.path.dirname(self.cachefile)
         if not usecache:
             self.history = self.process()
         else:
@@ -43,33 +46,28 @@ class HistoryWrapper(object):
                     self._dump_cache()
 
     def _load_cache(self):
-        cachedir = os.path.expanduser('~/.ansibullbot/cache/')
-        cachedir = os.path.join(cachedir, self.issue.instance.html_url.replace('https://github.com/', ''))
-        if not os.path.isdir(cachedir):
-            os.makedirs(cachedir)
-        cachefile = os.path.join(cachedir, 'history.pickle')
-        if not os.path.isfile(cachefile):
+        if not os.path.isdir(self.cachedir):
+            os.makedirs(self.cachedir)
+        if not os.path.isfile(self.cachefile):
             return None            
         try:
-            with open(cachefile, 'rb') as f:
+            with open(self.cachefile, 'rb') as f:
                 cachedata = pickle.load(f)
         except Exception as e:
             cachedata = None
         return cachedata
 
     def _dump_cache(self):
-        cachedir = os.path.expanduser('~/.ansibullbot/cache/')
-        cachedir = os.path.join(cachedir, self.issue.instance.html_url.replace('https://github.com/', ''))
-        if not os.path.isdir(cachedir):
-            os.makedirs(cachedir)
-        cachefile = os.path.join(cachedir, 'history.pickle')
+        if not os.path.isdir(self.cachedir):
+            os.makedirs(self.cachedir)
+        cachefile = os.path.join(self.cachedir, 'history.pickle')
 
         # keep the timestamp
         cachedata = {'updated_at': self.issue.instance.updated_at,
                      'history': self.history}
 
         try:
-            with open(cachefile, 'wb') as f:
+            with open(self.cachefile, 'wb') as f:
                 pickle.dump(cachedata, f)
         except Exception as e:
             import epdb; epdb.st()
@@ -98,13 +96,33 @@ class HistoryWrapper(object):
 
     def get_commands(self, username, command_keys):
         """Given a list of phrase keys, return a list of phrases used"""
-        comments = self.get_user_comments(username)
         commands = []
+
+        '''
+        comments = self.get_user_comments(username)
         for x in comments:
             for y in command_keys:
                 if y in x and not '!' + y in x:
                     commands.append(y)
                     break        
+        '''
+
+        comments = self._find_events_by_actor('commented', username, maxcount=999)
+        labels = self._find_events_by_actor('labeled', username, maxcount=999)
+        unlabels = self._find_events_by_actor('unlabeled', username, maxcount=999)
+        events = comments + labels + unlabels
+        events = sorted(events, key=itemgetter('created_at')) 
+        for event in events:
+            if event['event'] == 'commented':
+                for y in command_keys:
+                    if y in event['body'] and not '!' + y in event['body']:
+                        commands.append(y)
+            elif event['event'] == 'labeled':
+                if event['label'] in command_keys:
+                    commands.append(event['label'])
+            elif event['event'] == 'unlabeled':
+                if event['label'] in command_keys:
+                    commands.append('!' + event['label'])
         #import epdb; epdb.st()
         return commands
 
@@ -179,11 +197,11 @@ class HistoryWrapper(object):
             if type(username) != list:
                 if event['actor'] == username:
                     last_date = event['created_at']
-                    print("LAST DATE: %s" % last_date)
+                    #print("history - LAST DATE: %s" % last_date)
             else:
                 if event['actor'] in username:
                     last_date = event['created_at']
-                    print("LAST DATE: %s" % last_date)
+                    #print("history - LAST DATE: %s" % last_date)
             if last_date:
                 break
         return last_date
@@ -250,6 +268,7 @@ class HistoryWrapper(object):
             if event['event'] == 'labeled':
                 if event['label'] == label:
                     last_date = event['created_at']
+                    break
         return last_date
 
     def label_last_removed(self, label):
@@ -259,6 +278,7 @@ class HistoryWrapper(object):
             if event['event'] == 'unlabeled':
                 if event['label'] == label:
                     last_date = event['created_at']
+                    break
         return last_date
 
     def was_labeled(self, label=None):

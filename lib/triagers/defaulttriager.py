@@ -17,9 +17,11 @@
 
 from __future__ import print_function
 
+import glob
 import os
 import sys
 import time
+import pickle
 import pytz
 from datetime import datetime
 
@@ -28,8 +30,11 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from lib.wrappers.ghapiwrapper import ratecheck
+from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
+from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.extractors import extract_template_data
 from lib.utils.descriptionfixer import DescriptionFixer
 
@@ -72,6 +77,7 @@ class DefaultTriager(object):
     BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
     VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
     IGNORE_LABELS = [
+        "aws","azure","cloud",
         "feature_pull_request",
         "feature_idea",
         "bugfix_pull_request",
@@ -87,10 +93,10 @@ class DefaultTriager(object):
         "P1","P2","P3","P4",
     ]
 
-
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
-                 start_at=None, always_pause=False, force=False, safe_force=False, dry_run=False):
+                 start_at=None, always_pause=False, force=False, safe_force=False, 
+                 dry_run=False, no_since=False):
 
         self.verbose = verbose
         self.github_user = github_user
@@ -103,6 +109,7 @@ class DefaultTriager(object):
         self.force = force
         self.safe_force = safe_force
         self.dry_run = dry_run
+        self.no_since = no_since
 
         self.issue = None
         self.maintainers = {}
@@ -114,18 +121,134 @@ class DefaultTriager(object):
             'close': False,
         }
 
+        # set the cache dir
+        self.cachedir = '~/.ansibullbot/cache'
+        if self.github_repo == 'ansible':
+            self.cachedir += '/ansible/ansible/'
+        else:
+            self.cachedir += '/ansible/ansible-modules-%s/' % self.github_repo
+        self.cachedir += 'issues'
+        self.cachedir = os.path.expanduser(self.cachedir)
+        if not os.path.isdir(self.cachedir):
+            os.makedirs(self.cachedir)
+
+        print("Initializing AnsibleVersionIndexer")
+        self.version_indexer = AnsibleVersionIndexer()
+        #import epdb; epdb.st()
+        print("Initializing ModuleIndexer")
         self.module_indexer = ModuleIndexer()
         self.module_indexer.get_ansible_modules()
+        print("Getting ansible members")
         self.ansible_members = self.get_ansible_members()
+        print("Getting valid labels")
         self.valid_labels = self.get_valid_labels()
 
         # processed metadata
         self.meta = {}
 
+    def _process(self, usecache=True):
+        '''Do some initial processing of the issue'''
+
+        # clear all actions
+        self.actions = {
+            'newlabel': [],
+            'unlabel':  [],
+            'comments': [],
+            'close': False,
+        }
+
+        # clear module maintainers
+        self.module_maintainers = []
+
+        # print some general info about the Issue to be processed
+        print("\n")
+        print("Issue #%s [%s]: %s" % (self.issue.number, self.icount,
+                                (self.issue.instance.title).encode('ascii','ignore')))
+        print("%s" % self.issue.instance.html_url)
+        print("Created at %s" % self.issue.instance.created_at)
+        print("Updated at %s" % self.issue.instance.updated_at)
+
+        # get the template data
+        self.template_data = self.issue.get_template_data()
+
+        # was the issue type defined correctly?
+        issue_type_defined = False
+        issue_type_valid = False
+        issue_type = False
+        if 'issue type' in self.template_data:
+            issue_type_defined = True
+            issue_type = self.template_data['issue type']
+            if issue_type.lower() in self.VALID_ISSUE_TYPES:
+                issue_type_valid = True
+        self.meta['issue_type_defined'] = issue_type_defined
+        self.meta['issue_type_valid'] = issue_type_valid
+        self.meta['issue_type'] = issue_type
+
+
+        # What is the ansible version?
+        self.ansible_version = self.get_ansible_version()
+        self.debug('version: %s' % self.ansible_version)
+        self.ansible_label_version = self.get_ansible_version_major_minor()
+        self.debug('lversion: %s' % self.ansible_label_version)
+
+        # was component specified?
+        component_defined = 'component name' in self.template_data
+        self.meta['component_defined'] = component_defined
+
+        # extract the component
+        component = self.template_data.get('component name', None)
+
+        # save the real name
+        if self.github_repo != 'ansible':
+            self.match = self.module_indexer.find_match(component) or {}
+        else:
+            self.match = self.module_indexer.find_match(component, exact=True) or {}
+        self.module = self.match.get('name', None)
+
+        # check if component is a known module
+        component_isvalid = self.module_indexer.is_valid(component)
+        self.meta['component_valid'] = component_isvalid
+
+        # smart match modules (only on module repos)
+        if not component_isvalid and self.github_repo != 'ansible' and not self.match:
+            #smatch = self.smart_match_module()
+            if hasattr(self, 'meta'):
+                self.meta['fuzzy_match_called'] = True
+            kwargs = dict(
+                        repo=self.github_repo, 
+                        title=self.issue.instance.title, 
+                        component=self.template_data.get('component name')
+                     )
+            smatch = self.module_indexer.fuzzy_match(**kwargs)
+            if self.module_indexer.is_valid(smatch):
+                self.module = smatch
+                component = smatch
+                self.match = self.module_indexer.find_match(smatch)
+                component_isvalid = self.module_indexer.is_valid(component)
+                self.meta['component_valid'] = component_isvalid
+
+        # set the maintainer
+        self.module_maintainer = [x for x in self.get_module_maintainers()]
+
+        # Helper to fix issue descriptions ...
+        DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
+        self.issue.new_description = DF.new_description
+
+
     def _connect(self):
         """Connects to GitHub's API"""
         return Github(login_or_token=self.github_token or self.github_user,
                       password=self.github_pass)
+        #return GithubWrapper(
+        #        login_or_token=self.github_token or self.github_user,
+        #        password=self.github_pass
+        #       )
+
+    def _get_repo_path(self):
+        if self.github_repo in ['core', 'extras']:
+            return "ansible/ansible-modules-%s" % self.github_repo
+        else:
+            return "ansible/%s" % self.github_repo
 
     def is_pr(self, issue):
         if '/pull/' in issue.html_url:
@@ -136,24 +259,62 @@ class DefaultTriager(object):
     def is_issue(self, issue):
         return not self.is_pr(issue)
 
+    @ratecheck()
     def get_ansible_members(self):
+
         ansible_members = []
+        update = False
+        write_cache = False
+        now = self.get_current_time()
         org = self._connect().get_organization("ansible")
-        members = org.get_members()
-        ansible_members = [x.login for x in members]
+
+        cachedir = self.cachedir
+        if cachedir.endswith('/issues'):
+            cachedir = os.path.dirname(cachedir)
+        cachefile = os.path.join(cachedir, 'members.pickle')
+
+        if not os.path.isdir(cachedir):
+            os.makedirs(cachedir)
+
+        if os.path.isfile(cachefile):
+            with open(cachefile, 'rb') as f:
+                mdata = pickle.load(f)
+            ansible_members = mdata[1]
+            if mdata[0] < org.updated_at:
+                update = True
+        else:
+            update = True
+            write_cache = True
+
+        if update:
+            members = org.get_members()
+            ansible_members = [x.login for x in members]
+
+        # save the data
+        if write_cache:
+            mdata = [now, ansible_members]
+            with open(cachefile, 'wb') as f:
+                pickle.dump(mdata, f)
+
         #import epdb; epdb.st()
         return ansible_members
 
+    @ratecheck()
     def get_valid_labels(self):
+
+        # use the repo wrapper to enable caching+updating
+        self.gh = self._connect()
+        self.ghw = GithubWrapper(self.gh)
+        self.repo = self.ghw.get_repo(self._get_repo_path())
+
         vlabels = []
-        self.repo = self._connect().get_repo("ansible/ansible-modules-%s" %
-                                        self.github_repo)
         for vl in self.repo.get_labels():
             vlabels.append(vl.name)
         return vlabels
 
     def _get_maintainers(self, usecache=True):
         """Reads all known maintainers from files and their owner namespace"""
+        #import epdb; epdb.st()
         if not self.maintainers or not usecache:
             for repo in ['core', 'extras']:
                 f = open(MAINTAINERS_FILES[repo])
@@ -162,14 +323,48 @@ class DefaultTriager(object):
                     maintainers_string = (line.split(': ')[-1]).strip()
                     self.maintainers[owner_space] = maintainers_string.split(' ')
                 f.close()
-            # meta is special
-            self.maintainers['meta'] = ['ansible']
+        # meta is special
+        self.maintainers['meta'] = ['ansible']
+
         return self.maintainers
 
     def debug(self, msg=""):
         """Prints debug message if verbosity is given"""
         if self.verbose:
             print("Debug: " + msg)
+
+    def get_ansible_version(self):
+        aversion = None
+
+        rawdata = self.template_data.get('ansible version', '')
+        if rawdata:
+            aversion = self.version_indexer.strip_ansible_version(rawdata)
+
+        if not aversion or aversion == 'devel':
+            aversion = self.version_indexer.ansible_version_by_date(self.issue.instance.created_at)
+
+        if aversion:
+            if aversion.endswith('.'):
+                aversion += '0'
+
+        # re-run for versions ending with .x
+        if aversion:
+            if aversion.endswith('.x'):
+                aversion = self.version_indexer.strip_ansible_version(aversion)
+                #import epdb; epdb.st()
+
+        #import epdb; epdb.st()
+        if self.version_indexer.is_valid_version(aversion) and aversion != None:
+            return aversion
+        else:
+            print('INVALID: %s' % aversion)
+            import epdb; epdb.st()
+
+        #import epdb; epdb.st()
+        return aversion
+
+    def get_ansible_version_major_minor(self):
+        return self.version_indexer.get_major_minor(self.ansible_version)
 
     def get_module_maintainers(self, expand=True):
         """Returns the list of maintainers for the current module"""
@@ -186,7 +381,11 @@ class DefaultTriager(object):
             self.module_maintainers = []
             return self.module_maintainers
 
-        mdata = self.module_indexer.find_match(module)
+        if self.match:
+            mdata = self.match
+        else:
+            mdata = self.module_indexer.find_match(module)
+
         if mdata['repository'] != self.github_repo:
             # this was detected and handled in the process loop
             pass
@@ -197,7 +396,9 @@ class DefaultTriager(object):
         else:
             maintainers = self._get_maintainers()
 
-        if mdata['repo_filename'] in maintainers:
+        if mdata['name'] in maintainers:
+            self.module_maintainers = maintainers[mdata['name']]
+        elif mdata['repo_filename'] in maintainers:
             self.module_maintainers = maintainers[mdata['repo_filename']]
         elif (mdata['deprecated_filename']) in maintainers:
             self.module_maintainers = maintainers[mdata['deprecated_filename']]
@@ -229,6 +430,7 @@ class DefaultTriager(object):
 
     def create_actions(self):
         pass
+
 
     def component_from_comments(self):
         """Extracts a component name from special comments"""
@@ -280,7 +482,8 @@ class DefaultTriager(object):
        
 
     def get_current_time(self):
-        now = datetime.now()
+        #now = datetime.now()
+        now = datetime.utcnow()
         #now = datetime.now(pytz.timezone('US/Pacific'))
         #import epdb; epdb.st()
         return now
@@ -352,32 +555,33 @@ class DefaultTriager(object):
             if current_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
                 self.issue.add_desired_label(name=current_label)
 
-    def add_desired_labels_by_issue_type(self):
+    def add_desired_labels_by_issue_type(self, comments=True):
         """Adds labels by defined issue type"""
         issue_type = self.template_data.get('issue type', False)
 
         if issue_type is False:
             self.issue.add_desired_label('needs_info')
-            #self.issue.add_desired_comment(
-            #    boilerplate="issue_missing_data"
-            #)            
             return
 
         if not issue_type.lower() in self.VALID_ISSUE_TYPES:
             self.issue.add_desired_label('needs_info')
-            #self.issue.add_desired_comment(
-            #    boilerplate="issue_missing_data"
-            #)            
             return
 
         desired_label = issue_type.replace(' ', '_')        
         desired_label = desired_label.lower()
         desired_label = desired_label.replace('documentation', 'docs')
+
+        # is there a mutually exclusive label already?
+        if desired_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
+            mel = [x for x in self.issue.MUTUALLY_EXCLUSIVE_LABELS \
+                   if x in self.issue.current_labels]
+            if len(mel) > 0:
+                return
+
         if desired_label not in self.issue.get_current_labels():
             self.issue.add_desired_label(name=desired_label)
-        if len(self.issue.current_comments) == 0:
+        if len(self.issue.current_comments) == 0 and comments:
             # only set this if no other comments
-            #self.issue.add_desired_comment(boilerplate='issue_%s' % desired_label)
             self.issue.add_desired_comment(boilerplate='issue_new')
 
     def add_desired_labels_by_ansible_version(self):
@@ -429,6 +633,13 @@ class DefaultTriager(object):
         missing_sections = [x for x in self.issue.REQUIRED_SECTIONS \
                             if not x in self.template_data \
                             or not self.template_data.get(x)]
+
+        if not self.match and missing_sections:
+            # be lenient on component name for ansible/ansible
+            if self.github_repo == 'ansible' and 'component name' in missing_sections:
+                missing_sections.remove('component name')
+            #if missing_sections:
+            #    import epdb; epdb.st()
 
         issue_type = self.template_data.get('issue type', None)
         if issue_type:
@@ -537,17 +748,31 @@ class DefaultTriager(object):
     def check_safe_match(self):
         """ Turn force on or off depending on match characteristics """
 
+        safe_match = False
+
         if self.action_count() == 0:
-            self.force = True
+            #self.force = True
+            safe_match = True
+
+        elif not self.actions['close'] and not self.actions['unlabel']:
+            if len(self.actions['newlabel']) == 1:
+                if self.actions['newlabel'][0].startswith('affects_'):
+                    safe_match = True
+
+            #if not safe_match:
+            #    print("add labels only")
+            #    import epdb; epdb.st()
+
         else:
             safe_match = False
             if self.module:
                 if self.module in self.issue.instance.title.lower():
                     safe_match = True
-            if safe_match:
-                self.force = True
-            else:
-                self.force = False
+
+        if safe_match:
+            self.force = True
+        else:
+            self.force = False
 
     def action_count(self):
         """ Return the number of actions that are to be performed """
@@ -617,6 +842,7 @@ class DefaultTriager(object):
 
     def execute_actions(self):
         """Turns the actions into API calls"""
+
         #time.sleep(1)
         for comment in self.actions['comments']:
             self.debug(msg="API Call comment: " + comment)
@@ -634,10 +860,14 @@ class DefaultTriager(object):
 
 
     def smart_match_module(self):
+        '''Fuzzy matching for modules'''
+
+        if hasattr(self, 'meta'):
+            self.meta['smart_match_module_called'] = True
+
         match = None
         known_modules = []
-        #if not self.module_indexer.modules:
-        #    import epdb; epdb.st()
+
         for k,v in self.module_indexer.modules.iteritems():
             known_modules.append(v['name'])
 
@@ -656,6 +886,8 @@ class DefaultTriager(object):
             cmatches = [x for x in known_modules if x in component]
             cmatches = [x for x in cmatches if not '_' + x in component]
 
+            import epdb; epdb.st()
+
             # use title ... ?
             if title_matches:
                 cmatches = [x for x in cmatches if x in title_matches]
@@ -671,13 +903,38 @@ class DefaultTriager(object):
                         #import epdb; epdb.st()
                         pass
 
+        #import epdb; epdb.st()
         if not match:
             if len(title_matches) == 1:
                 match = title_matches[0]
             else:
-                print("TITLE MATCHES: %s" % title_matches)
-                print("COMPONENT MATCHES: %s" % cmatches)
-                #import epdb; epdb.st()
+                print("module - title matches: %s" % title_matches)
+                print("module - component matches: %s" % cmatches)
 
-        #import epdb; epdb.st()
         return match
+
+    def cache_issue(self, issue):
+        iid = issue.instance.number
+        fpath = os.path.join(self.cachedir, str(iid))
+        if not os.path.isdir(fpath):
+            os.makedirs(fpath)
+        fpath = os.path.join(fpath, 'iwrapper.pickle')
+        with open(fpath, 'wb') as f:
+            pickle.dump(issue, f)
+        #import epdb; epdb.st()
+
+    def load_cached_issues(self, state='open'):
+        issues = []
+        idirs = glob.glob('%s/*' % self.cachedir)
+        idirs = [x for x in idirs if not x.endswith('.pickle')]
+        for idir in idirs:
+            wfile = os.path.join(idir, 'iwrapper.pickle')
+            if os.path.isfile(wfile):
+                with open(wfile, 'rb') as f:
+                    wrapper = pickle.load(f)
+                    issues.append(wrapper.instance)
+        return issues
+
+    def wait_for_rate_limit(self):
+        gh = self._connect()
+        GithubWrapper.wait_for_rate_limit(githubobj=gh)        

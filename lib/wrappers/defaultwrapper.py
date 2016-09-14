@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import json
 import os
+import pickle
 import sys
 import time
 from datetime import datetime
@@ -69,7 +70,8 @@ class DefaultWrapper(object):
 
     REQUIRED_SECTIONS = []
 
-    def __init__(self, repo=None, issue=None):
+    def __init__(self, repo=None, issue=None, cachedir=None):
+        self.cachedir = cachedir
         self.repo = repo
         self.instance = issue
         self.number = self.instance.number
@@ -84,30 +86,117 @@ class DefaultWrapper(object):
         self.current_state = 'open'
         self.desired_state = 'open'
 
+    def get_current_time(self):
+        return datetime.utcnow()
+
     def get_comments(self):
         """Returns all current comments of the PR"""
-        if not self.current_comments:
-            self.current_comments = [x for x in self.instance.get_comments()]
-            self.current_comments.reverse()
-            #print("GOT %s COMMENTS" % len(self.current_comments))
-            for x in self.current_comments:
-                body = x.body
-                lines = body.split('\n')
-                if lines[-1].startswith('<!---') \
-                    and lines[-1].endswith('--->') \
-                    and 'boilerplate:' in lines[-1]:
-                    parts = lines[-1].split()
-                    boilerplate = parts[2]
-                    self.current_bot_comments.append(boilerplate)
-                else:
-                    self.current_bot_comments.append('')
+
+        comments = self.load_update_fetch('comments')
+
+        self.current_comments = [x for x in comments]
+        self.current_comments.reverse()
+        for x in self.current_comments:
+            body = x.body
+            lines = body.split('\n')
+            if lines[-1].startswith('<!---') \
+                and lines[-1].endswith('--->') \
+                and 'boilerplate:' in lines[-1]:
+                parts = lines[-1].split()
+                boilerplate = parts[2]
+                self.current_bot_comments.append(boilerplate)
+            else:
+                self.current_bot_comments.append('')
+
         return self.current_comments
 
     def get_events(self):
-        if not self.current_events:
-            self.current_events = \
-                [x for x in self.instance.get_events()]
+        self.current_events = self.load_update_fetch('events')
         return self.current_events
+
+    def load_update_fetch(self, property_name):
+        '''Fetch a property for an issue object'''
+
+        # A pygithub issue object has methods such as ...
+        #   - get_events()
+        #   - get_comments()
+        # Those methods return a list with no update() property, 
+        # so we can't take advantage of the caching scheme used
+        # for the issue it's self. Instead this function calls
+        # those methods by their given name, and write the data
+        # to a pickle file with a timestamp for the fetch time.
+        # Upon later loading of the pickle, the timestamp is 
+        # compared to the issue's update_at timestamp and if the
+        # pickle data is behind, the process will be repeated.
+
+        edata = None
+        events = []
+        updated = None
+        update = False
+        write_cache = False
+
+        try:
+            pfile = os.path.join(self.cachedir, 'issues', str(self.instance.number), '%s.pickle' % property_name)
+        except Exception as e:
+            print(e)
+            import epdb; epdb.st()
+        pdir = os.path.dirname(pfile)
+
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
+
+        ## DEBUG ...
+        #if os.path.isfile(pfile):
+        #    os.remove(pfile) 
+
+        if os.path.isfile(pfile):
+            try:
+                with open(pfile, 'rb') as f:
+                    edata = pickle.load(f)
+            except Exception as e:
+                update = True
+                write_cache = True
+
+        # check the timestamp on the cache
+        if edata:
+            updated = edata[0]
+            events = edata[1]
+            if updated < self.instance.updated_at:
+                update = True
+                write_cache = True
+
+        # pull all events if timestamp is behind or no events cached
+        if update or not events:        
+            write_cache = True
+            updated = self.get_current_time()
+            try:
+                methodToCall = getattr(self.instance, 'get_' + property_name)
+            except Exception as e:
+                print(e)
+                import epdb; epdb.st()
+            events = [x for x in methodToCall()]
+
+        if write_cache or not os.path.isfile(pfile):
+            # need to dump the pickle back to disk
+            edata = [updated, events]
+            with open(pfile, 'wb') as f:
+                pickle.dump(edata, f)
+        
+        return events
+
+
+    def get_assignee(self):
+        assignee = None
+        if self.instance.assignee == None:
+            pass
+        elif type(self.instance.assignee) != list:
+            assignee = self.instance.assignee.login
+        else:
+            assignee = []
+            for x in self.instance.assignee:
+                assignee.append(x.login)
+            import epdb; epdb.st()
+        return assignee
 
     def get_reactions(self):
         # https://developer.github.com/v3/reactions/
@@ -164,6 +253,12 @@ class DefaultWrapper(object):
         if name and name not in self.desired_labels:
             self.process_mutually_exclusive_labels(name=name)
             self.desired_labels.append(name)
+
+    def pop_desired_label(self, name=None):
+        """Deletes a label to the desired labels list"""
+        if name in self.desired_labels:
+            self.desired_labels.remove(name)
+
 
     def is_labeled_for_interaction(self):
         """Returns True if issue is labeld for interaction"""

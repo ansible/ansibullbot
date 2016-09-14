@@ -24,12 +24,7 @@ class ModuleIndexer(object):
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
 
-    def _find_match(self, pattern):
-        '''
-        if pattern == 'docker':
-            pattern = 'lib/ansible/modules/core/cloud/docker/_docker.py'
-            return self.modules[pattern]
-        '''
+    def _find_match(self, pattern, exact=False):
 
         match = None
         for k,v in self.modules.iteritems():
@@ -42,7 +37,7 @@ class ModuleIndexer(object):
                 if k == pattern:
                     match = v
                     break
-        if not match:
+        if not match and not exact:
             # search by properties
             for k,v in self.modules.iteritems():
                 for subkey in v.keys():
@@ -53,13 +48,12 @@ class ModuleIndexer(object):
                     break
         return match
 
-    def find_match(self, pattern):
-        #if pattern == 'docker':
-        #    import epdb; epdb.st()
+    def find_match(self, pattern, exact=False):
+        '''Exact module name matching'''
         if not pattern:
             return None
-        match = self._find_match(pattern)
-        if not match:
+        match = self._find_match(pattern, exact=exact)
+        if not match and not exact:
             # check for just the basename
             #   2617: ansible-s-extras/network/cloudflare_dns.py
             bname = os.path.basename(pattern)
@@ -278,3 +272,51 @@ class ModuleIndexer(object):
                             word = word.replace('@', '', 1)
                             authors.append(word)
         return authors
+
+
+    def fuzzy_match(self, repo=None, title=None, component=None):
+        '''Fuzzy matching for modules'''
+
+        match = None
+        known_modules = []
+
+        for k,v in self.modules.iteritems():
+            known_modules.append(v['name'])
+
+        title = title.lower()
+        title = title.replace(':', '')
+        title_matches = [x for x in known_modules if x + ' module' in title]
+
+        if not title_matches:
+            title_matches = [x for x in known_modules if title.startswith(x + ' ')]
+            if not title_matches:
+                title_matches = [x for x in known_modules if  ' ' + x + ' ' in title]
+
+        # don't do singular word matching in title for ansible/ansible
+        cmatches = None
+        if component:        
+            cmatches = [x for x in known_modules if x in component]
+            cmatches = [x for x in cmatches if not '_' + x in component]
+
+            # use title ... ?
+            if title_matches:
+                cmatches = [x for x in cmatches if x in title_matches]
+
+            if cmatches:
+                if len(cmatches) >= 1:
+                    match = cmatches[0]
+                if not match:
+                    if 'docs.ansible.com' in component:
+                        pass
+                    else:
+                        pass
+                print("module - component matches: %s" % cmatches)
+
+        if not match:
+            if len(title_matches) == 1:
+                match = title_matches[0]
+            else:
+                print("module - title matches: %s" % title_matches)
+
+        #import epdb; epdb.st()
+        return match
