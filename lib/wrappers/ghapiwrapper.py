@@ -16,15 +16,50 @@ from datetime import datetime
 def ratecheck():
     def decorator(func):
         def wrapper(*args, **kwargs):
+
+	    #(Epdb) pp args
+	    #(<lib.triagers.issuetriager.TriageIssues object at 0x7ff5c50e2a90>,)
+            caller = None
+            if args:
+                caller = args[0]
+
             result = None
-            try:
-                result = func(*args, **kwargs)
-            except GithubException as ge:
-                print(ge)
-                import epdb; epdb.st()
+            retries = 0
+
+            while True:
+
+                # abort everything if we've hit the limit
+                if retries > 10:
+                    raise Exception('Max retries exceeded [%s|%s' % (retries, 10))
+
+                try:
+                    result = func(*args, **kwargs)
+                    break
+
+                except GithubException as ge:
+                    print(ge)
+                    data = ge[1]
+                    msg = data.get('msg', '')
+
+                    if 'blocked from content creation' in msg:
+                        # https://github.com/octokit/octokit.net/issues/638
+                        # only 20 creates(POSTs) per minute?
+                        # maybe just try to sleep 5 minutes and retry?
+                        print('POST limit reached. Sleeping 5m')
+                        time.sleep(60*5)
+                    else:
+                        # Attempt to use the caller's wait_for_rate function
+                        if hasattr(caller, 'wait_for_rate_limit'):
+                            caller.wait_for_rate_limit()
+                        else:
+                            import epdb; epdb.st()
+
+                retries += 1
+
             return result
         return wrapper
     return decorator
+
 
 class GithubWrapper(object):
     def __init__(self, gh):
@@ -32,6 +67,21 @@ class GithubWrapper(object):
     def get_repo(self, repo_path):
         repo = RepoWrapper(self.gh, repo_path)
         return repo
+
+    def get_current_time(self):
+        return datetime.utcnow()
+
+    @staticmethod
+    def wait_for_rate_limit(githubobj=None):
+        rl = githubobj.get_rate_limit()
+        reset = rl.rate.reset
+        now = datetime.utcnow()
+        wait = (reset - now)
+        wait = wait.total_seconds()
+        if wait > 0:
+            print('rate limit exceeded, sleeping %s minutes' % (wait / 60))
+            time.sleep(wait)
+
 
 class RepoWrapper(object):
     def __init__(self, gh, repo_path):
@@ -130,6 +180,7 @@ class RepoWrapper(object):
                     except GithubException as e:
                         if 'rate limit exceeded' in e[1]['message']:
                             retry = True
+                            '''                            
                             print('rate limit exceeded, sleeping Xs')
                             rl = self.gh.get_rate_limit()
                             reset = rl.rate.reset
@@ -139,6 +190,8 @@ class RepoWrapper(object):
                             print('rate limit exceeded, sleeping %s minutes' \
                                   % (wait / 60))
                             time.sleep(wait)
+                            '''
+                            GithubWrapper.wait_for_rate_limit(githubobj=None)
                         elif e[1]['message'] == 'Not Found':
                             self.set_missing(exp)
                             retry = False
@@ -264,7 +317,6 @@ class RepoWrapper(object):
                 pickle.dump(edata, f)
 
         return events
-
 
     def get_current_time(self):
         return datetime.utcnow()

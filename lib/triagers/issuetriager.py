@@ -29,6 +29,7 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from lib.wrappers.ghapiwrapper import ratecheck
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.ghapiwrapper import RepoWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
@@ -126,67 +127,12 @@ class TriageIssues(DefaultTriager):
             #import epdb; epdb.st()
 
 
-
+    @ratecheck()
     def process(self, usecache=True):
         """Processes the Issue"""
 
         # basic processing
         self._process()
-
-        '''
-        # clear all actions
-        self.actions = {
-            'newlabel': [],
-            'unlabel':  [],
-            'comments': [],
-            'close': False,
-        }
-
-        # clear module maintainers
-        self.module_maintainers = []
-
-        # print some general info about the Issue to be processed
-        print("\nIssue #%s: %s" % (self.issue.number,
-                                (self.issue.instance.title).encode('ascii','ignore')))
-        print("Created at %s" % self.issue.instance.created_at)
-        print("Updated at %s" % self.issue.instance.updated_at)
-
-        # get the template data
-        self.template_data = self.issue.get_template_data()
-        # was the issue type defined correctly?
-        issue_type_defined = False
-        issue_type_valid = False
-        issue_type = False
-        if 'issue type' in self.template_data:
-            issue_type_defined = True
-            issue_type = self.template_data['issue type']
-            if issue_type.lower() in self.VALID_ISSUE_TYPES:
-                issue_type_valid = True
-
-        # was component specified?
-        component_defined = 'component name' in self.template_data
-        # extract the component
-        component = self.template_data.get('component name', None)
-        # save the real name
-        self.match = self.module_indexer.find_match(component) or {}
-        self.module = self.match.get('name', None)
-        # check if component is a known module
-        component_isvalid = self.module_indexer.is_valid(component)
-
-        # smart match modules
-        if not component_isvalid:
-            smatch = self.smart_match_module()
-            if self.module_indexer.is_valid(smatch):
-                self.module = smatch
-                component = smatch
-                self.match = self.module_indexer.find_match(smatch)
-
-        DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
-        self.issue.new_description = DF.new_description
-        #import epdb; epdb.st()
-        '''
-
-        #import epdb; epdb.st()
 
         # filed under the correct repository?
         this_repo = False

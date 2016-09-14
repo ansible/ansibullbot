@@ -842,6 +842,7 @@ class DefaultTriager(object):
 
     def execute_actions(self):
         """Turns the actions into API calls"""
+
         #time.sleep(1)
         for comment in self.actions['comments']:
             self.debug(msg="API Call comment: " + comment)
@@ -934,4 +935,6 @@ class DefaultTriager(object):
                     issues.append(wrapper.instance)
         return issues
 
-
+    def wait_for_rate_limit(self):
+        gh = self._connect()
+        GithubWrapper.wait_for_rate_limit(githubobj=gh)        
