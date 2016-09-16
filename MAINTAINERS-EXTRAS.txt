@@ -232,6 +232,8 @@ windows/win_iis_website.py: whenrik
 windows/win_iis_website.ps1: whenrik
 windows/win_nssm.py: smadam813 h0nIg
 windows/win_nssm.ps1: smadam813 h0nIg
+windows/win_owner.py: h0nIg
+windows/win_owner.ps1: h0nIg
 windows/win_package.py: trondhindenes
 windows/win_package.ps1: trondhindenes
 windows/win_regedit.py: joshludwig smadam813
