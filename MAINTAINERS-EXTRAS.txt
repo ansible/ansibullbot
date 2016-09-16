@@ -23,6 +23,7 @@ cloud/amazon/ecs_task.py: Java1Guy
 cloud/amazon/ecs_taskdefinition.py: Java1Guy rmorlok
 cloud/amazon/ecs_service.py: Java1Guy
 cloud/amazon/kinesis_stream.py: linuxdynasty
+cloud/amazon/redshift.py: j-carl
 cloud/amazon/route53_facts.py: Etherdaemon
 cloud/amazon/route53_health_check.py: zimbatm
 cloud/amazon/route53_zone.py: minichate
