@@ -16,7 +16,7 @@ The bot requires a minimal subset of information from the issue template
 * ansible version
 * summary
 
-If any of those items are missing or empty, ansibot will keep the issue in a "needs info" state until the data is provided in the issue's description. The bot is expecting a structor similar to the issue template, so please use that whenever possible.
+If any of those items are missing or empty, ansibot will keep the issue in a "needs info" state until the data is provided in the issue's description. The bot is expecting an issue description styled after the default issue template, so please use that whenever possible.
 
 
 ## For module maintainers
