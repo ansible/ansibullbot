@@ -105,9 +105,9 @@ network/basics/get_url.py: jpmens
 network/basics/slurp.py: ansible
 network/basics/uri.py: romeotheriault
 network/cumulus/: CumulusNetworks privateip gundalow
-network/dnos6/: dhivyap skg-net privateip gundalow
-network/dnos9/: dhivyap skg-net privateip gundalow
-network/dnos10/: dhivyap skg-net privateip gundalow
+network/dellos6/: dhivyap skg-net privateip gundalow
+network/dellos9/: dhivyap skg-net privateip gundalow
+network/dellos10/: dhivyap skg-net privateip gundalow
 network/eos/: privateip gundalow
 network/ios/: privateip gundalow
 network/iosxr/: privateip gundalow
