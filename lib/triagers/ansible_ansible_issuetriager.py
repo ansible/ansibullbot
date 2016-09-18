@@ -84,7 +84,8 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
     def get_current_state(self):
         '''Generate a synthetic state based on desired labels'''
-        choices = ['triage', 'needs_info']
+        #choices = ['triage', 'needs_info']
+        choices = ['needs_info']
         choices = [x for x in choices if x in self.issue.desired_labels]
         choices = [x for x in choices if x not in self.actions['unlabel']]
 
@@ -95,7 +96,9 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             state = 'waiting on submitter'
         else:
             # should not happen ...
-            import epdb; epdb.st()
+            print("ERROR: >1 STATE FOUND")
+            sys.exit(1)
+            #import epdb; epdb.st()
         return state
         
 
