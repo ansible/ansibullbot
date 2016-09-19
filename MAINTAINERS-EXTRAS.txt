@@ -173,6 +173,7 @@ packaging/os/zypper_repository.py: matze robinro
 source_control/bzr.py: andreparames
 source_control/github_hooks.py: pcgentry
 source_control/gitlab_: dj-wasabi
+storage/netapp/: hulquest
 system/alternatives.py: DavidWittman mulby
 system/at.py: risaacson
 system/capabilities.py: natefoo
