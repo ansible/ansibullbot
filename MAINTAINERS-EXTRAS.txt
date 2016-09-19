@@ -168,7 +168,7 @@ packaging/os/urpmi.py: pmakowski
 packaging/os/yumrepo.py: jtyr
 packaging/os/yum_repository.py: jtyr
 packaging/os/zypper.py: robinro
-packaging/os/zypper_repository.py: matze
+packaging/os/zypper_repository.py: matze robinro
 source_control/bzr.py: andreparames
 source_control/github_hooks.py: pcgentry
 source_control/gitlab_: dj-wasabi
