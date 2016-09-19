@@ -48,7 +48,8 @@ ALIAS_LABELS = {
         'community_review_owner_pr',
     ],
     'shipit': [
-        'shipit_owner_pr'
+        'shipit_owner_pr',
+        'shipit_by_ansible_member'
     ],
     'needs_revision': [
         'needs_revision_not_mergeable'
@@ -573,7 +574,7 @@ class TriagePullRequests:
                 if ("shipit" in comment.body or "+1" in comment.body
                     or "LGTM" in comment.body):
                     self.debug(msg="...said shipit!")
-                    self.pull_request.add_desired_label(name="shipit")
+                    self.pull_request.add_desired_label(name="shipit_by_ansible_member")
                     break
 
                 elif "needs_revision" in comment.body:
