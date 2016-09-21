@@ -97,6 +97,7 @@ monitoring/stackdriver.py: bwhaley
 monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
 network/a10/: mischapeters
+network/asa/: gundalow privateip 
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
