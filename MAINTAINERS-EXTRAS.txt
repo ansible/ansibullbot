@@ -53,9 +53,10 @@ cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson
 cloud/softlayer/sl_vm.py: mcltn
 cloud/smartos/: xen0l
-cloud/vmware/: chrrrles
+cloud/vmware/: jctanner
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: jcpowermac mtnbikenc
+cloud/vmware/vmware_guest: jctanner
 cloud/vmware/vmware_vm_shell.py: ritzk chrrrles
 cloud/vmware/vsphere_copy.py: dagwieers
 cloud/webfaction/: quentinsf
@@ -249,7 +250,7 @@ windows/win_uri.ps1: blakfeld
 windows/win_uri.py: blakfeld
 windows/win_unzip.py: schwartzmx
 windows/win_unzip.ps1: schwartzmx
-windows/win_updates.py: mattdavispdx
-windows/win_updates.ps1: mattdavispdx
+windows/win_updates.py: nitzmahone
+windows/win_updates.ps1: nitzmahone
 windows/win_webpicmd.py: petemounce
 windows/win_webpicmd.ps1: petemounce
