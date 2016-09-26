@@ -77,6 +77,10 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self.debug('assignee: %s' % self.issue.get_assignee())
         self.debug('comments: %s' % len(self.issue.current_comments))
         self.debug('state: %s' % self.get_current_state())
+
+        print("Total Comments: %s" % len(self.issue.current_comments))
+        self.print_comment_list()
+
         import pprint; pprint.pprint(self.actions)
         #import epdb; epdb.st()
         action_meta = self.apply_actions()
