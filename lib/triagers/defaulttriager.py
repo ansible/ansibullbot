@@ -353,15 +353,26 @@ class DefaultTriager(object):
                 aversion = self.version_indexer.strip_ansible_version(aversion)
                 #import epdb; epdb.st()
 
-        #import epdb; epdb.st()
         if self.version_indexer.is_valid_version(aversion) and aversion != None:
             return aversion
         else:
-            print('INVALID: %s' % aversion)
-            import epdb; epdb.st()
 
-        #import epdb; epdb.st()
+            # try to go through the submitter's comments and look for the
+            # first one that specifies a valid version
+            cversion = None
+            for comment in self.issue.current_comments:
+                if comment.user.login != self.issue.instance.user.login:
+                    continue
+                xver = self.version_indexer.strip_ansible_version(comment.body)
+                if self.version_indexer.is_valid_version(xver):
+                    cversion = xver
+                    break
+
+            # use the comment version
+            aversion = cversion                
+
         return aversion
+
 
     def get_ansible_version_major_minor(self):
         return self.version_indexer.get_major_minor(self.ansible_version)
