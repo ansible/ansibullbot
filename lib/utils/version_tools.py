@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import re
 import yaml
 from lib.utils.systemtools import *
@@ -30,7 +31,8 @@ class AnsibleVersionIndexer(object):
 
     def __init__(self):
         self.modules = {}
-        self.checkoutdir = '/tmp/ansible.version.checkout'
+        self.checkoutdir = '~/.ansibullbot/cache/ansible.version.checkout'
+        self.checkoutdir = os.path.expanduser(self.checkoutdir)
         self.VALIDVERSIONS = None
         self.COMMITVERSIONS = None
         self.DATEVERSIONS = None
@@ -358,6 +360,9 @@ class AnsibleVersionIndexer(object):
         #  origin/release1.6.1
         #  origin/release1.6.10
         #  origin/release1.6.2
+
+        # make sure the checkout cache is still valid
+        self.update_checkout()
 
         aversion = None
 
