@@ -127,6 +127,23 @@ class TriageIssues(DefaultTriager):
             #import epdb; epdb.st()
 
 
+    def print_comment_list(self):
+        """Print comment creators and the commands they used"""
+        for x in self.issue.current_comments:
+            if x.user.login != 'ansibot':
+                command = [y for y in self.VALID_COMMANDS if y in x.body \
+                           and not '!' + y in x.body]
+                command = ', '.join(command)
+            else:
+                # What template did ansibot use?
+                command = x.body.split('\n')[-1].split()[-2]
+
+            if command:
+                print("\t%s %s (%s)" % (x.created_at.isoformat(),
+                      x.user.login, command))
+            else:
+                print("\t%s %s" % (x.created_at.isoformat(), x.user.login))
+
     @ratecheck()
     def process(self, usecache=True):
         """Processes the Issue"""
@@ -188,11 +205,15 @@ class TriageIssues(DefaultTriager):
             % ', '.join(self.get_module_maintainers(expand=False)))
         print("Submitter: %s" % self.issue.get_submitter())
         print("Total Comments: %s" % len(self.issue.current_comments))
+        '''
         for x in self.issue.current_comments:
             print("\t%s %s %s" % (x.created_at.isoformat(),
                         x.user.login,
                         [y for y in self.VALID_COMMANDS if y in x.body \
                         and not '!' + y in x.body] or ''))
+        '''
+        self.print_comment_list()
+
         print("Current Labels: %s" % ', '.join(sorted(self.issue.current_labels)))
 
         import pprint; pprint.pprint(self.actions)
