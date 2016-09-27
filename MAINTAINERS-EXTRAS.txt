@@ -83,7 +83,7 @@ monitoring/bigpanda.py: hkariti
 monitoring/boundary_meter.py: ccollicutt
 monitoring/circonus_annotation.py: NickatEpic
 monitoring/datadog_event.py: n0ts
-monitoring/datadog_monitor.py: skornehl
+monitoring/datadog_monitor.py: skornehl jjshoe
 monitoring/librato_annotation.py: sedward
 monitoring/logentries.py: ivanvanderbyl
 monitoring/monit.py: brian-brazil dstoflet
