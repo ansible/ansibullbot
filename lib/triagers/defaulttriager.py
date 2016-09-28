@@ -426,10 +426,7 @@ class DefaultTriager(object):
         # Fallback to using the module author(s)
         if not module_maintainers and self.match:
             if self.match['authors']:
-                #FIXME - Something is setting authors in the module outside this function!
                 module_maintainers = [x for x in self.match['authors']]
-                #import pprint; pprint.pprint(module_maintainers)
-                #import epdb; epdb.st()
         return module_maintainers
 
     def get_current_labels(self):
@@ -639,9 +636,7 @@ class DefaultTriager(object):
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
-        #maintainers = self.module_maintainers
         maintainers = self.get_module_maintainers(expand=False)
-        #maintainers = self.get_module_maintainers_unexpanded()
 
         if not maintainers:
             maintainers = ['NO_MAINTAINER_FOUND'] #FIXME - why?
