@@ -41,7 +41,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
     # triage label should be added by bot, removed by human ... later by commands?
 
-    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
+    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 'bot_broken',
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
@@ -56,19 +56,13 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self._process()
 
         # unique processing workflow for this repo ...
-        #self.debug('des.labels.1: %s' % ' '.join(self.issue.desired_labels))
         self.process_history(usecache=usecache) # use events to add desired labels or comments
-        #self.debug('des.labels.2: %s' % ' '.join(self.issue.desired_labels))
         self.add_desired_labels_by_issue_type(comments=False) # only adds desired labels
-        #self.debug('des.labels.3: %s' % ' '.join(self.issue.desired_labels))
         self.keep_unmanaged_labels() # persists manual labels
-        #self.create_label_actions() # creates the label actions
         self.create_label_version_actions() # adds label for ansible version
         self.create_label_actions() # creates the label actions
-        self.debug('des.labels.4: %s' % ' '.join(self.issue.desired_labels))
         self.create_commment_actions() # renders the desired comments
 
-        # do the actions ...
         self.debug('cur.labels: %s' % ' '.join(self.issue.current_labels))
         self.debug('component: %s' % self.template_data.get('component name'))
         self.debug('match: %s' % self.match)
@@ -81,8 +75,8 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         print("Total Comments: %s" % len(self.issue.current_comments))
         self.print_comment_list()
 
+        # do the actions ...
         import pprint; pprint.pprint(self.actions)
-        #import epdb; epdb.st()
         action_meta = self.apply_actions()
         return action_meta
 
@@ -113,27 +107,6 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                 self.debug('keeping %s label' % label)
                 self.issue.add_desired_label(name=label)
 
-    ''' moved to issuetriager.py
-    def create_label_version_actions(self):
-        if not self.ansible_label_version:
-            return
-        expected = 'affects_%s' % self.ansible_label_version
-        if expected not in self.valid_labels:
-            print("NEED NEW LABEL: %s" % expected)
-            import epdb; epdb.st()
-
-        candidates = [x for x in self.issue.current_labels]
-        candidates = [x for x in candidates if x.startswith('affects_')]
-        candidates = [x for x in candidates if x != expected]
-        if len(candidates) > 0:
-            #for cand in candidates:
-            #    self.issue.pop_desired_label(name=cand)
-            return
-
-        if expected not in self.issue.current_labels:
-            self.issue.add_desired_label(name=expected)
-        #import epdb; epdb.st()
-    '''
 
     def process_history(self, usecache=True):
 
