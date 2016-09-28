@@ -378,7 +378,7 @@ class DefaultTriager(object):
         return self.version_indexer.get_major_minor(self.ansible_version)
 
 
-    def get_module_maintainers(self, expand=True, usecache=False):
+    def get_module_maintainers(self, expand=True, usecache=True):
         """Returns the list of maintainers for the current module"""
         # expand=False means don't use cache and don't expand the 'ansible' group
 
