@@ -377,6 +377,7 @@ class DefaultTriager(object):
     def get_ansible_version_major_minor(self):
         return self.version_indexer.get_major_minor(self.ansible_version)
 
+
     def get_module_maintainers(self, expand=True):
         """Returns the list of maintainers for the current module"""
         # expand=False means don't use cache and don't expand the 'ansible' group
@@ -422,10 +423,10 @@ class DefaultTriager(object):
         else:
             pass
 
+        # Fallback to using the module author(s)
         if not self.module_maintainers and self.match:
             if self.match['authors']:
                 self.module_maintainers = self.match['authors']
-
         return self.module_maintainers
 
     def get_current_labels(self):
@@ -637,7 +638,8 @@ class DefaultTriager(object):
         """Renders templates into comments using the boilerplate as filename"""
         #maintainers = self.module_maintainers
         maintainers = self.get_module_maintainers(expand=False)
-        #import epdb; epdb.st()
+        #maintainers = self.get_module_maintainers_unexpanded()
+
         if not maintainers:
             maintainers = ['NO_MAINTAINER_FOUND'] #FIXME - why?
         submitter = self.issue.get_submitter()
