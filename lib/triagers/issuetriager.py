@@ -46,7 +46,7 @@ environment = Environment(loader=loader, trim_blocks=True)
 
 class TriageIssues(DefaultTriager):
 
-    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
+    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 'bot_broken', 
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
@@ -124,7 +124,6 @@ class TriageIssues(DefaultTriager):
             # save this run time
             with open(last_run_file, 'wb') as f:
                 pickle.dump(now, f)
-            #import epdb; epdb.st()
 
 
     def print_comment_list(self):
@@ -205,20 +204,11 @@ class TriageIssues(DefaultTriager):
             % ', '.join(self.get_module_maintainers(expand=False)))
         print("Submitter: %s" % self.issue.get_submitter())
         print("Total Comments: %s" % len(self.issue.current_comments))
-        '''
-        for x in self.issue.current_comments:
-            print("\t%s %s %s" % (x.created_at.isoformat(),
-                        x.user.login,
-                        [y for y in self.VALID_COMMANDS if y in x.body \
-                        and not '!' + y in x.body] or ''))
-        '''
         self.print_comment_list()
-
         print("Current Labels: %s" % ', '.join(sorted(self.issue.current_labels)))
 
-        import pprint; pprint.pprint(self.actions)
-
         # invoke the wizard
+        import pprint; pprint.pprint(self.actions)
         action_meta = self.apply_actions()
         return action_meta
 

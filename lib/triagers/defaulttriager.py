@@ -377,20 +377,21 @@ class DefaultTriager(object):
     def get_ansible_version_major_minor(self):
         return self.version_indexer.get_major_minor(self.ansible_version)
 
-    def get_module_maintainers(self, expand=True):
+
+    def get_module_maintainers(self, expand=True, usecache=True):
         """Returns the list of maintainers for the current module"""
         # expand=False means don't use cache and don't expand the 'ansible' group
 
-        if self.module_maintainers and expand:
-            return self.module_maintainers
-        module = self.module
-        if not module:
-            self.module_maintainers = []
+        if self.module_maintainers and usecache:
             return self.module_maintainers
 
+        module_maintainers = []
+
+        module = self.module
+        if not module:
+            return module_maintainers
         if not self.module_indexer.is_valid(module):
-            self.module_maintainers = []
-            return self.module_maintainers
+            return module_maintainers
 
         if self.match:
             mdata = self.match
@@ -408,25 +409,25 @@ class DefaultTriager(object):
             maintainers = self._get_maintainers()
 
         if mdata['name'] in maintainers:
-            self.module_maintainers = maintainers[mdata['name']]
+            module_maintainers = maintainers[mdata['name']]
         elif mdata['repo_filename'] in maintainers:
-            self.module_maintainers = maintainers[mdata['repo_filename']]
+            module_maintainers = maintainers[mdata['repo_filename']]
         elif (mdata['deprecated_filename']) in maintainers:
-            self.module_maintainers = maintainers[mdata['deprecated_filename']]
+            module_maintainers = maintainers[mdata['deprecated_filename']]
         elif mdata['namespaced_module'] in maintainers:
-            self.module_maintainers = maintainers[mdata['namespaced_module']]
+            module_maintainers = maintainers[mdata['namespaced_module']]
         elif mdata['fulltopic'] in maintainers:
-            self.module_maintainers = maintainers[mdata['fulltopic']]
+            module_maintainers = maintainers[mdata['fulltopic']]
         elif (mdata['topic'] + '/') in maintainers:
-            self.module_maintainers = maintainers[mdata['topic'] + '/']
+            module_maintainers = maintainers[mdata['topic'] + '/']
         else:
             pass
 
-        if not self.module_maintainers and self.match:
+        # Fallback to using the module author(s)
+        if not module_maintainers and self.match:
             if self.match['authors']:
-                self.module_maintainers = self.match['authors']
-
-        return self.module_maintainers
+                module_maintainers = [x for x in self.match['authors']]
+        return module_maintainers
 
     def get_current_labels(self):
         """Pull the list of labels on this Issue"""
@@ -635,9 +636,8 @@ class DefaultTriager(object):
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
-        #maintainers = self.module_maintainers
         maintainers = self.get_module_maintainers(expand=False)
-        #import epdb; epdb.st()
+
         if not maintainers:
             maintainers = ['NO_MAINTAINER_FOUND'] #FIXME - why?
         submitter = self.issue.get_submitter()
