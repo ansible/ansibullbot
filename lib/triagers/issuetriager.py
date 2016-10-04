@@ -35,6 +35,7 @@ from lib.wrappers.ghapiwrapper import RepoWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.wrappers.historywrapper import HistoryWrapper
 from lib.utils.moduletools import ModuleIndexer
+from lib.utils.extractors import extract_pr_number_from_comment
 from lib.utils.extractors import extract_template_data
 from lib.utils.descriptionfixer import DescriptionFixer
 
@@ -534,8 +535,10 @@ class TriageIssues(DefaultTriager):
                 maintainer_command_resolved_bug = True
                 maintainer_command_close = True
             elif 'resolved_by_pr' in maintainer_last_comment:
+                pr_number = extract_pr_number_from_comment(maintainer_last_comment)
                 maintainer_command_resolved_pr = True
-                maintainer_command_close = True
+                if self.is_pr_merged(pr_number):
+                    maintainer_command_close = True
             elif 'needs_contributor' in maintainer_last_comment:
                 maintainer_command_needscontributor = True
             elif 'duplicate_of' in maintainer_last_comment:
@@ -862,6 +865,16 @@ class TriageIssues(DefaultTriager):
         # Did the maintainer issue a command?
         maintainer_commands = self.history.get_commands(maintainers, 
                                                         self.VALID_COMMANDS)
+
+        # handle resolved_by_pr ...
+        if 'resolved_by_pr' in maintainer_commands:
+            pr_number = extract_pr_number_from_comment(maintainer_last_comment)
+            hfacts['resolved_by_pr'] = {
+                'number': pr_number,
+                'merged': self.is_pr_merged(pr_number),
+            }            
+            #import epdb; epdb.st()
+
         # needs_info toggles
         ni_commands = [x for x in maintainer_commands if 'needs_info' in x]
 
