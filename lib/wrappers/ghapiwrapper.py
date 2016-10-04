@@ -114,9 +114,8 @@ class RepoWrapper(object):
         if issue:
             issue.update()
         else:
-            issue = self.repo.get_issue(exp)
+            issue = self.repo.get_issue(number)
         self.save_issue(issue)
-        #import epdb; epdb.st()
         return issue
 
     def get_labels(self):
