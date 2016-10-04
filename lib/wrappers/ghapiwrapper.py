@@ -112,11 +112,22 @@ class RepoWrapper(object):
     def get_issue(self, number):
         issue = self.load_issue(number)
         if issue:
-            issue.update()
+            if issue.update():
+                self.save_issue(issue)
         else:
             issue = self.repo.get_issue(number)
-        self.save_issue(issue)
+            self.save_issue(issue)
         return issue
+
+    def get_pullrequest(self, number):
+        pr = self.load_pullrequest(number)
+        if pr:
+            if pr.update():
+                self.save_pr(pr)
+        else:
+            pr = self.repo.get_pull(number)
+            self.save_pr(pr)
+        return pr
 
     def get_labels(self):
         return self.load_update_fetch('labels')
@@ -251,6 +262,14 @@ class RepoWrapper(object):
         else:
             return False
 
+    def load_pullrequest(self, number):
+        pfile = os.path.join(self.cachedir, 'issues', str(number), 'pullrequest.pickle')
+        if os.path.isfile(pfile):
+            with open(pfile, 'rb') as f:
+                issue = pickle.load(f)
+            return issue
+        else:
+            return False
 
     def save_issues(self, issues):
         for issue in issues:
@@ -264,6 +283,13 @@ class RepoWrapper(object):
         with open(cfile, 'wb') as f:
             pickle.dump(issue, f)
 
+    def save_pullrequest(self, issue):
+        cfile = os.path.join(self.cachedir, 'issues', str(issue.number), 'pullrequest.pickle')
+        cdir = os.path.dirname(cfile)
+        if not os.path.isdir(cdir):
+            os.makedirs(cdir)
+        with open(cfile, 'wb') as f:
+            pickle.dump(issue, f)
 
     def load_update_fetch(self, property_name):
         '''Fetch a get() property for an object'''

@@ -173,3 +173,29 @@ def _remove_markdown_comments(rawtext):
     return ''.join(cleaned)
 
 
+def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
+    # "resolved_by_pr 5136" --> 5136
+    # "resolved_by_pr #5136" --> 5136
+    # "resolved_by_pr https://github.com/ansible/ansible/issues/5136" --> 5136
+    # "resolved_by_pr https://github.com/ansible/ansible/issues/5136" --> 5136
+    index = rawtext.find(command)
+    index += len(command)
+    data = rawtext[index:]
+    data = data.strip()
+    words = data.split()    
+    
+    number = words[0]
+    if number.isdigit():
+        number = int(number)
+    elif number.startswith('#'):
+        number = number[1:]
+        number = int(number)
+    elif number.startswith('http'):
+        urlparts = number.split('/')
+        number = urlparts[-1]        
+        number = int(number)
+    else:
+        print('NOT SURE HOW TO PARSE %s' % rawtext)
+        import epdb; epdb.st()
+
+    return number
