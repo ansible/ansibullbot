@@ -865,6 +865,16 @@ class TriageIssues(DefaultTriager):
         # Did the maintainer issue a command?
         maintainer_commands = self.history.get_commands(maintainers, 
                                                         self.VALID_COMMANDS)
+
+        # handle resolved_by_pr ...
+        if 'resolved_by_pr' in maintainer_commands:
+            pr_number = extract_pr_number_from_comment(maintainer_last_comment)
+            hfacts['resolved_by_pr'] = {
+                'number': pr_number,
+                'merged': self.is_pr_merged(pr_number),
+            }            
+            #import epdb; epdb.st()
+
         # needs_info toggles
         ni_commands = [x for x in maintainer_commands if 'needs_info' in x]
 

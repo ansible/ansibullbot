@@ -125,6 +125,13 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
             self.issue.add_desired_label('bot_broken')
 
+        elif 'resolved_by_pr' in self.meta:
+
+            self.debug(msg='resolved_by_pr stanza')
+
+            if self.meta['resolved_by_pr']['merged']:
+                self.actions['close'] = True
+
         elif (self.match and (self.github_repo != self.match.get('repository', 'ansible')))\
             or 'needs_to_be_moved' in self.issue.current_labels:
 
