@@ -183,7 +183,10 @@ class DefaultTriager(object):
         self.meta['issue_type_defined'] = issue_type_defined
         self.meta['issue_type_valid'] = issue_type_valid
         self.meta['issue_type'] = issue_type
-
+        if self.meta['issue_type_valid']:
+            self.meta['issue_type_label'] = self.issue_type_to_label(issue_type)
+        else:
+            self.meta['issue_type_label'] = None
 
         # What is the ansible version?
         self.ansible_version = self.get_ansible_version()
