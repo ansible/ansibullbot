@@ -81,6 +81,7 @@ class DefaultWrapper(object):
         self.current_events = []
         self.current_comments = []
         self.current_bot_comments = []
+        self.last_bot_comment = None
         self.current_reactions = []
         self.desired_comments = []
         self.current_state = 'open'
@@ -96,17 +97,21 @@ class DefaultWrapper(object):
 
         self.current_comments = [x for x in comments]
         self.current_comments.reverse()
-        for x in self.current_comments:
+
+        # look for any comments made by the bot
+        for idx,x in enumerate(self.current_comments):
             body = x.body
             lines = body.split('\n')
+            lines = [y.strip() for y in lines if y.strip()]
+    
             if lines[-1].startswith('<!---') \
                 and lines[-1].endswith('--->') \
-                and 'boilerplate:' in lines[-1]:
+                and 'boilerplate:' in lines[-1]\
+                and x.user.login == 'ansibot':
+
                 parts = lines[-1].split()
                 boilerplate = parts[2]
                 self.current_bot_comments.append(boilerplate)
-            else:
-                self.current_bot_comments.append('')
 
         return self.current_comments
 
