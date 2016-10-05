@@ -729,7 +729,6 @@ class TriageIssues(DefaultTriager):
         elif not valid_module and not maintainer_command_needsinfo:
             self.debug(msg='invalid module stanza')
 
-            #import epdb; epdb.st()
             self.issue.add_desired_label('needs_info')
             if 'issue_invalid_module' not in self.issue.current_bot_comments \
                 and not 'issue_needs_info' in self.issue.current_bot_comments:
@@ -782,9 +781,15 @@ class TriageIssues(DefaultTriager):
                 or (not needsinfo_remove and missing_sections) \
                 or (needsinfo_add and not missing_sections): 
 
+
+                #import epdb; epdb.st()
                 self.issue.add_desired_label('needs_info')
                 if len(self.issue.current_comments) == 0 or not maintainer_commented:
-                    self.issue.add_desired_comment("issue_needs_info")
+                    if self.issue.current_bot_comments:
+                        if 'issue_needs_info' not in self.issue.current_bot_comments:
+                            self.issue.add_desired_comment("issue_needs_info")
+                    else:
+                        self.issue.add_desired_comment("issue_needs_info")
 
                 # needs_info: warn if stale, close if expired
                 elif needsinfo_expired:
