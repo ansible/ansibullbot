@@ -234,8 +234,19 @@ class TriageIssues(DefaultTriager):
             if self.issue.desired_state == 'closed':
                 # close the issue ...
                 self.actions['close'] = True
+
+                # We only want up to 1 comment when an issue is closed
                 if 'issue_closure' in self.issue.desired_comments:
-                    comment = self.render_comment(boilerplate='issue_closure')
+                    self.issue.desired_comments = ['issue_closure']
+                elif 'issue_deprecated_module' in self.issue.desired_comments:
+                    self.issue.desired_comments = ['issue_deprecated_module']
+                else:
+                    self.issue.desired_comments = []
+
+                if self.issue.desired_comments:
+                    comment = self.render_comment(
+                                boilerplate=self.issue.desired_comments[0]
+                              )
                     self.actions['comments'].append(comment)
                 return
 
@@ -400,6 +411,8 @@ class TriageIssues(DefaultTriager):
 
 
     def process_history(self, usecache=True):
+        '''Steps through all known meta about the issue and decides what to do'''
+
         self.meta = {}
         today = self.get_current_time()
 
@@ -428,7 +441,6 @@ class TriageIssues(DefaultTriager):
         # DEBUG + FIXME - speeds up bulk triage
         if 'component name' in missing_sections and self.match:
             missing_sections.remove('component name')
-        #import epdb; epdb.st()
 
         # Is this a valid module?
         valid_module = False
@@ -437,7 +449,6 @@ class TriageIssues(DefaultTriager):
             valid_module = True
             if self.match['repository'] != self.github_repo:
                 correct_repo = False
-            #import epdb; epdb.st()
 
         # Do these after evaluating the module
         self.add_desired_labels_by_issue_type()
@@ -473,12 +484,10 @@ class TriageIssues(DefaultTriager):
             notification_maintainers.remove('ansibot')
         maintainer_last_notified = self.history.\
                     last_notified(notification_maintainers)
-        #import epdb; epdb.st()
 
         # Has maintainer viewed issue?
         maintainer_viewed = self.history.has_viewed(maintainers)
         maintainer_last_viewed = self.history.last_viewed_at(maintainers)
-        #import epdb; epdb.st()
 
         # Has maintainer been mentioned?
         maintainer_mentioned = self.history.is_mentioned(maintainers)
@@ -631,7 +640,6 @@ class TriageIssues(DefaultTriager):
         maintainer_to_ping = False
         maintainer_to_reping = False
         if maintainer_waiting_on:
-            #import epdb; epdb.st()
             if maintainer_viewed and not maintainer_last_notified:
                 time_delta = today - maintainer_last_viewed
                 view_age = time_delta.days
@@ -683,6 +691,17 @@ class TriageIssues(DefaultTriager):
         if bot_broken:
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
+
+        elif self.match and self.match.get('deprecated', False) \
+            and 'feature_idea' in self.issue.desired_labels:
+
+            self.debug(msg='deprecated module stanza')
+
+            # Make the deprecated comment
+            self.issue.desired_comments = ['issue_deprecated_module']
+
+            # Close the issue ...
+            self.issue.set_desired_state('closed')
 
         elif maintainer_command_close:
 
@@ -764,7 +783,6 @@ class TriageIssues(DefaultTriager):
                 or (needsinfo_add and not missing_sections): 
 
                 self.issue.add_desired_label('needs_info')
-                #import epdb; epdb.st()
                 if len(self.issue.current_comments) == 0 or not maintainer_commented:
                     self.issue.add_desired_comment("issue_needs_info")
 
@@ -775,12 +793,10 @@ class TriageIssues(DefaultTriager):
                 elif needsinfo_stale \
                     and (submitter_to_ping or submitter_to_reping):
                     self.issue.add_desired_comment("issue_pending_closure")
-                #import epdb; epdb.st()
-        #import epdb; epdb.st()
 
 
     def get_history_facts(self, usecache=True):
-
+        '''Only used by the ansible/ansible triager at the moment'''
         hfacts = {}
         today = self.get_current_time()
         
@@ -873,7 +889,6 @@ class TriageIssues(DefaultTriager):
                 'number': pr_number,
                 'merged': self.is_pr_merged(pr_number),
             }            
-            #import epdb; epdb.st()
 
         # needs_info toggles
         ni_commands = [x for x in maintainer_commands if 'needs_info' in x]

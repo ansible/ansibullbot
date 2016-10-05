@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import shutil
 import yaml
 from lib.utils.systemtools import *
 
@@ -11,18 +12,41 @@ class ModuleIndexer(object):
 
     def create_checkout(self):
         """checkout ansible"""
-        cmd = "git clone http://github.com/ansible/ansible --recursive %s" % self.checkoutdir
+
+        print('# creating checkout for module indexer')
+
+        # cleanup
+        if os.path.isdir(self.checkoutdir):
+            shutil.rmtree(self.checkoutdir)
+
+        cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
+                % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
 
     def update_checkout(self):
         """rebase + pull + update the checkout"""
+
+        print('# updating checkout for module indexer')
+        success = True
+
         cmd = "cd %s ; git pull --rebase" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
+
+        # If rebase failed, recreate the checkout
+        if rc != 0:
+            self.create_checkout()
+            return
+
         cmd = "cd %s ; git submodule update --recursive" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
+
+        # if update fails, recreate the checkout
+        if rc != 0:
+            self.create_checkout()
+
 
     def _find_match(self, pattern, exact=False):
 
@@ -110,6 +134,7 @@ class ModuleIndexer(object):
         for match in matches:
             mdict = {}
             mdict['authors'] = []
+            mdict['deprecated'] = False
 
             mdict['filename'] = os.path.basename(match)
 
@@ -148,6 +173,7 @@ class ModuleIndexer(object):
 
             # deprecated modules
             if mname.startswith('_'):
+                mdict['deprecated'] = True
                 deprecated_filename = \
                     os.path.dirname(mdict['namespaced_module'])
                 deprecated_filename = \
@@ -171,6 +197,7 @@ class ModuleIndexer(object):
         self.modules['meta']['authors'] = []
         self.modules['meta']['name'] = 'meta'
         self.modules['meta']['namespaced_module'] = None
+        self.modules['meta']['deprecated'] = False
         self.modules['meta']['deprecated_filename'] = None
         self.modules['meta']['dirpath'] = None
         self.modules['meta']['filename'] = None
@@ -186,6 +213,7 @@ class ModuleIndexer(object):
         newitems = []
         for k,v in self.modules.iteritems():
             if v['name'].startswith('_'):
+                
                 dkey = os.path.dirname(v['filepath'])
                 dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
                 if not dkey in self.modules:
