@@ -430,6 +430,8 @@ class DefaultTriager(object):
         if not module_maintainers and self.match:
             if self.match['authors']:
                 module_maintainers = [x for x in self.match['authors']]
+
+        #import epdb; epdb.st()
         return module_maintainers
 
     def get_current_labels(self):

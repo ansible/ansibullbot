@@ -781,6 +781,7 @@ class TriageIssues(DefaultTriager):
                             self.issue.desired_comments.remove('issue_new')
             else:
                 # old issue -- renotify
+                import epdb; epdb.st()
                 if not self.match['deprecated'] and self.meta['notification_maintainers']:
                     if self.meta['maintainer_to_ping']:
                         self.issue.add_desired_comment("issue_notify_maintainer")
@@ -827,7 +828,11 @@ class TriageIssues(DefaultTriager):
         hfacts = {}
         today = self.get_current_time()
         
-        self.history = HistoryWrapper(self.issue, usecache=usecache, cachedir=self.cachedir)
+        self.history = HistoryWrapper(
+                        self.issue, 
+                        usecache=usecache, 
+                        cachedir=self.cachedir
+                       )
 
         # what was the last commment?
         bot_broken = False
@@ -880,6 +885,7 @@ class TriageIssues(DefaultTriager):
         # Who are the maintainers?
         maintainers = [x for x in self.get_module_maintainers()]
         #hfacts['maintainers'] = maintainers
+        #import epdb; epdb.st()
 
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
@@ -891,12 +897,12 @@ class TriageIssues(DefaultTriager):
         maintainers = sorted(set(maintainers))
 
         # Has maintainer been notified? When?
-        notification_maintainers = self.get_module_maintainers()
+        notification_maintainers = [x for x in self.get_module_maintainers()]
         if 'ansible' in notification_maintainers:
             notification_maintainers.extend(self.ansible_members)
         if 'ansibot' in notification_maintainers:
             notification_maintainers.remove('ansibot')
-        hfacts['notification_maintainers'] = maintainers
+        hfacts['notification_maintainers'] = notification_maintainers
         maintainer_last_notified = self.history.\
                     last_notified(notification_maintainers)
 

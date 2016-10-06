@@ -25,7 +25,7 @@ from github import GithubObject
 
 class HistoryWrapper(object):
 
-    def __init__(self, issue, usecache=True, cachedir=None):
+    def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
         self.issue = issue
         self.maincache = cachedir
         self.cachefile = os.path.join(self.maincache, str(issue.instance.number), 'history.pickle')
@@ -44,6 +44,13 @@ class HistoryWrapper(object):
                 else:
                     self.history = self.process()
                     self._dump_cache()
+
+        if exclude_users:
+            tmp_history = [x for x in self.history]
+            for x in tmp_history:
+                if x['actor'] in exclude_users:
+                    self.history.remove(x)
+        #import epdb; epdb.st()
 
     def _load_cache(self):
         if not os.path.isdir(self.cachedir):
