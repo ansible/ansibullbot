@@ -138,13 +138,17 @@ class TriageIssues(DefaultTriager):
     def print_comment_list(self):
         """Print comment creators and the commands they used"""
         for x in self.issue.current_comments:
+            command = None
             if x.user.login != 'ansibot':
                 command = [y for y in self.VALID_COMMANDS if y in x.body \
                            and not '!' + y in x.body]
                 command = ', '.join(command)
             else:
                 # What template did ansibot use?
-                command = x.body.split('\n')[-1].split()[-2]
+                try:
+                    command = x.body.split('\n')[-1].split()[-2]
+                except:
+                    pass
 
             if command:
                 print("\t%s %s (%s)" % (x.created_at.isoformat(),
