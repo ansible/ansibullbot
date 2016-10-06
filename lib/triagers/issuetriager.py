@@ -51,6 +51,14 @@ class TriageIssues(DefaultTriager):
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
+    CLOSURE_COMMANDS = [
+        'notabug',
+        'wontfix',
+        'bug_resolved',
+        'resolved_by_pr',
+        'duplicate_of'
+    ]
+
     def run(self, useapiwrapper=True):
         """Starts a triage run"""
 
@@ -130,13 +138,17 @@ class TriageIssues(DefaultTriager):
     def print_comment_list(self):
         """Print comment creators and the commands they used"""
         for x in self.issue.current_comments:
+            command = None
             if x.user.login != 'ansibot':
                 command = [y for y in self.VALID_COMMANDS if y in x.body \
                            and not '!' + y in x.body]
                 command = ', '.join(command)
             else:
                 # What template did ansibot use?
-                command = x.body.split('\n')[-1].split()[-2]
+                try:
+                    command = x.body.split('\n')[-1].split()[-2]
+                except:
+                    pass
 
             if command:
                 print("\t%s %s (%s)" % (x.created_at.isoformat(),
@@ -413,6 +425,13 @@ class TriageIssues(DefaultTriager):
     def process_history(self, usecache=True):
         '''Steps through all known meta about the issue and decides what to do'''
 
+        self.meta.update(self.get_facts())
+        self.add_desired_labels_by_issue_type()
+        self.add_desired_labels_by_ansible_version()
+        self.add_desired_labels_by_namespace()
+
+        '''
+        import epdb; epdb.st()
         self.meta = {}
         today = self.get_current_time()
 
@@ -683,12 +702,13 @@ class TriageIssues(DefaultTriager):
 
         # reset the maintainers
         maintainers = self.get_module_maintainers()
+        '''
 
         #################################################
         # FINAL LOGIC LOOP
         #################################################
 
-        if bot_broken:
+        if self.meta['bot_broken']:
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
 
@@ -703,15 +723,14 @@ class TriageIssues(DefaultTriager):
             # Close the issue ...
             self.issue.set_desired_state('closed')
 
-        elif maintainer_command_close:
+        elif self.meta['maintainer_closure']:
 
             self.debug(msg='maintainer closure stanza')
 
             # Need to close the issue ...
             self.issue.set_desired_state('closed')
 
-
-        elif new_module_request:
+        elif self.meta['new_module_request']:
 
             self.debug(msg='new module request stanza')
             self.issue.desired_comments = []
@@ -719,14 +738,15 @@ class TriageIssues(DefaultTriager):
                 if not label in self.issue.desired_labels:
                     self.issue.desired_labels.append(label)
 
-        elif not correct_repo:
+        elif not self.meta['correct_repo']:
 
             self.debug(msg='wrong repo stanza')
             self.issue.desired_comments = ['issue_wrong_repo']
             self.actions['close'] = True
-            #import epdb; epdb.st()
 
-        elif not valid_module and not maintainer_command_needsinfo:
+        elif not self.meta['valid_module'] and \
+            not self.meta['maintainer_command_needsinfo']:
+
             self.debug(msg='invalid module stanza')
 
             self.issue.add_desired_label('needs_info')
@@ -734,57 +754,60 @@ class TriageIssues(DefaultTriager):
                 and not 'issue_needs_info' in self.issue.current_bot_comments:
                 self.issue.desired_comments = ['issue_invalid_module']
 
-        elif not maintainers and not maintainer_command_needsinfo:
+        elif not self.meta['notification_maintainers'] and \
+            not self.meta['maintainer_command_needsinfo']:
 
             self.debug(msg='no maintainer stanza')
 
             self.issue.add_desired_label('waiting_on_maintainer')
             self.issue.add_desired_comment("issue_module_no_maintainer")
 
-        elif maintainer_command_needscontributor:
+        elif self.meta['maintainer_command'] == 'needs_contributor':
 
             # maintainer can't or won't fix this, but would like someone else to
             self.debug(msg='maintainer needs contributor stanza')
             self.issue.add_desired_label('waiting_on_contributor')
-            #import epdb; epdb.st()            
 
-        elif maintainer_waiting_on:
+        elif self.meta['maintainer_waiting_on']:
 
             self.debug(msg='maintainer wait stanza')
 
             self.issue.add_desired_label('waiting_on_maintainer')
             if len(self.issue.current_comments) == 0:
-                if issue_type:
-                    if submitter not in self.module_maintainers:
+                # new issue
+                if self.meta['issue_type']:
+                    if self.meta['submitter'] not in self.meta['notification_maintainers']:
+                        # ping the maintainer
                         self.issue.add_desired_comment('issue_new')
                     else:
+                        # do not send intial ping to maintainer if also submitter
                         if 'issue_new' in self.issue.desired_comments:
                             self.issue.desired_comments.remove('issue_new')
-                        #import epdb; epdb.st()
             else:
-                if maintainers != ['DEPRECATED']:
-                    if maintainer_to_ping and maintainers:
+                # old issue -- renotify
+                if not self.match['deprecated'] and self.meta['notification_maintainers']:
+                    if self.meta['maintainer_to_ping']:
                         self.issue.add_desired_comment("issue_notify_maintainer")
-                    elif maintainer_to_reping and maintainers:
+                    elif self.meta['maintainer_to_reping']:
                         self.issue.add_desired_comment("issue_renotify_maintainer")
-                #import epdb; epdb.st()
 
-        elif submitter_waiting_on:
+        elif self.meta['submitter_waiting_on']:
 
             self.debug(msg='submitter wait stanza')
-            #import epdb; epdb.st()
 
             if 'waiting_on_maintainer' in self.issue.desired_labels:
                 self.issue.desired_labels.remove('waiting_on_maintainer')
 
-            if (needsinfo_add or missing_sections) \
-                or (not needsinfo_remove and missing_sections) \
-                or (needsinfo_add and not missing_sections): 
+            if (self.meta['needsinfo_add'] or self.meta['missing_sections']) \
+                or (not self.meta['needsinfo_remove'] and self.meta['missing_sections']) \
+                or (self.meta['needsinfo_add'] and not self.meta['missing_sections']): 
 
 
                 #import epdb; epdb.st()
                 self.issue.add_desired_label('needs_info')
-                if len(self.issue.current_comments) == 0 or not maintainer_commented:
+                if len(self.issue.current_comments) == 0 or \
+                    not self.meta['maintainer_commented']:
+
                     if self.issue.current_bot_comments:
                         if 'issue_needs_info' not in self.issue.current_bot_comments:
                             self.issue.add_desired_comment("issue_needs_info")
@@ -792,20 +815,27 @@ class TriageIssues(DefaultTriager):
                         self.issue.add_desired_comment("issue_needs_info")
 
                 # needs_info: warn if stale, close if expired
-                elif needsinfo_expired:
+                elif self.meta['needsinfo_expired']:
                     self.issue.add_desired_comment("issue_closure")
                     self.issue.set_desired_state('closed')
-                elif needsinfo_stale \
-                    and (submitter_to_ping or submitter_to_reping):
+                elif self.meta['needsinfo_stale'] \
+                    and (self.meta['submitter_to_ping'] or self.meta['submitter_to_reping']):
                     self.issue.add_desired_comment("issue_pending_closure")
 
 
     def get_history_facts(self, usecache=True):
+        return self.get_facts(usecache=usecache)
+
+    def get_facts(self, usecache=True):
         '''Only used by the ansible/ansible triager at the moment'''
         hfacts = {}
         today = self.get_current_time()
         
-        self.history = HistoryWrapper(self.issue, usecache=usecache, cachedir=self.cachedir)
+        self.history = HistoryWrapper(
+                        self.issue, 
+                        usecache=usecache, 
+                        cachedir=self.cachedir
+                       )
 
         # what was the last commment?
         bot_broken = False
@@ -813,6 +843,11 @@ class TriageIssues(DefaultTriager):
             for comment in self.issue.current_comments:
                 if 'bot_broken' in comment.body:
                     bot_broken = True
+
+        hfacts['new_module_request'] = False
+        if 'feature_idea' in self.issue.desired_labels:
+            if self.template_data['component name'] == 'new':
+                hfacts['new_module_request'] = True
 
         # who made this and when did they last comment?
         submitter = self.issue.get_submitter()
@@ -829,6 +864,21 @@ class TriageIssues(DefaultTriager):
         #if 'ansible version' in missing_sections:
         #    missing_sections.remove('ansible version')
 
+        # Is this a valid module?
+        if self.match:
+            self.meta['valid_module'] = True
+        else:
+            self.meta['valid_module'] = False
+
+        # Filed in the right place?
+        if self.meta['valid_module']:
+            if self.match['repository'] != self.github_repo:
+                hfacts['correct_repo'] = False
+            else:
+                hfacts['correct_repo'] = True
+        else:
+            hfacts['correct_repo'] = True
+
         # DEBUG + FIXME - speeds up bulk triage
         if 'component name' in missing_sections \
             and (self.match or self.github_repo == 'ansible'):
@@ -837,6 +887,8 @@ class TriageIssues(DefaultTriager):
 
         # Who are the maintainers?
         maintainers = [x for x in self.get_module_maintainers()]
+        #hfacts['maintainers'] = maintainers
+        #import epdb; epdb.st()
 
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
@@ -848,11 +900,12 @@ class TriageIssues(DefaultTriager):
         maintainers = sorted(set(maintainers))
 
         # Has maintainer been notified? When?
-        notification_maintainers = self.get_module_maintainers()
+        notification_maintainers = [x for x in self.get_module_maintainers()]
         if 'ansible' in notification_maintainers:
             notification_maintainers.extend(self.ansible_members)
         if 'ansibot' in notification_maintainers:
             notification_maintainers.remove('ansibot')
+        hfacts['notification_maintainers'] = notification_maintainers
         maintainer_last_notified = self.history.\
                     last_notified(notification_maintainers)
 
@@ -887,6 +940,20 @@ class TriageIssues(DefaultTriager):
         maintainer_commands = self.history.get_commands(maintainers, 
                                                         self.VALID_COMMANDS)
 
+        # Keep all commands
+        hfacts['maintainer_commands'] = maintainer_commands
+        # Set a bit for the last command given
+        if hfacts['maintainer_commands']:
+            hfacts['maintainer_command'] = hfacts['maintainer_commands'][-1]
+        else:
+            hfacts['maintainer_command'] = None
+
+        # Is the last command a closure command?
+        if hfacts['maintainer_command'] in self.CLOSURE_COMMANDS:
+            hfacts['maintainer_closure'] = True
+        else:
+            hfacts['maintainer_closure'] = False
+
         # handle resolved_by_pr ...
         if 'resolved_by_pr' in maintainer_commands:
             pr_number = extract_pr_number_from_comment(maintainer_last_comment)
@@ -894,6 +961,8 @@ class TriageIssues(DefaultTriager):
                 'number': pr_number,
                 'merged': self.is_pr_merged(pr_number),
             }            
+            if not hfacts['resolved_by_pr']['merged']:
+                hfacts['maintainer_closure'] = False
 
         # needs_info toggles
         ni_commands = [x for x in maintainer_commands if 'needs_info' in x]
@@ -1046,5 +1115,4 @@ class TriageIssues(DefaultTriager):
         hfacts['last_commentor_issubmitter'] = last_commentor_issubmitter
         hfacts['last_commentor'] = last_commentor
 
-        #import epdb; epdb.st()
         return hfacts

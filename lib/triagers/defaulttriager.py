@@ -183,7 +183,10 @@ class DefaultTriager(object):
         self.meta['issue_type_defined'] = issue_type_defined
         self.meta['issue_type_valid'] = issue_type_valid
         self.meta['issue_type'] = issue_type
-
+        if self.meta['issue_type_valid']:
+            self.meta['issue_type_label'] = self.issue_type_to_label(issue_type)
+        else:
+            self.meta['issue_type_label'] = None
 
         # What is the ansible version?
         self.ansible_version = self.get_ansible_version()
@@ -427,6 +430,8 @@ class DefaultTriager(object):
         if not module_maintainers and self.match:
             if self.match['authors']:
                 module_maintainers = [x for x in self.match['authors']]
+
+        #import epdb; epdb.st()
         return module_maintainers
 
     def get_current_labels(self):
@@ -762,7 +767,6 @@ class DefaultTriager(object):
         safe_match = False
 
         if self.action_count() == 0:
-            #self.force = True
             safe_match = True
 
         elif not self.actions['close'] and not self.actions['unlabel']:
@@ -770,15 +774,22 @@ class DefaultTriager(object):
                 if self.actions['newlabel'][0].startswith('affects_'):
                     safe_match = True
 
-            #if not safe_match:
-            #    print("add labels only")
-            #    import epdb; epdb.st()
-
         else:
             safe_match = False
             if self.module:
                 if self.module in self.issue.instance.title.lower():
                     safe_match = True
+
+        # be more lenient on re-notifications
+        if not safe_match:
+            if not self.actions['close'] and \
+                not self.actions['unlabel'] and \
+                not self.actions['newlabel']:
+
+                if len(self.actions['comments']) == 1:
+                    if 'still waiting' in self.actions['comments'][0]:
+                        safe_match = True
+                #import epdb; epdb.st()
 
         if safe_match:
             self.force = True

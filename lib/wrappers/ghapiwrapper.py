@@ -38,14 +38,21 @@ def ratecheck():
 
                 except GithubException as ge:
                     print(ge)
-                    data = ge[1]
-                    msg = data.get('msg', '')
+
+                    if hasattr(ge, 'data'):
+                        msg = str(ge.data)
+                    else:
+                        try:
+                            data = ge[1]
+                            msg = data.get('msg', '')
+                        except Exception as e:
+                            import epdb; epdb.st()
 
                     if 'blocked from content creation' in msg:
                         # https://github.com/octokit/octokit.net/issues/638
                         # only 20 creates(POSTs) per minute?
                         # maybe just try to sleep 5 minutes and retry?
-                        print('POST limit reached. Sleeping 5m')
+                        print('POST limit reached. Sleeping 5m (%s)' % datetime.now())
                         time.sleep(60*5)
                     else:
                         # Attempt to use the caller's wait_for_rate function
@@ -84,7 +91,7 @@ class GithubWrapper(object):
 
 
 class RepoWrapper(object):
-    def __init__(self, gh, repo_path):
+    def __init__(self, gh, repo_path, verbose=True):
 
         self.gh = gh
         self.cachefile = os.path.join('~/.ansibullbot', 'cache', repo_path)
@@ -93,6 +100,7 @@ class RepoWrapper(object):
         self.cachedir = os.path.dirname(self.cachefile)
         self.updated_at_previous = None
         self.updated = False
+        self.verbose = verbose
 
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
@@ -104,6 +112,12 @@ class RepoWrapper(object):
         else:
             self.repo = self.gh.get_repo(repo_path)
             self.save_repo()
+
+    def debug(self, msg=""):
+        """Prints debug message if verbosity is given"""
+        if self.verbose:
+            print("Debug: " + msg)
+
 
     def save_repo(self):
         with open(self.cachefile, 'wb') as f:
@@ -142,11 +156,13 @@ class RepoWrapper(object):
         else:
 
             # load all cached issues then update or fetch missing ...
-
+            self.debug('loading cached issues')
             issues = self.load_issues()
+            self.debug('fetching all issues')
             rissues = self.repo.get_issues()
             last_issue = rissues[0]
 
+            self.debug('comparing cache against fetched')
             fetched = []
             expected = xrange(1, last_issue.number)
             for exp in expected:
@@ -214,6 +230,7 @@ class RepoWrapper(object):
                         print("could not fetch %s" % exp)
                         import epdb; epdb.st()
 
+            self.debug('storing cache of repo')
             self.save_repo()
 
             if itype == 'issue':

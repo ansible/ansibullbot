@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import shutil
 import yaml
 from lib.utils.systemtools import *
@@ -8,7 +9,9 @@ class ModuleIndexer(object):
 
     def __init__(self):
         self.modules = {}
-        self.checkoutdir = '/tmp/ansible.modules.checkout'
+        #self.checkoutdir = '/tmp/ansible.modules.checkout'
+        self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
+        self.checkoutdir = os.path.expanduser(self.checkoutdir)
 
     def create_checkout(self):
         """checkout ansible"""
