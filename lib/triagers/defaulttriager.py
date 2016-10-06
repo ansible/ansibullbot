@@ -784,7 +784,7 @@ class DefaultTriager(object):
         if not safe_match:
             if not self.actions['close'] and \
                 not self.actions['unlabel'] and \
-                not self.actions['label']:
+                not self.actions['newlabel']:
 
                 if len(self.actions['comments']) == 1:
                     if 'still waiting' in self.actions['comments'][0]:
