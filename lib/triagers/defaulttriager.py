@@ -767,7 +767,6 @@ class DefaultTriager(object):
         safe_match = False
 
         if self.action_count() == 0:
-            #self.force = True
             safe_match = True
 
         elif not self.actions['close'] and not self.actions['unlabel']:
@@ -775,15 +774,22 @@ class DefaultTriager(object):
                 if self.actions['newlabel'][0].startswith('affects_'):
                     safe_match = True
 
-            #if not safe_match:
-            #    print("add labels only")
-            #    import epdb; epdb.st()
-
         else:
             safe_match = False
             if self.module:
                 if self.module in self.issue.instance.title.lower():
                     safe_match = True
+
+        # be more lenient on re-notifications
+        if not safe_match:
+            if not self.actions['close'] and \
+                not self.actions['unlabel'] and \
+                not self.actions['label']:
+
+                if len(self.actions['comments']) == 1:
+                    if 'still waiting' in self.actions['comments'][0]:
+                        safe_match = True
+                #import epdb; epdb.st()
 
         if safe_match:
             self.force = True
