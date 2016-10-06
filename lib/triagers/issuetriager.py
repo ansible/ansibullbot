@@ -771,7 +771,7 @@ class TriageIssues(DefaultTriager):
             self.issue.add_desired_label('waiting_on_maintainer')
             if len(self.issue.current_comments) == 0:
                 # new issue
-                if issue_type:
+                if self.meta['issue_type']:
                     if self.meta['submitter'] not in self.meta['notification_maintainers']:
                         # ping the maintainer
                         self.issue.add_desired_comment('issue_new')
