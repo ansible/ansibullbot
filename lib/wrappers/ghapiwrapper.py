@@ -38,14 +38,21 @@ def ratecheck():
 
                 except GithubException as ge:
                     print(ge)
-                    data = ge[1]
-                    msg = data.get('msg', '')
+
+                    if hasattr(ge, 'data'):
+                        msg = str(ge.data)
+                    else:
+                        try:
+                            data = ge[1]
+                            msg = data.get('msg', '')
+                        except Exception as e:
+                            import epdb; epdb.st()
 
                     if 'blocked from content creation' in msg:
                         # https://github.com/octokit/octokit.net/issues/638
                         # only 20 creates(POSTs) per minute?
                         # maybe just try to sleep 5 minutes and retry?
-                        print('POST limit reached. Sleeping 5m')
+                        print('POST limit reached. Sleeping 5m (%s)' % datetime.now())
                         time.sleep(60*5)
                     else:
                         # Attempt to use the caller's wait_for_rate function
