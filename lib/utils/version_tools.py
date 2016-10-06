@@ -203,10 +203,13 @@ class AnsibleVersionIndexer(object):
                 or rawlines[idx+1].startswith('configured module search path')):
                 parts = x.replace(')', '').split()
                 aversion = parts[1]
+
                 # is this a checkout with a hash? ...
-                if len(parts) > 2:
+                if len(parts) > 3:
                     ahash = parts[3]
-                    #import epdb; epdb.st()        
+                elif len(parts) > 2:
+                    # ['ansible', '2.2.0.0', 'rc1']
+                    pass
                 return aversion
 
         # try to find a vstring ...
