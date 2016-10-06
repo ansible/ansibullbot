@@ -781,7 +781,6 @@ class TriageIssues(DefaultTriager):
                             self.issue.desired_comments.remove('issue_new')
             else:
                 # old issue -- renotify
-                import epdb; epdb.st()
                 if not self.match['deprecated'] and self.meta['notification_maintainers']:
                     if self.meta['maintainer_to_ping']:
                         self.issue.add_desired_comment("issue_notify_maintainer")
