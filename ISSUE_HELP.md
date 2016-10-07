@@ -25,6 +25,7 @@ Thanks in advance for taking a look at this bug report and for your ongoing work
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
 * **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
+* **bot_skip** - Ansible staff members use this to have the bot skip triaging an issue.
 * **needs_info** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
 * **!needs_info** - If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
 * **notabug** - If you believe this is not a bug, please leave a comment stating `notabug`, along with any additional information as to why it is not, and we will close this issue.

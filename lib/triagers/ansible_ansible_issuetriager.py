@@ -41,7 +41,8 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
     # triage label should be added by bot, removed by human ... later by commands?
 
-    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 'bot_broken',
+    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
+                      'bot_broken', 'bot_skip',
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
@@ -119,11 +120,22 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
         self.meta.update(self.get_history_facts(usecache=usecache))
 
         ## state workflow ...
+
         if self.meta['bot_broken']:
 
             self.debug(msg='broken bot stanza')
 
             self.issue.add_desired_label('bot_broken')
+
+        elif self.meta['bot_skip']:
+
+            self.debug(msg='bot skip stanza')
+
+            # clear out all actions and do nothing
+            for k,v in self.actions.iteritems():
+                if type(v) == list:
+                    self.actions[k] = []
+            self.actions['close'] = False
 
         elif 'resolved_by_pr' in self.meta:
 
