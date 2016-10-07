@@ -364,8 +364,9 @@ class ModuleIndexer(object):
             if len(lines) > 1:
                 return True
 
-            if lines[0].strip().endswith('*'):
-                return True
+            if lines:
+                if lines[0].strip().endswith('*'):
+                    return True
 
         return False
 
