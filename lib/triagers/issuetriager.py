@@ -60,6 +60,15 @@ class TriageIssues(DefaultTriager):
         'duplicate_of'
     ]
 
+    # re-notify interval for maintainers
+    RENOTIFY_INTERVAL = 14
+
+    # max limit for needs_info notifications
+    RENOTIFY_EXPIRE = 56
+
+    # re-notify interval by this number for features
+    FEATURE_RENOTIFY_INTERVAL = 60
+
     def run(self, useapiwrapper=True):
         """Starts a triage run"""
 
@@ -438,280 +447,6 @@ class TriageIssues(DefaultTriager):
         self.add_desired_labels_by_ansible_version()
         self.add_desired_labels_by_namespace()
 
-        '''
-        import epdb; epdb.st()
-        self.meta = {}
-        today = self.get_current_time()
-
-        # Build the history
-        self.debug(msg="Building event history ...")
-        self.history = HistoryWrapper(self.issue, usecache=usecache, cachedir=self.cachedir)
-
-        # what was the last commment?
-        bot_broken = False
-        if self.issue.current_comments:
-            for comment in self.issue.current_comments:
-                if 'bot_broken' in comment.body:
-                    bot_broken = True
-
-        # who made this and when did they last comment?
-        submitter = self.issue.get_submitter()
-        submitter_last_commented = self.history.last_commented_at(submitter)
-        submitter_last_comment = self.history.last_comment(submitter)
-        submitter_last_notified = self.history.last_notified(submitter)
-
-        # what did they not provide?
-        missing_sections = self.issue.get_missing_sections()
-        if 'ansible version' in missing_sections:
-            missing_sections.remove('ansible version')
-
-        # DEBUG + FIXME - speeds up bulk triage
-        if 'component name' in missing_sections and self.match:
-            missing_sections.remove('component name')
-
-        # Is this a valid module?
-        valid_module = False
-        correct_repo = True
-        if self.match:
-            valid_module = True
-            if self.match['repository'] != self.github_repo:
-                correct_repo = False
-
-        # Do these after evaluating the module
-        self.add_desired_labels_by_issue_type()
-        if 'ansible version' in missing_sections:
-            #self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-            self.add_desired_labels_by_ansible_version()
-        #self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-        self.add_desired_labels_by_namespace()
-        #self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-
-
-        # Who are the maintainers?
-        maintainers = [x for x in self.get_module_maintainers()]
-        #if 'ansible' in maintainers:
-        #    maintainers.remove('ansible')
-        #    maintainers += self.ansible_members
-
-        #print("MAINTAINERS: %s" % maintainers)
-        if 'ansible' in maintainers:
-            maintainers.remove('ansible')
-        maintainers.extend(self.ansible_members)
-        if 'ansibot' in maintainers:
-            maintainers.remove('ansibot')
-        if submitter in maintainers:
-            maintainers.remove(submitter)
-        maintainers = sorted(set(maintainers))
-
-        # Has maintainer been notified? When?
-        notification_maintainers = self.get_module_maintainers()
-        if 'ansible' in notification_maintainers:
-            notification_maintainers.extend(self.ansible_members)
-        if 'ansibot' in notification_maintainers:
-            notification_maintainers.remove('ansibot')
-        maintainer_last_notified = self.history.\
-                    last_notified(notification_maintainers)
-
-        # Has maintainer viewed issue?
-        maintainer_viewed = self.history.has_viewed(maintainers)
-        maintainer_last_viewed = self.history.last_viewed_at(maintainers)
-
-        # Has maintainer been mentioned?
-        maintainer_mentioned = self.history.is_mentioned(maintainers)
-
-        # Has maintainer viewed issue?
-        maintainer_viewed = self.history.has_viewed(maintainers)
-
-        # Has the maintainer ever responded?
-        maintainer_commented = self.history.has_commented(maintainers)
-        maintainer_last_commented = self.history.last_commented_at(maintainers)
-        maintainer_last_comment = self.history.last_comment(maintainers)
-        maintainer_comments = self.history.get_user_comments(maintainers)
-        #import epdb; epdb.st()
-
-        # Was the maintainer the last commentor?
-        last_commentor_ismaintainer = False
-        last_commentor_issubmitter = False
-        last_commentor = self.history.last_commentor()
-        if last_commentor in maintainers and last_commentor != self.github_user:
-            last_commentor_ismaintainer = True
-        elif last_commentor == submitter:
-            last_commentor_issubmitter = True
-
-        # Did the maintainer issue a command?
-        maintainer_commands = self.history.get_commands(maintainers, 
-                                                        self.VALID_COMMANDS)
-        #import epdb; epdb.st()
-        maintainer_command_close = False
-        maintainer_command_needsinfo = False
-        maintainer_command_not_needsinfo = False
-        maintainer_command_notabug = False
-        maintainer_command_wontfix = False
-        maintainer_command_resolved_bug = False
-        maintainer_command_resolved_pr = False
-        maintainer_command_needscontributor = False
-        maintainer_command_duplicateof = False
-        if maintainer_commented and not maintainer_last_comment:
-            print('ERROR: should have a comment from maintainer')
-            import epdb; epdb.st()
-        elif maintainer_last_comment and last_commentor_ismaintainer:
-            maintainer_last_comment = maintainer_last_comment.strip()            
-            if 'needs_info' in maintainer_last_comment \
-                and not '!needs_info' in maintainer_last_comment:
-                maintainer_command_needsinfo = True
-            elif '!needs_info' in maintainer_last_comment:
-                maintainer_command_not_needsinfo = True
-            elif 'notabug' in maintainer_last_comment:
-                maintainer_command_notabug = True
-                maintainer_command_close = True
-            elif 'wontfix' in maintainer_last_comment:
-                maintainer_command_wontfix = True
-                maintainer_command_close = True
-            elif 'bug_resolved' in maintainer_last_comment:
-                maintainer_command_resolved_bug = True
-                maintainer_command_close = True
-            elif 'resolved_by_pr' in maintainer_last_comment:
-                pr_number = extract_pr_number_from_comment(maintainer_last_comment)
-                maintainer_command_resolved_pr = True
-                if self.is_pr_merged(pr_number):
-                    maintainer_command_close = True
-            elif 'needs_contributor' in maintainer_last_comment:
-                maintainer_command_needscontributor = True
-            elif 'duplicate_of' in maintainer_last_comment:
-                maintainer_command_duplicateof = True
-                maintainer_command_close = True
-        elif maintainer_commands:
-            # are there any persistant commands?
-            if 'needs_contributor' in maintainer_commands:
-                maintainer_command_needscontributor = True
-            elif not missing_sections and not submitter_last_commented and maintainer_commands[-1] == 'needs_info':
-                maintainer_command_needsinfo = True
-            elif not missing_sections and not submitter_last_commented and maintainer_commands[-1] == '!needs_info':
-                maintainer_command_not_needsinfo = True
-            #import epdb; epdb.st()
-        #import epdb; epdb.st()
-
-        # Has the maintainer ever subscribed?
-        maintainer_subscribed = self.history.has_subscribed(maintainers)
-
-        # Was it ever needs_info?
-        was_needs_info = self.history.was_labeled(label='needs_info')
-        needsinfo_last_applied = self.history.label_last_applied('needs_info')
-        needsinfo_last_removed = self.history.label_last_removed('needs_info')
-        #import epdb; epdb.st()
-
-        # Still needs_info?
-        needsinfo_add = False
-        needsinfo_remove = False
-        if 'needs_info' in self.issue.current_labels:
-            if submitter_last_commented and needsinfo_last_applied:
-                if submitter_last_commented > needsinfo_last_applied \
-                    and not missing_sections:
-                    needsinfo_remove = True
-        if maintainer_command_needsinfo and maintainer_last_commented:
-            if submitter_last_commented and maintainer_last_commented:
-                if submitter_last_commented > maintainer_last_commented:
-                    needsinfo_add = False
-                    needsinfo_remove = True
-            else:
-                needsinfo_add = True
-                needsinfo_remove = False
-
-        # Is needs_info stale or expired?
-        needsinfo_age = None
-        needsinfo_stale = False
-        needsinfo_expired = False
-        if 'needs_info' in self.issue.current_labels: 
-            time_delta = today - needsinfo_last_applied
-            needsinfo_age = time_delta.days
-            if needsinfo_age > 14:
-                needsinfo_stale = True
-            if needsinfo_age > 56:
-                needsinfo_expired = True
-
-        # Should we be in waiting_on_maintainer mode?
-        maintainer_waiting_on = False
-        if (needsinfo_remove or not needsinfo_add) \
-            or not was_needs_info \
-            and not missing_sections:
-            maintainer_waiting_on = True
-
-        # Should we [re]notify the submitter?
-        submitter_waiting_on = False
-        submitter_to_ping = False
-        submitter_to_reping = False
-        if not maintainer_waiting_on:
-            submitter_waiting_on = True
-
-        if missing_sections:
-            submitter_waiting_on = True
-            maintainer_waiting_on = False
-        else:
-            if 'needs_info' in self.issue.current_labels \
-                and not maintainer_command_not_needsinfo:
-                needsinfo_remove = True                
-                submitter_waiting_on = False
-                maintainer_waiting_on = True
-
-        if maintainer_command_not_needsinfo:
-            submitter_waiting_on = False
-            maintainer_waiting_on = True
-
-        if maintainer_command_needsinfo:
-            submitter_waiting_on = True
-            maintainer_waiting_on = False
-            needsinfo_add = True
-            needsinfo_remove = False
-
-        # Time to [re]ping maintainer?
-        maintainer_to_ping = False
-        maintainer_to_reping = False
-        if maintainer_waiting_on:
-            if maintainer_viewed and not maintainer_last_notified:
-                time_delta = today - maintainer_last_viewed
-                view_age = time_delta.days
-                if view_age > 14:
-                    maintainer_to_reping = True
-            elif maintainer_last_notified:
-                time_delta = today - maintainer_last_notified
-                ping_age = time_delta.days
-                if ping_age > 14:
-                    maintainer_to_reping = True
-            else:
-                maintainer_to_ping = True
-
-        # Time to [re]ping the submitter?
-        if submitter_waiting_on:
-            if submitter_last_notified:
-                time_delta = today - submitter_last_notified
-                notification_age = time_delta.days
-                if notification_age > 14:
-                    submitter_to_reping = True
-                else:
-                    submitter_to_reping = False
-                submitter_to_ping = False
-            else:
-                submitter_to_ping = True
-                submitter_to_reping = False
-
-        issue_type = self.template_data.get('issue type', None)
-        issue_type = self.issue_type_to_label(issue_type)
-        self.meta['issue_type'] = issue_type
-
-        # new module requests need to disable everything
-        #   https://github.com/ansible/ansible-modules-core/issues/4112
-        #   https://github.com/ansible/ansible-modules-core/issues/2267
-        #   https://github.com/ansible/ansible-modules-core/issues/2626
-        #   https://github.com/ansible/ansible-modules-core/issues/645
-        new_module_request = False
-        if 'feature_idea' in self.issue.desired_labels:
-            if self.template_data['component name'] == 'new':
-                new_module_request = True
-
-        # reset the maintainers
-        maintainers = self.get_module_maintainers()
-        '''
-
         #################################################
         # FINAL LOGIC LOOP
         #################################################
@@ -1049,9 +784,9 @@ class TriageIssues(DefaultTriager):
         if 'needs_info' in self.issue.current_labels: 
             time_delta = today - needsinfo_last_applied
             needsinfo_age = time_delta.days
-            if needsinfo_age > 14:
+            if needsinfo_age > self.RENOTIFY_INTERVAL:
                 needsinfo_stale = True
-            if needsinfo_age > 56:
+            if needsinfo_age > self.RENOTIFY_EXPIRE:
                 needsinfo_expired = True
 
         # Should we be in waiting_on_maintainer mode?
@@ -1085,16 +820,21 @@ class TriageIssues(DefaultTriager):
         maintainer_to_ping = False
         maintainer_to_reping = False
         if maintainer_waiting_on:
-            #import epdb; epdb.st()
+
+            # if feature idea, extend the notification interval
+            interval = self.RENOTIFY_INTERVAL
+            if self.meta.get('issue_type', None) == 'feature idea':
+                interval = self.FEATURE_RENOTIFY_INTERVAL
+
             if maintainer_viewed and not maintainer_last_notified:
                 time_delta = today - maintainer_last_viewed
                 view_age = time_delta.days
-                if view_age > 14:
+                if view_age > interval:
                     maintainer_to_reping = True
             elif maintainer_last_notified:
                 time_delta = today - maintainer_last_notified
                 ping_age = time_delta.days
-                if ping_age > 14:
+                if ping_age > interval:
                     maintainer_to_reping = True
             else:
                 maintainer_to_ping = True
@@ -1104,7 +844,7 @@ class TriageIssues(DefaultTriager):
             if submitter_last_notified:
                 time_delta = today - submitter_last_notified
                 notification_age = time_delta.days
-                if notification_age > 14:
+                if notification_age > self.RENOTIFY_INTERVAL:
                     submitter_to_reping = True
                 else:
                     submitter_to_reping = False

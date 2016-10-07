@@ -212,6 +212,12 @@ class ModuleIndexer(object):
         self.modules['meta']['topic'] = None
         self.modules['meta']['authors'] = []
 
+        # include is almost always an ansible/ansible issue
+        for k,v in self.modules.iteritems():
+            if k.endswith('/include.py'):
+                self.modules[k]['repository'] = 'ansible'
+                break
+
         # deprecated modules are annoying
         newitems = []
         for k,v in self.modules.iteritems():
@@ -356,12 +362,18 @@ class ModuleIndexer(object):
         '''Is the string a list or a glob of modules?'''
         if rawtext:
             lines = rawtext.split('\n')
+
+            # clean up lines
             lines = [x.strip() for x in lines if x.strip()]
+            lines = [x for x in lines if len(x) > 2]
+
             if len(lines) > 1:
                 return True
 
-            if lines[0].strip().endswith('*'):
-                return True
+            if lines:
+                if lines[0].strip().endswith('*'):
+                    return True
+
         return False
 
     # https://github.com/ansible/ansible-modules-core/issues/3831

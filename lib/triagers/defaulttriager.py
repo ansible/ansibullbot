@@ -239,30 +239,36 @@ class DefaultTriager(object):
             # get all of the matches
             self.matches = self.module_indexer.multi_match(craw)
 
-            # get maintainers for all of the matches
-            mmap = {}
-            for match in self.matches:
-                key = match['filename']
-                mmap[key] = self.get_maintainers_by_match(match)
+            if self.matches:
+                # get maintainers for all of the matches
+                mmap = {}
+                for match in self.matches:
+                    key = match['filename']
+                    mmap[key] = self.get_maintainers_by_match(match)
 
-            # is there a match that represents all included maintainers?
-            mtuples = [x[1] for x in mmap.items()]
-            umtuples = [list(x) for x in set(tuple(x) for x in mtuples)]
-            all_maintainers = []
-            for mtup in umtuples:
-                for x in mtup:
-                    if x not in all_maintainers:
-                        all_maintainers.append(x)
-            best_match = None
-            for k,v in mmap.iteritems():
-                if sorted(set(v)) == sorted(set(all_maintainers)):
-                    best_match = k
-                    break
-            if best_match:
-                self.match = self.module_indexer.find_match(best_match)
-            else:
-                print(craw)
-                import epdb; epdb.st()
+                # is there a match that represents all included maintainers?
+                mtuples = [x[1] for x in mmap.items()]
+                umtuples = [list(x) for x in set(tuple(x) for x in mtuples)]
+                all_maintainers = []
+                for mtup in umtuples:
+                    for x in mtup:
+                        if x not in all_maintainers:
+                            all_maintainers.append(x)
+                best_match = None
+                for k,v in mmap.iteritems():
+                    if sorted(set(v)) == sorted(set(all_maintainers)):
+                        best_match = k
+                        break
+                if best_match:
+                    self.match = self.module_indexer.find_match(best_match)
+                else:
+                    # there's no good match that would include all maintainers
+                    # just skip multi-module processing for now since the rest
+                    # of the code doesn't know what to do with it.
+                    self.debug('mutli-match maintainers: %s' % umtuples)
+                    #print(craw)
+                    #import epdb; epdb.st()
+                    pass
         else:
             self.meta['multiple_components'] = False
 
