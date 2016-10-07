@@ -212,6 +212,12 @@ class ModuleIndexer(object):
         self.modules['meta']['topic'] = None
         self.modules['meta']['authors'] = []
 
+        # include is almost always an ansible/ansible issue
+        for k,v in self.modules.iteritems():
+            if k.endswith('/include.py'):
+                self.modules[k]['repository'] = 'ansible'
+                break
+
         # deprecated modules are annoying
         newitems = []
         for k,v in self.modules.iteritems():
