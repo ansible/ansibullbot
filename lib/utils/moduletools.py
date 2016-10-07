@@ -354,14 +354,14 @@ class ModuleIndexer(object):
 
     def is_multi(self, rawtext):
         '''Is the string a list or a glob of modules?'''
-        lines = rawtext.split('\n')
-        lines = [x.strip() for x in lines if x.strip()]
-        if len(lines) > 1:
-            return True
+        if rawtext:
+            lines = rawtext.split('\n')
+            lines = [x.strip() for x in lines if x.strip()]
+            if len(lines) > 1:
+                return True
 
-        if lines[0].strip().endswith('*'):
-            return True
-
+            if lines[0].strip().endswith('*'):
+                return True
         return False
 
     # https://github.com/ansible/ansible-modules-core/issues/3831

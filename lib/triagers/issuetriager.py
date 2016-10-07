@@ -47,7 +47,8 @@ environment = Environment(loader=loader, trim_blocks=True)
 
 class TriageIssues(DefaultTriager):
 
-    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 'bot_broken', 
+    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
+                      'bot_broken', 'bot_skip',
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
@@ -229,6 +230,10 @@ class TriageIssues(DefaultTriager):
     def create_actions(self):
         """Create actions from the desired label/unlabel/comment actions"""
 
+        # do nothing for bot_skip
+        if self.meta['bot_skip']:
+            return
+
         if 'bot_broken' in self.issue.desired_labels:
             # If the bot is broken, do nothing other than set the broken label
             self.actions['comments'] = []
@@ -397,6 +402,9 @@ class TriageIssues(DefaultTriager):
             self.actions['close'] = False
             if not 'bot_broken' in self.issue.current_labels:
                 self.actions['newlabel'] = ['bot_broken']                
+            return
+
+        if self.meta['bot_skip']:
             return
 
         resolved_desired_labels = []
@@ -712,6 +720,16 @@ class TriageIssues(DefaultTriager):
             self.debug(msg='broken bot stanza')
             self.issue.add_desired_label('bot_broken')
 
+        elif self.meta['bot_skip']:
+
+            self.debug(msg='bot skip stanza')
+
+            # clear out all actions and do nothing
+            for k,v in self.actions.iteritems():
+                if type(v) == list:
+                    self.actions[k] = []
+            self.actions['close'] = False
+
         elif self.match and self.match.get('deprecated', False) \
             and 'feature_idea' in self.issue.desired_labels:
 
@@ -843,6 +861,13 @@ class TriageIssues(DefaultTriager):
             for comment in self.issue.current_comments:
                 if 'bot_broken' in comment.body:
                     bot_broken = True
+
+        # did someone from ansible want this issue skipped?
+        bot_skip = False
+        if self.issue.current_comments:
+            for comment in self.issue.current_comments:
+                if 'bot_skip' in comment.body and comment.user.login in self.ansible_members:
+                    bot_skip = True
 
         hfacts['new_module_request'] = False
         if 'feature_idea' in self.issue.desired_labels:
@@ -1089,6 +1114,7 @@ class TriageIssues(DefaultTriager):
                 submitter_to_reping = False
 
         hfacts['bot_broken'] = bot_broken
+        hfacts['bot_skip'] = bot_skip
         hfacts['missing_sections'] = missing_sections
         hfacts['was_needsinfo'] = was_needs_info
         hfacts['needsinfo_age'] = needsinfo_age
