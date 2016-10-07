@@ -230,6 +230,42 @@ class DefaultTriager(object):
                 component_isvalid = self.module_indexer.is_valid(component)
                 self.meta['component_valid'] = component_isvalid
 
+        # Allow globs for module groups
+        #   https://github.com/ansible/ansible-modules-core/issues/3831
+        craw = self.template_data.get('component_raw')
+        if self.module_indexer.is_multi(craw):
+            self.meta['multiple_components'] = True
+
+            # get all of the matches
+            self.matches = self.module_indexer.multi_match(craw)
+
+            # get maintainers for all of the matches
+            mmap = {}
+            for match in self.matches:
+                key = match['filename']
+                mmap[key] = self.get_maintainers_by_match(match)
+
+            # is there a match that represents all included maintainers?
+            mtuples = [x[1] for x in mmap.items()]
+            umtuples = [list(x) for x in set(tuple(x) for x in mtuples)]
+            all_maintainers = []
+            for mtup in umtuples:
+                for x in mtup:
+                    if x not in all_maintainers:
+                        all_maintainers.append(x)
+            best_match = None
+            for k,v in mmap.iteritems():
+                if sorted(set(v)) == sorted(set(all_maintainers)):
+                    best_match = k
+                    break
+            if best_match:
+                self.match = self.module_indexer.find_match(best_match)
+            else:
+                print(craw)
+                import epdb; epdb.st()
+        else:
+            self.meta['multiple_components'] = False
+
         # set the maintainer
         self.module_maintainer = [x for x in self.get_module_maintainers()]
 
@@ -317,7 +353,6 @@ class DefaultTriager(object):
 
     def _get_maintainers(self, usecache=True):
         """Reads all known maintainers from files and their owner namespace"""
-        #import epdb; epdb.st()
         if not self.maintainers or not usecache:
             for repo in ['core', 'extras']:
                 f = open(MAINTAINERS_FILES[repo])
@@ -379,6 +414,33 @@ class DefaultTriager(object):
 
     def get_ansible_version_major_minor(self):
         return self.version_indexer.get_major_minor(self.ansible_version)
+
+    def get_maintainers_by_match(self, match):
+        module_maintainers = []
+
+        maintainers = self._get_maintainers()
+        if match['name'] in maintainers:
+            module_maintainers = maintainers[match['name']]
+        elif match['repo_filename'] in maintainers:
+            module_maintainers = maintainers[match['repo_filename']]
+        elif (match['deprecated_filename']) in maintainers:
+            module_maintainers = maintainers[match['deprecated_filename']]
+        elif match['namespaced_module'] in maintainers:
+            module_maintainers = maintainers[match['namespaced_module']]
+        elif match['fulltopic'] in maintainers:
+            module_maintainers = maintainers[match['fulltopic']]
+        elif (match['topic'] + '/') in maintainers:
+            module_maintainers = maintainers[match['topic'] + '/']
+        else:
+            pass
+
+        # Fallback to using the module author(s)
+        if not module_maintainers and self.match:
+            if self.match['authors']:
+                module_maintainers = [x for x in self.match['authors']]
+
+        #import epdb; epdb.st()
+        return module_maintainers
 
 
     def get_module_maintainers(self, expand=True, usecache=True):
