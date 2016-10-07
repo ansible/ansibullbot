@@ -52,6 +52,9 @@ def extract_template_data(body, issue_number=None):
         tdict.pop(k, None)
         tdict[ku] = v
 
+    # make a raw component section for later processing
+    component_raw = tdict.get('component name', '')
+
     # cleanup the sections
     for k,v in tdict.iteritems():
         # remove markdown comments from the sections
@@ -131,7 +134,12 @@ def extract_template_data(body, issue_number=None):
         # save
         tdict[k] = v
 
-    #import epdb; epdb.st()
+    # quick clean and add raw component to the dict
+    component_raw = remove_markdown_comments(component_raw)
+    component_raw = '\n'.join([x.strip() for x in component_raw.split('\n') if x.strip()])
+    component_raw = '\n'.join([x for x in component_raw.split('\n') if not x.startswith('#')])
+    tdict['component_raw'] = component_raw
+
     return tdict
 
 

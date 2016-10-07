@@ -351,3 +351,46 @@ class ModuleIndexer(object):
 
         #import epdb; epdb.st()
         return match
+
+    def is_multi(self, rawtext):
+        '''Is the string a list or a glob of modules?'''
+        lines = rawtext.split('\n')
+        lines = [x.strip() for x in lines if x.strip()]
+        if len(lines) > 1:
+            return True
+
+        if lines[0].strip().endswith('*'):
+            return True
+
+        return False
+
+    # https://github.com/ansible/ansible-modules-core/issues/3831
+    def multi_match(self, rawtext):
+        '''Return a list of matches for a given glob or list of names'''
+        matches = []
+        lines = rawtext.split('\n')
+        lines = [x.strip() for x in lines if x.strip()]
+        for line in lines:
+            # is it an exact name, a path, a globbed name, a globbed path?
+            if line.endswith('*'):
+                thiskey = line.replace('*', '')
+                keymatches = []
+                for k in self.modules.keys():
+                    if thiskey in k:
+                        keymatches.append(k)
+                for k in keymatches:
+                    matches.append(self.modules[k].copy())
+            else:
+                match = self.find_match(line)
+                if match:
+                    matches.append(match)
+
+        # unique the list        
+        tmplist = []
+        for x in matches:
+            if x not in tmplist:
+                tmplist.append(x)
+        if matches != tmplist:
+            matches = [x for x in tmplist]        
+
+        return matches
