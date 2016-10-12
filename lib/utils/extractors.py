@@ -202,6 +202,18 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
         urlparts = number.split('/')
         number = urlparts[-1]        
         number = int(number)
+    elif rawtext.find('#'):
+        number = rawtext[rawtext.find('#'):]
+        number = number.replace('#', '')
+        while number:
+            if not number[-1].isdigit():
+                number = number[:-1]
+            else:
+                break
+        try:
+            number = int(number)
+        except Exception as e:
+            number = None
     else:
         print('NOT SURE HOW TO PARSE %s' % rawtext)
         import epdb; epdb.st()

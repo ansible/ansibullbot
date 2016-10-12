@@ -137,10 +137,10 @@ class RepoWrapper(object):
         pr = self.load_pullrequest(number)
         if pr:
             if pr.update():
-                self.save_pr(pr)
+                self.save_pullrequest(pr)
         else:
             pr = self.repo.get_pull(number)
-            self.save_pr(pr)
+            self.save_pullrequest(pr)
         return pr
 
     def get_labels(self):
