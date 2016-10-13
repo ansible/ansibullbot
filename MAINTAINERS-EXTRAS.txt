@@ -49,6 +49,7 @@ cloud/misc/virt.py: ansible
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
 cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz
+cloud/ovirt/: machacekondra
 cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson
 cloud/softlayer/sl_vm.py: mcltn
