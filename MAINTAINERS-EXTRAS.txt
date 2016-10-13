@@ -113,7 +113,7 @@ network/haproxy.py: ravibhure
 network/illumos/: xen0l
 network/ipify_facts.py: resmo
 network/lldp.py: andyhky
-network/netconf/netconf_config.py: lpenzr
+network/netconf/netconf_config.py: lpenz
 network/nmcli.py: alcamie101
 network/openvswitch_bridge.py: stygstra
 network/openvswitch_db.py: ansible
