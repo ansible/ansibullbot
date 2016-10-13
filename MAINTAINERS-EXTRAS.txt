@@ -113,11 +113,12 @@ network/haproxy.py: ravibhure
 network/illumos/: xen0l
 network/ipify_facts.py: resmo
 network/lldp.py: andyhky
-network/netconf/netconf_config.py: lpenz
+network/netconf/netconf_config.py: lpenzr
 network/nmcli.py: alcamie101
 network/openvswitch_bridge.py: stygstra
 network/openvswitch_db.py: ansible
 network/openvswitch_port.py: stygstra
+network/panos/: ivanbojer
 network/snmp_facts.py: ogenstad
 network/wakeonlan: dagwieers
 notification/campfire.py: fabulops
