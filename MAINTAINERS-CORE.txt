@@ -45,6 +45,7 @@ cloud/google/gce.py: supertom
 cloud/google/gce_lb.py: supertom
 cloud/google/gce_net.py: supertom
 cloud/google/gce_pd.py: supertom
+cloud/google/gce_mig.py: supertom
 cloud/linode/linode.py: zbal
 cloud/openstack/_keystone_user.py: DEPRECATED
 cloud/openstack/_nova_keypair.py: DEPRECATED
