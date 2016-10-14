@@ -17,9 +17,9 @@ cloud/amazon/ec2_vpc_subnet_facts.py: wimnat
 cloud/amazon/ec2_vpc_dhcp_options_facts.py: naslanidis
 cloud/amazon/GUIDELINES.md: willthames wimnat
 cloud/amazon/ec2_win_password.py: rickmendes
-cloud/amazon/ecs_cluster.py: Java1Guy
-cloud/amazon/ecs_service_facts.py: Java1Guy
-cloud/amazon/ecs_task.py: Java1Guy
+cloud/amazon/ecs_cluster.py: Java1Guy rmorlok
+cloud/amazon/ecs_service_facts.py: Java1Guy rmorlok
+cloud/amazon/ecs_task.py: Java1Guy rmorlok
 cloud/amazon/ecs_taskdefinition.py: Java1Guy rmorlok
 cloud/amazon/ecs_service.py: Java1Guy
 cloud/amazon/kinesis_stream.py: linuxdynasty
