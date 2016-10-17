@@ -97,10 +97,11 @@ monitoring/pingdom.py: thaumos
 monitoring/rollbar_deployment.py: kavu
 monitoring/sensu_check.py: andsens
 monitoring/stackdriver.py: bwhaley
+monitoring/statusio_maintenance.py: bhcopeland
 monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
 network/a10/: mischapeters
-network/asa/: gundalow privateip 
+network/asa/: gundalow privateip
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
@@ -163,7 +164,7 @@ packaging/os/pacman.py: indrajitr
 packaging/os/pkg5.py: mavit
 packaging/os/pkg5_publisher.py: mavit
 packaging/os/pkgin.py: L2G szinck troy2914
-packaging/os/pkgng.py: JoergFiedler 
+packaging/os/pkgng.py: JoergFiedler
 packaging/os/pkgutil.py: dermute
 packaging/os/portage.py: sayap
 packaging/os/portinstall.py: berenddeboer
