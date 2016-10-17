@@ -101,6 +101,36 @@ class HistoryWrapper(object):
         comments = [x['body'] for x in matching_events]
         return comments
 
+    def get_user_comments_groupby(self, username, groupby='d'):
+        '''Count comments for a user by day/week/month/year'''
+
+        comments = self._find_events_by_actor('commented', 
+                                              username, 
+                                              maxcount=999)
+        groups = {}
+        for comment in comments:
+            created = comment['created_at']
+            ts = None
+            if groupby == 'd':
+                # day
+                ts = '%s-%s-%s' % (created.year, created.month, created.day)
+            elif groupby == 'w':
+                # week
+                ts = '%s-%s' % (created.year, created.isocalendar()[1])
+            elif groupby == 'm':
+                # month
+                ts = '%s-%s' % (created.year, created.month)
+            elif groupby == 'y':
+                # year
+                ts = '%s' % (created.year)
+
+            if ts:
+                if ts not in groups:
+                    groups[ts] = 0
+                groups[ts] += 1
+ 
+        return groups
+
     def get_commands(self, username, command_keys):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []

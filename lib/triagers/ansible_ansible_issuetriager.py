@@ -125,6 +125,11 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
             self.debug(msg='broken bot stanza')
 
+            # clear out all actions and do nothing
+            for k,v in self.actions.iteritems():
+                if type(v) == list:
+                    self.actions[k] = []
+            self.actions['close'] = False           
             self.issue.add_desired_label('bot_broken')
 
         elif self.meta['bot_skip']:
@@ -136,6 +141,17 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
                 if type(v) == list:
                     self.actions[k] = []
             self.actions['close'] = False
+
+        elif self.meta['bot_spam']:
+
+            self.debug(msg='bot spam stanza')
+
+            # clear out all actions and do nothing
+            for k,v in self.actions.iteritems():
+                if type(v) == list:
+                    self.actions[k] = []
+            self.actions['close'] = False
+            self.issue.add_desired_label('bot_broken')
 
         elif 'resolved_by_pr' in self.meta:
 
