@@ -499,6 +499,11 @@ class DefaultTriager(object):
             if self.match['authors']:
                 module_maintainers = [x for x in self.match['authors']]
 
+        # need to set the no maintainer template or assume ansible?
+        if not module_maintainers and self.module and self.match:
+            #import epdb; epdb.st()
+            pass
+
         #import epdb; epdb.st()
         return module_maintainers
 
@@ -713,6 +718,7 @@ class DefaultTriager(object):
 
         if not maintainers:
             maintainers = ['NO_MAINTAINER_FOUND'] #FIXME - why?
+
         submitter = self.issue.get_submitter()
         missing_sections = [x for x in self.issue.REQUIRED_SECTIONS \
                             if not x in self.template_data \
