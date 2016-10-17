@@ -173,23 +173,22 @@ class TriageIssues(DefaultTriager):
         # basic processing
         self._process()
 
-        # filed under the correct repository?
-        this_repo = False
-        correct_repo = None
-
         # who maintains this?
         maintainers = []
 
-        component_isvalid = self.meta.get('component_isvalid', False)
-        if not component_isvalid:
-            pass
-        else:
-            correct_repo = self.module_indexer.\
-                            get_repository_for_module(component)
-            if correct_repo == self.github_repo:
-                this_repo = True
+        if self.meta.get('component_valid', False):
+            correct_repo = self.match.get('repository')
+            if correct_repo != self.github_repo:
+                self.meta['correct_repo'] = False
+            else:
+                self.meta['correct_repo'] = True
                 maintainers = self.get_module_maintainers()
+                if not maintainers:
+                    #issue_module_no_maintainer
+                    #import epdb; epdb.st()
+                    pass
 
+        '''
         # Has the maintainer -ever- commented?
         maintainer_commented = False
         if component_isvalid:
@@ -203,7 +202,7 @@ class TriageIssues(DefaultTriager):
         maintainer_last_comment_age = -1
         if component_isvalid:
             maintainer_last_comment_age = self.age_of_last_maintainer_comment()
-
+        '''
 
         ###########################################################
         #                   Enumerate Actions
@@ -476,6 +475,11 @@ class TriageIssues(DefaultTriager):
             # Close the issue ...
             self.issue.set_desired_state('closed')
 
+        elif not self.meta['maintainers_known'] and self.meta['valid_module']:
+
+            self.debug(msg='unknown maintainer stanza') 
+            self.issue.desired_comments = ['issue_module_no_maintainer']
+
         elif self.meta['maintainer_closure']:
 
             self.debug(msg='maintainer closure stanza')
@@ -649,6 +653,11 @@ class TriageIssues(DefaultTriager):
         maintainers = [x for x in self.get_module_maintainers()]
         #hfacts['maintainers'] = maintainers
         #import epdb; epdb.st()
+
+        # Set a fact to indicate that we know the maintainer
+        self.meta['maintainers_known'] = False
+        if maintainers:
+            self.meta['maintainers_known'] = True
 
         if 'ansible' in maintainers:
             maintainers.remove('ansible')
