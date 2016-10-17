@@ -69,6 +69,9 @@ class TriageIssues(DefaultTriager):
     # re-notify interval by this number for features
     FEATURE_RENOTIFY_INTERVAL = 60
 
+    # the max comments per week before ansibot becomes a "spammer"
+    MAX_BOT_COMMENTS_PER_WEEK = 5
+
     def run(self, useapiwrapper=True):
         """Starts a triage run"""
 
@@ -464,6 +467,20 @@ class TriageIssues(DefaultTriager):
                     self.actions[k] = []
             self.actions['close'] = False
 
+        elif self.meta['bot_spam']:
+
+            self.debug(msg='bot spam stanza')
+
+            # clear out all actions and do nothing
+            for k,v in self.actions.iteritems():
+                if type(v) == list:
+                    self.actions[k] = []
+            self.actions['close'] = False
+
+            # do we mark this somehow?
+            self.issue.add_desired_label('bot_broken')
+
+
         elif self.match and self.match.get('deprecated', False) \
             and 'feature_idea' in self.issue.desired_labels:
 
@@ -608,6 +625,15 @@ class TriageIssues(DefaultTriager):
                 if 'bot_skip' in comment.body and comment.user.login in self.ansible_members:
                     bot_skip = True
 
+
+        # Has the bot been overzealous with comments?
+        hfacts['bot_spam'] = False
+        bcg = self.history.get_user_comments_groupby('ansibot', groupby='w')
+        for k,v in bcg.iteritems():
+            if v >= self.MAX_BOT_COMMENTS_PER_WEEK:
+                hfacts['bot_spam'] = True
+
+        # Is this a new module?
         hfacts['new_module_request'] = False
         if 'feature_idea' in self.issue.desired_labels:
             if self.template_data['component name'] == 'new':
