@@ -286,9 +286,15 @@ class ModuleIndexer(object):
             #import epdb; epdb.st()
             return authors
 
+        # quit early if the yaml was not valid
         if not ydata:
             return authors
 
+        # sometimes the field is 'author', sometimes it is 'authors'
+        if 'authors' in ydata:
+            ydata['author'] = ydata['authors']
+
+        # quit if the key was not found
         if not 'author' in ydata:
             return authors
 
@@ -308,6 +314,7 @@ class ModuleIndexer(object):
                         if word.startswith('@'):
                             word = word.replace('@', '', 1)
                             authors.append(word)
+
         return authors
 
 
