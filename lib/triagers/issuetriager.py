@@ -651,9 +651,6 @@ class TriageIssues(DefaultTriager):
         # what did they not provide?
         missing_sections = self.issue.get_missing_sections()
 
-        #if 'ansible version' in missing_sections:
-        #    missing_sections.remove('ansible version')
-
         # Is this a valid module?
         if self.match:
             self.meta['valid_module'] = True

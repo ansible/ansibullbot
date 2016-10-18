@@ -265,15 +265,20 @@ class DefaultTriager(object):
                     # there's no good match that would include all maintainers
                     # just skip multi-module processing for now since the rest
                     # of the code doesn't know what to do with it.
-                    self.debug('mutli-match maintainers: %s' % umtuples)
+                    self.debug('multi-match maintainers: %s' % umtuples)
                     #print(craw)
                     #import epdb; epdb.st()
                     pass
         else:
             self.meta['multiple_components'] = False
 
-        # set the maintainer
+        # set the maintainer(s)
         self.module_maintainer = [x for x in self.get_module_maintainers()]
+        self.meta['module_maintainers'] = self.module_maintainer
+
+        # fixme: too many places where the module is set
+        if self.match:
+            self.module = self.match['name']
 
         # Helper to fix issue descriptions ...
         DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
