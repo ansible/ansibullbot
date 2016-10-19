@@ -1,5 +1,5 @@
 cloud/amazon/_ec2_ami_search.py: DEPRECATED
-cloud/amazon/cloudformation.py: jsmartin
+cloud/amazon/cloudformation.py: tedder ryansb
 cloud/amazon/ec2.py: ansible
 cloud/amazon/ec2_ami.py: jjshoe
 cloud/amazon/ec2_ami_find.py: tombamford
