@@ -133,7 +133,7 @@ source_control/subversion.py: dsummersl
 system/authorized_key.py: ansible
 system/cron.py: dsummersl EvanK
 system/group.py: ansible
-system/hostname.py: hnakamur saito-hideki
+system/hostname.py: alikins saito-hideki
 system/mount.py: ansible
 system/ping.py: ansible
 system/seboolean.py: ansible
