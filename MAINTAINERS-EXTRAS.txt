@@ -54,7 +54,7 @@ cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson
 cloud/softlayer/sl_vm.py: mcltn
 cloud/smartos/: xen0l
-cloud/vmware/: jctanner
+cloud/vmware/: chrrrles
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: jcpowermac mtnbikenc
 cloud/vmware/vmware_guest: jctanner
