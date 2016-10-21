@@ -76,6 +76,7 @@ database/mysql/mysql_replication.py: banyek
 database/postgresql/postgresql_ext.py: dschep
 database/postgresql/postgresql_lang.py: jensdepuydt
 database/vertica/: dareko
+files/blockinfile.py: yaegashi
 files/archive.py: bendoh
 files/patch.py: jirutka luisperlaz
 identity/opendj/: dj-wasabi
