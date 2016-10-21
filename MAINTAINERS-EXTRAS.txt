@@ -1,3 +1,4 @@
+cloud/amazon/cloudformation_facts.py: jmenga
 cloud/amazon/cloudtrail.py: ansible
 cloud/amazon/cloudwatchevent_rule.py: jsdalton
 cloud/amazon/dynamodb_table.py: loia
