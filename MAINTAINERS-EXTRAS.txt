@@ -221,6 +221,7 @@ web_infrastructure/jboss.py: jhoekx
 web_infrastructure/jira.py: tarka
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/jenkins_job.py: sermilrod
+web_infrastructure/jenkins_plugin.py: jtyr
 web_infrastructure/taiga_issue.py: lekum
 windows/win_acl.py: schwartzmx trondhindenes
 windows/win_acl.ps1: schwartzmx trondhindenes
