@@ -1,4 +1,5 @@
 cloud/amazon/cloudtrail.py: ansible
+cloud/amazon/cloudwatchevent_rule.py: jsdalton
 cloud/amazon/dynamodb_table.py: loia
 cloud/amazon/ec2_ami_copy.py: amir343
 cloud/amazon/ec2_customer_gateway.py: michaelbaydoun
