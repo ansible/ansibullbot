@@ -1,10 +1,13 @@
+cloud/amazon/cloudformation_facts.py: jmenga
 cloud/amazon/cloudtrail.py: ansible
+cloud/amazon/cloudwatchevent_rule.py: jsdalton
 cloud/amazon/dynamodb_table.py: loia
 cloud/amazon/ec2_ami_copy.py: amir343
 cloud/amazon/ec2_customer_gateway.py: michaelbaydoun
 cloud/amazon/ec2_elb_facts.py: mjschultz
 cloud/amazon/ec2_eni.py: wimnat
 cloud/amazon/ec2_eni_facts.py: wimnat
+cloud/amazon/ec2_lc_find.py: fiunchinho
 cloud/amazon/ec2_vpc_nat_gateway.py: linuxdynasty
 cloud/amazon/ec2_vpc_net_facts.py: whiter
 cloud/amazon/ec2_remote_facts.py: michaeljs1990 wimnat
@@ -23,6 +26,7 @@ cloud/amazon/ecs_task.py: Java1Guy rmorlok
 cloud/amazon/ecs_taskdefinition.py: Java1Guy rmorlok
 cloud/amazon/ecs_service.py: Java1Guy rmorlok
 cloud/amazon/kinesis_stream.py: linuxdynasty
+cloud/amazon/lambda.py: steynovich
 cloud/amazon/redshift.py: j-carl
 cloud/amazon/route53_facts.py: Etherdaemon
 cloud/amazon/route53_health_check.py: zimbatm
@@ -34,6 +38,7 @@ cloud/amazon/sns_topic.py: joelthompson
 cloud/amazon/sqs_queue.py: loia
 cloud/amazon/sts_assume_role.py: bekelchik
 cloud/amazon/sts_session_token.py: pwnall
+cloud/azure/azure_rm_deployment.py: devigned lmazuel
 cloud/centurylink/: clc-runner
 cloud/cloudstack/: resmo dazworrall
 cloud/docker/docker_login.py: olsaki
@@ -74,6 +79,7 @@ database/mysql/mysql_replication.py: banyek
 database/postgresql/postgresql_ext.py: dschep
 database/postgresql/postgresql_lang.py: jensdepuydt
 database/vertica/: dareko
+files/blockinfile.py: yaegashi
 files/archive.py: bendoh
 files/patch.py: jirutka luisperlaz
 identity/opendj/: dj-wasabi
@@ -219,6 +225,7 @@ web_infrastructure/jboss.py: jhoekx
 web_infrastructure/jira.py: tarka
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/jenkins_job.py: sermilrod
+web_infrastructure/jenkins_plugin.py: jtyr
 web_infrastructure/taiga_issue.py: lekum
 windows/win_acl.py: schwartzmx trondhindenes
 windows/win_acl.ps1: schwartzmx trondhindenes
