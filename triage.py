@@ -30,6 +30,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from lib.triagers.issuetriager import TriageIssues
 from lib.triagers.ansible_ansible_issuetriager import AnsibleAnsibleTriageIssues
+from lib.triagers.ansible_ansible_pulltriager import AnsibleAnsibleTriagePullRequests
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
 
@@ -818,26 +819,53 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    # THIS IS TO FORCE THE OLD BEHAVIOR BY DEFAULT
     ANSIBULLBOT_VERSION = int(os.environ.get('ANSIBULLBOT_VERSION', 1))
-    if not ANSIBULLBOT_VERSION == 2:
+    ANSIBULLBOT_ALLOW_PRS = os.environ.get('ANSIBULLBOT_ALLOW_PRS', False)
+
+    # THIS IS TO FORCE THE OLD BEHAVIOR BY DEFAULT
+    if not ANSIBULLBOT_VERSION == 2 and not ANSIBULLBOT_ALLOW_PRS:
         args.only_prs = True
         args.only_issues = False
 
     if args.only_prs or not args.only_issues:
-        triage = TriagePullRequests(
-            verbose=args.verbose,
-            github_user=args.gh_user,
-            github_pass=args.gh_pass,
-            github_token=args.gh_token,
-            github_repo=args.repo,
-            pr_number=args.pr,
-            start_at_pr=args.start_at,
-            always_pause=args.pause,
-            force=args.force,
-            dry_run=args.dry_run,
+        triage = None
+        kwargs = dict(
+                verbose=args.verbose,
+                github_user=args.gh_user,
+                github_pass=args.gh_pass,
+                github_token=args.gh_token,
+                github_repo=args.repo,
+                pr_number=args.pr,
+                start_at_pr=args.start_at,
+                always_pause=args.pause,
+                force=args.force,
+                dry_run=args.dry_run,
         )
+
+        if ANSIBULLBOT_VERSION == 1:
+            #triage = TriagePullRequests(**kwargs)
+            pass
+
+        elif ANSIBULLBOT_VERSION == 2: 
+
+            kwargs['safe_force'] = args.safe_force
+            kwargs['no_since'] = args.no_since
+            kwargs['number'] = kwargs['pr_number']
+            kwargs.pop('pr_number', None)
+            kwargs['start_at'] = kwargs['start_at_pr']
+            kwargs.pop('start_at_pr', None)
+
+            if args.repo == 'ansible':
+                triage = AnsibleAnsibleTriagePullRequests(**kwargs)
+            else:
+                import epdb; epdb.st()
+
+        if not triage:
+            print('No triager for %s version %s' % (args.repo, ANSIBULLBOT_VERSION))
+            sys.exit(1)
+
         triage.run()
+
     elif args.only_issues or not args.only_prs:
         kwargs = dict(
                     verbose=args.verbose,
