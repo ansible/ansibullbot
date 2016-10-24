@@ -894,7 +894,9 @@ class TriageIssues(DefaultTriager):
 
             # if feature idea, extend the notification interval
             interval = self.RENOTIFY_INTERVAL
-            if self.meta.get('issue_type', None) == 'feature idea':
+            if self.meta.get('issue_type', None) == 'feature idea' \
+                or 'feature_idea' in self.issue.current_labels:
+
                 interval = self.FEATURE_RENOTIFY_INTERVAL
 
             if maintainer_viewed and not maintainer_last_notified:
