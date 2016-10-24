@@ -3,7 +3,7 @@
 import operator
 import shlex
 
-def extract_template_data(body, issue_number=None):
+def extract_template_data(body, issue_number=None, issue_class='issue'):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME', 
                 'ANSIBLE VERSION', 'CONFIGURATION', 
                 'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT', 
@@ -126,10 +126,20 @@ def extract_template_data(body, issue_number=None):
                         v = v[-1]
                     v = v.strip()
 
-            if k == 'issue type' and v != 'bug report' and 'bug' in v.lower():
-                v = 'bug report'
-            elif k == 'issue type' and v != 'feature idea' and 'feature' in v.lower():
-                v = 'feature idea'
+            if issue_class == 'issue':
+                if k == 'issue type' and v != 'bug report' and 'bug' in v.lower():
+                    v = 'bug report'
+                elif k == 'issue type' and v != 'feature idea' and 'feature' in v.lower():
+                    v = 'feature idea'
+            elif issue_class == 'pullrequest':
+                if k == 'issue type' and v != 'bugfix pull request' and 'bug' in v.lower():
+                    v = 'bugfix pull request'
+                elif k == 'issue type' and v != 'feature pull request' and 'feature' in v.lower():
+                    v = 'feature pull request' 
+                elif k == 'issue type' and v != 'new module pull request' and 'new module' in v.lower():
+                    v = 'new module pull request' 
+                elif k == 'issue type' and v != 'docs pull request' and 'docs' in v.lower():
+                    v = 'docs pull request' 
 
         # save
         tdict[k] = v

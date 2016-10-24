@@ -88,6 +88,8 @@ class DefaultWrapper(object):
         self.current_state = 'open'
         self.desired_state = 'open'
 
+        self.pullrequest = None
+
     def get_current_time(self):
         return datetime.utcnow()
 
@@ -119,6 +121,18 @@ class DefaultWrapper(object):
     def get_events(self):
         self.current_events = self.load_update_fetch('events')
         return self.current_events
+
+    def get_commits(self):
+        self.commits = self.load_update_fetch('commits')
+        return self.commits
+
+    def get_files(self):
+        self.files = self.load_update_fetch('files')
+        return self.files
+
+    def get_review_comments(self):
+        self.review_comments = self.load_update_fetch('review_comments')
+        return self.review_comments
 
     def relocate_pickle_files(self):
         '''Move files to the correct location to fix bad pathing'''
@@ -187,12 +201,25 @@ class DefaultWrapper(object):
                 update = True
                 write_cache = True
 
+        baseobj = None
+        if hasattr(self.instance, 'get_' + property_name):
+            baseobj = self.instance
+        else:
+            if self.pullrequest:
+                if hasattr(self.pullrequest, 'get_' + property_name):
+                    baseobj = self.pullrequest
+
+        if not baseobj:
+            print('%s was not a property for the issue or the pullrequest' % property_name)
+            import epdb; epdb.st()
+            sys.exit(1)
+
         # pull all events if timestamp is behind or no events cached
         if update or not events:        
             write_cache = True
             updated = self.get_current_time()
             try:
-                methodToCall = getattr(self.instance, 'get_' + property_name)
+                methodToCall = getattr(baseobj, 'get_' + property_name)
             except Exception as e:
                 print(e)
                 import epdb; epdb.st()
@@ -251,9 +278,15 @@ class DefaultWrapper(object):
 
     def get_template_data(self):
         """Extract templated data from an issue body"""
+
+        if self.instance.pull_request:
+            issue_class = 'pullrequest'
+        else:
+            issue_class = 'issue'
+
         if not self.template_data:
             self.template_data = \
-                extract_template_data(self.instance.body, issue_number=self.number)
+                extract_template_data(self.instance.body, issue_number=self.number, issue_class=issue_class)
         return self.template_data
 
     def resolve_desired_labels(self, desired_label):

@@ -44,4 +44,9 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                       'wontfix', 'bug_resolved', 'resolved_by_pr', 
                       'needs_contributor', 'duplicate_of']
 
+    def process(self):
+        # basic processing
+        self._process()
+        import epdb; epdb.st()
+
 
