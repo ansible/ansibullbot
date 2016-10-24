@@ -186,11 +186,21 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
     # "resolved_by_pr #5136" --> 5136
     # "resolved_by_pr https://github.com/ansible/ansible/issues/5136" --> 5136
     # "resolved_by_pr https://github.com/ansible/ansible/issues/5136" --> 5136
+    # "resolved_by_pr #5319." --> 5319
     index = rawtext.find(command)
     index += len(command)
     data = rawtext[index:]
     data = data.strip()
-    words = data.split()    
+    words = data.split()
+
+    # remove non-digit chars
+    if words:
+        newword = ''
+        for char in words[0]:
+            if char.isdigit():
+                newword += str(char)
+        if newword:
+            words[0] = newword
     
     number = words[0]
     if number.isdigit():

@@ -20,6 +20,7 @@ from __future__ import print_function
 import json
 import os
 import pickle
+import shutil
 import sys
 import time
 from datetime import datetime
@@ -119,6 +120,27 @@ class DefaultWrapper(object):
         self.current_events = self.load_update_fetch('events')
         return self.current_events
 
+    def relocate_pickle_files(self):
+        '''Move files to the correct location to fix bad pathing'''
+        srcdir = os.path.join(self.cachedir, 'issues', str(self.instance.number))
+        destdir = os.path.join(self.cachedir, str(self.instance.number))
+
+        if not os.path.isdir(srcdir):
+            return True
+
+        if not os.path.isdir(destdir):
+            os.makedirs(destdir)
+
+        # move the files
+        pfiles = os.listdir(srcdir)
+        for pf in pfiles:
+            src = os.path.join(srcdir, pf)
+            dest = os.path.join(destdir, pf)
+            shutil.move(src, dest)
+
+        # get rid of the bad dir
+        shutil.rmtree(srcdir)
+
     def load_update_fetch(self, property_name):
         '''Fetch a property for an issue object'''
 
@@ -140,19 +162,14 @@ class DefaultWrapper(object):
         update = False
         write_cache = False
 
-        try:
-            pfile = os.path.join(self.cachedir, 'issues', str(self.instance.number), '%s.pickle' % property_name)
-        except Exception as e:
-            print(e)
-            import epdb; epdb.st()
+        # fix bad pathing
+        self.relocate_pickle_files()
+
+        pfile = os.path.join(self.cachedir, str(self.instance.number), '%s.pickle' % property_name)
         pdir = os.path.dirname(pfile)
 
         if not os.path.isdir(pdir):
             os.makedirs(pdir)
-
-        ## DEBUG ...
-        #if os.path.isfile(pfile):
-        #    os.remove(pfile) 
 
         if os.path.isfile(pfile):
             try:
