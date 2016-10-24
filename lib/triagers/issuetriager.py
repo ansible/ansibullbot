@@ -625,6 +625,45 @@ class TriageIssues(DefaultTriager):
                 if 'bot_skip' in comment.body and comment.user.login in self.ansible_members:
                     bot_skip = True
 
+        #########################################################
+        # Facts for new "triage" workflow
+        #########################################################
+
+        # these logins don't count for the next set of facts
+        exclude_logins = ['ansibot', 'gregdek', self.issue.instance.user.login]
+
+        # Has a human (not ansibot + not submitter) ever changed labels?
+        lchanges = [x for x in self.history.history if x['event'] in ['labeled', 'unlabeled'] and x['actor'] not in exclude_logins]
+        if lchanges:
+            hfacts['human_labeled'] = True
+        else:
+            hfacts['human_labeled'] = False
+
+        # Has a human (not ansibot + not submitter) ever changed the title?
+        tchanges = [x for x in self.history.history if x['event'] in ['renamed'] and x['actor'] not in exclude_logins]
+        if tchanges:
+            hfacts['human_retitled'] = True
+        else:
+            hfacts['human_retitled'] = False
+
+        # Has a human (not ansibot + not submitter) ever changed the description?
+        # ... github doesn't record an event for this. Lame.
+
+        # Has a human (not ansibot + not submitter) ever set a milestone?
+        mchanges = [x for x in self.history.history if x['event'] in ['milestoned', 'demilestoned'] and x['actor'] not in exclude_logins]
+        if mchanges:
+            hfacts['human_milestoned'] = True
+        else:
+            hfacts['human_milestoned'] = False
+
+        # Has a human (not ansibot + not submitter) ever set/unset assignees?
+        achanges = [x for x in self.history.history if x['event'] in ['assigned', 'unassigned'] and x['actor'] not in exclude_logins]
+        if achanges:
+            hfacts['human_assigned'] = True
+        else:
+            hfacts['human_assigned'] = False
+
+        #########################################################
 
         # Has the bot been overzealous with comments?
         hfacts['bot_spam'] = False
