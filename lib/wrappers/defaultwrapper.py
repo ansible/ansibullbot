@@ -413,13 +413,13 @@ class DefaultWrapper(object):
         assignees = [x for x in self.current_assignees]
         if user not in self.current_assignees:
             assignees.append(user)
-            self._edit_assingees(assignees)
+            self._edit_assignees(assignees)
 
     def unassign_user(self, user):
         assignees = [x for x in self.current_assignees]
         if user in self.current_assignees:
             assignees.remove(user)
-            self._edit_assingees(assignees)
+            self._edit_assignees(assignees)
 
     def _edit_assignees(self, assignees):
         # https://github.com/PyGithub/PyGithub/pull/469/files

@@ -667,8 +667,8 @@ class DefaultTriager(object):
             # special handling for PRs
             if self.issue.instance.pull_request:
 
-                me = [x for x in self.issue.current_labels if x in self.MUTUALLY_EXCLUSIVE_LABELS]
-                if not me:
+                mel = [x for x in self.issue.current_labels if x in self.MUTUALLY_EXCLUSIVE_LABELS]
+                if not mel:
                     # if only adding new files, assume it is a feature
                     if self.patch_contains_only_new_files():
                         issue_type = 'feature pull request'

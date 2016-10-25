@@ -30,6 +30,7 @@ class TriagePullRequests(DefaultTriager):
             self.repo = self.ghw.get_repo(self._get_repo_path())
 
         # make a list of valid assignees
+        print('Getting valid assignees')
         self.valid_assignees = [x.login for x in self.repo.get_assignees()]
 
         # extend the ignored labels by repo
@@ -41,6 +42,7 @@ class TriagePullRequests(DefaultTriager):
             # get the issue
             issue = self.repo.get_issue(int(self.number))
             self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
+            self.issue.MUTUALLY_EXCLUSIVE_LABELS = self.MUTUALLY_EXCLUSIVE_LABELS
             self.issue.valid_assignees = self.valid_assignees
             self.issue.get_events()
             self.issue.get_comments()
@@ -57,6 +59,7 @@ class TriagePullRequests(DefaultTriager):
         else:
 
             # need to get the PRs
+            print('Getting ALL pullrequests')
             pullrequests = self.repo.get_pullrequests(since=None)
 
             # iterate
@@ -64,6 +67,7 @@ class TriagePullRequests(DefaultTriager):
                 # get the issue and make a wrapper             
                 issue = self.repo.get_issue(int(pr.number))
                 self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
+                self.issue.MUTUALLY_EXCLUSIVE_LABELS = self.MUTUALLY_EXCLUSIVE_LABELS
                 self.issue.valid_assignees = self.valid_assignees
                 self.issue.get_events()
                 self.issue.get_comments()

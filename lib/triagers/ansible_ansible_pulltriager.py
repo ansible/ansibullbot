@@ -24,18 +24,9 @@ import time
 from datetime import datetime
 from operator import itemgetter
 from pprint import pprint
-
-# remember to pip install PyGithub, kids!
 from github import Github
 
-#from jinja2 import Environment, FileSystemLoader
-
-#from lib.wrappers.issuewrapper import IssueWrapper
-#from lib.wrappers.historywrapper import HistoryWrapper
 from pulltriager import TriagePullRequests
-
-#loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
-#environment = Environment(loader=loader, trim_blocks=True)
 
 
 class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
@@ -67,7 +58,11 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         },
         'docsite/': {
             'labels': ['docs_pull_request'],
-            'maintainers': ['dharmabumstead']
+            'maintainers': ['dharmabumstead'],
+            'inclusive': False,
+        },
+        'lib/ansible/executor/': {
+            'labels': ['executor'],
         },
         'lib/ansible/plugins/module_utils/': {
             'labels': ['module_util'],
@@ -81,7 +76,6 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         },
         'packaging/': {
             'labels': ['packaging'],
-            'maintainers': ['dharmabumstead']
         },
         'test/': {
             'labels': ['test_pull_requests'],
@@ -134,6 +128,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
 
         self.debug('match patch files to labels+maintainers')
 
+        matches = []
         for pfile in self.issue.files:
             fn = pfile.filename
 
@@ -157,12 +152,24 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
             self.debug('\t%s matches %s' % (fn, match))
 
             if match:
+                matches.append(match)
+
+        matches = sorted(set(matches))
+        if matches:
+            for match in matches:
+
+                # if not inclusive and multiple matches, skip this 
+                #   [prevents assigning features to docs maintainer]
+                if not self.FILEMAP[match].get('inclusive', True) and len(matches) > 1:
+                    continue
+
                 for label in self.FILEMAP[match].get('labels', []):
                     if label in self.valid_labels:
                         self.issue.add_desired_label(label, mutually_exclusive=self.MUTUALLY_EXCLUSIVE_LABELS)
                 for assignee in self.FILEMAP[match].get('maintainers', []):
                     if assignee in self.valid_assignees:
                         self.issue.add_desired_assignee(assignee)
+
 
     def create_actions(self):
         self.actions['assign'] = []
