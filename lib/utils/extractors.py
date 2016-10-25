@@ -140,6 +140,8 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
                     v = 'new module pull request' 
                 elif k == 'issue type' and v != 'docs pull request' and 'docs' in v.lower():
                     v = 'docs pull request' 
+                elif k == 'issue type' and v != 'test pull request' and 'test' in v.lower():
+                    v = 'test pull request' 
 
         # save
         tdict[k] = v

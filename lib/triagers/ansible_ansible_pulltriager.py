@@ -152,7 +152,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
             if match:
                 for label in self.FILEMAP[match].get('labels', []):
                     if label in self.valid_labels:
-                        self.issue.add_desired_label(label)
+                        self.issue.add_desired_label(label, mutually_exclusive=self.MUTUALLY_EXCLUSIVE_LABELS)
                 for assignee in self.FILEMAP[match].get('maintainers', []):
                     if assignee in self.valid_assignees:
                         self.issue.add_desired_assignee(assignee)
@@ -185,4 +185,25 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         for com in self.issue.desired_comments:
             print('comments not yet implemented in this triager')
             sys.exit(1)
+
+    def check_safe_match(self):
+        """ Turn force on or off depending on match characteristics """
+
+        if self.action_count() == 0:
+            self.force = True
+        else:
+            safe_match = False
+
+            if not self.actions['close'] and \
+                (not self.actions['unlabel'] or self.actions['unlabel'] == ['needs_info'])\
+                and not self.actions['unassign'] and not self.actions['assign']:
+                safe_match = True
+
+            if safe_match:
+                self.force = True
+            else:
+                self.force = False
+            #import epdb; epdb.st()
+
+
 

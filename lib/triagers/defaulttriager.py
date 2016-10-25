@@ -34,6 +34,7 @@ from lib.wrappers.ghapiwrapper import ratecheck
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
+from lib.utils.file_tools import FileIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.extractors import extract_template_data
 from lib.utils.descriptionfixer import DescriptionFixer
@@ -138,6 +139,9 @@ class DefaultTriager(object):
         print("Initializing ModuleIndexer")
         self.module_indexer = ModuleIndexer()
         self.module_indexer.get_ansible_modules()
+        print("Initializing FileIndexer")
+        self.file_indexer = FileIndexer()
+        self.file_indexer.get_files()
         print("Getting ansible members")
         self.ansible_members = self.get_ansible_members()
         print("Getting valid labels")
@@ -659,8 +663,20 @@ class DefaultTriager(object):
             return
 
         if not issue_type.lower() in self.VALID_ISSUE_TYPES:
-            self.issue.add_desired_label('needs_info')
-            return
+
+            # special handling for PRs
+            if self.issue.instance.pull_request:
+                # if only adding new files, assume it is a feature
+                if self.patch_contains_only_new_files():
+                    issue_type = 'feature pull request'
+                else:                    
+                    self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
+                    self.issue.add_desired_label('needs_info')
+                    return
+            else:
+                self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
+                self.issue.add_desired_label('needs_info')
+                return
 
         desired_label = issue_type.replace(' ', '_')        
         desired_label = desired_label.lower()
@@ -678,6 +694,17 @@ class DefaultTriager(object):
         if len(self.issue.current_comments) == 0 and comments:
             # only set this if no other comments
             self.issue.add_desired_comment(boilerplate='issue_new')
+
+
+    def patch_contains_only_new_files(self):
+        '''Does the PR edit any existing files?'''
+        oldfiles = False
+        for x in self.issue.files:
+            if x.filename.encode('ascii', 'ignore') in self.file_indexer.files:
+                self.debug('old file match on %s' % x.filename.encode('ascii', 'ignore'))
+                oldfiles = True
+                break
+        return not oldfiles
 
     def add_desired_labels_by_ansible_version(self):
         if not 'ansible version' in self.template_data:

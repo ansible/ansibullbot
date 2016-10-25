@@ -10,7 +10,10 @@ from lib.triagers.defaulttriager import DefaultTriager
 
 class TriagePullRequests(DefaultTriager):
 
-    VALID_ISSUE_TYPES = ['bugfix pull request' , 'feature pull request', 'docs pull request', 'new module pull request']
+    VALID_ISSUE_TYPES = ['bugfix pull request' , 'feature pull request', 'docs pull request', 
+                         'new module pull request', 'test pull request']
+
+    MUTUALLY_EXCLUSIVE_LABELS = VALID_ISSUE_TYPES
 
     def run(self, useapiwrapper=True):
         # how many issues have been processed
@@ -52,8 +55,24 @@ class TriagePullRequests(DefaultTriager):
             self.process()
 
         else:
-                
-            print('not implemented yet')
-            sys.exit(1)
 
+            # need to get the PRs
+            pullrequests = self.repo.get_pullrequests(since=None)
 
+            # iterate
+            for pr in pullrequests:
+                # get the issue and make a wrapper             
+                issue = self.repo.get_issue(int(pr.number))
+                self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
+                self.issue.valid_assignees = self.valid_assignees
+                self.issue.get_events()
+                self.issue.get_comments()
+
+                # get the PR and it's properties
+                self.issue.pullrequest = pr
+                self.issue.get_commits()
+                self.issue.get_files()
+                self.issue.get_review_comments()
+
+                # do the work
+                self.process()
