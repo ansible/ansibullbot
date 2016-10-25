@@ -87,6 +87,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         },
         'test/': {
             'labels': ['test_pull_requests'],
+            'inclusive': True
         }
 
     }
@@ -172,13 +173,21 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                 # if not inclusive and multiple matches, skip this 
                 #   [prevents assigning features to docs maintainer]
                 if not self.FILEMAP[match].get('inclusive', True) and len(matches) > 1:
+                    self.debug('%s is not inclusive, skipping' % match)
                     continue
 
                 for label in self.FILEMAP[match].get('labels', []):
                     if label in self.valid_labels:
-                        self.issue.add_desired_label(label, mutually_exclusive=self.MUTUALLY_EXCLUSIVE_LABELS)
+                        self.debug('add %s from %s' % (label, match))
+                        if self.FILEMAP[match].get('inclusive') == True:
+                            me = []
+                        else:
+                            me = self.MUTUALLY_EXCLUSIVE_LABELS
+                        self.issue.add_desired_label(label, mutually_exclusive=me)
+
                 for assignee in self.FILEMAP[match].get('maintainers', []):
                     if assignee in self.valid_assignees:
+                        self.debug('assign %s from %s' % (assignee, match))
                         self.issue.add_desired_assignee(assignee)
 
 
@@ -222,6 +231,14 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
             if not self.actions['close'] and \
                 (not self.actions['unlabel'] or self.actions['unlabel'] == ['needs_info'])\
                 and not self.actions['unassign'] and not self.actions['assign']:
+                safe_match = True
+
+            # just adding test_pull_requests label
+            if not self.actions['close'] \
+                and not self.actions['unlabel'] \
+                and not self.actions['assign'] \
+                and not self.actions['unassign'] \
+                and self.actions['newlabel'] == ['test_pull_requests']:
                 safe_match = True
 
             if safe_match:

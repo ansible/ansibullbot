@@ -685,6 +685,11 @@ class DefaultTriager(object):
         desired_label = desired_label.lower()
         desired_label = desired_label.replace('documentation', 'docs')
 
+        # FIXME - shouldn't have to do this
+        if desired_label == 'test_pull_request':
+            desired_label = 'test_pull_requests'
+        #import epdb; epdb.st()
+
         # is there a mutually exclusive label already?
         if desired_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
             mel = [x for x in self.issue.MUTUALLY_EXCLUSIVE_LABELS \

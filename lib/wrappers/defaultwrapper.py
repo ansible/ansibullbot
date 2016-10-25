@@ -343,6 +343,7 @@ class DefaultWrapper(object):
                 if len(me) == 0:
                     self.desired_labels.append(name)
 
+
     def pop_desired_label(self, name=None):
         """Deletes a label to the desired labels list"""
         if name in self.desired_labels:
