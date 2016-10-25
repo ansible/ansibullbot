@@ -104,6 +104,8 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         # determine new labels to add by patch filenames
         self.add_desired_labels_and_assignees_by_filenames()
 
+        # build the actions
+        self.create_actions()
         import epdb; epdb.st()
 
     def keep_current_assignees(self):
@@ -118,8 +120,9 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
     def add_desired_labels_and_assignees_by_filenames(self):
         fkeys = self.FILEMAP.keys()
 
+        self.debug('match patch files to labels+maintainers')
+
         for pfile in self.issue.files:
-            print(pfile.filename)
             fn = pfile.filename
 
             match = None
@@ -127,7 +130,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                 # explicit match
                 match = fn
             else:
-                # best match
+                # best match: FIXME - use proper regex
                 match = None
                 for fk in fkeys:
                     fk_ = fk.replace('*', '')
@@ -139,18 +142,42 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                             match = fk
                             continue
 
-            print('%s match %s' % (fn, match))
+            self.debug('\t%s matches %s' % (fn, match))
+
             if match:
                 for label in self.FILEMAP[match].get('labels', []):
                     if label in self.valid_labels:
-                        self.add_desired_label(label)
+                        self.issue.add_desired_label(label)
                 for assignee in self.FILEMAP[match].get('maintainers', []):
                     if assignee in self.ansible_members:
-                        self.add_desired_assignee(assignee)
+                        self.issue.add_desired_assignee(assignee)
 
+    def create_actions(self):
+        self.actions['assign'] = []
+        self.actions['unassign'] = []
+        self.actions['comments'] = []
+        self.actions['newlabel'] = []
+        self.actions['unlabel'] = []
+        self.actions['close'] = False
 
-        import epdb; epdb.st()        
+        # assignment
+        for user in self.issue.current_assignees:
+            if user not in self.issue.desired_assignees:
+                self.actions['unassign'].append(user)
+        for user in self.issue.desired_assignees:
+            if user not in self.issue.current_assignees:
+                self.actions['assign'].append(user)
 
+        # labels
+        for label in self.issue.current_labels:
+            if label not in self.issue.desired_labels:
+                self.actions['unlabel'].append(label)            
+        for label in self.issue.desired_labels:
+            if label not in self.issue.current_labels:
+                self.actions['label'].append(label)
 
-
+        # comments
+        for com in self.issue.desired_comments:
+            print('comments not yet implemented in this triager')
+            sys.exit(1)
 
