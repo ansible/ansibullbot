@@ -30,7 +30,6 @@ class TriagePullRequests(DefaultTriager):
         if hasattr(self, 'IGNORE_LABELS_ADD'):
             self.IGNORE_LABELS.extend(self.IGNORE_LABELS_ADD)
 
-
         if self.number:
 
             # get the issue
@@ -39,15 +38,13 @@ class TriagePullRequests(DefaultTriager):
             self.issue.get_events()
             self.issue.get_comments()
 
-            # get the PR
+            # get the PR and it's properties
             self.issue.pullrequest = self.repo.get_pullrequest(int(self.number))
             self.issue.get_commits()
             self.issue.get_files()
             self.issue.get_review_comments()
 
-            # get files/patches?
-            import epdb; epdb.st()
-
+            # do the work
             self.process()
 
         else:

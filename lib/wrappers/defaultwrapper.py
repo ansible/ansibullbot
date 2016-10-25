@@ -26,12 +26,14 @@ import time
 from datetime import datetime
 
 # remember to pip install PyGithub, kids!
+import github
 from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
+
 
 class DefaultWrapper(object):
 
@@ -79,6 +81,7 @@ class DefaultWrapper(object):
         self.current_labels = self.get_current_labels()
         self.template_data = {}
         self.desired_labels = []
+        self.desired_assignees = []
         self.current_events = []
         self.current_comments = []
         self.current_bot_comments = []
@@ -89,6 +92,9 @@ class DefaultWrapper(object):
         self.desired_state = 'open'
 
         self.pullrequest = None
+
+        self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
+
 
     def get_current_time(self):
         return datetime.utcnow()
@@ -155,7 +161,8 @@ class DefaultWrapper(object):
         # get rid of the bad dir
         shutil.rmtree(srcdir)
 
-    def load_update_fetch(self, property_name):
+    # self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
+    def load_update_fetch(self, property_name, obj=None):
         '''Fetch a property for an issue object'''
 
         # A pygithub issue object has methods such as ...
@@ -202,12 +209,18 @@ class DefaultWrapper(object):
                 write_cache = True
 
         baseobj = None
-        if hasattr(self.instance, 'get_' + property_name):
-            baseobj = self.instance
+        if obj:
+            if obj == 'issue':
+                baseobj = self.instance
+            elif obj == 'pullrequest':
+                baseobj = self.pullrequest
         else:
-            if self.pullrequest:
-                if hasattr(self.pullrequest, 'get_' + property_name):
-                    baseobj = self.pullrequest
+            if hasattr(self.instance, 'get_' + property_name):
+                baseobj = self.instance
+            else:
+                if self.pullrequest:
+                    if hasattr(self.pullrequest, 'get_' + property_name):
+                        baseobj = self.pullrequest
 
         if not baseobj:
             print('%s was not a property for the issue or the pullrequest' % property_name)
@@ -218,12 +231,23 @@ class DefaultWrapper(object):
         if update or not events:        
             write_cache = True
             updated = self.get_current_time()
-            try:
-                methodToCall = getattr(baseobj, 'get_' + property_name)
-            except Exception as e:
-                print(e)
-                import epdb; epdb.st()
-            events = [x for x in methodToCall()]
+
+            if not hasattr(baseobj, 'get_' + property_name) and hasattr(baseobj, property_name):
+                # !callable properties
+                try:
+                    methodToCall = getattr(baseobj, property_name)
+                except Exception as e:
+                    print(e)
+                    import epdb; epdb.st()
+                events = methodToCall
+            else:
+                # callable properties
+                try:
+                    methodToCall = getattr(baseobj, 'get_' + property_name)
+                except Exception as e:
+                    print(e)
+                    import epdb; epdb.st()
+                events = [x for x in methodToCall()]
 
         if write_cache or not os.path.isfile(pfile):
             # need to dump the pickle back to disk
@@ -356,4 +380,25 @@ class DefaultWrapper(object):
     def set_description(self, description):
         # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
         self.instance.edit(body=description)
+
+    def get_assignees(self):
+        # https://developer.github.com/v3/issues/assignees/
+        # https://developer.github.com/changes/2016-5-27-multiple-assignees/
+        # https://github.com/PyGithub/PyGithub/pull/469
+        # the pygithub issue object only offers a single assignee (right now)
+
+        assignees = []
+        if not hasattr(self.instance, 'assignees'):
+            raw_assignees = self.raw_data_issue['assignees']
+            assignees = [x.login for x in self.instance._makeListOfClassesAttribute(github.NamedUser.NamedUser, raw_assignees).value]
+        else:
+            assignees = [x.login for x in self.instance.assignees]
+
+        self.current_assignees = [x for x in assignees]
+        return self.current_assignees
+
+    def add_desired_assignee(self, assignee):
+        if assignee not in self.desired_assignees:
+            self.desired_assignees.append(assignee)
+
 

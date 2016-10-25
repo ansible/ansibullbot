@@ -39,14 +39,118 @@ from pulltriager import TriagePullRequests
 
 class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
 
-    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
-                      'bot_broken', 'bot_skip',
-                      'wontfix', 'bug_resolved', 'resolved_by_pr', 
-                      'needs_contributor', 'duplicate_of']
+    VALID_COMMANDS = ['needs_info', 
+                      '!needs_info', 
+                      'notabug', 
+                      'bot_broken', 
+                      'bot_skip',
+                      'wontfix', 
+                      'bug_resolved', 
+                      'resolved_by_pr', 
+                      'needs_contributor', 
+                      'duplicate_of']
+
+    FILEMAP = {
+        'contrib/inventory/': {
+            'labels': ['contrib_inventory'],
+        },
+        'contrib/inventory/ec2*': {
+            'labels': ['contrib_inventory', 'cloud', 'aws'],
+        },
+        'contrib/inventory/gce*': {
+            'labels': ['contrib_inventory', 'cloud', 'gce'],
+        },
+        'contrib/inventory/vmware_*': {
+            'labels': ['contrib_inventory', 'cloud', 'vmware'],
+            'maintainers': ['jctanner']
+        },
+        'docsite/': {
+            'labels': ['docs_pull_request'],
+            'maintainers': ['dharmabumstead']
+        },
+        'lib/ansible/plugins/module_utils/': {
+            'labels': ['module_util'],
+        },
+        'lib/ansible/plugins/module_utils/vmware*': {
+            'labels': ['module_util', 'cloud', 'vmware'],
+            'maintainers': ['jctanner']
+        },
+        'lib/ansible/plugins/action/': {
+            'labels': ['action_plugin'],
+        },
+        'packaging/': {
+            'labels': ['packaging'],
+            'maintainers': ['dharmabumstead']
+        },
+        'test/': {
+            'labels': ['test_pull_requests'],
+        }
+
+    }
 
     def process(self):
-        # basic processing
+        # basic processing [builds self.meta]
         self._process()
+
+        # keep current assignees
+        self.keep_current_assignees()
+
+        # keep existing labels
+        self.keep_current_main_labels()
+
+        # determine new labels to add by itype
+        self.add_desired_labels_by_issue_type(comments=False)
+
+        # determine new labels to add by patch filenames
+        self.add_desired_labels_and_assignees_by_filenames()
+
         import epdb; epdb.st()
+
+    def keep_current_assignees(self):
+        for assignee in self.issue.get_assignees():
+            self.issue.add_desired_assignee(assignee)
+
+    def keep_current_main_labels(self):
+        current_labels = self.issue.get_current_labels()
+        for current_label in current_labels:
+            self.issue.add_desired_label(name=current_label)
+
+    def add_desired_labels_and_assignees_by_filenames(self):
+        fkeys = self.FILEMAP.keys()
+
+        for pfile in self.issue.files:
+            print(pfile.filename)
+            fn = pfile.filename
+
+            match = None
+            if fn in fkeys:
+                # explicit match
+                match = fn
+            else:
+                # best match
+                match = None
+                for fk in fkeys:
+                    fk_ = fk.replace('*', '')
+                    if fn.startswith(fk_):
+                        if not match:
+                            match = fk
+                            continue
+                        elif len(fk) > match:
+                            match = fk
+                            continue
+
+            print('%s match %s' % (fn, match))
+            if match:
+                for label in self.FILEMAP[match].get('labels', []):
+                    if label in self.valid_labels:
+                        self.add_desired_label(label)
+                for assignee in self.FILEMAP[match].get('maintainers', []):
+                    if assignee in self.ansible_members:
+                        self.add_desired_assignee(assignee)
+
+
+        import epdb; epdb.st()        
+
+
 
 
