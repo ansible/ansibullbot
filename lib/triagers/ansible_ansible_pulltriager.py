@@ -108,6 +108,13 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         # build the actions
         self.create_actions()
 
+        self.debug('cur.labels: %s' % ' '.join(self.issue.current_labels))
+        self.debug('submitter: %s' % self.issue.get_submitter())
+        self.debug('assignee: %s' % self.issue.current_assignees)
+
+        print("Total Comments: %s" % len(self.issue.current_comments))
+        self.print_comment_list()
+
         # run the actions
         if self.verbose:
             pprint(self.actions)
