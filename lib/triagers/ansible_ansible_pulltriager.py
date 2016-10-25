@@ -61,8 +61,19 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
             'maintainers': ['dharmabumstead'],
             'inclusive': False,
         },
+        'lib/': {
+        },
         'lib/ansible/executor/': {
             'labels': ['executor'],
+        },
+        'lib/ansible/parsing/vault/': {
+            'labels': ['vault'],
+        },
+        'lib/ansible/plugins/action/': {
+            'labels': ['action_plugin'],
+        },
+        'lib/ansible/plugins/connection/': {
+            'labels': ['connection_plugin'],
         },
         'lib/ansible/plugins/module_utils/': {
             'labels': ['module_util'],
@@ -70,9 +81,6 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         'lib/ansible/plugins/module_utils/vmware*': {
             'labels': ['module_util', 'cloud', 'vmware'],
             'maintainers': ['jctanner']
-        },
-        'lib/ansible/plugins/action/': {
-            'labels': ['action_plugin'],
         },
         'packaging/': {
             'labels': ['packaging'],
@@ -148,7 +156,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                         if not match:
                             match = fk
                             continue
-                        elif len(fk) > match:
+                        elif len(fk) > len(match):
                             match = fk
                             continue
 
