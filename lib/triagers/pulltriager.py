@@ -13,7 +13,7 @@ class TriagePullRequests(DefaultTriager):
     VALID_ISSUE_TYPES = ['bugfix pull request' , 'feature pull request', 'docs pull request', 
                          'new module pull request', 'test pull request']
 
-    MUTUALLY_EXCLUSIVE_LABELS = VALID_ISSUE_TYPES
+    MUTUALLY_EXCLUSIVE_LABELS = [x.replace(' ', '_') for x in VALID_ISSUE_TYPES]
 
     def run(self, useapiwrapper=True):
         # how many issues have been processed
@@ -60,7 +60,7 @@ class TriagePullRequests(DefaultTriager):
             pullrequests = self.repo.get_pullrequests(since=None)
 
             # iterate
-            for pr in pullrequests:
+            for idp,pr in enumerate(pullrequests):
                 # get the issue and make a wrapper             
                 issue = self.repo.get_issue(int(pr.number))
                 self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
