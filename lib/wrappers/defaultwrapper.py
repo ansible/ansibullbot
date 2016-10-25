@@ -329,10 +329,12 @@ class DefaultWrapper(object):
                 if resolved_label in self.MUTUALLY_EXCLUSIVE_LABELS:
                     self.desired_labels.remove(label)        
 
-    def add_desired_label(self, name=None, mutually_exclusive=[]):
+    def add_desired_label(self, name=None, mutually_exclusive=[], force=False):
         """Adds a label to the desired labels list"""
         if name and name not in self.desired_labels:
-            if not mutually_exclusive:
+            if force:
+                self.desired_labels.append(name)
+            elif not mutually_exclusive:
                 self.process_mutually_exclusive_labels(name=name)
                 self.desired_labels.append(name)
             else:

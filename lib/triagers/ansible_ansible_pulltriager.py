@@ -92,12 +92,15 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
 
         # keep existing labels
         self.keep_current_main_labels()
+        self.debug('1. labels: %s' % self.issue.desired_labels)
 
         # determine new labels to add by itype
         self.add_desired_labels_by_issue_type(comments=False)
+        self.debug('2. labels: %s' % self.issue.desired_labels)
 
         # determine new labels to add by patch filenames
         self.add_desired_labels_and_assignees_by_filenames()
+        self.debug('3. labels: %s' % self.issue.desired_labels)
 
         # build the actions
         self.create_actions()
@@ -121,7 +124,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
     def keep_current_main_labels(self):
         current_labels = self.issue.get_current_labels()
         for current_label in current_labels:
-            self.issue.add_desired_label(name=current_label)
+            self.issue.add_desired_label(name=current_label, force=True)
 
     def add_desired_labels_and_assignees_by_filenames(self):
         fkeys = self.FILEMAP.keys()

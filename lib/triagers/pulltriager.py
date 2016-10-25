@@ -14,6 +14,7 @@ class TriagePullRequests(DefaultTriager):
                          'new module pull request', 'test pull request']
 
     MUTUALLY_EXCLUSIVE_LABELS = [x.replace(' ', '_') for x in VALID_ISSUE_TYPES]
+    MUTUALLY_EXCLUSIVE_LABELS = [x.replace('test_pull_request', 'test_pull_requests') for x in MUTUALLY_EXCLUSIVE_LABELS]
 
     def run(self, useapiwrapper=True):
         # how many issues have been processed
