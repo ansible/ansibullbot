@@ -146,6 +146,9 @@ class RepoWrapper(object):
     def get_labels(self):
         return self.load_update_fetch('labels')
     
+    def get_assignees(self):
+        return self.load_update_fetch('assignees')
+
     def get_issues(self, since=None, state='open', itype='issue'):
 
         if since:

@@ -23,6 +23,7 @@ import sys
 import time
 from datetime import datetime
 from operator import itemgetter
+from pprint import pprint
 
 # remember to pip install PyGithub, kids!
 from github import Github
@@ -106,7 +107,11 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
 
         # build the actions
         self.create_actions()
-        import epdb; epdb.st()
+
+        # run the actions
+        if self.verbose:
+            pprint(self.actions)
+        self.apply_actions()
 
     def keep_current_assignees(self):
         for assignee in self.issue.get_assignees():
@@ -149,7 +154,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                     if label in self.valid_labels:
                         self.issue.add_desired_label(label)
                 for assignee in self.FILEMAP[match].get('maintainers', []):
-                    if assignee in self.ansible_members:
+                    if assignee in self.valid_assignees:
                         self.issue.add_desired_assignee(assignee)
 
     def create_actions(self):
@@ -174,7 +179,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                 self.actions['unlabel'].append(label)            
         for label in self.issue.desired_labels:
             if label not in self.issue.current_labels:
-                self.actions['label'].append(label)
+                self.actions['newlabel'].append(label)
 
         # comments
         for com in self.issue.desired_comments:

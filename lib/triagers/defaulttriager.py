@@ -959,6 +959,12 @@ class DefaultTriager(object):
             self.debug(msg="API Call newlabel: " + newlabel)
             self.issue.add_label(label=newlabel)
 
+        if 'assign' in self.actions:
+            for user in self.actions['assign']:
+                self.issue.assign_user(user)
+        if 'unassign' in self.actions:
+            for user in self.actions['unassign']:
+                self.issue.unassign_user(user)
 
     def smart_match_module(self):
         '''Fuzzy matching for modules'''

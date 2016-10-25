@@ -17,6 +17,7 @@
 
 from __future__ import print_function
 
+import inspect
 import json
 import os
 import pickle
@@ -91,6 +92,7 @@ class DefaultWrapper(object):
         self.current_state = 'open'
         self.desired_state = 'open'
 
+        self.valid_assignees = []
         self.pullrequest = None
 
         self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
@@ -398,7 +400,43 @@ class DefaultWrapper(object):
         return self.current_assignees
 
     def add_desired_assignee(self, assignee):
-        if assignee not in self.desired_assignees:
+        if assignee not in self.desired_assignees and assignee in self.valid_assignees:
             self.desired_assignees.append(assignee)
+
+    def assign_user(self, user):
+        assignees = [x for x in self.current_assignees]
+        if user not in self.current_assignees:
+            assignees.append(user)
+            self._edit_assingees(assignees)
+
+    def unassign_user(self, user):
+        assignees = [x for x in self.current_assignees]
+        if user in self.current_assignees:
+            assignees.remove(user)
+            self._edit_assingees(assignees)
+
+    def _edit_assignees(self, assignees):
+        # https://github.com/PyGithub/PyGithub/pull/469/files
+        # https://raw.githubusercontent.com/tmshn/PyGithub/ba007dc8a8bb5d5fdf75706db84dab6a69929d7d/github/Issue.py
+        # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
+        #self.instance.edit(body=description)
+
+        vparms = inspect.getargspec(self.instance.edit)
+        if 'assignees' in vparms.args:
+            print('time to implement the native call for edit on assignees')
+            sys.exit(1)
+        else:
+            post_parameters = dict()
+            post_parameters["assignees"] = [x for x in assignees]
+            
+            headers, data = self.instance._requester.requestJsonAndCheck(
+                "PATCH",
+                self.instance.url,
+                input=post_parameters
+            )
+            if headers['status'] != '200 OK':
+                print('ERROR: failed to edit assignees')
+                sys.exit(1)
+            #import epdb; epdb.st()
 
 

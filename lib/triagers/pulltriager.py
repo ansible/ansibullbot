@@ -26,6 +26,9 @@ class TriagePullRequests(DefaultTriager):
             self.ghw = GithubWrapper(self.gh)
             self.repo = self.ghw.get_repo(self._get_repo_path())
 
+        # make a list of valid assignees
+        self.valid_assignees = [x.login for x in self.repo.get_assignees()]
+
         # extend the ignored labels by repo
         if hasattr(self, 'IGNORE_LABELS_ADD'):
             self.IGNORE_LABELS.extend(self.IGNORE_LABELS_ADD)
@@ -35,6 +38,7 @@ class TriagePullRequests(DefaultTriager):
             # get the issue
             issue = self.repo.get_issue(int(self.number))
             self.issue = IssueWrapper(repo=self.repo, issue=issue, cachedir=self.cachedir)
+            self.issue.valid_assignees = self.valid_assignees
             self.issue.get_events()
             self.issue.get_comments()
 
