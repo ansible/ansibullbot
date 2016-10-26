@@ -134,6 +134,8 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         # check if the PR is related to py3
         self.check_for_python3()
 
+        self.check_for_merge_issues()
+
         # build the actions
         self.create_actions()
 
@@ -182,31 +184,9 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                     if not fk in matches:
                         matches.append(fk)
 
-            '''
-            match = None
-            if fn in fkeys:
-                # explicit match
-                match = fn
-            else:
-                # best match: FIXME - use proper regex
-                match = None
-                for fk in fkeys:
-
-                    if self.FILEMAP[fk]['regex'].match(fn):
-                        if not match:
-                            match = fk
-                            continue
-                        elif len(fk) > len(match):
-                            match = fk
-                            continue
-
-            self.debug('\t%s matches %s' % (fn, match))
-
-            if match:
-                matches.append(match)
-            '''
-
+        # FIXME - do the inclusive checking here
         matches = sorted(set(matches))
+
         if matches:
             for match in matches:
 
@@ -322,5 +302,15 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
             self.debug('python3 reference detected')
             self.issue.add_desired_label('python3')
 
+
+    def check_for_merge_issues(self):
+
+        # clean == no test failure and no merge conflicts
+        # unstable == test failures
+        # dirty == merge conflict
+
+        mergeable = self.issue.pullrequest.mergeable
+        mergeable_state = self.issue.pullrequest.mergeable_state
+        #import epdb; epdb.st()
 
 
