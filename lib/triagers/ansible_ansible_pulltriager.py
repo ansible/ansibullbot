@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import os
 import pickle
+import re
 import sys
 import time
 from datetime import datetime
@@ -78,9 +79,24 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         'lib/ansible/plugins/module_utils/': {
             'labels': ['module_util'],
         },
-        'lib/ansible/plugins/module_utils/vmware*': {
+        '.*gce.*': {
+            'labels': ['cloud', 'gce'],
+        },
+        '.*ec2.*': {
+            'labels': ['cloud', 'aws'],
+        },
+        '.*rax.*': {
+            'labels': ['cloud', 'rax'],
+        },
+        '.*azure.*': {
+            'labels': ['cloud', 'azure'],
+        },
+        '.*vmware.*': {
             'labels': ['module_util', 'cloud', 'vmware'],
             'maintainers': ['jctanner']
+        },
+        '.*docker.*': {
+            'labels': ['cloud', 'docker'],
         },
         'packaging/': {
             'labels': ['packaging'],
@@ -93,6 +109,10 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
     }
 
     def process(self):
+
+        # create the filemap regexes
+        self.build_filemap_regexes()
+
         # basic processing [builds self.meta]
         self._process()
 
@@ -111,6 +131,9 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         self.add_desired_labels_and_assignees_by_filenames()
         self.debug('3. labels: %s' % self.issue.desired_labels)
 
+        # check if the PR is related to py3
+        self.check_for_python3()
+
         # build the actions
         self.create_actions()
 
@@ -125,6 +148,15 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         if self.verbose:
             pprint(self.actions)
         self.apply_actions()
+
+    def build_filemap_regexes(self):
+        '''Create regex matchers for each key in the map'''
+        for k,v in self.FILEMAP.iteritems():
+            if not 'regex' in self.FILEMAP:
+                reg = k
+                if reg.endswith('/'):
+                    reg += '*'
+                self.FILEMAP[k]['regex'] = re.compile(reg)
 
     def keep_current_assignees(self):
         for assignee in self.issue.get_assignees():
@@ -144,6 +176,13 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         for pfile in self.issue.files:
             fn = pfile.filename
 
+            for fk in fkeys:
+                if self.FILEMAP[fk]['regex'].match(fn):
+                    self.debug('\t%s matches %s' % (fn, fk))
+                    if not fk in matches:
+                        matches.append(fk)
+
+            '''
             match = None
             if fn in fkeys:
                 # explicit match
@@ -152,8 +191,8 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                 # best match: FIXME - use proper regex
                 match = None
                 for fk in fkeys:
-                    fk_ = fk.replace('*', '')
-                    if fn.startswith(fk_):
+
+                    if self.FILEMAP[fk]['regex'].match(fn):
                         if not match:
                             match = fk
                             continue
@@ -165,6 +204,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
 
             if match:
                 matches.append(match)
+            '''
 
         matches = sorted(set(matches))
         if matches:
@@ -246,6 +286,41 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
             else:
                 self.force = False
             #import epdb; epdb.st()
+
+
+
+    def check_for_python3(self):
+        ispy3 = False
+        py3strings = ['python 3', 'python3', 'py3', 'py 3'] 
+
+        for py3str in py3strings:
+
+            if py3str in self.issue.instance.title.lower():
+                ispy3 = True
+                break
+
+            if py3str in self.template_data.get('component_raw', ''):
+                ispy3 = True
+                break
+
+            if py3str in self.template_data.get('component name', ''):
+                ispy3 = True
+                break
+
+            if py3str in self.template_data.get('summary', ''):
+                ispy3 = True
+                break
+
+        if ispy3:
+            for comment in self.issue.current_comments:
+                if '!python3' in comment.body:
+                    self.debug('!python3 override in comments')
+                    ispy3 = False
+                    break
+
+        if ispy3:
+            self.debug('python3 reference detected')
+            self.issue.add_desired_label('python3')
 
 
 
