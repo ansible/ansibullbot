@@ -43,6 +43,10 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
                       'needs_contributor', 
                       'duplicate_of']
 
+    # The filemap is a way to match a filepath, a directory
+    # or a regex to a specific label or a set of assignees.
+    # The 'inclusive' key is an indication that the match
+    # should override all other matches.
     FILEMAP = {
         'contrib/inventory/': {
             'labels': ['contrib_inventory'],
