@@ -146,6 +146,9 @@ class RepoWrapper(object):
     def get_labels(self):
         return self.load_update_fetch('labels')
     
+    def get_assignees(self):
+        return self.load_update_fetch('assignees')
+
     def get_issues(self, since=None, state='open', itype='issue'):
 
         if since:
@@ -173,9 +176,7 @@ class RepoWrapper(object):
                 # skip pull requests if requested
                 if itype == 'issue' and ci:
                     if ci.pull_request:
-                        #print('skipping %s' % ci.html_url)
                         continue
-                #import epdb; epdb.st()
 
                 retry = True
                 while retry:                
@@ -243,6 +244,13 @@ class RepoWrapper(object):
             issues.sort(key = lambda x: x.number, reverse=True)
 
         return issues
+
+
+    def get_pullrequests(self, since=None, state='open', itype='pullrequest'):
+        # there is no 'since' for pullrequests
+        prs = [x for x in self.repo.get_pulls()]
+        return prs
+
 
     def is_missing(self, number):
         mfile = os.path.join(self.cachedir, 'issues', str(number), 'missing')

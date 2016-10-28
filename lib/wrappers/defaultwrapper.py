@@ -17,6 +17,7 @@
 
 from __future__ import print_function
 
+import inspect
 import json
 import os
 import pickle
@@ -26,12 +27,14 @@ import time
 from datetime import datetime
 
 # remember to pip install PyGithub, kids!
+import github
 from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
+
 
 class DefaultWrapper(object):
 
@@ -79,6 +82,7 @@ class DefaultWrapper(object):
         self.current_labels = self.get_current_labels()
         self.template_data = {}
         self.desired_labels = []
+        self.desired_assignees = []
         self.current_events = []
         self.current_comments = []
         self.current_bot_comments = []
@@ -87,6 +91,12 @@ class DefaultWrapper(object):
         self.desired_comments = []
         self.current_state = 'open'
         self.desired_state = 'open'
+
+        self.valid_assignees = []
+        self.pullrequest = None
+
+        self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
+
 
     def get_current_time(self):
         return datetime.utcnow()
@@ -120,6 +130,18 @@ class DefaultWrapper(object):
         self.current_events = self.load_update_fetch('events')
         return self.current_events
 
+    def get_commits(self):
+        self.commits = self.load_update_fetch('commits')
+        return self.commits
+
+    def get_files(self):
+        self.files = self.load_update_fetch('files')
+        return self.files
+
+    def get_review_comments(self):
+        self.review_comments = self.load_update_fetch('review_comments')
+        return self.review_comments
+
     def relocate_pickle_files(self):
         '''Move files to the correct location to fix bad pathing'''
         srcdir = os.path.join(self.cachedir, 'issues', str(self.instance.number))
@@ -141,7 +163,8 @@ class DefaultWrapper(object):
         # get rid of the bad dir
         shutil.rmtree(srcdir)
 
-    def load_update_fetch(self, property_name):
+    # self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
+    def load_update_fetch(self, property_name, obj=None):
         '''Fetch a property for an issue object'''
 
         # A pygithub issue object has methods such as ...
@@ -187,16 +210,46 @@ class DefaultWrapper(object):
                 update = True
                 write_cache = True
 
+        baseobj = None
+        if obj:
+            if obj == 'issue':
+                baseobj = self.instance
+            elif obj == 'pullrequest':
+                baseobj = self.pullrequest
+        else:
+            if hasattr(self.instance, 'get_' + property_name):
+                baseobj = self.instance
+            else:
+                if self.pullrequest:
+                    if hasattr(self.pullrequest, 'get_' + property_name):
+                        baseobj = self.pullrequest
+
+        if not baseobj:
+            print('%s was not a property for the issue or the pullrequest' % property_name)
+            import epdb; epdb.st()
+            sys.exit(1)
+
         # pull all events if timestamp is behind or no events cached
         if update or not events:        
             write_cache = True
             updated = self.get_current_time()
-            try:
-                methodToCall = getattr(self.instance, 'get_' + property_name)
-            except Exception as e:
-                print(e)
-                import epdb; epdb.st()
-            events = [x for x in methodToCall()]
+
+            if not hasattr(baseobj, 'get_' + property_name) and hasattr(baseobj, property_name):
+                # !callable properties
+                try:
+                    methodToCall = getattr(baseobj, property_name)
+                except Exception as e:
+                    print(e)
+                    import epdb; epdb.st()
+                events = methodToCall
+            else:
+                # callable properties
+                try:
+                    methodToCall = getattr(baseobj, 'get_' + property_name)
+                except Exception as e:
+                    print(e)
+                    import epdb; epdb.st()
+                events = [x for x in methodToCall()]
 
         if write_cache or not os.path.isfile(pfile):
             # need to dump the pickle back to disk
@@ -251,9 +304,15 @@ class DefaultWrapper(object):
 
     def get_template_data(self):
         """Extract templated data from an issue body"""
+
+        if self.instance.pull_request:
+            issue_class = 'pullrequest'
+        else:
+            issue_class = 'issue'
+
         if not self.template_data:
             self.template_data = \
-                extract_template_data(self.instance.body, issue_number=self.number)
+                extract_template_data(self.instance.body, issue_number=self.number, issue_class=issue_class)
         return self.template_data
 
     def resolve_desired_labels(self, desired_label):
@@ -270,11 +329,20 @@ class DefaultWrapper(object):
                 if resolved_label in self.MUTUALLY_EXCLUSIVE_LABELS:
                     self.desired_labels.remove(label)        
 
-    def add_desired_label(self, name=None):
+    def add_desired_label(self, name=None, mutually_exclusive=[], force=False):
         """Adds a label to the desired labels list"""
         if name and name not in self.desired_labels:
-            self.process_mutually_exclusive_labels(name=name)
-            self.desired_labels.append(name)
+            if force:
+                self.desired_labels.append(name)
+            elif not mutually_exclusive:
+                self.process_mutually_exclusive_labels(name=name)
+                self.desired_labels.append(name)
+            else:
+                mutually_exclusive = [x.replace(' ', '_') for x in mutually_exclusive]
+                me = [x for x in self.desired_labels if x in mutually_exclusive]
+                if len(me) == 0:
+                    self.desired_labels.append(name)
+
 
     def pop_desired_label(self, name=None):
         """Deletes a label to the desired labels list"""
@@ -323,4 +391,61 @@ class DefaultWrapper(object):
     def set_description(self, description):
         # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
         self.instance.edit(body=description)
+
+    def get_assignees(self):
+        # https://developer.github.com/v3/issues/assignees/
+        # https://developer.github.com/changes/2016-5-27-multiple-assignees/
+        # https://github.com/PyGithub/PyGithub/pull/469
+        # the pygithub issue object only offers a single assignee (right now)
+
+        assignees = []
+        if not hasattr(self.instance, 'assignees'):
+            raw_assignees = self.raw_data_issue['assignees']
+            assignees = [x.login for x in self.instance._makeListOfClassesAttribute(github.NamedUser.NamedUser, raw_assignees).value]
+        else:
+            assignees = [x.login for x in self.instance.assignees]
+
+        self.current_assignees = [x for x in assignees]
+        return self.current_assignees
+
+    def add_desired_assignee(self, assignee):
+        if assignee not in self.desired_assignees and assignee in self.valid_assignees:
+            self.desired_assignees.append(assignee)
+
+    def assign_user(self, user):
+        assignees = [x for x in self.current_assignees]
+        if user not in self.current_assignees:
+            assignees.append(user)
+            self._edit_assignees(assignees)
+
+    def unassign_user(self, user):
+        assignees = [x for x in self.current_assignees]
+        if user in self.current_assignees:
+            assignees.remove(user)
+            self._edit_assignees(assignees)
+
+    def _edit_assignees(self, assignees):
+        # https://github.com/PyGithub/PyGithub/pull/469/files
+        # https://raw.githubusercontent.com/tmshn/PyGithub/ba007dc8a8bb5d5fdf75706db84dab6a69929d7d/github/Issue.py
+        # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
+        #self.instance.edit(body=description)
+
+        vparms = inspect.getargspec(self.instance.edit)
+        if 'assignees' in vparms.args:
+            print('time to implement the native call for edit on assignees')
+            sys.exit(1)
+        else:
+            post_parameters = dict()
+            post_parameters["assignees"] = [x for x in assignees]
+            
+            headers, data = self.instance._requester.requestJsonAndCheck(
+                "PATCH",
+                self.instance.url,
+                input=post_parameters
+            )
+            if headers['status'] != '200 OK':
+                print('ERROR: failed to edit assignees')
+                sys.exit(1)
+            #import epdb; epdb.st()
+
 
