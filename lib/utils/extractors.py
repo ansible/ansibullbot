@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import operator
+import re
 import shlex
 
 def extract_template_data(body, issue_number=None):
@@ -88,7 +89,15 @@ def extract_template_data(body, issue_number=None):
 
             # https://github.com/ansible/ansible-modules-core/issues/4159
             if k == 'component name' and 'module' in v:
-                v = v.replace('module', ' ')
+                # some modules have the word "_module" in their name and others do not
+                # https://github.com/ansible/ansibullbot/issues/198
+                # https://github.com/ansible/ansible-modules-core/issues/5328
+                reg = re.compile('\S+_module')
+                match = reg.match(v)
+                if match:
+                    v = v[match.pos:match.end()]
+                else:
+                    v = v.replace('module', ' ')
 
             # remove useless chars
             badchars = ['#', ',', ':', ';', '*', "'", '"', '`', '---', '__']
