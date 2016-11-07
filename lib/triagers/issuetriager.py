@@ -750,13 +750,18 @@ class TriageIssues(DefaultTriager):
 
         # handle resolved_by_pr ...
         if 'resolved_by_pr' in maintainer_commands:
-            pr_number = extract_pr_number_from_comment(maintainer_last_comment)
-            hfacts['resolved_by_pr'] = {
-                'number': pr_number,
-                'merged': self.is_pr_merged(pr_number),
-            }            
-            if not hfacts['resolved_by_pr']['merged']:
-                hfacts['maintainer_closure'] = False
+            maintainer_comments = self.history.get_user_comments(maintainers)
+            maintainer_comments = [x for x in reversed(maintainer_comments) \
+                                   if 'resolved_by_pr' in x]
+            for comment in maintainer_comments:
+                pr_number = extract_pr_number_from_comment(comment)
+                hfacts['resolved_by_pr'] = {
+                    'number': pr_number,
+                    'merged': self.is_pr_merged(pr_number),
+                }
+                if not hfacts['resolved_by_pr']['merged']:
+                    hfacts['maintainer_closure'] = False
+                break
 
         # needs_info toggles
         ni_commands = [x for x in maintainer_commands if 'needs_info' in x]
