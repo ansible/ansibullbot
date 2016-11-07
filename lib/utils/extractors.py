@@ -222,8 +222,11 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
                 newword += str(char)
         if newword:
             words[0] = newword
-    
+
+    if not words:
+        return None
     number = words[0]
+
     if number.isdigit():
         number = int(number)
     elif number.startswith('#'):
