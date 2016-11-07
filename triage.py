@@ -843,8 +843,7 @@ def main():
         )
 
         if ANSIBULLBOT_VERSION == 1:
-            #triage = TriagePullRequests(**kwargs)
-            pass
+            triage = TriagePullRequests(**kwargs)
 
         elif ANSIBULLBOT_VERSION == 2: 
 
@@ -858,7 +857,8 @@ def main():
             if args.repo == 'ansible':
                 triage = AnsibleAnsibleTriagePullRequests(**kwargs)
             else:
-                import epdb; epdb.st()
+                print('Version 2 PR triage for %s repo not yet implemented' % args.repo)
+                sys.exit(1)
 
         if not triage:
             print('No triager for %s version %s' % (args.repo, ANSIBULLBOT_VERSION))
