@@ -101,6 +101,13 @@ database/mssql/mssql_db.py: vedit
 database/mysql/mysql_replication.py: banyek
 database/postgresql/postgresql_ext.py: dschep
 database/postgresql/postgresql_lang.py: jensdepuydt
+database/proxysql/proxysql_backend_servers.py: bmildren
+database/proxysql/proxysql_global_variables.py: bmildren
+database/proxysql/proxysql_manage_config.py: bmildren
+database/proxysql/proxysql_mysql_users.py: bmildren
+database/proxysql/proxysql_query_rules.py: bmildren
+database/proxysql/proxysql_replication_hostgroups.py: bmildren
+database/proxysql/proxysql_scheduler.py: bmildren
 database/vertica/: dareko
 files/blockinfile.py: yaegashi
 files/archive.py: bendoh
