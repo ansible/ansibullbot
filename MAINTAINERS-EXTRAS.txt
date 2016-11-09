@@ -112,6 +112,7 @@ database/vertica/: dareko
 files/blockinfile.py: yaegashi
 files/archive.py: bendoh
 files/patch.py: jirutka luisperlaz
+identity/ipa/: Nosmoht
 identity/opendj/: dj-wasabi
 infrastructure/foreman/: ehelms
 messaging/rabbitmq: manuel-sousa chrishoffman romanek-adam
