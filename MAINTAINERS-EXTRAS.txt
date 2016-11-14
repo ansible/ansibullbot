@@ -59,7 +59,7 @@ cloud/amazon/sts_session_token.py: pwnall
 cloud/atomic/: krsacme
 cloud/azure/azure_rm_deployment.py: devigned lmazuel
 cloud/centurylink/: clc-runner
-cloud/cloudstack/: resmo dazworrall
+cloud/cloudstack/: resmo
 cloud/docker/docker_login.py: olsaki
 cloud/google/gcdns_: walbert947
 cloud/google/gce_img.py: supertom
