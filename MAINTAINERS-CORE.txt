@@ -101,19 +101,19 @@ inventory/group_by.py: jhoekx
 network/basics/get_url.py: jpmens
 network/basics/slurp.py: ansible
 network/basics/uri.py: romeotheriault
-network/cumulus/: CumulusNetworks privateip gundalow
-network/dellos6/: dhivyap skg-net privateip gundalow
-network/dellos9/: dhivyap skg-net privateip gundalow
-network/dellos10/: dhivyap skg-net privateip gundalow
-network/eos/: privateip gundalow
-network/ios/: privateip gundalow
-network/iosxr/: privateip gundalow
-network/junos/: privateip gundalow
-network/netvisor/: amitsi privateip gundalow
-network/nxos/: jedelman8 GGabriele privateip gundalow
-network/openswitch/: privateip gundalow
-network/sros/: privateip gundalow
-network/vyos/: privateip gundalow
+network/cumulus/: CumulusNetworks privateip gundalow qalthos
+network/dellos6/: dhivyap skg-net privateip gundalow qalthos
+network/dellos9/: dhivyap skg-net privateip gundalow qalthos
+network/dellos10/: dhivyap skg-net privateip gundalow qalthos
+network/eos/: privateip gundalow qalthos
+network/ios/: privateip gundalow qalthos
+network/iosxr/: privateip gundalow qalthos
+network/junos/: privateip gundalow qalthos
+network/netvisor/: amitsi privateip gundalow qalthos
+network/nxos/: jedelman8 GGabriele privateip gundalow qalthos
+network/openswitch/: privateip gundalow qalthos
+network/sros/: privateip gundalow qalthos
+network/vyos/: privateip gundalow qalthos
 packaging/language/easy_install.py: mattupstate
 packaging/language/gem.py: ansible
 packaging/language/pip.py: mattupstate
