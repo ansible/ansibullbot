@@ -75,7 +75,7 @@ cloud/misc/virt.py: ansible
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
 cloud/ovh/ovh_ip_loadbalancing_backend.py: pascalheraud
-cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz
+cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz thingee
 cloud/ovirt/: machacekondra
 cloud/profitbricks/: baldwinSPC
 cloud/rackspace/: smashwilson

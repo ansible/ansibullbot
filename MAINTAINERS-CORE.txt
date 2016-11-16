@@ -50,7 +50,7 @@ cloud/openstack/_quantum_floating_ip_associate.py: DEPRECATED
 cloud/openstack/_quantum_router.py: DEPRECATED
 cloud/openstack/_quantum_router_gateway.py: DEPRECATED
 cloud/openstack/_quantum_router_interface.py: DEPRECATED
-cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz
+cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz thingee
 cloud/rackspace/rax.py: j2sol sivel
 cloud/rackspace/rax_cbs.py: claco sivel
 cloud/rackspace/rax_cbs_attachments.py: claco sivel
