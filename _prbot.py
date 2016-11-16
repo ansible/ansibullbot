@@ -314,6 +314,18 @@ def triage(urlstring):
     #----------------------------------------------------------------------------
     if (pr_filename.split('/')[0] == 'cloud') and ('cloud' not in pr_labels):
         actions.append("newlabel: cloud")
+        cloud_type = pr_filename.split('/')[1]
+        if cloud_type == 'amazon' and ('aws' not in pr_labels):
+            actions.append("newlabel: aws")
+        elif cloud_type = 'digital_ocean' and ('digital_ocean' not in pr_labels):
+            actions.append("newlabel: digital_ocean")
+        elif cloud_type = 'google' and ('gce' not in pr_labels):
+            actions.append("newlabel: gce")
+        elif cloud_type = 'openstack' and ('openstack' not in pr_labels):
+            actions.append("newlabel: openstack")
+        elif cloud_type = 'vmware' and ('vmware' not in pr_labels):
+            actions.append("newlabel: vmware")
+
     if (pr_filename.split('/')[0] == 'network') and ('networking' not in pr_labels):
         actions.append("newlabel: networking")
     if (pr_filename.split('/')[0] == 'windows') and ('windows' not in pr_labels):
