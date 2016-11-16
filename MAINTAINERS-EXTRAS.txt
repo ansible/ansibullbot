@@ -69,6 +69,7 @@ cloud/lxd/: hnakamur
 cloud/misc/ovirt.py: joshainglis karmab
 cloud/misc/proxmox.py: UnderGreen
 cloud/misc/proxmox_template.py: UnderGreen
+cloud/misc/proxmox_kvm.py: helldorado
 cloud/misc/rhevm.py: TimothyVandenbrande
 cloud/misc/virt.py: ansible
 cloud/misc/virt_net.py: drybjed
