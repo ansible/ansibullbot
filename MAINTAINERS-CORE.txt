@@ -97,7 +97,7 @@ files/template.py: ansible
 files/unarchive.py: dagwieers pileofrogs
 files/xattr.py: ansible
 inventory/add_host.py: ansible
-inventory/group_by.py: jhoekx
+inventory/group_by.py: ansible
 network/basics/get_url.py: jpmens
 network/basics/slurp.py: ansible
 network/basics/uri.py: romeotheriault
