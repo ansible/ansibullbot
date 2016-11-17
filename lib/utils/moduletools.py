@@ -212,23 +212,30 @@ class ModuleIndexer(object):
         self.modules['meta']['topic'] = None
         self.modules['meta']['authors'] = []
 
-        # include is almost always an ansible/ansible issue
-        for k,v in self.modules.iteritems():
-            if k.endswith('/include.py'):
-                self.modules[k]['repository'] = 'ansible'
-                break
-
-        # deprecated modules are annoying
+        # custom fixes
         newitems = []
         for k,v in self.modules.iteritems():
+
+            # include* is almost always an ansible/ansible issue
+            # https://github.com/ansible/ansibullbot/issues/214
+            if k.endswith('/include.py'):
+                self.modules[k]['repository'] = 'ansible'
+            # https://github.com/ansible/ansibullbot/issues/214
+            if k.endswith('/include_vars.py'):
+                self.modules[k]['repository'] = 'ansible'
+            if k.endswith('/include_role.py'):
+                self.modules[k]['repository'] = 'ansible'
+
+            # deprecated modules are annoying
             if v['name'].startswith('_'):
-                
+
                 dkey = os.path.dirname(v['filepath'])
                 dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
                 if not dkey in self.modules:
                     nd = v.copy()
                     nd['name'] = nd['name'].replace('_', '', 1)
                     newitems.append((dkey, nd))
+
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
 
