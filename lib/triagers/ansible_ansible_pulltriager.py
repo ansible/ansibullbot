@@ -57,6 +57,9 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         'contrib/inventory/gce*': {
             'labels': ['contrib_inventory', 'cloud', 'gce'],
         },
+        'contrib/inventory/openstack*': {
+            'labels': ['contrib_inventory', 'cloud', 'openstack'],
+        },
         'contrib/inventory/vmware_*': {
             'labels': ['contrib_inventory', 'cloud', 'vmware'],
             'maintainers': ['jctanner']
@@ -91,6 +94,9 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
         },
         '.*rax.*': {
             'labels': ['cloud', 'rax'],
+        },
+        '.*openstack.*': {
+            'labels': ['cloud', 'openstack'],
         },
         '.*azure.*': {
             'labels': ['cloud', 'azure'],
