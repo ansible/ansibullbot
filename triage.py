@@ -72,6 +72,7 @@ MODULE_NAMESPACE_LABELS = {
     'cloud/google': "gce",
     'cloud/amazon': "aws",
     'cloud/azure': "azure",
+    'cloud/openstack': "openstack",
     'cloud/digital_ocean': "digital_ocean",
     'windows': "windows",
     'network': "networking"
