@@ -223,6 +223,8 @@ class ModuleIndexer(object):
             # https://github.com/ansible/ansibullbot/issues/214
             if k.endswith('/include_vars.py'):
                 self.modules[k]['repository'] = 'ansible'
+            if k.endswith('/include_role.py'):
+                self.modules[k]['repository'] = 'ansible'
 
             # deprecated modules are annoying
             if v['name'].startswith('_'):
