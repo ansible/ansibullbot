@@ -386,21 +386,26 @@ class HistoryWrapper(object):
 
         for reaction in reactions:
             # 2016-07-26T20:08:20Z
-            edict = {}
-            edict['id'] = reaction['id']
-            edict['event'] = 'reacted'
-            edict['created_at'] = reaction['created_at']
-            edict['actor'] = reaction['user']['login']
-            edict['content'] = reaction['content']
-
-            # convert the timestamp the same way the lib does it
-            if type(edict['created_at']) in [unicode, str]:
-                dt = GithubObject.GithubObject.\
-                        _makeDatetimeAttribute(edict['created_at'])
-                edict['created_at'] = dt.value
+            if not isinstance(reaction, dict):
+                # FIXME - not sure what's happening here
                 #import epdb; epdb.st()
+                pass
+            else:
+                edict = {}
+                edict['id'] = reaction['id']
+                edict['event'] = 'reacted'
+                edict['created_at'] = reaction['created_at']
+                edict['actor'] = reaction['user']['login']
+                edict['content'] = reaction['content']
 
-            processed_events.append(edict)
+                # convert the timestamp the same way the lib does it
+                if type(edict['created_at']) in [unicode, str]:
+                    dt = GithubObject.GithubObject.\
+                            _makeDatetimeAttribute(edict['created_at'])
+                    edict['created_at'] = dt.value
+                    #import epdb; epdb.st()
+
+                processed_events.append(edict)
 
         # sort by created_at
         sorted_events = sorted(processed_events, key=itemgetter('created_at')) 
