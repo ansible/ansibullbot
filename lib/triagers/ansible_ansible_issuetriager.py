@@ -41,9 +41,9 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
     # triage label should be added by bot, removed by human ... later by commands?
 
-    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
+    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug',
                       'bot_broken', 'bot_skip',
-                      'wontfix', 'bug_resolved', 'resolved_by_pr', 
+                      'wontfix', 'bug_resolved', 'resolved_by_pr',
                       'needs_contributor', 'duplicate_of']
 
     IGNORE_LABELS_ADD = ['cloud', 'networking', 'vmware', 'windows', 'openstack', 'backport']
@@ -99,7 +99,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             sys.exit(1)
             #import epdb; epdb.st()
         return state
-        
+
 
     def keep_unmanaged_labels(self):
         '''Persists labels that were added manually and not bot managed'''
@@ -129,7 +129,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             for k,v in self.actions.iteritems():
                 if type(v) == list:
                     self.actions[k] = []
-            self.actions['close'] = False           
+            self.actions['close'] = False
             self.issue.add_desired_label('bot_broken')
 
         elif self.meta['bot_skip']:
@@ -159,6 +159,18 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
 
             if self.meta['resolved_by_pr']['merged']:
                 self.actions['close'] = True
+
+        elif self.meta['needs_contributor']:
+
+            self.debug(msg='needs contributor stanza')
+
+            # clear out all actions and do nothing
+            for k,v in self.actions.iteritems():
+                if type(v) == list:
+                    self.actions[k] = []
+            self.actions['close'] = False
+            self.issue.add_desired_label('waiting_on_contributor')
+
 
         elif (self.match and (self.github_repo != self.match.get('repository', 'ansible')))\
             or 'needs_to_be_moved' in self.issue.current_labels:

@@ -567,10 +567,10 @@ class TriageIssues(DefaultTriager):
         '''Only used by the ansible/ansible triager at the moment'''
         hfacts = {}
         today = self.get_current_time()
-        
+
         self.history = HistoryWrapper(
-                        self.issue, 
-                        usecache=usecache, 
+                        self.issue,
+                        usecache=usecache,
                         cachedir=self.cachedir
                        )
 
@@ -768,7 +768,7 @@ class TriageIssues(DefaultTriager):
 
         # Has the maintainer ever subscribed?
         maintainer_subscribed = self.history.has_subscribed(maintainers)
-        
+
         # Was it ever needs_info?
         was_needs_info = self.history.was_labeled(label='needs_info')
         needsinfo_last_applied = self.history.label_last_applied('needs_info')
@@ -777,7 +777,7 @@ class TriageIssues(DefaultTriager):
         # Still needs_info?
         needsinfo_add = False
         needsinfo_remove = False
-        
+
         if 'needs_info' in self.issue.current_labels:
             if not needsinfo_last_applied or not submitter_last_commented:
                 import epdb; epdb.st()
@@ -787,7 +787,7 @@ class TriageIssues(DefaultTriager):
 
         #if 'needs_info' in maintainer_commands and maintainer_last_commented:
         if ni_commands and maintainer_last_commented:
-            if ni_commands[-1] == 'needs_info':            
+            if ni_commands[-1] == 'needs_info':
                 #import epdb; epdb.st()
                 if submitter_last_commented and maintainer_last_commented:
                     if submitter_last_commented > maintainer_last_commented:
@@ -893,6 +893,14 @@ class TriageIssues(DefaultTriager):
             else:
                 submitter_to_ping = True
                 submitter_to_reping = False
+
+        # needs_contributor ...
+        hfacts['needs_contributor'] = False
+        for command in maintainer_commands:
+            if command == 'needs_contributor':
+                hfacts['needs_contributor'] = True
+            elif command == '!needs_contributor':
+                hfacts['needs_contributor'] = False
 
         hfacts['bot_broken'] = bot_broken
         hfacts['bot_skip'] = bot_skip
