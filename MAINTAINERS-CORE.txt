@@ -108,7 +108,7 @@ network/dellos10/: dhivyap skg-net privateip gundalow qalthos
 network/eos/: privateip gundalow qalthos
 network/ios/: privateip gundalow qalthos
 network/iosxr/: privateip gundalow qalthos
-network/junos/: privateip gundalow qalthos
+network/junos/: privateip gundalow qalthos ganeshnalawade
 network/netvisor/: amitsi privateip gundalow qalthos
 network/nxos/: jedelman8 GGabriele privateip gundalow qalthos
 network/openswitch/: privateip gundalow qalthos
