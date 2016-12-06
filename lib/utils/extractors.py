@@ -5,16 +5,19 @@ import re
 import shlex
 
 def extract_template_data(body, issue_number=None, issue_class='issue'):
-    SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME', 
-                'ANSIBLE VERSION', 'CONFIGURATION', 
-                'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT', 
+    SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
+                'ANSIBLE VERSION', 'CONFIGURATION',
+                'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT',
                 'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
                 'ACTUAL RESULTS']
 
-    ISSUE_TYPES = ['Bug Report', 'Feature Idea', 
+    ISSUE_TYPES = ['Bug Report', 'Feature Idea',
                    'Feature Request', 'Documentation Report']
 
     tdict = {} #this is the final result to return
+
+    if not body:
+        return tdict
 
     upper_body = body.upper()
 
@@ -23,7 +26,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
     for section in SECTIONS:
         # http://www.tutorialspoint.com/python/string_find.htm
         # str.find(str, beg=0 end=len(string))        
-        match = upper_body.find(section)                 
+        match = upper_body.find(section)
         if match != -1:
             match_map[section] = match
     if not match_map:
@@ -40,7 +43,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
         # if last index, slice to the end
         if idx >= total_indexes:
             tdict[x[0]] = body[start_index:]
-        else:        
+        else:
             # slice to the next section
             stop_index = match_map[idx+1][1]
             tdict[x[0]] = body[start_index:stop_index]
