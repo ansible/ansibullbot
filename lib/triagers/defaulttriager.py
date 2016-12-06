@@ -194,9 +194,11 @@ class DefaultTriager(object):
 
         # What is the ansible version?
         self.ansible_version = self.get_ansible_version()
-        self.debug('version: %s' % self.ansible_version)
+        if not isinstance(self.debug, bool):
+            self.debug('version: %s' % self.ansible_version)
         self.ansible_label_version = self.get_ansible_version_major_minor()
-        self.debug('lversion: %s' % self.ansible_label_version)
+        if not isinstance(self.debug, bool):
+            self.debug('lversion: %s' % self.ansible_label_version)
 
         # was component specified?
         component_defined = 'component name' in self.template_data
@@ -222,8 +224,8 @@ class DefaultTriager(object):
             if hasattr(self, 'meta'):
                 self.meta['fuzzy_match_called'] = True
             kwargs = dict(
-                        repo=self.github_repo, 
-                        title=self.issue.instance.title, 
+                        repo=self.github_repo,
+                        title=self.issue.instance.title,
                         component=self.template_data.get('component name')
                      )
             smatch = self.module_indexer.fuzzy_match(**kwargs)
@@ -269,7 +271,8 @@ class DefaultTriager(object):
                     # there's no good match that would include all maintainers
                     # just skip multi-module processing for now since the rest
                     # of the code doesn't know what to do with it.
-                    self.debug('multi-match maintainers: %s' % umtuples)
+                    if not isinstance(self.debug, bool):
+                        self.debug('multi-match maintainers: %s' % umtuples)
                     #print(craw)
                     #import epdb; epdb.st()
                     pass
@@ -672,16 +675,18 @@ class DefaultTriager(object):
                     # if only adding new files, assume it is a feature
                     if self.patch_contains_only_new_files():
                         issue_type = 'feature pull request'
-                    else:                    
-                        self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
+                    else:
+                        if not isinstance(self.debug, bool):
+                            self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
                         self.issue.add_desired_label('needs_info')
                         return
             else:
-                self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
+                if not isinstance(self.debug, bool):
+                    self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
                 self.issue.add_desired_label('needs_info')
                 return
 
-        desired_label = issue_type.replace(' ', '_')        
+        desired_label = issue_type.replace(' ', '_')
         desired_label = desired_label.lower()
         desired_label = desired_label.replace('documentation', 'docs')
 
@@ -709,21 +714,24 @@ class DefaultTriager(object):
         oldfiles = False
         for x in self.issue.files:
             if x.filename.encode('ascii', 'ignore') in self.file_indexer.files:
-                self.debug('old file match on %s' % x.filename.encode('ascii', 'ignore'))
+                if not isinstance(self.debug, bool):
+                    self.debug('old file match on %s' % x.filename.encode('ascii', 'ignore'))
                 oldfiles = True
                 break
         return not oldfiles
 
     def add_desired_labels_by_ansible_version(self):
         if not 'ansible version' in self.template_data:
-            self.debug(msg="no ansible version section")
+            if not isinstance(self.debug, bool):
+                self.debug(msg="no ansible version section")
             self.issue.add_desired_label(name="needs_info")
             #self.issue.add_desired_comment(
             #    boilerplate="issue_missing_data"
             #)            
             return
         if not self.template_data['ansible version']:
-            self.debug(msg="no ansible version defined")
+            if not isinstance(self.debug, bool):
+                self.debug(msg="no ansible version defined")
             self.issue.add_desired_label(name="needs_info")
             #self.issue.add_desired_comment(
             #    boilerplate="issue_missing_data"
@@ -796,30 +804,35 @@ class DefaultTriager(object):
         comments = self.issue.get_comments()
         today = datetime.today()
 
-        self.debug(msg="--- START Processing Comments:")
+        if not isinstance(self.debug, bool):
+            self.debug(msg="--- START Processing Comments:")
 
         for idc,comment in enumerate(comments):
 
             if comment.user.login in self.BOTLIST:
-                self.debug(msg="%s is in botlist: " % comment.user.login)
+                if not isinstance(self.debug, bool):
+                    self.debug(msg="%s is in botlist: " % comment.user.login)
                 time_delta = today - comment.created_at
                 comment_days_old = time_delta.days
 
-                self.debug(msg="Days since last bot comment: %s" % comment_days_old)
+                if not isinstance(self.debug, bool):
+                    self.debug(msg="Days since last bot comment: %s" % comment_days_old)
                 if comment_days_old > 14:
                     labels = self.issue.desired_labels
 
                     if 'pending' not in comment.body:
 
                         if self.issue.is_labeled_for_interaction():
-                            self.debug(msg="submitter_first_warning")
+                            if not isinstance(self.debug, bool):
+                                self.debug(msg="submitter_first_warning")
                             self.issue.add_desired_comment(
                                 boilerplate="submitter_first_warning"
                             )
                             break
 
                         if "maintainer_review" not in labels:
-                            self.debug(msg="maintainer_first_warning")
+                            if not isinstance(self.debug, bool):
+                                self.debug(msg="maintainer_first_warning")
                             self.issue.add_desired_comment(
                                 boilerplate="maintainer_first_warning"
                             )
@@ -828,20 +841,23 @@ class DefaultTriager(object):
                     # pending in comment.body                           
                     else:
                         if self.issue.is_labeled_for_interaction():
-                            self.debug(msg="submitter_second_warning")
+                            if not isinstance(self.debug, bool):
+                                self.debug(msg="submitter_second_warning")
                             self.issue.add_desired_comment(
                                 boilerplate="submitter_second_warning"
                             )
                             break
 
                         if "maintainer_review" in labels:
-                            self.debug(msg="maintainer_second_warning")
+                            if not isinstance(self.debug, bool):
+                                self.debug(msg="maintainer_second_warning")
                             self.issue.add_desired_comment(
                                 boilerplate="maintainer_second_warning"
                             )
                             break
 
-                self.debug(msg="STATUS: no useful state change since last pass"
+                if not isinstance(self.debug, bool):
+                    self.debug(msg="STATUS: no useful state change since last pass"
                             "( %s )" % comment.user.login)
                 break
 
@@ -849,22 +865,24 @@ class DefaultTriager(object):
                 or comment.user.login.lower() in module_maintainers\
                 or ('ansible' in module_maintainers and comment.user.login in self.ansible_members):
 
-                self.debug(msg="%s is module maintainer commented on %s." % (comment.user.login, comment.created_at))
+                if not isinstance(self.debug, bool):
+                    self.debug(msg="%s is module maintainer commented on %s." % (comment.user.login, comment.created_at))
                 if 'needs_info' in comment.body:
-                    self.debug(msg="...said needs_info!")
+                    if not isinstance(self.debug, bool):
+                        self.debug(msg="...said needs_info!")
                     self.issue.add_desired_label(name="needs_info")
                 elif "close_me" in comment.body:
-                    self.debug(msg="...said close_me!")
+                    if not isinstance(self.debug, bool): self.debug(msg="...said close_me!")
                     self.issue.add_desired_label(name="pending_action_close_me")
                     break
 
             if comment.user.login == self.issue.get_submitter():
-                self.debug(msg="submitter %s, commented on %s." % (comment.user.login, comment.created_at))
+                if not isinstance(self.debug, bool): self.debug(msg="submitter %s, commented on %s." % (comment.user.login, comment.created_at))
 
             if comment.user.login not in self.BOTLIST and comment.user.login in self.ansible_members:
-                self.debug(msg="%s is a ansible member" % comment.user.login)
+                if not isinstance(self.debug, bool): self.debug(msg="%s is a ansible member" % comment.user.login)
 
-        self.debug(msg="--- END Processing Comments")
+        if not isinstance(self.debug, bool): self.debug(msg="--- END Processing Comments")
 
 
     def issue_type_to_label(self, issue_type):
@@ -981,17 +999,21 @@ class DefaultTriager(object):
 
         #time.sleep(1)
         for comment in self.actions['comments']:
-            self.debug(msg="API Call comment: " + comment)
+            #import epdb; epdb.st()
+            if not isinstance(self.debug, bool):
+                self.debug(msg="API Call comment: " + comment)
             self.issue.add_comment(comment=comment)
         if self.actions['close']:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             self.issue.instance.edit(state='closed')
             return
         for unlabel in self.actions['unlabel']:
-            self.debug(msg="API Call unlabel: " + unlabel)
+            if not isinstance(self.debug, bool):
+                self.debug(msg="API Call unlabel: " + unlabel)
             self.issue.remove_label(label=unlabel)
         for newlabel in self.actions['newlabel']:
-            self.debug(msg="API Call newlabel: " + newlabel)
+            if not isinstance(self.debug, bool):
+                self.debug(msg="API Call newlabel: " + newlabel)
             self.issue.add_label(label=newlabel)
 
         if 'assign' in self.actions:

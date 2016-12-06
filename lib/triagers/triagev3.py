@@ -145,14 +145,15 @@ class TriageV3(DefaultTriager):
                 if iw.repo_full_name in MREPOS:
                     if iw.created_at >= REPOMERGEDATE:
                         # close new module issues+prs immediately
+                        logging.info('module issue created -after- merge')
                         action_meta = self.close_module_issue_with_message(iw)
                     else:
                         # process history
                         # - check if message was given, comment if not
                         # - if X days after message, close PRs, move issues.
-                        logging.info('module issue created before merge')
+                        logging.info('module issue created -before- merge')
 
-                        hw = self.get_history(iw, usecache=False, cachedir=hcache)
+                        hw = self.get_history(iw, usecache=True, cachedir=hcache)
                         lc = hw.last_date_for_boilerplate('repomerge')
                         if lc:
                             lcdelta = (datetime.datetime.now() - lc).days
