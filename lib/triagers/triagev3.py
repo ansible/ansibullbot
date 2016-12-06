@@ -26,9 +26,9 @@ from lib.triagers.defaulttriager import DefaultTriager
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 
-#REPOS = ['ansible/ansible', 'ansible/ansible-modules-core', 'ansible/ansible-modules-extras']
+REPOS = ['ansible/ansible', 'ansible/ansible-modules-core', 'ansible/ansible-modules-extras']
 #REPOS = ['ansible/ansible-modules-core', 'ansible/ansible-modules-extras']
-REPOS = ['ansible/ansible-modules-extras']
+#REPOS = ['ansible/ansible-modules-extras']
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 
@@ -39,7 +39,7 @@ class TriageV3(DefaultTriager):
         self.last_run = None
         self.daemonize = None
         self.daemonize_interval = None
-        self.dry_run = True
+        self.dry_run = False
         self.force = False
         self.gh_pass = None
         self.github_pass = None
@@ -162,7 +162,6 @@ class TriageV3(DefaultTriager):
 
         pprint(self.actions)
         action_meta = self.apply_actions()
-        import epdb; epdb.st()
         return action_meta
 
 
