@@ -114,7 +114,7 @@ class DefaultWrapper(object):
             body = x.body
             lines = body.split('\n')
             lines = [y.strip() for y in lines if y.strip()]
-    
+
             if lines[-1].startswith('<!---') \
                 and lines[-1].endswith('--->') \
                 and 'boilerplate:' in lines[-1]\
@@ -230,7 +230,7 @@ class DefaultWrapper(object):
             sys.exit(1)
 
         # pull all events if timestamp is behind or no events cached
-        if update or not events:        
+        if update or not events:
             write_cache = True
             updated = self.get_current_time()
 
@@ -256,7 +256,7 @@ class DefaultWrapper(object):
             edata = [updated, events]
             with open(pfile, 'wb') as f:
                 pickle.dump(edata, f)
-        
+
         return events
 
 
@@ -327,7 +327,7 @@ class DefaultWrapper(object):
             for label in self.desired_labels:
                 resolved_label = self.resolve_desired_labels(label)
                 if resolved_label in self.MUTUALLY_EXCLUSIVE_LABELS:
-                    self.desired_labels.remove(label)        
+                    self.desired_labels.remove(label)
 
     def add_desired_label(self, name=None, mutually_exclusive=[], force=False):
         """Adds a label to the desired labels list"""
@@ -437,7 +437,7 @@ class DefaultWrapper(object):
         else:
             post_parameters = dict()
             post_parameters["assignees"] = [x for x in assignees]
-            
+
             headers, data = self.instance._requester.requestJsonAndCheck(
                 "PATCH",
                 self.instance.url,
@@ -446,6 +446,39 @@ class DefaultWrapper(object):
             if headers['status'] != '200 OK':
                 print('ERROR: failed to edit assignees')
                 sys.exit(1)
-            #import epdb; epdb.st()
+
+    @property
+    def repo_full_name(self):
+        return self.repo.repo.full_name
+
+    @property
+    def html_url(self):
+        return self.instance.html_url
+
+    @property
+    def created_at(self):
+        return self.instance.created_at
+
+    @property
+    def updated_at(self):
+        return self.instance.updated_at
+
+    @property
+    def closed_at(self):
+        return self.instance.closed_at
+
+    @property
+    def merged_at(self):
+        # only pullrequest objects have merged_at
+        return self.instance.merged_at
+
+    @property
+    def state(self):
+        return self.instance.state
+
+
+
+
+
 
 
