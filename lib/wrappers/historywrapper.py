@@ -104,8 +104,8 @@ class HistoryWrapper(object):
     def get_user_comments_groupby(self, username, groupby='d'):
         '''Count comments for a user by day/week/month/year'''
 
-        comments = self._find_events_by_actor('commented', 
-                                              username, 
+        comments = self._find_events_by_actor('commented',
+                                              username,
                                               maxcount=999)
         groups = {}
         for comment in comments:
@@ -343,6 +343,29 @@ class HistoryWrapper(object):
                     labeled = True
                     break
         return labeled
+
+    def get_boilerplate_comments(self, botname='ansibot', dates=False):
+        boilerplates = []
+        comments = self._find_events_by_actor('commented',
+                                              botname,
+                                              maxcount=999)
+        for comment in comments:
+            if 'boilerplate:' in comment['body']:
+                lines = [x for x in comment['body'].split('\n') if x.strip() and 'boilerplate:' in x]
+                bp = lines[0].split()[2]
+                if dates:
+                    boilerplates.append((comment['created_at'], bp))
+                else:
+                    boilerplates.append(bp)
+        return boilerplates
+
+    def last_date_for_boilerplate(self, boiler, botname='ansibot'):
+        last_date = None
+        bps = self.get_boilerplate_comments(botname=botname, dates=True)
+        for bp in bps:
+            if bp[1] == boiler:
+                last_date = bp[0]
+        return last_date
 
     def process(self):
         """Merge all events into chronological order"""

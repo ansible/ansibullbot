@@ -24,13 +24,19 @@ import os
 from pprint import pprint
 from lib.triagers.defaulttriager import DefaultTriager
 from lib.wrappers.ghapiwrapper import GithubWrapper
+from lib.wrappers.historywrapper import HistoryWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 
-REPOS = ['ansible/ansible', 'ansible/ansible-modules-core', 'ansible/ansible-modules-extras']
+REPOS = [
+    'ansible/ansible',
+    'ansible/ansible-modules-core',
+    'ansible/ansible-modules-extras'
+]
 #REPOS = ['ansible/ansible-modules-core', 'ansible/ansible-modules-extras']
 #REPOS = ['ansible/ansible-modules-extras']
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
+MREPO_CLOSE_WINDOW = 30
 
 class TriageV3(DefaultTriager):
 
@@ -57,6 +63,7 @@ class TriageV3(DefaultTriager):
         self.pr = False
         self.repo = None
         self.safe_force = False
+        self.skiprepo = []
         self.start_at = False
         self.verbose = False
 
@@ -74,8 +81,9 @@ class TriageV3(DefaultTriager):
         attribs = dir(self.args)
         attribs = [x for x in attribs if not x.startswith('_')]
         for x in attribs:
-            val = getattr(self, x)
+            val = getattr(self.args, x)
             setattr(self, x, val)
+        #import epdb; epdb.st()
 
         if self.args.daemonize:
             logging.info('starting daemonize loop')
@@ -116,6 +124,10 @@ class TriageV3(DefaultTriager):
 
         for item in self.repos.items():
             repopath = item[0]
+
+            if repopath in self.skiprepo:
+                continue
+
             repoobj = item[1]['repo']
             issues = item[1]['issues']
             for i_item in issues.items():
@@ -127,20 +139,91 @@ class TriageV3(DefaultTriager):
                     logging.info(iw + ' is closed, skipping')
                     continue
 
+                hcache = os.path.join(self.cachedir, iw.repo_full_name, 'issues')
                 action_meta = None
+
                 if iw.repo_full_name in MREPOS:
                     if iw.created_at >= REPOMERGEDATE:
+                        # close new module issues+prs immediately
                         action_meta = self.close_module_issue_with_message(iw)
                     else:
-                        pass
+                        # process history
+                        # - check if message was given, comment if not
+                        # - if X days after message, close PRs, move issues.
+                        logging.info('module issue created before merge')
+
+                        hw = self.get_history(iw, usecache=False, cachedir=hcache)
+                        lc = hw.last_date_for_boilerplate('repomerge')
+                        if lc:
+                            lcdelta = (datetime.datetime.now() - lc).days
+                        else:
+                            lcdelta = None
+
+                        kwargs = {}
+                        # missing the comment?
+                        if lc:
+                            kwargs['bp'] = 'repomerge'
+                        else:
+                            kwargs['bp'] = None
+
+                        # should it be closed or not?
+                        if iw.is_pullrequest():
+                            if lc and lcdelta > MREPO_CLOSE_WINDOW:
+                                kwargs['close'] = True
+                                action_meta = self.close_module_issue_with_message(iw, **kwargs)
+                            elif not lc:
+                                # add the comment
+                                self.add_repomerge_comment(iw)
+                            else:
+                                # do nothing
+                                pass
+                        else:
+                            kwargs['close'] = False
+                            if lc and lcdelta > MREPO_CLOSE_WINDOW:
+                                # move it for them
+                                self.move_issue(iw)
+                            elif not lc:
+                                # add the comment
+                                self.add_repomerge_comment(iw)
+                            else:
+                                # do nothing
+                                pass
+
                 else:
+                    # ansible/ansible triage
                     pass
 
                 pprint(action_meta)
                 #import epdb; epdb.st()
 
+    def move_issue(self, issue):
+        pass
 
-    def close_module_issue_with_message(self, issue):
+    def add_repomerge_comment(self, issue, bp='repomerge'):
+        '''Add the comment without closing'''
+        self.actions = {}
+        self.actions['close'] = False
+        self.actions['comments'] = []
+        self.actions['newlabel'] = []
+        self.actions['unlabel'] = []
+
+        # stubs for the comment templater
+        self.module_maintainers = []
+        self.module = None
+        self.issue = issue
+        self.template_data = {}
+        self.github_repo = issue.repo_full_name
+        self.match = {}
+
+        comment = self.render_comment(boilerplate=bp)
+        self.actions['comments'] = [comment]
+
+        pprint(self.actions)
+        action_meta = self.apply_actions()
+        return action_meta
+
+
+    def close_module_issue_with_message(self, issue, bp='repomerge_new'):
         '''After the repomerge, new issues+prs in the module repos should be closed'''
         self.actions = {}
         self.actions['close'] = True
@@ -156,8 +239,7 @@ class TriageV3(DefaultTriager):
         self.github_repo = issue.repo_full_name
         self.match = {}
 
-        issue.add_desired_comment('repomerge')
-        comment = self.render_comment(boilerplate='repomerge')
+        comment = self.render_comment(boilerplate=bp)
         self.actions['comments'] = [comment]
 
         pprint(self.actions)
@@ -178,6 +260,11 @@ class TriageV3(DefaultTriager):
         self.ghw = GithubWrapper(self.gh)
 
         for repo in REPOS:
+
+            if repo in self.skiprepo:
+                continue
+            #import epdb; epdb.st()
+
             logging.info('getting repo obj for %s' % repo)
             cachedir = os.path.join(self.cachedir, repo)
             self.repos[repo] = {}
@@ -206,5 +293,10 @@ class TriageV3(DefaultTriager):
 
         logging.info('finished querying updated issues')
         return issueids
+
+
+    def get_history(self, issue, usecache=True, cachedir=None):
+        history = HistoryWrapper(issue, usecache=usecache, cachedir=cachedir)
+	return history
 
 

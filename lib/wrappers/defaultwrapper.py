@@ -476,6 +476,24 @@ class DefaultWrapper(object):
     def state(self):
         return self.instance.state
 
+    @property
+    def github_type(self):
+        if '/pull/' in self.html_url:
+            return 'pullrequest'
+        else:
+            return 'issue'
+
+    def is_pullrequest(self):
+        if self.github_type == 'pullrequest':
+            return True
+        else:
+            return False
+
+    def is_issue(self):
+        if self.github_type == 'issue':
+            return True
+        else:
+            return False
 
 
 

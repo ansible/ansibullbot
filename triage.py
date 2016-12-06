@@ -774,6 +774,9 @@ def main3():
     parser.add_argument("--daemonize_interval", type=int, default=(60 * 60),
                         help="seconds to sleep between loop iterations")
 
+    parser.add_argument("--skiprepo", action='append',
+                        help="Github repo to skip triaging")
+
     parser.add_argument("--repo", "-r", type=str,
                         help="Github repo to triage (defaults to all)")
     parser.add_argument("--gh-user", "-u", type=str,
