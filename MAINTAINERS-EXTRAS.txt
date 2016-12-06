@@ -265,7 +265,7 @@ web_infrastructure/apache2_mod_proxy.py: oboukili
 web_infrastructure/deploy_helper.py: ramondelafuente
 web_infrastructure/ejabberd_user.py: privateip
 web_infrastructure/jboss.py: jhoekx
-web_infrastructure/jira.py: tarka
+web_infrastructure/jira.py: tarka Slezhuk
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/jenkins_job.py: sermilrod
 web_infrastructure/jenkins_plugin.py: jtyr
