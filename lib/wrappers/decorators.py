@@ -5,6 +5,7 @@
 import time
 import logging
 import functools
+import socket
 
 from functools import wraps
 from inspect import getargspec
@@ -28,9 +29,14 @@ def RateLimited(fn):
                 print(e)
                 if hasattr(e, 'data') and e.data.get('message'):
                     if 'blocked from content creation' in e.data['message']:
+                        logging.info('content creation rate limit exceeded')
                         sminutes = 2
                     elif 'rate limit exceeded' in e.data['message']:
+                        logging.info('general rate limit exceeded')
                         sminutes = 61
+                    elif isinstance(e, socket.error):
+                        logging.info('socket error')
+                        sminutes = 5
                     else:
                         import epdb; epdb.st()
                 else:
