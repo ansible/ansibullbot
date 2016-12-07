@@ -786,8 +786,8 @@ class DefaultTriager(object):
         correct_repo = self.match.get('repository', None)
 
         template = environment.get_template('%s.j2' % boilerplate)
-        comment = template.render(maintainers=maintainers, 
-                                  submitter=submitter, 
+        comment = template.render(maintainers=maintainers,
+                                  submitter=submitter,
                                   issue_type=issue_type,
                                   correct_repo=correct_repo,
                                   component_name=self.template_data.get('component name', 'NULL'),
@@ -980,7 +980,7 @@ class DefaultTriager(object):
                 action_meta['REDO'] = True
         else:
             print("Skipping.")
-    
+
         # let the upper level code redo this issue
         return action_meta
 

@@ -139,7 +139,8 @@ class TriageV3(DefaultTriager):
                     logging.info(iw + ' is closed, skipping')
                     continue
 
-                hcache = os.path.join(self.cachedir, iw.repo_full_name, 'issues')
+                #hcache = os.path.join(self.cachedir, iw.repo_full_name, 'issues')
+                hcache = os.path.join(self.cachedir, iw.repo_full_name)
                 action_meta = None
 
                 if iw.repo_full_name in MREPOS:
@@ -153,7 +154,9 @@ class TriageV3(DefaultTriager):
                         # - if X days after message, close PRs, move issues.
                         logging.info('module issue created -before- merge')
 
+                        logging.info('build history')
                         hw = self.get_history(iw, usecache=True, cachedir=hcache)
+                        logging.info('history built')
                         lc = hw.last_date_for_boilerplate('repomerge')
                         if lc:
                             lcdelta = (datetime.datetime.now() - lc).days

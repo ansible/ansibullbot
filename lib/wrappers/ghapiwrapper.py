@@ -13,6 +13,8 @@ import sys
 import time
 from datetime import datetime
 
+from lib.wrappers.decorators import RateLimited
+
 def ratecheck():
     def decorator(func):
         def wrapper(*args, **kwargs):
@@ -72,6 +74,8 @@ def ratecheck():
 class GithubWrapper(object):
     def __init__(self, gh):
         self.gh = gh
+
+    @RateLimited
     def get_repo(self, repo_path, verbose=True):
         repo = RepoWrapper(self.gh, repo_path, verbose=verbose)
         return repo

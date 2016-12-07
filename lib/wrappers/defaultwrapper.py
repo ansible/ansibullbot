@@ -34,6 +34,8 @@ from jinja2 import Environment, FileSystemLoader
 
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
+from lib.wrappers.ghapiwrapper import ratecheck
+from lib.wrappers.decorators import RateLimited
 
 
 class DefaultWrapper(object):
@@ -380,6 +382,7 @@ class DefaultWrapper(object):
         """Removes a label from the Issue using the GitHub API"""
         self.get_issue().remove_from_labels(label)
 
+    @RateLimited
     def add_comment(self, comment=None):
         """Adds a comment to the Issue using the GitHub API"""
         self.get_issue().create_comment(comment)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 import os
 import pickle
 import sys
@@ -7,6 +8,7 @@ import time
 from datetime import datetime
 from operator import itemgetter
 from github import GithubObject
+from lib.wrappers.decorators import RateLimited
 
 # historywrapper.py
 #
@@ -36,13 +38,18 @@ class HistoryWrapper(object):
             """Building history is expensive and slow"""
             cache = self._load_cache()
             if not cache:
+                logging.info('empty history cache, rebuilding')
                 self.history = self.process()
+                logging.info('dumping newly created history cache')
                 self._dump_cache()
             else:
                 if cache['updated_at'] >= self.issue.instance.updated_at:
+                    logging.info('use cached history')
                     self.history = cache['history']
                 else:
+                    logging.info('history out of date, updating')
                     self.history = self.process()
+                    logging.info('dumping newly created history cache')
                     self._dump_cache()
 
         if exclude_users:
@@ -56,11 +63,13 @@ class HistoryWrapper(object):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
         if not os.path.isfile(self.cachefile):
-            return None            
+            logging.info('!%s' % self.cachefile)
+            return None
         try:
             with open(self.cachefile, 'rb') as f:
                 cachedata = pickle.load(f)
         except Exception as e:
+            logging.info('%s failed to load' % self.cachefile)
             cachedata = None
         return cachedata
 
@@ -367,6 +376,7 @@ class HistoryWrapper(object):
                 last_date = bp[0]
         return last_date
 
+    @RateLimited
     def process(self):
         """Merge all events into chronological order"""
 
