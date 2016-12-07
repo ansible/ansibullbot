@@ -306,6 +306,8 @@ windows/win_regmerge.py: jhawkesworth
 windows/win_regmerge.ps1: jhawkesworth
 windows/win_robocopy.ps1: blakfeld
 windows/win_robocopy.py: blakfeld
+windows/win_say.ps1: jhawkesworth
+windows/win_say.py: jhawkesworth
 windows/win_share.ps1: h0nIg
 windows/win_share.py: h0nIg
 windows/win_scheduled_task.ps1: petemounce
