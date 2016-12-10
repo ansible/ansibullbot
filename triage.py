@@ -28,6 +28,7 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+from lib.triagers.triagev3 import TriageV3
 from lib.triagers.issuetriager import TriageIssues
 from lib.triagers.ansible_ansible_issuetriager import AnsibleAnsibleTriageIssues
 from lib.triagers.ansible_ansible_pulltriager import AnsibleAnsibleTriagePullRequests
@@ -759,8 +760,76 @@ class TriagePullRequests:
                 self.pull_request = PullRequest(repo=repo, pr=pull)
                 self.process()
 
+def main3():
+    parser = argparse.ArgumentParser(description="Triage various issue+PR queues "
+                                                 "for Ansible. (NOTE: only "
+                                                 "useful if you have commit "
+                                                 "access to the repo in "
+                                                 "question.)")
+
+    parser.add_argument("--logfile", type=str, default='/var/log/ansibullbot.log',
+                        help="Send logging to this file")
+    parser.add_argument("--daemonize", action="store_true",
+                        help="run in a continuos loop")
+    parser.add_argument("--daemonize_interval", type=int, default=(30 * 60),
+                        help="seconds to sleep between loop iterations")
+
+    parser.add_argument("--skiprepo", action='append',
+                        help="Github repo to skip triaging")
+
+    parser.add_argument("--repo", "-r", type=str,
+                        help="Github repo to triage (defaults to all)")
+    parser.add_argument("--gh-user", "-u", type=str,
+                        help="Github username or token of triager")
+    parser.add_argument("--gh-pass", "-P", type=str,
+                        help="Github password of triager")
+    parser.add_argument("--gh-token", "-T", type=str,
+                        help="Github token of triager")
+    parser.add_argument("--dry-run", "-n", action="store_true",
+                        help="Do not apply any changes.")
+
+    parser.add_argument("--only_prs", action="store_true",
+                        help="Triage pullrequests only")
+    parser.add_argument("--only_issues", action="store_true",
+                        help="Triage issues only")
+
+    parser.add_argument("--only_open", action="store_true",
+                        help="Triage open issues|prs only")
+    parser.add_argument("--only_closed", action="store_true",
+                        help="Triage closed issues|prs only")
+
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="Verbose output")
+    parser.add_argument("--force", "-f", action="store_true",
+                        help="Do not ask questions")
+    parser.add_argument("--safe_force", action="store_true",
+                        help="Prompt only when the workflow doesn't meet specific criteria")
+    parser.add_argument("--debug", "-d", action="store_true",
+                        help="Debug output")
+    parser.add_argument("--pause", "-p", action="store_true",
+                        help="Always pause between prs|issues")
+    parser.add_argument("--pr", "--id", type=int,
+                        help="Triage only the specified pr|issue")
+    parser.add_argument("--start-at", type=int,
+                        help="Start triage at the specified pr|issue")
+    parser.add_argument("--no_since", action="store_true",
+                        help="Do not use the since keyword to fetch issues")
+    args = parser.parse_args()
+
+    # Run the triager ...
+    TriageV3(args)
+
 
 def main():
+
+    ANSIBULLBOT_VERSION = int(os.environ.get('ANSIBULLBOT_VERSION', 1))
+    ANSIBULLBOT_ALLOW_PRS = os.environ.get('ANSIBULLBOT_ALLOW_PRS', False)
+
+    print('VERSION: %s' % ANSIBULLBOT_VERSION)
+    if ANSIBULLBOT_VERSION == 3:
+        main3()
+    sys.exit(0)
+
     parser = argparse.ArgumentParser(description="Triage various PR queues "
                                                  "for Ansible. (NOTE: only "
                                                  "useful if you have commit "
@@ -820,9 +889,6 @@ def main():
               file=sys.stderr)
         sys.exit(1)
 
-    ANSIBULLBOT_VERSION = int(os.environ.get('ANSIBULLBOT_VERSION', 1))
-    ANSIBULLBOT_ALLOW_PRS = os.environ.get('ANSIBULLBOT_ALLOW_PRS', False)
-
     # THIS IS TO FORCE THE OLD BEHAVIOR BY DEFAULT
     if not ANSIBULLBOT_VERSION == 2 and not ANSIBULLBOT_ALLOW_PRS:
         args.only_prs = True
@@ -846,7 +912,7 @@ def main():
         if ANSIBULLBOT_VERSION == 1:
             triage = TriagePullRequests(**kwargs)
 
-        elif ANSIBULLBOT_VERSION == 2: 
+        elif ANSIBULLBOT_VERSION == 2:
 
             kwargs['safe_force'] = args.safe_force
             kwargs['no_since'] = args.no_since

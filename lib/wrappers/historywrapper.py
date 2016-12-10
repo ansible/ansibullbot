@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import logging
 import os
 import pickle
 import sys
@@ -7,6 +8,7 @@ import time
 from datetime import datetime
 from operator import itemgetter
 from github import GithubObject
+from lib.wrappers.decorators import RateLimited
 
 # historywrapper.py
 #
@@ -36,13 +38,18 @@ class HistoryWrapper(object):
             """Building history is expensive and slow"""
             cache = self._load_cache()
             if not cache:
+                logging.info('empty history cache, rebuilding')
                 self.history = self.process()
+                logging.info('dumping newly created history cache')
                 self._dump_cache()
             else:
                 if cache['updated_at'] >= self.issue.instance.updated_at:
+                    logging.info('use cached history')
                     self.history = cache['history']
                 else:
+                    logging.info('history out of date, updating')
                     self.history = self.process()
+                    logging.info('dumping newly created history cache')
                     self._dump_cache()
 
         if exclude_users:
@@ -56,11 +63,13 @@ class HistoryWrapper(object):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
         if not os.path.isfile(self.cachefile):
-            return None            
+            logging.info('!%s' % self.cachefile)
+            return None
         try:
             with open(self.cachefile, 'rb') as f:
                 cachedata = pickle.load(f)
         except Exception as e:
+            logging.info('%s failed to load' % self.cachefile)
             cachedata = None
         return cachedata
 
@@ -104,8 +113,8 @@ class HistoryWrapper(object):
     def get_user_comments_groupby(self, username, groupby='d'):
         '''Count comments for a user by day/week/month/year'''
 
-        comments = self._find_events_by_actor('commented', 
-                                              username, 
+        comments = self._find_events_by_actor('commented',
+                                              username,
                                               maxcount=999)
         groups = {}
         for comment in comments:
@@ -344,6 +353,30 @@ class HistoryWrapper(object):
                     break
         return labeled
 
+    def get_boilerplate_comments(self, botname='ansibot', dates=False):
+        boilerplates = []
+        comments = self._find_events_by_actor('commented',
+                                              botname,
+                                              maxcount=999)
+        for comment in comments:
+            if 'boilerplate:' in comment['body']:
+                lines = [x for x in comment['body'].split('\n') if x.strip() and 'boilerplate:' in x]
+                bp = lines[0].split()[2]
+                if dates:
+                    boilerplates.append((comment['created_at'], bp))
+                else:
+                    boilerplates.append(bp)
+        return boilerplates
+
+    def last_date_for_boilerplate(self, boiler, botname='ansibot'):
+        last_date = None
+        bps = self.get_boilerplate_comments(botname=botname, dates=True)
+        for bp in bps:
+            if bp[1] == boiler:
+                last_date = bp[0]
+        return last_date
+
+    @RateLimited
     def process(self):
         """Merge all events into chronological order"""
 

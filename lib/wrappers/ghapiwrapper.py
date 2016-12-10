@@ -13,12 +13,15 @@ import sys
 import time
 from datetime import datetime
 
+from lib.wrappers.decorators import RateLimited
+
 def ratecheck():
     def decorator(func):
         def wrapper(*args, **kwargs):
 
-	    #(Epdb) pp args
-	    #(<lib.triagers.issuetriager.TriageIssues object at 0x7ff5c50e2a90>,)
+            #(Epdb) pp args
+            #(<lib.triagers.issuetriager.TriageIssues object at 0x7ff5c50e2a90>,)
+
             caller = None
             if args:
                 caller = args[0]
@@ -71,8 +74,10 @@ def ratecheck():
 class GithubWrapper(object):
     def __init__(self, gh):
         self.gh = gh
-    def get_repo(self, repo_path):
-        repo = RepoWrapper(self.gh, repo_path)
+
+    @RateLimited
+    def get_repo(self, repo_path, verbose=True):
+        repo = RepoWrapper(self.gh, repo_path, verbose=verbose)
         return repo
 
     def get_current_time(self):
@@ -108,6 +113,7 @@ class RepoWrapper(object):
             with open(self.cachefile, 'rb') as f:
                 self.repo = pickle.load(f)
             self.updated_at_previous = self.repo.updated_at
+            #import epdb; epdb.st()
             self.updated = self.repo.update()
         else:
             self.repo = self.gh.get_repo(repo_path)
@@ -145,11 +151,13 @@ class RepoWrapper(object):
 
     def get_labels(self):
         return self.load_update_fetch('labels')
-    
+
     def get_assignees(self):
         return self.load_update_fetch('assignees')
 
     def get_issues(self, since=None, state='open', itype='issue'):
+
+        '''Abstraction around get_issues to get ALL issues in a cached way'''
 
         if since:
             issues = self.repo.get_issues(since=since)
@@ -162,8 +170,16 @@ class RepoWrapper(object):
             self.debug('loading cached issues')
             issues = self.load_issues()
             self.debug('fetching all issues')
-            rissues = self.repo.get_issues()
+            if state:
+                rissues = self.repo.get_issues(state=state)
+            else:
+                rissues = self.repo.get_issues()
+
+            if state == 'open':
+                return rissues
+
             last_issue = rissues[0]
+            #import epdb; epdb.st()
 
             self.debug('comparing cache against fetched')
             fetched = []
@@ -179,7 +195,7 @@ class RepoWrapper(object):
                         continue
 
                 retry = True
-                while retry:                
+                while retry:
                     try:
                         if not ci:
                             print('%s was not cached' % exp)
@@ -207,7 +223,7 @@ class RepoWrapper(object):
                     except GithubException as e:
                         if 'rate limit exceeded' in e[1]['message']:
                             retry = True
-                            '''                            
+                            '''
                             print('rate limit exceeded, sleeping Xs')
                             rl = self.gh.get_rate_limit()
                             reset = rl.rate.reset

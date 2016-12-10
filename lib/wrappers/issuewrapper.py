@@ -34,9 +34,11 @@ from defaultwrapper import DefaultWrapper
 
 class IssueWrapper(DefaultWrapper):
 
-    REQUIRED_SECTIONS = ['issue type', 'component name', 'ansible version', 'summary'] 
+    REQUIRED_SECTIONS = ['issue type', 'component name', 'ansible version', 'summary']
 
     def noop(self):
         pass
 
+    def __str__(self):
+        return self.instance.html_url
 
