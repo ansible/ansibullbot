@@ -20,6 +20,7 @@
 import datetime
 import logging
 import os
+import time
 
 from pprint import pprint
 from lib.triagers.defaulttriager import DefaultTriager
@@ -111,7 +112,11 @@ class TriageV3(DefaultTriager):
 
     def loop(self):
         '''Call the run method in a defined interval'''
-        pass
+        while True:
+            self.run()
+            interval = self.args.daemonize_interval
+            logging.info('sleep %ss (%sm)' % (interval, interval / 60))
+            time.sleep(interval)
 
     def run(self):
         '''Primary execution method'''
