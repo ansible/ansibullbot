@@ -1,20 +1,28 @@
 #!/usr/bin/env python
 
-# This is a triager for the combined repos that should have happend in the 12-2016 timeframe.
+# This is a triager for the combined repos that should have happend
+# in the 12-2016 timeframe.
 #   https://groups.google.com/forum/#!topic/ansible-devel/mIxqxXRsmCI
 #   https://groups.google.com/forum/#!topic/ansible-devel/iJouivmSSk4
 #   https://github.com/ansible/proposals/issues/30
 
 # Key features:
-#   * daemonize mode that can continuously loop and process without needing wrapper scripts
-#   * closed issues will also be processed (pygithub will kill ratelimits for this, so use a new caching+index tool)
-#   * open issues in ansible-modules-[core|extras] will be closed with a note about pr|issue mover
-#   * maintainers can be assigned to more than just the files in lib/ansible/modules 
-#   * closed issues with active comments will be locked with msg about opening new
+#   * daemonize mode that can continuously loop and process w/out scripts
+#   * closed issues will also be processed (pygithub will kill ratelimits for
+#     this, so use a new caching+index tool)
+#   * open issues in ansible-modules-[core|extras] will be closed with a note
+#     about pr|issue mover
+#   * maintainers can be assigned to more than just the files in
+#     lib/ansible/modules
+#   * closed issues with active comments will be locked with msg about opening
+#     new
 #   * closed issues where submitter issues "reopen" command will be reopened
-#   * false positives on module issue detection can be corrected by a wide range of people
-#   * more people (not just maintainers) should have access to a subset of bot commands
-#   * a generic label add|remove command will allow the community to fill in where the bot can't
+#   * false positives on module issue detection can be corrected by a wide range
+#     of people
+#   * more people (not just maintainers) should have access to a subset of bot
+#     commands
+#   * a generic label add|remove command will allow the community to fill in
+#     where the bot can't
 #   * different workflows should be a matter of enabling different plugins
 
 import datetime
@@ -33,11 +41,10 @@ REPOS = [
     'ansible/ansible-modules-core',
     'ansible/ansible-modules-extras'
 ]
-#REPOS = ['ansible/ansible-modules-core', 'ansible/ansible-modules-extras']
-#REPOS = ['ansible/ansible-modules-extras']
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 30
+
 
 class TriageV3(DefaultTriager):
 
@@ -84,7 +91,6 @@ class TriageV3(DefaultTriager):
         for x in attribs:
             val = getattr(self.args, x)
             setattr(self, x, val)
-        #import epdb; epdb.st()
 
         if self.args.daemonize:
             logging.info('starting daemonize loop')
@@ -95,10 +101,17 @@ class TriageV3(DefaultTriager):
         logging.info('stopping bot')
 
     def set_logger(self):
-        logging.level = logging.INFO
-        logFormatter = logging.Formatter("%(asctime)s %(levelname)s  %(message)s")
+        if self.args.debug:
+            logging.level = logging.DEBUG
+        else:
+            logging.level = logging.INFO
+        logFormatter = \
+            logging.Formatter("%(asctime)s %(levelname)s  %(message)s")
         rootLogger = logging.getLogger()
-        rootLogger.setLevel(logging.INFO)
+        if self.args.debug:
+            rootLogger.setLevel(logging.DEBUG)
+        else:
+            rootLogger.setLevel(logging.INFO)
 
         fileHandler = logging.FileHandler("{0}/{1}".format(
                 os.path.dirname(self.args.logfile),
@@ -133,10 +146,8 @@ class TriageV3(DefaultTriager):
             if repopath in self.skiprepo:
                 continue
 
-            repoobj = item[1]['repo']
             issues = item[1]['issues']
             for i_item in issues.items():
-                ik = i_item[0]
                 iw = i_item[1]
                 logging.info(iw)
 
@@ -144,11 +155,13 @@ class TriageV3(DefaultTriager):
                     logging.info(iw + ' is closed, skipping')
                     continue
 
-                #hcache = os.path.join(self.cachedir, iw.repo_full_name, 'issues')
                 hcache = os.path.join(self.cachedir, iw.repo_full_name)
                 action_meta = None
 
-                if iw.repo_full_name in MREPOS:
+                if iw.repo_full_name not in MREPOS:
+                    # ansible/ansible triage
+                    import epdb; epdb.st()
+                else:
                     if iw.created_at >= REPOMERGEDATE:
                         # close new module issues+prs immediately
                         logging.info('module issue created -after- merge')
@@ -160,7 +173,11 @@ class TriageV3(DefaultTriager):
                         logging.info('module issue created -before- merge')
 
                         logging.info('build history')
-                        hw = self.get_history(iw, usecache=True, cachedir=hcache)
+                        hw = self.get_history(
+                            iw,
+                            usecache=True,
+                            cachedir=hcache
+                        )
                         logging.info('history built')
                         lc = hw.last_date_for_boilerplate('repomerge')
                         if lc:
@@ -179,7 +196,11 @@ class TriageV3(DefaultTriager):
                         if iw.is_pullrequest():
                             if lc and lcdelta > MREPO_CLOSE_WINDOW:
                                 kwargs['close'] = True
-                                action_meta = self.close_module_issue_with_message(iw, **kwargs)
+                                action_meta = \
+                                    self.close_module_issue_with_message(
+                                        iw,
+                                        **kwargs
+                                    )
                             elif not lc:
                                 # add the comment
                                 self.add_repomerge_comment(iw)
@@ -198,12 +219,8 @@ class TriageV3(DefaultTriager):
                                 # do nothing
                                 pass
 
-                else:
-                    # ansible/ansible triage
-                    pass
-
                 pprint(action_meta)
-                #import epdb; epdb.st()
+                import epdb; epdb.st()
 
     def move_issue(self, issue):
         pass
@@ -231,9 +248,8 @@ class TriageV3(DefaultTriager):
         action_meta = self.apply_actions()
         return action_meta
 
-
     def close_module_issue_with_message(self, issue, bp='repomerge_new'):
-        '''After the repomerge, new issues+prs in the module repos should be closed'''
+        '''After repomerge, new issues+prs in the mod repos should be closed'''
         self.actions = {}
         self.actions['close'] = True
         self.actions['comments'] = []
@@ -255,13 +271,12 @@ class TriageV3(DefaultTriager):
         action_meta = self.apply_actions()
         return action_meta
 
-
     def collect_issues(self):
         '''Populate the local cache of issues'''
         # this should do a few things:
         #   1. collect all issues (open+closed) via a webcrawler
-        #   2. index the issues into a sqllite database so we can query on update times
-        #   3. set an abstracted object that takes in queries 
+        #   2. index the issues into a rdmbs so we can query on update times(?)
+        #   3. set an abstracted object that takes in queries
         logging.info('start collecting issues')
         logging.debug('creating github connection object')
         self.gh = self._connect()
@@ -276,9 +291,10 @@ class TriageV3(DefaultTriager):
 
             logging.info('getting repo obj for %s' % repo)
             cachedir = os.path.join(self.cachedir, repo)
-            self.repos[repo] = {}
-            self.repos[repo]['repo'] = self.ghw.get_repo(repo, verbose=False)
-            self.repos[repo]['issues'] = {}
+            self.repos[repo] = {
+                'repo': self.ghw.get_repo(repo, verbose=False),
+                'issues': {}
+            }
             logging.info('getting issue objs for %s' % repo)
             issues = self.repos[repo]['repo'].get_issues()
             for issue in issues:
@@ -294,7 +310,7 @@ class TriageV3(DefaultTriager):
 
     def get_updated_issues(self, since=None):
         '''Get issues to work on'''
-        # this should return a list of issueids that have changed since the last run
+        # this should return a list of issueids that changed since the last run
         logging.info('start querying updated issues')
 
         # these need to be tuples (namespace, repo, number)
@@ -303,9 +319,6 @@ class TriageV3(DefaultTriager):
         logging.info('finished querying updated issues')
         return issueids
 
-
     def get_history(self, issue, usecache=True, cachedir=None):
         history = HistoryWrapper(issue, usecache=usecache, cachedir=cachedir)
-	return history
-
-
+        return history

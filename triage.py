@@ -785,7 +785,7 @@ def main3():
                         help="Github password of triager")
     parser.add_argument("--gh-token", "-T", type=str,
                         help="Github token of triager")
-    parser.add_argument("--dry-run", "-n", action="store_true",
+    parser.add_argument("--dryrun", "-n", action="store_true",
                         help="Do not apply any changes.")
 
     parser.add_argument("--only_prs", action="store_true",
