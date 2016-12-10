@@ -2,6 +2,9 @@
 
 # https://github.com/octokit/octokit.net/issues/638#issuecomment-67795998
 
+# FIXME
+#   - [Errno -5] No address associated with hostname
+
 import time
 import logging
 import functools
@@ -29,20 +32,20 @@ def RateLimited(fn):
                 print(e)
                 if hasattr(e, 'data') and e.data.get('message'):
                     if 'blocked from content creation' in e.data['message']:
-                        logging.info('content creation rate limit exceeded')
+                        logging.warning('content creation rate limit exceeded')
                         sminutes = 2
                     elif 'rate limit exceeded' in e.data['message']:
-                        logging.info('general rate limit exceeded')
+                        logging.warning('general rate limit exceeded')
                         sminutes = 61
                     elif isinstance(e, socket.error):
-                        logging.info('socket error')
+                        logging.warning('socket error')
                         sminutes = 5
                     else:
                         import epdb; epdb.st()
                 else:
                     import epdb; epdb.st()
 
-                logging.info('sleeping %s minutes' % sminutes)
+                logging.warning('sleeping %s minutes' % sminutes)
                 time.sleep(sminutes*60)
 
         return x
