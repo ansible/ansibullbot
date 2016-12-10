@@ -771,7 +771,7 @@ def main3():
                         help="Send logging to this file")
     parser.add_argument("--daemonize", action="store_true",
                         help="run in a continuos loop")
-    parser.add_argument("--daemonize_interval", type=int, default=(60 * 60),
+    parser.add_argument("--daemonize_interval", type=int, default=(30 * 60),
                         help="seconds to sleep between loop iterations")
 
     parser.add_argument("--skiprepo", action='append',
