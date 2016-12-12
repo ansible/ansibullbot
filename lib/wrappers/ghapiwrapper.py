@@ -366,7 +366,7 @@ class RepoWrapper(object):
                     write_cache = True
 
         # pull all events if timestamp is behind or no events cached
-        if update or not events:        
+        if update or not events:
             write_cache = True
             updated = self.get_current_time()
             try:

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import copy
 import os
 import shutil
 import yaml
@@ -7,8 +8,28 @@ from lib.utils.systemtools import *
 
 class ModuleIndexer(object):
 
-    def __init__(self):
+    EMPTY_MODULE = {
+        'authors': [],
+        'name': None,
+        'namespaced_module': None,
+        'deprecated': False,
+        'deprecated_filename': None,
+        'dirpath': None,
+        'filename': None,
+        'filepath': None,
+        'fulltopic': None,
+        'maintainers': [],
+        'maintainers_key': None,
+        'repo_filename': None,
+        'repository': 'ansible',
+        'subtopic': None,
+        'topic': None
+    }
+
+
+    def __init__(self, maintainers=None):
         self.modules = {}
+        self.maintainers = maintainers or {}
         #self.checkoutdir = '/tmp/ansible.modules.checkout'
         self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
@@ -135,9 +156,7 @@ class ModuleIndexer(object):
 
         # figure out the names
         for match in matches:
-            mdict = {}
-            mdict['authors'] = []
-            mdict['deprecated'] = False
+            mdict = copy.deepcopy(self.EMPTY_MODULE)
 
             mdict['filename'] = os.path.basename(match)
 
@@ -197,21 +216,21 @@ class ModuleIndexer(object):
             self.modules[k]['authors'] = authors
 
         # meta is a special module
-        self.modules['meta'] = {}
-        self.modules['meta']['authors'] = []
+        self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
         self.modules['meta']['name'] = 'meta'
-        self.modules['meta']['namespaced_module'] = None
-        self.modules['meta']['deprecated'] = False
-        self.modules['meta']['deprecated_filename'] = None
-        self.modules['meta']['dirpath'] = None
-        self.modules['meta']['filename'] = None
-        self.modules['meta']['filepath'] = None
-        self.modules['meta']['fulltopic'] = None
         self.modules['meta']['repo_filename'] = 'meta'
-        self.modules['meta']['repository'] = 'core'
-        self.modules['meta']['subtopic'] = None
-        self.modules['meta']['topic'] = None
-        self.modules['meta']['authors'] = []
+
+        # include is a special module
+        self.modules['include'] = copy.deepcopy(self.EMPTY_MODULE)
+        self.modules['include']['name'] = 'include'
+        self.modules['include']['repo_filename'] = 'include'
+        self.modules['include']['maintainers'] = ['ansible']
+
+        # include-role is a special module
+        self.modules['include_role'] = copy.deepcopy(self.EMPTY_MODULE)
+        self.modules['include_role']['name'] = 'include_role'
+        self.modules['include_role']['repo_filename'] = 'include_role'
+        self.modules['include_role']['maintainers'] = ['ansible']
 
         # custom fixes
         newitems = []
@@ -240,8 +259,28 @@ class ModuleIndexer(object):
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
 
+        self.set_maintainers()
+
         return self.modules
 
+    def set_maintainers(self):
+        '''Define the maintainers for each module'''
+        mkeys = self.maintainers.keys()
+        for k,v in self.modules.iteritems():
+            if not v['filepath']:
+                continue
+            best_match = None
+            for mkey in mkeys:
+                if mkey in v['filepath']:
+                    if not best_match:
+                        best_match = mkey
+                        continue
+                    if len(mkey) > len(best_match):
+                        best_match = mkey
+            if best_match:
+                self.modules[k]['maintainers_key'] = best_match
+                self.modules[k]['maintainers'] = self.maintainers[best_match]
+            #import epdb; epdb.st()
 
     def get_module_authors(self, module_file):
         """Grep the authors out of the module docstrings"""

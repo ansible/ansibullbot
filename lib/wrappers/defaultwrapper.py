@@ -96,28 +96,7 @@ class DefaultWrapper(object):
         self.pr_files = []
 
         self.valid_assignees = []
-
         self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
-
-    @property
-    def number(self):
-        return self.instance.number
-
-    @property
-    def pullrequest(self):
-        pr = self.repo.get_pullrequest(self.number)
-        return pr
-
-    @property
-    def files(self):
-        if not self.pr_files:
-            self.pr_files = self.load_update_fetch('files')
-        files = [x.filename for x in self.pr_files]
-        return files
-
-    @property
-    def body(self):
-        return self.instance.body
 
     def get_current_time(self):
         return datetime.utcnow()
@@ -469,6 +448,22 @@ class DefaultWrapper(object):
                 print('ERROR: failed to edit assignees')
                 sys.exit(1)
 
+    def is_pullrequest(self):
+        if self.github_type == 'pullrequest':
+            return True
+        else:
+            return False
+
+    def is_issue(self):
+        if self.github_type == 'issue':
+            return True
+        else:
+            return False
+
+    @property
+    def title(self):
+        return self.instance.title
+
     @property
     def repo_full_name(self):
         return self.repo.repo.full_name
@@ -505,20 +500,34 @@ class DefaultWrapper(object):
         else:
             return 'issue'
 
-    def is_pullrequest(self):
-        if self.github_type == 'pullrequest':
-            return True
-        else:
-            return False
+    @property
+    def number(self):
+        return self.instance.number
 
-    def is_issue(self):
-        if self.github_type == 'issue':
-            return True
-        else:
-            return False
+    @property
+    def submitter(self):
+        return self.instance.user.login
 
+    @property
+    def comments(self):
+        return self.get_comments()
 
+    @property
+    def pullrequest(self):
+        pr = self.repo.get_pullrequest(self.number)
+        return pr
 
+    @property
+    def files(self):
+        if not self.pr_files:
+            self.pr_files = self.load_update_fetch('files')
+        files = [x.filename for x in self.pr_files]
+        return files
 
+    @property
+    def body(self):
+        return self.instance.body
 
-
+    @property
+    def labels(self):
+        return self.get_current_labels()

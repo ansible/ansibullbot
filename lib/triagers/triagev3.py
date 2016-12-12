@@ -50,6 +50,7 @@ REPOS = [
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 30
+MAINTAINERS_FILES = ['MAINTAINERS-CORE.txt', 'MAINTAINERS-EXTRAS.txt']
 
 
 class TriageV3(DefaultTriager):
@@ -74,6 +75,31 @@ class TriageV3(DefaultTriager):
         'docs pull request': 'docs_pull_request',
         'new module pull request': 'new_plugin'
     }
+
+    MANAGED_LABELS = [
+        'bot_broken',
+        'needs_info',
+        'needs_rebase',
+        'needs_revision',
+        'shipit',
+        'shipit_owner_pr'
+    ]
+
+    VALID_COMMANDS = [
+        'needs_info',
+        '!needs_info',
+        'notabug',
+        'bot_broken',
+        'bot_skip',
+        'wontfix',
+        'bug_resolved',
+        'resolved_pr_pr',
+        'needs_contributor',
+        'needs_rebase',
+        'needs_revision',
+        'shipit',
+        'duplicate_of'
+    ]
 
     def __init__(self, args):
         self.args = args
@@ -102,6 +128,9 @@ class TriageV3(DefaultTriager):
         self.start_at = False
         self.verbose = False
 
+        # extend managed labels
+        self.MANAGED_LABELS += self.ISSUE_TYPES.values()
+
         # where to store junk
         self.cachedir = '~/.ansibullbot/cache'
         self.cachedir = os.path.expanduser(self.cachedir)
@@ -117,7 +146,10 @@ class TriageV3(DefaultTriager):
         attribs = [x for x in attribs if not x.startswith('_')]
         for x in attribs:
             val = getattr(self.args, x)
-            setattr(self, x, val)
+            if x.startswith('gh_'):
+                setattr(self, x.replace('gh_', 'github_'), val)
+            else:
+                setattr(self, x, val)
 
         if self.args.daemonize:
             logging.info('starting daemonize loop')
@@ -164,10 +196,13 @@ class TriageV3(DefaultTriager):
         # get the issues
         self.collect_issues()
 
+        # get the maintainers
+        self.module_maintainers = self.get_maintainers_mapping()
+
         # set the indexers
         self.version_indexer = AnsibleVersionIndexer()
         self.file_indexer = FileIndexer()
-        self.module_indexer = ModuleIndexer()
+        self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
         # get the ansible members
@@ -189,6 +224,13 @@ class TriageV3(DefaultTriager):
 
             issues = item[1]['issues']
             for i_item in issues.items():
+
+                if self.args.start_at:
+                    if i_item[0] < self.args.start_at:
+                        logging.info('skip %s' % i_item[0])
+                        continue
+                #import epdb; epdb.st()
+
                 iw = i_item[1]
                 logging.info(iw)
 
@@ -196,6 +238,7 @@ class TriageV3(DefaultTriager):
                     logging.info(iw + ' is closed, skipping')
                     continue
 
+                self.issue = iw
                 hcache = os.path.join(self.cachedir, iw.repo_full_name)
                 action_meta = None
 
@@ -204,18 +247,15 @@ class TriageV3(DefaultTriager):
 
                     # basic processing
                     self.process(iw)
+                    self.meta.update(self.get_facts(iw))
 
-                    # common functions
-                    #   who owns it?
-                    #   bot skip OR bot broken
-                    #   WoS OR WoM OR WoA OR WoC
-                    #   notifications
-
-                    # pull request
+                    # history+comment processing
+                    #self.process_history()
 
                     # issue
+                    #import epdb; epdb.st()
+                    pass
 
-                    import epdb; epdb.st()
                 else:
                     if iw.created_at >= REPOMERGEDATE:
                         # close new module issues+prs immediately
@@ -275,18 +315,88 @@ class TriageV3(DefaultTriager):
                                 pass
 
                 pprint(action_meta)
-                import epdb; epdb.st()
+
+                self.issue = iw
+                self.create_actions()
+
+                logging.info('finished triage for %s' % iw.number)
+                if self.issue.is_pullrequest() and self.meta['shipit']:
+                    import epdb; epdb.st()
+
+    def create_actions(self):
+
+        if self.meta['bot_broken']:
+            logging.warning('bot broken!')
+            if 'bot_broken' not in self.issue.labels:
+                self.actions['newlabel'].append('bot_broken')
+            return None
+
+        elif self.meta['bot_skip']:
+            logging.info('bot skip')
+            return None
+
+        elif self.meta['bot_spam']:
+            logging.warning('bot spam!')
+            return None
+
+        if self.meta['shipit']:
+            logging.info('shipit')
+            if self.meta['shipit_owner_pr'] \
+                    and 'shipit_owner_pr' not in self.issue.labels \
+                    and 'shipit_owner_pr' not in self.actions['newlabel']:
+                self.actions['newlabel'].append('shipit_owner_pr')
+            elif not self.meta['shipit_owner_pr'] \
+                    and self.meta['shipit'] \
+                    and 'shipit' not in self.issue.labels \
+                    and 'shipit' not in self.actions['newlabel']:
+                self.actions['newlabel'].append('shipit')
+
+        if self.meta['is_module']:
+            if 'module' not in self.issue.labels:
+                self.actions['newlabel'].append('module')
+
+        if self.meta['is_module_util']:
+            if 'module_util' not in self.issue.labels:
+                self.actions['newlabel'].append('module_util')
+
+        if self.meta['is_plugin']:
+            if 'plugin' not in self.issue.labels:
+                self.actions['newlabel'].append('plugin')
+
+        if self.meta['ansible_label_version']:
+            label = 'affects_%s' % self.meta['ansible_label_version']
+            if label not in self.issue.labels:
+                self.actions['newlabel'].append(label)
+
+        if self.meta['issue_type']:
+            label = self.ISSUE_TYPES.get(self.meta['issue_type'])
+            if label and label not in self.issue.labels:
+                self.actions['newlabel'].append(label)
+
+        # maintainer commands
+        # needs info
+
+        if not self.empty_actions:
+            pprint(self.actions)
+            import epdb; epdb.st()
+
+    def empty_actions(self):
+        empty = True
+        for k,v in self.actions.iteritems():
+            if v:
+                empty = False
+                break
+        return empty
 
     def move_issue(self, issue):
+        '''Move an issue to ansible/ansible'''
+        # this should only happen >30 days -after- the repomerge
         pass
 
     def add_repomerge_comment(self, issue, bp='repomerge'):
         '''Add the comment without closing'''
-        self.actions = {}
-        self.actions['close'] = False
-        self.actions['comments'] = []
-        self.actions['newlabel'] = []
-        self.actions['unlabel'] = []
+
+        self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
 
         # stubs for the comment templater
         self.module_maintainers = []
@@ -426,9 +536,12 @@ class TriageV3(DefaultTriager):
         logging.info('ansible version: %s' % self.meta['ansible_version'])
 
         # what is this?
+        self.meta['is_bad_pr'] = False
         self.meta['is_module'] = False
+        self.meta['is_new_module'] = False
         self.meta['is_module_util'] = False
         self.meta['is_plugin'] = False
+        self.meta['is_new_plugin'] = False
         self.meta['is_core'] = False
         self.meta['module_match'] = None
         self.meta['component'] = None
@@ -441,27 +554,91 @@ class TriageV3(DefaultTriager):
                     self.meta['is_plugin'] = True
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
+                elif 'module' in self.template_data.get('component_raw') \
+                        or 'module' in iw.title:
+                    # FUZZY MATCH?
+                    logging.info('fuzzy match module component')
+                    fm = self.module_indexer.fuzzy_match(
+                        title=iw.title,
+                        component=self.template_data['component_raw']
+                    )
+                    if fm:
+                        match = self.module_indexer.find_match(fm)
+                        self.meta['is_module'] = True
+                        self.meta['is_plugin'] = True
+                        self.meta['module_match'] = copy.deepcopy(match)
+                        self.meta['component'] = match['name']
                 else:
-                    import epdb; epdb.st()
+                    pass
+
+        elif len(iw.files) > 100:
+            # das merge?
+            self.meta['bad_pr'] = True
         else:
             # assume pullrequest
             for f in iw.files:
+
+                if f.startswith('lib/ansible/module_utils'):
+                    self.meta['is_module_util'] = True
+                    continue
+
+                if f.startswith('lib/ansible') \
+                        and not f.startswith('lib/ansible/modules'):
+                    self.meta['is_core'] = True
+
+                if not f.startswith('lib/ansible/modules'):
+                    continue
+
+                # duplicates?
+                if self.meta['module_match']:
+                    # same maintainer?
+                    nm = self.module_indexer.find_match(f)
+                    if not nm:
+                        import epdb; epdb.st()
+                    if nm['maintainers'] == \
+                            self.meta['module_match']['maintainers']:
+                        continue
+                    else:
+                        # >1 set of maintainers
+                        logging.info('multiple modules referenced')
+                        import epdb; epdb.st()
+
                 if self.module_indexer.find_match(f):
                     match = self.module_indexer.find_match(f)
                     self.meta['is_module'] = True
                     self.meta['is_plugin'] = True
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
+                elif f.startswith('lib/ansible/modules')\
+                    and (f.endswith('.py') or f.endswith('.ps1')):
+                    self.meta['is_new_module'] = True
+                    self.meta['is_module'] = True
+                    self.meta['is_plugin'] = True
+                    match = copy.deepcopy(self.module_indexer.EMPTY_MODULE)
+                    match['name'] = os.path.basename(f).replace('.py', '')
+                    match['filepath'] = f
+                    self.meta['module_match'] = copy.deepcopy(match)
+                    self.meta['component'] = match['name']
                 else:
                     print(f)
                     import epdb; epdb.st()
-            #import epdb; epdb.st()
 
         # who owns this?
         self.meta['owner'] = 'ansible'
         if self.meta['module_match']:
             print(self.meta['module_match'])
-        import epdb; epdb.st()
+            maintainers = self.meta['module_match']['maintainers']
+            if maintainers:
+                self.meta['owner'] = maintainers
+            elif self.meta['is_new_module']:
+                self.meta['owner'] = ['ansible']
+            else:
+                logging.error('NO MAINTAINER LISTED FOR %s'
+                              % self.meta['module_match']['name'])
+                import epdb; epdb.st()
+
+        # shipit?
+        self.meta.update(self.get_shipit_facts(iw, self.meta))
 
     def guess_issue_type(self, issuewrapper):
         iw = issuewrapper
@@ -478,3 +655,57 @@ class TriageV3(DefaultTriager):
             pass
 
         return None
+
+    def get_maintainers_mapping(self):
+        maintainers = {}
+        for fname in MAINTAINERS_FILES:
+            with open(fname, 'rb') as f:
+                for line in f.readlines():
+                    #print(line)
+                    owner_space = (line.split(': ')[0]).strip()
+                    maintainers_string = (line.split(': ')[-1]).strip()
+                    maintainers[owner_space] = maintainers_string.split(' ')
+                    #import epdb; epdb.st()
+
+        # meta is special
+        maintainers['meta'] = ['ansible']
+        return maintainers
+
+    def keep_unmanaged_labels(self, issue):
+        '''Persists labels that were added manually and not bot managed'''
+        for label in issue.current_labels:
+            if label not in self.MANAGED_LABELS:
+                self.debug('keeping %s label' % label)
+                self.issue.add_desired_label(name=label)
+
+    def get_shipit_facts(self, issuewrapper, meta):
+        # shipit/+1/LGTM in comment.body from maintainer
+        iw = issuewrapper
+        nmeta = {
+            'shipit': False,
+            'shipit_owner_pr': False
+        }
+
+        if not iw.is_pullrequest():
+            return nmeta
+        if not meta['module_match']:
+            return nmeta
+
+        maintainers = meta['module_match']['maintainers']
+        for comment in iw.comments:
+            if comment.user.login in maintainers:
+                body = comment.body
+                if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    nmeta['shipit'] = True
+                    if comment.user.login == iw.submitter:
+                        nmeta['shipit_owner_pr'] = True
+
+        #import epdb; epdb.st()
+        return nmeta
+
+    def get_facts(self, issuewrapper):
+        facts = {}
+        facts['bot_broken'] = False
+        facts['bot_skip'] = False
+        facts['bot_spam'] = False
+        return facts
