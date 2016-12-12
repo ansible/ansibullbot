@@ -80,7 +80,7 @@ class DefaultWrapper(object):
         self.cachedir = cachedir
         self.repo = repo
         self.instance = issue
-        self.number = self.instance.number
+        #self.number = self.instance.number
         self.current_labels = self.get_current_labels()
         self.template_data = {}
         self.desired_labels = []
@@ -93,12 +93,31 @@ class DefaultWrapper(object):
         self.desired_comments = []
         self.current_state = 'open'
         self.desired_state = 'open'
+        self.pr_files = []
 
         self.valid_assignees = []
-        self.pullrequest = None
 
         self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
 
+    @property
+    def number(self):
+        return self.instance.number
+
+    @property
+    def pullrequest(self):
+        pr = self.repo.get_pullrequest(self.number)
+        return pr
+
+    @property
+    def files(self):
+        if not self.pr_files:
+            self.pr_files = self.load_update_fetch('files')
+        files = [x.filename for x in self.pr_files]
+        return files
+
+    @property
+    def body(self):
+        return self.instance.body
 
     def get_current_time(self):
         return datetime.utcnow()
@@ -172,12 +191,12 @@ class DefaultWrapper(object):
         # A pygithub issue object has methods such as ...
         #   - get_events()
         #   - get_comments()
-        # Those methods return a list with no update() property, 
+        # Those methods return a list with no update() property,
         # so we can't take advantage of the caching scheme used
         # for the issue it's self. Instead this function calls
         # those methods by their given name, and write the data
         # to a pickle file with a timestamp for the fetch time.
-        # Upon later loading of the pickle, the timestamp is 
+        # Upon later loading of the pickle, the timestamp is
         # compared to the issue's update_at timestamp and if the
         # pickle data is behind, the process will be repeated.
 
@@ -284,7 +303,7 @@ class DefaultWrapper(object):
             headers['Accept'] = 'application/vnd.github.squirrel-girl-preview'
             jdata = []
             try:
-                resp = self.instance._requester.requestJson('GET', 
+                resp = self.instance._requester.requestJson('GET',
                                         reactions_url, headers=headers)
                 data = resp[2]
                 jdata = json.loads(data)

@@ -25,6 +25,7 @@
 #     where the bot can't
 #   * different workflows should be a matter of enabling different plugins
 
+import copy
 import datetime
 import logging
 import os
@@ -35,6 +36,11 @@ from lib.triagers.defaulttriager import DefaultTriager
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.historywrapper import HistoryWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
+
+from lib.utils.moduletools import ModuleIndexer
+from lib.utils.version_tools import AnsibleVersionIndexer
+from lib.utils.file_tools import FileIndexer
+
 
 REPOS = [
     'ansible/ansible',
@@ -47,6 +53,27 @@ MREPO_CLOSE_WINDOW = 30
 
 
 class TriageV3(DefaultTriager):
+
+    EMPTY_ACTIONS = {
+        'newlabel': [],
+        'unlabel': [],
+        'comments': [],
+        'close': False,
+        'open': False,
+    }
+
+    EMPTY_META = {
+    }
+
+    ISSUE_TYPES = {
+        'bug report': 'bug_report',
+        'bugfix pull request': 'bugfix_pullrequest',
+        'feature idea': 'feature_idea',
+        'feature pull request': 'feature_pull_request',
+        'documentation report': 'docs_report',
+        'docs pull request': 'docs_pull_request',
+        'new module pull request': 'new_plugin'
+    }
 
     def __init__(self, args):
         self.args = args
@@ -133,7 +160,21 @@ class TriageV3(DefaultTriager):
 
     def run(self):
         '''Primary execution method'''
+
+        # get the issues
         self.collect_issues()
+
+        # set the indexers
+        self.version_indexer = AnsibleVersionIndexer()
+        self.file_indexer = FileIndexer()
+        self.module_indexer = ModuleIndexer()
+        self.module_indexer.get_ansible_modules()
+
+        # get the ansible members
+        self.ansible_members = self.get_ansible_members()
+
+        # get valid labels
+        self.valid_labels = self.get_valid_labels('ansible/ansible')
 
         #if self.last_run:
         #    wissues = self.get_updated_issues(since=self.last_run)
@@ -160,6 +201,20 @@ class TriageV3(DefaultTriager):
 
                 if iw.repo_full_name not in MREPOS:
                     # ansible/ansible triage
+
+                    # basic processing
+                    self.process(iw)
+
+                    # common functions
+                    #   who owns it?
+                    #   bot skip OR bot broken
+                    #   WoS OR WoM OR WoA OR WoC
+                    #   notifications
+
+                    # pull request
+
+                    # issue
+
                     import epdb; epdb.st()
                 else:
                     if iw.created_at >= REPOMERGEDATE:
@@ -295,15 +350,26 @@ class TriageV3(DefaultTriager):
                 'repo': self.ghw.get_repo(repo, verbose=False),
                 'issues': {}
             }
+
             logging.info('getting issue objs for %s' % repo)
-            issues = self.repos[repo]['repo'].get_issues()
-            for issue in issues:
+            if self.pr:
+                logging.info('fetch %s' % self.pr)
+                issue = self.repos[repo]['repo'].get_issue(self.pr)
                 iw = IssueWrapper(
                         repo=self.repos[repo]['repo'],
                         issue=issue,
                         cachedir=cachedir
                 )
                 self.repos[repo]['issues'][iw.number] = iw
+            else:
+                issues = self.repos[repo]['repo'].get_issues()
+                for issue in issues:
+                    iw = IssueWrapper(
+                            repo=self.repos[repo]['repo'],
+                            issue=issue,
+                            cachedir=cachedir
+                    )
+                    self.repos[repo]['issues'][iw.number] = iw
             logging.info('getting issue objs for %s complete' % repo)
 
         logging.info('finished collecting issues')
@@ -322,3 +388,93 @@ class TriageV3(DefaultTriager):
     def get_history(self, issue, usecache=True, cachedir=None):
         history = HistoryWrapper(issue, usecache=usecache, cachedir=cachedir)
         return history
+
+    def process(self, issuewrapper):
+        '''Do initial processing of the issue'''
+        iw = issuewrapper
+
+        # clear the actions+meta
+        self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
+        self.meta = copy.deepcopy(self.EMPTY_META)
+
+        # clear maintainers
+        self.maintainers = []
+
+        # extract template data
+        self.template_data = iw.get_template_data()
+
+        # set the issue type
+        ITYPE = self.template_data.get('issue type')
+        if ITYPE in self.ISSUE_TYPES:
+            self.meta['issue_type'] = ITYPE
+        else:
+            # look for best match?
+            self.meta['issue_type'] = self.guess_issue_type(iw)
+
+        # get ansible version
+        if iw.is_issue():
+            self.meta['ansible_version'] = \
+                self.get_ansible_version_by_issue(iw)
+        else:
+            # use the submit date's current version
+            self.meta['ansible_version'] = \
+                self.version_indexer.ansible_version_by_date(iw.created_at)
+        self.meta['ansible_label_version'] = \
+            self.get_ansible_version_major_minor(
+                version=self.meta['ansible_version']
+            )
+        logging.info('ansible version: %s' % self.meta['ansible_version'])
+
+        # what is this?
+        self.meta['is_module'] = False
+        self.meta['is_module_util'] = False
+        self.meta['is_plugin'] = False
+        self.meta['is_core'] = False
+        self.meta['module_match'] = None
+        self.meta['component'] = None
+        if iw.is_issue():
+            if self.template_data.get('component name'):
+                cname = self.template_data.get('component name')
+                if self.module_indexer.find_match(cname):
+                    match = self.module_indexer.find_match(cname)
+                    self.meta['is_module'] = True
+                    self.meta['is_plugin'] = True
+                    self.meta['module_match'] = copy.deepcopy(match)
+                    self.meta['component'] = match['name']
+                else:
+                    import epdb; epdb.st()
+        else:
+            # assume pullrequest
+            for f in iw.files:
+                if self.module_indexer.find_match(f):
+                    match = self.module_indexer.find_match(f)
+                    self.meta['is_module'] = True
+                    self.meta['is_plugin'] = True
+                    self.meta['module_match'] = copy.deepcopy(match)
+                    self.meta['component'] = match['name']
+                else:
+                    print(f)
+                    import epdb; epdb.st()
+            #import epdb; epdb.st()
+
+        # who owns this?
+        self.meta['owner'] = 'ansible'
+        if self.meta['module_match']:
+            print(self.meta['module_match'])
+        import epdb; epdb.st()
+
+    def guess_issue_type(self, issuewrapper):
+        iw = issuewrapper
+
+        # body contains any known types?
+        body = iw.body
+        for key in self.ISSUE_TYPES.keys():
+            if key in body.lower():
+                return key
+
+        if iw.is_issue():
+            pass
+        elif iw.is_pullrequest():
+            pass
+
+        return None

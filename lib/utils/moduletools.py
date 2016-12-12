@@ -119,7 +119,7 @@ class ModuleIndexer(object):
         #(Epdb) pp module
         #u'wait_for'
         #(Epdb) pp self.module_indexer.is_valid(module)
-        #False        
+        #False
 
         matches = []
         module_dir = os.path.join(self.checkoutdir, 'lib/ansible/modules')
@@ -129,7 +129,7 @@ class ModuleIndexer(object):
                 if 'lib/ansible/modules' in root \
                     and not filename == '__init__.py' \
                     and (filename.endswith('.py') or filename.endswith('.ps1')):
-                    matches.append(os.path.join(root, filename))    
+                    matches.append(os.path.join(root, filename))
 
         matches = sorted(set(matches))
 
@@ -151,13 +151,14 @@ class ModuleIndexer(object):
             subpath = dirpath.replace('lib/ansible/modules/', '')
             path_parts = subpath.split('/')
             mdict['repository'] = path_parts[0]
-            mdict['topic'] = path_parts[1]
+            mdict['topic'] = path_parts[0]
+
             if len(path_parts) > 2:
-                mdict['subtopic'] = path_parts[2]
-                mdict['fulltopic'] = '/'.join(path_parts[1:3]) + '/'
+                mdict['subtopic'] = path_parts[1]
+                mdict['fulltopic'] = '/'.join(path_parts[1:2]) + '/'
             else:
                 mdict['subtopic'] = None
-                mdict['fulltopic'] = path_parts[1] +'/'
+                mdict['fulltopic'] = path_parts[0] +'/'
 
             mdict['repo_filename'] = mdict['filepath']\
                 .replace('lib/ansible/modules/%s/' % mdict['repository'], '')
@@ -255,11 +256,11 @@ class ModuleIndexer(object):
         with open(module_file, 'rb') as f:
             for line in f:
                 if 'DOCUMENTATION' in line:
-                    inphase = True 
-                    continue                
+                    inphase = True
+                    continue
                 if line.strip().endswith("'''") or line.strip().endswith('"""'):
                     phase = None
-                    break 
+                    break
                 if inphase:
                     documentation += line
 
@@ -283,7 +284,7 @@ class ModuleIndexer(object):
                 author_lines += x + '\n'
 
         if not author_lines:
-            return authors            
+            return authors
 
         ydata = {}
         try:
@@ -345,7 +346,7 @@ class ModuleIndexer(object):
 
         # don't do singular word matching in title for ansible/ansible
         cmatches = None
-        if component:        
+        if component:
             cmatches = [x for x in known_modules if x in component]
             cmatches = [x for x in cmatches if not '_' + x in component]
 
@@ -411,12 +412,12 @@ class ModuleIndexer(object):
                 if match:
                     matches.append(match)
 
-        # unique the list        
+        # unique the list
         tmplist = []
         for x in matches:
             if x not in tmplist:
                 tmplist.append(x)
         if matches != tmplist:
-            matches = [x for x in tmplist]        
+            matches = [x for x in tmplist]
 
         return matches
