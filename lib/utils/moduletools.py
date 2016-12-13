@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import ast
 import copy
 import os
 import shutil
@@ -22,6 +23,7 @@ class ModuleIndexer(object):
         'fulltopic': None,
         'maintainers': [],
         'maintainers_key': None,
+        'metadata': {},
         'repo_filename': None,
         'repository': 'ansible',
         'subtopic': None,
@@ -219,20 +221,6 @@ class ModuleIndexer(object):
         self.modules['meta']['name'] = 'meta'
         self.modules['meta']['repo_filename'] = 'meta'
 
-        '''
-        # include is a special module
-        self.modules['include'] = copy.deepcopy(self.EMPTY_MODULE)
-        self.modules['include']['name'] = 'include'
-        self.modules['include']['repo_filename'] = 'include'
-        self.modules['include']['maintainers'] = ['ansible']
-
-        # include-role is a special module
-        #self.modules['include_role'] = copy.deepcopy(self.EMPTY_MODULE)
-        #self.modules['include_role']['name'] = 'include_role'
-        #self.modules['include_role']['repo_filename'] = 'include_role'
-        self.modules['include_role']['maintainers'] = ['ansible']
-        '''
-
         # custom fixes
         newitems = []
         for k,v in self.modules.iteritems():
@@ -264,6 +252,9 @@ class ModuleIndexer(object):
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
 
+        self.set_module_metadata()
+
+        # depends on metadata now ...
         self.set_maintainers()
 
         return self.modules
@@ -286,8 +277,10 @@ class ModuleIndexer(object):
                 self.modules[k]['maintainers_key'] = best_match
                 self.modules[k]['maintainers'] = self.maintainers[best_match]
             else:
-                self.modules[k]['maintainers_key'] = best_match
-                self.modules[k]['maintainers'] = ['ansible']
+                #import epdb; epdb.st()
+                if v['metadata'].get('supported_by') in ['committer', 'core']:
+                    self.modules[k]['maintainers_key'] = best_match
+                    self.modules[k]['maintainers'] = ['ansible']
 
     def get_module_authors(self, module_file):
         """Grep the authors out of the module docstrings"""
@@ -477,3 +470,34 @@ class ModuleIndexer(object):
             matches = [x for x in tmplist]
 
         return matches
+
+    def set_module_metadata(self):
+        for k,v in self.modules.iteritems():
+            if not v['filepath']:
+                continue
+            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            self.modules[k]['metadata'].update(self.get_module_metadata(mfile))
+
+    def get_module_metadata(self, module_file):
+        meta = {}
+        #import epdb; epdb.st()
+
+        rawmeta = ''
+        inphase = False
+        with open(module_file, 'rb') as f:
+            for line in f:
+                if line.startswith('ANSIBLE_METADATA'):
+                    inphase = True
+                    #continue
+                if line.startswith('DOCUMENTATION'):
+                    break
+                if inphase:
+                    rawmeta += line
+        rawmeta = rawmeta.replace('ANSIBLE_METADATA =', '', 1)
+        rawmeta = rawmeta.strip()
+        try:
+            meta = ast.literal_eval(rawmeta)
+        except SyntaxError:
+            pass
+
+        return meta

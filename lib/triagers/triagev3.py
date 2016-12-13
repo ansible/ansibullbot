@@ -62,6 +62,7 @@ class TriageV3(DefaultTriager):
         'comments': [],
         'close': False,
         'open': False,
+        'merge': False,
     }
 
     EMPTY_META = {
@@ -330,6 +331,7 @@ class TriageV3(DefaultTriager):
                 pprint(self.actions)
                 self.apply_actions()
                 logging.info('finished triage for %s' % iw.number)
+                #import epdb; epdb.st()
 
     def create_actions(self):
 

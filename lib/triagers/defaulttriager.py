@@ -986,9 +986,9 @@ class DefaultTriager(object):
         """ Return the number of actions that are to be performed """
         count = 0
         for k,v in self.actions.iteritems():
-            if k in ['close', 'open'] and v:
+            if k in ['close', 'open', 'merge'] and v:
                 count += 1
-            elif k != 'close' and k != 'open':
+            elif k != 'close' and k != 'open' and k != 'merge':
                 count += len(v)
         return count
 
