@@ -23,18 +23,12 @@ import os
 import pickle
 import shutil
 import sys
-import time
 from datetime import datetime
 
 # remember to pip install PyGithub, kids!
 import github
-from github import Github
 
-from jinja2 import Environment, FileSystemLoader
-
-from lib.utils.moduletools import ModuleIndexer
 from lib.utils.extractors import extract_template_data
-from lib.wrappers.ghapiwrapper import ratecheck
 from lib.wrappers.decorators import RateLimited
 
 
@@ -104,6 +98,7 @@ class DefaultWrapper(object):
     def get_comments(self):
         """Returns all current comments of the PR"""
 
+        #import epdb; epdb.st()
         comments = self.load_update_fetch('comments')
 
         self.current_comments = [x for x in comments]
@@ -116,9 +111,9 @@ class DefaultWrapper(object):
             lines = [y.strip() for y in lines if y.strip()]
 
             if lines[-1].startswith('<!---') \
-                and lines[-1].endswith('--->') \
-                and 'boilerplate:' in lines[-1]\
-                and x.user.login == 'ansibot':
+                    and lines[-1].endswith('--->') \
+                    and 'boilerplate:' in lines[-1]\
+                    and x.user.login == 'ansibot':
 
                 parts = lines[-1].split()
                 boilerplate = parts[2]
@@ -144,8 +139,15 @@ class DefaultWrapper(object):
 
     def relocate_pickle_files(self):
         '''Move files to the correct location to fix bad pathing'''
-        srcdir = os.path.join(self.cachedir, 'issues', str(self.instance.number))
-        destdir = os.path.join(self.cachedir, str(self.instance.number))
+        srcdir = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.instance.number)
+        )
+        destdir = os.path.join(
+            self.cachedir,
+            str(self.instance.number)
+        )
 
         if not os.path.isdir(srcdir):
             return True
@@ -185,10 +187,12 @@ class DefaultWrapper(object):
         update = False
         write_cache = False
 
-        # fix bad pathing
-        self.relocate_pickle_files()
-
-        pfile = os.path.join(self.cachedir, str(self.instance.number), '%s.pickle' % property_name)
+        pfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.instance.number),
+            '%s.pickle' % property_name
+        )
         pdir = os.path.dirname(pfile)
 
         if not os.path.isdir(pdir):
@@ -225,7 +229,8 @@ class DefaultWrapper(object):
                         baseobj = self.pullrequest
 
         if not baseobj:
-            print('%s was not a property for the issue or the pullrequest' % property_name)
+            print('%s was not a property for the issue or the pullrequest'
+                  % property_name)
             import epdb; epdb.st()
             sys.exit(1)
 
@@ -234,7 +239,8 @@ class DefaultWrapper(object):
             write_cache = True
             updated = self.get_current_time()
 
-            if not hasattr(baseobj, 'get_' + property_name) and hasattr(baseobj, property_name):
+            if not hasattr(baseobj, 'get_' + property_name) \
+                    and hasattr(baseobj, property_name):
                 # !callable properties
                 try:
                     methodToCall = getattr(baseobj, property_name)
@@ -259,10 +265,9 @@ class DefaultWrapper(object):
 
         return events
 
-
     def get_assignee(self):
         assignee = None
-        if self.instance.assignee == None:
+        if self.instance.assignee is None:
             pass
         elif type(self.instance.assignee) != list:
             assignee = self.instance.assignee.login
@@ -282,11 +287,15 @@ class DefaultWrapper(object):
             headers['Accept'] = 'application/vnd.github.squirrel-girl-preview'
             jdata = []
             try:
-                resp = self.instance._requester.requestJson('GET',
-                                        reactions_url, headers=headers)
+                resp = self.instance._requester.requestJson(
+                    'GET',
+                    reactions_url,
+                    headers=headers
+                )
                 data = resp[2]
                 jdata = json.loads(data)
             except Exception as e:
+                print(e)
                 pass
             self.current_reactions = jdata
         return self.current_reactions
@@ -312,7 +321,11 @@ class DefaultWrapper(object):
 
         if not self.template_data:
             self.template_data = \
-                extract_template_data(self.instance.body, issue_number=self.number, issue_class=issue_class)
+                extract_template_data(
+                    self.instance.body,
+                    issue_number=self.number,
+                    issue_class=issue_class
+                )
         return self.template_data
 
     def resolve_desired_labels(self, desired_label):
@@ -338,17 +351,16 @@ class DefaultWrapper(object):
                 self.process_mutually_exclusive_labels(name=name)
                 self.desired_labels.append(name)
             else:
-                mutually_exclusive = [x.replace(' ', '_') for x in mutually_exclusive]
+                mutually_exclusive = \
+                    [x.replace(' ', '_') for x in mutually_exclusive]
                 me = [x for x in self.desired_labels if x in mutually_exclusive]
                 if len(me) == 0:
                     self.desired_labels.append(name)
-
 
     def pop_desired_label(self, name=None):
         """Deletes a label to the desired labels list"""
         if name in self.desired_labels:
             self.desired_labels.remove(name)
-
 
     def is_labeled_for_interaction(self):
         """Returns True if issue is labeld for interaction"""
@@ -363,9 +375,10 @@ class DefaultWrapper(object):
             self.desired_comments.append(boilerplate)
 
     def get_missing_sections(self):
-        missing_sections = [x for x in self.REQUIRED_SECTIONS \
-                            if not x in self.template_data \
-                            or not self.template_data.get(x)]
+        missing_sections = \
+            [x for x in self.REQUIRED_SECTIONS
+                if x not in self.template_data or
+                not self.template_data.get(x)]
         return missing_sections
 
     def get_issue(self):
@@ -402,7 +415,10 @@ class DefaultWrapper(object):
         assignees = []
         if not hasattr(self.instance, 'assignees'):
             raw_assignees = self.raw_data_issue['assignees']
-            assignees = [x.login for x in self.instance._makeListOfClassesAttribute(github.NamedUser.NamedUser, raw_assignees).value]
+            assignees = \
+                [x.login for x in self.instance._makeListOfClassesAttribute(
+                    github.NamedUser.NamedUser,
+                    raw_assignees).value]
         else:
             assignees = [x.login for x in self.instance.assignees]
 
@@ -410,7 +426,8 @@ class DefaultWrapper(object):
         return self.current_assignees
 
     def add_desired_assignee(self, assignee):
-        if assignee not in self.desired_assignees and assignee in self.valid_assignees:
+        if assignee not in self.desired_assignees \
+                and assignee in self.valid_assignees:
             self.desired_assignees.append(assignee)
 
     def assign_user(self, user):
@@ -514,6 +531,7 @@ class DefaultWrapper(object):
 
     @property
     def pullrequest(self):
+        #import epdb; epdb.st()
         pr = self.repo.get_pullrequest(self.number)
         return pr
 

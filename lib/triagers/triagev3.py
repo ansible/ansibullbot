@@ -474,6 +474,11 @@ class TriageV3(DefaultTriager):
             else:
                 issues = self.repos[repo]['repo'].get_issues()
                 for issue in issues:
+
+                    if self.args.start_at:
+                        if issue.number < self.args.start_at:
+                            continue
+
                     iw = IssueWrapper(
                             repo=self.repos[repo]['repo'],
                             issue=issue,
@@ -543,6 +548,7 @@ class TriageV3(DefaultTriager):
         self.meta['is_plugin'] = False
         self.meta['is_new_plugin'] = False
         self.meta['is_core'] = False
+        self.meta['is_multi_module'] = False
         self.meta['module_match'] = None
         self.meta['component'] = None
         if iw.is_issue():
@@ -593,15 +599,16 @@ class TriageV3(DefaultTriager):
                 if self.meta['module_match']:
                     # same maintainer?
                     nm = self.module_indexer.find_match(f)
-                    if not nm:
-                        import epdb; epdb.st()
-                    if nm['maintainers'] == \
-                            self.meta['module_match']['maintainers']:
-                        continue
-                    else:
-                        # >1 set of maintainers
-                        logging.info('multiple modules referenced')
-                        import epdb; epdb.st()
+                    if nm:
+                        self.meta['is_multi_module'] = True
+                        if nm['maintainers'] == \
+                                self.meta['module_match']['maintainers']:
+                            continue
+                        else:
+                            # >1 set of maintainers
+                            logging.info('multiple modules referenced')
+                            #import epdb; epdb.st()
+                            pass
 
                 if self.module_indexer.find_match(f):
                     match = self.module_indexer.find_match(f)
@@ -609,8 +616,8 @@ class TriageV3(DefaultTriager):
                     self.meta['is_plugin'] = True
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
-                elif f.startswith('lib/ansible/modules')\
-                    and (f.endswith('.py') or f.endswith('.ps1')):
+                elif f.startswith('lib/ansible/modules') \
+                        and (f.endswith('.py') or f.endswith('.ps1')):
                     self.meta['is_new_module'] = True
                     self.meta['is_module'] = True
                     self.meta['is_plugin'] = True

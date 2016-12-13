@@ -2,25 +2,24 @@
 
 from __future__ import print_function
 
-import github
 from github.GithubException import GithubException
 import glob
 import pickle
-import operator
 import os
 import socket
-import sys
 import time
 from datetime import datetime
 
 from lib.wrappers.decorators import RateLimited
+
 
 def ratecheck():
     def decorator(func):
         def wrapper(*args, **kwargs):
 
             #(Epdb) pp args
-            #(<lib.triagers.issuetriager.TriageIssues object at 0x7ff5c50e2a90>,)
+            #(<lib.triagers.issuetriager.TriageIssues
+            # object at 0x7ff5c50e2a90>,)
 
             caller = None
             if args:
@@ -33,7 +32,9 @@ def ratecheck():
 
                 # abort everything if we've hit the limit
                 if retries > 10:
-                    raise Exception('Max retries exceeded [%s|%s' % (retries, 10))
+                    raise Exception(
+                        'Max retries exceeded [%s|%s' % (retries, 10)
+                    )
 
                 try:
                     result = func(*args, **kwargs)
@@ -49,13 +50,15 @@ def ratecheck():
                             data = ge[1]
                             msg = data.get('msg', '')
                         except Exception as e:
+                            print(e)
                             import epdb; epdb.st()
 
                     if 'blocked from content creation' in msg:
                         # https://github.com/octokit/octokit.net/issues/638
                         # only 20 creates(POSTs) per minute?
                         # maybe just try to sleep 5 minutes and retry?
-                        print('POST limit reached. Sleeping 5m (%s)' % datetime.now())
+                        print('POST limit reached. Sleeping 5m (%s)'
+                              % datetime.now())
                         time.sleep(60*5)
                     else:
                         # Attempt to use the caller's wait_for_rate function
@@ -124,7 +127,6 @@ class RepoWrapper(object):
         if self.verbose:
             print("Debug: " + msg)
 
-
     def save_repo(self):
         with open(self.cachefile, 'wb') as f:
             pickle.dump(self.repo, f)
@@ -140,6 +142,7 @@ class RepoWrapper(object):
         return issue
 
     def get_pullrequest(self, number):
+        #import epdb; epdb.st()
         pr = self.load_pullrequest(number)
         if pr:
             if pr.update():
@@ -182,7 +185,7 @@ class RepoWrapper(object):
             #import epdb; epdb.st()
 
             self.debug('comparing cache against fetched')
-            fetched = []
+            #fetched = []
             expected = xrange(1, last_issue.number)
             for exp in expected:
                 if self.is_missing(exp):
@@ -257,16 +260,14 @@ class RepoWrapper(object):
                 issues = [x for x in issues if x.state == 'open']
 
             # sort in reverse numerical order
-            issues.sort(key = lambda x: x.number, reverse=True)
+            issues.sort(key=lambda x: x.number, reverse=True)
 
         return issues
-
 
     def get_pullrequests(self, since=None, state='open', itype='pullrequest'):
         # there is no 'since' for pullrequests
         prs = [x for x in self.repo.get_pulls()]
         return prs
-
 
     def is_missing(self, number):
         mfile = os.path.join(self.cachedir, 'issues', str(number), 'missing')
@@ -295,7 +296,12 @@ class RepoWrapper(object):
         return issues
 
     def load_issue(self, number):
-        pfile = os.path.join(self.cachedir, 'issues', str(number), 'issue.pickle')
+        pfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(number),
+            'issue.pickle'
+        )
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
                 issue = pickle.load(f)
@@ -304,7 +310,16 @@ class RepoWrapper(object):
             return False
 
     def load_pullrequest(self, number):
-        pfile = os.path.join(self.cachedir, 'issues', str(number), 'pullrequest.pickle')
+        #import epdb; epdb.st()
+        pfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(number),
+            'pullrequest.pickle'
+        )
+        pdir = os.path.dirname(pfile)
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
                 issue = pickle.load(f)
@@ -317,7 +332,12 @@ class RepoWrapper(object):
             self.save_issue(issue)
 
     def save_issue(self, issue):
-        cfile = os.path.join(self.cachedir, 'issues', str(issue.number), 'issue.pickle')
+        cfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(issue.number),
+            'issue.pickle'
+        )
         cdir = os.path.dirname(cfile)
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
@@ -325,7 +345,12 @@ class RepoWrapper(object):
             pickle.dump(issue, f)
 
     def save_pullrequest(self, issue):
-        cfile = os.path.join(self.cachedir, 'issues', str(issue.number), 'pullrequest.pickle')
+        cfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(issue.number),
+            'pullrequest.pickle'
+        )
         cdir = os.path.dirname(cfile)
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
@@ -386,5 +411,3 @@ class RepoWrapper(object):
 
     def get_current_time(self):
         return datetime.utcnow()
-
-

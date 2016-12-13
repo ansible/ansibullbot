@@ -220,6 +220,7 @@ class ModuleIndexer(object):
         self.modules['meta']['name'] = 'meta'
         self.modules['meta']['repo_filename'] = 'meta'
 
+        '''
         # include is a special module
         self.modules['include'] = copy.deepcopy(self.EMPTY_MODULE)
         self.modules['include']['name'] = 'include'
@@ -227,10 +228,11 @@ class ModuleIndexer(object):
         self.modules['include']['maintainers'] = ['ansible']
 
         # include-role is a special module
-        self.modules['include_role'] = copy.deepcopy(self.EMPTY_MODULE)
-        self.modules['include_role']['name'] = 'include_role'
-        self.modules['include_role']['repo_filename'] = 'include_role'
+        #self.modules['include_role'] = copy.deepcopy(self.EMPTY_MODULE)
+        #self.modules['include_role']['name'] = 'include_role'
+        #self.modules['include_role']['repo_filename'] = 'include_role'
         self.modules['include_role']['maintainers'] = ['ansible']
+        '''
 
         # custom fixes
         newitems = []
@@ -245,6 +247,10 @@ class ModuleIndexer(object):
                 self.modules[k]['repository'] = 'ansible'
             if k.endswith('/include_role.py'):
                 self.modules[k]['repository'] = 'ansible'
+
+            # ansible maintains these
+            if 'include' in k:
+                self.modules[k]['maintainers'] = ['ansible']
 
             # deprecated modules are annoying
             if v['name'].startswith('_'):
