@@ -285,7 +285,9 @@ class ModuleIndexer(object):
             if best_match:
                 self.modules[k]['maintainers_key'] = best_match
                 self.modules[k]['maintainers'] = self.maintainers[best_match]
-            #import epdb; epdb.st()
+            else:
+                self.modules[k]['maintainers_key'] = best_match
+                self.modules[k]['maintainers'] = ['ansible']
 
     def get_module_authors(self, module_file):
         """Grep the authors out of the module docstrings"""
