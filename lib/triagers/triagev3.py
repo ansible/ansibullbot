@@ -223,15 +223,14 @@ class TriageV3(DefaultTriager):
                 continue
 
             issues = item[1]['issues']
-            for i_item in issues.items():
+            for number,iw in issues.items():
 
                 if self.args.start_at:
-                    if i_item[0] < self.args.start_at:
-                        logging.info('skip %s' % i_item[0])
+                    if number < self.args.start_at:
+                        logging.info('skip %s' % number)
                         continue
-                #import epdb; epdb.st()
 
-                iw = i_item[1]
+                self.issue = iw
                 logging.info(iw)
 
                 if iw.state == 'closed':
@@ -314,29 +313,43 @@ class TriageV3(DefaultTriager):
                                 # do nothing
                                 pass
 
-                pprint(action_meta)
-
-                self.issue = iw
+                #pprint(action_meta)
                 self.create_actions()
 
                 logging.info('finished triage for %s' % iw.number)
-                if self.issue.is_pullrequest() and self.meta['shipit']:
-                    import epdb; epdb.st()
+
+                #if self.issue.is_pullrequest() and self.meta['shipit']:
+                #    pprint(self.actions)
+                #    import epdb; epdb.st()
+
+                #if not self.empty_actions():
+                #    pprint(self.actions)
+
+                pprint(self.actions)
+                import epdb; epdb.st()
 
     def create_actions(self):
 
         if self.meta['bot_broken']:
             logging.warning('bot broken!')
+            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             if 'bot_broken' not in self.issue.labels:
                 self.actions['newlabel'].append('bot_broken')
             return None
 
         elif self.meta['bot_skip']:
             logging.info('bot skip')
+            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
 
         elif self.meta['bot_spam']:
             logging.warning('bot spam!')
+            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
+            return None
+
+        elif self.meta['is_bad_pr']:
+            # FIXME - do something!
+            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
 
         if self.meta['shipit']:
@@ -350,6 +363,10 @@ class TriageV3(DefaultTriager):
                     and 'shipit' not in self.issue.labels \
                     and 'shipit' not in self.actions['newlabel']:
                 self.actions['newlabel'].append('shipit')
+
+        if self.meta['is_new_module'] or self.meta['is_new_plugin']:
+            if 'new_plugin' not in self.issue.labels:
+                self.actions['newlabel'].append('new_plugin')
 
         if self.meta['is_module']:
             if 'module' not in self.issue.labels:
@@ -376,9 +393,9 @@ class TriageV3(DefaultTriager):
         # maintainer commands
         # needs info
 
-        if not self.empty_actions:
-            pprint(self.actions)
-            import epdb; epdb.st()
+        #if not self.empty_actions:
+        #    pprint(self.actions)
+        #    import epdb; epdb.st()
 
     def empty_actions(self):
         empty = True
