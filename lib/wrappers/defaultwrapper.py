@@ -87,6 +87,7 @@ class DefaultWrapper(object):
         self.desired_comments = []
         self.current_state = 'open'
         self.desired_state = 'open'
+        self.pr_obj = None
         self.pr_files = []
 
         self.valid_assignees = []
@@ -531,9 +532,9 @@ class DefaultWrapper(object):
 
     @property
     def pullrequest(self):
-        #import epdb; epdb.st()
-        pr = self.repo.get_pullrequest(self.number)
-        return pr
+        if not self.pr_obj:
+            self.pr_obj = self.repo.get_pullrequest(self.number)
+        return self.pr_obj
 
     @property
     def files(self):
