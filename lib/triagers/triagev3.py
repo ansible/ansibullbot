@@ -735,16 +735,64 @@ class TriageV3(DefaultTriager):
         if not meta['module_match']:
             return nmeta
 
+        migrated_issue = None
         maintainers = meta['module_match']['maintainers']
         for comment in iw.comments:
+            body = comment.body
+
+            # Migrated from ansible/ansible-modules-extras#3662
+            if comment.user.login == iw.submitter and \
+                    'migrated from' in body.lower():
+                migrated_issue = body.split()[-1]
+                #import epdb; epdb.st()
+
             if comment.user.login in maintainers:
-                body = comment.body
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     nmeta['shipit'] = True
                     if comment.user.login == iw.submitter:
                         nmeta['shipit_owner_pr'] = True
+                    break
 
-        #import epdb; epdb.st()
+        # prmover doesn't copy comments, so they have to
+        # be scraped from the old pullrequest
+        if migrated_issue and not nmeta['shipit']:
+
+            if migrated_issue.startswith('https://'):
+                miparts = migrated_issue.split('/')
+                minumber = int(miparts[-1])
+                minamespace = miparts[-4]
+                mirepo = miparts[-3]
+                mirepopath = minamespace + '/' + mirepo
+            elif '#' in migrated_issue:
+                miparts = migrated_issue.split('#')
+                minumber = int(miparts[-1])
+                mirepopath = miparts[0]
+            else:
+                print(migrated_issue)
+                import epdb; epdb.st()
+
+            if mirepopath not in self.repos:
+                self.repos[mirepopath] = {
+                    'repo': self.ghw.get_repo(mirepopath, verbose=False),
+                    'issues': {}
+                }
+            mrepo = self.repos[mirepopath]['repo']
+            missue = mrepo.get_issue(minumber)
+            mw = IssueWrapper(
+                repo=mrepo,
+                issue=missue,
+                cachedir = os.path.join(self.cachedir, mirepopath)
+            )
+
+            for comment in mw.comments:
+                if comment.user.login in maintainers:
+                    if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                        nmeta['shipit'] = True
+                        if comment.user.login == iw.submitter:
+                            nmeta['shipit_owner_pr'] = True
+                        break
+                #import epdb; epdb.st()
+
         return nmeta
 
     def get_facts(self, issuewrapper):
