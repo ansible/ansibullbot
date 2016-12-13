@@ -42,6 +42,7 @@ from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
 
 
+BOTNAMES = ['ansibot', 'gregdek']
 REPOS = [
     'ansible/ansible',
     'ansible/ansible-modules-core',
@@ -227,7 +228,10 @@ class TriageV3(DefaultTriager):
                 continue
 
             issues = item[1]['issues']
-            for number,iw in issues.items():
+            numbers = sorted(issues.keys())
+            for number in numbers:
+
+                iw = issues[number]
 
                 if self.args.start_at:
                     if number < self.args.start_at:
@@ -242,7 +246,7 @@ class TriageV3(DefaultTriager):
                     continue
 
                 hcache = os.path.join(self.cachedir, iw.repo_full_name)
-                action_meta = None
+                #action_meta = None
 
                 if iw.repo_full_name not in MREPOS:
                     # ansible/ansible triage
@@ -262,7 +266,7 @@ class TriageV3(DefaultTriager):
                     if iw.created_at >= REPOMERGEDATE:
                         # close new module issues+prs immediately
                         logging.info('module issue created -after- merge')
-                        action_meta = self.close_module_issue_with_message(iw)
+                        self.close_module_issue_with_message(iw)
                         continue
                     else:
                         # process history
@@ -294,11 +298,10 @@ class TriageV3(DefaultTriager):
                         if iw.is_pullrequest():
                             if lc and lcdelta > MREPO_CLOSE_WINDOW:
                                 kwargs['close'] = True
-                                action_meta = \
-                                    self.close_module_issue_with_message(
-                                        iw,
-                                        **kwargs
-                                    )
+                                self.close_module_issue_with_message(
+                                    iw,
+                                    **kwargs
+                                )
                             elif not lc:
                                 # add the comment
                                 self.add_repomerge_comment(iw)
@@ -320,6 +323,10 @@ class TriageV3(DefaultTriager):
                         continue
 
                 self.create_actions()
+                logging.info('url: %s' % self.issue.html_url)
+                logging.info('title: %s' % self.issue.title)
+                logging.info('component: %s'
+                             % self.template_data.get('component_raw'))
                 pprint(self.actions)
                 self.apply_actions()
                 logging.info('finished triage for %s' % iw.number)
@@ -367,6 +374,9 @@ class TriageV3(DefaultTriager):
         if self.meta['is_module']:
             if 'module' not in self.issue.labels:
                 self.actions['newlabel'].append('module')
+        else:
+            if 'module' in self.issue.labels:
+                self.actions['unlabel'].append('module')
 
         if self.meta['is_module_util']:
             if 'module_util' not in self.issue.labels:
@@ -375,6 +385,9 @@ class TriageV3(DefaultTriager):
         if self.meta['is_plugin']:
             if 'plugin' not in self.issue.labels:
                 self.actions['newlabel'].append('plugin')
+        else:
+            if 'plugin' in self.issue.labels:
+                self.actions['unlabel'].append('plugin')
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
@@ -399,7 +412,7 @@ class TriageV3(DefaultTriager):
     def check_safe_match(self):
         safe = True
         for k,v in self.actions.iteritems():
-            if k == 'newlabel':
+            if k == 'newlabel' or k == 'unlabel':
                 continue
             if v:
                 safe = False
@@ -438,6 +451,9 @@ class TriageV3(DefaultTriager):
         comment = self.render_comment(boilerplate=bp)
         self.actions['comments'] = [comment]
 
+        logging.info('url: %s' % self.issue.html_url)
+        logging.info('title: %s' % self.issue.title)
+        logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(self.actions)
         action_meta = self.apply_actions()
         return action_meta
@@ -461,6 +477,9 @@ class TriageV3(DefaultTriager):
         comment = self.render_comment(boilerplate=bp)
         self.actions['comments'] = [comment]
 
+        logging.info('url: %s' % self.issue.html_url)
+        logging.info('title: %s' % self.issue.title)
+        logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(self.actions)
         action_meta = self.apply_actions()
         return action_meta
@@ -572,6 +591,7 @@ class TriageV3(DefaultTriager):
         # what is this?
         self.meta['is_bad_pr'] = False
         self.meta['is_module'] = False
+        self.meta['is_action_plugin'] = False
         self.meta['is_new_module'] = False
         self.meta['is_module_util'] = False
         self.meta['is_plugin'] = False
@@ -580,9 +600,11 @@ class TriageV3(DefaultTriager):
         self.meta['is_multi_module'] = False
         self.meta['module_match'] = None
         self.meta['component'] = None
+
         if iw.is_issue():
             if self.template_data.get('component name'):
                 cname = self.template_data.get('component name')
+                craw = self.template_data.get('component_raw')
                 if self.module_indexer.find_match(cname):
                     match = self.module_indexer.find_match(cname)
                     self.meta['is_module'] = True
@@ -590,7 +612,9 @@ class TriageV3(DefaultTriager):
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
                 elif self.template_data.get('component_raw') \
-                        or 'module' in iw.title:
+                        and ('module' in iw.title or
+                             'module' in craw or
+                             'action' in craw):
                     # FUZZY MATCH?
                     logging.info('fuzzy match module component')
                     fm = self.module_indexer.fuzzy_match(
@@ -622,11 +646,15 @@ class TriageV3(DefaultTriager):
                     self.meta['is_module_util'] = True
                     continue
 
+                if f.startswith('lib/ansible/plugins/action'):
+                    self.meta['is_action_plugin'] = True
+
                 if f.startswith('lib/ansible') \
                         and not f.startswith('lib/ansible/modules'):
                     self.meta['is_core'] = True
 
-                if not f.startswith('lib/ansible/modules'):
+                if not f.startswith('lib/ansible/modules') and \
+                        not f.startswith('lib/ansible/plugins/actions'):
                     continue
 
                 # duplicates?
@@ -681,6 +709,11 @@ class TriageV3(DefaultTriager):
                               % self.meta['module_match']['name'])
                 import epdb; epdb.st()
 
+        # everything else is "core"
+        if not self.meta['is_module']:
+            self.meta['is_core'] = True
+            #import epdb; epdb.st()
+
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
 
@@ -727,7 +760,9 @@ class TriageV3(DefaultTriager):
         iw = issuewrapper
         nmeta = {
             'shipit': False,
-            'shipit_owner_pr': False
+            'shipit_owner_pr': False,
+            'shipit_ansible': False,
+            'shipit_community': False
         }
 
         if not iw.is_pullrequest():
@@ -735,10 +770,23 @@ class TriageV3(DefaultTriager):
         if not meta['module_match']:
             return nmeta
 
+        ansible_shipits = 0
+        shipits = 0
         migrated_issue = None
         maintainers = meta['module_match']['maintainers']
         for comment in iw.comments:
             body = comment.body
+
+            # ansible shipits
+            if comment.user.login in self.ansible_members and \
+                    comment.user.login not in BOTNAMES:
+                if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    ansible_shipits += 1
+
+            # community shipits
+            if comment.user.login != iw.submitter:
+                if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    shipits += 1
 
             # Migrated from ansible/ansible-modules-extras#3662
             if comment.user.login == iw.submitter and \
@@ -781,17 +829,43 @@ class TriageV3(DefaultTriager):
             mw = IssueWrapper(
                 repo=mrepo,
                 issue=missue,
-                cachedir = os.path.join(self.cachedir, mirepopath)
+                cachedir=os.path.join(self.cachedir, mirepopath)
             )
 
             for comment in mw.comments:
+
+                # ansible shipits
+                if comment.user.login in self.ansible_members and \
+                        comment.user.login not in BOTNAMES:
+                    if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                        ansible_shipits += 1
+
+                # community shipits
+                if comment.user.login != iw.submitter:
+                    if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                        shipits += 1
+
                 if comment.user.login in maintainers:
                     if 'shipit' in body or '+1' in body or 'LGTM' in body:
                         nmeta['shipit'] = True
                         if comment.user.login == iw.submitter:
                             nmeta['shipit_owner_pr'] = True
                         break
-                #import epdb; epdb.st()
+
+        # https://github.com/ansible/ansible-modules-extras/pull/1749
+        # Thanks again to @dinoocch for this PR. This PR was reviewed by an
+        # Ansible member. Marking for inclusion.
+        if not nmeta['shipit'] and ansible_shipits > 0:
+            nmeta['shipit'] = True
+            nmeta['shipit_ansible'] = True
+
+        # community voted shipits
+        if not nmeta['shipit'] and shipits > 1 and \
+                (self.meta['is_module'] and self.meta['is_new_module']):
+            #import epdb; epdb.st()
+            nmeta['shipit'] = True
+            nmeta['shipit_community'] = True
+            #import epdb; epdb.st()
 
         return nmeta
 
