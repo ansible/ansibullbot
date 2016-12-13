@@ -613,6 +613,11 @@ class TriageV3(DefaultTriager):
             # assume pullrequest
             for f in iw.files:
 
+                if f.startswith('lib/ansible/modules/core') or \
+                        f.startswith('lib/ansible/modules/core'):
+                    self.meta['is_bad_pr'] = True
+                    continue
+
                 if f.startswith('lib/ansible/module_utils'):
                     self.meta['is_module_util'] = True
                     continue
