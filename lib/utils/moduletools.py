@@ -373,6 +373,14 @@ class ModuleIndexer(object):
     def fuzzy_match(self, repo=None, title=None, component=None):
         '''Fuzzy matching for modules'''
 
+        # authorized_keys vs. authorized_key
+        if component and component.endswith('s'):
+            #import epdb; epdb.st()
+            tm = self.find_match(component[:-1])
+            if tm:
+                return tm['name']
+            #import epdb; epdb.st()
+
         match = None
         known_modules = []
 
