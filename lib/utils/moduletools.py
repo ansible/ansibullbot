@@ -4,7 +4,9 @@ import copy
 import os
 import shutil
 import yaml
-from lib.utils.systemtools import *
+#from lib.utils.systemtools import *
+from lib.utils.systemtools import run_command
+
 
 class ModuleIndexer(object):
 
@@ -26,7 +28,6 @@ class ModuleIndexer(object):
         'topic': None
     }
 
-
     def __init__(self, maintainers=None):
         self.modules = {}
         self.maintainers = maintainers or {}
@@ -44,7 +45,7 @@ class ModuleIndexer(object):
             shutil.rmtree(self.checkoutdir)
 
         cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
-                % self.checkoutdir
+            % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
 
@@ -52,7 +53,7 @@ class ModuleIndexer(object):
         """rebase + pull + update the checkout"""
 
         print('# updating checkout for module indexer')
-        success = True
+        #success = True
 
         cmd = "cd %s ; git pull --rebase" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
@@ -70,7 +71,6 @@ class ModuleIndexer(object):
         # if update fails, recreate the checkout
         if rc != 0:
             self.create_checkout()
-
 
     def _find_match(self, pattern, exact=False):
 
@@ -147,9 +147,9 @@ class ModuleIndexer(object):
         module_dir = os.path.expanduser(module_dir)
         for root, dirnames, filenames in os.walk(module_dir):
             for filename in filenames:
-                if 'lib/ansible/modules' in root \
-                    and not filename == '__init__.py' \
-                    and (filename.endswith('.py') or filename.endswith('.ps1')):
+                if 'lib/ansible/modules' in root and \
+                        not filename == '__init__.py' and \
+                        (filename.endswith('.py') or filename.endswith('.ps1')):
                     matches.append(os.path.join(root, filename))
 
         matches = sorted(set(matches))
@@ -177,17 +177,17 @@ class ModuleIndexer(object):
                 mdict['fulltopic'] = '/'.join(path_parts[1:2]) + '/'
             else:
                 mdict['subtopic'] = None
-                mdict['fulltopic'] = path_parts[0] +'/'
+                mdict['fulltopic'] = path_parts[0] + '/'
 
             mdict['repo_filename'] = mdict['filepath']\
                 .replace('lib/ansible/modules/%s/' % mdict['repository'], '')
 
             # clustering/consul
             mdict['namespaced_module'] = mdict['repo_filename']
-            mdict['namespaced_module'] = mdict['namespaced_module']\
-                                            .replace('.py', '')
-            mdict['namespaced_module'] = mdict['namespaced_module']\
-                                            .replace('.ps1', '')
+            mdict['namespaced_module'] = \
+                mdict['namespaced_module'].replace('.py', '')
+            mdict['namespaced_module'] = \
+                mdict['namespaced_module'].replace('.ps1', '')
 
             mname = os.path.basename(match)
             mname = mname.replace('.py', '')
@@ -204,7 +204,6 @@ class ModuleIndexer(object):
                 mdict['deprecated_filename'] = deprecated_filename
             else:
                 mdict['deprecated_filename'] = mdict['repo_filename']
-
 
             mkey = mdict['filepath']
             self.modules[mkey] = mdict
@@ -257,7 +256,7 @@ class ModuleIndexer(object):
 
                 dkey = os.path.dirname(v['filepath'])
                 dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
-                if not dkey in self.modules:
+                if dkey not in self.modules:
                     nd = v.copy()
                     nd['name'] = nd['name'].replace('_', '', 1)
                     newitems.append((dkey, nd))
@@ -304,7 +303,7 @@ class ModuleIndexer(object):
                     inphase = True
                     continue
                 if line.strip().endswith("'''") or line.strip().endswith('"""'):
-                    phase = None
+                    #phase = None
                     break
                 if inphase:
                     documentation += line
@@ -321,7 +320,8 @@ class ModuleIndexer(object):
                 #print("START ON %s" % x)
                 inphase = True
                 #continue
-            if inphase and not x.strip().startswith('-') and not x.strip().startswith('author'):
+            if inphase and not x.strip().startswith('-') and \
+                    not x.strip().startswith('author'):
                 #print("BREAK ON %s" % x)
                 inphase = False
                 break
@@ -348,7 +348,7 @@ class ModuleIndexer(object):
             ydata['author'] = ydata['authors']
 
         # quit if the key was not found
-        if not 'author' in ydata:
+        if 'author' not in ydata:
             return authors
 
         if type(ydata['author']) != list:
@@ -370,7 +370,6 @@ class ModuleIndexer(object):
 
         return authors
 
-
     def fuzzy_match(self, repo=None, title=None, component=None):
         '''Fuzzy matching for modules'''
 
@@ -385,9 +384,11 @@ class ModuleIndexer(object):
         title_matches = [x for x in known_modules if x + ' module' in title]
 
         if not title_matches:
-            title_matches = [x for x in known_modules if title.startswith(x + ' ')]
+            title_matches = [x for x in known_modules
+                             if title.startswith(x + ' ')]
             if not title_matches:
-                title_matches = [x for x in known_modules if  ' ' + x + ' ' in title]
+                title_matches = \
+                    [x for x in known_modules if ' ' + x + ' ' in title]
 
         # don't do singular word matching in title for ansible/ansible
         cmatches = None
