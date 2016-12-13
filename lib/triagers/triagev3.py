@@ -121,6 +121,7 @@ class TriageV3(DefaultTriager):
         self.only_open = False
         self.only_prs = False
         self.pause = False
+        self.always_pause = False
         self.pr = False
         self.repo = None
         self.safe_force = False
@@ -150,6 +151,9 @@ class TriageV3(DefaultTriager):
                 setattr(self, x.replace('gh_', 'github_'), val)
             else:
                 setattr(self, x, val)
+
+        if self.args.pause:
+            self.always_pause = True
 
         if self.args.daemonize:
             logging.info('starting daemonize loop')
@@ -237,7 +241,6 @@ class TriageV3(DefaultTriager):
                     logging.info(iw + ' is closed, skipping')
                     continue
 
-                self.issue = iw
                 hcache = os.path.join(self.cachedir, iw.repo_full_name)
                 action_meta = None
 
@@ -260,6 +263,7 @@ class TriageV3(DefaultTriager):
                         # close new module issues+prs immediately
                         logging.info('module issue created -after- merge')
                         action_meta = self.close_module_issue_with_message(iw)
+                        continue
                     else:
                         # process history
                         # - check if message was given, comment if not
@@ -312,21 +316,13 @@ class TriageV3(DefaultTriager):
                             else:
                                 # do nothing
                                 pass
+                        # do nothing else on these repos
+                        continue
 
-                #pprint(action_meta)
                 self.create_actions()
-
-                logging.info('finished triage for %s' % iw.number)
-
-                #if self.issue.is_pullrequest() and self.meta['shipit']:
-                #    pprint(self.actions)
-                #    import epdb; epdb.st()
-
-                #if not self.empty_actions():
-                #    pprint(self.actions)
-
                 pprint(self.actions)
-                import epdb; epdb.st()
+                self.apply_actions()
+                logging.info('finished triage for %s' % iw.number)
 
     def create_actions(self):
 
@@ -390,12 +386,28 @@ class TriageV3(DefaultTriager):
             if label and label not in self.issue.labels:
                 self.actions['newlabel'].append(label)
 
+        self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
+        self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
+
         # maintainer commands
         # needs info
 
         #if not self.empty_actions:
         #    pprint(self.actions)
         #    import epdb; epdb.st()
+
+    def check_safe_match(self):
+        safe = True
+        for k,v in self.actions.iteritems():
+            if k == 'newlabel':
+                continue
+            if v:
+                safe = False
+        if safe:
+            self.force = True
+        else:
+            self.force = False
+        return safe
 
     def empty_actions(self):
         empty = True
@@ -577,7 +589,7 @@ class TriageV3(DefaultTriager):
                     self.meta['is_plugin'] = True
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
-                elif 'module' in self.template_data.get('component_raw') \
+                elif self.template_data.get('component_raw') \
                         or 'module' in iw.title:
                     # FUZZY MATCH?
                     logging.info('fuzzy match module component')
@@ -643,6 +655,9 @@ class TriageV3(DefaultTriager):
                     match['filepath'] = f
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
+                elif f.endswith('.md'):
+                    # network/avi/README.md
+                    continue
                 else:
                     print(f)
                     import epdb; epdb.st()

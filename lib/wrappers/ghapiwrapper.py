@@ -131,6 +131,7 @@ class RepoWrapper(object):
         with open(self.cachefile, 'wb') as f:
             pickle.dump(self.repo, f)
 
+    @RateLimited
     def get_issue(self, number):
         issue = self.load_issue(number)
         if issue:
@@ -141,6 +142,7 @@ class RepoWrapper(object):
             self.save_issue(issue)
         return issue
 
+    @RateLimited
     def get_pullrequest(self, number):
         #import epdb; epdb.st()
         pr = self.load_pullrequest(number)
@@ -152,12 +154,15 @@ class RepoWrapper(object):
             self.save_pullrequest(pr)
         return pr
 
+    @RateLimited
     def get_labels(self):
         return self.load_update_fetch('labels')
 
+    @RateLimited
     def get_assignees(self):
         return self.load_update_fetch('assignees')
 
+    @RateLimited
     def get_issues(self, since=None, state='open', itype='issue'):
 
         '''Abstraction around get_issues to get ALL issues in a cached way'''
@@ -264,6 +269,7 @@ class RepoWrapper(object):
 
         return issues
 
+    @RateLimited
     def get_pullrequests(self, since=None, state='open', itype='pullrequest'):
         # there is no 'since' for pullrequests
         prs = [x for x in self.repo.get_pulls()]
