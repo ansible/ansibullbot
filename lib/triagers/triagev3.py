@@ -27,8 +27,10 @@
 
 import copy
 import datetime
+import json
 import logging
 import os
+import re
 import time
 
 from pprint import pprint
@@ -52,6 +54,7 @@ MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 30
 MAINTAINERS_FILES = ['MAINTAINERS-CORE.txt', 'MAINTAINERS-EXTRAS.txt']
+FILEMAP_FILENAME = 'FILEMAP.json'
 
 
 class TriageV3(DefaultTriager):
@@ -114,6 +117,8 @@ class TriageV3(DefaultTriager):
         'shipit',
         'duplicate_of'
     ]
+
+    FILEMAP = {}
 
     def __init__(self, args):
         self.args = args
@@ -216,6 +221,9 @@ class TriageV3(DefaultTriager):
 
         # get the maintainers
         self.module_maintainers = self.get_maintainers_mapping()
+
+        # get the filemap
+        self.FILEMAP = self.get_filemap()
 
         # set the indexers
         self.version_indexer = AnsibleVersionIndexer()
@@ -345,8 +353,28 @@ class TriageV3(DefaultTriager):
                 logging.info('finished triage for %s' % iw.number)
                 #import epdb; epdb.st()
 
-    def create_actions(self):
+    def get_filemap(self):
+        '''Read filemap and make re matchers'''
+        with open(FILEMAP_FILENAME, 'rb') as f:
+            jdata = json.loads(f.read())
+        for k,v in jdata.iteritems():
+            reg = k
+            if reg.endswith('/'):
+                reg += '*'
+            jdata[k]['regex'] = re.compile(reg)
 
+            if not 'inclusive' in v:
+                jdata[k]['inclusive'] = True
+            if not 'notify' in v:
+                jdata[k]['notify'] = []
+            if not 'labels' in v:
+                jdata[k]['labels'] = []
+
+        #import epdb; epdb.st()
+        return jdata
+
+    def create_actions(self):
+        '''Parse facts and make actiosn from them'''
         if self.meta['bot_broken']:
             logging.warning('bot broken!')
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
@@ -429,6 +457,14 @@ class TriageV3(DefaultTriager):
             if label and label not in self.issue.labels:
                 self.actions['newlabel'].append(label)
 
+        # use the filemap to add labels
+        if self.issue.is_pullrequest():
+            fmap_labels = self.get_filemap_labels_for_files(self.issue.files)
+            for label in fmap_labels:
+                if label in self.valid_labels and \
+                        label not in self.issue.labels:
+                    self.actions['newlabel'].append(label)
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
@@ -451,6 +487,32 @@ class TriageV3(DefaultTriager):
         else:
             self.force = False
         return safe
+
+    def get_filemap_labels_for_files(self, files):
+        '''Get expected labels from the filemap'''
+        labels = []
+
+        exclusive = False
+        for f in files:
+
+            # only one match
+            if exclusive:
+                continue
+
+            for k,v in self.FILEMAP.iteritems():
+                if not v['inclusive'] and v['regex'].match(f):
+                    labels = v['labels']
+                    exclusive = True
+                    break
+
+                if not 'labels' in v:
+                    continue
+                if v['regex'].match(f):
+                    for label in v['labels']:
+                        if label not in labels:
+                            labels.append(label)
+
+        return labels
 
     def empty_actions(self):
         empty = True
