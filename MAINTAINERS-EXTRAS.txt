@@ -29,10 +29,10 @@ cloud/amazon/GUIDELINES.md: willthames wimnat
 cloud/amazon/ec2_vpc_vgw.py: naslanidis
 cloud/amazon/ec2_win_password.py: rickmendes
 cloud/amazon/ecs_cluster.py: Java1Guy rmorlok
-cloud/amazon/ecs_service_facts.py: Java1Guy rmorlok
-cloud/amazon/ecs_task.py: Java1Guy rmorlok
-cloud/amazon/ecs_taskdefinition.py: Java1Guy rmorlok
-cloud/amazon/ecs_service.py: Java1Guy rmorlok
+cloud/amazon/ecs_service_facts.py: simplesteph Java1Guy rmorlok
+cloud/amazon/ecs_task.py: simplesteph Java1Guy rmorlok
+cloud/amazon/ecs_taskdefinition.py: simplesteph Java1Guy rmorlok
+cloud/amazon/ecs_service.py: simplesteph Java1Guy rmorlok
 cloud/amazon/efs_facts.py: ryansydnor
 cloud/amazon/efs.py: ryansydnor akazakov
 cloud/amazon/execute_lambda.py: ryansb
