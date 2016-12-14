@@ -363,14 +363,12 @@ class TriageV3(DefaultTriager):
                 reg += '*'
             jdata[k]['regex'] = re.compile(reg)
 
-            if not 'inclusive' in v:
+            if 'inclusive' not in v:
                 jdata[k]['inclusive'] = True
-            if not 'notify' in v:
+            if 'notify' not in v:
                 jdata[k]['notify'] = []
-            if not 'labels' in v:
+            if 'labels' not in v:
                 jdata[k]['labels'] = []
-
-        #import epdb; epdb.st()
         return jdata
 
     def create_actions(self):
@@ -465,6 +463,11 @@ class TriageV3(DefaultTriager):
                         label not in self.issue.labels:
                     self.actions['newlabel'].append(label)
 
+        # python3 ... obviously!
+        if self.meta['is_py3']:
+            if 'python3' not in self.issue.labels:
+                self.actions['newlabel'].append('python3')
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
@@ -505,7 +508,7 @@ class TriageV3(DefaultTriager):
                     exclusive = True
                     break
 
-                if not 'labels' in v:
+                if 'labels' not in v:
                     continue
                 if v['regex'].match(f):
                     for label in v['labels']:
@@ -813,6 +816,9 @@ class TriageV3(DefaultTriager):
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
 
+        # python3 ?
+        self.meta['is_py3'] = self.is_python3()
+
     def guess_issue_type(self, issuewrapper):
         iw = issuewrapper
 
@@ -984,3 +990,35 @@ class TriageV3(DefaultTriager):
         facts['bot_skip'] = False
         facts['bot_spam'] = False
         return facts
+
+    def is_python3(self):
+        '''Is the issue related to python3?'''
+        ispy3 = False
+        py3strings = ['python 3', 'python3', 'py3', 'py 3']
+
+        for py3str in py3strings:
+
+            if py3str in self.issue.title.lower():
+                ispy3 = True
+                break
+
+            if py3str in self.template_data.get('component_raw', ''):
+                ispy3 = True
+                break
+
+            if py3str in self.template_data.get('component name', ''):
+                ispy3 = True
+                break
+
+            if py3str in self.template_data.get('summary', ''):
+                ispy3 = True
+                break
+
+        if ispy3:
+            for comment in self.issue.comments:
+                if '!python3' in comment.body:
+                    logging.info('!python3 override in comments')
+                    ispy3 = False
+                    break
+
+        return ispy3
