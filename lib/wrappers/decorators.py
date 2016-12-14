@@ -27,6 +27,9 @@ def RateLimited(fn):
             try:
                 x = fn(*args, **kwargs)
                 success = True
+            except socket.error:
+                logging.warning('socket error: sleeping 2 minutes')
+                time.sleep(2*60)
             except Exception as e:
                 # e.status == 403 == blocked from content creation
                 print(e)
