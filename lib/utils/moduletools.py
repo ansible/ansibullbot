@@ -169,17 +169,9 @@ class ModuleIndexer(object):
             filepath = match.replace(self.checkoutdir + '/', '')
             mdict['filepath'] = filepath
 
-            subpath = dirpath.replace('lib/ansible/modules/', '')
-            path_parts = subpath.split('/')
-            mdict['repository'] = path_parts[0]
-            mdict['topic'] = path_parts[0]
-
-            if len(path_parts) > 2:
-                mdict['subtopic'] = path_parts[1]
-                mdict['fulltopic'] = '/'.join(path_parts[1:2]) + '/'
-            else:
-                mdict['subtopic'] = None
-                mdict['fulltopic'] = path_parts[0] + '/'
+            mdict.update(
+                self.split_topics_from_path(filepath)
+            )
 
             mdict['repo_filename'] = mdict['filepath']\
                 .replace('lib/ansible/modules/%s/' % mdict['repository'], '')
@@ -281,6 +273,28 @@ class ModuleIndexer(object):
                 if v['metadata'].get('supported_by') in ['committer', 'core']:
                     self.modules[k]['maintainers_key'] = best_match
                     self.modules[k]['maintainers'] = ['ansible']
+
+    def split_topics_from_path(self, module_file):
+        subpath = module_file.replace('lib/ansible/modules/', '')
+        path_parts = subpath.split('/')
+        topic = path_parts[0]
+
+        if len(path_parts) > 2:
+            subtopic = path_parts[1]
+            fulltopic = '/'.join(path_parts[0:2])
+        else:
+            subtopic = None
+            fulltopic = path_parts[0]
+
+        tdata = {
+            'fulltopic': fulltopic,
+            'namespace': fulltopic,
+            'topic': topic,
+            'subtopic': subtopic
+        }
+
+        #import epdb; epdb.st()
+        return tdata
 
     def get_module_authors(self, module_file):
         """Grep the authors out of the module docstrings"""

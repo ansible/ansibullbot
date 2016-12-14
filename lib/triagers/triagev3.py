@@ -87,6 +87,18 @@ class TriageV3(DefaultTriager):
         'shipit_owner_pr'
     ]
 
+    # modules having files starting like the key, will get the value label
+    MODULE_NAMESPACE_LABELS = {
+        'cloud': "cloud",
+        'cloud/google': "gce",
+        'cloud/amazon': "aws",
+        'cloud/azure': "azure",
+        'cloud/openstack': "openstack",
+        'cloud/digital_ocean': "digital_ocean",
+        'windows': "windows",
+        'network': "networking"
+    }
+
     VALID_COMMANDS = [
         'needs_info',
         '!needs_info',
@@ -368,6 +380,22 @@ class TriageV3(DefaultTriager):
                     and 'shipit' not in self.issue.labels \
                     and 'shipit' not in self.actions['newlabel']:
                 self.actions['newlabel'].append('shipit')
+
+        if self.meta['is_new_module'] or self.meta['is_module']:
+            # add topic labels
+            for t in ['topic', 'subtopic']:
+                label = self.meta['module_match'].get(t)
+                if label and label in self.valid_labels and \
+                        label not in self.issue.current_labels:
+                    self.actions['newlabel'].append(label)
+
+            # add namespace labels
+            namespace = self.meta['module_match'].get('namespace')
+            if namespace in self.MODULE_NAMESPACE_LABELS:
+                label = self.MODULE_NAMESPACE_LABELS[namespace]
+                if label not in self.issue.current_labels:
+                    self.actions['newlabel'].append(label)
+            #import epdb; epdb.st()
 
         if self.meta['is_new_module'] or self.meta['is_new_plugin']:
             if 'new_plugin' not in self.issue.labels:
@@ -688,6 +716,10 @@ class TriageV3(DefaultTriager):
                     match = copy.deepcopy(self.module_indexer.EMPTY_MODULE)
                     match['name'] = os.path.basename(f).replace('.py', '')
                     match['filepath'] = f
+                    match.update(
+                        self.module_indexer.split_topics_from_path(f)
+                    )
+                    #import epdb; epdb.st()
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
                 elif f.endswith('.md'):
@@ -759,6 +791,15 @@ class TriageV3(DefaultTriager):
 
     def get_shipit_facts(self, issuewrapper, meta):
         # shipit/+1/LGTM in comment.body from maintainer
+
+        # AUTOMERGE
+        # * New module, existing namespace: require a "shipit" from some
+        #   other maintainer in the namespace. (Ideally, identify a maintainer
+        #   for the entire namespace.)
+        # * New module, new namespace: require discussion with the creator
+        #   of the namespace, which will likely be a vendor.
+        # * And all new modules, of course, go in as "preview" mode.
+
         iw = issuewrapper
         nmeta = {
             'shipit': False,
@@ -791,9 +832,13 @@ class TriageV3(DefaultTriager):
                     shipits += 1
 
             # Migrated from ansible/ansible-modules-extras#3662
+            # u'Migrated from
+            #   https://github.com/ansible/ansible-modules-extras/pull/2979 by
+            #   tintoy (not original author)'
             if comment.user.login == iw.submitter and \
-                    'migrated from' in body.lower():
-                migrated_issue = body.split()[-1]
+                    body.lower().startswith('migrated from'):
+                bparts = body.split()
+                migrated_issue = bparts[2]
                 #import epdb; epdb.st()
 
             if comment.user.login in maintainers:
