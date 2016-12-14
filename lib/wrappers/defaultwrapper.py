@@ -89,6 +89,7 @@ class DefaultWrapper(object):
         self.desired_state = 'open'
         self.pr_obj = None
         self.pr_files = []
+        self.history = None
 
         self.valid_assignees = []
         self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')

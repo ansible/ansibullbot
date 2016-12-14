@@ -118,6 +118,16 @@ class TriageV3(DefaultTriager):
         'duplicate_of'
     ]
 
+    ISSUE_REQUIRED_FIELDS = [
+        'issue type',
+        'component name',
+        'ansible version',
+        'summary'
+    ]
+
+    PULLREQUEST_REQUIRED_FIELDS = [
+    ]
+
     FILEMAP = {}
 
     def __init__(self, args):
@@ -467,6 +477,13 @@ class TriageV3(DefaultTriager):
         if self.meta['is_py3']:
             if 'python3' not in self.issue.labels:
                 self.actions['newlabel'].append('python3')
+
+        # needs info?
+        if self.meta['is_needs_info']:
+            if 'needs_info' not in self.issue.labels:
+                self.actions['newlabel'].append('needs_info')
+        elif 'needs_info' in self.issue.labels:
+            self.actions['unlabel'].append('needs_info')
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
@@ -819,6 +836,9 @@ class TriageV3(DefaultTriager):
         # python3 ?
         self.meta['is_py3'] = self.is_python3()
 
+        # needsinfo?
+        self.meta['is_needs_info'] = self.is_needsinfo()
+
     def guess_issue_type(self, issuewrapper):
         iw = issuewrapper
 
@@ -1022,3 +1042,60 @@ class TriageV3(DefaultTriager):
                     break
 
         return ispy3
+
+    def missing_fields(self):
+        # start with missing template data
+        if self.issue.is_issue():
+            mf = self.ISSUE_REQUIRED_FIELDS
+        else:
+            mf = self.PULLREQUEST_REQUIRED_FIELDS
+
+        if not self.issue.history:
+            self.issue.history = self.get_history(
+                self.issue,
+                cachedir=self.cachedir,
+                usecache=True
+            )
+
+        #import epdb; epdb.st()
+
+    def is_needsinfo(self):
+
+        needs_info = False
+        if not self.issue.history:
+            self.issue.history = self.get_history(
+                self.issue,
+                cachedir=self.cachedir,
+                usecache=True
+            )
+
+        maintainers = [x for x in self.ansible_members]
+        if self.meta.get('module_match'):
+            maintainers += self.meta['module_match'].get('maintainers', [])
+
+        for event in self.issue.history.history:
+
+            if needs_info and event['actor'] == self.issue.submitter:
+                needs_info = False
+
+            if event['actor'] in BOTNAMES:
+                continue
+            if event['actor'] not in maintainers:
+                continue
+
+            if event['event'] == 'labeled':
+                if event['label'] == 'needs_info':
+                    needs_info = True
+                    continue
+            if event['event'] == 'unlabeled':
+                if event['label'] == 'needs_info':
+                    needs_info = False
+                    continue
+            if event['event'] == 'commented':
+                if '!needs_info' in event['body']:
+                    needs_info = False
+                elif 'needs_info' in event['body']:
+                    needs_info = True
+
+        #import epdb; epdb.st()
+        return needs_info
