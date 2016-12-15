@@ -421,6 +421,9 @@ class TriageV3(DefaultTriager):
             # add topic labels
             for t in ['topic', 'subtopic']:
                 label = self.meta['module_match'].get(t)
+                if label in self.MODULE_NAMESPACE_LABELS:
+                    label = self.MODULE_NAMESPACE_LABELS[label]
+
                 if label and label in self.valid_labels and \
                         label not in self.issue.current_labels:
                     self.actions['newlabel'].append(label)
@@ -494,6 +497,7 @@ class TriageV3(DefaultTriager):
         #if not self.empty_actions:
         #    pprint(self.actions)
         #    import epdb; epdb.st()
+        #import epdb; epdb.st()
 
     def check_safe_match(self):
         safe = True

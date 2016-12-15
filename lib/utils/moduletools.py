@@ -27,7 +27,8 @@ class ModuleIndexer(object):
         'repo_filename': None,
         'repository': 'ansible',
         'subtopic': None,
-        'topic': None
+        'topic': None,
+        'imports': []
     }
 
     def __init__(self, maintainers=None):
@@ -36,6 +37,7 @@ class ModuleIndexer(object):
         #self.checkoutdir = '/tmp/ansible.modules.checkout'
         self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
+        self.importmap = {}
 
     def create_checkout(self):
         """checkout ansible"""
@@ -244,7 +246,11 @@ class ModuleIndexer(object):
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
 
+        # parse metadata
         self.set_module_metadata()
+
+        # parse imports
+        self.set_module_imports()
 
         # depends on metadata now ...
         self.set_maintainers()
@@ -515,3 +521,34 @@ class ModuleIndexer(object):
             pass
 
         return meta
+
+    def set_module_imports(self):
+        for k,v in self.modules.iteritems():
+            if not v['filepath']:
+                continue
+            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            self.modules[k]['imports'] = self.get_module_imports(mfile)
+
+    def get_module_imports(self, module_file):
+
+        #import ansible.module_utils.nxos
+        #from ansible.module_utils.netcfg import NetworkConfig, dumps
+        #from ansible.module_utils.network import NetworkModule
+
+        mimports = []
+
+        with open(module_file, 'rb') as f:
+            for line in f:
+                line = line.strip()
+                line = line.replace(',', '')
+                if line.startswith('import') or \
+                        ('import' in line and 'from' in line):
+                    lparts = line.split()
+                    if line.startswith('import '):
+                        mimports.append(lparts[1])
+                    elif line.startswith('from '):
+                        mpath = lparts[1] + '.'
+                        for spath in lparts[3:]:
+                            mimports.append(mpath + spath)
+
+        return mimports
