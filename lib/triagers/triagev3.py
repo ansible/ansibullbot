@@ -73,7 +73,7 @@ class TriageV3(DefaultTriager):
 
     ISSUE_TYPES = {
         'bug report': 'bug_report',
-        'bugfix pull request': 'bugfix_pullrequest',
+        'bugfix pull request': 'bugfix_pull_request',
         'feature idea': 'feature_idea',
         'feature pull request': 'feature_pull_request',
         'documentation report': 'docs_report',
@@ -405,17 +405,33 @@ class TriageV3(DefaultTriager):
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
 
-        if self.meta['shipit']:
+        if self.meta['shipit'] and not self.meta['is_needs_revision']:
             logging.info('shipit')
             if self.meta['shipit_owner_pr'] \
-                    and 'shipit_owner_pr' not in self.issue.labels \
-                    and 'shipit_owner_pr' not in self.actions['newlabel']:
+                    and 'shipit_owner_pr' not in self.issue.labels:
+                self.actions['newlabel'].append('shipit')
                 self.actions['newlabel'].append('shipit_owner_pr')
             elif not self.meta['shipit_owner_pr'] \
                     and self.meta['shipit'] \
                     and 'shipit' not in self.issue.labels \
                     and 'shipit' not in self.actions['newlabel']:
                 self.actions['newlabel'].append('shipit')
+        else:
+            if 'shipit' in self.issue.labels:
+                self.actions['unlabel'].append('shipit')
+            if 'shipit_owner_pr' in self.issue.labels:
+                self.actions['unlabel'].append('shipit_owner_pr')
+            if self.meta['is_needs_revision']:
+                if 'needs_revision' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_revision')
+
+        if self.meta['is_needs_rebase']:
+            if 'needs_rebase' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_rebase')
+        else:
+            if 'needs_rebase' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_rebase')
+        #import epdb; epdb.st()
 
         if self.meta['is_new_module'] or self.meta['is_module']:
             # add topic labels
@@ -837,6 +853,8 @@ class TriageV3(DefaultTriager):
 
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
+        self.meta.update(self.get_needs_revision_facts(iw, self.meta))
+        self.meta.update(self.get_community_review_facts(iw, self.meta))
 
         # python3 ?
         self.meta['is_py3'] = self.is_python3()
@@ -909,7 +927,10 @@ class TriageV3(DefaultTriager):
         ansible_shipits = 0
         shipits = 0
         migrated_issue = None
-        maintainers = meta['module_match']['maintainers']
+
+        maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
+        maintainers += meta['module_match']['maintainers']
+
         for comment in iw.comments:
             body = comment.body
 
@@ -1074,7 +1095,7 @@ class TriageV3(DefaultTriager):
                 usecache=True
             )
 
-        maintainers = [x for x in self.ansible_members]
+        maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
 
@@ -1104,3 +1125,78 @@ class TriageV3(DefaultTriager):
 
         #import epdb; epdb.st()
         return needs_info
+
+    def get_needs_revision_facts(self, issuewrapper, meta):
+        # Thanks @adityacs for this PR. This PR requires revisions, either
+        # because it fails to build or by reviewer request. Please make the
+        # suggested revisions. When you are done, please comment with text
+        # 'ready_for_review' and we will put this PR back into review.
+
+        needs_revision = False
+        needs_rebase = False
+
+        iw = issuewrapper
+        if not iw.is_pullrequest():
+            return {'is_needs_revision': needs_revision,
+                    'is_needs_rebase': needs_rebase}
+
+        #if not meta['is_new_module']:
+        #    return {'is_needs_revision': needs_revision}
+
+        if not iw.history:
+            iw.history = self.get_history(
+                iw,
+                cachedir=self.cachedir,
+                usecache=True
+            )
+
+        maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
+        if self.meta.get('module_match'):
+            maintainers += self.meta['module_match'].get('maintainers', [])
+
+        if iw.pullrequest.mergeable_state != 'clean':
+            needs_revision = True
+            if iw.pullrequest.mergeable_state == 'unstable':
+                pass
+            else:
+                needs_rebase = True
+        else:
+            for event in iw.history.history:
+                if event['actor'] in maintainers:
+                    if event['event'] == 'labeled':
+                        if event['label'] == 'needs_revision':
+                            needs_revision = True
+                    if event['event'] == 'unlabeled':
+                        if event['label'] == 'needs_revision':
+                            needs_revision = False
+                if needs_revision and event['actor'] == iw.submitter:
+                    if event['event'] == 'commented':
+                        if 'ready_for_review' in event['body']:
+                            needs_revision = False
+
+        #if needs_revision and not needs_rebase:
+        #    print(iw.html_url)
+        #    import epdb; epdb.st()
+
+        return {'is_needs_revision': needs_revision,
+                'is_needs_rebase': needs_rebase}
+
+
+    def get_community_review_facts(self, issuewrapper, meta):
+        # Thanks @jpeck-resilient for this new module. When this module
+        # receives 'shipit' comments from two community members and any
+        # 'needs_revision' comments have been resolved, we will mark for
+        # inclusion
+
+        community_review = False
+
+        iw = issuewrapper
+        if not iw.is_pullrequest():
+            return {'is_community_review': community_review}
+        if not meta['is_new_module']:
+            return {'is_community_review': community_review}
+
+        if not ['shipit'] and not meta['is_needs_revision']:
+            community_review = True
+
+        return {'is_community_review': community_review}

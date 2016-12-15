@@ -535,6 +535,8 @@ class DefaultWrapper(object):
     def pullrequest(self):
         if not self.pr_obj:
             self.pr_obj = self.repo.get_pullrequest(self.number)
+            if self.pr_obj.update():
+                self.repo.save_pullrequest(self.pr_obj)
         return self.pr_obj
 
     @property
