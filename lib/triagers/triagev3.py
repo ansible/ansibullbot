@@ -808,8 +808,9 @@ class TriageV3(DefaultTriager):
                     # network/avi/README.md
                     continue
                 else:
+                    # FIXME - what do with these files?
                     print(f)
-                    import epdb; epdb.st()
+                    #import epdb; epdb.st()
 
         # who owns this?
         self.meta['owner'] = 'ansible'
@@ -823,7 +824,7 @@ class TriageV3(DefaultTriager):
             else:
                 logging.error('NO MAINTAINER LISTED FOR %s'
                               % self.meta['module_match']['name'])
-                import epdb; epdb.st()
+                #import epdb; epdb.st()
 
         # everything else is "core"
         if not self.meta['is_module']:

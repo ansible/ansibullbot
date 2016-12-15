@@ -40,6 +40,9 @@
     "lib/ansible/plugins/module_utils/": {
         "labels": ["module_util"]
     },
+    "lib/ansible/modules/network/(?!basics).*/.*": {
+        "labels": ["networking"]
+    },
     ".*gce.*": {
         "labels": ["cloud", "gce"]
     },
