@@ -424,6 +424,9 @@ class TriageV3(DefaultTriager):
             if self.meta['is_needs_revision']:
                 if 'needs_revision' not in self.issue.labels:
                     self.actions['newlabel'].append('needs_revision')
+            else:
+                if 'needs_revision' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_revision')
 
         if self.meta['is_needs_rebase']:
             if 'needs_rebase' not in self.issue.labels:
