@@ -387,10 +387,12 @@ class DefaultWrapper(object):
         """Gets the issue from the GitHub API"""
         return self.instance
 
+    @RateLimited
     def add_label(self, label=None):
         """Adds a label to the Issue using the GitHub API"""
         self.get_issue().add_to_labels(label)
 
+    @RateLimited
     def remove_label(self, label=None):
         """Removes a label from the Issue using the GitHub API"""
         self.get_issue().remove_from_labels(label)
@@ -532,6 +534,7 @@ class DefaultWrapper(object):
         return self.get_comments()
 
     @property
+    @RateLimited
     def pullrequest(self):
         if not self.pr_obj:
             self.pr_obj = self.repo.get_pullrequest(self.number)

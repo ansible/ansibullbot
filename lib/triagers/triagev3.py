@@ -260,6 +260,7 @@ class TriageV3(DefaultTriager):
 
             issues = item[1]['issues']
             numbers = sorted(issues.keys())
+            numbers.reverse()
             for number in numbers:
 
                 iw = issues[number]
@@ -404,6 +405,10 @@ class TriageV3(DefaultTriager):
             # FIXME - do something!
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
+
+        ## TRIAGE!!!
+        if not self.issue.labels:
+            self.actions['newlabel'].append('triage')
 
         if self.meta['shipit'] and not self.meta['is_needs_revision']:
             logging.info('shipit')
