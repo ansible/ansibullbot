@@ -876,7 +876,7 @@ class TriageV3(DefaultTriager):
         # body contains any known types?
         body = iw.body
         for key in self.ISSUE_TYPES.keys():
-            if key in body.lower():
+            if body and key in body.lower():
                 return key
 
         if iw.is_issue():

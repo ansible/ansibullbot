@@ -313,10 +313,13 @@ class DefaultWrapper(object):
             labels.append(label.name)
         return labels
 
+    @RateLimited
     def get_template_data(self):
         """Extract templated data from an issue body"""
 
-        if self.instance.pull_request:
+        #if self.instance.pull_request:
+
+        if self.is_pullrequest():
             issue_class = 'pullrequest'
         else:
             issue_class = 'issue'
