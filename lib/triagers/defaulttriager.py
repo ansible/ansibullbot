@@ -814,6 +814,11 @@ class DefaultTriager(object):
                 if thislabel in self.valid_labels:
                     self.issue.add_desired_label(thislabel)
 
+    def render_boilerplate(self, tvars, boilerplate=None):
+        template = environment.get_template('%s.j2' % boilerplate)
+        comment = template.render(**tvars)
+        return comment
+
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
         maintainers = self.get_module_maintainers(expand=False)

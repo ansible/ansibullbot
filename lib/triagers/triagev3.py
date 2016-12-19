@@ -63,6 +63,8 @@ class TriageV3(DefaultTriager):
         'newlabel': [],
         'unlabel': [],
         'comments': [],
+        'assign': [],
+        'unassign': [],
         'close': False,
         'open': False,
         'merge': False,
@@ -376,6 +378,8 @@ class TriageV3(DefaultTriager):
 
             if 'inclusive' not in v:
                 jdata[k]['inclusive'] = True
+            if 'assign' not in v:
+                jdata[k]['assign'] = []
             if 'notify' not in v:
                 jdata[k]['notify'] = []
             if 'labels' not in v:
@@ -406,9 +410,13 @@ class TriageV3(DefaultTriager):
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
 
-        ## TRIAGE!!!
+        # TRIAGE!!!
         if not self.issue.labels:
-            self.actions['newlabel'].append('triage')
+            self.actions['newlabel'].append('needs_triage')
+        if 'triage' in self.issue.labels:
+            if 'needs_triage' not in self.issue.labels:
+                self.actions['newlabel'].append('needs_triage')
+            self.actions['unlabel'].append('triage')
 
         if self.meta['shipit'] and not self.meta['is_needs_revision']:
             logging.info('shipit')
@@ -512,6 +520,20 @@ class TriageV3(DefaultTriager):
         elif 'needs_info' in self.issue.labels:
             self.actions['unlabel'].append('needs_info')
 
+        # assignees?
+        if self.meta['to_assign']:
+            for user in self.meta['to_assign']:
+                self.actions['assign'].append(user)
+            #import epdb; epdb.st()
+
+        # notify?
+        if self.meta['to_notify']:
+            tvars = {'notify': self.meta['to_notify']}
+            comment = self.render_boilerplate(tvars, boilerplate='notify')
+            if comment not in self.actions['comments']:
+                self.actions['comments'].append(comment)
+            #import epdb; epdb.st()
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
@@ -561,6 +583,38 @@ class TriageV3(DefaultTriager):
                             labels.append(label)
 
         return labels
+
+    def get_filemap_users_for_files(self, files):
+        '''Get expected notifiees from the filemap'''
+        to_notify = []
+        to_assign = []
+
+        exclusive = False
+        for f in files:
+
+            # only one match
+            if exclusive:
+                continue
+
+            for k,v in self.FILEMAP.iteritems():
+                if not v['inclusive'] and v['regex'].match(f):
+                    to_notify = v['notify']
+                    to_assign = v['assign']
+                    exclusive = True
+                    break
+
+                if 'notify' not in v and 'assign' not in v:
+                    continue
+
+                if v['regex'].match(f):
+                    for user in v['notify']:
+                        if user not in to_notify:
+                            to_notify.append(user)
+                    for user in v['assign']:
+                        if user not in to_assign:
+                            to_assign.append(user)
+
+        return (to_notify, to_assign)
 
     def empty_actions(self):
         empty = True
@@ -644,10 +698,16 @@ class TriageV3(DefaultTriager):
 
             logging.info('getting repo obj for %s' % repo)
             cachedir = os.path.join(self.cachedir, repo)
-            self.repos[repo] = {
-                'repo': self.ghw.get_repo(repo, verbose=False),
-                'issues': {}
-            }
+
+            if repo not in self.repos:
+                self.repos[repo] = {
+                    'repo': self.ghw.get_repo(repo, verbose=False),
+                    'issues': {},
+                    'processed': [],
+                    'since': None
+                }
+            else:
+                self.repos[repo]['issues'] = {}
 
             logging.info('getting issue objs for %s' % repo)
             if self.pr:
@@ -660,12 +720,47 @@ class TriageV3(DefaultTriager):
                 )
                 self.repos[repo]['issues'][iw.number] = iw
             else:
-                issues = self.repos[repo]['repo'].get_issues()
+                if not self.repos[repo]['since']:
+                    # get all of them
+                    issues = self.repos[repo]['repo'].get_issues()
+                    self.repos[repo]['since'] = datetime.datetime.utcnow()
+                else:
+                    # get updated since last run + newly created
+                    issues = self.repos[repo]['repo'].get_issues(
+                        since=self.repos[repo]['since']
+                    )
+                    # reset the since marker
+                    self.repos[repo]['since'] = datetime.datetime.utcnow()
+                    # get newly created issues
+                    logging.info('getting last issue number for %s' % repo)
+                    last_number = \
+                        self.repos[repo]['repo'].get_last_issue_number()
+                    current_numbers = sorted(set(self.repos[repo]['processed']))
+                    missing_numbers = xrange(current_numbers[-1], last_number)
+                    missing_numbers = [x for x in missing_numbers
+                                       if x not in
+                                       self.repos[repo]['processed']]
+                    for x in missing_numbers:
+                        issue = None
+                        try:
+                            issue = self.repos[repo]['repo'].get_issue(x)
+                        except Exception as e:
+                            print(e)
+                            import epdb; epdb.st()
+                        if issue and issue not in issues and \
+                                issue.state == 'open':
+                            issues.append(issue)
+                    #import epdb; epdb.st()
+
                 for issue in issues:
 
                     if self.args.start_at:
                         if issue.number < self.args.start_at:
                             continue
+
+                    # keep track of this issue number
+                    if issue.number not in self.repos[repo]['processed']:
+                        self.repos[repo]['processed'].append(issue.number)
 
                     iw = IssueWrapper(
                             repo=self.repos[repo]['repo'],
@@ -673,6 +768,7 @@ class TriageV3(DefaultTriager):
                             cachedir=cachedir
                     )
                     self.repos[repo]['issues'][iw.number] = iw
+
             logging.info('getting issue objs for %s complete' % repo)
 
         logging.info('finished collecting issues')
@@ -863,6 +959,7 @@ class TriageV3(DefaultTriager):
         self.meta.update(self.get_shipit_facts(iw, self.meta))
         self.meta.update(self.get_needs_revision_facts(iw, self.meta))
         self.meta.update(self.get_community_review_facts(iw, self.meta))
+        self.meta.update(self.get_notification_facts(iw, self.meta))
 
         # python3 ?
         self.meta['is_py3'] = self.is_python3()
@@ -1091,7 +1188,7 @@ class TriageV3(DefaultTriager):
                 usecache=True
             )
 
-        #import epdb; epdb.st()
+        return mf
 
     def is_needsinfo(self):
 
@@ -1189,7 +1286,6 @@ class TriageV3(DefaultTriager):
         return {'is_needs_revision': needs_revision,
                 'is_needs_rebase': needs_rebase}
 
-
     def get_community_review_facts(self, issuewrapper, meta):
         # Thanks @jpeck-resilient for this new module. When this module
         # receives 'shipit' comments from two community members and any
@@ -1208,3 +1304,78 @@ class TriageV3(DefaultTriager):
             community_review = True
 
         return {'is_community_review': community_review}
+
+    def get_notification_facts(self, issuewrapper, meta):
+        '''Build facts about mentions/pings'''
+        iw = issuewrapper
+        if not iw.history:
+            iw.history = self.get_history(
+                iw,
+                cachedir=self.cachedir,
+                usecache=True
+            )
+
+        nfacts = {
+            'to_notify': [],
+            'to_assign': []
+        }
+
+        # who is assigned?
+        current_assignees = iw.get_assignees()
+
+        # who can be assigned?
+        valid_assignees = [x.login for x in iw.repo.get_assignees()]
+
+        # add people from filemap matches
+        if iw.is_pullrequest():
+            (fnotify, fassign) = self.get_filemap_users_for_files(iw.files)
+            for user in fnotify:
+                if user == iw.submitter:
+                    continue
+                if user not in nfacts['to_notify']:
+                    if not iw.history.is_mentioned(user) and \
+                            not iw.history.was_assigned(user) and \
+                            not iw.history.was_subscribed(user) and \
+                            not iw.history.last_comment(user):
+
+                        nfacts['to_notify'].append(user)
+
+            for user in fassign:
+                if user == iw.submitter:
+                    continue
+                if user in nfacts['to_assign']:
+                    continue
+                if user not in current_assignees and user in valid_assignees:
+                    nfacts['to_assign'].append(user)
+
+        # add module maintainers
+        if meta.get('module_match'):
+            maintainers = meta.get('module_match', {}).get('maintainers', [])
+
+            # do nothing if not maintained
+            if maintainers:
+
+                # don't ping us...
+                if 'ansible' in maintainers:
+                    maintainers.remove('ansible')
+
+                for maintainer in maintainers:
+
+                    # don't notify maintainers of their own issues ... duh
+                    if maintainer == iw.submitter:
+                        continue
+
+                    if maintainer in valid_assignees and \
+                            maintainer not in current_assignees:
+                        nfacts['to_assign'].append(maintainer)
+
+                    if maintainer in nfacts['to_notify']:
+                        continue
+
+                    if not iw.history.is_mentioned(maintainer) and \
+                            not iw.history.was_assigned(maintainer) and \
+                            not iw.history.was_subscribed(maintainer) and \
+                            not iw.history.last_comment(maintainer):
+                        nfacts['to_notify'].append(maintainer)
+
+        return nfacts

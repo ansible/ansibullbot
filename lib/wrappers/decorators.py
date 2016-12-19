@@ -7,14 +7,15 @@
 
 import time
 import logging
-import functools
+#import functools
 import socket
 
-from functools import wraps
-from inspect import getargspec
+#from functools import wraps
+#from inspect import getargspec
+
 
 def RateLimited(fn):
-    argspec = getargspec(fn)
+    #argspec = getargspec(fn)
 
     def inner(*args, **kwargs):
 
@@ -43,6 +44,9 @@ def RateLimited(fn):
                     elif isinstance(e, socket.error):
                         logging.warning('socket error')
                         sminutes = 5
+                    elif 'Server Error' in e.data.get('message'):
+                        logging.warning('server error')
+                        sminutes = 2
                     else:
                         import epdb; epdb.st()
                 else:
@@ -54,5 +58,3 @@ def RateLimited(fn):
         return x
 
     return inner
-
-

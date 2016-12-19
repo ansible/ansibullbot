@@ -6,10 +6,13 @@ from github.GithubException import GithubException
 import glob
 import pickle
 import os
+import re
+import requests
 import socket
 import time
 from datetime import datetime
 
+from bs4 import BeautifulSoup
 from lib.wrappers.decorators import RateLimited
 
 
@@ -102,6 +105,7 @@ class RepoWrapper(object):
     def __init__(self, gh, repo_path, verbose=True):
 
         self.gh = gh
+        self.repo_path = repo_path
         self.cachefile = os.path.join('~/.ansibullbot', 'cache', repo_path)
         self.cachefile = '%s/repo.pickle' % self.cachefile
         self.cachefile = os.path.expanduser(self.cachefile)
@@ -130,6 +134,37 @@ class RepoWrapper(object):
     def save_repo(self):
         with open(self.cachefile, 'wb') as f:
             pickle.dump(self.repo, f)
+
+    def get_last_issue_number(self):
+        '''Scrape the newest issue/pr number'''
+
+        url = 'https://github.com/'
+        url += self.repo_path
+        url += '/issues?q='
+
+        rr = requests.get(url)
+        soup = BeautifulSoup(rr.text, 'html.parser')
+        refs = soup.findAll('a')
+        urls = []
+        for ref in refs:
+            if 'href' in ref.attrs:
+                print(ref.attrs['href'])
+                urls.append(ref.attrs['href'])
+        checkpath = '/' + self.repo_path
+        m = re.compile('^%s/(pull|issues)/[0-9]+$' % checkpath)
+        urls = [x for x in urls if m.match(x)]
+
+        if not urls:
+            import epdb; epdb.st()
+
+        numbers = [x.split('/')[-1] for x in urls]
+        numbers = [int(x) for x in numbers]
+        numbers = sorted(set(numbers))
+        if numbers:
+            return numbers[-1]
+        else:
+            return None
+
 
     @RateLimited
     def get_issue(self, number):
