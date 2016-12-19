@@ -142,14 +142,14 @@ monitoring/stackdriver.py: bwhaley
 monitoring/statusio_maintenance.py: bhcopeland
 monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
-network/a10/: mischapeters ericchou1 gundalow Qalthos privateip
-network/asa/: gundalow Qalthos privateip
+network/a10/: mischapeters ericchou1 gundalow qalthos privateip
+network/asa/: gundalow qalthos privateip
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
 network/exoscale/: resmo
-network/f5/: mhite caphrim007 gundalow Qalthos privateip
+network/f5/: mhite caphrim007 gundalow qalthos privateip
 network/f5/bigip_monitor_http.py: srvg
 network/f5/bigip_monitor_tcp.py: srvg
 network/f5/bigip_virtual_server.py: Etienne-Carriere
