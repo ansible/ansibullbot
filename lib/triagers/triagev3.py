@@ -257,8 +257,9 @@ class TriageV3(DefaultTriager):
         for item in self.repos.items():
             repopath = item[0]
 
-            if repopath in self.skiprepo:
-                continue
+            if self.skiprepo:
+                if repopath in self.skiprepo:
+                    continue
 
             issues = item[1]['issues']
             numbers = sorted(issues.keys())
@@ -702,8 +703,9 @@ class TriageV3(DefaultTriager):
 
         for repo in REPOS:
 
-            if repo in self.skiprepo:
-                continue
+            if self.skiprepo:
+                if repo in self.skiprepo:
+                    continue
             #import epdb; epdb.st()
 
             logging.info('getting repo obj for %s' % repo)
@@ -764,7 +766,8 @@ class TriageV3(DefaultTriager):
 
                 for issue in issues:
 
-                    if self.args.start_at:
+                    # start-at only on the first run
+                    if self.args.start_at and not self.repos[repo]['since']:
                         if issue.number < self.args.start_at:
                             continue
 
@@ -1253,7 +1256,8 @@ class TriageV3(DefaultTriager):
         iw = issuewrapper
         if not iw.is_pullrequest():
             return {'is_needs_revision': needs_revision,
-                    'is_needs_rebase': needs_rebase}
+                    'is_needs_rebase': needs_rebase,
+                    'mergeable_state': None}
 
         # force a PR update ...
         iw.update_pullrequest()
@@ -1308,7 +1312,8 @@ class TriageV3(DefaultTriager):
         #import epdb; epdb.st()
 
         return {'is_needs_revision': needs_revision,
-                'is_needs_rebase': needs_rebase}
+                'is_needs_rebase': needs_rebase,
+                'mergeable_state': mstate}
 
     def get_community_review_facts(self, issuewrapper, meta):
         # Thanks @jpeck-resilient for this new module. When this module
