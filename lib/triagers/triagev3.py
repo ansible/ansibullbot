@@ -389,6 +389,9 @@ class TriageV3(DefaultTriager):
 
     def create_actions(self):
         '''Parse facts and make actiosn from them'''
+
+        import epdb; epdb.st()
+
         if self.meta['bot_broken']:
             logging.warning('bot broken!')
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
@@ -406,10 +409,10 @@ class TriageV3(DefaultTriager):
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
 
-        elif self.meta['is_bad_pr']:
-            # FIXME - do something!
-            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
-            return None
+        #elif self.meta['is_bad_pr']:
+        #    # FIXME - do something!
+        #    self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
+        #    return None
 
         # TRIAGE!!!
         if not self.issue.labels:
@@ -437,7 +440,7 @@ class TriageV3(DefaultTriager):
                 self.actions['unlabel'].append('shipit_owner_pr')
 
         # needs revision
-        if self.meta['is_needs_revision']:
+        if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
             if 'needs_revision' not in self.issue.labels:
                 self.actions['newlabel'].append('needs_revision')
         else:
@@ -448,7 +451,7 @@ class TriageV3(DefaultTriager):
         #        'needs_revision' in self.issue.labels:
         #    self.actions['unlabel'].append('needs_revision')
 
-        if self.meta['is_needs_rebase']:
+        if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
             if 'needs_rebase' not in self.issue.labels:
                     self.actions['newlabel'].append('needs_rebase')
         else:
@@ -473,7 +476,6 @@ class TriageV3(DefaultTriager):
                 label = self.MODULE_NAMESPACE_LABELS[namespace]
                 if label not in self.issue.current_labels:
                     self.actions['newlabel'].append(label)
-            #import epdb; epdb.st()
 
         if self.meta['is_new_module'] or self.meta['is_new_plugin']:
             if 'new_plugin' not in self.issue.labels:
@@ -531,7 +533,6 @@ class TriageV3(DefaultTriager):
         if self.meta['to_assign']:
             for user in self.meta['to_assign']:
                 self.actions['assign'].append(user)
-            #import epdb; epdb.st()
 
         # notify?
         if self.meta['to_notify']:
@@ -539,17 +540,12 @@ class TriageV3(DefaultTriager):
             comment = self.render_boilerplate(tvars, boilerplate='notify')
             if comment not in self.actions['comments']:
                 self.actions['comments'].append(comment)
-            #import epdb; epdb.st()
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
         # maintainer commands
         # needs info
-
-        #if not self.empty_actions:
-        #    pprint(self.actions)
-        #    import epdb; epdb.st()
         #import epdb; epdb.st()
 
     def check_safe_match(self):
@@ -1275,6 +1271,7 @@ class TriageV3(DefaultTriager):
 
         # clean/unstable/dirty/unknown
         mstate = iw.pullrequest.mergeable_state
+        logging.info('mergeable_state == %s' % mstate)
 
         # clean/unstable/dirty/unknown
         if mstate != 'clean':
@@ -1305,6 +1302,10 @@ class TriageV3(DefaultTriager):
                     if event['event'] == 'commented':
                         if 'ready_for_review' in event['body']:
                             needs_revision = False
+
+        logging.info('mergeable_state == %s' % mstate)
+        logging.info('needs_rebase == %s' % needs_rebase)
+        logging.info('needs_revision == %s' % needs_revision)
 
         #if needs_revision and not needs_rebase:
         #    print(iw.html_url)
