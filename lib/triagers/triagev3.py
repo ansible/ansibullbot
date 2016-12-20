@@ -1008,7 +1008,7 @@ class TriageV3(DefaultTriager):
         maintainers['meta'] = ['ansible']
         return maintainers
 
-    def keep_unmanaged_labels(sel1Gf, issue):
+    def keep_unmanaged_labels(self, issue):
         '''Persists labels that were added manually and not bot managed'''
         for label in issue.current_labels:
             if label not in self.MANAGED_LABELS:
