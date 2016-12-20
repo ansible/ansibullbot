@@ -541,9 +541,23 @@ class DefaultWrapper(object):
     def pullrequest(self):
         if not self.pr_obj:
             self.pr_obj = self.repo.get_pullrequest(self.number)
-            if self.pr_obj.update():
-                self.repo.save_pullrequest(self.pr_obj)
+            self.repo.save_pullrequest(self.pr_obj)
+        else:
+            self.update_pullrequest()
         return self.pr_obj
+
+    @RateLimited
+    def update_pullrequest(self):
+        if not self.pr_obj:
+            self.pr_obj = self.repo.get_pullrequest(self.number)
+            self.repo.save_pullrequest(self.pr_obj)
+        elif self.pr_obj.updated_at < self.instance.updated_at:
+            if self.pr_obj.update():
+                    self.repo.save_pullrequest(self.pr_obj)
+        else:
+            pass
+            #if self.pr_obj.update():
+            #        self.repo.save_pullrequest(self.pr_obj)
 
     @property
     def files(self):

@@ -434,12 +434,18 @@ class TriageV3(DefaultTriager):
                 self.actions['unlabel'].append('shipit')
             if 'shipit_owner_pr' in self.issue.labels:
                 self.actions['unlabel'].append('shipit_owner_pr')
-            if self.meta['is_needs_revision']:
-                if 'needs_revision' not in self.issue.labels:
-                    self.actions['newlabel'].append('needs_revision')
-            else:
-                if 'needs_revision' in self.issue.labels:
-                    self.actions['unlabel'].append('needs_revision')
+
+        # needs revision
+        if self.meta['is_needs_revision']:
+            if 'needs_revision' not in self.issue.labels:
+                self.actions['newlabel'].append('needs_revision')
+        else:
+            if 'needs_revision' in self.issue.labels:
+                self.actions['unlabel'].append('needs_revision')
+
+        #if not self.meta['needs_revision'] and \
+        #        'needs_revision' in self.issue.labels:
+        #    self.actions['unlabel'].append('needs_revision')
 
         if self.meta['is_needs_rebase']:
             if 'needs_rebase' not in self.issue.labels:
@@ -549,6 +555,10 @@ class TriageV3(DefaultTriager):
         safe = True
         for k,v in self.actions.iteritems():
             if k == 'newlabel' or k == 'unlabel':
+                continue
+            if k == 'comments' and len(v) == 0:
+                continue
+            if k == 'assign':
                 continue
             if v:
                 safe = False
@@ -998,7 +1008,7 @@ class TriageV3(DefaultTriager):
         maintainers['meta'] = ['ansible']
         return maintainers
 
-    def keep_unmanaged_labels(self, issue):
+    def keep_unmanaged_labels(sel1Gf, issue):
         '''Persists labels that were added manually and not bot managed'''
         for label in issue.current_labels:
             if label not in self.MANAGED_LABELS:
@@ -1245,8 +1255,8 @@ class TriageV3(DefaultTriager):
             return {'is_needs_revision': needs_revision,
                     'is_needs_rebase': needs_rebase}
 
-        #if not meta['is_new_module']:
-        #    return {'is_needs_revision': needs_revision}
+        # force a PR update ...
+        iw.update_pullrequest()
 
         if not iw.history:
             iw.history = self.get_history(
@@ -1259,12 +1269,25 @@ class TriageV3(DefaultTriager):
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
 
-        if iw.pullrequest.mergeable_state != 'clean':
+        # clean/unstable/dirty/unknown
+        mstate = iw.pullrequest.mergeable_state
+
+        # clean/unstable/dirty/unknown
+        if mstate != 'clean':
             needs_revision = True
-            if iw.pullrequest.mergeable_state == 'unstable':
+            if mstate == 'unstable':
+                # tests failing?
+                pass
+            elif mstate == 'dirty':
+                needs_rebase = True
+            elif mstate == 'unknown':
+                # tests in progress?
                 pass
             else:
-                needs_rebase = True
+                print(mstate)
+                logging.error('mergeable_state %s is unhandled' % mstate)
+                #needs_rebase = True
+                #import epdb; epdb.st()
         else:
             for event in iw.history.history:
                 if event['actor'] in maintainers:
@@ -1282,6 +1305,7 @@ class TriageV3(DefaultTriager):
         #if needs_revision and not needs_rebase:
         #    print(iw.html_url)
         #    import epdb; epdb.st()
+        #import epdb; epdb.st()
 
         return {'is_needs_revision': needs_revision,
                 'is_needs_rebase': needs_rebase}
@@ -1333,7 +1357,7 @@ class TriageV3(DefaultTriager):
                 if user == iw.submitter:
                     continue
                 if user not in nfacts['to_notify']:
-                    if not iw.history.is_mentioned(user) and \
+                    if not iw.history.last_notified(user) and \
                             not iw.history.was_assigned(user) and \
                             not iw.history.was_subscribed(user) and \
                             not iw.history.last_comment(user):
@@ -1372,10 +1396,12 @@ class TriageV3(DefaultTriager):
                     if maintainer in nfacts['to_notify']:
                         continue
 
-                    if not iw.history.is_mentioned(maintainer) and \
+                    if not iw.history.last_notified(maintainer) and \
                             not iw.history.was_assigned(maintainer) and \
                             not iw.history.was_subscribed(maintainer) and \
                             not iw.history.last_comment(maintainer):
                         nfacts['to_notify'].append(maintainer)
+
+        #import epdb; epdb.st()
 
         return nfacts

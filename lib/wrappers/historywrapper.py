@@ -16,7 +16,7 @@ from lib.wrappers.decorators import RateLimited
 #
 #   This class will join the events and comments of an issue into
 #   an object that allows the user to make basic queries without
-#   having to iterate through events manaully. 
+#   having to iterate through events manaully.
 #
 #   Constructor Examples:
 #       hwrapper = HistoryWrapper(IssueWrapper)
@@ -104,8 +104,8 @@ class HistoryWrapper(object):
 
     def get_user_comments(self, username):
         """Get all the comments from a user"""
-        matching_events = self._find_events_by_actor('commented', 
-                                                    username, 
+        matching_events = self._find_events_by_actor('commented',
+                                                    username,
                                                     maxcount=999)
         comments = [x['body'] for x in matching_events]
         return comments
@@ -137,7 +137,7 @@ class HistoryWrapper(object):
                 if ts not in groups:
                     groups[ts] = 0
                 groups[ts] += 1
- 
+
         return groups
 
     def get_commands(self, username, command_keys):
@@ -150,14 +150,14 @@ class HistoryWrapper(object):
             for y in command_keys:
                 if y in x and not '!' + y in x:
                     commands.append(y)
-                    break        
+                    break
         '''
 
         comments = self._find_events_by_actor('commented', username, maxcount=999)
         labels = self._find_events_by_actor('labeled', username, maxcount=999)
         unlabels = self._find_events_by_actor('unlabeled', username, maxcount=999)
         events = comments + labels + unlabels
-        events = sorted(events, key=itemgetter('created_at')) 
+        events = sorted(events, key=itemgetter('created_at'))
         for event in events:
             if event['event'] == 'commented':
                 for y in command_keys:
@@ -182,7 +182,10 @@ class HistoryWrapper(object):
 
     def is_mentioned(self, username):
         """Has person X ever been mentioned in this issue?"""
+
+        #import epdb; epdb.st()
         matching_events = self._find_events_by_actor('mentioned', username)
+
         if len(matching_events) > 0:
             return True
         else:
@@ -441,7 +444,7 @@ class HistoryWrapper(object):
                 processed_events.append(edict)
 
         # sort by created_at
-        sorted_events = sorted(processed_events, key=itemgetter('created_at')) 
+        sorted_events = sorted(processed_events, key=itemgetter('created_at'))
 
         # return ...
         return sorted_events
