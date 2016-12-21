@@ -390,8 +390,6 @@ class TriageV3(DefaultTriager):
     def create_actions(self):
         '''Parse facts and make actiosn from them'''
 
-        import epdb; epdb.st()
-
         if self.meta['bot_broken']:
             logging.warning('bot broken!')
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
@@ -1248,11 +1246,15 @@ class TriageV3(DefaultTriager):
 
         needs_revision = False
         needs_rebase = False
+        has_shippable = False
+        has_travis = False
 
         iw = issuewrapper
         if not iw.is_pullrequest():
             return {'is_needs_revision': needs_revision,
                     'is_needs_rebase': needs_rebase,
+                    'has_shippable': has_shippable,
+                    'has_travis': has_travis,
                     'mergeable_state': None}
 
         # force a PR update ...
@@ -1303,17 +1305,29 @@ class TriageV3(DefaultTriager):
                         if 'ready_for_review' in event['body']:
                             needs_revision = False
 
+        if not needs_rebase and not needs_revision:
+            statuses = iw.pullrequest_status
+            if statuses:
+                for x in statuses:
+                    if 'travis-ci.org' in x['target_url']:
+                        has_travis = True
+                        continue
+                    if 'shippable.com' in x['target_url']:
+                        has_shippable = True
+                        continue
+
+            if has_travis:
+                needs_rebase = True
+            #import epdb; epdb.st()
+
         logging.info('mergeable_state == %s' % mstate)
         logging.info('needs_rebase == %s' % needs_rebase)
         logging.info('needs_revision == %s' % needs_revision)
 
-        #if needs_revision and not needs_rebase:
-        #    print(iw.html_url)
-        #    import epdb; epdb.st()
-        #import epdb; epdb.st()
-
         return {'is_needs_revision': needs_revision,
                 'is_needs_rebase': needs_rebase,
+                'has_shippable': has_shippable,
+                'has_travis': has_travis,
                 'mergeable_state': mstate}
 
     def get_community_review_facts(self, issuewrapper, meta):

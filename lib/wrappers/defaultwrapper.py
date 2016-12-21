@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import inspect
 import json
+import logging
 import os
 import pickle
 import shutil
@@ -88,6 +89,8 @@ class DefaultWrapper(object):
         self.current_state = 'open'
         self.desired_state = 'open'
         self.pr_obj = None
+        self.pr_status_raw = None
+        self.pull_raw = None
         self.pr_files = []
         self.history = None
 
@@ -138,6 +141,21 @@ class DefaultWrapper(object):
     def get_review_comments(self):
         self.review_comments = self.load_update_fetch('review_comments')
         return self.review_comments
+
+    def _fetch_api_url(self, url):
+        # fetch the url and parse to json
+        jdata = None
+        try:
+            resp = self.instance._requester.requestJson(
+                'GET',
+                url
+            )
+            data = resp[2]
+            jdata = json.loads(data)
+        except Exception as e:
+            print(e)
+            pass
+        return jdata
 
     def relocate_pickle_files(self):
         '''Move files to the correct location to fix bad pathing'''
@@ -558,6 +576,60 @@ class DefaultWrapper(object):
             pass
             #if self.pr_obj.update():
             #        self.repo.save_pullrequest(self.pr_obj)
+
+    @property
+    @RateLimited
+    def pullrequest_raw_data(self):
+        if not self.pull_raw:
+            self.pull_raw = self.pullrequest.raw_data
+        return self.pull_raw
+
+    @property
+    @RateLimited
+    def pullrequest_status(self):
+
+        fetched = False
+        jdata = None
+        pdata = None
+        # pull out the status url from the raw data
+        rd = self.pullrequest_raw_data
+        surl = rd['statuses_url']
+
+        pfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.number),
+            'pr_status.pickle'
+        )
+
+        if os.path.isfile(pfile):
+            #pdata = pickle.loads(pfile)
+            with open(pfile, 'rb') as f:
+                pdata = pickle.load(f)
+
+        if pdata:
+            if pdata[0] < self.pullrequest.updated_at:
+                logging.info('fetching pr status: <date')
+                jdata = self._fetch_api_url(surl)
+                fetched = True
+            else:
+                jdata = pdata[1]
+
+        if not jdata:
+            logging.info('fetching pr status: !data')
+            jdata = self._fetch_api_url(surl)
+            fetched = True
+
+        if fetched or not os.path.isfile(pfile):
+            logging.info('writing %s' % pfile)
+            pdata = (self.pullrequest.updated_at, jdata)
+            #pickle.dump(pdata, pfile, protocol=2)
+            with open(pfile, 'wb') as f:
+                #pickle.dump(pdata, f)
+                pickle.dump(pdata, f, protocol=2)
+
+        #import epdb; epdb.st()
+        return jdata
 
     @property
     def files(self):
