@@ -227,6 +227,7 @@ source_control/github_hooks.py: pcgentry
 source_control/github_key.py: erydo
 source_control/github_release.py: adrianmoisey
 source_control/gitlab_: dj-wasabi
+storage/infinidat/: GR360RY
 storage/netapp/: hulquest
 system/alternatives.py: DavidWittman mulby
 system/at.py: risaacson
