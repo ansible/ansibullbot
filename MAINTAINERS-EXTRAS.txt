@@ -221,6 +221,7 @@ packaging/os/yum_repository.py: jtyr
 packaging/os/zypper.py: robinro
 packaging/os/zypper_repository.py: matze robinro
 remote_management/ipmi/: cloudnull
+remote_management/stacki/: bsanders bbyhuy
 source_control/bzr.py: andreparames
 source_control/git_config.py: djmattyg007
 source_control/github_hooks.py: pcgentry
