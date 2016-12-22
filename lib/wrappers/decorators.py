@@ -7,11 +7,15 @@
 
 import time
 import logging
-#import functools
 import socket
 
-#from functools import wraps
-#from inspect import getargspec
+
+def get_reset_time(args):
+    obj = args[0]
+    if isinstance(obj, lib.wrappers.ghapiwrapper.GithubWrapper):
+        import epdb; epdb.st()
+    else:
+        import epdb; epdb.st()
 
 
 def RateLimited(fn):
@@ -39,6 +43,8 @@ def RateLimited(fn):
                         logging.warning('content creation rate limit exceeded')
                         sminutes = 2
                     elif 'rate limit exceeded' in e.data['message']:
+                        reset_time = get_reset_time(args)
+                        import epdb; epdb.st()
                         logging.warning('general rate limit exceeded')
                         sminutes = 61
                     elif isinstance(e, socket.error):

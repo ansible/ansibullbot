@@ -112,7 +112,7 @@ class TriageV3(DefaultTriager):
         'bot_skip',
         'wontfix',
         'bug_resolved',
-        'resolved_pr_pr',
+        'resolved_by_pr',
         'needs_contributor',
         'needs_rebase',
         'needs_revision',
@@ -288,7 +288,7 @@ class TriageV3(DefaultTriager):
 
                     # basic processing
                     self.process(iw)
-                    self.meta.update(self.get_facts(iw))
+                    #self.meta.update(self.get_facts(iw))
 
                     # history+comment processing
                     #self.process_history()
@@ -390,25 +390,22 @@ class TriageV3(DefaultTriager):
     def create_actions(self):
         '''Parse facts and make actiosn from them'''
 
-        if self.meta['bot_broken']:
+        if 'bot_broken' in self.meta['maintainer_commands'] or \
+                'bot_broken' in self.meta['submitter_commands'] or \
+                'bot_broken' in self.issue.labels:
             logging.warning('bot broken!')
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             if 'bot_broken' not in self.issue.labels:
                 self.actions['newlabel'].append('bot_broken')
             return None
 
-        elif self.meta['bot_skip']:
-            logging.info('bot skip')
+        elif 'bot_skip' in self.meta['maintainer_commands'] or \
+                'bot_skip' in self.meta['submitter_commands']:
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
 
-        elif self.meta['bot_spam']:
-            logging.warning('bot spam!')
-            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
-            return None
-
-        #elif self.meta['is_bad_pr']:
-        #    # FIXME - do something!
+        #elif self.meta['bot_spam']:
+        #    logging.warning('bot spam!')
         #    self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
         #    return None
 
@@ -973,6 +970,7 @@ class TriageV3(DefaultTriager):
 
         # needsinfo?
         self.meta['is_needs_info'] = self.is_needsinfo()
+        self.meta.update(self.process_comment_commands(iw, self.meta))
 
     def guess_issue_type(self, issuewrapper):
         iw = issuewrapper
@@ -1011,6 +1009,62 @@ class TriageV3(DefaultTriager):
             if label not in self.MANAGED_LABELS:
                 self.debug('keeping %s label' % label)
                 self.issue.add_desired_label(name=label)
+
+    def is_migrated(self, issuewrapper):
+        migrated_issue = None
+        iw = issuewrapper
+
+        # body: Copied from original issue: ansible/ansible-modules-core#4974
+        if 'Copied from original issue' in iw.body:
+            idx = iw.body.find('Copied from original issue')
+            msg = iw.body[idx:]
+            migrated_issue = msg.split()[-1]
+            if migrated_issue.endswith('_'):
+                migrated_issue = migrated_issue.rstrip('_')
+            #import epdb; epdb.st()
+        else:
+            for comment in iw.comments:
+                body = comment.body
+                # Migrated from ansible/ansible-modules-extras#3662
+                # u'Migrated from
+                # https://github.com/ansible/ansible-modules-extras/pull/2979 by
+                #   tintoy (not original author)'
+                if comment.user.login == iw.submitter and \
+                        body.lower().startswith('migrated from'):
+                    bparts = body.split()
+                    migrated_issue = bparts[2]
+                    break
+
+        return migrated_issue
+
+    def get_migrated_issue(self, migrated_issue):
+        if migrated_issue.startswith('https://'):
+            miparts = migrated_issue.split('/')
+            minumber = int(miparts[-1])
+            minamespace = miparts[-4]
+            mirepo = miparts[-3]
+            mirepopath = minamespace + '/' + mirepo
+        elif '#' in migrated_issue:
+            miparts = migrated_issue.split('#')
+            minumber = int(miparts[-1])
+            mirepopath = miparts[0]
+        else:
+            print(migrated_issue)
+            import epdb; epdb.st()
+
+        if mirepopath not in self.repos:
+            self.repos[mirepopath] = {
+                'repo': self.ghw.get_repo(mirepopath, verbose=False),
+                'issues': {}
+            }
+        mrepo = self.repos[mirepopath]['repo']
+        missue = mrepo.get_issue(minumber)
+        mw = IssueWrapper(
+            repo=mrepo,
+            issue=missue,
+            cachedir=os.path.join(self.cachedir, mirepopath)
+        )
+        return mw
 
     def get_shipit_facts(self, issuewrapper, meta):
         # shipit/+1/LGTM in comment.body from maintainer
@@ -1142,12 +1196,14 @@ class TriageV3(DefaultTriager):
 
         return nmeta
 
+    '''
     def get_facts(self, issuewrapper):
         facts = {}
         facts['bot_broken'] = False
         facts['bot_skip'] = False
         facts['bot_spam'] = False
         return facts
+    '''
 
     def is_python3(self):
         '''Is the issue related to python3?'''
@@ -1423,5 +1479,52 @@ class TriageV3(DefaultTriager):
                         nfacts['to_notify'].append(maintainer)
 
         #import epdb; epdb.st()
-
         return nfacts
+
+    def process_comment_commands(self, issuewrapper, meta):
+        vcommands = [x for x in self.VALID_COMMANDS]
+        vcommands.remove('needs_info')
+        vcommands.remove('!needs_info')
+        vcommands.remove('shipit')
+        vcommands.remove('needs_rebase')
+
+        iw = issuewrapper
+        if not iw.history:
+            iw.history = self.get_history(
+                iw,
+                cachedir=self.cachedir,
+                usecache=True
+            )
+
+        # if this was migrated, merge the old history
+        migrated_issue = self.is_migrated(iw)
+        if migrated_issue:
+            mi = self.get_migrated_issue(migrated_issue)
+            if not mi.history:
+                mi.history = self.get_history(
+                    mi,
+                    cachedir=self.cachedir,
+                    usecache=True
+                )
+            iw.history.merge_history(mi.history.history)
+        #import epdb; epdb.st()
+
+        maintainers = []
+        if meta['module_match']:
+            maintainers += meta.get('module_match', {}).get('maintainers', [])
+            maintainers += meta.get('module_match', {}).get('authors', [])
+        maintainers += [x.login for x in iw.repo.get_assignees()]
+        maintainers = sorted(set(maintainers))
+
+        meta['maintainer_commands'] = iw.history.get_commands(
+            maintainers,
+            vcommands,
+            uselabels=False
+        )
+        meta['submitter_commands'] = iw.history.get_commands(
+            iw.submitter,
+            vcommands,
+            uselabels=False
+        )
+
+        return meta

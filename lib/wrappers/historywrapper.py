@@ -140,18 +140,9 @@ class HistoryWrapper(object):
 
         return groups
 
-    def get_commands(self, username, command_keys):
+    def get_commands(self, username, command_keys, uselabels=True):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
-
-        '''
-        comments = self.get_user_comments(username)
-        for x in comments:
-            for y in command_keys:
-                if y in x and not '!' + y in x:
-                    commands.append(y)
-                    break
-        '''
 
         comments = self._find_events_by_actor('commented', username, maxcount=999)
         labels = self._find_events_by_actor('labeled', username, maxcount=999)
@@ -161,12 +152,14 @@ class HistoryWrapper(object):
         for event in events:
             if event['event'] == 'commented':
                 for y in command_keys:
+                    if event['body'].startswith('_From @'):
+                        continue
                     if y in event['body'] and not '!' + y in event['body']:
                         commands.append(y)
-            elif event['event'] == 'labeled':
+            elif event['event'] == 'labeled' and uselabels:
                 if event['label'] in command_keys:
                     commands.append(event['label'])
-            elif event['event'] == 'unlabeled':
+            elif event['event'] == 'unlabeled' and uselabels:
                 if event['label'] in command_keys:
                     commands.append('!' + event['label'])
         #import epdb; epdb.st()
@@ -448,3 +441,12 @@ class HistoryWrapper(object):
 
         # return ...
         return sorted_events
+
+    def merge_history(self, oldhistory):
+        '''Combine history from another issue [migration]'''
+
+        self.history += oldhistory
+        # sort by created_at
+        self.history = sorted(self.history, key=itemgetter('created_at'))
+
+
