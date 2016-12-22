@@ -30,8 +30,42 @@ class HistoryWrapper(object):
     def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
         self.issue = issue
         self.maincache = cachedir
-        self.cachefile = os.path.join(self.maincache, str(issue.instance.number), 'history.pickle')
+
+        if issue.repo.repo_path not in cachedir and 'issues' not in cachedir:
+            self.cachefile = os.path.join(
+                self.maincache,
+                issue.repo.repo_path,
+                'issues',
+                str(issue.instance.number),
+                'history.pickle'
+            )
+        elif issue.repo.repo_path not in cachedir:
+            self.cachefile = os.path.join(
+                self.maincache,
+                issue.repo.repo_path,
+                'issues',
+                str(issue.instance.number),
+                'history.pickle'
+            )
+        elif 'issues' not in cachedir:
+            self.cachefile = os.path.join(
+                self.maincache,
+                'issues',
+                str(issue.instance.number),
+                'history.pickle'
+            )
+        else:
+            self.cachefile = os.path.join(
+                self.maincache,
+                str(issue.instance.number),
+                'history.pickle'
+            )
+
         self.cachedir = os.path.dirname(self.cachefile)
+        if 'issues' not in self.cachedir:
+            print(self.cachedir)
+            import epdb; epdb.st()
+
         if not usecache:
             self.history = self.process()
         else:

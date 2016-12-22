@@ -1018,7 +1018,11 @@ class TriageV3(DefaultTriager):
         if 'Copied from original issue' in iw.body:
             idx = iw.body.find('Copied from original issue')
             msg = iw.body[idx:]
-            migrated_issue = msg.split()[-1]
+            try:
+                migrated_issue = msg.split()[4]
+            except Exception as e:
+                print(e)
+                import epdb; epdb.st()
             if migrated_issue.endswith('_'):
                 migrated_issue = migrated_issue.rstrip('_')
             #import epdb; epdb.st()
@@ -1035,6 +1039,7 @@ class TriageV3(DefaultTriager):
                     migrated_issue = bparts[2]
                     break
 
+        #import epdb; epdb.st()
         return migrated_issue
 
     def get_migrated_issue(self, migrated_issue):
