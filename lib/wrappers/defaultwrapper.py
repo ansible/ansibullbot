@@ -608,6 +608,7 @@ class DefaultWrapper(object):
                 pdata = pickle.load(f)
 
         if pdata:
+            # is the data stale?
             if pdata[0] < self.pullrequest.updated_at:
                 logging.info('fetching pr status: <date')
                 jdata = self._fetch_api_url(surl)
@@ -615,6 +616,7 @@ class DefaultWrapper(object):
             else:
                 jdata = pdata[1]
 
+        # missing?
         if not jdata:
             logging.info('fetching pr status: !data')
             jdata = self._fetch_api_url(surl)
@@ -625,7 +627,6 @@ class DefaultWrapper(object):
             pdata = (self.pullrequest.updated_at, jdata)
             #pickle.dump(pdata, pfile, protocol=2)
             with open(pfile, 'wb') as f:
-                #pickle.dump(pdata, f)
                 pickle.dump(pdata, f, protocol=2)
 
         #import epdb; epdb.st()

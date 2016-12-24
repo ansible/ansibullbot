@@ -109,6 +109,7 @@ class TriageV3(DefaultTriager):
         '!needs_info',
         'notabug',
         'bot_broken',
+        '!bot_broken',
         'bot_skip',
         'wontfix',
         'bug_resolved',
@@ -1053,6 +1054,10 @@ class TriageV3(DefaultTriager):
             miparts = migrated_issue.split('#')
             minumber = int(miparts[-1])
             mirepopath = miparts[0]
+        elif '/' in migrated_issue:
+            miparts = migrated_issue.split('/')
+            minumber = int(miparts[-1])
+            mirepopath = '/'.join(miparts[0:2])
         else:
             print(migrated_issue)
             import epdb; epdb.st()
@@ -1309,6 +1314,7 @@ class TriageV3(DefaultTriager):
         needs_rebase = False
         has_shippable = False
         has_travis = False
+        ci_state = None
 
         iw = issuewrapper
         if not iw.is_pullrequest():
@@ -1316,7 +1322,8 @@ class TriageV3(DefaultTriager):
                     'is_needs_rebase': needs_rebase,
                     'has_shippable': has_shippable,
                     'has_travis': has_travis,
-                    'mergeable_state': None}
+                    'mergeable_state': None,
+                    'ci_state': ci_state}
 
         # force a PR update ...
         iw.update_pullrequest()
@@ -1336,22 +1343,49 @@ class TriageV3(DefaultTriager):
         mstate = iw.pullrequest.mergeable_state
         logging.info('mergeable_state == %s' % mstate)
 
+        # get the exact state from shippable ...
+        #   success/pending/failure/... ?
+        ci_status = iw.pullrequest_status
+        ci_states = [x['state'] for x in ci_status]
+        if not ci_states:
+            ci_state = None
+        else:
+            ci_state = ci_states[0]
+        logging.info('ci_state == %s' % ci_state)
+
         # clean/unstable/dirty/unknown
         if mstate != 'clean':
-            needs_revision = True
+
+            if ci_state == 'failure':
+                needs_revision = True
+
+            if mstate == 'dirty':
+                needs_revision = True
+                needs_rebase = True
+
+            elif mstate == 'unknown':
+                needs_revision = True
+
+            '''
             if mstate == 'unstable':
                 # tests failing?
+                import epdb; epdb.st()
                 pass
             elif mstate == 'dirty':
                 needs_rebase = True
             elif mstate == 'unknown':
                 # tests in progress?
+                import epdb; epdb.st()
                 pass
             else:
                 print(mstate)
                 logging.error('mergeable_state %s is unhandled' % mstate)
                 #needs_rebase = True
                 #import epdb; epdb.st()
+            '''
+
+            #import epdb; epdb.st()
+
         else:
             for event in iw.history.history:
                 if event['actor'] in maintainers:
@@ -1367,9 +1401,8 @@ class TriageV3(DefaultTriager):
                             needs_revision = False
 
         if not needs_rebase and not needs_revision:
-            statuses = iw.pullrequest_status
-            if statuses:
-                for x in statuses:
+            if ci_status:
+                for x in ci_status:
                     if 'travis-ci.org' in x['target_url']:
                         has_travis = True
                         continue
@@ -1379,17 +1412,21 @@ class TriageV3(DefaultTriager):
 
             if has_travis:
                 needs_rebase = True
-            #import epdb; epdb.st()
 
         logging.info('mergeable_state == %s' % mstate)
         logging.info('needs_rebase == %s' % needs_rebase)
         logging.info('needs_revision == %s' % needs_revision)
 
+        #if needs_revision:
+        #    print(iw.html_url)
+        #    import epdb; epdb.st()
+
         return {'is_needs_revision': needs_revision,
                 'is_needs_rebase': needs_rebase,
                 'has_shippable': has_shippable,
                 'has_travis': has_travis,
-                'mergeable_state': mstate}
+                'mergeable_state': mstate,
+                'ci_state': ci_state}
 
     def get_community_review_facts(self, issuewrapper, meta):
         # Thanks @jpeck-resilient for this new module. When this module
@@ -1524,12 +1561,23 @@ class TriageV3(DefaultTriager):
         meta['maintainer_commands'] = iw.history.get_commands(
             maintainers,
             vcommands,
-            uselabels=False
+            uselabels=False,
         )
         meta['submitter_commands'] = iw.history.get_commands(
             iw.submitter,
             vcommands,
-            uselabels=False
+            uselabels=False,
         )
 
+        # negate bot_broken  ... bot_broken vs. !bot_broken
+        bb = [x for x in meta['maintainer_commands'] if 'bot_broken' in x]
+        if bb:
+            if bb[-1] == '!bot_broken':
+                meta['maintainer_commands'].remove('bot_broken')
+        bb = [x for x in meta['submitter_commands'] if 'bot_broken' in x]
+        if bb:
+            if bb[-1] == '!bot_broken':
+                meta['submitter_commands'].remove('bot_broken')
+
+        #import epdb; epdb.st()
         return meta
