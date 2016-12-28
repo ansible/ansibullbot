@@ -11,9 +11,20 @@ import socket
 
 
 def get_reset_time(args):
+
+    try:
+        from lib.wrappers.ghapiwrapper import GithubWrapper
+        from lib.wrappers.historywrapper import HistoryWrapper
+    except ImportError:
+        return None
+
     obj = args[0]
-    if isinstance(obj, lib.wrappers.ghapiwrapper.GithubWrapper):
-        import epdb; epdb.st()
+    if isinstance(obj, GithubWrapper):
+        #import epdb; epdb.st()
+        pass
+    elif isinstance(obj, HistoryWrapper):
+        #import epdb; epdb.st()
+        pass
     else:
         import epdb; epdb.st()
 
