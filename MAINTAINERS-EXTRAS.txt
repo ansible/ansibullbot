@@ -125,6 +125,7 @@ monitoring/circonus_annotation.py: NickatEpic
 monitoring/datadog_event.py: n0ts
 monitoring/datadog_monitor.py: skornehl jjshoe
 monitoring/honeybadger_deployment.py: stympy
+monitoring/icinga2_feature.py: nerzhul
 monitoring/librato_annotation.py: sedward
 monitoring/logentries.py: ivanvanderbyl
 monitoring/logicmonitor.py: ethanculler woz5999
