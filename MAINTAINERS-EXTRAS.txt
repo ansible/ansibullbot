@@ -160,6 +160,7 @@ network/ipify_facts.py: resmo
 network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
 network/nmcli.py: alcamie101
+network/omapi_host.py: nerzhul
 network/openvswitch_bridge.py: stygstra
 network/openvswitch_db.py: ansible
 network/openvswitch_port.py: stygstra
