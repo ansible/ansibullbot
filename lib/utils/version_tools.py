@@ -453,7 +453,7 @@ class AnsibleVersionIndexer(object):
         else:
             acommit = None
             datestr = str(dateobj).split()[0]
-            for dv in revbersed(self.DATEVERSIONS):
+            for dv in reversed(self.DATEVERSIONS):
                 if dv[0] == datestr:
                     accommit = dv[1]
                     break
