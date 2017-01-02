@@ -1193,12 +1193,15 @@ class DefaultTriager(object):
         GithubWrapper.wait_for_rate_limit(githubobj=gh)
 
     @ratecheck()
-    def is_pr_merged(self, number):
+    def is_pr_merged(self, number, repo=None):
         '''Check if a PR# has been merged or not'''
         merged = False
         pr = None
         try:
-            pr = self.repo.get_pullrequest(number)
+            if not repo:
+                pr = self.repo.get_pullrequest(number)
+            else:
+                pr = repo.get_pullrequest(number)
         except Exception as e:
             print(e)
         if pr:

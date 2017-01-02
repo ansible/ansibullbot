@@ -39,6 +39,7 @@ from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.historywrapper import HistoryWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 
+from lib.utils.extractors import extract_pr_number_from_comment
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
@@ -548,7 +549,21 @@ class TriageV3(DefaultTriager):
                 self.actions['newlabel'].append('waiting_on_contributor')
         elif 'waiting_on_contributor' in self.issue.labels:
                 self.actions['unlabel'].append('waiting_on_contributor')
-        #import epdb; epdb.st()
+
+        # wontfix / notabug / bug_resolved / resolved_by_pr / duplicate_of
+        if 'wontfix' in self.meta['maintainer_commands']:
+            self.actions['close'] = True
+        if 'notabug' in self.meta['maintainer_commands']:
+            self.actions['close'] = True
+        if 'bug_resolved' in self.meta['maintainer_commands']:
+            self.actions['close'] = True
+        if 'duplicate_of' in self.meta['maintainer_commands']:
+            self.actions['close'] = True
+        if 'resolved_by_pr' in self.meta['maintainer_commands']:
+            # 'resolved_by_pr': {'merged': True, 'number': 19141},
+            if self.meta['resolved_by_pr']['merged']:
+                self.actions['close'] = True
+            #import epdb; epdb.st()
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
@@ -1595,22 +1610,19 @@ class TriageV3(DefaultTriager):
                 meta['submitter_commands']
             )
 
-        '''
-        # negate bot_broken  ... bot_broken vs. !bot_broken
-        bb = [x for x in meta['maintainer_commands'] if 'bot_broken' in x]
-        if bb:
-            if bb[-1] == '!bot_broken':
-                meta['maintainer_commands'].remove('bot_broken')
-        bb = [x for x in meta['submitter_commands'] if 'bot_broken' in x]
-        if bb:
-            if bb[-1] == '!bot_broken':
-                meta['submitter_commands'].remove('bot_broken')
-
-        meta['maintainer_commands'] = self.negate_command(
-            'needs_contributor',
-            meta['maintainer_commands']
-        )
-        '''
+        # resolved_by_pr is special
+        if 'resolved_by_pr' in meta['maintainer_commands']:
+            # find the comment
+            mc = iw.history.get_user_comments(maintainers)
+            mc = [x for x in mc if 'resolved_by_pr' in x]
+            # extract the PR
+            pr_number = extract_pr_number_from_comment(mc[-1])
+            # was it merged?
+            merged = self.is_pr_merged(pr_number, repo=iw.repo)
+            meta['resolved_by_pr'] = {
+                'number': pr_number,
+                'merged': merged
+            }
 
         #import epdb; epdb.st()
         return meta
