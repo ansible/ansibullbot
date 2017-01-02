@@ -273,106 +273,127 @@ class TriageV3(DefaultTriager):
             numbers.reverse()
             for number in numbers:
 
-                iw = issues[number]
+                logging.info(issues[number])
 
                 if self.args.start_at:
                     if number < self.args.start_at:
                         logging.info('skip %s' % number)
+                        redo = False
                         continue
 
-                self.issue = iw
-                logging.info(iw)
-
-                if iw.state == 'closed':
-                    logging.info(iw + ' is closed, skipping')
+                if issues[number].state == 'closed':
+                    logging.info(issues[number] + ' is closed, skipping')
+                    redo = False
                     continue
 
-                hcache = os.path.join(self.cachedir, iw.repo_full_name)
-                #action_meta = None
+                # alias to a shorter var name
+                iw = issues[number]
 
-                if iw.repo_full_name not in MREPOS:
-                    # ansible/ansible triage
+                # users may want to re-run this issue after manual intervention
+                redo = True
+                loopcount = 0
 
-                    # basic processing
-                    self.process(iw)
-                    #self.meta.update(self.get_facts(iw))
+                while redo:
 
-                    # history+comment processing
-                    #self.process_history()
+                    # use the loopcount to check new data
+                    loopcount += 1
 
-                    # issue
-                    #import epdb; epdb.st()
-                    pass
-
-                else:
-                    if iw.created_at >= REPOMERGEDATE:
-                        # close new module issues+prs immediately
-                        logging.info('module issue created -after- merge')
-                        self.close_module_issue_with_message(iw)
-                        continue
-                    else:
-                        # process history
-                        # - check if message was given, comment if not
-                        # - if X days after message, close PRs, move issues.
-                        logging.info('module issue created -before- merge')
-
-                        logging.info('build history')
-                        hw = self.get_history(
-                            iw,
-                            usecache=True,
-                            cachedir=hcache
+                    # if >1 get latest data
+                    if loopcount > 1:
+                        iobj = iw.repo.get_issue(iw.number)
+                        niw = IssueWrapper(
+                            repo=iw.repo,
+                            issue=iobj,
+                            cachedir=iw.cachedir
                         )
-                        logging.info('history built')
-                        lc = hw.last_date_for_boilerplate('repomerge')
-                        if lc:
-                            lcdelta = (datetime.datetime.now() - lc).days
-                        else:
-                            lcdelta = None
+                        iw = niw
 
-                        kwargs = {}
-                        # missing the comment?
-                        if lc:
-                            kwargs['bp'] = 'repomerge'
-                        else:
-                            kwargs['bp'] = None
+                    # this is where the history cache goes
+                    hcache = os.path.join(self.cachedir, iw.repo_full_name)
 
-                        # should it be closed or not?
-                        if iw.is_pullrequest():
-                            if lc and lcdelta > MREPO_CLOSE_WINDOW:
-                                kwargs['close'] = True
-                                self.close_module_issue_with_message(
-                                    iw,
-                                    **kwargs
-                                )
-                            elif not lc:
-                                # add the comment
-                                self.add_repomerge_comment(iw)
+                    # set the global issue
+                    self.issue = iw
+
+                    if iw.repo_full_name not in MREPOS:
+                        # basic processing for ansible/ansible
+                        self.process(iw)
+                        pass
+
+                    else:
+                        # module repo processing ...
+                        if iw.created_at >= REPOMERGEDATE:
+                            # close new module issues+prs immediately
+                            logging.info('module issue created -after- merge')
+                            self.close_module_issue_with_message(iw)
+                            redo = False
+                            continue
+                        else:
+                            # process history
+                            # - check if message was given, comment if not
+                            # - if X days after message, close PRs, move issues.
+                            logging.info('module issue created -before- merge')
+
+                            logging.info('build history')
+                            hw = self.get_history(
+                                iw,
+                                usecache=True,
+                                cachedir=hcache
+                            )
+                            logging.info('history built')
+                            lc = hw.last_date_for_boilerplate('repomerge')
+                            if lc:
+                                lcdelta = (datetime.datetime.now() - lc).days
                             else:
-                                # do nothing
-                                pass
-                        else:
-                            kwargs['close'] = False
-                            if lc and lcdelta > MREPO_CLOSE_WINDOW:
-                                # move it for them
-                                self.move_issue(iw)
-                            elif not lc:
-                                # add the comment
-                                self.add_repomerge_comment(iw)
-                            else:
-                                # do nothing
-                                pass
-                        # do nothing else on these repos
-                        continue
+                                lcdelta = None
 
-                self.create_actions()
-                logging.info('url: %s' % self.issue.html_url)
-                logging.info('title: %s' % self.issue.title)
-                logging.info('component: %s'
-                             % self.template_data.get('component_raw'))
-                pprint(self.actions)
-                self.apply_actions()
+                            kwargs = {}
+                            # missing the comment?
+                            if lc:
+                                kwargs['bp'] = 'repomerge'
+                            else:
+                                kwargs['bp'] = None
+
+                            # should it be closed or not?
+                            if iw.is_pullrequest():
+                                if lc and lcdelta > MREPO_CLOSE_WINDOW:
+                                    kwargs['close'] = True
+                                    self.close_module_issue_with_message(
+                                        iw,
+                                        **kwargs
+                                    )
+                                elif not lc:
+                                    # add the comment
+                                    self.add_repomerge_comment(iw)
+                                else:
+                                    # do nothing
+                                    pass
+                            else:
+                                kwargs['close'] = False
+                                if lc and lcdelta > MREPO_CLOSE_WINDOW:
+                                    # move it for them
+                                    self.move_issue(iw)
+                                elif not lc:
+                                    # add the comment
+                                    self.add_repomerge_comment(iw)
+                                else:
+                                    # do nothing
+                                    pass
+                            # do nothing else on these repos
+                            redo = False
+                            continue
+
+                    self.create_actions()
+                    logging.info('url: %s' % self.issue.html_url)
+                    logging.info('title: %s' % self.issue.title)
+                    logging.info('component: %s'
+                                % self.template_data.get('component_raw'))
+                    pprint(self.actions)
+
+                    action_meta = self.apply_actions()
+                    if not action_meta['REDO']:
+                        redo = False
+
                 logging.info('finished triage for %s' % iw.number)
-                #import epdb; epdb.st()
 
     def get_filemap(self):
         '''Read filemap and make re matchers'''

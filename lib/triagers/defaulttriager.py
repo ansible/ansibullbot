@@ -18,6 +18,7 @@
 from __future__ import print_function
 
 import glob
+import logging
 import os
 import sys
 import pickle
@@ -1048,7 +1049,7 @@ class DefaultTriager(object):
                     print("Running actions non-interactive as you forced.")
                     self.execute_actions()
                     return
-                cont = raw_input("Take recommended actions (y/N/a/R/T)? ")
+                cont = raw_input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
                 if cont in ('Y', 'y'):
@@ -1059,10 +1060,12 @@ class DefaultTriager(object):
                 if cont == 'r' or cont == 'R':
                     action_meta['REDO'] = True
                 if cont == 'DEBUG':
+                    # put the user into a breakpoint to do live debug
+                    action_meta['REDO'] = True
                     import epdb; epdb.st()
         elif self.always_pause:
             print("Skipping, but pause.")
-            cont = raw_input("Continue (Y/n/a/R/T)? ")
+            cont = raw_input("Continue (Y/n/a/R/T/DEBUG)? ")
             if cont in ('a', 'A', 'n', 'N'):
                 sys.exit(0)
             if cont == 'T':
@@ -1071,6 +1074,7 @@ class DefaultTriager(object):
             elif cont == 'REDO':
                 action_meta['REDO'] = True
             elif cont == 'DEBUG':
+                # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
         else:
@@ -1092,28 +1096,28 @@ class DefaultTriager(object):
 
         #time.sleep(1)
         for comment in self.actions['comments']:
-            #import epdb; epdb.st()
-            if not isinstance(self.debug, bool):
-                self.debug(msg="API Call comment: " + comment)
+            logging.info("acton: comment - " + comment)
             self.issue.add_comment(comment=comment)
         if self.actions['close']:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
+            logging.info('action: close')
             self.issue.instance.edit(state='closed')
             return
+
         for unlabel in self.actions['unlabel']:
-            if not isinstance(self.debug, bool):
-                self.debug(msg="API Call unlabel: " + unlabel)
+            logging.info('action: unlabel - ' + unlabel)
             self.issue.remove_label(label=unlabel)
         for newlabel in self.actions['newlabel']:
-            if not isinstance(self.debug, bool):
-                self.debug(msg="API Call newlabel: " + newlabel)
+            logging.info('action: label - ' + newlabel)
             self.issue.add_label(label=newlabel)
 
         if 'assign' in self.actions:
             for user in self.actions['assign']:
+                logging.info('action: assign - ' + user)
                 self.issue.assign_user(user)
         if 'unassign' in self.actions:
             for user in self.actions['unassign']:
+                logging.info('action: unassign - ' + user)
                 self.issue.unassign_user(user)
 
     def smart_match_module(self):
