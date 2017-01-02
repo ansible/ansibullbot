@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 
+import datetime
 import os
 import re
-import yaml
 from lib.utils.systemtools import *
 
 from distutils.version import StrictVersion
 from distutils.version import LooseVersion
+
 
 def list_to_version(inlist, cast_string=True, reverse=True, binary=False):
     # [1,2,3] => "3.2.1"
@@ -45,7 +46,8 @@ class AnsibleVersionIndexer(object):
 
     def create_checkout(self):
         """checkout ansible"""
-        cmd = "git clone http://github.com/ansible/ansible --recursive %s" % self.checkoutdir
+        cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
+            % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
 
@@ -72,7 +74,7 @@ class AnsibleVersionIndexer(object):
         # branches
         cmd = 'cd %s;' % self.checkoutdir
         cmd += 'git branch -a'
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, 
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         (so, se) = p.communicate()
         lines = [x.strip() for x in so.split('\n') if x.strip()]
@@ -88,15 +90,18 @@ class AnsibleVersionIndexer(object):
         # tags
         cmd = 'cd %s;' % self.checkoutdir
         cmd += 'git tag -l'
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, 
-                             stderr=subprocess.PIPE)
+        p = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
         (so, se) = p.communicate()
         lines = [x.strip() for x in so.split('\n') if x.strip()]
         rlines = [x.replace('v', '', 1) for x in lines]
         for rline in rlines:
             if not rline in self.VALIDVERSIONS:
                 self.VALIDVERSIONS[rline] = 'tag'
-
 
     def is_valid_version(self, version):
 
@@ -145,10 +150,10 @@ class AnsibleVersionIndexer(object):
         # 2.x
 
         devel = ['devel', 'master', 'head', 'latest', 'all', 'all?', 'all ?', 'any',
-                 'n/a', 'na', 'not applicable', 'latest devel', 
+                 'n/a', 'na', 'not applicable', 'latest devel',
                  'latest devel branch', 'ansible devel', '', 'future',
                  'git version', 'ansible@devel', 'all recent releases']
-        
+
         if not self.VALIDVERSIONS:
             self._get_versions()
 
@@ -435,21 +440,30 @@ class AnsibleVersionIndexer(object):
             for x in lines:
                 parts = x.split(';')
                 self.DATEVERSIONS.append(parts)
-        #import epdb; epdb.st()
 
-        acommit = None
-        datestr = str(dateobj).split()[0]
-        for dv in reversed(self.DATEVERSIONS):
-            if dv[0] == datestr:
-                accommit = dv[1]
-                break
-        if not acommit:
-            datestr = '-'.join(datestr.split('-')[0:2])
-            for dv in self.DATEVERSIONS:
-                dvs = '-'.join(dv[0].split('-')[0:2])
-                if dvs == datestr:
-                    acommit = dv[1]
+        last_commit_date = self.DATEVERSIONS[0][0]
+        last_commit_date = datetime.datetime.strptime(
+            last_commit_date,
+            '%Y-%m-%d'
+        )
+
+        # use last commit version if older than incoming date
+        if dateobj >= last_commit_date:
+            acommit = self.DATEVERSIONS[0][1]
+        else:
+            acommit = None
+            datestr = str(dateobj).split()[0]
+            for dv in revbersed(self.DATEVERSIONS):
+                if dv[0] == datestr:
+                    accommit = dv[1]
                     break
+            if not acommit:
+                datestr = '-'.join(datestr.split('-')[0:2])
+                for dv in self.DATEVERSIONS:
+                    dvs = '-'.join(dv[0].split('-')[0:2])
+                    if dvs == datestr:
+                        acommit = dv[1]
+                        break
 
         aversion = None
         if acommit:
