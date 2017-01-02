@@ -111,13 +111,18 @@ class TriageV3(DefaultTriager):
         'bot_broken',
         '!bot_broken',
         'bot_skip',
+        '!bot_skip',
         'wontfix',
         'bug_resolved',
         'resolved_by_pr',
         'needs_contributor',
+        '!needs_contributor',
         'needs_rebase',
+        '!needs_rebase',
         'needs_revision',
+        '!needs_revision',
         'shipit',
+        '!shipit',
         'duplicate_of'
     ]
 
@@ -536,6 +541,14 @@ class TriageV3(DefaultTriager):
             comment = self.render_boilerplate(tvars, boilerplate='notify')
             if comment not in self.actions['comments']:
                 self.actions['comments'].append(comment)
+
+        # needs_contributor
+        if 'needs_contributor' in self.meta['maintainer_commands']:
+            if 'waiting_on_contributor' not in self.issue.labels:
+                self.actions['newlabel'].append('waiting_on_contributor')
+        elif 'waiting_on_contributor' in self.issue.labels:
+                self.actions['unlabel'].append('waiting_on_contributor')
+        #import epdb; epdb.st()
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
@@ -1569,6 +1582,20 @@ class TriageV3(DefaultTriager):
             uselabels=False,
         )
 
+        negative_commands = \
+            [x for x in self.VALID_COMMANDS if x.startswith('!')]
+        negative_commands = [x.replace('!', '') for x in negative_commands]
+        for x in negative_commands:
+            meta['maintainer_commands'] = self.negate_command(
+                x,
+                meta['maintainer_commands']
+            )
+            meta['submitter_commands'] = self.negate_command(
+                x,
+                meta['submitter_commands']
+            )
+
+        '''
         # negate bot_broken  ... bot_broken vs. !bot_broken
         bb = [x for x in meta['maintainer_commands'] if 'bot_broken' in x]
         if bb:
@@ -1579,5 +1606,25 @@ class TriageV3(DefaultTriager):
             if bb[-1] == '!bot_broken':
                 meta['submitter_commands'].remove('bot_broken')
 
+        meta['maintainer_commands'] = self.negate_command(
+            'needs_contributor',
+            meta['maintainer_commands']
+        )
+        '''
+
         #import epdb; epdb.st()
         return meta
+
+    def negate_command(self, command, commands):
+        # negate bot_broken  ... bot_broken vs. !bot_broken
+        positive = command
+        negative = '!' + command
+
+        bb = [x for x in commands if positive in x]
+        if bb:
+            for x in bb:
+                if x == negative:
+                    commands.remove(positive)
+                    commands.remove(negative)
+
+        return commands
