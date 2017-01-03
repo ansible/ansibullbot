@@ -282,7 +282,9 @@ class TriageV3(DefaultTriager):
 
             issues = item[1]['issues']
             numbers = sorted(issues.keys())
-            numbers.reverse()
+            if self.args.sort == 'desc':
+                numbers.reverse()
+
             for number in numbers:
 
                 logging.info(issues[number])

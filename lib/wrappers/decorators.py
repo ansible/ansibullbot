@@ -8,15 +8,17 @@
 import time
 import logging
 import socket
+import sys
 
 from github.RateLimit import RateLimit
 
 
-def get_reset_time(args):
+def get_rate_limit(fn, args):
     '''Return the number of seconds until the rate limit resets'''
 
     # These are circular imports so they need to be deferred
     try:
+        from lib.triagers.triagev3 import TriageV3
         from lib.wrappers.ghapiwrapper import GithubWrapper
         from lib.wrappers.ghapiwrapper import RepoWrapper
         from lib.wrappers.historywrapper import HistoryWrapper
@@ -24,10 +26,11 @@ def get_reset_time(args):
         from lib.wrappers.pullrequestwrapper import PullrequestWrapper
     except ImportError as e:
         logging.error(str(e))
-        return None
+        sys.exit(1)
 
     # all of these have a get_rate_limit function
     safe_classes = (
+        TriageV3,
         GithubWrapper,
         RepoWrapper,
         IssueWrapper,
@@ -35,8 +38,6 @@ def get_reset_time(args):
         HistoryWrapper
     )
 
-    # default to 62 minutes
-    reset_time = 60 * 62
     rl = None
     obj = args[0]
 
@@ -47,17 +48,30 @@ def get_reset_time(args):
         import epdb; epdb.st()
 
     if rl:
-        # The time at which the current rate limit window resets
-        # in UTC epoch seconds. [ex. 1483405983]
-        logging.debug('rate_limit: %s' % str(rl))
         if isinstance(rl, dict):
-            reset_time = rl['resources']['core']['reset'] - time.time()
+            pass
         elif isinstance(rl, RateLimit):
-            reset_time = \
-                rl.raw_data['resources']['core']['reset'] - time.time()
+                rl = rl.raw_data
         else:
             logging.error('rl object is uknown type')
             import epdb; epdb.st()
+
+    return rl
+
+
+def get_reset_time(fn, args):
+    '''Return the number of seconds until the rate limit resets'''
+
+    # default to 62 minutes
+    reset_time = 60 * 62
+
+    rl = get_rate_limit(args)
+
+    if rl:
+        # The time at which the current rate limit window resets
+        # in UTC epoch seconds. [ex. 1483405983]
+        logging.debug('rate_limit: %s' % str(rl))
+        reset_time = rl['resources']['core']['reset'] - time.time()
         reset_time = int(reset_time)
         if reset_time < 1:
             reset_time = 0
@@ -75,12 +89,23 @@ def RateLimited(fn):
         count = 0
         while not success:
             count += 1
-            logging.debug('ratelimited call #%s on %s' %
-                         (count, str(type(args[0]))))
 
+            rl = get_rate_limit(fn, args)
+            #import epdb; epdb.st()
+            #logging.debug('ratelimit: remaining %s' %
+            #              rl['resources']['core']['remaining'])
+
+            logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
+                          (count,
+                           str(type(args[0])),
+                           fn.func_name,
+                           rl['resources']['core']['remaining']))
+
+            #import epdb; epdb.st()
             if count > 1:
                 import epdb; epdb.st()
 
+            # default to 5 minute sleep
             sminutes = 5
             try:
                 x = fn(*args, **kwargs)
@@ -98,7 +123,7 @@ def RateLimited(fn):
                         return x
                     elif 'rate limit exceeded' in e.data['message']:
                         logging.warning('general rate limit exceeded')
-                        reset_time = get_reset_time(args)
+                        reset_time = get_reset_time(fn, args)
                         sminutes = reset_time / 60
                     elif isinstance(e, socket.error):
                         logging.warning('socket error')
