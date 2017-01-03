@@ -769,6 +769,9 @@ def main3():
                     "question.)"
     )
 
+    parser.add_argument("--collect_only", action="store_true",
+                        help="stop after caching issues")
+
     parser.add_argument("--skip_module_repos", action="store_true",
                         help="ignore the module repos")
 

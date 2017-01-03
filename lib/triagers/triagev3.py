@@ -247,6 +247,10 @@ class TriageV3(DefaultTriager):
         # get the issues
         self.collect_issues()
 
+        # stop here if we're just collecting issues to populate cache
+        if self.args.collect_only:
+            return
+
         # get the maintainers
         self.module_maintainers = self.get_maintainers_mapping()
 
