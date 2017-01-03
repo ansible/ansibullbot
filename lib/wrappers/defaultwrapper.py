@@ -94,6 +94,12 @@ class DefaultWrapper(object):
         self.pr_files = []
         self.history = None
 
+        self.full_cachedir = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.number)
+        )
+
         self.valid_assignees = []
         self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
 

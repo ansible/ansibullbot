@@ -277,6 +277,9 @@ class TriageV3(DefaultTriager):
                 if repopath in self.skiprepo:
                     continue
 
+            if self.args.skip_module_repos and 'module' in repopath:
+                continue
+
             issues = item[1]['issues']
             numbers = sorted(issues.keys())
             numbers.reverse()
@@ -291,7 +294,7 @@ class TriageV3(DefaultTriager):
                         continue
 
                 if issues[number].state == 'closed':
-                    logging.info(issues[number] + ' is closed, skipping')
+                    logging.info(str(issues[number]) + ' is closed, skipping')
                     redo = False
                     continue
 
@@ -391,6 +394,10 @@ class TriageV3(DefaultTriager):
                             redo = False
                             continue
 
+                    # save the meta
+                    self.dump_meta(iw, self.meta)
+
+                    # build up actions from the meta
                     self.create_actions()
                     logging.info('url: %s' % self.issue.html_url)
                     logging.info('title: %s' % self.issue.title)
@@ -400,11 +407,22 @@ class TriageV3(DefaultTriager):
                     )
                     pprint(self.actions)
 
+                    # do the actions
                     action_meta = self.apply_actions()
                     if not action_meta['REDO']:
                         redo = False
 
                 logging.info('finished triage for %s' % iw.number)
+
+    def dump_meta(self, issuewrapper, meta):
+        mfile = os.path.join(
+            issuewrapper.full_cachedir,
+            'meta.json'
+        )
+        meta['time'] = datetime.datetime.now().isoformat()
+        with open(mfile, 'wb') as f:
+            json.dump(meta, f)
+        #import epdb; epdb.st()
 
     def get_filemap(self):
         '''Read filemap and make re matchers'''
@@ -757,13 +775,12 @@ class TriageV3(DefaultTriager):
                 pprint(rl)
 
                 for issue in issues:
-                    number = issue.number
                     iw = IssueWrapper(
                             repo=thisrepo,
                             issue=issue,
                             cachedir=cachedir
                     )
-                    hw = HistoryWrapper(
+                    HistoryWrapper(
                         iw,
                         usecache=False,
                         cachedir=cachedir
@@ -788,7 +805,9 @@ class TriageV3(DefaultTriager):
             if self.skiprepo:
                 if repo in self.skiprepo:
                     continue
-            #import epdb; epdb.st()
+
+            if self.args.skip_module_repos and 'module' in repo:
+                continue
 
             logging.info('getting repo obj for %s' % repo)
             cachedir = os.path.join(self.cachedir, repo)

@@ -761,11 +761,16 @@ class TriagePullRequests:
                 self.process()
 
 def main3():
-    parser = argparse.ArgumentParser(description="Triage various issue+PR queues "
-                                                 "for Ansible. (NOTE: only "
-                                                 "useful if you have commit "
-                                                 "access to the repo in "
-                                                 "question.)")
+    parser = argparse.ArgumentParser(
+        description="Triage various issue+PR queues "
+                    "for Ansible. (NOTE: only "
+                    "useful if you have commit "
+                    "access to the repo in "
+                    "question.)"
+    )
+
+    parser.add_argument("--skip_module_repos", action="store_true",
+                        help="ignore the module repos")
 
     parser.add_argument("--force_rate_limit", action="store_true",
                         help="debug: force the rate limit")

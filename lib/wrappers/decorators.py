@@ -9,6 +9,8 @@ import time
 import logging
 import socket
 
+from github.RateLimit import RateLimit
+
 
 def get_reset_time(args):
     '''Return the number of seconds until the rate limit resets'''
@@ -50,13 +52,17 @@ def get_reset_time(args):
         logging.debug('rate_limit: %s' % str(rl))
         if isinstance(rl, dict):
             reset_time = rl['resources']['core']['reset'] - time.time()
+        elif isinstance(rl, RateLimit):
+            reset_time = \
+                rl.raw_data['resources']['core']['reset'] - time.time()
         else:
-            logging.error('rl object is not a dict ... possibly RateLimit?')
+            logging.error('rl object is uknown type')
             import epdb; epdb.st()
         reset_time = int(reset_time)
         if reset_time < 1:
             reset_time = 0
 
+    #import epdb; epdb.st()
     logging.debug('get_reset_time [return]: %s(s)' % reset_time)
     return reset_time
 
@@ -69,8 +75,11 @@ def RateLimited(fn):
         count = 0
         while not success:
             count += 1
-            logging.info('ratelimited call #%s on %s' %
+            logging.debug('ratelimited call #%s on %s' %
                          (count, str(type(args[0]))))
+
+            if count > 1:
+                import epdb; epdb.st()
 
             sminutes = 5
             try:
