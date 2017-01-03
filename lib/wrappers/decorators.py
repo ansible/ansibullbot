@@ -76,7 +76,9 @@ def get_reset_time(fn, args):
         if reset_time < 1:
             reset_time = 0
 
-    #import epdb; epdb.st()
+        # always pad by 5s
+        reset_time += 5
+
     logging.debug('get_reset_time [return]: %s(s)' % reset_time)
     return reset_time
 
@@ -98,43 +100,42 @@ def RateLimited(fn):
                            fn.func_name,
                            rl['resources']['core']['remaining']))
 
-            if count > 1:
-                import epdb; epdb.st()
+            #if count > 1:
+            #    import epdb; epdb.st()
 
             # default to 5 minute sleep
-            sminutes = 5
+            stime = 5*60
             try:
                 x = fn(*args, **kwargs)
                 success = True
-            except socket.error:
-                logging.warning('socket error: sleeping 2 minutes')
+            except socket.error as e:
+                logging.warning('socket error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except Exception as e:
                 print(e)
                 if hasattr(e, 'data') and e.data.get('message'):
                     if 'blocked from content creation' in e.data['message']:
                         logging.warning('content creation rate limit exceeded')
-                        sminutes = 2
+                        stime = 2*60
                     elif 'Label does not exist' in e.data['message']:
                         return x
                     elif 'rate limit exceeded' in e.data['message']:
                         logging.warning('general rate limit exceeded')
-                        reset_time = get_reset_time(fn, args)
-                        sminutes = reset_time / 60
+                        stime = get_reset_time(fn, args)
                     elif isinstance(e, socket.error):
                         logging.warning('socket error')
-                        sminutes = 5
+                        stime = 5*60
                     elif 'Server Error' in e.data.get('message'):
                         logging.warning('server error')
-                        sminutes = 2
+                        stime = 2*60
                     else:
                         import epdb; epdb.st()
                 else:
                     import epdb; epdb.st()
 
                 #import epdb; epdb.st()
-                logging.warning('sleeping %s minutes' % sminutes)
-                time.sleep(sminutes*60)
+                logging.warning('sleeping %s minutes' % (stime/60))
+                time.sleep(stime)
 
         return x
 
