@@ -125,7 +125,6 @@ monitoring/circonus_annotation.py: NickatEpic
 monitoring/datadog_event.py: n0ts
 monitoring/datadog_monitor.py: skornehl jjshoe
 monitoring/honeybadger_deployment.py: stympy
-monitoring/icinga2_feature.py: nerzhul
 monitoring/librato_annotation.py: sedward
 monitoring/logentries.py: ivanvanderbyl
 monitoring/logicmonitor.py: ethanculler woz5999
@@ -143,14 +142,14 @@ monitoring/stackdriver.py: bwhaley
 monitoring/statusio_maintenance.py: bhcopeland
 monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
-network/a10/: mischapeters ericchou1 gundalow Qalthos privateip
-network/asa/: gundalow Qalthos privateip
+network/a10/: mischapeters ericchou1 gundalow qalthos privateip
+network/asa/: gundalow qalthos privateip
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
 network/exoscale/: resmo
-network/f5/: mhite caphrim007 gundalow Qalthos privateip
+network/f5/: mhite caphrim007 gundalow qalthos privateip
 network/f5/bigip_monitor_http.py: srvg
 network/f5/bigip_monitor_tcp.py: srvg
 network/f5/bigip_virtual_server.py: Etienne-Carriere
@@ -160,7 +159,6 @@ network/ipify_facts.py: resmo
 network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
 network/nmcli.py: alcamie101
-network/omapi_host.py: nerzhul
 network/openvswitch_bridge.py: stygstra
 network/openvswitch_db.py: ansible
 network/openvswitch_port.py: stygstra
@@ -223,14 +221,12 @@ packaging/os/yum_repository.py: jtyr
 packaging/os/zypper.py: robinro
 packaging/os/zypper_repository.py: matze robinro
 remote_management/ipmi/: cloudnull
-remote_management/stacki/: bsanders bbyhuy
 source_control/bzr.py: andreparames
 source_control/git_config.py: djmattyg007
 source_control/github_hooks.py: pcgentry
 source_control/github_key.py: erydo
 source_control/github_release.py: adrianmoisey
 source_control/gitlab_: dj-wasabi
-storage/infinidat/: GR360RY vmalloc
 storage/netapp/: hulquest
 system/alternatives.py: DavidWittman mulby
 system/at.py: risaacson
@@ -269,7 +265,7 @@ web_infrastructure/apache2_mod_proxy.py: oboukili
 web_infrastructure/deploy_helper.py: ramondelafuente
 web_infrastructure/ejabberd_user.py: privateip
 web_infrastructure/jboss.py: jhoekx
-web_infrastructure/jira.py: tarka Slezhuk
+web_infrastructure/jira.py: tarka
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/jenkins_job.py: sermilrod
 web_infrastructure/jenkins_plugin.py: jtyr

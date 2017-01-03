@@ -18,11 +18,10 @@
 from __future__ import print_function
 
 import glob
+import logging
 import os
 import sys
-import time
 import pickle
-import pytz
 from datetime import datetime
 
 # remember to pip install PyGithub, kids!
@@ -30,13 +29,12 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib.wrappers.ghapiwrapper import ratecheck
+#from lib.wrappers.ghapiwrapper import ratecheck
+from lib.wrappers.decorators import RateLimited
 from lib.wrappers.ghapiwrapper import GithubWrapper
-from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.file_tools import FileIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
-from lib.utils.extractors import extract_template_data
 from lib.utils.descriptionfixer import DescriptionFixer
 
 basepath = os.path.dirname(__file__).split('/')
@@ -72,6 +70,8 @@ MANUAL_INTERACTION_LABELS = [
     "needs_info",
 ]
 
+BOTLIST = None
+
 
 class DefaultTriager(object):
 
@@ -96,8 +96,8 @@ class DefaultTriager(object):
 
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
-                 start_at=None, always_pause=False, force=False, safe_force=False, 
-                 dry_run=False, no_since=False):
+                 start_at=None, always_pause=False, force=False,
+                 safe_force=False, dry_run=False, no_since=False):
 
         self.verbose = verbose
         self.github_user = github_user
@@ -166,8 +166,10 @@ class DefaultTriager(object):
 
         # print some general info about the Issue to be processed
         print("\n")
-        print("Issue #%s [%s]: %s" % (self.issue.number, self.icount,
-                                (self.issue.instance.title).encode('ascii','ignore')))
+        print("Issue #%s [%s]: %s" % (
+            self.issue.number,
+            self.icount, self.issue.instance.title.encode('ascii','ignore'))
+        )
         print("%s" % self.issue.instance.html_url)
         print("Created at %s" % self.issue.instance.created_at)
         print("Updated at %s" % self.issue.instance.updated_at)
@@ -211,7 +213,8 @@ class DefaultTriager(object):
         if self.github_repo != 'ansible':
             self.match = self.module_indexer.find_match(component) or {}
         else:
-            self.match = self.module_indexer.find_match(component, exact=True) or {}
+            self.match = \
+                self.module_indexer.find_match(component, exact=True) or {}
         self.module = self.match.get('name', None)
 
         # check if component is a known module
@@ -219,8 +222,10 @@ class DefaultTriager(object):
         self.meta['component_valid'] = component_isvalid
 
         # smart match modules (only on module repos)
-        if not component_isvalid and self.github_repo != 'ansible' and not self.match:
-            #smatch = self.smart_match_module()
+        if not component_isvalid and \
+                self.github_repo != 'ansible' and \
+                not self.match:
+
             if hasattr(self, 'meta'):
                 self.meta['fuzzy_match_called'] = True
             kwargs = dict(
@@ -291,7 +296,6 @@ class DefaultTriager(object):
         DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
         self.issue.new_description = DF.new_description
 
-
     def _connect(self):
         """Connects to GitHub's API"""
         return Github(login_or_token=self.github_token or self.github_user,
@@ -316,7 +320,7 @@ class DefaultTriager(object):
     def is_issue(self, issue):
         return not self.is_pr(issue)
 
-    @ratecheck()
+    @RateLimited
     def get_ansible_members(self):
 
         ansible_members = []
@@ -356,17 +360,26 @@ class DefaultTriager(object):
         #import epdb; epdb.st()
         return ansible_members
 
-    @ratecheck()
-    def get_valid_labels(self):
+    @RateLimited
+    def get_valid_labels(self, repo=None):
 
         # use the repo wrapper to enable caching+updating
         self.gh = self._connect()
         self.ghw = GithubWrapper(self.gh)
-        self.repo = self.ghw.get_repo(self._get_repo_path())
 
-        vlabels = []
-        for vl in self.repo.get_labels():
-            vlabels.append(vl.name)
+        if not repo:
+            # OLD workflow
+            self.repo = self.ghw.get_repo(self._get_repo_path())
+            vlabels = []
+            for vl in self.repo.get_labels():
+                vlabels.append(vl.name)
+        else:
+            # v3 workflow
+            rw = self.ghw.get_repo(repo)
+            vlabels = []
+            for vl in rw.get_labels():
+                vlabels.append(vl.name)
+
         return vlabels
 
     def _get_maintainers(self, usecache=True):
@@ -377,7 +390,8 @@ class DefaultTriager(object):
                 for line in f:
                     owner_space = (line.split(': ')[0]).strip()
                     maintainers_string = (line.split(': ')[-1]).strip()
-                    self.maintainers[owner_space] = maintainers_string.split(' ')
+                    self.maintainers[owner_space] = \
+                        maintainers_string.split(' ')
                 f.close()
         # meta is special
         self.maintainers['meta'] = ['ansible']
@@ -397,7 +411,10 @@ class DefaultTriager(object):
             aversion = self.version_indexer.strip_ansible_version(rawdata)
 
         if not aversion or aversion == 'devel':
-            aversion = self.version_indexer.ansible_version_by_date(self.issue.instance.created_at)
+            aversion = \
+                self.version_indexer.ansible_version_by_date(
+                    self.issue.instance.created_at
+                )
 
         if aversion:
             if aversion.endswith('.'):
@@ -409,7 +426,8 @@ class DefaultTriager(object):
                 aversion = self.version_indexer.strip_ansible_version(aversion)
                 #import epdb; epdb.st()
 
-        if self.version_indexer.is_valid_version(aversion) and aversion != None:
+        if self.version_indexer.is_valid_version(aversion) and \
+                aversion is not None:
             return aversion
         else:
 
@@ -425,13 +443,63 @@ class DefaultTriager(object):
                     break
 
             # use the comment version
-            aversion = cversion                
+            aversion = cversion
 
         return aversion
 
+    def get_ansible_version_by_issue(self, issuewrapper):
+        iw = issuewrapper
+        aversion = None
 
-    def get_ansible_version_major_minor(self):
-        return self.version_indexer.get_major_minor(self.ansible_version)
+        rawdata = iw.get_template_data().get('ansible version', '')
+        if rawdata:
+            aversion = self.version_indexer.strip_ansible_version(rawdata)
+
+        if not aversion or aversion == 'devel':
+            aversion = self.version_indexer.ansible_version_by_date(
+                self.issue.instance.created_at
+            )
+
+        if aversion:
+            if aversion.endswith('.'):
+                aversion += '0'
+
+        # re-run for versions ending with .x
+        if aversion:
+            if aversion.endswith('.x'):
+                aversion = self.version_indexer.strip_ansible_version(aversion)
+                #import epdb; epdb.st()
+
+        if self.version_indexer.is_valid_version(aversion) and \
+                aversion is not None:
+            return aversion
+        else:
+
+            # try to go through the submitter's comments and look for the
+            # first one that specifies a valid version
+            cversion = None
+            for comment in self.issue.current_comments:
+                if comment.user.login != self.issue.instance.user.login:
+                    continue
+                xver = self.version_indexer.strip_ansible_version(comment.body)
+                if self.version_indexer.is_valid_version(xver):
+                    cversion = xver
+                    break
+
+            # use the comment version
+            aversion = cversion
+
+        return aversion
+
+    def get_ansible_version_major_minor(self, version=None):
+        if not version:
+            # old workflow
+            if not hasattr(self, 'ansible_version'):
+                import epdb; epdb.st()
+            return self.version_indexer.get_major_minor(self.ansible_version)
+        else:
+            # v3 workflow
+            return self.version_indexer.get_major_minor(version)
 
     def get_maintainers_by_match(self, match):
         module_maintainers = []
@@ -460,10 +528,9 @@ class DefaultTriager(object):
         #import epdb; epdb.st()
         return module_maintainers
 
-
     def get_module_maintainers(self, expand=True, usecache=True):
         """Returns the list of maintainers for the current module"""
-        # expand=False means don't use cache and don't expand the 'ansible' group
+        # expand=False ... ?
 
         if self.module_maintainers and usecache:
             return self.module_maintainers
@@ -533,14 +600,17 @@ class DefaultTriager(object):
     def create_actions(self):
         pass
 
-
     def component_from_comments(self):
         """Extracts a component name from special comments"""
         # https://github.com/ansible/ansible-modules/core/issues/2618
         # comments like: [module: packaging/os/zypper.py] ... ?
         component = None
         for idx, x in enumerate(self.issue.current_comments):
-            if '[' in x.body and ']' in x.body and ('module' in x.body or 'component' in x.body or 'plugin' in x.body):
+            if '[' in x.body and \
+                    ']' in x.body and \
+                    ('module' in x.body or
+                     'component' in x.body or
+                     'plugin' in x.body):
                 if x.user.login in BOTLIST:
                     component = x.body.split()[-1]
                     component = component.replace('[', '')
@@ -550,7 +620,7 @@ class DefaultTriager(object):
         """Has the maintainer -ever- commented on the issue?"""
         commented = False
         if self.module_maintainers:
-                
+
             for comment in self.issue.current_comments:
                 # ignore comments from submitter
                 if comment.user.login == self.issue.get_submitter():
@@ -558,7 +628,7 @@ class DefaultTriager(object):
 
                 # "ansible" is special ...
                 if 'ansible' in self.module_maintainers \
-                    and comment.user.login in self.ansible_members:
+                        and comment.user.login in self.ansible_members:
                     commented = True
                 elif comment.user.login in self.module_maintainers:
                     commented = True
@@ -581,7 +651,6 @@ class DefaultTriager(object):
                             mentioned = True
                             break
         return mentioned
-       
 
     def get_current_time(self):
         #now = datetime.now()
@@ -598,7 +667,7 @@ class DefaultTriager(object):
                 # "ansible" is special ...
                 is_maintainer = False
                 if 'ansible' in self.module_maintainers \
-                    and comment.user.login in self.ansible_members:
+                        and comment.user.login in self.ansible_members:
                     is_maintainer = True
                 elif comment.user.login in self.module_maintainers:
                     is_maintainer = True
@@ -620,7 +689,7 @@ class DefaultTriager(object):
         waiting = False
         if self.module_maintainers:
             if not self.issue.current_comments:
-                return True            
+                return True
 
             creator_last_index = -1
             maintainer_last_index = -1
@@ -632,13 +701,14 @@ class DefaultTriager(object):
                 # "ansible" is special ...
                 is_maintainer = False
                 if 'ansible' in self.module_maintainers \
-                    and comment.user.login in self.ansible_members:
+                        and comment.user.login in self.ansible_members:
                     is_maintainer = True
                 elif comment.user.login in self.module_maintainers:
                     is_maintainer = True
 
                 if is_maintainer and \
-                    (maintainer_last_index == -1 or idx < maintainer_last_index):
+                    (maintainer_last_index == -1 or
+                     idx < maintainer_last_index):
                     maintainer_last_index = idx
 
             if creator_last_index == -1 and maintainer_last_index == -1:
@@ -648,8 +718,7 @@ class DefaultTriager(object):
             elif creator_last_index < maintainer_last_index:
                 waiting = True
 
-        return waiting                
-            
+        return waiting
 
     def keep_current_main_labels(self):
         current_labels = self.issue.get_current_labels()
@@ -670,19 +739,27 @@ class DefaultTriager(object):
             # special handling for PRs
             if self.issue.instance.pull_request:
 
-                mel = [x for x in self.issue.current_labels if x in self.MUTUALLY_EXCLUSIVE_LABELS]
+                mel = [x for x in self.issue.current_labels
+                       if x in self.MUTUALLY_EXCLUSIVE_LABELS]
+
                 if not mel:
                     # if only adding new files, assume it is a feature
                     if self.patch_contains_only_new_files():
                         issue_type = 'feature pull request'
                     else:
                         if not isinstance(self.debug, bool):
-                            self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
+                            msg = '"%s"' % issue_type
+                            msg += ' was not a valid issue type'
+                            msg += ', adding "needs_info"'
+                            self.debug(msg)
                         self.issue.add_desired_label('needs_info')
                         return
             else:
                 if not isinstance(self.debug, bool):
-                    self.debug('"%s" was not a valid issue type, adding "needs_info"' % issue_type)
+                    msg = '"%s"' % issue_type
+                    msg += ' was not a valid issue type'
+                    msg += ', adding "needs_info"'
+                    self.debug(msg)
                 self.issue.add_desired_label('needs_info')
                 return
 
@@ -697,7 +774,7 @@ class DefaultTriager(object):
 
         # is there a mutually exclusive label already?
         if desired_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
-            mel = [x for x in self.issue.MUTUALLY_EXCLUSIVE_LABELS \
+            mel = [x for x in self.issue.MUTUALLY_EXCLUSIVE_LABELS
                    if x in self.issue.current_labels]
             if len(mel) > 0:
                 return
@@ -708,26 +785,27 @@ class DefaultTriager(object):
             # only set this if no other comments
             self.issue.add_desired_comment(boilerplate='issue_new')
 
-
     def patch_contains_only_new_files(self):
         '''Does the PR edit any existing files?'''
         oldfiles = False
         for x in self.issue.files:
             if x.filename.encode('ascii', 'ignore') in self.file_indexer.files:
                 if not isinstance(self.debug, bool):
-                    self.debug('old file match on %s' % x.filename.encode('ascii', 'ignore'))
+                    msg = 'old file match on'
+                    msg += ' %s' % x.filename.encode('ascii', 'ignore')
+                    self.debug(msg)
                 oldfiles = True
                 break
         return not oldfiles
 
     def add_desired_labels_by_ansible_version(self):
-        if not 'ansible version' in self.template_data:
+        if 'ansible version' not in self.template_data:
             if not isinstance(self.debug, bool):
                 self.debug(msg="no ansible version section")
             self.issue.add_desired_label(name="needs_info")
             #self.issue.add_desired_comment(
             #    boilerplate="issue_missing_data"
-            #)            
+            #)
             return
         if not self.template_data['ansible version']:
             if not isinstance(self.debug, bool):
@@ -735,7 +813,7 @@ class DefaultTriager(object):
             self.issue.add_desired_label(name="needs_info")
             #self.issue.add_desired_comment(
             #    boilerplate="issue_missing_data"
-            #)            
+            #)
             return
 
     def add_desired_labels_by_namespace(self):
@@ -744,7 +822,7 @@ class DefaultTriager(object):
         SKIPTOPICS = ['network/basics/']
 
         if not self.match:
-            return False        
+            return False
 
         '''
         if 'component name' in self.template_data and self.match:
@@ -752,7 +830,7 @@ class DefaultTriager(object):
                 self.issue.add_desired_comment(boilerplate='issue_wrong_repo')
         '''
 
-        for key in ['topic', 'subtopic']:            
+        for key in ['topic', 'subtopic']:
             # ignore networking/basics
             if self.match[key] and not self.match['fulltopic'] in SKIPTOPICS:
                 thislabel = self.issue.TOPIC_MAP.\
@@ -760,21 +838,28 @@ class DefaultTriager(object):
                 if thislabel in self.valid_labels:
                     self.issue.add_desired_label(thislabel)
 
+    def render_boilerplate(self, tvars, boilerplate=None):
+        template = environment.get_template('%s.j2' % boilerplate)
+        comment = template.render(**tvars)
+        return comment
+
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
         maintainers = self.get_module_maintainers(expand=False)
 
         if not maintainers:
-            maintainers = ['NO_MAINTAINER_FOUND'] #FIXME - why?
+            # FIXME - why?
+            maintainers = ['NO_MAINTAINER_FOUND']
 
         submitter = self.issue.get_submitter()
-        missing_sections = [x for x in self.issue.REQUIRED_SECTIONS \
-                            if not x in self.template_data \
-                            or not self.template_data.get(x)]
+        missing_sections = [x for x in self.issue.REQUIRED_SECTIONS
+                            if x not in self.template_data or
+                            not self.template_data.get(x)]
 
         if not self.match and missing_sections:
             # be lenient on component name for ansible/ansible
-            if self.github_repo == 'ansible' and 'component name' in missing_sections:
+            if self.github_repo == 'ansible' and \
+                    'component name' in missing_sections:
                 missing_sections.remove('component name')
             #if missing_sections:
             #    import epdb; epdb.st()
@@ -786,19 +871,18 @@ class DefaultTriager(object):
         correct_repo = self.match.get('repository', None)
 
         template = environment.get_template('%s.j2' % boilerplate)
+        component_name = self.template_data.get('component name', 'NULL'),
         comment = template.render(maintainers=maintainers,
                                   submitter=submitter,
                                   issue_type=issue_type,
                                   correct_repo=correct_repo,
-                                  component_name=self.template_data.get('component name', 'NULL'),
+                                  component_name=component_name,
                                   missing_sections=missing_sections)
-        #import epdb; epdb.st()
         return comment
-
 
     def process_comments(self):
         """ Processes ISSUE comments for matching criteria to add labels"""
-        if not self.github_user in self.BOTLIST:
+        if self.github_user not in self.BOTLIST:
             self.BOTLIST.append(self.github_user)
         module_maintainers = self.get_module_maintainers()
         comments = self.issue.get_comments()
@@ -816,7 +900,8 @@ class DefaultTriager(object):
                 comment_days_old = time_delta.days
 
                 if not isinstance(self.debug, bool):
-                    self.debug(msg="Days since last bot comment: %s" % comment_days_old)
+                    msg = "Days since last bot comment: %s" % comment_days_old
+                    self.debug(msg=msg)
                 if comment_days_old > 14:
                     labels = self.issue.desired_labels
 
@@ -838,7 +923,7 @@ class DefaultTriager(object):
                             )
                             break
 
-                    # pending in comment.body                           
+                    # pending in comment.body
                     else:
                         if self.issue.is_labeled_for_interaction():
                             if not isinstance(self.debug, bool):
@@ -857,33 +942,46 @@ class DefaultTriager(object):
                             break
 
                 if not isinstance(self.debug, bool):
-                    self.debug(msg="STATUS: no useful state change since last pass"
-                            "( %s )" % comment.user.login)
+                    msg = "STATUS: no useful state change since last pass"
+                    msg += "( %s )" % comment.user.login
+                    self.debug(msg=msg)
                 break
 
             if comment.user.login in module_maintainers \
                 or comment.user.login.lower() in module_maintainers\
-                or ('ansible' in module_maintainers and comment.user.login in self.ansible_members):
+                or ('ansible' in module_maintainers and
+                    comment.user.login in self.ansible_members):
 
                 if not isinstance(self.debug, bool):
-                    self.debug(msg="%s is module maintainer commented on %s." % (comment.user.login, comment.created_at))
+                    msg = "%s" % comment.user.login
+                    msg = " is module maintainer commented on"
+                    msg += "%s." % comment.created_at
+                    self.debug(msg=msg)
                 if 'needs_info' in comment.body:
                     if not isinstance(self.debug, bool):
                         self.debug(msg="...said needs_info!")
                     self.issue.add_desired_label(name="needs_info")
                 elif "close_me" in comment.body:
-                    if not isinstance(self.debug, bool): self.debug(msg="...said close_me!")
+                    if not isinstance(self.debug, bool):
+                        self.debug(msg="...said close_me!")
                     self.issue.add_desired_label(name="pending_action_close_me")
                     break
 
             if comment.user.login == self.issue.get_submitter():
-                if not isinstance(self.debug, bool): self.debug(msg="submitter %s, commented on %s." % (comment.user.login, comment.created_at))
+                if not isinstance(self.debug, bool):
+                    msg = "submitter %s" % comment.user.login
+                    msg += ", commented on %s." % comment.created_at
+                    self.debug(msg=msg)
 
-            if comment.user.login not in self.BOTLIST and comment.user.login in self.ansible_members:
-                if not isinstance(self.debug, bool): self.debug(msg="%s is a ansible member" % comment.user.login)
+            if comment.user.login not in self.BOTLIST and \
+                    comment.user.login in self.ansible_members:
+                if not isinstance(self.debug, bool):
+                    self.debug(
+                        msg="%s is a ansible member" % comment.user.login
+                    )
 
-        if not isinstance(self.debug, bool): self.debug(msg="--- END Processing Comments")
-
+        if not isinstance(self.debug, bool):
+            self.debug(msg="--- END Processing Comments")
 
     def issue_type_to_label(self, issue_type):
         if issue_type:
@@ -891,7 +989,6 @@ class DefaultTriager(object):
             issue_type = issue_type.replace(' ', '_')
             issue_type = issue_type.replace('documentation', 'docs')
         return issue_type
-
 
     def check_safe_match(self):
         """ Turn force on or off depending on match characteristics """
@@ -915,8 +1012,8 @@ class DefaultTriager(object):
         # be more lenient on re-notifications
         if not safe_match:
             if not self.actions['close'] and \
-                not self.actions['unlabel'] and \
-                not self.actions['newlabel']:
+                    not self.actions['unlabel'] and \
+                    not self.actions['newlabel']:
 
                 if len(self.actions['comments']) == 1:
                     if 'still waiting' in self.actions['comments'][0]:
@@ -932,9 +1029,10 @@ class DefaultTriager(object):
         """ Return the number of actions that are to be performed """
         count = 0
         for k,v in self.actions.iteritems():
-            if k == 'close' and v:
+            if k in ['close', 'open', 'merge', 'close_migrated'] and v:
                 count += 1
-            elif k != 'close':
+            elif k != 'close' and k != 'open' and \
+                    k != 'merge' and k != 'close_migrated':
                 count += len(v)
         return count
 
@@ -952,8 +1050,8 @@ class DefaultTriager(object):
                 if self.force:
                     print("Running actions non-interactive as you forced.")
                     self.execute_actions()
-                    return
-                cont = raw_input("Take recommended actions (y/N/a/R/T)? ")
+                    return action_meta
+                cont = raw_input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
                 if cont in ('Y', 'y'):
@@ -964,10 +1062,12 @@ class DefaultTriager(object):
                 if cont == 'r' or cont == 'R':
                     action_meta['REDO'] = True
                 if cont == 'DEBUG':
+                    # put the user into a breakpoint to do live debug
+                    action_meta['REDO'] = True
                     import epdb; epdb.st()
         elif self.always_pause:
             print("Skipping, but pause.")
-            cont = raw_input("Continue (Y/n/a/R/T)? ")
+            cont = raw_input("Continue (Y/n/a/R/T/DEBUG)? ")
             if cont in ('a', 'A', 'n', 'N'):
                 sys.exit(0)
             if cont == 'T':
@@ -976,6 +1076,7 @@ class DefaultTriager(object):
             elif cont == 'REDO':
                 action_meta['REDO'] = True
             elif cont == 'DEBUG':
+                # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
         else:
@@ -991,36 +1092,43 @@ class DefaultTriager(object):
         cont = raw_input("Apply this new description? (Y/N)")
         if cont == 'Y':
             self.issue.set_description(self.issue.new_description)
-        #import epdb; epdb.st() 
-
 
     def execute_actions(self):
         """Turns the actions into API calls"""
 
         #time.sleep(1)
         for comment in self.actions['comments']:
-            #import epdb; epdb.st()
-            if not isinstance(self.debug, bool):
-                self.debug(msg="API Call comment: " + comment)
+            logging.info("acton: comment - " + comment)
             self.issue.add_comment(comment=comment)
         if self.actions['close']:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
+            logging.info('action: close')
             self.issue.instance.edit(state='closed')
             return
+
+        if self.actions['close_migrated']:
+            mi = self.get_issue_by_repopath_and_number(
+                self.meta['migrated_issue_repo_path'],
+                self.meta['migrated_issue_number']
+            )
+            logging.info('close migrated: %s' % mi.html_url)
+            mi.instance.edit(state='closed')
+            #import epdb; epdb.st()
+
         for unlabel in self.actions['unlabel']:
-            if not isinstance(self.debug, bool):
-                self.debug(msg="API Call unlabel: " + unlabel)
+            logging.info('action: unlabel - ' + unlabel)
             self.issue.remove_label(label=unlabel)
         for newlabel in self.actions['newlabel']:
-            if not isinstance(self.debug, bool):
-                self.debug(msg="API Call newlabel: " + newlabel)
+            logging.info('action: label - ' + newlabel)
             self.issue.add_label(label=newlabel)
 
         if 'assign' in self.actions:
             for user in self.actions['assign']:
+                logging.info('action: assign - ' + user)
                 self.issue.assign_user(user)
         if 'unassign' in self.actions:
             for user in self.actions['unassign']:
+                logging.info('action: unassign - ' + user)
                 self.issue.unassign_user(user)
 
     def smart_match_module(self):
@@ -1039,18 +1147,17 @@ class DefaultTriager(object):
         title = title.replace(':', '')
         title_matches = [x for x in known_modules if x + ' module' in title]
         if not title_matches:
-            title_matches = [x for x in known_modules if title.startswith(x + ' ')]
+            title_matches = [x for x in known_modules
+                             if title.startswith(x + ' ')]
             if not title_matches:
-                title_matches = [x for x in known_modules if  ' ' + x + ' ' in title]
-            
+                title_matches = [x for x in known_modules
+                                 if ' ' + x + ' ' in title]
 
         cmatches = None
-        if self.template_data.get('component name'):        
+        if self.template_data.get('component name'):
             component = self.template_data.get('component name')
             cmatches = [x for x in known_modules if x in component]
             cmatches = [x for x in cmatches if not '_' + x in component]
-
-            import epdb; epdb.st()
 
             # use title ... ?
             if title_matches:
@@ -1061,13 +1168,10 @@ class DefaultTriager(object):
                     match = cmatches[0]
                 if not match:
                     if 'docs.ansible.com' in component:
-                        #import epdb; epdb.st()
                         pass
                     else:
-                        #import epdb; epdb.st()
                         pass
 
-        #import epdb; epdb.st()
         if not match:
             if len(title_matches) == 1:
                 match = title_matches[0]
@@ -1101,15 +1205,18 @@ class DefaultTriager(object):
 
     def wait_for_rate_limit(self):
         gh = self._connect()
-        GithubWrapper.wait_for_rate_limit(githubobj=gh)        
+        GithubWrapper.wait_for_rate_limit(githubobj=gh)
 
-    @ratecheck()
-    def is_pr_merged(self, number):
+    @RateLimited
+    def is_pr_merged(self, number, repo=None):
         '''Check if a PR# has been merged or not'''
         merged = False
         pr = None
         try:
-            pr = self.repo.get_pullrequest(number)
+            if not repo:
+                pr = self.repo.get_pullrequest(number)
+            else:
+                pr = repo.get_pullrequest(number)
         except Exception as e:
             print(e)
         if pr:
@@ -1121,8 +1228,8 @@ class DefaultTriager(object):
         for x in self.issue.current_comments:
             command = None
             if x.user.login != 'ansibot':
-                command = [y for y in self.VALID_COMMANDS if y in x.body \
-                           and not '!' + y in x.body]
+                command = [y for y in self.VALID_COMMANDS
+                           if y in x.body and not '!' + y in x.body]
                 command = ', '.join(command)
             else:
                 # What template did ansibot use?
@@ -1136,4 +1243,3 @@ class DefaultTriager(object):
                       x.user.login, command))
             else:
                 print("\t%s %s" % (x.created_at.isoformat(), x.user.login))
-

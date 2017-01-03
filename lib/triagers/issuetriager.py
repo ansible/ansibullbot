@@ -29,7 +29,8 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib.wrappers.ghapiwrapper import ratecheck
+#from lib.wrappers.ghapiwrapper import ratecheck
+from lib.wrappers.decorators import RateLimited
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.ghapiwrapper import RepoWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
@@ -47,9 +48,9 @@ environment = Environment(loader=loader, trim_blocks=True)
 
 class TriageIssues(DefaultTriager):
 
-    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug', 
+    VALID_COMMANDS = ['needs_info', '!needs_info', 'notabug',
                       'bot_broken', 'bot_skip',
-                      'wontfix', 'bug_resolved', 'resolved_by_pr', 
+                      'wontfix', 'bug_resolved', 'resolved_by_pr',
                       'needs_contributor', 'duplicate_of']
 
     CLOSURE_COMMANDS = [
@@ -147,7 +148,7 @@ class TriageIssues(DefaultTriager):
             with open(last_run_file, 'wb') as f:
                 pickle.dump(now, f)
 
-    @ratecheck()
+    @RateLimited
     def process(self, usecache=True):
         """Processes the Issue"""
 
@@ -179,7 +180,7 @@ class TriageIssues(DefaultTriager):
 
         self.process_history(usecache=usecache)
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
-        
+
         self.create_actions()
         self.debug(msg='desired_comments: %s' % self.issue.desired_comments)
 
@@ -215,7 +216,7 @@ class TriageIssues(DefaultTriager):
             self.actions['unlabel'] = []
             self.actions['close'] = False
             if not 'bot_broken' in self.issue.current_labels:
-                self.actions['newlabel'] = ['bot_broken']                
+                self.actions['newlabel'] = ['bot_broken']
             return
 
         # add the version labels
@@ -281,12 +282,12 @@ class TriageIssues(DefaultTriager):
                 and 'needs_info' not in self.issue.desired_labels:
                 self.issue.desired_comments.remove('issue_needs_info')
             else:
-                import epdb; epdb.st()        
+                import epdb; epdb.st()
 
         # Do not comment needs_info if it's not a label
         if 'issue_needs_info' in self.issue.desired_comments \
             and not 'needs_info' in self.issue.desired_labels:
-            self.issue.desired_comments.remove('issue_needs_info')    
+            self.issue.desired_comments.remove('issue_needs_info')
 
         # render the comments
         for boilerplate in self.issue.desired_comments:
@@ -344,12 +345,12 @@ class TriageIssues(DefaultTriager):
                 and 'needs_info' not in self.issue.desired_labels:
                 self.issue.desired_comments.remove('issue_needs_info')
             else:
-                import epdb; epdb.st()        
+                import epdb; epdb.st()
 
         # Do not comment needs_info if it's not a label
         if 'issue_needs_info' in self.issue.desired_comments \
             and not 'needs_info' in self.issue.desired_labels:
-            self.issue.desired_comments.remove('issue_needs_info')    
+            self.issue.desired_comments.remove('issue_needs_info')
 
         # render the comments
         for boilerplate in self.issue.desired_comments:
@@ -375,7 +376,7 @@ class TriageIssues(DefaultTriager):
             self.actions['unlabel'] = []
             self.actions['close'] = False
             if not 'bot_broken' in self.issue.current_labels:
-                self.actions['newlabel'] = ['bot_broken']                
+                self.actions['newlabel'] = ['bot_broken']
             return
 
         if self.meta['bot_skip']:
@@ -457,7 +458,7 @@ class TriageIssues(DefaultTriager):
 
         elif not self.meta['maintainers_known'] and self.meta['valid_module']:
 
-            self.debug(msg='unknown maintainer stanza') 
+            self.debug(msg='unknown maintainer stanza')
             self.issue.desired_comments = ['issue_module_no_maintainer']
 
         elif self.meta['maintainer_closure']:
@@ -537,7 +538,7 @@ class TriageIssues(DefaultTriager):
 
             if (self.meta['needsinfo_add'] or self.meta['missing_sections']) \
                 or (not self.meta['needsinfo_remove'] and self.meta['missing_sections']) \
-                or (self.meta['needsinfo_add'] and not self.meta['missing_sections']): 
+                or (self.meta['needsinfo_add'] and not self.meta['missing_sections']):
 
 
                 #import epdb; epdb.st()
@@ -731,7 +732,7 @@ class TriageIssues(DefaultTriager):
             last_commentor_issubmitter = True
 
         # Did the maintainer issue a command?
-        maintainer_commands = self.history.get_commands(maintainers, 
+        maintainer_commands = self.history.get_commands(maintainers,
                                                         self.VALID_COMMANDS)
 
         # Keep all commands
@@ -800,7 +801,7 @@ class TriageIssues(DefaultTriager):
                 needsinfo_add = False
                 needsinfo_remove = True
 
-        # Save existing needs_info if not time to remove ...        
+        # Save existing needs_info if not time to remove ...
         if 'needs_info' in self.issue.current_labels \
             and not needsinfo_add \
             and not needsinfo_remove:
@@ -820,7 +821,7 @@ class TriageIssues(DefaultTriager):
         needsinfo_age = None
         needsinfo_stale = False
         needsinfo_expired = False
-        if 'needs_info' in self.issue.current_labels: 
+        if 'needs_info' in self.issue.current_labels:
             time_delta = today - needsinfo_last_applied
             needsinfo_age = time_delta.days
             if needsinfo_age > self.RENOTIFY_INTERVAL:

@@ -761,11 +761,22 @@ class TriagePullRequests:
                 self.process()
 
 def main3():
-    parser = argparse.ArgumentParser(description="Triage various issue+PR queues "
-                                                 "for Ansible. (NOTE: only "
-                                                 "useful if you have commit "
-                                                 "access to the repo in "
-                                                 "question.)")
+    parser = argparse.ArgumentParser(
+        description="Triage various issue+PR queues "
+                    "for Ansible. (NOTE: only "
+                    "useful if you have commit "
+                    "access to the repo in "
+                    "question.)"
+    )
+
+    parser.add_argument("--skip_module_repos", action="store_true",
+                        help="ignore the module repos")
+
+    parser.add_argument("--force_rate_limit", action="store_true",
+                        help="debug: force the rate limit")
+
+    parser.add_argument("--sort", default='desc', choices=['asc', 'desc'],
+                        help="Direction to sort issues [desc=9-0 asc=0-9]")
 
     parser.add_argument("--logfile", type=str, default='/var/log/ansibullbot.log',
                         help="Send logging to this file")
@@ -785,7 +796,7 @@ def main3():
                         help="Github password of triager")
     parser.add_argument("--gh-token", "-T", type=str,
                         help="Github token of triager")
-    parser.add_argument("--dry-run", "-n", action="store_true",
+    parser.add_argument("--dryrun", "-n", action="store_true",
                         help="Do not apply any changes.")
 
     parser.add_argument("--only_prs", action="store_true",
