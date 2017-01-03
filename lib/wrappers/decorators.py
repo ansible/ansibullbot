@@ -65,7 +65,7 @@ def get_reset_time(fn, args):
     # default to 62 minutes
     reset_time = 60 * 62
 
-    rl = get_rate_limit(args)
+    rl = get_rate_limit(fn, args)
 
     if rl:
         # The time at which the current rate limit window resets
@@ -91,9 +91,6 @@ def RateLimited(fn):
             count += 1
 
             rl = get_rate_limit(fn, args)
-            #import epdb; epdb.st()
-            #logging.debug('ratelimit: remaining %s' %
-            #              rl['resources']['core']['remaining'])
 
             logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
                           (count,
@@ -101,7 +98,6 @@ def RateLimited(fn):
                            fn.func_name,
                            rl['resources']['core']['remaining']))
 
-            #import epdb; epdb.st()
             if count > 1:
                 import epdb; epdb.st()
 
