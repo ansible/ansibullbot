@@ -767,6 +767,9 @@ def main3():
                                                  "access to the repo in "
                                                  "question.)")
 
+    parser.add_argument("--force_rate_limit", action="store_true",
+                        help="debug: force the rate limit")
+
     parser.add_argument("--logfile", type=str, default='/var/log/ansibullbot.log',
                         help="Send logging to this file")
     parser.add_argument("--daemonize", action="store_true",

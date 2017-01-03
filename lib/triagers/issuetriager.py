@@ -29,7 +29,8 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib.wrappers.ghapiwrapper import ratecheck
+#from lib.wrappers.ghapiwrapper import ratecheck
+from lib.wrappers.decorators import RateLimited
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.ghapiwrapper import RepoWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
@@ -147,7 +148,7 @@ class TriageIssues(DefaultTriager):
             with open(last_run_file, 'wb') as f:
                 pickle.dump(now, f)
 
-    @ratecheck()
+    @RateLimited
     def process(self, usecache=True):
         """Processes the Issue"""
 

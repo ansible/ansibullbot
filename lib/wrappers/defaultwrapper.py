@@ -97,6 +97,9 @@ class DefaultWrapper(object):
         self.valid_assignees = []
         self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
 
+    def get_rate_limit(self):
+        return self.repo.gh.get_rate_limit()
+
     def get_current_time(self):
         return datetime.utcnow()
 

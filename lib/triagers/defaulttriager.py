@@ -29,7 +29,8 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib.wrappers.ghapiwrapper import ratecheck
+#from lib.wrappers.ghapiwrapper import ratecheck
+from lib.wrappers.decorators import RateLimited
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.file_tools import FileIndexer
@@ -319,7 +320,7 @@ class DefaultTriager(object):
     def is_issue(self, issue):
         return not self.is_pr(issue)
 
-    @ratecheck()
+    @RateLimited
     def get_ansible_members(self):
 
         ansible_members = []
@@ -359,7 +360,7 @@ class DefaultTriager(object):
         #import epdb; epdb.st()
         return ansible_members
 
-    @ratecheck()
+    @RateLimited
     def get_valid_labels(self, repo=None):
 
         # use the repo wrapper to enable caching+updating
@@ -1028,9 +1029,10 @@ class DefaultTriager(object):
         """ Return the number of actions that are to be performed """
         count = 0
         for k,v in self.actions.iteritems():
-            if k in ['close', 'open', 'merge'] and v:
+            if k in ['close', 'open', 'merge', 'close_migrated'] and v:
                 count += 1
-            elif k != 'close' and k != 'open' and k != 'merge':
+            elif k != 'close' and k != 'open' and \
+                    k != 'merge' and k != 'close_migrated':
                 count += len(v)
         return count
 
@@ -1048,7 +1050,7 @@ class DefaultTriager(object):
                 if self.force:
                     print("Running actions non-interactive as you forced.")
                     self.execute_actions()
-                    return
+                    return action_meta
                 cont = raw_input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
@@ -1103,6 +1105,15 @@ class DefaultTriager(object):
             logging.info('action: close')
             self.issue.instance.edit(state='closed')
             return
+
+        if self.actions['close_migrated']:
+            mi = self.get_issue_by_repopath_and_number(
+                self.meta['migrated_issue_repo_path'],
+                self.meta['migrated_issue_number']
+            )
+            logging.info('close migrated: %s' % mi.html_url)
+            mi.instance.edit(state='closed')
+            #import epdb; epdb.st()
 
         for unlabel in self.actions['unlabel']:
             logging.info('action: unlabel - ' + unlabel)
@@ -1196,7 +1207,7 @@ class DefaultTriager(object):
         gh = self._connect()
         GithubWrapper.wait_for_rate_limit(githubobj=gh)
 
-    @ratecheck()
+    @RateLimited
     def is_pr_merged(self, number, repo=None):
         '''Check if a PR# has been merged or not'''
         merged = False

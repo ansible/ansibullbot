@@ -3,9 +3,6 @@
 import logging
 import os
 import pickle
-import sys
-import time
-from datetime import datetime
 from operator import itemgetter
 from github import GithubObject
 from lib.wrappers.decorators import RateLimited
@@ -24,6 +21,7 @@ from lib.wrappers.decorators import RateLimited
 #
 #   https://developer.github.com/v3/issues/events/
 #   https://developer.github.com/v3/issues/comments/
+
 
 class HistoryWrapper(object):
 
@@ -93,6 +91,9 @@ class HistoryWrapper(object):
                     self.history.remove(x)
         #import epdb; epdb.st()
 
+    def get_rate_limit(self):
+        return self.issue.repo.gh.get_rate_limit()
+
     def _load_cache(self):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
@@ -103,6 +104,7 @@ class HistoryWrapper(object):
             with open(self.cachefile, 'rb') as f:
                 cachedata = pickle.load(f)
         except Exception as e:
+            logging.debug(e)
             logging.info('%s failed to load' % self.cachefile)
             cachedata = None
         return cachedata
@@ -110,7 +112,7 @@ class HistoryWrapper(object):
     def _dump_cache(self):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
-        cachefile = os.path.join(self.cachedir, 'history.pickle')
+        #cachefile = os.path.join(self.cachedir, 'history.pickle')
 
         # keep the timestamp
         cachedata = {'updated_at': self.issue.instance.updated_at,
@@ -120,6 +122,7 @@ class HistoryWrapper(object):
             with open(self.cachefile, 'wb') as f:
                 pickle.dump(cachedata, f)
         except Exception as e:
+            logging.debug(e)
             import epdb; epdb.st()
             pass
 
@@ -138,18 +141,22 @@ class HistoryWrapper(object):
 
     def get_user_comments(self, username):
         """Get all the comments from a user"""
-        matching_events = self._find_events_by_actor('commented',
-                                                    username,
-                                                    maxcount=999)
+        matching_events = self._find_events_by_actor(
+            'commented',
+            username,
+            maxcount=999
+        )
         comments = [x['body'] for x in matching_events]
         return comments
 
     def get_user_comments_groupby(self, username, groupby='d'):
         '''Count comments for a user by day/week/month/year'''
 
-        comments = self._find_events_by_actor('commented',
-                                              username,
-                                              maxcount=999)
+        comments = self._find_events_by_actor(
+            'commented',
+            username,
+            maxcount=999
+        )
         groups = {}
         for comment in comments:
             created = comment['created_at']
@@ -178,9 +185,21 @@ class HistoryWrapper(object):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
 
-        comments = self._find_events_by_actor('commented', username, maxcount=999)
-        labels = self._find_events_by_actor('labeled', username, maxcount=999)
-        unlabels = self._find_events_by_actor('unlabeled', username, maxcount=999)
+        comments = self._find_events_by_actor(
+            'commented',
+            username,
+            maxcount=999
+        )
+        labels = self._find_events_by_actor(
+            'labeled',
+            username,
+            maxcount=999
+        )
+        unlabels = self._find_events_by_actor(
+            'unlabeled',
+            username,
+            maxcount=999
+        )
         events = comments + labels + unlabels
         events = sorted(events, key=itemgetter('created_at'))
         for event in events:
@@ -390,7 +409,8 @@ class HistoryWrapper(object):
                                               maxcount=999)
         for comment in comments:
             if 'boilerplate:' in comment['body']:
-                lines = [x for x in comment['body'].split('\n') if x.strip() and 'boilerplate:' in x]
+                lines = [x for x in comment['body'].split('\n')
+                         if x.strip() and 'boilerplate:' in x]
                 bp = lines[0].split()[2]
                 if dates:
                     boilerplates.append((comment['created_at'], bp))
@@ -478,9 +498,6 @@ class HistoryWrapper(object):
 
     def merge_history(self, oldhistory):
         '''Combine history from another issue [migration]'''
-
         self.history += oldhistory
         # sort by created_at
         self.history = sorted(self.history, key=itemgetter('created_at'))
-
-

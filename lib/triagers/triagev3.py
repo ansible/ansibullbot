@@ -67,6 +67,7 @@ class TriageV3(DefaultTriager):
         'assign': [],
         'unassign': [],
         'close': False,
+        'close_migrated': False,
         'open': False,
         'merge': False,
     }
@@ -193,6 +194,11 @@ class TriageV3(DefaultTriager):
         if self.args.pause:
             self.always_pause = True
 
+        if args.force_rate_limit:
+            logging.warning('attempting to trigger rate limit')
+            self.trigger_rate_limit()
+            return
+
         if self.args.daemonize:
             logging.info('starting daemonize loop')
             self.loop()
@@ -223,6 +229,9 @@ class TriageV3(DefaultTriager):
         consoleHandler = logging.StreamHandler()
         consoleHandler.setFormatter(logFormatter)
         rootLogger.addHandler(consoleHandler)
+
+    def get_rate_limit(self):
+        return self.gh.get_rate_limit().raw_data
 
     def loop(self):
         '''Call the run method in a defined interval'''
@@ -277,7 +286,7 @@ class TriageV3(DefaultTriager):
 
                 if self.args.start_at:
                     if number < self.args.start_at:
-                        logging.info('skip %s' % number)
+                        logging.info('(start_at) skip %s' % number)
                         redo = False
                         continue
 
@@ -385,8 +394,10 @@ class TriageV3(DefaultTriager):
                     self.create_actions()
                     logging.info('url: %s' % self.issue.html_url)
                     logging.info('title: %s' % self.issue.title)
-                    logging.info('component: %s'
-                                % self.template_data.get('component_raw'))
+                    logging.info(
+                        'component: %s' %
+                        self.template_data.get('component_raw')
+                    )
                     pprint(self.actions)
 
                     action_meta = self.apply_actions()
@@ -584,13 +595,14 @@ class TriageV3(DefaultTriager):
             # 'resolved_by_pr': {'merged': True, 'number': 19141},
             if self.meta['resolved_by_pr']['merged']:
                 self.actions['close'] = True
-            #import epdb; epdb.st()
+
+        # migrated and source closed?
+        if self.meta['is_migrated']:
+            if self.meta['migrated_issue_state'] != 'closed':
+                self.actions['close_migrated'] = True
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
-
-        # maintainer commands
-        # needs info
         #import epdb; epdb.st()
 
     def check_safe_match(self):
@@ -729,6 +741,35 @@ class TriageV3(DefaultTriager):
         pprint(self.actions)
         action_meta = self.apply_actions()
         return action_meta
+
+    def trigger_rate_limit(self):
+        '''Repeatedly make calls to exhaust rate limit'''
+
+        self.gh = self._connect()
+        self.ghw = GithubWrapper(self.gh)
+
+        while True:
+            for repo in REPOS:
+                cachedir = os.path.join(self.cachedir, repo)
+                thisrepo = self.ghw.get_repo(repo, verbose=False)
+                issues = thisrepo.repo.get_issues()
+                rl = thisrepo.get_rate_limit()
+                pprint(rl)
+
+                for issue in issues:
+                    number = issue.number
+                    iw = IssueWrapper(
+                            repo=thisrepo,
+                            issue=issue,
+                            cachedir=cachedir
+                    )
+                    hw = HistoryWrapper(
+                        iw,
+                        usecache=False,
+                        cachedir=cachedir
+                    )
+                    rl = thisrepo.get_rate_limit()
+                    pprint(rl)
 
     def collect_issues(self):
         '''Populate the local cache of issues'''
@@ -890,6 +931,7 @@ class TriageV3(DefaultTriager):
         self.meta['is_multi_module'] = False
         self.meta['module_match'] = None
         self.meta['component'] = None
+        self.meta['is_migrated'] = False
 
         if iw.is_issue():
             if self.template_data.get('component name'):
@@ -1022,6 +1064,16 @@ class TriageV3(DefaultTriager):
         self.meta['is_needs_info'] = self.is_needsinfo()
         self.meta.update(self.process_comment_commands(iw, self.meta))
 
+        # migrated?
+        mi = self.is_migrated(iw)
+        if mi:
+            miw = self.get_migrated_issue(mi)
+            self.meta['is_migrated'] = True
+            self.meta['migrated_from'] = mi
+            self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
+            self.meta['migrated_issue_number'] = miw.number
+            self.meta['migrated_issue_state'] = miw.state
+
     def guess_issue_type(self, issuewrapper):
         iw = issuewrapper
 
@@ -1111,6 +1163,7 @@ class TriageV3(DefaultTriager):
             print(migrated_issue)
             import epdb; epdb.st()
 
+        '''
         if mirepopath not in self.repos:
             self.repos[mirepopath] = {
                 'repo': self.ghw.get_repo(mirepopath, verbose=False),
@@ -1122,6 +1175,31 @@ class TriageV3(DefaultTriager):
             repo=mrepo,
             issue=missue,
             cachedir=os.path.join(self.cachedir, mirepopath)
+        )
+        '''
+
+        mw = self.get_issue_by_repopath_and_number(
+            mirepopath,
+            minumber
+        )
+
+        return mw
+
+    def get_issue_by_repopath_and_number(self, repo_path, number):
+
+        # get the repo if not already fetched
+        if repo_path not in self.repos:
+            self.repos[repo_path] = {
+                'repo': self.ghw.get_repo(repo_path, verbose=False),
+                'issues': {}
+            }
+
+        mrepo = self.repos[repo_path]['repo']
+        missue = mrepo.get_issue(number)
+        mw = IssueWrapper(
+            repo=mrepo,
+            issue=missue,
+            cachedir=os.path.join(self.cachedir, repo_path)
         )
         return mw
 

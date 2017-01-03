@@ -5,6 +5,7 @@ from __future__ import print_function
 from github.GithubException import GithubException
 import glob
 import pickle
+import logging
 import os
 import re
 import requests
@@ -16,65 +17,6 @@ from bs4 import BeautifulSoup
 from lib.wrappers.decorators import RateLimited
 
 
-def ratecheck():
-    def decorator(func):
-        def wrapper(*args, **kwargs):
-
-            #(Epdb) pp args
-            #(<lib.triagers.issuetriager.TriageIssues
-            # object at 0x7ff5c50e2a90>,)
-
-            caller = None
-            if args:
-                caller = args[0]
-
-            result = None
-            retries = 0
-
-            while True:
-
-                # abort everything if we've hit the limit
-                if retries > 10:
-                    raise Exception(
-                        'Max retries exceeded [%s|%s' % (retries, 10)
-                    )
-
-                try:
-                    result = func(*args, **kwargs)
-                    break
-
-                except GithubException as ge:
-                    print(ge)
-
-                    if hasattr(ge, 'data'):
-                        msg = str(ge.data)
-                    else:
-                        try:
-                            data = ge[1]
-                            msg = data.get('msg', '')
-                        except Exception as e:
-                            print(e)
-                            import epdb; epdb.st()
-
-                    if 'blocked from content creation' in msg:
-                        # https://github.com/octokit/octokit.net/issues/638
-                        # only 20 creates(POSTs) per minute?
-                        # maybe just try to sleep 5 minutes and retry?
-                        print('POST limit reached. Sleeping 5m (%s)'
-                              % datetime.now())
-                        time.sleep(60*5)
-                    else:
-                        # Attempt to use the caller's wait_for_rate function
-                        if hasattr(caller, 'wait_for_rate_limit'):
-                            caller.wait_for_rate_limit()
-                        else:
-                            import epdb; epdb.st()
-
-                retries += 1
-
-            return result
-        return wrapper
-    return decorator
 
 
 class GithubWrapper(object):
@@ -89,16 +31,8 @@ class GithubWrapper(object):
     def get_current_time(self):
         return datetime.utcnow()
 
-    @staticmethod
-    def wait_for_rate_limit(githubobj=None):
-        rl = githubobj.get_rate_limit()
-        reset = rl.rate.reset
-        now = datetime.utcnow()
-        wait = (reset - now)
-        wait = wait.total_seconds()
-        if wait > 0:
-            print('rate limit exceeded, sleeping %s minutes' % (wait / 60))
-            time.sleep(wait)
+    def get_rate_limit(self):
+        return self.gh.get_rate_limit().raw_data
 
 
 class RepoWrapper(object):
@@ -125,6 +59,9 @@ class RepoWrapper(object):
         else:
             self.repo = self.gh.get_repo(repo_path)
             self.save_repo()
+
+    def get_rate_limit(self):
+        return self.gh.get_rate_limit().raw_data
 
     def debug(self, msg=""):
         """Prints debug message if verbosity is given"""
@@ -164,7 +101,6 @@ class RepoWrapper(object):
             return numbers[-1]
         else:
             return None
-
 
     @RateLimited
     def get_issue(self, number):
@@ -210,9 +146,10 @@ class RepoWrapper(object):
         else:
 
             # load all cached issues then update or fetch missing ...
-            self.debug('loading cached issues')
+            logging.debug('loading cached issues')
             issues = self.load_issues()
-            self.debug('fetching all issues')
+
+            logging.debug('fetching all issues')
             if state:
                 rissues = self.repo.get_issues(state=state)
             else:
@@ -222,10 +159,8 @@ class RepoWrapper(object):
                 return rissues
 
             last_issue = rissues[0]
-            #import epdb; epdb.st()
 
-            self.debug('comparing cache against fetched')
-            #fetched = []
+            logging.debug('comparing cache against fetched')
             expected = xrange(1, last_issue.number)
             for exp in expected:
                 if self.is_missing(exp):
@@ -237,60 +172,19 @@ class RepoWrapper(object):
                     if ci.pull_request:
                         continue
 
-                retry = True
-                while retry:
-                    try:
-                        if not ci:
-                            print('%s was not cached' % exp)
-                            issue = self.repo.get_issue(exp)
-                            issues.append(issue)
-                            self.save_issue(issue)
-                            retry = False
-                        else:
-                            # update and save [only if open]
-                            if ci.state == 'open':
-                                if ci.update():
-                                    self.save_issue(ci)
-                            retry = False
+                if not ci:
+                    logging.debug('fetching %s' % exp)
+                    issue = self.repo.get_issue(exp)
+                    issues.append(issue)
+                    logging.debug('saving %s' % exp)
+                    self.save_issue(issue)
+                else:
+                    if ci.state == 'open':
+                        if ci.update():
+                            logging.debug('%s updated' % exp)
+                            self.save_issue(ci)
 
-                    except socket.timeout as e:
-                        #import epdb; epdb.st()
-                        print('socket timeout, sleeping 10s')
-                        time.sleep(10)
-
-                    except IndexError as e:
-                        #self.set_missing(exp)
-                        print('index error, sleeping 10s')
-                        time.sleep(10)
-
-                    except GithubException as e:
-                        if 'rate limit exceeded' in e[1]['message']:
-                            retry = True
-                            '''
-                            print('rate limit exceeded, sleeping Xs')
-                            rl = self.gh.get_rate_limit()
-                            reset = rl.rate.reset
-                            now = datetime.now()
-                            wait = (reset - datetime.utcnow())
-                            wait = wait.total_seconds()
-                            print('rate limit exceeded, sleeping %s minutes' \
-                                  % (wait / 60))
-                            time.sleep(wait)
-                            '''
-                            GithubWrapper.wait_for_rate_limit(githubobj=None)
-                        elif e[1]['message'] == 'Not Found':
-                            self.set_missing(exp)
-                            retry = False
-                        else:
-                            print(e)
-                            import epdb; epdb.st()
-
-                    except Exception as e:
-                        print(e)
-                        print("could not fetch %s" % exp)
-                        import epdb; epdb.st()
-
-            self.debug('storing cache of repo')
+            logging.debug('storing cache of repo')
             self.save_repo()
 
             if itype == 'issue':
@@ -329,10 +223,15 @@ class RepoWrapper(object):
         issues = []
         gfiles = glob.glob('%s/issues/*/issue.pickle' % self.cachedir)
         for gf in gfiles:
-            with open(gf, 'rb') as f:
-                issue = pickle.load(f)
-                #if state == 'open' and issue.state == 'open':
-                #    issues.append(issue)
+            logging.debug('load %s' % gf)
+            issue = None
+            try:
+                with open(gf, 'rb') as f:
+                    issue = pickle.load(f)
+            except EOFError as e:
+                # this is bad, get rid of it
+                os.remove(gf)
+            if issue:
                 issues.append(issue)
         return issues
 
