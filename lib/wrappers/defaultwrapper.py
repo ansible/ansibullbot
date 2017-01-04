@@ -111,6 +111,22 @@ class DefaultWrapper(object):
     def get_current_time(self):
         return datetime.utcnow()
 
+    def save_issue(self):
+        pfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.instance.number),
+            'issue.pickle'
+        )
+        pdir = os.path.dirname(pfile)
+
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
+
+        logging.debug('dump %s' % pfile)
+        with open(pfile, 'wb') as f:
+            pickle.dump(self.instance, f)
+
     @RateLimited
     def get_comments(self):
         """Returns all current comments of the PR"""

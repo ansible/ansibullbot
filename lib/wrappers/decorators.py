@@ -148,6 +148,11 @@ def RateLimited(fn):
                     elif 'Server Error' in e.data.get('message'):
                         logging.warning('server error')
                         stime = 2*60
+                    elif 'Not Found' in e.data.get('message'):
+                        logging.info('object not found')
+                        #stime = 0
+                        #success = True
+                        return None
                     else:
                         import epdb; epdb.st()
                 else:
@@ -156,6 +161,17 @@ def RateLimited(fn):
                 #import epdb; epdb.st()
                 logging.warning('sleeping %s minutes' % (stime/60))
                 time.sleep(stime)
+
+        '''
+        #import epdb; epdb.st()
+        rl = get_rate_limit(fn, args)
+
+        logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
+                        (count,
+                        str(type(args[0])),
+                        fn.func_name,
+                        rl['resources']['core']['remaining']))
+        '''
 
         return x
 

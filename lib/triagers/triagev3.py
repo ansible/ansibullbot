@@ -280,6 +280,7 @@ class TriageV3(DefaultTriager):
 
         for item in self.repos.items():
             repopath = item[0]
+            repo = item[1]['repo']
 
             if self.skiprepo:
                 if repopath in self.skiprepo:
@@ -288,14 +289,21 @@ class TriageV3(DefaultTriager):
             if self.args.skip_module_repos and 'module' in repopath:
                 continue
 
+            '''
             issues = item[1]['issues']
             numbers = sorted(issues.keys())
             if self.args.sort == 'desc':
                 numbers.reverse()
 
             for number in numbers:
+            '''
 
-                logging.info(issues[number])
+            for issue in item[1]['issues']:
+
+                #logging.info(issues[number])
+                #logging.info('starting triage for %s' % str(issues[number]))
+                logging.info('starting triage for %s' % str(issue.number))
+                nmber = issue.number
 
                 if self.args.start_at:
                     if number < self.args.start_at:
@@ -303,13 +311,24 @@ class TriageV3(DefaultTriager):
                         redo = False
                         continue
 
-                if issues[number].state == 'closed':
-                    logging.info(str(issues[number]) + ' is closed, skipping')
+                #if issues[number].state == 'closed':
+                if issue.state == 'closed':
+                    logging.info(str(number) + ' is closed, skipping')
                     redo = False
                     continue
 
+                #import epdb; epdb.st()
+
                 # alias to a shorter var name
-                iw = issues[number]
+                #iw = issues[number]
+                iw = IssueWrapper(
+                    repo=repo,
+                    issue=issue,
+                    cachedir=self.cachedir
+                )
+                iw.save_issue()
+
+                logging.info('starting triage for %s' % str(iw))
 
                 # users may want to re-run this issue after manual intervention
                 redo = True
@@ -329,6 +348,7 @@ class TriageV3(DefaultTriager):
                             cachedir=iw.cachedir
                         )
                         iw = niw
+                        iw.save_issue()
 
                     # this is where the history cache goes
                     hcache = os.path.join(self.cachedir, iw.repo_full_name)
@@ -404,9 +424,6 @@ class TriageV3(DefaultTriager):
                             redo = False
                             continue
 
-                    # save the meta
-                    self.dump_meta(iw, self.meta)
-
                     # build up actions from the meta
                     self.create_actions()
                     logging.info('url: %s' % self.issue.html_url)
@@ -417,12 +434,17 @@ class TriageV3(DefaultTriager):
                     )
                     pprint(self.actions)
 
+                    # save the meta+actions
+                    dmeta = self.meta.copy()
+                    dmeta['actions'] = self.actions.copy()
+                    self.dump_meta(iw, dmeta)
+
                     # do the actions
                     action_meta = self.apply_actions()
                     if not action_meta['REDO']:
                         redo = False
 
-                logging.info('finished triage for %s' % iw.number)
+                logging.info('finished triage for %s' % str(iw))
 
     def dump_meta(self, issuewrapper, meta):
         mfile = os.path.join(
@@ -826,7 +848,7 @@ class TriageV3(DefaultTriager):
             if repo not in self.repos:
                 self.repos[repo] = {
                     'repo': self.ghw.get_repo(repo, verbose=False),
-                    'issues': {},
+                    'issues': [],
                     'processed': [],
                     'since': None
                 }
@@ -842,6 +864,7 @@ class TriageV3(DefaultTriager):
                         issue=issue,
                         cachedir=cachedir
                 )
+                iw.save_issue()
                 self.repos[repo]['issues'][iw.number] = iw
             else:
                 if not self.repos[repo]['since']:
@@ -864,6 +887,7 @@ class TriageV3(DefaultTriager):
                     missing_numbers = [x for x in missing_numbers
                                        if x not in
                                        self.repos[repo]['processed']]
+
                     for x in missing_numbers:
                         issue = None
                         try:
@@ -874,8 +898,19 @@ class TriageV3(DefaultTriager):
                         if issue and issue not in issues and \
                                 issue.state == 'open':
                             issues.append(issue)
-                    #import epdb; epdb.st()
 
+                        '''
+                        # save it ...
+                        if issue:
+                            iw = IssueWrapper(
+                                    repo=self.repos[repo]['repo'],
+                                    issue=issue,
+                                    cachedir=cachedir
+                            )
+                            iw.save_issue()
+                        '''
+
+                '''
                 for issue in issues:
 
                     # start-at only on the first run
@@ -892,7 +927,10 @@ class TriageV3(DefaultTriager):
                             issue=issue,
                             cachedir=cachedir
                     )
+                    #iw.save_issue()
                     self.repos[repo]['issues'][iw.number] = iw
+                '''
+                self.repos[repo]['issues'] = issues
 
             logging.info('getting issue objs for %s complete' % repo)
 

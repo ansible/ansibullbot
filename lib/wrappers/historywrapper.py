@@ -5,7 +5,6 @@ import os
 import pickle
 from operator import itemgetter
 from github import GithubObject
-from lib.wrappers.decorators import RateLimited
 
 # historywrapper.py
 #
@@ -63,6 +62,7 @@ class HistoryWrapper(object):
         if 'issues' not in self.cachedir:
             print(self.cachedir)
             import epdb; epdb.st()
+
 
         if not usecache:
             self.history = self.process()
@@ -429,6 +429,11 @@ class HistoryWrapper(object):
     #@RateLimited
     def process(self):
         """Merge all events into chronological order"""
+
+        #from pprint import pprint
+        #pprint(self._load_cache())
+        #pprint(self.issue.updated_at)
+        #import epdb; epdb.st()
 
         processed_events = []
 
