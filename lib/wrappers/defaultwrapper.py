@@ -685,7 +685,3 @@ class DefaultWrapper(object):
             logging.debug('_labels == False')
             self._labels = self.get_labels()
         return self._labels
-
-    @property
-    def current_labels(self):
-        return self.get_current_labels()
