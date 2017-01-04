@@ -273,11 +273,6 @@ class TriageV3(DefaultTriager):
         # get valid labels
         self.valid_labels = self.get_valid_labels('ansible/ansible')
 
-        #if self.last_run:
-        #    wissues = self.get_updated_issues(since=self.last_run)
-        #else:
-        #    wissues = self.get_updated_issues()
-
         for item in self.repos.items():
             repopath = item[0]
             repo = item[1]['repo']
@@ -289,46 +284,27 @@ class TriageV3(DefaultTriager):
             if self.args.skip_module_repos and 'module' in repopath:
                 continue
 
-            '''
-            issues = item[1]['issues']
-            numbers = sorted(issues.keys())
-            if self.args.sort == 'desc':
-                numbers.reverse()
-
-            for number in numbers:
-            '''
-
             for issue in item[1]['issues']:
 
-                #logging.info(issues[number])
-                #logging.info('starting triage for %s' % str(issues[number]))
-                #logging.info('starting triage for %s' % str(issue.number))
                 number = issue.number
-
                 if self.args.start_at:
                     if number < self.args.start_at:
                         logging.info('(start_at) skip %s' % number)
                         redo = False
                         continue
-
-                #if issues[number].state == 'closed':
                 if issue.state == 'closed':
                     logging.info(str(number) + ' is closed, skipping')
                     redo = False
                     continue
 
-                #import epdb; epdb.st()
-
                 # alias to a shorter var name
-                #iw = issues[number]
                 iw = IssueWrapper(
                     repo=repo,
                     issue=issue,
                     cachedir=self.cachedir
                 )
-                iw.save_issue()
-
                 logging.info('starting triage for %s' % str(iw))
+                iw.save_issue()
 
                 # users may want to re-run this issue after manual intervention
                 redo = True
@@ -359,70 +335,12 @@ class TriageV3(DefaultTriager):
                     if iw.repo_full_name not in MREPOS:
                         # basic processing for ansible/ansible
                         self.process(iw)
-                        pass
-
                     else:
                         # module repo processing ...
-                        if iw.created_at >= REPOMERGEDATE:
-                            # close new module issues+prs immediately
-                            logging.info('module issue created -after- merge')
-                            self.close_module_issue_with_message(iw)
-                            redo = False
-                            continue
-                        else:
-                            # process history
-                            # - check if message was given, comment if not
-                            # - if X days after message, close PRs, move issues.
-                            logging.info('module issue created -before- merge')
-
-                            logging.info('build history')
-                            hw = self.get_history(
-                                iw,
-                                usecache=True,
-                                cachedir=hcache
-                            )
-                            logging.info('history built')
-                            lc = hw.last_date_for_boilerplate('repomerge')
-                            if lc:
-                                lcdelta = (datetime.datetime.now() - lc).days
-                            else:
-                                lcdelta = None
-
-                            kwargs = {}
-                            # missing the comment?
-                            if lc:
-                                kwargs['bp'] = 'repomerge'
-                            else:
-                                kwargs['bp'] = None
-
-                            # should it be closed or not?
-                            if iw.is_pullrequest():
-                                if lc and lcdelta > MREPO_CLOSE_WINDOW:
-                                    kwargs['close'] = True
-                                    self.close_module_issue_with_message(
-                                        iw,
-                                        **kwargs
-                                    )
-                                elif not lc:
-                                    # add the comment
-                                    self.add_repomerge_comment(iw)
-                                else:
-                                    # do nothing
-                                    pass
-                            else:
-                                kwargs['close'] = False
-                                if lc and lcdelta > MREPO_CLOSE_WINDOW:
-                                    # move it for them
-                                    self.move_issue(iw)
-                                elif not lc:
-                                    # add the comment
-                                    self.add_repomerge_comment(iw)
-                                else:
-                                    # do nothing
-                                    pass
-                            # do nothing else on these repos
-                            redo = False
-                            continue
+                        self.run_module_repo_issue(self, iw, hcache=hcache)
+                        # do nothing else on these repos
+                        redo = False
+                        continue
 
                     # build up actions from the meta
                     self.create_actions()
@@ -445,6 +363,66 @@ class TriageV3(DefaultTriager):
                         redo = False
 
                 logging.info('finished triage for %s' % str(iw))
+
+    def run_module_repo_issue(self, iw, hcache=None):
+        ''' Module Repos are dead!!! '''
+
+        if iw.created_at >= REPOMERGEDATE:
+            # close new module issues+prs immediately
+            logging.info('module issue created -after- merge')
+            self.close_module_issue_with_message(iw)
+            return
+        else:
+            # process history
+            # - check if message was given, comment if not
+            # - if X days after message, close PRs, move issues.
+            logging.info('module issue created -before- merge')
+
+            logging.info('build history')
+            hw = self.get_history(
+                iw,
+                usecache=True,
+                cachedir=hcache
+            )
+            logging.info('history built')
+            lc = hw.last_date_for_boilerplate('repomerge')
+            if lc:
+                lcdelta = (datetime.datetime.now() - lc).days
+            else:
+                lcdelta = None
+
+            kwargs = {}
+            # missing the comment?
+            if lc:
+                kwargs['bp'] = 'repomerge'
+            else:
+                kwargs['bp'] = None
+
+            # should it be closed or not?
+            if iw.is_pullrequest():
+                if lc and lcdelta > MREPO_CLOSE_WINDOW:
+                    kwargs['close'] = True
+                    self.close_module_issue_with_message(
+                        iw,
+                        **kwargs
+                    )
+                elif not lc:
+                    # add the comment
+                    self.add_repomerge_comment(iw)
+                else:
+                    # do nothing
+                    pass
+            else:
+                kwargs['close'] = False
+                if lc and lcdelta > MREPO_CLOSE_WINDOW:
+                    # move it for them
+                    self.move_issue(iw)
+                elif not lc:
+                    # add the comment
+                    self.add_repomerge_comment(iw)
+                else:
+                    # do nothing
+                    pass
 
     def dump_meta(self, issuewrapper, meta):
         mfile = os.path.join(
