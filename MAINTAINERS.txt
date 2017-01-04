@@ -268,6 +268,7 @@ network/ios/: privateip gundalow Qalthos
 network/iosxr/: privateip gundalow Qalthos
 network/ipify_facts.py: resmo
 network/junos/: privateip gundalow Qalthos ganeshnalawade
+network/ldap_entry.py jtyr
 network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
 network/netvisor/: amitsi privateip gundalow Qalthos
@@ -347,7 +348,6 @@ packaging/os/svr4pkg.py: brontitall
 packaging/os/swdepot.py: melodous
 packaging/os/urpmi.py: pmakowski
 packaging/os/yum.py: ansible
-packaging/os/yumrepo.py: jtyr
 packaging/os/yum_repository.py: jtyr
 packaging/os/zypper.py: robinro
 packaging/os/zypper_repository.py: matze robinro
