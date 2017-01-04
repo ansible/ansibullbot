@@ -76,7 +76,9 @@ class DefaultWrapper(object):
         self.repo = repo
         self.instance = issue
         #self.number = self.instance.number
-        self.current_labels = self.get_current_labels()
+        #self.current_labels = self.get_current_labels()
+        #self.current_labels = []
+        self._labels = False
         self.template_data = {}
         self.desired_labels = []
         self.desired_assignees = []
@@ -659,4 +661,10 @@ class DefaultWrapper(object):
 
     @property
     def labels(self):
+        if self._labels is False:
+            self._labels = self.get_current_labels()
+        return self._labels
+
+    @property
+    def current_labels(self):
         return self.get_current_labels()
