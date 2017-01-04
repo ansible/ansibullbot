@@ -356,7 +356,7 @@ class DefaultWrapper(object):
         return self.instance.user.login
 
     @RateLimited
-    def get_current_labels(self):
+    def get_labels(self):
         """Pull the list of labels on this Issue"""
         labels = []
         for label in self.instance.labels:
@@ -612,18 +612,16 @@ class DefaultWrapper(object):
                     self.repo.save_pullrequest(self.pr_obj)
         else:
             pass
-            #if self.pr_obj.update():
-            #        self.repo.save_pullrequest(self.pr_obj)
 
     @property
     @RateLimited
     def pullrequest_raw_data(self):
         if not self.pull_raw:
+            logging.info('pullrequest_raw_data [get]')
             self.pull_raw = self.pullrequest.raw_data
         return self.pull_raw
 
     @property
-    @RateLimited
     def pullrequest_status(self):
 
         fetched = False
@@ -641,7 +639,7 @@ class DefaultWrapper(object):
         )
 
         if os.path.isfile(pfile):
-            #pdata = pickle.loads(pfile)
+            logging.info('pullrequest_status load pfile')
             with open(pfile, 'rb') as f:
                 pdata = pickle.load(f)
 
@@ -684,7 +682,8 @@ class DefaultWrapper(object):
     @property
     def labels(self):
         if self._labels is False:
-            self._labels = self.get_current_labels()
+            logging.debug('_labels == False')
+            self._labels = self.get_labels()
         return self._labels
 
     @property

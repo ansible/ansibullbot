@@ -535,14 +535,14 @@ class TriageV3(DefaultTriager):
                     label = self.MODULE_NAMESPACE_LABELS[label]
 
                 if label and label in self.valid_labels and \
-                        label not in self.issue.current_labels:
+                        label not in self.issue.labels:
                     self.actions['newlabel'].append(label)
 
             # add namespace labels
             namespace = self.meta['module_match'].get('namespace')
             if namespace in self.MODULE_NAMESPACE_LABELS:
                 label = self.MODULE_NAMESPACE_LABELS[namespace]
-                if label not in self.issue.current_labels:
+                if label not in self.issue.labels:
                     self.actions['newlabel'].append(label)
 
         #if self.meta['is_new_module'] or self.meta['is_new_plugin']:
@@ -1126,7 +1126,7 @@ class TriageV3(DefaultTriager):
 
     def keep_unmanaged_labels(self, issue):
         '''Persists labels that were added manually and not bot managed'''
-        for label in issue.current_labels:
+        for label in issue.labels:
             if label not in self.MANAGED_LABELS:
                 self.debug('keeping %s label' % label)
                 self.issue.add_desired_label(name=label)
