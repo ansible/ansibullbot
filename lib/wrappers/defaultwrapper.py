@@ -171,6 +171,7 @@ class DefaultWrapper(object):
         self.review_comments = self.load_update_fetch('review_comments')
         return self.review_comments
 
+    @RateLimited
     def _fetch_api_url(self, url):
         # fetch the url and parse to json
         jdata = None
@@ -661,11 +662,9 @@ class DefaultWrapper(object):
         if fetched or not os.path.isfile(pfile):
             logging.info('writing %s' % pfile)
             pdata = (self.pullrequest.updated_at, jdata)
-            #pickle.dump(pdata, pfile, protocol=2)
             with open(pfile, 'wb') as f:
                 pickle.dump(pdata, f, protocol=2)
 
-        #import epdb; epdb.st()
         return jdata
 
     @property
