@@ -302,8 +302,8 @@ class TriageV3(DefaultTriager):
 
                 #logging.info(issues[number])
                 #logging.info('starting triage for %s' % str(issues[number]))
-                logging.info('starting triage for %s' % str(issue.number))
-                nmber = issue.number
+                #logging.info('starting triage for %s' % str(issue.number))
+                number = issue.number
 
                 if self.args.start_at:
                     if number < self.args.start_at:
