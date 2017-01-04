@@ -213,7 +213,7 @@ class TriageV3(DefaultTriager):
         else:
             logging.level = logging.INFO
         logFormatter = \
-            logging.Formatter("%(asctime)s %(levelname)s  %(message)s")
+            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
         rootLogger = logging.getLogger()
         if self.args.debug:
             rootLogger.setLevel(logging.DEBUG)
