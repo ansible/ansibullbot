@@ -292,6 +292,12 @@ class TriageV3(DefaultTriager):
                         logging.info('(start_at) skip %s' % number)
                         redo = False
                         continue
+                if self.args.resume_id:
+                    if number > self.resume_id:
+                        continue
+                    else:
+                        # unset for daemonize loops
+                        self.args.resume_id = None
                 if issue.state == 'closed':
                     logging.info(str(number) + ' is closed, skipping')
                     redo = False

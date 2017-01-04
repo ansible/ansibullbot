@@ -824,6 +824,10 @@ def main3():
                         help="Always pause between prs|issues")
     parser.add_argument("--pr", "--id", type=int,
                         help="Triage only the specified pr|issue")
+
+    parser.add_argument("--resume_id", type=int,
+                        help="Run full triage, but start at this number")
+
     parser.add_argument("--start-at", type=int,
                         help="Start triage at the specified pr|issue")
     parser.add_argument("--no_since", action="store_true",
