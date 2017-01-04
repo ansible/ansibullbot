@@ -191,6 +191,10 @@ class TriageV3(DefaultTriager):
             else:
                 setattr(self, x, val)
 
+        os.environ['GITHUB_USERNAME'] = self.args.gh_user or ''
+        os.environ['GITHUB_PASSWORD'] = self.args.gh_pass or ''
+        os.environ['GITHUB_TOKEN'] = self.args.gh_token or ''
+
         if self.args.pause:
             self.always_pause = True
 
@@ -803,6 +807,7 @@ class TriageV3(DefaultTriager):
         logging.info('start collecting issues')
         logging.debug('creating github connection object')
         self.gh = self._connect()
+
         logging.info('creating github connection wrapper')
         self.ghw = GithubWrapper(self.gh)
 

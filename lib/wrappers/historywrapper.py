@@ -426,7 +426,7 @@ class HistoryWrapper(object):
                 last_date = bp[0]
         return last_date
 
-    @RateLimited
+    #@RateLimited
     def process(self):
         """Merge all events into chronological order"""
 

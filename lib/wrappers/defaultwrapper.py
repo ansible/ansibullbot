@@ -109,6 +109,7 @@ class DefaultWrapper(object):
     def get_current_time(self):
         return datetime.utcnow()
 
+    @RateLimited
     def get_comments(self):
         """Returns all current comments of the PR"""
 
@@ -135,6 +136,7 @@ class DefaultWrapper(object):
 
         return self.current_comments
 
+    @RateLimited
     def get_events(self):
         self.current_events = self.load_update_fetch('events')
         return self.current_events
@@ -307,6 +309,7 @@ class DefaultWrapper(object):
             import epdb; epdb.st()
         return assignee
 
+    @RateLimited
     def get_reactions(self):
         # https://developer.github.com/v3/reactions/
         if not self.current_reactions:
@@ -329,10 +332,12 @@ class DefaultWrapper(object):
             self.current_reactions = jdata
         return self.current_reactions
 
+    @RateLimited
     def get_submitter(self):
         """Returns the submitter"""
         return self.instance.user.login
 
+    @RateLimited
     def get_current_labels(self):
         """Pull the list of labels on this Issue"""
         labels = []
