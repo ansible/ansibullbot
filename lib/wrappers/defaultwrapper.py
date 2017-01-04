@@ -78,7 +78,11 @@ class DefaultWrapper(object):
         #self.number = self.instance.number
         #self.current_labels = self.get_current_labels()
         #self.current_labels = []
+        self._assignees = False
+        self._comments = False
+        self._events = False
         self._labels = False
+        self._reactions = False
         self.template_data = {}
         self.desired_labels = []
         self.desired_assignees = []
@@ -127,6 +131,7 @@ class DefaultWrapper(object):
         with open(pfile, 'wb') as f:
             pickle.dump(self.instance, f)
 
+
     @RateLimited
     def get_comments(self):
         """Returns all current comments of the PR"""
@@ -153,6 +158,12 @@ class DefaultWrapper(object):
                 self.current_bot_comments.append(boilerplate)
 
         return self.current_comments
+
+    @property
+    def events(self):
+        if self._events is False:
+            self._events = self.get_events()
+        return self._events
 
     @RateLimited
     def get_events(self):
@@ -328,6 +339,12 @@ class DefaultWrapper(object):
             import epdb; epdb.st()
         return assignee
 
+    @property
+    def reactions(self):
+        if self._reactions is False:
+            self._reactions = self.get_reactions()
+        return self._reactions
+
     @RateLimited
     def get_reactions(self):
         # https://developer.github.com/v3/reactions/
@@ -464,6 +481,12 @@ class DefaultWrapper(object):
         # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
         self.instance.edit(body=description)
 
+    @property
+    def assignees(self):
+        if self._assignees is False:
+            self._assignees = self.get_assignees
+        return self._assignees
+
     def get_assignees(self):
         # https://developer.github.com/v3/issues/assignees/
         # https://developer.github.com/changes/2016-5-27-multiple-assignees/
@@ -480,8 +503,8 @@ class DefaultWrapper(object):
         else:
             assignees = [x.login for x in self.instance.assignees]
 
-        self.current_assignees = [x for x in assignees]
-        return self.current_assignees
+        res = [x for x in assignees]
+        return res
 
     def add_desired_assignee(self, assignee):
         if assignee not in self.desired_assignees \
@@ -489,14 +512,14 @@ class DefaultWrapper(object):
             self.desired_assignees.append(assignee)
 
     def assign_user(self, user):
-        assignees = [x for x in self.current_assignees]
-        if user not in self.current_assignees:
+        assignees = [x for x in self.assignees]
+        if user not in self.assignees:
             assignees.append(user)
             self._edit_assignees(assignees)
 
     def unassign_user(self, user):
         assignees = [x for x in self.current_assignees]
-        if user in self.current_assignees:
+        if user in self.assignees:
             assignees.remove(user)
             self._edit_assignees(assignees)
 
@@ -585,16 +608,18 @@ class DefaultWrapper(object):
 
     @property
     def comments(self):
-        return self.get_comments()
+        if self._comments is False:
+            self._comments = self.get_comments()
+        return self._comments
 
     @property
-    @RateLimited
     def pullrequest(self):
         if not self.pr_obj:
+            logging.debug('@pullrequest.get_pullrequest #%s' % self.number)
             self.pr_obj = self.repo.get_pullrequest(self.number)
             self.repo.save_pullrequest(self.pr_obj)
-        else:
-            self.update_pullrequest()
+        #else:
+        #    self.update_pullrequest()
         return self.pr_obj
 
     @RateLimited
@@ -618,7 +643,7 @@ class DefaultWrapper(object):
     @RateLimited
     def pullrequest_raw_data(self):
         if not self.pull_raw:
-            logging.info('pullrequest_raw_data [get]')
+            logging.info('@pullrequest_raw_data')
             self.pull_raw = self.pullrequest.raw_data
         return self.pull_raw
 

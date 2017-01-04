@@ -63,7 +63,6 @@ class HistoryWrapper(object):
             print(self.cachedir)
             import epdb; epdb.st()
 
-
         if not usecache:
             self.history = self.process()
         else:
@@ -431,9 +430,9 @@ class HistoryWrapper(object):
 
         processed_events = []
 
-        events = self.issue.get_events()
-        comments = self.issue.get_comments()
-        reactions = self.issue.get_reactions()
+        events = self.issue.events
+        comments = self.issue.comments
+        reactions = self.issue.reactions
 
         processed_events = []
         for ide,event in enumerate(events):

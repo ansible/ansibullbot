@@ -44,6 +44,7 @@ class RepoWrapper(object):
         self.updated_at_previous = None
         self.updated = False
         self.verbose = verbose
+        self._assignees = False
 
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
@@ -203,9 +204,19 @@ class RepoWrapper(object):
     def get_labels(self):
         return self.load_update_fetch('labels')
 
+    @property
+    def assignees(self):
+        if self._assignees is False:
+            self._assignees = self.load_update_fetch('assignees')
+        return self._assignees
+
+    '''
     @RateLimited
     def get_assignees(self):
-        return self.load_update_fetch('assignees')
+        if self._assignees is False:
+            self._assignees = self.load_update_fetch('assignees')
+        return self._assignees
+    '''
 
     def get_issues(self, since=None, state='open', itype='issue'):
 
@@ -336,6 +347,7 @@ class RepoWrapper(object):
         with open(cfile, 'wb') as f:
             pickle.dump(issue, f)
 
+    @RateLimited
     def load_update_fetch(self, property_name):
         '''Fetch a get() property for an object'''
 

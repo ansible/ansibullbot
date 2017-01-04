@@ -1609,10 +1609,10 @@ class TriageV3(DefaultTriager):
         }
 
         # who is assigned?
-        current_assignees = iw.get_assignees()
+        current_assignees = iw.assignees
 
         # who can be assigned?
-        valid_assignees = [x.login for x in iw.repo.get_assignees()]
+        valid_assignees = [x.login for x in iw.repo.assignees]
 
         # add people from filemap matches
         if iw.is_pullrequest():
@@ -1701,7 +1701,7 @@ class TriageV3(DefaultTriager):
         if meta['module_match']:
             maintainers += meta.get('module_match', {}).get('maintainers', [])
             maintainers += meta.get('module_match', {}).get('authors', [])
-        maintainers += [x.login for x in iw.repo.get_assignees()]
+        maintainers += [x.login for x in iw.repo.assignees]
         maintainers = sorted(set(maintainers))
 
         meta['maintainer_commands'] = iw.history.get_commands(
