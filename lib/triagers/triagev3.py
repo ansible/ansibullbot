@@ -545,9 +545,13 @@ class TriageV3(DefaultTriager):
                 if label not in self.issue.current_labels:
                     self.actions['newlabel'].append(label)
 
-        if self.meta['is_new_module'] or self.meta['is_new_plugin']:
+        #if self.meta['is_new_module'] or self.meta['is_new_plugin']:
+        #    if 'new_plugin' not in self.issue.labels:
+        #        self.actions['newlabel'].append('new_plugin')
+
+        if self.meta['is_new_module']:
             if 'new_plugin' not in self.issue.labels:
-                self.actions['newlabel'].append('new_plugin')
+                self.actions['newlabel'].append('new_module')
 
         if self.meta['is_module']:
             if 'module' not in self.issue.labels:
@@ -560,12 +564,12 @@ class TriageV3(DefaultTriager):
             if 'module_util' not in self.issue.labels:
                 self.actions['newlabel'].append('module_util')
 
-        if self.meta['is_plugin']:
-            if 'plugin' not in self.issue.labels:
-                self.actions['newlabel'].append('plugin')
-        else:
-            if 'plugin' in self.issue.labels:
-                self.actions['unlabel'].append('plugin')
+        #if self.meta['is_plugin']:
+        #    if 'plugin' not in self.issue.labels:
+        #        self.actions['newlabel'].append('plugin')
+        #else:
+        #    if 'plugin' in self.issue.labels:
+        #        self.actions['unlabel'].append('plugin')
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
@@ -827,7 +831,7 @@ class TriageV3(DefaultTriager):
                 continue
 
             logging.info('getting repo obj for %s' % repo)
-            cachedir = os.path.join(self.cachedir, repo)
+            #cachedir = os.path.join(self.cachedir, repo)
 
             if repo not in self.repos:
                 self.repos[repo] = {
