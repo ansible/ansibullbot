@@ -209,92 +209,10 @@ class RepoWrapper(object):
 
     def get_issues(self, since=None, state='open', itype='issue'):
 
-        '''Abstraction around get_issues to get ALL issues in a cached way'''
-
         if since:
             return self.repo.get_issues(since=since)
         else:
             return self.repo.get_issues()
-
-        return []
-
-        if since:
-            issues = self.repo.get_issues(since=since)
-            issues = [x for x in issues]
-            for issue in issues:
-                self.save_issue(issue)
-        else:
-
-            '''
-            # load all cached issues then update or fetch missing ...
-            logging.debug('loading cached issues')
-            issues = self.load_issues()
-            '''
-
-            '''
-            logging.debug('fetching all issues')
-            if state:
-                rissues = self.repo.get_issues(state=state)
-            else:
-                rissues = self.repo.get_issues()
-
-            if state == 'open':
-                return rissues
-            last_issue = rissues[0]
-            '''
-
-            numbers_range = self.scrape_open_issue_numbers()
-            import epdb; epdb.st()
-            #last_number = self.get_last_issue_number()
-            #logging.info('last number: %s' % last_number)
-
-            logging.debug('loading cached issues')
-            issues = self.load_issues(filter=numbers_range)
-            #import epdb; epdb.st()
-
-            logging.debug('comparing cache against fetched')
-            #expected = xrange(1, last_number)
-            expected = xrange(1, numbers_range[-1])
-            for exp in expected:
-                if self.is_missing(exp):
-                    continue
-
-                if exp not in numbers_range:
-                    continue
-
-                # cached issue ...
-                ci = next((i for i in issues if i.number == exp), None)
-
-                '''
-                # skip pull requests if requested
-                if itype == 'issue' and ci:
-                    if ci.pull_request:
-                        continue
-                '''
-
-                if not ci:
-                    logging.debug('fetching %s' % exp)
-                    issue = self.fetch_repo_issue(exp)
-                    if issue:
-                        issues.append(issue)
-                        logging.debug('saving %s' % exp)
-                        self.save_issue(issue)
-                else:
-                    ci = self.update_issue(ci)
-
-            logging.debug('storing cache of repo')
-            self.save_repo()
-
-            if itype == 'issue':
-                issues = [x for x in issues if not x.pull_request]
-
-            if state == 'open':
-                issues = [x for x in issues if x.state == 'open']
-
-            # sort in reverse numerical order
-            issues.sort(key=lambda x: x.number, reverse=True)
-
-        return issues
 
     @RateLimited
     def fetch_repo_issue(self, number):

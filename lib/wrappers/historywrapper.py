@@ -426,14 +426,8 @@ class HistoryWrapper(object):
                 last_date = bp[0]
         return last_date
 
-    #@RateLimited
     def process(self):
         """Merge all events into chronological order"""
-
-        #from pprint import pprint
-        #pprint(self._load_cache())
-        #pprint(self.issue.updated_at)
-        #import epdb; epdb.st()
 
         processed_events = []
 
