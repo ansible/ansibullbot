@@ -248,7 +248,7 @@ class TriageV3(DefaultTriager):
     def run(self):
         '''Primary execution method'''
 
-        # get the issues
+        # get all of the open issues [or just one]
         self.collect_issues()
 
         # stop here if we're just collecting issues to populate cache
@@ -843,13 +843,7 @@ class TriageV3(DefaultTriager):
             if self.pr:
                 logging.info('fetch %s' % self.pr)
                 issue = self.repos[repo]['repo'].get_issue(self.pr)
-                iw = IssueWrapper(
-                        repo=self.repos[repo]['repo'],
-                        issue=issue,
-                        cachedir=cachedir
-                )
-                iw.save_issue()
-                self.repos[repo]['issues'][iw.number] = iw
+                self.repos[repo]['issues'] = [issue]
             else:
                 if not self.repos[repo]['since']:
                     # get all of them
@@ -883,37 +877,6 @@ class TriageV3(DefaultTriager):
                                 issue.state == 'open':
                             issues.append(issue)
 
-                        '''
-                        # save it ...
-                        if issue:
-                            iw = IssueWrapper(
-                                    repo=self.repos[repo]['repo'],
-                                    issue=issue,
-                                    cachedir=cachedir
-                            )
-                            iw.save_issue()
-                        '''
-
-                '''
-                for issue in issues:
-
-                    # start-at only on the first run
-                    if self.args.start_at and not self.repos[repo]['since']:
-                        if issue.number < self.args.start_at:
-                            continue
-
-                    # keep track of this issue number
-                    if issue.number not in self.repos[repo]['processed']:
-                        self.repos[repo]['processed'].append(issue.number)
-
-                    iw = IssueWrapper(
-                            repo=self.repos[repo]['repo'],
-                            issue=issue,
-                            cachedir=cachedir
-                    )
-                    #iw.save_issue()
-                    self.repos[repo]['issues'][iw.number] = iw
-                '''
                 self.repos[repo]['issues'] = issues
 
             logging.info('getting issue objs for %s complete' % repo)

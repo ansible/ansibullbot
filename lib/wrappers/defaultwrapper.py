@@ -599,10 +599,16 @@ class DefaultWrapper(object):
     @RateLimited
     def update_pullrequest(self):
         if not self.pr_obj:
+            logging.info('update_pullrequest [fetching] pr #%s' % self.number)
             self.pr_obj = self.repo.get_pullrequest(self.number)
+            logging.info('update_pullrequest [save] pr #%s' % self.number)
             self.repo.save_pullrequest(self.pr_obj)
         elif self.pr_obj.updated_at < self.instance.updated_at:
+            logging.info('update_pullrequest [update] pr #%s' % self.number)
             if self.pr_obj.update():
+                    logging.info(
+                        'update_pullrequest [save] pr #%s' % self.number
+                    )
                     self.repo.save_pullrequest(self.pr_obj)
         else:
             pass
