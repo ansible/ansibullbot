@@ -1498,6 +1498,7 @@ class TriageV3(DefaultTriager):
         needs_revision = False
         needs_revision_msgs = []
         needs_rebase = False
+        needs_rebase_msgs = []
         has_shippable = False
         has_travis = False
         ci_state = None
@@ -1507,6 +1508,7 @@ class TriageV3(DefaultTriager):
             return {'is_needs_revision': needs_revision,
                     'is_needs_revision_msgs': needs_revision_msgs,
                     'is_needs_rebase': needs_rebase,
+                    'is_needs_rebase_msgs': needs_rebase_msgs,
                     'has_shippable': has_shippable,
                     'has_travis': has_travis,
                     'mergeable_state': None,
@@ -1556,6 +1558,7 @@ class TriageV3(DefaultTriager):
                 needs_revision = True
                 needs_rebase = True
                 needs_revision_msgs.append('mergeable state is dirty')
+                needs_rebase_msgs.append('mergeable state is dirty')
 
             elif mstate == 'unknown':
                 needs_revision = True
@@ -1589,6 +1592,7 @@ class TriageV3(DefaultTriager):
 
             if has_travis:
                 needs_rebase = True
+                needs_rebase_msgs.append('travis-ci found in status')
 
         logging.info('mergeable_state == %s' % mstate)
         logging.info('needs_rebase == %s' % needs_rebase)
@@ -1597,6 +1601,7 @@ class TriageV3(DefaultTriager):
         return {'is_needs_revision': needs_revision,
                 'is_needs_revision_msgs': needs_revision_msgs,
                 'is_needs_rebase': needs_rebase,
+                'is_needs_rebase_msgs': needs_rebase_msgs,
                 'has_shippable': has_shippable,
                 'has_travis': has_travis,
                 'mergeable_state': mstate,
