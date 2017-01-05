@@ -1561,8 +1561,10 @@ class TriageV3(DefaultTriager):
                 needs_rebase_msgs.append('mergeable state is dirty')
 
             elif mstate == 'unknown':
-                needs_revision = True
-                needs_revision_msgs.append('mergeable state is unknown')
+                # if tests are still running, this needs to be ignored.
+                if ci_state not in ['success', 'pending']:
+                    needs_revision = True
+                    needs_revision_msgs.append('mergeable state is unknown')
         else:
             for event in iw.history.history:
                 if event['actor'] in maintainers:
