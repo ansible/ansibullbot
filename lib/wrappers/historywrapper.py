@@ -468,8 +468,8 @@ class HistoryWrapper(object):
                 edict['event'] = event.event
                 edict['created_at'] = event.created_at
 
-                raw_data = self._raw_data_from_event(event)
                 if edict['event'] in ['labeled', 'unlabeled']:
+                    raw_data = self._raw_data_from_event(event)
                     edict['label'] = raw_data.get('label', {}).get('name', None)
                 elif edict['event'] == 'mentioned':
                     pass
@@ -477,7 +477,6 @@ class HistoryWrapper(object):
                     pass
                 elif edict['event'] == 'referenced':
                     edict['commit_id'] = event.commit_id
-                    #edict['body'] = event.body
 
             processed_events.append(edict)
 
