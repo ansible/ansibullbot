@@ -318,19 +318,10 @@ class TriageV3(DefaultTriager):
                 )
                 logging.info('starting triage for %s' % str(iw))
                 iw.save_issue()
-
-                # update PR data
-                if iw.is_pullrequest():
-                    if iw.updated_at != iw.pullrequest.updated_at:
-                        iw.update_pullrequest()
-                    # force this for now, since there's no sync between
-                    # it and the pr's updated_at property.
-                    iw.get_pullrequest_status(force_fetch=True)
-                    iw.pullrequest.mergeable_state
-                    #import epdb; epdb.st()
+                self.force_pr_update(iw)
 
                 # users may want to re-run this issue after manual intervention
-                redo = True
+                redo = False
                 loopcount = 0
 
                 while redo:
@@ -340,6 +331,7 @@ class TriageV3(DefaultTriager):
 
                     # if >1 get latest data
                     if loopcount > 1:
+                        logging.info('restarting triage for %s' % str(iw))
                         iobj = iw.repo.get_issue(iw.number)
                         niw = IssueWrapper(
                             repo=iw.repo,
@@ -348,6 +340,7 @@ class TriageV3(DefaultTriager):
                         )
                         iw = niw
                         iw.save_issue()
+                        self.force_pr_update(iw)
 
                     # this is where the history cache goes
                     hcache = os.path.join(self.cachedir, iw.repo_full_name)
@@ -382,10 +375,21 @@ class TriageV3(DefaultTriager):
 
                     # do the actions
                     action_meta = self.apply_actions()
-                    if not action_meta['REDO']:
-                        redo = False
+                    if action_meta['REDO']:
+                        redo = True
 
                 logging.info('finished triage for %s' % str(iw))
+
+    def force_pr_update(self, iw):
+        # update PR data
+        if iw.is_pullrequest():
+            if iw.updated_at != iw.pullrequest.updated_at:
+                iw.update_pullrequest()
+            # force this for now, since there's no sync between
+            # it and the pr's updated_at property.
+            iw.get_pullrequest_status(force_fetch=True)
+            iw.pullrequest.mergeable_state
+            #import epdb; epdb.st()
 
     def save_meta(self, issuewrapper, meta):
         # save the meta+actions
