@@ -433,6 +433,8 @@ class HistoryWrapper(object):
         return raw_data
 
     def get_event_from_cache(self, eventid, cache):
+        if not cache:
+            return None
         matches = [x for x in cache['history'] if x['id'] == eventid]
         if matches:
             return matches[0]
