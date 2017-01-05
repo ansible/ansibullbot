@@ -290,8 +290,10 @@ class TriageV3(DefaultTriager):
                 self.issue = None
                 self.meta = {}
                 self.actions = {}
-
                 number = issue.number
+                #import epdb; epdb.st()
+                self.repos[repopath]['processed'].append(number)
+
                 if self.args.start_at:
                     if number < self.args.start_at:
                         logging.info('(start_at) skip %s' % number)
@@ -1690,10 +1692,14 @@ class TriageV3(DefaultTriager):
 
     def process_comment_commands(self, issuewrapper, meta):
         vcommands = [x for x in self.VALID_COMMANDS]
+        # these are handled by other fact gathering functions
         vcommands.remove('needs_info')
         vcommands.remove('!needs_info')
         vcommands.remove('shipit')
         vcommands.remove('needs_rebase')
+        vcommands.remove('!needs_rebase')
+        vcommands.remove('needs_revision')
+        vcommands.remove('!needs_rebase')
 
         iw = issuewrapper
         if not iw.history:
