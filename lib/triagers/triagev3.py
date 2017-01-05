@@ -370,6 +370,8 @@ class TriageV3(DefaultTriager):
     def save_meta(self, issuewrapper, meta):
         # save the meta+actions
         dmeta = meta.copy()
+        dmeta['created_at'] = issuewrapper.created_at.isoformat()
+        dmeta['updated_at'] = issuewrapper.updated_at.isoformat()
         dmeta['template_data'] = issuewrapper.template_data
         dmeta['actions'] = self.actions.copy()
         if issuewrapper.history:
@@ -383,6 +385,7 @@ class TriageV3(DefaultTriager):
             dmeta['pullrequest_status'] = issuewrapper.pullrequest_status
         else:
             dmeta['pullrequest_status'] = []
+
         #import epdb; epdb.st()
         self.dump_meta(issuewrapper, dmeta)
 
@@ -452,6 +455,7 @@ class TriageV3(DefaultTriager):
             'meta.json'
         )
         meta['time'] = datetime.datetime.now().isoformat()
+        logging.info('dump meta to %s' % mfile)
         with open(mfile, 'wb') as f:
             json.dump(meta, f)
         #import epdb; epdb.st()
