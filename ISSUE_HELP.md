@@ -26,7 +26,9 @@ Expect the bot to do a few things:
 
   "needs_triage" will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
 
-2. Notify the maintainer(s) of the relevant file(s) or module(s).
+2. Notify and assign the maintainer(s) of the relevant file(s) or module(s).
+
+  Notifications will happen via a comment with the '@<NAME>' syntax. If you know of other interested parties, feel free to ping them in a comment or in your issue description.
 
 ## For pullrequest submitters
 Expect the bot to do a few things:
