@@ -18,24 +18,28 @@ The bot requires a minimal subset of information from the issue template
 
 If any of those items are missing or empty, ansibot will keep the issue in a "needs info" state until the data is provided in the issue's description. The bot is expecting an issue description styled after the default issue template, so please use that whenever possible.
 
+Expect the bot to do a few things:
+
+1. Add common labels such as needs_triage, bug_report, feature_idea, etc.
+
+  These labels are determined by templated data in the description. Please fill out the templates as accurately as possible so that the appropriate labels are used.
+
+  "needs_triage" will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
+
+2. Notify the maintainer(s) of the relevant file(s) or module(s).
+
 ## For pullrequest submitters
 Expect the bot to do a few things:
 
-1. Add common labels such as bugfix_pullrequest, feature_pullrequest, etc.
-
-  These labels are determined by examining the files in your pullrequest **and** the templated data in the description. Please fill out the templates as accurately as possible so that the appropriate people are notified of your change.
+1. All of the items described in the "for issue submitters" section.
 
 2. Add labels indicating the status of the pullrequest.
 
   * needs_rebase - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
   * needs_revision - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
 
-2. Notify the maintainer(s) of the file or module you are modifying.
-
-  This is an identical process for normal issues. Please fill out the issue template as accurately as possible so that the appropriate people are notified of your change.
-
 ## For community module maintainers
-Thanks in advance for taking a look at this bug report and for your ongoing work in maintaining this module. If you are unable to troubleshoot this issue with the information provided, please ping the submitter of the issue in a comment to let them know. 
+Thanks in advance for taking a look at issues+pullrequests and for your ongoing maintainince. If you are unable to troubleshoot or review this issue/pullrequest with the information provided, please ping the submitter of the issue in a comment to let them know. 
 
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
