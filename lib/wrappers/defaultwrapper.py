@@ -82,6 +82,7 @@ class DefaultWrapper(object):
         self._comments = False
         self._events = False
         self._labels = False
+        self._pr_status = False
         self._reactions = False
         self.template_data = {}
         self.desired_labels = []
@@ -130,7 +131,6 @@ class DefaultWrapper(object):
         logging.debug('dump %s' % pfile)
         with open(pfile, 'wb') as f:
             pickle.dump(self.instance, f)
-
 
     @RateLimited
     def get_comments(self):
@@ -226,7 +226,6 @@ class DefaultWrapper(object):
         # get rid of the bad dir
         shutil.rmtree(srcdir)
 
-    # self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
     def load_update_fetch(self, property_name, obj=None):
         '''Fetch a property for an issue object'''
 
@@ -618,8 +617,6 @@ class DefaultWrapper(object):
             logging.debug('@pullrequest.get_pullrequest #%s' % self.number)
             self.pr_obj = self.repo.get_pullrequest(self.number)
             self.repo.save_pullrequest(self.pr_obj)
-        #else:
-        #    self.update_pullrequest()
         return self.pr_obj
 
     @RateLimited
@@ -636,6 +633,7 @@ class DefaultWrapper(object):
                         'update_pullrequest [save] pr #%s' % self.number
                     )
                     self.repo.save_pullrequest(self.pr_obj)
+                    self.pull_raw = None
         else:
             pass
 
@@ -647,9 +645,7 @@ class DefaultWrapper(object):
             self.pull_raw = self.pullrequest.raw_data
         return self.pull_raw
 
-    @property
-    def pullrequest_status(self):
-
+    def get_pullrequest_status(self, force_fetch=False):
         fetched = False
         jdata = None
         pdata = None
@@ -671,7 +667,7 @@ class DefaultWrapper(object):
 
         if pdata:
             # is the data stale?
-            if pdata[0] < self.pullrequest.updated_at:
+            if pdata[0] < self.pullrequest.updated_at or force_fetch:
                 logging.info('fetching pr status: <date')
                 jdata = self._fetch_api_url(surl)
                 fetched = True
@@ -691,6 +687,12 @@ class DefaultWrapper(object):
                 pickle.dump(pdata, f, protocol=2)
 
         return jdata
+
+    @property
+    def pullrequest_status(self):
+        if self._pr_status is False:
+            self._pr_status = self.get_pullrequest_status()
+        return self._pr_status
 
     @property
     def files(self):

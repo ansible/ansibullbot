@@ -317,6 +317,14 @@ class TriageV3(DefaultTriager):
                 logging.info('starting triage for %s' % str(iw))
                 iw.save_issue()
 
+                # update PR data
+                if iw.is_pullrequest():
+                    if iw.updated_at != iw.pullrequest.updated_at:
+                        iw.update_pullrequest()
+                    # force this for now, since there's no sync between
+                    # it and the pr's updated_at property.
+                    iw.get_pullrequest_status(force_fetch=True)
+
                 # users may want to re-run this issue after manual intervention
                 redo = True
                 loopcount = 0
@@ -1473,6 +1481,7 @@ class TriageV3(DefaultTriager):
         # 'ready_for_review' and we will put this PR back into review.
 
         needs_revision = False
+        needs_revision_msgs = []
         needs_rebase = False
         has_shippable = False
         has_travis = False
@@ -1481,14 +1490,19 @@ class TriageV3(DefaultTriager):
         iw = issuewrapper
         if not iw.is_pullrequest():
             return {'is_needs_revision': needs_revision,
+                    'is_needs_revision_msgs': needs_revision_msgs,
                     'is_needs_rebase': needs_rebase,
                     'has_shippable': has_shippable,
                     'has_travis': has_travis,
                     'mergeable_state': None,
                     'ci_state': ci_state}
 
+        '''
         # force a PR update ...
-        iw.update_pullrequest()
+        if iw.updated_at != iw.pullrequest.updated_at:
+            iw.update_pullrequest()
+        import epdb; epdb.st()
+        '''
 
         if not iw.history:
             iw.history = self.get_history(
@@ -1516,44 +1530,36 @@ class TriageV3(DefaultTriager):
         logging.info('ci_state == %s' % ci_state)
 
         # clean/unstable/dirty/unknown
+        mstate = iw.pullrequest.mergeable_state
+        if mstate == 'unknown' and ci_state == 'success':
+            logging.info('set mergeable_state to ci_state')
+            mstate = 'clean'
+        logging.info('mergeable_state == %s' % mstate)
+
+        # clean/unstable/dirty/unknown
         if mstate != 'clean':
 
             if ci_state == 'failure':
                 needs_revision = True
+                needs_revision_msgs.append('ci failure')
 
             if mstate == 'dirty':
                 needs_revision = True
                 needs_rebase = True
+                needs_revision_msgs.append('mergeable state is dirty')
 
             elif mstate == 'unknown':
                 needs_revision = True
-
-            '''
-            if mstate == 'unstable':
-                # tests failing?
-                import epdb; epdb.st()
-                pass
-            elif mstate == 'dirty':
-                needs_rebase = True
-            elif mstate == 'unknown':
-                # tests in progress?
-                import epdb; epdb.st()
-                pass
-            else:
-                print(mstate)
-                logging.error('mergeable_state %s is unhandled' % mstate)
-                #needs_rebase = True
-                #import epdb; epdb.st()
-            '''
-
-            #import epdb; epdb.st()
-
+                needs_revision_msgs.append('mergeable state is unknown')
         else:
             for event in iw.history.history:
                 if event['actor'] in maintainers:
                     if event['event'] == 'labeled':
                         if event['label'] == 'needs_revision':
                             needs_revision = True
+                            needs_revision_msgs.append(
+                                '[%s] labeled' % event['actor']
+                            )
                     if event['event'] == 'unlabeled':
                         if event['label'] == 'needs_revision':
                             needs_revision = False
@@ -1579,11 +1585,8 @@ class TriageV3(DefaultTriager):
         logging.info('needs_rebase == %s' % needs_rebase)
         logging.info('needs_revision == %s' % needs_revision)
 
-        #if needs_revision:
-        #    print(iw.html_url)
-        #    import epdb; epdb.st()
-
         return {'is_needs_revision': needs_revision,
+                'is_needs_revision_msgs': needs_revision_msgs,
                 'is_needs_rebase': needs_rebase,
                 'has_shippable': has_shippable,
                 'has_travis': has_travis,
