@@ -342,7 +342,7 @@ class DefaultWrapper(object):
     @property
     def reactions(self):
         if self._reactions is False:
-            self._reactions = self.get_reactions()
+            self._reactions = [x for x in self.get_reactions()]
         return self._reactions
 
     @RateLimited
@@ -484,7 +484,7 @@ class DefaultWrapper(object):
     @property
     def assignees(self):
         if self._assignees is False:
-            self._assignees = self.get_assignees
+            self._assignees = self.get_assignees()
         return self._assignees
 
     def get_assignees(self):
@@ -707,5 +707,5 @@ class DefaultWrapper(object):
     def labels(self):
         if self._labels is False:
             logging.debug('_labels == False')
-            self._labels = self.get_labels()
+            self._labels = [x for x in self.get_labels()]
         return self._labels
