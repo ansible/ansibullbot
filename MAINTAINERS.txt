@@ -157,7 +157,7 @@ cloud/softlayer/sl_vm.py: mcltn
 cloud/vmware/: ansible
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: ansible
-cloud/vmware/vmware_guest: jctanner nerzhul
+cloud/vmware/vmware_guest: jctanner nerzhul dav1x
 cloud/vmware/vmware_vm_shell.py: ritzk chrrrles
 cloud/vmware/vsphere_copy.py: dagwieers
 cloud/vmware/vsphere_guest.py: ansible
