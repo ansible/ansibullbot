@@ -350,18 +350,15 @@ class TriageV3(DefaultTriager):
 
                     # build up actions from the meta
                     self.create_actions()
+                    pprint(self.actions)
+                    self.save_meta(iw, self.meta)
+
                     logging.info('url: %s' % self.issue.html_url)
                     logging.info('title: %s' % self.issue.title)
                     logging.info(
                         'component: %s' %
                         self.template_data.get('component_raw')
                     )
-                    pprint(self.actions)
-
-                    # save the meta+actions
-                    dmeta = self.meta.copy()
-                    dmeta['actions'] = self.actions.copy()
-                    self.dump_meta(iw, dmeta)
 
                     # do the actions
                     action_meta = self.apply_actions()
@@ -369,6 +366,25 @@ class TriageV3(DefaultTriager):
                         redo = False
 
                 logging.info('finished triage for %s' % str(iw))
+
+    def save_meta(self, issuewrapper, meta):
+        # save the meta+actions
+        dmeta = meta.copy()
+        dmeta['template_data'] = issuewrapper.template_data
+        dmeta['actions'] = self.actions.copy()
+        if issuewrapper.history:
+            dmeta['history'] = issuewrapper.history.history
+            for idx,x in enumerate(dmeta['history']):
+                dmeta['history'][idx]['created_at'] = \
+                    x['created_at'].isoformat()
+        else:
+            dmeta['history'] = []
+        if issuewrapper.is_pullrequest():
+            dmeta['pullrequest_status'] = issuewrapper.pullrequest_status
+        else:
+            dmeta['pullrequest_status'] = []
+        #import epdb; epdb.st()
+        self.dump_meta(issuewrapper, dmeta)
 
     def run_module_repo_issue(self, iw, hcache=None):
         ''' Module Repos are dead!!! '''
@@ -1351,15 +1367,6 @@ class TriageV3(DefaultTriager):
             #import epdb; epdb.st()
 
         return nmeta
-
-    '''
-    def get_facts(self, issuewrapper):
-        facts = {}
-        facts['bot_broken'] = False
-        facts['bot_skip'] = False
-        facts['bot_spam'] = False
-        return facts
-    '''
 
     def is_python3(self):
         '''Is the issue related to python3?'''
