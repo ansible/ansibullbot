@@ -20,18 +20,19 @@ If any of those items are missing or empty, ansibot will keep the issue in a "ne
 
 ## For pullrequest submitters
 Expect the bot to do a few things:
-1. Label the pullrequest with common labels such as bugfix_pullrequest, feature_pullrequest, etc.
 
-    These labels are determined by examining the files in your pullrequest **and** the templated data in the description. Please fill out the templates as accurately as possible so that the appropriate people are notified of your change.
+1. Add common labels such as bugfix_pullrequest, feature_pullrequest, etc.
+
+  These labels are determined by examining the files in your pullrequest **and** the templated data in the description. Please fill out the templates as accurately as possible so that the appropriate people are notified of your change.
 
 2. Add labels indicating the status of the pullrequest.
 
-    * **needs_rebase ** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
-    * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_reviw"
+  * **needs_rebase ** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
+  * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_reviw"
 
 2. Notify the maintainer(s) of the file or module you are modifying.
 
-    This is an identical process for normal issues. Please fill out the issue template as accurately as possible so that the appropriate people are notified of your change.
+  This is an identical process for normal issues. Please fill out the issue template as accurately as possible so that the appropriate people are notified of your change.
 
 ## For community module maintainers
 Thanks in advance for taking a look at this bug report and for your ongoing work in maintaining this module. If you are unable to troubleshoot this issue with the information provided, please ping the submitter of the issue in a comment to let them know. 
