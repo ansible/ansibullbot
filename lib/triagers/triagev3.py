@@ -585,8 +585,11 @@ class TriageV3(DefaultTriager):
         #        self.actions['newlabel'].append('new_plugin')
 
         if self.meta['is_new_module']:
-            if 'new_plugin' not in self.issue.labels:
+            if 'new_module' not in self.issue.labels:
                 self.actions['newlabel'].append('new_module')
+        else:
+            if 'new_module' in self.issue.labels:
+                self.actions['unlabel'].append('new_module')
 
         if self.meta['is_module']:
             if 'module' not in self.issue.labels:
@@ -1533,9 +1536,9 @@ class TriageV3(DefaultTriager):
 
         # clean/unstable/dirty/unknown
         mstate = iw.pullrequest.mergeable_state
-        if mstate == 'unknown' and ci_state == 'success':
-            logging.info('set mergeable_state to ci_state')
-            mstate = 'clean'
+        #if mstate == 'unknown' and ci_state == 'success':
+        #    logging.info('set mergeable_state to ci_state')
+        #    mstate = 'clean'
         logging.info('mergeable_state == %s' % mstate)
 
         # clean/unstable/dirty/unknown
@@ -1699,7 +1702,7 @@ class TriageV3(DefaultTriager):
         vcommands.remove('needs_rebase')
         vcommands.remove('!needs_rebase')
         vcommands.remove('needs_revision')
-        vcommands.remove('!needs_rebase')
+        vcommands.remove('!needs_revision')
 
         iw = issuewrapper
         if not iw.history:
