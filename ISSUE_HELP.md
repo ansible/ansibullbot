@@ -27,8 +27,8 @@ Expect the bot to do a few things:
 
 2. Add labels indicating the status of the pullrequest.
 
-  * **needs_rebase ** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
-  * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_reviw"
+  * needs_rebase - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
+  * needs_revision - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
 
 2. Notify the maintainer(s) of the file or module you are modifying.
 
