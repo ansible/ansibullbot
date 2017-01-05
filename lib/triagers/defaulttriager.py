@@ -296,6 +296,7 @@ class DefaultTriager(object):
         DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
         self.issue.new_description = DF.new_description
 
+    @RateLimited
     def _connect(self):
         """Connects to GitHub's API"""
         return Github(login_or_token=self.github_token or self.github_user,

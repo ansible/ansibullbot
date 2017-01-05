@@ -1,5 +1,5 @@
 {% if notify|length > 1 %}
-cc @{{ notify|join(', @') }}
+cc @{{ notify|join(' @') }}
 {% else %}
 cc @{{ notify[0] }}
 {% endif %}

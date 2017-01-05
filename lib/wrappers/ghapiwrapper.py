@@ -2,21 +2,18 @@
 
 from __future__ import print_function
 
-from github.GithubException import GithubException
 import glob
 import pickle
 import logging
 import os
 import re
 import requests
-import socket
 import time
+import urllib2
 from datetime import datetime
 
 from bs4 import BeautifulSoup
 from lib.wrappers.decorators import RateLimited
-
-
 
 
 class GithubWrapper(object):
@@ -47,6 +44,7 @@ class RepoWrapper(object):
         self.updated_at_previous = None
         self.updated = False
         self.verbose = verbose
+        self._assignees = False
 
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
@@ -54,7 +52,6 @@ class RepoWrapper(object):
             with open(self.cachefile, 'rb') as f:
                 self.repo = pickle.load(f)
             self.updated_at_previous = self.repo.updated_at
-            #import epdb; epdb.st()
             self.updated = self.repo.update()
         else:
             self.repo = self.gh.get_repo(repo_path)
@@ -75,6 +72,8 @@ class RepoWrapper(object):
     def get_last_issue_number(self):
         '''Scrape the newest issue/pr number'''
 
+        logging.info('scraping last issue number')
+
         url = 'https://github.com/'
         url += self.repo_path
         url += '/issues?q='
@@ -85,7 +84,7 @@ class RepoWrapper(object):
         urls = []
         for ref in refs:
             if 'href' in ref.attrs:
-                print(ref.attrs['href'])
+                #print(ref.attrs['href'])
                 urls.append(ref.attrs['href'])
         checkpath = '/' + self.repo_path
         m = re.compile('^%s/(pull|issues)/[0-9]+$' % checkpath)
@@ -102,6 +101,82 @@ class RepoWrapper(object):
         else:
             return None
 
+    def scrape_open_issue_numbers(self, url=None, recurse=True):
+
+        '''Make a (semi-inaccurate) range of open issue numbers'''
+
+        # The github api paginates through all open issues and quickly
+        # hits a rate limit on large issue queues. Webscraping also
+        # hits an undocumented rate limit. What this will do instead,
+        # is find the issues on the first and last page of results and
+        # then fill in the numbers between for a best guess range of
+        # numbers that are likely to be open.
+
+        # https://github.com/ansible/ansible/issues?q=is%3Aopen
+        # https://github.com/ansible/ansible/issues?page=2&q=is%3Aopen
+
+        base_url = 'https://github.com'
+        if not url:
+            url = base_url
+            url += '/'
+            url += self.repo_path
+            url += '/issues?'
+            #url += 'per_page=100'
+            #url += '&'
+            url += urllib2.quote('q=is open')
+
+        ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0)'
+        ua += ' Gecko/20100101 Firefix/40.1'
+        headers = {
+            'User-Agent': ua
+        }
+
+        rr = requests.get(url, headers=headers)
+        if rr.reason == 'Too Many Requests':
+            time.sleep(10)
+            rr = requests.get(url, headers=headers)
+
+        soup = BeautifulSoup(rr.text, 'html.parser')
+        numbers = self._scrape_issue_numbers_from_soup(soup)
+
+        if recurse:
+
+            pages = soup.findAll('a', {'href': lambda L: L and 'page=' in L})
+
+            if pages:
+                pages = [x for x in pages if 'class' not in x.attrs]
+                last_page = pages[-1]
+                last_url = base_url + last_page.attrs['href']
+                new_numbers = self.scrape_open_issue_numbers(
+                    url=last_url,
+                    recurse=False
+                )
+                new_numbers = sorted(set(new_numbers))
+                # fill in the gap ...
+                fillers = [x for x in xrange(new_numbers[-1], numbers[0])]
+                numbers += new_numbers
+                numbers += fillers
+
+        numbers = sorted(set(numbers))
+        return numbers
+
+    def _scrape_issue_numbers_from_soup(self, soup):
+        refs = soup.findAll('a')
+        urls = []
+        for ref in refs:
+            if 'href' in ref.attrs:
+                print(ref.attrs['href'])
+                urls.append(ref.attrs['href'])
+
+        checkpath = '/' + self.repo_path
+        m = re.compile('^%s/(pull|issues)/[0-9]+$' % checkpath)
+        urls = [x for x in urls if m.match(x)]
+
+        numbers = [x.split('/')[-1] for x in urls]
+        numbers = [int(x) for x in numbers]
+        numbers = sorted(set(numbers))
+        return numbers
+
     @RateLimited
     def get_issue(self, number):
         issue = self.load_issue(number)
@@ -116,87 +191,54 @@ class RepoWrapper(object):
     @RateLimited
     def get_pullrequest(self, number):
         #import epdb; epdb.st()
-        pr = self.load_pullrequest(number)
+        #pr = self.load_pullrequest(number)
+        '''
         if pr:
             if pr.update():
                 self.save_pullrequest(pr)
         else:
             pr = self.repo.get_pull(number)
             self.save_pullrequest(pr)
+        '''
+        pr = self.repo.get_pull(number)
         return pr
 
     @RateLimited
     def get_labels(self):
         return self.load_update_fetch('labels')
 
+    @property
+    def assignees(self):
+        if self._assignees is False:
+            self._assignees = self.load_update_fetch('assignees')
+        return self._assignees
+
+    '''
     @RateLimited
     def get_assignees(self):
-        return self.load_update_fetch('assignees')
+        if self._assignees is False:
+            self._assignees = self.load_update_fetch('assignees')
+        return self._assignees
+    '''
 
-    @RateLimited
     def get_issues(self, since=None, state='open', itype='issue'):
 
-        '''Abstraction around get_issues to get ALL issues in a cached way'''
-
         if since:
-            issues = self.repo.get_issues(since=since)
-            issues = [x for x in issues]
-            for issue in issues:
-                self.save_issue(issue)
+            return self.repo.get_issues(since=since)
         else:
+            return self.repo.get_issues()
 
-            # load all cached issues then update or fetch missing ...
-            logging.debug('loading cached issues')
-            issues = self.load_issues()
+    @RateLimited
+    def fetch_repo_issue(self, number):
+        issue = self.repo.get_issue(number)
+        return issue
 
-            logging.debug('fetching all issues')
-            if state:
-                rissues = self.repo.get_issues(state=state)
-            else:
-                rissues = self.repo.get_issues()
-
-            if state == 'open':
-                return rissues
-
-            last_issue = rissues[0]
-
-            logging.debug('comparing cache against fetched')
-            expected = xrange(1, last_issue.number)
-            for exp in expected:
-                if self.is_missing(exp):
-                    continue
-                ci = next((i for i in issues if i.number == exp), None)
-
-                # skip pull requests if requested
-                if itype == 'issue' and ci:
-                    if ci.pull_request:
-                        continue
-
-                if not ci:
-                    logging.debug('fetching %s' % exp)
-                    issue = self.repo.get_issue(exp)
-                    issues.append(issue)
-                    logging.debug('saving %s' % exp)
-                    self.save_issue(issue)
-                else:
-                    if ci.state == 'open':
-                        if ci.update():
-                            logging.debug('%s updated' % exp)
-                            self.save_issue(ci)
-
-            logging.debug('storing cache of repo')
-            self.save_repo()
-
-            if itype == 'issue':
-                issues = [x for x in issues if not x.pull_request]
-
-            if state == 'open':
-                issues = [x for x in issues if x.state == 'open']
-
-            # sort in reverse numerical order
-            issues.sort(key=lambda x: x.number, reverse=True)
-
-        return issues
+    @RateLimited
+    def update_issue(self, issue):
+        if issue.update():
+            logging.debug('%s updated' % issue.number)
+            self.save_issue(issue)
+        return issue
 
     @RateLimited
     def get_pullrequests(self, since=None, state='open', itype='pullrequest'):
@@ -219,10 +261,19 @@ class RepoWrapper(object):
         with open(mfile, 'wb') as f:
             f.write('\n')
 
-    def load_issues(self, state='open'):
+    def load_issues(self, state='open', filter=None):
         issues = []
         gfiles = glob.glob('%s/issues/*/issue.pickle' % self.cachedir)
         for gf in gfiles:
+
+            if filter:
+                gf_parts = gf.split('/')
+                this_number = gf_parts[-2]
+                this_number = int(this_number)
+                #import epdb; epdb.st()
+                if this_number not in filter:
+                    continue
+
             logging.debug('load %s' % gf)
             issue = None
             try:
@@ -230,6 +281,7 @@ class RepoWrapper(object):
                     issue = pickle.load(f)
             except EOFError as e:
                 # this is bad, get rid of it
+                logging.error(e)
                 os.remove(gf)
             if issue:
                 issues.append(issue)
@@ -281,6 +333,7 @@ class RepoWrapper(object):
         cdir = os.path.dirname(cfile)
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
+        logging.debug('dump %s' % cfile)
         with open(cfile, 'wb') as f:
             pickle.dump(issue, f)
 
@@ -297,6 +350,7 @@ class RepoWrapper(object):
         with open(cfile, 'wb') as f:
             pickle.dump(issue, f)
 
+    @RateLimited
     def load_update_fetch(self, property_name):
         '''Fetch a get() property for an object'''
 

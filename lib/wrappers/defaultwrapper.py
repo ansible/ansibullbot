@@ -76,7 +76,14 @@ class DefaultWrapper(object):
         self.repo = repo
         self.instance = issue
         #self.number = self.instance.number
-        self.current_labels = self.get_current_labels()
+        #self.current_labels = self.get_current_labels()
+        #self.current_labels = []
+        self._assignees = False
+        self._comments = False
+        self._events = False
+        self._labels = False
+        self._pr_status = False
+        self._reactions = False
         self.template_data = {}
         self.desired_labels = []
         self.desired_assignees = []
@@ -109,6 +116,23 @@ class DefaultWrapper(object):
     def get_current_time(self):
         return datetime.utcnow()
 
+    def save_issue(self):
+        pfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.instance.number),
+            'issue.pickle'
+        )
+        pdir = os.path.dirname(pfile)
+
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
+
+        logging.debug('dump %s' % pfile)
+        with open(pfile, 'wb') as f:
+            pickle.dump(self.instance, f)
+
+    @RateLimited
     def get_comments(self):
         """Returns all current comments of the PR"""
 
@@ -135,6 +159,13 @@ class DefaultWrapper(object):
 
         return self.current_comments
 
+    @property
+    def events(self):
+        if self._events is False:
+            self._events = self.get_events()
+        return self._events
+
+    @RateLimited
     def get_events(self):
         self.current_events = self.load_update_fetch('events')
         return self.current_events
@@ -151,6 +182,7 @@ class DefaultWrapper(object):
         self.review_comments = self.load_update_fetch('review_comments')
         return self.review_comments
 
+    @RateLimited
     def _fetch_api_url(self, url):
         # fetch the url and parse to json
         jdata = None
@@ -194,7 +226,6 @@ class DefaultWrapper(object):
         # get rid of the bad dir
         shutil.rmtree(srcdir)
 
-    # self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
     def load_update_fetch(self, property_name, obj=None):
         '''Fetch a property for an issue object'''
 
@@ -307,6 +338,13 @@ class DefaultWrapper(object):
             import epdb; epdb.st()
         return assignee
 
+    @property
+    def reactions(self):
+        if self._reactions is False:
+            self._reactions = [x for x in self.get_reactions()]
+        return self._reactions
+
+    @RateLimited
     def get_reactions(self):
         # https://developer.github.com/v3/reactions/
         if not self.current_reactions:
@@ -329,11 +367,13 @@ class DefaultWrapper(object):
             self.current_reactions = jdata
         return self.current_reactions
 
+    @RateLimited
     def get_submitter(self):
         """Returns the submitter"""
         return self.instance.user.login
 
-    def get_current_labels(self):
+    @RateLimited
+    def get_labels(self):
         """Pull the list of labels on this Issue"""
         labels = []
         for label in self.instance.labels:
@@ -440,6 +480,12 @@ class DefaultWrapper(object):
         # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
         self.instance.edit(body=description)
 
+    @property
+    def assignees(self):
+        if self._assignees is False:
+            self._assignees = self.get_assignees()
+        return self._assignees
+
     def get_assignees(self):
         # https://developer.github.com/v3/issues/assignees/
         # https://developer.github.com/changes/2016-5-27-multiple-assignees/
@@ -456,8 +502,8 @@ class DefaultWrapper(object):
         else:
             assignees = [x.login for x in self.instance.assignees]
 
-        self.current_assignees = [x for x in assignees]
-        return self.current_assignees
+        res = [x for x in assignees]
+        return res
 
     def add_desired_assignee(self, assignee):
         if assignee not in self.desired_assignees \
@@ -465,14 +511,14 @@ class DefaultWrapper(object):
             self.desired_assignees.append(assignee)
 
     def assign_user(self, user):
-        assignees = [x for x in self.current_assignees]
-        if user not in self.current_assignees:
+        assignees = [x for x in self.assignees]
+        if user not in self.assignees:
             assignees.append(user)
             self._edit_assignees(assignees)
 
     def unassign_user(self, user):
         assignees = [x for x in self.current_assignees]
-        if user in self.current_assignees:
+        if user in self.assignees:
             assignees.remove(user)
             self._edit_assignees(assignees)
 
@@ -561,42 +607,45 @@ class DefaultWrapper(object):
 
     @property
     def comments(self):
-        return self.get_comments()
+        if self._comments is False:
+            self._comments = self.get_comments()
+        return self._comments
 
     @property
-    @RateLimited
     def pullrequest(self):
         if not self.pr_obj:
+            logging.debug('@pullrequest.get_pullrequest #%s' % self.number)
             self.pr_obj = self.repo.get_pullrequest(self.number)
             self.repo.save_pullrequest(self.pr_obj)
-        else:
-            self.update_pullrequest()
         return self.pr_obj
 
     @RateLimited
     def update_pullrequest(self):
         if not self.pr_obj:
+            logging.info('update_pullrequest [fetching] pr #%s' % self.number)
             self.pr_obj = self.repo.get_pullrequest(self.number)
+            logging.info('update_pullrequest [save] pr #%s' % self.number)
             self.repo.save_pullrequest(self.pr_obj)
         elif self.pr_obj.updated_at < self.instance.updated_at:
+            logging.info('update_pullrequest [update] pr #%s' % self.number)
             if self.pr_obj.update():
+                    logging.info(
+                        'update_pullrequest [save] pr #%s' % self.number
+                    )
                     self.repo.save_pullrequest(self.pr_obj)
+                    self.pull_raw = None
         else:
             pass
-            #if self.pr_obj.update():
-            #        self.repo.save_pullrequest(self.pr_obj)
 
     @property
     @RateLimited
     def pullrequest_raw_data(self):
         if not self.pull_raw:
+            logging.info('@pullrequest_raw_data')
             self.pull_raw = self.pullrequest.raw_data
         return self.pull_raw
 
-    @property
-    @RateLimited
-    def pullrequest_status(self):
-
+    def get_pullrequest_status(self, force_fetch=False):
         fetched = False
         jdata = None
         pdata = None
@@ -612,13 +661,13 @@ class DefaultWrapper(object):
         )
 
         if os.path.isfile(pfile):
-            #pdata = pickle.loads(pfile)
+            logging.info('pullrequest_status load pfile')
             with open(pfile, 'rb') as f:
                 pdata = pickle.load(f)
 
         if pdata:
             # is the data stale?
-            if pdata[0] < self.pullrequest.updated_at:
+            if pdata[0] < self.pullrequest.updated_at or force_fetch:
                 logging.info('fetching pr status: <date')
                 jdata = self._fetch_api_url(surl)
                 fetched = True
@@ -634,12 +683,16 @@ class DefaultWrapper(object):
         if fetched or not os.path.isfile(pfile):
             logging.info('writing %s' % pfile)
             pdata = (self.pullrequest.updated_at, jdata)
-            #pickle.dump(pdata, pfile, protocol=2)
             with open(pfile, 'wb') as f:
                 pickle.dump(pdata, f, protocol=2)
 
-        #import epdb; epdb.st()
         return jdata
+
+    @property
+    def pullrequest_status(self):
+        if self._pr_status is False:
+            self._pr_status = self.get_pullrequest_status()
+        return self._pr_status
 
     @property
     def files(self):
@@ -654,4 +707,7 @@ class DefaultWrapper(object):
 
     @property
     def labels(self):
-        return self.get_current_labels()
+        if self._labels is False:
+            logging.debug('_labels == False')
+            self._labels = [x for x in self.get_labels()]
+        return self._labels

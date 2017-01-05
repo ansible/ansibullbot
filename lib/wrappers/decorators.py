@@ -7,6 +7,8 @@
 
 import time
 import logging
+import os
+import requests
 import socket
 import sys
 
@@ -14,6 +16,22 @@ from github.RateLimit import RateLimit
 
 
 def get_rate_limit(fn, args):
+    username = os.environ.get('GITHUB_USERNAME')
+    password = os.environ.get('GITHUB_PASSWORD')
+    token = os.environ.get('GITHUB_TOKEN')
+
+    if token:
+        logging.error('token auth not yet implemented here!')
+        sys.exit(1)
+    else:
+        rr = requests.get(
+            'https://api.github.com/rate_limit',
+            auth=(username, password)
+        )
+    return rr.json()
+
+
+def get_rate_limit_old(fn, args):
     '''Return the number of seconds until the rate limit resets'''
 
     # These are circular imports so they need to be deferred
@@ -92,6 +110,7 @@ def RateLimited(fn):
         while not success:
             count += 1
 
+            #import epdb; epdb.st()
             rl = get_rate_limit(fn, args)
 
             logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
@@ -100,8 +119,9 @@ def RateLimited(fn):
                            fn.func_name,
                            rl['resources']['core']['remaining']))
 
-            #if count > 1:
-            #    import epdb; epdb.st()
+            if count > 10:
+                logging.error('HIT 10 loop iteration on call, giving up')
+                sys.exit(1)
 
             # default to 5 minute sleep
             stime = 5*60
@@ -128,6 +148,11 @@ def RateLimited(fn):
                     elif 'Server Error' in e.data.get('message'):
                         logging.warning('server error')
                         stime = 2*60
+                    elif 'Not Found' in e.data.get('message'):
+                        logging.info('object not found')
+                        #stime = 0
+                        #success = True
+                        return None
                     else:
                         import epdb; epdb.st()
                 else:
@@ -136,6 +161,17 @@ def RateLimited(fn):
                 #import epdb; epdb.st()
                 logging.warning('sleeping %s minutes' % (stime/60))
                 time.sleep(stime)
+
+        '''
+        #import epdb; epdb.st()
+        rl = get_rate_limit(fn, args)
+
+        logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
+                        (count,
+                        str(type(args[0])),
+                        fn.func_name,
+                        rl['resources']['core']['remaining']))
+        '''
 
         return x
 

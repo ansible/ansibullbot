@@ -78,6 +78,7 @@ class HistoryWrapper(object):
                 if cache['updated_at'] >= self.issue.instance.updated_at:
                     logging.info('use cached history')
                     self.history = cache['history']
+                    #import epdb; epdb.st()
                 else:
                     logging.info('history out of date, updating')
                     self.history = self.process()
@@ -427,35 +428,58 @@ class HistoryWrapper(object):
         return last_date
 
     @RateLimited
+    def _raw_data_from_event(self, event):
+        raw_data = event.raw_data.copy()
+        return raw_data
+
+    def get_event_from_cache(self, eventid, cache):
+        if not cache:
+            return None
+        matches = [x for x in cache['history'] if x['id'] == eventid]
+        if matches:
+            return matches[0]
+        else:
+            return None
+
     def process(self):
         """Merge all events into chronological order"""
 
+        # FIXME - load this just once for later reference
+        cache = self._load_cache()
+
         processed_events = []
 
-        events = self.issue.get_events()
-        comments = self.issue.get_comments()
-        reactions = self.issue.get_reactions()
+        events = self.issue.events
+        comments = self.issue.comments
+        reactions = self.issue.reactions
 
         processed_events = []
         for ide,event in enumerate(events):
-            edict = {}
-            edict['id'] = event.id
-            if not hasattr(event.actor, 'login'):
-                edict['actor'] = None
+
+            cdict = self.get_event_from_cache(event.id, cache)
+            if cdict:
+                edict = cdict.copy()
+                #import epdb; epdb.st()
             else:
-                edict['actor'] = event.actor.login
-            edict['event'] = event.event
-            edict['created_at'] = event.created_at
-            raw_data = event.raw_data.copy()
-            if edict['event'] in ['labeled', 'unlabeled']:
-                edict['label'] = raw_data.get('label', {}).get('name', None)
-            elif edict['event'] == 'mentioned':
-                pass
-            elif edict['event'] == 'subscribed':
-                pass
-            elif edict['event'] == 'referenced':
-                edict['commit_id'] = event.commit_id
-                #edict['body'] = event.body
+                edict = {}
+                edict['id'] = event.id
+                if not hasattr(event.actor, 'login'):
+                    edict['actor'] = None
+                else:
+                    edict['actor'] = event.actor.login
+                edict['event'] = event.event
+                edict['created_at'] = event.created_at
+
+                if edict['event'] in ['labeled', 'unlabeled']:
+                    raw_data = self._raw_data_from_event(event)
+                    edict['label'] = raw_data.get('label', {}).get('name', None)
+                elif edict['event'] == 'mentioned':
+                    pass
+                elif edict['event'] == 'subscribed':
+                    pass
+                elif edict['event'] == 'referenced':
+                    edict['commit_id'] = event.commit_id
+
             processed_events.append(edict)
 
         for idc,comment in enumerate(comments):
