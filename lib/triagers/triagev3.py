@@ -286,6 +286,11 @@ class TriageV3(DefaultTriager):
 
             for issue in item[1]['issues']:
 
+                iw = None
+                self.issue = None
+                self.meta = {}
+                self.actions = {}
+
                 number = issue.number
                 if self.args.start_at:
                     if number < self.args.start_at:
@@ -457,7 +462,7 @@ class TriageV3(DefaultTriager):
         meta['time'] = datetime.datetime.now().isoformat()
         logging.info('dump meta to %s' % mfile)
         with open(mfile, 'wb') as f:
-            json.dump(meta, f)
+            json.dump(meta, f, sort_keys=True, indent=2)
         #import epdb; epdb.st()
 
     def get_filemap(self):
