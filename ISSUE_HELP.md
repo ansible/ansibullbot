@@ -49,13 +49,10 @@ To streamline the maintenance process, we've added some commands to the ansibot 
 * **bot_skip** - Ansible staff members use this to have the bot skip triaging an issue.
 * **needs_info** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
 * **!needs_info** - If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
-
-* **needs_revision** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
-* **!needs_revision** - If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
-
-* **needs_rebase** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
-* **!needs_rebase** - If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
-
+* **needs_revision** - Use this command if you would like the submitter to make changes.
+* **!needs_revision** - If you want to clear the needs_revision label, use this command.
+* **needs_rebase** - Use this command if the submitters branch is out of date. The bot should automatically apply this label, so you may never need to use it.
+* **!needs_rebase** - Clear the needs_rebase label.
 * **notabug** - If you believe this is not a bug, please leave a comment stating `notabug`, along with any additional information as to why it is not, and we will close this issue.
 * **bug_resolved** - If you believe this issue is resolved, please leave a comment stating bug_resolved, and we will close this issue. 
 * **resolved_by_pr** - If you believe this issue has been resolved by a pull request, please leave a comment stating `resolved_by_pr` followed by the pull request number. 
