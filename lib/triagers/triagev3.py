@@ -326,6 +326,8 @@ class TriageV3(DefaultTriager):
                     # force this for now, since there's no sync between
                     # it and the pr's updated_at property.
                     iw.get_pullrequest_status(force_fetch=True)
+                    iw.pullrequest.mergeable_state
+                    #import epdb; epdb.st()
 
                 # users may want to re-run this issue after manual intervention
                 redo = True
@@ -365,15 +367,18 @@ class TriageV3(DefaultTriager):
 
                     # build up actions from the meta
                     self.create_actions()
-                    pprint(self.actions)
                     self.save_meta(iw, self.meta)
-
                     logging.info('url: %s' % self.issue.html_url)
                     logging.info('title: %s' % self.issue.title)
                     logging.info(
                         'component: %s' %
                         self.template_data.get('component_raw')
                     )
+                    if self.meta['is_needs_revision']:
+                        logging.info('needs_revision')
+                        for msg in self.meta['is_needs_revision_msgs']:
+                            logging.info('needs_revision_msg: %s' % msg)
+                    pprint(self.actions)
 
                     # do the actions
                     action_meta = self.apply_actions()
@@ -1520,10 +1525,6 @@ class TriageV3(DefaultTriager):
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
 
-        # clean/unstable/dirty/unknown
-        mstate = iw.pullrequest.mergeable_state
-        logging.info('mergeable_state == %s' % mstate)
-
         # get the exact state from shippable ...
         #   success/pending/failure/... ?
         ci_status = iw.pullrequest_status
@@ -1536,10 +1537,8 @@ class TriageV3(DefaultTriager):
 
         # clean/unstable/dirty/unknown
         mstate = iw.pullrequest.mergeable_state
-        #if mstate == 'unknown' and ci_state == 'success':
-        #    logging.info('set mergeable_state to ci_state')
-        #    mstate = 'clean'
         logging.info('mergeable_state == %s' % mstate)
+        #import epdb; epdb.st()
 
         # clean/unstable/dirty/unknown
         if mstate != 'clean':
