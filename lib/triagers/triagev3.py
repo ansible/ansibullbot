@@ -321,13 +321,14 @@ class TriageV3(DefaultTriager):
                 self.force_pr_update(iw)
 
                 # users may want to re-run this issue after manual intervention
-                redo = False
+                redo = True
                 loopcount = 0
 
                 while redo:
 
                     # use the loopcount to check new data
                     loopcount += 1
+                    redo = False
 
                     # if >1 get latest data
                     if loopcount > 1:
@@ -1697,6 +1698,7 @@ class TriageV3(DefaultTriager):
         return nfacts
 
     def process_comment_commands(self, issuewrapper, meta):
+
         vcommands = [x for x in self.VALID_COMMANDS]
         # these are handled by other fact gathering functions
         vcommands.remove('needs_info')
@@ -1773,7 +1775,6 @@ class TriageV3(DefaultTriager):
                 'merged': merged
             }
 
-        #import epdb; epdb.st()
         return meta
 
     def negate_command(self, command, commands):
