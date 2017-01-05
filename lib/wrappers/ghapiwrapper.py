@@ -191,13 +191,16 @@ class RepoWrapper(object):
     @RateLimited
     def get_pullrequest(self, number):
         #import epdb; epdb.st()
-        pr = self.load_pullrequest(number)
+        #pr = self.load_pullrequest(number)
+        '''
         if pr:
             if pr.update():
                 self.save_pullrequest(pr)
         else:
             pr = self.repo.get_pull(number)
             self.save_pullrequest(pr)
+        '''
+        pr = self.repo.get_pull(number)
         return pr
 
     @RateLimited
