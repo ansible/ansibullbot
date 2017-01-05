@@ -560,17 +560,22 @@ class TriageV3(DefaultTriager):
             if 'needs_revision' in self.issue.labels:
                 self.actions['unlabel'].append('needs_revision')
 
-        #if not self.meta['needs_revision'] and \
-        #        'needs_revision' in self.issue.labels:
-        #    self.actions['unlabel'].append('needs_revision')
-
         if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
             if 'needs_rebase' not in self.issue.labels:
                     self.actions['newlabel'].append('needs_rebase')
         else:
             if 'needs_rebase' in self.issue.labels:
                     self.actions['unlabel'].append('needs_rebase')
-        #import epdb; epdb.st()
+
+        # travis-ci.org ...
+        if self.meta['has_travis'] and not self.meta['has_travis_notification']:
+            tvars = {'submitter': self.issue.submitter}
+            comment = self.render_boilerplate(
+                tvars,
+                boilerplate='travis_notify'
+            )
+            if comment not in self.actions['comments']:
+                self.actions['comments'].append(comment)
 
         if self.meta['is_new_module'] or self.meta['is_module']:
             # add topic labels
@@ -611,13 +616,6 @@ class TriageV3(DefaultTriager):
         if self.meta['is_module_util']:
             if 'module_util' not in self.issue.labels:
                 self.actions['newlabel'].append('module_util')
-
-        #if self.meta['is_plugin']:
-        #    if 'plugin' not in self.issue.labels:
-        #        self.actions['newlabel'].append('plugin')
-        #else:
-        #    if 'plugin' in self.issue.labels:
-        #        self.actions['unlabel'].append('plugin')
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
@@ -1501,6 +1499,7 @@ class TriageV3(DefaultTriager):
         needs_rebase_msgs = []
         has_shippable = False
         has_travis = False
+        has_travis_notification = False
         ci_state = None
 
         iw = issuewrapper
@@ -1511,15 +1510,9 @@ class TriageV3(DefaultTriager):
                     'is_needs_rebase_msgs': needs_rebase_msgs,
                     'has_shippable': has_shippable,
                     'has_travis': has_travis,
+                    'has_travis_notification': has_travis_notification,
                     'mergeable_state': None,
                     'ci_state': ci_state}
-
-        '''
-        # force a PR update ...
-        if iw.updated_at != iw.pullrequest.updated_at:
-            iw.update_pullrequest()
-        import epdb; epdb.st()
-        '''
 
         if not iw.history:
             iw.history = self.get_history(
@@ -1596,9 +1589,15 @@ class TriageV3(DefaultTriager):
                 needs_rebase = True
                 needs_rebase_msgs.append('travis-ci found in status')
 
-        logging.info('mergeable_state == %s' % mstate)
-        logging.info('needs_rebase == %s' % needs_rebase)
-        logging.info('needs_revision == %s' % needs_revision)
+                # 'has_travis_notification': has_travis_notification,
+                if 'travis_notify' in iw.history.get_boilerplate_comments():
+                    has_travis_notification = True
+                else:
+                    has_travis_notification = False
+
+        logging.info('mergeable_state is %s' % mstate)
+        logging.info('needs_rebase is %s' % needs_rebase)
+        logging.info('needs_revision is %s' % needs_revision)
 
         return {'is_needs_revision': needs_revision,
                 'is_needs_revision_msgs': needs_revision_msgs,
@@ -1606,6 +1605,7 @@ class TriageV3(DefaultTriager):
                 'is_needs_rebase_msgs': needs_rebase_msgs,
                 'has_shippable': has_shippable,
                 'has_travis': has_travis,
+                'has_travis_notification': has_travis_notification,
                 'mergeable_state': mstate,
                 'ci_state': ci_state}
 
