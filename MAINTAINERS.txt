@@ -152,7 +152,8 @@ cloud/rackspace/rax_queue.py: claco sivel
 cloud/rackspace/rax_scaling_group.py: sivel
 cloud/rackspace/rax_scaling_policy.py: sivel
 cloud/rackspace/: smashwilson
-cloud/smartos/: xen0l
+cloud/smartos/imgadm.py: jasperla
+cloud/smartos/smartos_image_facts.py: xen0l
 cloud/softlayer/sl_vm.py: mcltn
 cloud/vmware/: ansible
 cloud/vmware/vca_: privateip
