@@ -15,7 +15,7 @@
         "labels": ["contrib_inventory", "cloud", "vmware"],
         "notify": ["jctanner"]
     },
-    "docsite/": {
+    "docs/": {
         "labels": ["docs_pull_request"],
         "notify": ["dharmabumstead"],
         "inclusive": false
