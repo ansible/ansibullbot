@@ -26,19 +26,19 @@
         "labels": ["executor"]
     },
     "lib/ansible/module_utils/": {
-        "labels": ["module_util"]
+        "labels": ["c:module_utils/"]
     },
     "lib/ansible/parsing/vault/": {
         "labels": ["vault"]
     },
     "lib/ansible/plugins/action/": {
-        "labels": ["action_plugin"]
+        "labels": ["c:plugins/action"]
     },
     "lib/ansible/plugins/connection/": {
         "labels": ["connection_plugin"]
     },
     "lib/ansible/plugins/module_utils/": {
-        "labels": ["module_util"]
+        "labels": ["c:module_utils/"]
     },
     "lib/ansible/modules/network/(?!basics).*/.*": {
         "labels": ["networking"]
