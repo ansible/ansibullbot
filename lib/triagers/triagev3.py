@@ -1590,16 +1590,15 @@ class TriageV3(DefaultTriager):
                     has_shippable = True
                     continue
 
-        if not needs_rebase and not needs_revision:
-            if has_travis:
-                needs_rebase = True
-                needs_rebase_msgs.append('travis-ci found in status')
+        if has_travis:
+            needs_rebase = True
+            needs_rebase_msgs.append('travis-ci found in status')
 
-                # 'has_travis_notification': has_travis_notification,
-                if 'travis_notify' in iw.history.get_boilerplate_comments():
-                    has_travis_notification = True
-                else:
-                    has_travis_notification = False
+            # 'has_travis_notification': has_travis_notification,
+            if 'travis_notify' in iw.history.get_boilerplate_comments():
+                has_travis_notification = True
+            else:
+                has_travis_notification = False
 
         # check reviews if no other flags ...
         if not needs_rebase and not needs_revision:
