@@ -1538,7 +1538,6 @@ class TriageV3(DefaultTriager):
         # clean/unstable/dirty/unknown
         mstate = iw.pullrequest.mergeable_state
         logging.info('mergeable_state == %s' % mstate)
-        #import epdb; epdb.st()
 
         # clean/unstable/dirty/unknown
         if mstate != 'clean':
@@ -1573,6 +1572,10 @@ class TriageV3(DefaultTriager):
                 if needs_revision and event['actor'] == iw.submitter:
                     if event['event'] == 'commented':
                         if 'ready_for_review' in event['body']:
+                            needs_revision = False
+                elif needs_revision and event['actor'] in maintainers:
+                    if event['event'] == 'commented':
+                        if '!needs_revision' in event['body']:
                             needs_revision = False
 
         if not needs_rebase and not needs_revision:
