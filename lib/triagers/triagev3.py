@@ -390,6 +390,7 @@ class TriageV3(DefaultTriager):
             # it and the pr's updated_at property.
             iw.get_pullrequest_status(force_fetch=True)
             iw.pullrequest.mergeable_state
+            iw.get_pullrequest_reviews()
             #import epdb; epdb.st()
 
     def save_meta(self, issuewrapper, meta):
@@ -408,8 +409,10 @@ class TriageV3(DefaultTriager):
             dmeta['history'] = []
         if issuewrapper.is_pullrequest():
             dmeta['pullrequest_status'] = issuewrapper.pullrequest_status
+            dmeta['pullrequest_reviews'] = issuewrapper.reviews
         else:
             dmeta['pullrequest_status'] = []
+            dmeta['pullrequest_reviews'] = []
 
         #import epdb; epdb.st()
         self.dump_meta(issuewrapper, dmeta)
@@ -1538,7 +1541,6 @@ class TriageV3(DefaultTriager):
         # clean/unstable/dirty/unknown
         mstate = iw.pullrequest.mergeable_state
         logging.info('mergeable_state == %s' % mstate)
-        #import epdb; epdb.st()
 
         # clean/unstable/dirty/unknown
         if mstate != 'clean':
@@ -1574,17 +1576,21 @@ class TriageV3(DefaultTriager):
                     if event['event'] == 'commented':
                         if 'ready_for_review' in event['body']:
                             needs_revision = False
+                elif needs_revision and event['actor'] in maintainers:
+                    if event['event'] == 'commented':
+                        if '!needs_revision' in event['body']:
+                            needs_revision = False
+
+        if ci_status:
+            for x in ci_status:
+                if 'travis-ci.org' in x['target_url']:
+                    has_travis = True
+                    continue
+                if 'shippable.com' in x['target_url']:
+                    has_shippable = True
+                    continue
 
         if not needs_rebase and not needs_revision:
-            if ci_status:
-                for x in ci_status:
-                    if 'travis-ci.org' in x['target_url']:
-                        has_travis = True
-                        continue
-                    if 'shippable.com' in x['target_url']:
-                        has_shippable = True
-                        continue
-
             if has_travis:
                 needs_rebase = True
                 needs_rebase_msgs.append('travis-ci found in status')
@@ -1594,6 +1600,19 @@ class TriageV3(DefaultTriager):
                     has_travis_notification = True
                 else:
                     has_travis_notification = False
+
+        # check reviews if no other flags ...
+        if not needs_rebase and not needs_revision:
+            # state: CHANGES_REQUESTED, APPROVED
+            reviews = iw.reviews
+            if reviews:
+                for review in reviews:
+                    if review['state'] == 'CHANGES_REQUESTED':
+                        needs_revision = True
+                        needs_revision_msgs.append(
+                            '@%s requires changes' % review['user']['login']
+                        )
+                #import epdb; epdb.st()
 
         logging.info('mergeable_state is %s' % mstate)
         logging.info('needs_rebase is %s' % needs_rebase)

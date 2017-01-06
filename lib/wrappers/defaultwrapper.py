@@ -83,6 +83,7 @@ class DefaultWrapper(object):
         self._events = False
         self._labels = False
         self._pr_status = False
+        self._pr_reviews = False
         self._reactions = False
         self.template_data = {}
         self.desired_labels = []
@@ -711,3 +712,25 @@ class DefaultWrapper(object):
             logging.debug('_labels == False')
             self._labels = [x for x in self.get_labels()]
         return self._labels
+
+    @property
+    def reviews(self):
+        if self._pr_reviews is False:
+            self._pr_reviews = self.get_pullrequest_reviews()
+        return self._pr_reviews
+
+    @RateLimited
+    def get_pullrequest_reviews(self):
+        # https://developer.github.com/v3/
+        #   pulls/reviews/#list-reviews-on-a-pull-request
+        reviews_url = self.pullrequest.url + '/reviews'
+        headers = {}
+        headers['Accept'] = 'application/vnd.github.black-cat-preview+json'
+        resp = self.instance._requester.requestJson(
+            'GET',
+            reviews_url,
+            headers=headers
+        )
+        jdata = json.loads(resp[2])
+        #import epdb; epdb.st()
+        return jdata
