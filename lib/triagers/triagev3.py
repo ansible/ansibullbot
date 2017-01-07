@@ -44,6 +44,8 @@ from lib.utils.moduletools import ModuleIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
 
+from lib.wrappers.decorators import RateLimited
+
 
 BOTNAMES = ['ansibot', 'gregdek']
 REPOS = [
@@ -56,6 +58,15 @@ REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 30
 MAINTAINERS_FILES = ['MAINTAINERS.txt']
 FILEMAP_FILENAME = 'FILEMAP.json'
+
+ERROR_CODES = {
+    'shippable_failure': 1,
+    'travis-ci': 2,
+    'throttled': 3,
+    'dirty': 4,
+    'labeled': 5,
+    'review': 6
+}
 
 
 class TriageV3(DefaultTriager):
@@ -284,6 +295,9 @@ class TriageV3(DefaultTriager):
             if self.args.skip_module_repos and 'module' in repopath:
                 continue
 
+            # scrape pr data from www for later opchecking
+            self.pr_summaries = repo.pullrequest_summaries
+
             for issue in item[1]['issues']:
 
                 iw = None
@@ -291,6 +305,7 @@ class TriageV3(DefaultTriager):
                 self.meta = {}
                 self.actions = {}
                 number = issue.number
+                self.number = number
                 #import epdb; epdb.st()
                 self.repos[repopath]['processed'].append(number)
 
@@ -317,8 +332,8 @@ class TriageV3(DefaultTriager):
                     cachedir=self.cachedir
                 )
                 logging.info('starting triage for %s' % str(iw))
-                iw.save_issue()
-                self.force_pr_update(iw)
+                iw.update()
+                self.issue = iw
 
                 # users may want to re-run this issue after manual intervention
                 redo = True
@@ -340,6 +355,7 @@ class TriageV3(DefaultTriager):
                             cachedir=iw.cachedir
                         )
                         iw = niw
+                        self.issue = iw
                         iw.save_issue()
                         self.force_pr_update(iw)
 
@@ -381,6 +397,10 @@ class TriageV3(DefaultTriager):
 
                 logging.info('finished triage for %s' % str(iw))
 
+    @RateLimited
+    def update_issue_object(self, issue):
+        issue.update()
+
     def force_pr_update(self, iw):
         # update PR data
         if iw.is_pullrequest():
@@ -400,6 +420,8 @@ class TriageV3(DefaultTriager):
         dmeta['updated_at'] = issuewrapper.updated_at.isoformat()
         dmeta['template_data'] = issuewrapper.template_data
         dmeta['actions'] = self.actions.copy()
+        dmeta['labels'] = issuewrapper.labels
+        dmeta['assigees'] = issuewrapper.assignees
         if issuewrapper.history:
             dmeta['history'] = issuewrapper.history.history
             for idx,x in enumerate(dmeta['history']):
@@ -538,7 +560,9 @@ class TriageV3(DefaultTriager):
                 self.actions['newlabel'].append('needs_triage')
             self.actions['unlabel'].append('triage')
 
-        if self.meta['shipit'] and not self.meta['is_needs_revision']:
+        if self.meta['shipit'] and \
+                not self.meta['is_needs_revision'] and \
+                not self.meta['is_needs_info']:
             logging.info('shipit')
             if self.meta['shipit_owner_pr'] \
                     and 'shipit_owner_pr' not in self.issue.labels:
@@ -1120,9 +1144,9 @@ class TriageV3(DefaultTriager):
             #import epdb; epdb.st()
 
         # shipit?
-        self.meta.update(self.get_shipit_facts(iw, self.meta))
+        #self.meta.update(self.get_shipit_facts(iw, self.meta))
         self.meta.update(self.get_needs_revision_facts(iw, self.meta))
-        self.meta.update(self.get_community_review_facts(iw, self.meta))
+        #self.meta.update(self.get_community_review_facts(iw, self.meta))
         self.meta.update(self.get_notification_facts(iw, self.meta))
 
         # python3 ?
@@ -1131,6 +1155,10 @@ class TriageV3(DefaultTriager):
         # needsinfo?
         self.meta['is_needs_info'] = self.is_needsinfo()
         self.meta.update(self.process_comment_commands(iw, self.meta))
+
+        # shipit?
+        self.meta.update(self.get_shipit_facts(iw, self.meta))
+        self.meta.update(self.get_community_review_facts(iw, self.meta))
 
         # migrated?
         mi = self.is_migrated(iw)
@@ -1394,10 +1422,19 @@ class TriageV3(DefaultTriager):
         # community voted shipits
         if not nmeta['shipit'] and shipits > 1 and \
                 (self.meta['is_module'] and self.meta['is_new_module']):
-            #import epdb; epdb.st()
             nmeta['shipit'] = True
             nmeta['shipit_community'] = True
-            #import epdb; epdb.st()
+
+        if nmeta['shipit'] and \
+                (meta['is_needs_info'] or
+                 meta['is_needs_revision'] or
+                 meta['is_needs_rebase']):
+
+            nmeta['shipit'] = False
+            nmeta['shipit_community'] = False
+            nmeta['shipit_ansible'] = False
+
+        #import epdb; epdb.st()
 
         return nmeta
 
@@ -1452,12 +1489,6 @@ class TriageV3(DefaultTriager):
     def is_needsinfo(self):
 
         needs_info = False
-        if not self.issue.history:
-            self.issue.history = self.get_history(
-                self.issue,
-                cachedir=self.cachedir,
-                usecache=True
-            )
 
         maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
         if self.meta.get('module_match'):
@@ -1496,6 +1527,8 @@ class TriageV3(DefaultTriager):
         # suggested revisions. When you are done, please comment with text
         # 'ready_for_review' and we will put this PR back into review.
 
+        # a "dirty" mergeable_state can exist with "successfull" ci_state.
+
         needs_revision = False
         needs_revision_msgs = []
         needs_rebase = False
@@ -1504,18 +1537,35 @@ class TriageV3(DefaultTriager):
         has_travis = False
         has_travis_notification = False
         ci_state = None
+        mstate = None
+        change_requested = None
+        hreviews = None
+        reviews = None
+
+        rmeta = {
+            'is_needs_revision': needs_revision,
+            'is_needs_revision_msgs': needs_revision_msgs,
+            'is_needs_rebase': needs_rebase,
+            'is_needs_rebase_msgs': needs_rebase_msgs,
+            'has_shippable': has_shippable,
+            'has_travis': has_travis,
+            'has_travis_notification': has_travis_notification,
+            'mergeable_state': mstate,
+            'changed_requested': change_requested,
+            'ci_state': ci_state,
+            'reviews_api': hreviews,
+            'reviews_www': hreviews
+        }
 
         iw = issuewrapper
         if not iw.is_pullrequest():
-            return {'is_needs_revision': needs_revision,
-                    'is_needs_revision_msgs': needs_revision_msgs,
-                    'is_needs_rebase': needs_rebase,
-                    'is_needs_rebase_msgs': needs_rebase_msgs,
-                    'has_shippable': has_shippable,
-                    'has_travis': has_travis,
-                    'has_travis_notification': has_travis_notification,
-                    'mergeable_state': None,
-                    'ci_state': ci_state}
+            return rmeta
+
+        # do some validation
+        if self.number != self.issue.number or \
+                self.number != self.issue.instance.number or \
+                self.number != self.issue.pullrequest.number:
+            logging.error('1) something is wrong here!')
 
         if not iw.history:
             iw.history = self.get_history(
@@ -1557,12 +1607,26 @@ class TriageV3(DefaultTriager):
 
             elif mstate == 'unknown':
                 # if tests are still running, this needs to be ignored.
-                if ci_state not in ['success', 'pending']:
+                if ci_state not in ['pending']:
                     needs_revision = True
                     needs_revision_msgs.append('mergeable state is unknown')
+                    needs_rebase = True
+                    needs_rebase_msgs.append('mergeable state is unknown')
+
+            elif mstate == 'unstable':
+                # reduce the label churn
+                if ci_state == 'pending' and 'needs_revision' in iw.labels:
+                    needs_revision = True
+                    needs_rebase_msgs.append('keep label till test finished')
+
         else:
             for event in iw.history.history:
-                if event['actor'] in maintainers:
+
+                if event['actor'] in BOTNAMES:
+                    continue
+
+                if event['actor'] in maintainers and \
+                        event['actor'] != iw.submitter:
                     if event['event'] == 'labeled':
                         if event['label'] == 'needs_revision':
                             needs_revision = True
@@ -1572,14 +1636,28 @@ class TriageV3(DefaultTriager):
                     if event['event'] == 'unlabeled':
                         if event['label'] == 'needs_revision':
                             needs_revision = False
+                            needs_revision_msgs.append(
+                                '[%s] unlabeled' % event['actor']
+                            )
+                    continue
+
                 if needs_revision and event['actor'] == iw.submitter:
                     if event['event'] == 'commented':
                         if 'ready_for_review' in event['body']:
                             needs_revision = False
-                elif needs_revision and event['actor'] in maintainers:
+                            needs_revision_msgs.append(
+                                '[%s] ready_for_review' % event['actor']
+                            )
+                    continue
+
+                if needs_revision and event['actor'] in maintainers:
                     if event['event'] == 'commented':
                         if '!needs_revision' in event['body']:
                             needs_revision = False
+                            needs_revision_msgs.append(
+                                '[%s] !needs_revision' % event['actor']
+                            )
+                    continue
 
         if ci_status:
             for x in ci_status:
@@ -1601,31 +1679,98 @@ class TriageV3(DefaultTriager):
                 has_travis_notification = False
 
         # check reviews if no other flags ...
+        hreviews = iw.repo.scrape_pullrequest_review(iw.number)
         if not needs_rebase and not needs_revision:
+
             # state: CHANGES_REQUESTED, APPROVED
             reviews = iw.reviews
             if reviews:
                 for review in reviews:
                     if review['state'] == 'CHANGES_REQUESTED':
+
+                        # if review['user']['login'] in hreviews:
+                        #     import epdb; epdb.st()
+
+                        change_requested = True
                         needs_revision = True
                         needs_revision_msgs.append(
                             '@%s requires changes' % review['user']['login']
                         )
-                #import epdb; epdb.st()
+
+                '''
+                if reviews[-1]['state'] == 'CHANGES_REQUESTED':
+                    needs_revision = True
+                    needs_revision_msgs.append(
+                        '@%s requires changes' % reviews[-1]['user']['login']
+                    )
+                '''
+
+                '''
+                last_sha = None
+                commits = iw.commits
+                if commits:
+                    last_sha = commits[-1].sha
+                for review in reviews:
+                    if review['commit_id'] != last_sha:
+                        continue
+                    if review['state'] == 'CHANGES_REQUESTED':
+                        change_requested = True
+                        needs_revision = True
+                        needs_revision_msgs.append(
+                            '@%s requires changes'
+                            % reviews[-1]['user']['login']
+                        )
+                '''
+
+        # use scraped data to opcheck
+        if iw.number in self.pr_summaries:
+            summary = self.pr_summaries[iw.number]
+
+            '''
+            if summary['ci_state'] == 'failure' and \
+                    not needs_revision:
+                logging.error('ci state is bad but needs_revision not set')
+                import epdb; epdb.st()
+
+            if not needs_revision and \
+                    summary['review_message'] and \
+                    summary['review_message'] != 'approved':
+                logging.error('change request but needs_revision not set')
+                import epdb; epdb.st()
+
+            if needs_revision and \
+                    summary['ci_state'] == 'success' and \
+                    summary['review_message'] != 'changes requested' and \
+                    'labeled' not in needs_revision_msgs[0] and \
+                    mstate != 'dirty':
+                logging.error('cistate success but also needs_revision')
+                import epdb; epdb.st()
+
+            if hreviews['reviews']:
+                import epdb; epdb.st()
+            '''
 
         logging.info('mergeable_state is %s' % mstate)
         logging.info('needs_rebase is %s' % needs_rebase)
         logging.info('needs_revision is %s' % needs_revision)
 
-        return {'is_needs_revision': needs_revision,
-                'is_needs_revision_msgs': needs_revision_msgs,
-                'is_needs_rebase': needs_rebase,
-                'is_needs_rebase_msgs': needs_rebase_msgs,
-                'has_shippable': has_shippable,
-                'has_travis': has_travis,
-                'has_travis_notification': has_travis_notification,
-                'mergeable_state': mstate,
-                'ci_state': ci_state}
+        rmeta = {
+            'is_needs_revision': needs_revision,
+            'is_needs_revision_msgs': needs_revision_msgs,
+            'is_needs_rebase': needs_rebase,
+            'is_needs_rebase_msgs': needs_rebase_msgs,
+            'has_shippable': has_shippable,
+            'has_travis': has_travis,
+            'has_travis_notification': has_travis_notification,
+            'mergeable_state': mstate,
+            'changed_requested': change_requested,
+            'ci_state': ci_state,
+            'pr_summary': self.pr_summaries.get(self.number),
+            'reviews_api': iw.reviews,
+            'reviews_www': hreviews
+        }
+
+        return rmeta
 
     def get_community_review_facts(self, issuewrapper, meta):
         # Thanks @jpeck-resilient for this new module. When this module
@@ -1641,7 +1786,7 @@ class TriageV3(DefaultTriager):
         if not meta['is_new_module']:
             return {'is_community_review': community_review}
 
-        if not ['shipit'] and not meta['is_needs_revision']:
+        if not meta['shipit'] and not meta['is_needs_revision']:
             community_review = True
 
         return {'is_community_review': community_review}

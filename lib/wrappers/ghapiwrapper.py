@@ -139,6 +139,105 @@ class RepoWrapper(object):
 
         return prs
 
+    def scrape_pullrequest_review(self, number):
+
+        reviews = {
+            'users': {},
+            'reviews': {}
+        }
+
+        base_url = 'https://github.com'
+        url = base_url
+        url += '/'
+        url += self.repo_path
+        url += '/pull/'
+        url += str(number)
+
+        rr = self._request_url(url)
+        soup = BeautifulSoup(rr.text, 'html.parser')
+
+        # <span class="reviewers-status-icon tooltipped tooltipped-nw
+        # float-right d-block text-center" aria-label="nerzhul requested
+        # changes">
+        spans = soup.findAll(
+            'span',
+            {'class': lambda L: L and 'reviewers-status-icon' in L}
+        )
+        for span in spans:
+            # nerzhul requested changes
+            # bcoca left review comments
+            # gundalow approved these changes
+            txt = span.attrs['aria-label']
+            tparts = txt.split(None, 1)
+            reviews['users'][tparts[0]] = tparts[1]
+
+        # <div id="pullrequestreview-15502866" class="timeline-comment
+        # js-comment">
+        rdivs = soup.findAll(
+            'div',
+            {'class': lambda L: L and 'discussion-item-review' in L}
+        )
+        count = 0
+        for rdiv in rdivs:
+            count += 1
+
+            author = rdiv.find('a', {'class': ['author']}).text
+
+            id_div = rdiv.find(
+                'div',
+                {'id': lambda L: L and L.startswith('pullrequestreview-')}
+            )
+            if id_div:
+                rid = id_div.attrs['id']
+            else:
+                rid = count
+
+            tdiv = rdiv.find('relative-time')
+            if tdiv:
+                timestamp = tdiv['datetime']
+            else:
+                timestamp = None
+
+            obutton = rdiv.findAll(
+                'button',
+                {'class': lambda L: L and 'outdated-comment-label' in L}
+            )
+            if obutton:
+                outdated = True
+            else:
+                outdated = False
+
+            atxt = rdiv.find('div', {'class': ['discussion-item-header']}).text
+            atxt = atxt.lower()
+            if 'suggested changes' in atxt:
+                action = 'suggested changes'
+            elif 'requested changes' in atxt:
+                action = 'requested changes'
+            elif 'requested a review' in atxt:
+                action = 'requested review'
+            elif 'requested review' in atxt:
+                action = 'requested review'
+            elif 'approved these changes' in atxt:
+                action = 'approved'
+            elif 'left review comments' in atxt:
+                action = 'review comment'
+            elif 'reviewed' in atxt:
+                action = 'reviewed'
+            else:
+                action = None
+                import epdb; epdb.st()
+
+            reviews['reviews'][rid] = {
+                'actor': author,
+                'action': action,
+                'timestamp': timestamp,
+                'outdated': outdated
+            }
+
+            #import epdb; epdb.st()
+        #import epdb; epdb.st()
+        return reviews
+
     def scrape_open_issue_numbers(self, url=None, recurse=True):
 
         '''Make a (semi-inaccurate) range of open issue numbers'''
