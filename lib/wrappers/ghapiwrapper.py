@@ -45,6 +45,7 @@ class RepoWrapper(object):
         self.updated = False
         self.verbose = verbose
         self._assignees = False
+        self._pullrequest_summaries = False
 
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
@@ -101,6 +102,43 @@ class RepoWrapper(object):
         else:
             return None
 
+    @property
+    def pullrequest_summaries(self):
+        if self._pullrequest_summaries is False:
+            self._pullrequest_summaries = \
+                self.scrape_pullrequest_summaries()
+        return self._pullrequest_summaries
+
+    def scrape_pullrequest_summaries(self):
+
+        prs = {}
+
+        base_url = 'https://github.com'
+        url = base_url
+        url += '/'
+        url += self.repo_path
+        url += '/pulls?'
+        url += urllib2.quote('q=is open')
+
+        page_count = 0
+        while url:
+            page_count += 1
+            rr = self._request_url(url)
+            if rr.status_code != 200:
+                break
+            soup = BeautifulSoup(rr.text, 'html.parser')
+            data = self._parse_pullrequests_summary_page(soup)
+            if data['next_page']:
+                url = base_url + data['next_page']
+            else:
+                url = None
+            if data['prs']:
+                prs.update(data['prs'])
+            else:
+                import epdb; epdb.st()
+
+        return prs
+
     def scrape_open_issue_numbers(self, url=None, recurse=True):
 
         '''Make a (semi-inaccurate) range of open issue numbers'''
@@ -125,19 +163,9 @@ class RepoWrapper(object):
             #url += '&'
             url += urllib2.quote('q=is open')
 
-        ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0)'
-        ua += ' Gecko/20100101 Firefix/40.1'
-        headers = {
-            'User-Agent': ua
-        }
-
-        rr = requests.get(url, headers=headers)
-        if rr.reason == 'Too Many Requests':
-            time.sleep(10)
-            rr = requests.get(url, headers=headers)
-
+        rr = self._request_url(url)
         soup = BeautifulSoup(rr.text, 'html.parser')
-        numbers = self._scrape_issue_numbers_from_soup(soup)
+        numbers = self._parse_issue_numbers_from_soup(soup)
 
         if recurse:
 
@@ -160,7 +188,27 @@ class RepoWrapper(object):
         numbers = sorted(set(numbers))
         return numbers
 
-    def _scrape_issue_numbers_from_soup(self, soup):
+    def _request_url(self, url):
+        ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0)'
+        ua += ' Gecko/20100101 Firefix/40.1'
+        headers = {
+            'User-Agent': ua
+        }
+
+        sleep = 60
+        failed = True
+        while failed:
+            rr = requests.get(url, headers=headers)
+            if rr.reason == 'Too Many Requests':
+                logging.debug('too many requests, sleeping %ss' % sleep)
+                time.sleep(sleep)
+                sleep = sleep * 2
+            else:
+                failed = False
+
+        return rr
+
+    def _parse_issue_numbers_from_soup(self, soup):
         refs = soup.findAll('a')
         urls = []
         for ref in refs:
@@ -177,6 +225,58 @@ class RepoWrapper(object):
         numbers = sorted(set(numbers))
         return numbers
 
+    def _parse_pullrequests_summary_page(self, soup):
+        data = {
+            'prs': {}
+        }
+
+        lis = soup.findAll(
+            'li',
+            {'class': lambda L: L and L.endswith('issue-row')}
+        )
+
+        if lis:
+            for li in lis:
+
+                number = li.attrs['id'].split('_')[-1]
+                number = int(number)
+                status_txt = None
+                status_state = None
+                review_txt = None
+
+                status = li.find('div', {'class': 'commit-build-statuses'})
+                if status:
+                    status_a = status.find('a')
+                    status_txt = status_a.attrs['aria-label'].lower().strip()
+                    status_state = status_txt.split(':')[0]
+
+                review_txt = None
+                review = li.find(
+                    'a',
+                    {'aria-label': lambda L: L and 'review' in L}
+                )
+                if review:
+                    review_txt = review.text.lower().strip()
+                else:
+                    review_txt = None
+
+                data['prs'][number] = {
+                    'ci_state': status_state,
+                    'ci_message': status_txt,
+                    'review_message': review_txt,
+
+                }
+
+        # next_page
+        next_page = None
+        next_a = soup.find('a', {'class': ['next_page']})
+        if next_a:
+            next_page = next_a.attrs['href']
+        data['next_page'] = next_page
+
+        #import epdb; epdb.st()
+        return data
+
     @RateLimited
     def get_issue(self, number):
         issue = self.load_issue(number)
@@ -190,16 +290,6 @@ class RepoWrapper(object):
 
     @RateLimited
     def get_pullrequest(self, number):
-        #import epdb; epdb.st()
-        #pr = self.load_pullrequest(number)
-        '''
-        if pr:
-            if pr.update():
-                self.save_pullrequest(pr)
-        else:
-            pr = self.repo.get_pull(number)
-            self.save_pullrequest(pr)
-        '''
         pr = self.repo.get_pull(number)
         return pr
 
