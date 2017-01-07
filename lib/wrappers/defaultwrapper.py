@@ -31,6 +31,7 @@ import github
 
 from lib.utils.extractors import extract_template_data
 from lib.wrappers.decorators import RateLimited
+from lib.wrappers.historywrapper import HistoryWrapper
 
 
 class DefaultWrapper(object):
@@ -80,8 +81,11 @@ class DefaultWrapper(object):
         #self.current_labels = []
         self._assignees = False
         self._comments = False
+        self._commits = False
         self._events = False
+        self._history = False
         self._labels = False
+        self._pr = False
         self._pr_status = False
         self._pr_reviews = False
         self._reactions = False
@@ -96,11 +100,10 @@ class DefaultWrapper(object):
         self.desired_comments = []
         self.current_state = 'open'
         self.desired_state = 'open'
-        self.pr_obj = None
         self.pr_status_raw = None
         self.pull_raw = None
         self.pr_files = []
-        self.history = None
+        #self.history = None
 
         self.full_cachedir = os.path.join(
             self.cachedir,
@@ -171,9 +174,9 @@ class DefaultWrapper(object):
         self.current_events = self.load_update_fetch('events')
         return self.current_events
 
-    def get_commits(self):
-        self.commits = self.load_update_fetch('commits')
-        return self.commits
+    #def get_commits(self):
+    #    self.commits = self.load_update_fetch('commits')
+    #    return self.commits
 
     def get_files(self):
         self.files = self.load_update_fetch('files')
@@ -614,29 +617,15 @@ class DefaultWrapper(object):
 
     @property
     def pullrequest(self):
-        if not self.pr_obj:
+        if not self._pr:
             logging.debug('@pullrequest.get_pullrequest #%s' % self.number)
-            self.pr_obj = self.repo.get_pullrequest(self.number)
-            self.repo.save_pullrequest(self.pr_obj)
-        return self.pr_obj
+            self._pr = self.repo.get_pullrequest(self.number)
+            #self.repo.save_pullrequest(self._pr)
+        return self._pr
 
-    @RateLimited
     def update_pullrequest(self):
-        if not self.pr_obj:
-            logging.info('update_pullrequest [fetching] pr #%s' % self.number)
-            self.pr_obj = self.repo.get_pullrequest(self.number)
-            logging.info('update_pullrequest [save] pr #%s' % self.number)
-            self.repo.save_pullrequest(self.pr_obj)
-        elif self.pr_obj.updated_at < self.instance.updated_at:
-            logging.info('update_pullrequest [update] pr #%s' % self.number)
-            if self.pr_obj.update():
-                    logging.info(
-                        'update_pullrequest [save] pr #%s' % self.number
-                    )
-                    self.repo.save_pullrequest(self.pr_obj)
-                    self.pull_raw = None
-        else:
-            pass
+        # the underlying call is wrapper with ratelimited ...
+        self._pr = self.repo.get_pullrequest(self.number)
 
     @property
     @RateLimited
@@ -721,6 +710,8 @@ class DefaultWrapper(object):
 
     @RateLimited
     def get_pullrequest_reviews(self):
+        # https://developer.github.com/
+        #   early-access/graphql/enum/pullrequestreviewstate/
         # https://developer.github.com/v3/
         #   pulls/reviews/#list-reviews-on-a-pull-request
         reviews_url = self.pullrequest.url + '/reviews'
@@ -734,3 +725,66 @@ class DefaultWrapper(object):
         jdata = json.loads(resp[2])
         #import epdb; epdb.st()
         return jdata
+
+    def scrape_pr_state(self):
+        # https://github.com/ansible/ansible/pulls?
+        #   utf8=%E2%9C%93&q=is%3Apr%20is%3Aopen%2019995
+        '''
+        import requests
+        from datetime import datetime
+        from bs4 import BeautifulSoup
+
+        username= os.environ.get('GITHUB_USERNAME')
+        password = os.environ.get('GITHUB_PASSWORD')
+        url = self.html_url
+        login_url = 'https://github.com/login'
+
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        payload = {
+            'login': username,
+            'password': password
+        }
+
+        session = requests.Session()
+        rr = session.post(login_url, headers=headers, data=payload)
+
+        #rr = requests.get(url, auth=(username, password))
+        #soup = BeautifulSoup(rr.text, 'html.parser')
+        #resp = self.instance._requester.requestJson('GET', url)
+        import epdb; epdb.st()
+        '''
+        pass
+
+    @property
+    def history(self):
+        if self._history is False:
+            self._history = \
+                HistoryWrapper(self, cachedir=self.cachedir, usecache=True)
+        return self._history
+
+    @RateLimited
+    def update(self):
+        self.instance.update()
+        self._history = \
+            HistoryWrapper(self, cachedir=self.cachedir, usecache=True)
+        if self.is_pullrequest():
+            self.pullrequest.update()
+
+            if self.instance.updated_at > self.pullrequest.updated_at:
+                import epdb; epdb.st()
+
+    @property
+    def commits(self):
+        if self._commits is False:
+            self._commits = self.get_commits()
+        return self._commits
+
+    @RateLimited
+    def get_commits(self):
+        if not self.is_pullrequest():
+            return None
+        commits = [x for x in self.pullrequest.get_commits()]
+
+    def scrape_reviews(self):
+        import epdb; epdb.st()
+        return commits
