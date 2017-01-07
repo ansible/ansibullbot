@@ -136,7 +136,8 @@ class TriageV3(DefaultTriager):
         '!needs_revision',
         'shipit',
         '!shipit',
-        'duplicate_of'
+        'duplicate_of',
+        'closeme'
     ]
 
     ISSUE_REQUIRED_FIELDS = [
@@ -720,7 +721,10 @@ class TriageV3(DefaultTriager):
         safe = True
         for k,v in self.actions.iteritems():
             if k == 'newlabel' or k == 'unlabel':
-                continue
+                if 'needs_revision' in v or 'needs_rebase' in v:
+                    safe = False
+                else:
+                    continue
             if k == 'comments' and len(v) == 0:
                 continue
             if k == 'assign':
@@ -1627,37 +1631,48 @@ class TriageV3(DefaultTriager):
 
                 if event['actor'] in maintainers and \
                         event['actor'] != iw.submitter:
+
                     if event['event'] == 'labeled':
                         if event['label'] == 'needs_revision':
                             needs_revision = True
                             needs_revision_msgs.append(
                                 '[%s] labeled' % event['actor']
                             )
+                            continue
+
                     if event['event'] == 'unlabeled':
                         if event['label'] == 'needs_revision':
                             needs_revision = False
                             needs_revision_msgs.append(
                                 '[%s] unlabeled' % event['actor']
                             )
-                    continue
+                            continue
 
-                if needs_revision and event['actor'] == iw.submitter:
-                    if event['event'] == 'commented':
-                        if 'ready_for_review' in event['body']:
-                            needs_revision = False
-                            needs_revision_msgs.append(
-                                '[%s] ready_for_review' % event['actor']
-                            )
-                    continue
-
-                if needs_revision and event['actor'] in maintainers:
                     if event['event'] == 'commented':
                         if '!needs_revision' in event['body']:
                             needs_revision = False
                             needs_revision_msgs.append(
                                 '[%s] !needs_revision' % event['actor']
                             )
-                    continue
+                            continue
+
+                    if event['event'] == 'commented':
+                        if 'needs_revision' in event['body'] and \
+                                '!needs_revision' not in event['body']:
+                            needs_revision = True
+                            needs_revision_msgs.append(
+                                '[%s] needs_revision' % event['actor']
+                            )
+                            continue
+
+                if event['actor'] == iw.submitter:
+                    if event['event'] == 'commented':
+                        if 'ready_for_review' in event['body']:
+                            needs_revision = False
+                            needs_revision_msgs.append(
+                                '[%s] ready_for_review' % event['actor']
+                            )
+                            continue
 
         if ci_status:
             for x in ci_status:
@@ -1724,9 +1739,9 @@ class TriageV3(DefaultTriager):
 
         # use scraped data to opcheck
         if iw.number in self.pr_summaries:
-            summary = self.pr_summaries[iw.number]
-
+            pass
             '''
+            summary = self.pr_summaries[iw.number]
             if summary['ci_state'] == 'failure' and \
                     not needs_revision:
                 logging.error('ci state is bad but needs_revision not set')
