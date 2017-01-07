@@ -814,6 +814,8 @@ def main3():
 
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output")
+    parser.add_argument("--dry-run", action="store_true",
+                        help="Ignore all actions")
     parser.add_argument("--force", "-f", action="store_true",
                         help="Do not ask questions")
     parser.add_argument("--safe_force", action="store_true",
