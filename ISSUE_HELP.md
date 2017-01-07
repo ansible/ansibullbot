@@ -30,6 +30,10 @@ Expect the bot to do a few things:
 
   Notifications will happen via a comment with the '@<NAME>' syntax. If you know of other interested parties, feel free to ping them in a comment or in your issue description.
 
+To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
+
+* **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
+
 ## For pullrequest submitters
 Expect the bot to do a few things:
 
@@ -40,11 +44,20 @@ Expect the bot to do a few things:
   * needs_rebase - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
   * needs_revision - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
 
+
+If you are finished committing to your pullrequest or have made changes due to a request, please
+
+To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
+
+* **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
+* **ready_for_review** - If you are finished making commits to your pullrequest or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
+
 ## For community module maintainers
 Thanks in advance for taking a look at issues+pullrequests and for your ongoing maintainince. If you are unable to troubleshoot or review this issue/pullrequest with the information provided, please ping the submitter of the issue in a comment to let them know. 
 
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
+* **shipit** - If you approve of the code in this pullrequest, use this command to have it  merged.
 * **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
 * **bot_skip** - Ansible staff members use this to have the bot skip triaging an issue.
 * **needs_info** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
