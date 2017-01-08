@@ -24,7 +24,7 @@ Expect the bot to do a few things:
 
   These labels are determined by templated data in the description. Please fill out the templates as accurately as possible so that the appropriate labels are used.
 
-  "needs_triage" will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
+  **needs_triage** will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
 
 2. Notify and assign the maintainer(s) of the relevant file(s) or module(s).
 
@@ -41,8 +41,8 @@ Expect the bot to do a few things:
 
 2. Add labels indicating the status of the pullrequest.
 
-  * needs_rebase - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
-  * needs_revision - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
+  * **needs_rebase** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
+  * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
 
 
 If you are finished committing to your pullrequest or have made changes due to a request, please
