@@ -6,9 +6,9 @@ Making progress in resolving issues for modules depends upon your interaction! P
 If at anytime you think this bot is misbehaving, please leave a comment containing the keyword `bot_broken` and an Ansible staff member will intervene.
 
 ## For issue submitters
-Please note that if you have a question about how to use this module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question ."
+Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question ."
 
-If the module maintainer or ansibot needs further information, please respond to the request, so that you can help us to help you! 
+If the feature/module maintainer or ansibot needs further information, please respond to the request, so that you can help us to help you!
 
 The bot requires a minimal subset of information from the issue template 
 * issue type
