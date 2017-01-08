@@ -496,11 +496,18 @@ class ModuleIndexer(object):
             if not v['filepath']:
                 continue
             mfile = os.path.join(self.checkoutdir, v['filepath'])
+            if not mfile.endswith('.py'):
+                # metadata is only the .py files ...
+                ext = mfile.split('.')[-1]
+                mfile = mfile.replace('.' + ext, '.py', 1)
+
             self.modules[k]['metadata'].update(self.get_module_metadata(mfile))
 
     def get_module_metadata(self, module_file):
         meta = {}
-        #import epdb; epdb.st()
+
+        if not os.path.isfile(module_file):
+            return meta
 
         rawmeta = ''
         inphase = False

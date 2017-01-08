@@ -507,10 +507,9 @@ class HistoryWrapper(object):
 
                 # convert the timestamp the same way the lib does it
                 if type(edict['created_at']) in [unicode, str]:
-                    dt = GithubObject.GithubObject.\
-                            _makeDatetimeAttribute(edict['created_at'])
-                    edict['created_at'] = dt.value
-                    #import epdb; epdb.st()
+                    edict['created_at'] = self.parse_timestamp(
+                        edict['created_at']
+                    )
 
                 processed_events.append(edict)
 
@@ -519,6 +518,28 @@ class HistoryWrapper(object):
 
         # return ...
         return sorted_events
+
+    def parse_timestamp(self, timestamp):
+        # convert the timestamp the same way the lib does it
+        dt = GithubObject.GithubObject._makeDatetimeAttribute(timestamp)
+        return dt.value
+
+    def merge_reviews(self, reviews):
+        for review in reviews:
+            event = {}
+            event['id'] = review['id']
+            event['actor'] = review['user']['login']
+            event['created_at'] = self.parse_timestamp(review['submitted_at'])
+            if review['state'] == 'COMMENTED':
+                event['event'] = 'review_comment'
+            elif review['state'] == 'CHANGES_REQUESTED':
+                event['event'] = 'review_changes_requested'
+            elif review['state'] == 'APPROVED':
+                event['event'] = 'review_approved'
+            else:
+                import epdb; epdb.st()
+            self.history.append(event)
+        self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def merge_history(self, oldhistory):
         '''Combine history from another issue [migration]'''

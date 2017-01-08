@@ -296,8 +296,12 @@ class TriageV3(DefaultTriager):
             if self.args.skip_module_repos and 'module' in repopath:
                 continue
 
+            if self.args.module_repos_only and 'module' not in repopath:
+                continue
+
             # scrape pr data from www for later opchecking
-            self.pr_summaries = repo.pullrequest_summaries
+            if 'module' not in repopath:
+                self.pr_summaries = repo.pullrequest_summaries
 
             for issue in item[1]['issues']:
 
@@ -371,7 +375,7 @@ class TriageV3(DefaultTriager):
                         self.process(iw)
                     else:
                         # module repo processing ...
-                        self.run_module_repo_issue(self, iw, hcache=hcache)
+                        self.run_module_repo_issue(iw, hcache=hcache)
                         # do nothing else on these repos
                         redo = False
                         continue
@@ -477,7 +481,7 @@ class TriageV3(DefaultTriager):
             # should it be closed or not?
             if iw.is_pullrequest():
                 if lc and lcdelta > MREPO_CLOSE_WINDOW:
-                    kwargs['close'] = True
+                    #kwargs['close'] = True
                     self.close_module_issue_with_message(
                         iw,
                         **kwargs
@@ -561,6 +565,44 @@ class TriageV3(DefaultTriager):
                 self.actions['newlabel'].append('needs_triage')
             self.actions['unlabel'].append('triage')
 
+        # REVIEWS
+        for rtype in ['core_review', 'committer_review', 'community_review']:
+            if self.meta[rtype]:
+                if rtype not in self.issue.labels:
+                    self.actions['newlabel'].append(rtype)
+            else:
+                if rtype in self.issue.labels:
+                    self.actions['unlabel'].append(rtype)
+
+        """
+        # COMMUNITY REVIEW
+        if self.meta['community_review']:
+            if 'community_review' not in self.issue.labels:
+                self.actions['newlabel'].append('community_review')
+        else:
+            if 'community_review' in self.issue.labels:
+                self.actions['unlabel'].append('community_review')
+
+        # COMMITTER REVIEW
+        if self.meta['committer_review']:
+            if 'committer_review' not in self.issue.labels:
+                self.actions['newlabel'].append('comitter_review')
+        else:
+            if 'committer_review' in self.issue.labels:
+                self.actions['unlabel'].append('comitter_review')
+
+        # CORE REVIEW
+        if self.meta['core_review']:
+            if 'core_review' not in self.issue.labels:
+                self.actions['newlabel'].append('core_review')
+        else:
+            if 'core_review' in self.issue.labels:
+                self.actions['unlabel'].append('core_review')
+        """
+
+        #import epdb; epdb.st()
+
+        # SHIPIT
         if self.meta['shipit'] and \
                 not self.meta['is_needs_revision'] and \
                 not self.meta['is_needs_info']:
@@ -622,10 +664,6 @@ class TriageV3(DefaultTriager):
                 label = self.MODULE_NAMESPACE_LABELS[namespace]
                 if label not in self.issue.labels:
                     self.actions['newlabel'].append(label)
-
-        #if self.meta['is_new_module'] or self.meta['is_new_plugin']:
-        #    if 'new_plugin' not in self.issue.labels:
-        #        self.actions['newlabel'].append('new_plugin')
 
         if self.meta['is_new_module']:
             if 'new_module' not in self.issue.labels:
@@ -907,6 +945,9 @@ class TriageV3(DefaultTriager):
             if self.args.skip_module_repos and 'module' in repo:
                 continue
 
+            if self.args.module_repos_only and 'module' not in repo:
+                continue
+
             logging.info('getting repo obj for %s' % repo)
             #cachedir = os.path.join(self.cachedir, repo)
 
@@ -1162,7 +1203,7 @@ class TriageV3(DefaultTriager):
 
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
-        self.meta.update(self.get_community_review_facts(iw, self.meta))
+        self.meta.update(self.get_review_facts(iw, self.meta))
 
         # migrated?
         mi = self.is_migrated(iw)
@@ -1544,7 +1585,8 @@ class TriageV3(DefaultTriager):
         mstate = None
         change_requested = None
         hreviews = None
-        reviews = None
+        #reviews = None
+        ready_for_review = None
 
         rmeta = {
             'is_needs_revision': needs_revision,
@@ -1558,7 +1600,8 @@ class TriageV3(DefaultTriager):
             'changed_requested': change_requested,
             'ci_state': ci_state,
             'reviews_api': hreviews,
-            'reviews_www': hreviews
+            'reviews_www': hreviews,
+            'ready_for_review': ready_for_review
         }
 
         iw = issuewrapper
@@ -1624,6 +1667,10 @@ class TriageV3(DefaultTriager):
                     needs_rebase_msgs.append('keep label till test finished')
 
         else:
+
+            # merge in the reviews to the history
+            iw.history.merge_reviews(iw.reviews)
+
             for event in iw.history.history:
 
                 if event['actor'] in BOTNAMES:
@@ -1668,11 +1715,37 @@ class TriageV3(DefaultTriager):
                 if event['actor'] == iw.submitter:
                     if event['event'] == 'commented':
                         if 'ready_for_review' in event['body']:
+                            ready_for_review = True
                             needs_revision = False
                             needs_revision_msgs.append(
                                 '[%s] ready_for_review' % event['actor']
                             )
                             continue
+                        if 'shipit' in event['body']:
+                            ready_for_review = True
+                            needs_revision = False
+                            needs_revision_msgs.append(
+                                '[%s] shipit' % event['actor']
+                            )
+                            continue
+
+                if event['event'].startswith('review_'):
+                    if event['event'] == 'review_changes_requested':
+                        needs_revision = True
+                        needs_revision_msgs.append(
+                            '[%s] changes requested' % event['actor']
+                        )
+                        continue
+
+                    if event['event'] == 'review_approved':
+                        needs_revision = False
+                        needs_revision_msgs.append(
+                            '[%s] approved' % event['actor']
+                        )
+                        continue
+
+                #import epdb; epdb.st()
+        #import epdb; epdb.st()
 
         if ci_status:
             for x in ci_status:
@@ -1693,50 +1766,7 @@ class TriageV3(DefaultTriager):
             else:
                 has_travis_notification = False
 
-        # check reviews if no other flags ...
-        hreviews = iw.repo.scrape_pullrequest_review(iw.number)
-        if not needs_rebase and not needs_revision:
-
-            # state: CHANGES_REQUESTED, APPROVED
-            reviews = iw.reviews
-            if reviews:
-                for review in reviews:
-                    if review['state'] == 'CHANGES_REQUESTED':
-
-                        # if review['user']['login'] in hreviews:
-                        #     import epdb; epdb.st()
-
-                        change_requested = True
-                        needs_revision = True
-                        needs_revision_msgs.append(
-                            '@%s requires changes' % review['user']['login']
-                        )
-
-                '''
-                if reviews[-1]['state'] == 'CHANGES_REQUESTED':
-                    needs_revision = True
-                    needs_revision_msgs.append(
-                        '@%s requires changes' % reviews[-1]['user']['login']
-                    )
-                '''
-
-                '''
-                last_sha = None
-                commits = iw.commits
-                if commits:
-                    last_sha = commits[-1].sha
-                for review in reviews:
-                    if review['commit_id'] != last_sha:
-                        continue
-                    if review['state'] == 'CHANGES_REQUESTED':
-                        change_requested = True
-                        needs_revision = True
-                        needs_revision_msgs.append(
-                            '@%s requires changes'
-                            % reviews[-1]['user']['login']
-                        )
-                '''
-
+        """
         # use scraped data to opcheck
         if iw.number in self.pr_summaries:
             pass
@@ -1764,10 +1794,13 @@ class TriageV3(DefaultTriager):
             if hreviews['reviews']:
                 import epdb; epdb.st()
             '''
+        """
 
         logging.info('mergeable_state is %s' % mstate)
         logging.info('needs_rebase is %s' % needs_rebase)
         logging.info('needs_revision is %s' % needs_revision)
+        logging.info('ready_for_review is %s' % ready_for_review)
+        #import epdb; epdb.st()
 
         rmeta = {
             'is_needs_revision': needs_revision,
@@ -1782,29 +1815,69 @@ class TriageV3(DefaultTriager):
             'ci_state': ci_state,
             'pr_summary': self.pr_summaries.get(self.number),
             'reviews_api': iw.reviews,
-            'reviews_www': hreviews
+            'reviews_www': iw.scrape_reviews(),
+            'ready_for_review': ready_for_review
         }
 
         return rmeta
 
-    def get_community_review_facts(self, issuewrapper, meta):
+    def get_supported_by(self, issuewrapper, meta):
+
+        # https://github.com/ansible/proposals/issues/30
+        # core: maintained by the ansible core team.
+        # community: This module is maintained by the community at large...
+        # unmaintained: This module currently needs a new community contributor
+        # committer: Committers to the ansible repository are the gatekeepers...
+
+        supported_by = 'core'
+        mmatch = meta.get('module_match')
+        if mmatch:
+            mmeta = mmatch.get('metadata', {})
+            if mmeta:
+                supported_by = mmeta.get('supported_by', 'core')
+        if meta['is_new_module']:
+            supported_by = 'community'
+        return supported_by
+
+    def get_review_facts(self, issuewrapper, meta):
         # Thanks @jpeck-resilient for this new module. When this module
         # receives 'shipit' comments from two community members and any
         # 'needs_revision' comments have been resolved, we will mark for
         # inclusion
 
-        community_review = False
+        # pr is a module
+        # pr owned by community or is new
+        # pr owned by ansible
+
+        rfacts = {
+            'core_review': False,
+            'community_review': False,
+            'committer_review': False,
+        }
 
         iw = issuewrapper
         if not iw.is_pullrequest():
-            return {'is_community_review': community_review}
-        if not meta['is_new_module']:
-            return {'is_community_review': community_review}
+            return rfacts
+        if meta['shipit']:
+            return rfacts
+        if meta['is_needs_revision']:
+            return rfacts
+        if meta['is_needs_rebase']:
+            return rfacts
+        if not meta['is_module']:
+            return rfacts
 
-        if not meta['shipit'] and not meta['is_needs_revision']:
-            community_review = True
+        supported_by = self.get_supported_by(iw, meta)
+        if supported_by == 'community':
+            rfacts['community_review'] = True
+        elif supported_by == 'core':
+            rfacts['core_review'] = True
+        elif supported_by == 'committer':
+            rfacts['committer_review'] = True
+        else:
+            import epdb; epdb.st()
 
-        return {'is_community_review': community_review}
+        return rfacts
 
     def get_notification_facts(self, issuewrapper, meta):
         '''Build facts about mentions/pings'''

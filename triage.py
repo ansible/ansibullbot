@@ -774,6 +774,8 @@ def main3():
 
     parser.add_argument("--skip_module_repos", action="store_true",
                         help="ignore the module repos")
+    parser.add_argument("--module_repos_only", action="store_true",
+                        help="only process the module repos")
 
     parser.add_argument("--force_rate_limit", action="store_true",
                         help="debug: force the rate limit")

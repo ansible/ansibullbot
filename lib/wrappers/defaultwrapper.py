@@ -784,7 +784,8 @@ class DefaultWrapper(object):
         if not self.is_pullrequest():
             return None
         commits = [x for x in self.pullrequest.get_commits()]
+        return commits
 
     def scrape_reviews(self):
-        import epdb; epdb.st()
-        return commits
+        reviews = self.repo.scrape_pullrequest_review(self.number)
+        return reviews
