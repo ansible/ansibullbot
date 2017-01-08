@@ -234,8 +234,6 @@ class RepoWrapper(object):
                 'outdated': outdated
             }
 
-            #import epdb; epdb.st()
-        #import epdb; epdb.st()
         return reviews
 
     def scrape_open_issue_numbers(self, url=None, recurse=True):
