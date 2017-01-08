@@ -45,7 +45,7 @@ Expect the bot to do a few things:
   * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
 
 
-If you are finished committing to your pullrequest or have made changes due to a request, please
+If you are finished committing to your pullrequest or have made changes due to a request, please use the **ready_for_review** command.
 
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
