@@ -43,6 +43,7 @@ from lib.utils.extractors import extract_pr_number_from_comment
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
+from lib.utils.webscraper import GithubWebScraper
 
 from lib.wrappers.decorators import RateLimited
 
@@ -179,6 +180,7 @@ class TriageV3(DefaultTriager):
         self.skiprepo = []
         self.start_at = False
         self.verbose = False
+        self.issue_summaries = {}
 
         # extend managed labels
         self.MANAGED_LABELS += self.ISSUE_TYPES.values()
@@ -206,6 +208,8 @@ class TriageV3(DefaultTriager):
         os.environ['GITHUB_USERNAME'] = self.args.gh_user or ''
         os.environ['GITHUB_PASSWORD'] = self.args.gh_pass or ''
         os.environ['GITHUB_TOKEN'] = self.args.gh_token or ''
+
+        self.gws = GithubWebScraper()
 
         if self.args.pause:
             self.always_pause = True
@@ -299,9 +303,8 @@ class TriageV3(DefaultTriager):
             if self.args.module_repos_only and 'module' not in repopath:
                 continue
 
-            # scrape pr data from www for later opchecking
-            if 'module' not in repopath:
-                self.pr_summaries = repo.pullrequest_summaries
+            # scrape all summaries rom www for later opchecking
+            self.update_issue_summaries(repopath=repopath)
 
             for issue in item[1]['issues']:
 
@@ -319,12 +322,12 @@ class TriageV3(DefaultTriager):
                         logging.info('(start_at) skip %s' % number)
                         redo = False
                         continue
-                if self.args.resume_id:
-                    if number > self.resume_id:
+                if self.args.start_at:
+                    if number > self.start_at:
                         continue
                     else:
                         # unset for daemonize loops
-                        self.args.resume_id = None
+                        self.args.start_at = None
                 if issue.state == 'closed':
                     logging.info(str(number) + ' is closed, skipping')
                     redo = False
@@ -364,6 +367,10 @@ class TriageV3(DefaultTriager):
                         iw.save_issue()
                         self.force_pr_update(iw)
 
+                    if loopcount > 1 or \
+                            iw.number not in self.issue_summaries[repopath]:
+                        self.update_single_issue_summary(self.issue)
+
                     # this is where the history cache goes
                     hcache = os.path.join(self.cachedir, iw.repo_full_name)
 
@@ -393,6 +400,14 @@ class TriageV3(DefaultTriager):
                         logging.info('needs_revision')
                         for msg in self.meta['is_needs_revision_msgs']:
                             logging.info('needs_revision_msg: %s' % msg)
+
+                    rn = self.issue.repo_full_name
+                    #import epdb; epdb.st()
+                    summary = self.issue_summaries.get(rn, {}).\
+                        get(self.issue.number, None)
+                    pprint(summary)
+                    #import epdb; epdb.st()
+
                     pprint(self.actions)
 
                     # do the actions
@@ -402,21 +417,61 @@ class TriageV3(DefaultTriager):
 
                 logging.info('finished triage for %s' % str(iw))
 
+    def update_issue_summaries(self, repopath=None):
+
+        if repopath:
+            repopaths = [repopath]
+        else:
+            repopaths = [x for x in REPOS]
+
+        for rp in repopaths:
+
+            # scrape all summaries rom www for later opchecking
+            cachefile = os.path.join(
+                self.cachedir,
+                '%s__scraped_issues.json' % rp
+            )
+            self.issue_summaries[repopath] = self.gws.get_issue_summaries(
+                'https://github.com/%s' % rp,
+                cachefile=cachefile
+            )
+
+    def update_single_issue_summary(self, issuewrapper):
+
+        number = issuewrapper.number
+        rp = issuewrapper.repo_full_name
+
+        # scrape all summaries rom www for later opchecking
+        cachefile = os.path.join(
+            self.cachedir,
+            '%s__scraped_issues.json' % rp
+        )
+
+        self.issue_summaries[rp][number] = \
+            self.gws.get_single_issue_summary(
+                rp,
+                issuewrapper.number,
+                cachefile=cachefile
+            )
+
     @RateLimited
     def update_issue_object(self, issue):
         issue.update()
+        return issue
 
     def force_pr_update(self, iw):
         # update PR data
         if iw.is_pullrequest():
-            if iw.updated_at != iw.pullrequest.updated_at:
-                iw.update_pullrequest()
+            #if iw.updated_at != iw.pullrequest.updated_at:
+            #    iw.update_pullrequest()
+            iw.update_pullrequest()
+
             # force this for now, since there's no sync between
             # it and the pr's updated_at property.
             iw.get_pullrequest_status(force_fetch=True)
             iw.pullrequest.mergeable_state
             iw.get_pullrequest_reviews()
-            #import epdb; epdb.st()
+        return iw
 
     def save_meta(self, issuewrapper, meta):
         # save the meta+actions
@@ -674,24 +729,42 @@ class TriageV3(DefaultTriager):
 
         if self.meta['is_module']:
             if 'module' not in self.issue.labels:
-                self.actions['newlabel'].append('module')
+                # don't add manually removed label
+                if not self.issue.history.was_unlabeled(
+                    'module',
+                    bots=BOTNAMES
+                ):
+                    self.actions['newlabel'].append('module')
         else:
             if 'module' in self.issue.labels:
-                self.actions['unlabel'].append('module')
+                # don't remove manually added label
+                if not self.issue.history.was_labeled(
+                    'module',
+                    bots=BOTNAMES
+                ):
+                    self.actions['unlabel'].append('module')
 
+        '''
         if self.meta['is_module_util']:
-            if 'module_util' not in self.issue.labels:
-                self.actions['newlabel'].append('module_util')
+            if 'c:module_utils/' not in self.issue.labels:
+                # do not re-add module_util
+                if not self.issue.history.was_unlabeled('c:module_utils/'):
+                    self.actions['newlabel'].append('module_util')
+        '''
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
             if label not in self.issue.labels:
-                self.actions['newlabel'].append(label)
+                # do not re-add version labels
+                if not self.issue.history.was_unlabeled(label):
+                    self.actions['newlabel'].append(label)
 
         if self.meta['issue_type']:
             label = self.ISSUE_TYPES.get(self.meta['issue_type'])
             if label and label not in self.issue.labels:
-                self.actions['newlabel'].append(label)
+                # do not re-add issue type labels
+                if not self.issue.history.was_unlabeled(label):
+                    self.actions['newlabel'].append(label)
 
         # use the filemap to add labels
         if self.issue.is_pullrequest():
@@ -699,12 +772,16 @@ class TriageV3(DefaultTriager):
             for label in fmap_labels:
                 if label in self.valid_labels and \
                         label not in self.issue.labels:
-                    self.actions['newlabel'].append(label)
+                    # do not re-add these labels
+                    if not self.issue.history.was_unlabeled(label):
+                        self.actions['newlabel'].append(label)
 
         # python3 ... obviously!
         if self.meta['is_py3']:
             if 'python3' not in self.issue.labels:
-                self.actions['newlabel'].append('python3')
+                # do not re-add py3
+                if not self.issue.history.was_unlabeled(label):
+                    self.actions['newlabel'].append('python3')
 
         # needs info?
         if self.meta['is_needs_info']:
@@ -716,7 +793,9 @@ class TriageV3(DefaultTriager):
         # assignees?
         if self.meta['to_assign']:
             for user in self.meta['to_assign']:
-                self.actions['assign'].append(user)
+                # don't re-assign people
+                if not self.issue.history.was_unassigned(user):
+                    self.actions['assign'].append(user)
 
         # notify?
         if self.meta['to_notify']:
@@ -1442,16 +1521,19 @@ class TriageV3(DefaultTriager):
                 # ansible shipits
                 if comment.user.login in self.ansible_members and \
                         comment.user.login not in BOTNAMES:
-                    if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    if 'shipit' in body.lower() or \
+                            '+1' in body or 'LGTM' in body:
                         ansible_shipits += 1
 
                 # community shipits
                 if comment.user.login != iw.submitter:
-                    if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    if 'shipit' in body.lower() or \
+                            '+1' in body or 'LGTM' in body:
                         shipits += 1
 
                 if comment.user.login in maintainers:
-                    if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    if 'shipit' in body.lower() or \
+                            '+1' in body or 'LGTM' in body:
                         nmeta['shipit'] = True
                         if comment.user.login == iw.submitter:
                             nmeta['shipit_owner_pr'] = True
@@ -1639,6 +1721,10 @@ class TriageV3(DefaultTriager):
         mstate = iw.pullrequest.mergeable_state
         logging.info('mergeable_state == %s' % mstate)
 
+        # FIXME - DEBUG !!!
+        if ci_state == 'success' and mstate == 'unknown':
+            import epdb; epdb.st()
+
         # clean/unstable/dirty/unknown
         if mstate != 'clean':
 
@@ -1721,7 +1807,7 @@ class TriageV3(DefaultTriager):
                                 '[%s] ready_for_review' % event['actor']
                             )
                             continue
-                        if 'shipit' in event['body']:
+                        if 'shipit' in event['body'].lower():
                             ready_for_review = True
                             needs_revision = False
                             needs_revision_msgs.append(
@@ -1813,7 +1899,7 @@ class TriageV3(DefaultTriager):
             'mergeable_state': mstate,
             'changed_requested': change_requested,
             'ci_state': ci_state,
-            'pr_summary': self.pr_summaries.get(self.number),
+            'pr_summary': self.issue_summaries.get(self.number),
             'reviews_api': iw.reviews,
             'reviews_www': iw.scrape_reviews(),
             'ready_for_review': ready_for_review
@@ -1859,6 +1945,8 @@ class TriageV3(DefaultTriager):
         if not iw.is_pullrequest():
             return rfacts
         if meta['shipit']:
+            return rfacts
+        if meta['is_needs_info']:
             return rfacts
         if meta['is_needs_revision']:
             return rfacts

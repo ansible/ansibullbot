@@ -377,10 +377,13 @@ class HistoryWrapper(object):
                     break
         return last_date
 
-    def was_labeled(self, label=None):
+    def was_labeled(self, label, bots=None):
         """Were labels -ever- applied to this issue?"""
         labeled = False
         for event in self.history:
+            if bots:
+                if event['actor'] in bots:
+                    continue
             if event['event'] == 'labeled':
                 if label and event['label'] == label:
                     labeled = True
@@ -390,10 +393,13 @@ class HistoryWrapper(object):
                     break
         return labeled
 
-    def was_unlabeled(self, label=None):
+    def was_unlabeled(self, label, bots=None):
         """Were labels -ever- unapplied from this issue?"""
         labeled = False
         for event in self.history:
+            if bots:
+                if event['actor'] in bots:
+                    continue
             if event['event'] == 'unlabeled':
                 if label and event['label'] == label:
                     labeled = True
