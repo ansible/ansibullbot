@@ -32,8 +32,6 @@ from lib.triagers.triagev3 import TriageV3
 from lib.triagers.issuetriager import TriageIssues
 from lib.triagers.ansible_ansible_issuetriager import AnsibleAnsibleTriageIssues
 from lib.triagers.ansible_ansible_pulltriager import AnsibleAnsibleTriagePullRequests
-from lib.utils.moduletools import ModuleIndexer
-from lib.utils.extractors import extract_template_data
 
 loader = FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
@@ -829,10 +827,7 @@ def main3():
     parser.add_argument("--pr", "--id", type=int,
                         help="Triage only the specified pr|issue")
 
-    parser.add_argument("--resume_id", type=int,
-                        help="Run full triage, but start at this number")
-
-    parser.add_argument("--start-at", type=int,
+    parser.add_argument("--start-at", "--resume_id", type=int,
                         help="Start triage at the specified pr|issue")
     parser.add_argument("--no_since", action="store_true",
                         help="Do not use the since keyword to fetch issues")
