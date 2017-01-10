@@ -182,8 +182,16 @@ class TriageV3(DefaultTriager):
         self.verbose = False
         self.issue_summaries = {}
 
+        '''
+        # get the ansible members
+        self.ansible_members = self.get_ansible_members()
+
+        # get valid labels
+        self.valid_labels = self.get_valid_labels('ansible/ansible')
+
         # extend managed labels
         self.MANAGED_LABELS += self.ISSUE_TYPES.values()
+        '''
 
         # where to store junk
         self.cachedir = '~/.ansibullbot/cache'
@@ -205,16 +213,48 @@ class TriageV3(DefaultTriager):
             else:
                 setattr(self, x, val)
 
+        if self.args.pause:
+            self.always_pause = True
+
         # This is for the RateLimited decorator ...
         os.environ['GITHUB_USERNAME'] = self.args.gh_user or ''
         os.environ['GITHUB_PASSWORD'] = self.args.gh_pass or ''
         os.environ['GITHUB_TOKEN'] = self.args.gh_token or ''
 
+        # connect to github
+        self.gh = self._connect()
+        # wrap the connection
+        self.ghw = GithubWrapper(self.gh)
+
         # create the scraper for www data
         self.gws = GithubWebScraper(cachedir=self.cachedir)
 
-        if self.args.pause:
-            self.always_pause = True
+        # get the ansible members
+        self.ansible_members = self.get_ansible_members()
+
+        # get valid labels
+        self.valid_labels = self.get_valid_labels('ansible/ansible')
+
+        # extend managed labels
+        self.MANAGED_LABELS += self.ISSUE_TYPES.values()
+
+        # get the maintainers
+        self.module_maintainers = self.get_maintainers_mapping()
+
+        # get the filemap
+        self.FILEMAP = self.get_filemap()
+
+        # set the indexers
+        self.version_indexer = AnsibleVersionIndexer()
+        self.file_indexer = FileIndexer()
+        self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
+        self.module_indexer.get_ansible_modules()
+
+        # get the ansible members
+        self.ansible_members = self.get_ansible_members()
+
+        # get valid labels
+        self.valid_labels = self.get_valid_labels('ansible/ansible')
 
         if args.force_rate_limit:
             logging.warning('attempting to trigger rate limit')
@@ -273,28 +313,12 @@ class TriageV3(DefaultTriager):
         if self.args.collect_only:
             return
 
-        # get the maintainers
-        self.module_maintainers = self.get_maintainers_mapping()
-
-        # get the filemap
-        self.FILEMAP = self.get_filemap()
-
-        # set the indexers
-        self.version_indexer = AnsibleVersionIndexer()
-        self.file_indexer = FileIndexer()
-        self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
-        self.module_indexer.get_ansible_modules()
-
-        # get the ansible members
-        self.ansible_members = self.get_ansible_members()
-
-        # get valid labels
-        self.valid_labels = self.get_valid_labels('ansible/ansible')
-
+        # loop through each repo made by collect_repos
         for item in self.repos.items():
             repopath = item[0]
             repo = item[1]['repo']
 
+            # skip repos based on args
             if self.skiprepo:
                 if repopath in self.skiprepo:
                     continue
@@ -303,7 +327,7 @@ class TriageV3(DefaultTriager):
             if self.args.module_repos_only and 'module' not in repopath:
                 continue
 
-            # this is where the history cache goes
+            # this is where the issue history cache goes
             hcache = os.path.join(self.cachedir, repopath)
             # scrape all summaries from www for later opchecking
             self.update_issue_summaries(repopath=repopath)
@@ -320,6 +344,7 @@ class TriageV3(DefaultTriager):
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(number)
 
+                # skip issues based on args
                 if self.args.start_at:
                     if number < self.args.start_at:
                         logging.info('(start_at) skip %s' % number)
@@ -335,18 +360,6 @@ class TriageV3(DefaultTriager):
                     logging.info(str(number) + ' is closed, skipping')
                     redo = False
                     continue
-
-                '''
-                # alias to a shorter var name
-                iw = IssueWrapper(
-                    repo=repo,
-                    issue=issue,
-                    cachedir=self.cachedir
-                )
-                logging.info('starting triage for %s' % str(iw))
-                iw.update()
-                self.issue = iw
-                '''
 
                 # users may want to re-run this issue after manual intervention
                 redo = True
@@ -473,22 +486,6 @@ class TriageV3(DefaultTriager):
     def update_issue_object(self, issue):
         issue.update()
         return issue
-
-    '''
-    def force_pr_update(self, iw):
-        # update PR data
-        if iw.is_pullrequest():
-            #if iw.updated_at != iw.pullrequest.updated_at:
-            #    iw.update_pullrequest()
-            iw.update_pullrequest()
-
-            # force this for now, since there's no sync between
-            # it and the pr's updated_at property.
-            iw.get_pullrequest_status(force_fetch=True)
-            iw.pullrequest.mergeable_state
-            iw.get_reviews()
-        return iw
-    '''
 
     def save_meta(self, issuewrapper, meta):
         # save the meta+actions
@@ -1005,10 +1002,8 @@ class TriageV3(DefaultTriager):
     def collect_repos(self):
         '''Populate the local cache of repos'''
         # this should do a few things:
-        #   1. collect all issues (open+closed) via a webcrawler
-        #   2. index the issues into a rdmbs so we can query on update times(?)
-        #   3. set an abstracted object that takes in queries
         logging.info('start collecting repos')
+
         logging.debug('creating github connection object')
         self.gh = self._connect()
 
@@ -1017,13 +1012,12 @@ class TriageV3(DefaultTriager):
 
         for repo in REPOS:
 
+            # skip repos based on args
             if self.skiprepo:
                 if repo in self.skiprepo:
                     continue
-
             if self.args.skip_module_repos and 'module' in repo:
                 continue
-
             if self.args.module_repos_only and 'module' not in repo:
                 continue
 
