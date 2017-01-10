@@ -74,16 +74,16 @@ class GithubWebScraper(object):
             for k,v in data['issues'].iteritems():
                 v['href'] = self.baseurl + v['href']
                 if str(k) not in issues:
-                    changed.append(v['number'])
+                    changed.append(str(v['number']))
                     changes = True
                 elif v != issues[str(k)]:
-                    changed.append(v['number'])
+                    changed.append(str(v['number']))
                     changes = True
                 issues[str(k)] = v
 
             if changed:
                 #import epdb; epdb.st()
-                logging.info('changed: %s' % ','.join(changed))
+                logging.info('changed: %s' % ','.join(x for x in changed))
 
             if not changes:
                 break
