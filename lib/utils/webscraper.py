@@ -15,6 +15,7 @@ class GithubWebScraper(object):
     cachedir = None
     baseurl = 'https://github.com'
     summaries = {}
+    reviews = {}
 
     def __init__(self, cachedir=None):
         if cachedir:
