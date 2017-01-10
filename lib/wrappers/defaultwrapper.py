@@ -24,6 +24,7 @@ import os
 import pickle
 import shutil
 import sys
+import time
 from datetime import datetime
 
 # remember to pip install PyGithub, kids!
@@ -626,8 +627,11 @@ class DefaultWrapper(object):
         return self._pr
 
     def update_pullrequest(self):
-        # the underlying call is wrapper with ratelimited ...
-        self._pr = self.repo.get_pullrequest(self.number)
+        if self.is_pullrequest():
+            # the underlying call is wrapper with ratelimited ...
+            self._pr = self.repo.get_pullrequest(self.number)
+            self.get_pullrequest_status(force_fetch=True)
+            self.get_reviews()
 
     @property
     @RateLimited
@@ -707,11 +711,11 @@ class DefaultWrapper(object):
     @property
     def reviews(self):
         if self._pr_reviews is False:
-            self._pr_reviews = self.get_pullrequest_reviews()
+            self._pr_reviews = self.get_reviews()
         return self._pr_reviews
 
     @RateLimited
-    def get_pullrequest_reviews(self):
+    def get_reviews(self):
         # https://developer.github.com/
         #   early-access/graphql/enum/pullrequestreviewstate/
         # https://developer.github.com/v3/
@@ -727,35 +731,6 @@ class DefaultWrapper(object):
         jdata = json.loads(resp[2])
         #import epdb; epdb.st()
         return jdata
-
-    def scrape_pr_state(self):
-        # https://github.com/ansible/ansible/pulls?
-        #   utf8=%E2%9C%93&q=is%3Apr%20is%3Aopen%2019995
-        '''
-        import requests
-        from datetime import datetime
-        from bs4 import BeautifulSoup
-
-        username= os.environ.get('GITHUB_USERNAME')
-        password = os.environ.get('GITHUB_PASSWORD')
-        url = self.html_url
-        login_url = 'https://github.com/login'
-
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        payload = {
-            'login': username,
-            'password': password
-        }
-
-        session = requests.Session()
-        rr = session.post(login_url, headers=headers, data=payload)
-
-        #rr = requests.get(url, auth=(username, password))
-        #soup = BeautifulSoup(rr.text, 'html.parser')
-        #resp = self.instance._requester.requestJson('GET', url)
-        import epdb; epdb.st()
-        '''
-        pass
 
     @property
     def history(self):
@@ -788,6 +763,36 @@ class DefaultWrapper(object):
         commits = [x for x in self.pullrequest.get_commits()]
         return commits
 
-    #def scrape_reviews(self):
-    #    reviews = self.repo.scrape_pullrequest_review(self.number)
-    #    return reviews
+    @property
+    def mergeable_state(self):
+        if not self.is_pullrequest():
+            return None
+
+        # http://stackoverflow.com/a/30620973
+        fetchcount = 0
+        while self.pullrequest.mergeable_state == 'unknown':
+            fetchcount += 1
+            if fetchcount >= 10:
+                logging.error('exceeded fetch threshold for mstate')
+                sys.exit(1)
+
+            logging.warning(
+                're-fetch[%s] PR#%s because mergeable state is unknown' % (
+                    fetchcount,
+                    self.number
+                 )
+            )
+
+            self.update_pullrequest()
+            time.sleep(1)
+
+        return self.pullrequest.mergeable_state
+
+    @property
+    def wip(self):
+        '''Is this a WIP?'''
+        if self.title.startswith('WIP'):
+            return True
+        elif '[WIP]' in self.title:
+            return True
+        return False

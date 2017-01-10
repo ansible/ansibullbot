@@ -298,14 +298,14 @@ class TriageV3(DefaultTriager):
             if self.skiprepo:
                 if repopath in self.skiprepo:
                     continue
-
             if self.args.skip_module_repos and 'module' in repopath:
                 continue
-
             if self.args.module_repos_only and 'module' not in repopath:
                 continue
 
-            # scrape all summaries rom www for later opchecking
+            # this is where the history cache goes
+            hcache = os.path.join(self.cachedir, repopath)
+            # scrape all summaries from www for later opchecking
             self.update_issue_summaries(repopath=repopath)
 
             for issue in item[1]['issues']:
@@ -316,7 +316,8 @@ class TriageV3(DefaultTriager):
                 self.actions = {}
                 number = issue.number
                 self.number = number
-                #import epdb; epdb.st()
+
+                # keep track of known issues
                 self.repos[repopath]['processed'].append(number)
 
                 if self.args.start_at:
@@ -335,6 +336,7 @@ class TriageV3(DefaultTriager):
                     redo = False
                     continue
 
+                '''
                 # alias to a shorter var name
                 iw = IssueWrapper(
                     repo=repo,
@@ -344,37 +346,39 @@ class TriageV3(DefaultTriager):
                 logging.info('starting triage for %s' % str(iw))
                 iw.update()
                 self.issue = iw
+                '''
 
                 # users may want to re-run this issue after manual intervention
                 redo = True
+
+                # keep track of how many times this isssue has been re-done
                 loopcount = 0
 
                 while redo:
 
                     # use the loopcount to check new data
                     loopcount += 1
+
+                    if loopcount <= 1:
+                        logging.info('starting triage for %s' % issue.html_url)
+                    else:
+                        # if >1 get latest data
+                        logging.info('restarting triage for %s' % number)
+                        issue = repo.get_issue(number)
+
+                    # clear redo
                     redo = False
 
-                    # if >1 get latest data
-                    if loopcount > 1:
-                        logging.info('restarting triage for %s' % str(iw))
-                        iobj = iw.repo.get_issue(iw.number)
-                        niw = IssueWrapper(
-                            repo=iw.repo,
-                            issue=iobj,
-                            cachedir=iw.cachedir
-                        )
-                        iw = niw
-                        self.issue = iw
-                        #iw.save_issue()
-                        self.force_pr_update(iw)
+                    # create the wrapper
+                    iw = IssueWrapper(
+                        repo=repo,
+                        issue=issue,
+                        cachedir=self.cachedir
+                    )
 
-                    #if loopcount > 1 or \
-                    #        iw.number not in self.issue_summaries[repopath]:
-                    #    self.update_single_issue_summary(self.issue)
-
-                    # this is where the history cache goes
-                    hcache = os.path.join(self.cachedir, iw.repo_full_name)
+                    # force an update on the PR data
+                    if iw.repo_full_name not in MREPOS:
+                        iw.update_pullrequest()
 
                     # set the global issue
                     self.issue = iw
@@ -389,9 +393,6 @@ class TriageV3(DefaultTriager):
                         redo = False
                         continue
 
-                    if self.meta.get('mergeable_state') == 'unknown':
-                        import epdb; epdb.st()
-
                     # build up actions from the meta
                     self.create_actions()
                     self.save_meta(iw, self.meta)
@@ -405,19 +406,33 @@ class TriageV3(DefaultTriager):
                         logging.info('needs_revision')
                         for msg in self.meta['is_needs_revision_msgs']:
                             logging.info('needs_revision_msg: %s' % msg)
+                    if self.meta['is_needs_rebase']:
+                        logging.info('needs_rebase')
+                        for msg in self.meta['is_needs_rebase_msgs']:
+                            logging.info('needs_rebase_msg: %s' % msg)
 
-                    rn = self.issue.repo_full_name
+                    # DEBUG!
                     #import epdb; epdb.st()
-                    summary = self.issue_summaries.get(rn, {}).\
-                        get(self.issue.number, None)
-                    if not summary:
-                        summary = self.gws.get_single_issue_summary(
-                            rn,
-                            self.issue.number,
-                            force=True
-                        )
-                    pprint(summary)
-                    #import epdb; epdb.st()
+                    if self.meta.get('mergeable_state') == 'unknown' or \
+                            'needs_rebase' in self.actions['newlabel'] or \
+                            'needs_rebase' in self.actions['unlabel'] or \
+                            'needs_revision' in self.actions['newlabel'] or \
+                            'needs_revision' in self.actions['unlabel']:
+                        rn = self.issue.repo_full_name
+                        #import epdb; epdb.st()
+                        summary = self.issue_summaries.get(rn, {}).\
+                            get(self.issue.number, None)
+                        if not summary:
+                            summary = self.gws.get_single_issue_summary(
+                                rn,
+                                self.issue.number,
+                                force=True
+                            )
+                        pprint(summary)
+
+                        if self.meta.get('mergeable_state') == 'unknown':
+                            pprint(self.actions)
+                            import epdb; epdb.st()
 
                     pprint(self.actions)
 
@@ -459,6 +474,7 @@ class TriageV3(DefaultTriager):
         issue.update()
         return issue
 
+    '''
     def force_pr_update(self, iw):
         # update PR data
         if iw.is_pullrequest():
@@ -470,8 +486,9 @@ class TriageV3(DefaultTriager):
             # it and the pr's updated_at property.
             iw.get_pullrequest_status(force_fetch=True)
             iw.pullrequest.mergeable_state
-            iw.get_pullrequest_reviews()
+            iw.get_reviews()
         return iw
+    '''
 
     def save_meta(self, issuewrapper, meta):
         # save the meta+actions
@@ -633,33 +650,36 @@ class TriageV3(DefaultTriager):
                 if rtype in self.issue.labels:
                     self.actions['unlabel'].append(rtype)
 
-        # SHIPIT
-        if self.meta['shipit'] and \
-                not self.meta['is_needs_revision'] and \
-                not self.meta['is_needs_info']:
-            logging.info('shipit')
-            if self.meta['shipit_owner_pr'] \
-                    and 'shipit_owner_pr' not in self.issue.labels:
-                self.actions['newlabel'].append('shipit')
-                self.actions['newlabel'].append('shipit_owner_pr')
-            elif not self.meta['shipit_owner_pr'] \
-                    and self.meta['shipit'] \
-                    and 'shipit' not in self.issue.labels \
-                    and 'shipit' not in self.actions['newlabel']:
-                self.actions['newlabel'].append('shipit')
-        else:
-            if 'shipit' in self.issue.labels:
-                self.actions['unlabel'].append('shipit')
-            if 'shipit_owner_pr' in self.issue.labels:
-                self.actions['unlabel'].append('shipit_owner_pr')
+        # Ignore needs_revision if this is a work in progress
+        if not self.issue.wip:
 
-        # needs revision
-        if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
-            if 'needs_revision' not in self.issue.labels:
-                self.actions['newlabel'].append('needs_revision')
-        else:
-            if 'needs_revision' in self.issue.labels:
-                self.actions['unlabel'].append('needs_revision')
+            # SHIPIT
+            if self.meta['shipit'] and \
+                    not self.meta['is_needs_revision'] and \
+                    not self.meta['is_needs_info']:
+                logging.info('shipit')
+                if self.meta['shipit_owner_pr'] \
+                        and 'shipit_owner_pr' not in self.issue.labels:
+                    self.actions['newlabel'].append('shipit')
+                    self.actions['newlabel'].append('shipit_owner_pr')
+                elif not self.meta['shipit_owner_pr'] \
+                        and self.meta['shipit'] \
+                        and 'shipit' not in self.issue.labels \
+                        and 'shipit' not in self.actions['newlabel']:
+                    self.actions['newlabel'].append('shipit')
+            else:
+                if 'shipit' in self.issue.labels:
+                    self.actions['unlabel'].append('shipit')
+                if 'shipit_owner_pr' in self.issue.labels:
+                    self.actions['unlabel'].append('shipit_owner_pr')
+
+            # needs revision
+            if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
+                if 'needs_revision' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_revision')
+            else:
+                if 'needs_revision' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_revision')
 
         if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
             if 'needs_rebase' not in self.issue.labels:
@@ -1677,19 +1697,6 @@ class TriageV3(DefaultTriager):
         if not iw.is_pullrequest():
             return rmeta
 
-        # do some validation
-        if self.number != self.issue.number or \
-                self.number != self.issue.instance.number or \
-                self.number != self.issue.pullrequest.number:
-            logging.error('1) something is wrong here!')
-
-        if not iw.history:
-            iw.history = self.get_history(
-                iw,
-                cachedir=self.cachedir,
-                usecache=True
-            )
-
         maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
@@ -1705,7 +1712,7 @@ class TriageV3(DefaultTriager):
         logging.info('ci_state == %s' % ci_state)
 
         # clean/unstable/dirty/unknown
-        mstate = iw.pullrequest.mergeable_state
+        mstate = iw.mergeable_state
         logging.info('mergeable_state == %s' % mstate)
 
         # clean/unstable/dirty/unknown
@@ -1812,9 +1819,6 @@ class TriageV3(DefaultTriager):
                             '[%s] approved' % event['actor']
                         )
                         continue
-
-                #import epdb; epdb.st()
-        #import epdb; epdb.st()
 
         if ci_status:
             for x in ci_status:
