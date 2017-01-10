@@ -389,6 +389,9 @@ class TriageV3(DefaultTriager):
                         redo = False
                         continue
 
+                    if self.meta.get('mergeable_state') == 'unknown':
+                        import epdb; epdb.st()
+
                     # build up actions from the meta
                     self.create_actions()
                     self.save_meta(iw, self.meta)
@@ -407,6 +410,12 @@ class TriageV3(DefaultTriager):
                     #import epdb; epdb.st()
                     summary = self.issue_summaries.get(rn, {}).\
                         get(self.issue.number, None)
+                    if not summary:
+                        summary = self.gws.get_single_issue_summary(
+                            rn,
+                            self.issue.number,
+                            force=True
+                        )
                     pprint(summary)
                     #import epdb; epdb.st()
 
@@ -598,10 +607,14 @@ class TriageV3(DefaultTriager):
             self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
             return None
 
-        #elif self.meta['bot_spam']:
-        #    logging.warning('bot spam!')
-        #    self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
-        #    return None
+        # UNKNOWN!!! ... sigh.
+        if self.issue.is_pullrequest() and \
+                self.meta['mergeable_state'] == 'unknown':
+            msg = 'skipping %s because it has a' % self.issue.number
+            msg += ' mergeable_state of unknown'
+            logging.warning(msg)
+            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
+            return None
 
         # TRIAGE!!!
         if not self.issue.labels:
@@ -619,34 +632,6 @@ class TriageV3(DefaultTriager):
             else:
                 if rtype in self.issue.labels:
                     self.actions['unlabel'].append(rtype)
-
-        """
-        # COMMUNITY REVIEW
-        if self.meta['community_review']:
-            if 'community_review' not in self.issue.labels:
-                self.actions['newlabel'].append('community_review')
-        else:
-            if 'community_review' in self.issue.labels:
-                self.actions['unlabel'].append('community_review')
-
-        # COMMITTER REVIEW
-        if self.meta['committer_review']:
-            if 'committer_review' not in self.issue.labels:
-                self.actions['newlabel'].append('comitter_review')
-        else:
-            if 'committer_review' in self.issue.labels:
-                self.actions['unlabel'].append('comitter_review')
-
-        # CORE REVIEW
-        if self.meta['core_review']:
-            if 'core_review' not in self.issue.labels:
-                self.actions['newlabel'].append('core_review')
-        else:
-            if 'core_review' in self.issue.labels:
-                self.actions['unlabel'].append('core_review')
-        """
-
-        #import epdb; epdb.st()
 
         # SHIPIT
         if self.meta['shipit'] and \
@@ -835,6 +820,10 @@ class TriageV3(DefaultTriager):
                     continue
             if k == 'comments' and len(v) == 0:
                 continue
+            if k == 'comments' and len(v) == 1:
+                # notifying maintainer
+                if v[0].startswith('cc '):
+                    continue
             if k == 'assign':
                 continue
             if v:
@@ -1029,7 +1018,8 @@ class TriageV3(DefaultTriager):
                 }
             else:
                 # force a clean repo object to limit caching problems
-                self.repos[repo]['repo'] = self.ghw.get_repo(repo, verbose=False)
+                self.repos[repo]['repo'] = \
+                    self.ghw.get_repo(repo, verbose=False)
                 # clear the issues
                 self.repos[repo]['issues'] = {}
 
@@ -1661,7 +1651,7 @@ class TriageV3(DefaultTriager):
         ci_state = None
         mstate = None
         change_requested = None
-        hreviews = None
+        #hreviews = None
         #reviews = None
         ready_for_review = None
 
@@ -1673,6 +1663,7 @@ class TriageV3(DefaultTriager):
             'has_shippable': has_shippable,
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
+            'mergeable': None,
             'mergeable_state': mstate,
             'changed_requested': change_requested,
             'ci_state': ci_state,
@@ -1716,11 +1707,6 @@ class TriageV3(DefaultTriager):
         # clean/unstable/dirty/unknown
         mstate = iw.pullrequest.mergeable_state
         logging.info('mergeable_state == %s' % mstate)
-
-        # FIXME - DEBUG !!!
-        #if ci_state == 'success' and mstate == 'unknown':
-        if mstate == 'unknown':
-            import epdb; epdb.st()
 
         # clean/unstable/dirty/unknown
         if mstate != 'clean':
@@ -1849,46 +1835,22 @@ class TriageV3(DefaultTriager):
             else:
                 has_travis_notification = False
 
-        """
-        # use scraped data to opcheck
-        if iw.number in self.pr_summaries:
-            pass
-            '''
-            summary = self.pr_summaries[iw.number]
-            if summary['ci_state'] == 'failure' and \
-                    not needs_revision:
-                logging.error('ci state is bad but needs_revision not set')
-                import epdb; epdb.st()
-
-            if not needs_revision and \
-                    summary['review_message'] and \
-                    summary['review_message'] != 'approved':
-                logging.error('change request but needs_revision not set')
-                import epdb; epdb.st()
-
-            if needs_revision and \
-                    summary['ci_state'] == 'success' and \
-                    summary['review_message'] != 'changes requested' and \
-                    'labeled' not in needs_revision_msgs[0] and \
-                    mstate != 'dirty':
-                logging.error('cistate success but also needs_revision')
-                import epdb; epdb.st()
-
-            if hreviews['reviews']:
-                import epdb; epdb.st()
-            '''
-        """
-
         logging.info('mergeable_state is %s' % mstate)
         logging.info('needs_rebase is %s' % needs_rebase)
         logging.info('needs_revision is %s' % needs_revision)
         logging.info('ready_for_review is %s' % ready_for_review)
-        #import epdb; epdb.st()
 
         # Scrape web data for debug purposes
         rfn = self.issue.repo_full_name
         www_summary = self.gws.get_single_issue_summary(rfn, self.issue.number)
         www_reviews = self.gws.scrape_pullrequest_review(rfn, self.issue.number)
+
+        '''
+        # FIXME - DEBUG !!!
+        #if ci_state == 'success' and mstate == 'unknown':
+        if mstate == 'unknown' and not has_travis:
+            import epdb; epdb.st()
+        '''
 
         rmeta = {
             'is_needs_revision': needs_revision,
@@ -1898,6 +1860,7 @@ class TriageV3(DefaultTriager):
             'has_shippable': has_shippable,
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
+            'mergeable': self.issue.pullrequest.mergeable,
             'mergeable_state': mstate,
             'changed_requested': change_requested,
             'ci_state': ci_state,
