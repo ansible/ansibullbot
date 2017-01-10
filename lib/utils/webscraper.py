@@ -12,8 +12,17 @@ from bs4 import BeautifulSoup
 
 
 class GithubWebScraper(object):
+    cachedir = None
     baseurl = 'https://github.com'
     summaries = {}
+
+    def __init__(self, cachedir=None):
+        if cachedir:
+            self.cachedir = cachedir
+        else:
+            self.cachedir = '/tmp/gws'
+        if not os.path.isdir(self.cachedir):
+            os.makedirs(self.cachedir)
 
     def get_issue_summaries(self, repo_url, cachefile=None):
         # https://github.com/ansible/ansible-modules-extras/issues?q=is%3Aopen
@@ -21,8 +30,10 @@ class GithubWebScraper(object):
         issues = {}
 
         if cachefile is None:
-            cachefile = '/tmp/%s_issue_summaries.json' \
-                % repo_url.split('/')[-1]
+            cachefile = os.path.join(
+                self.cachedir,
+                '%s_issue_summaries.json' % repo_url.split('/')[-1]
+            )
 
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
@@ -64,27 +75,43 @@ class GithubWebScraper(object):
         #import epdb; epdb.st()
         return issues
 
-    def get_single_issue_summary(self, repo_url, number, cachefile=None):
+    def get_single_issue_summary(
+        self,
+        repo_url,
+        number,
+        cachefile=None,
+        force=False
+    ):
+
+        '''Scrape the summary for a specific issue'''
 
         issues = {}
 
+        #if cachefile is None:
+        #    cachefile = '/tmp/%s_issue_summaries.json' \
+        #        % repo_url.split('/')[-1]
+
         if cachefile is None:
-            cachefile = '/tmp/%s_issue_summaries.json' \
-                % repo_url.split('/')[-1]
+            cachefile = os.path.join(
+                self.cachedir,
+                '%s_issue_summaries.json' % repo_url.split('/')[-1]
+            )
 
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
                 issues = json.load(f)
 
-        url = self.baseurl + '/' + repo_url
-        url += '/issues'
-        url += '?'
-        url += 'q=%s' % number
+        if number not in issues or force:
 
-        rr = self._request_url(url)
-        soup = BeautifulSoup(rr.text, 'html.parser')
-        data = self._parse_issue_summary_page(soup)
-        issues.update(data['issues'])
+            url = self.baseurl + '/' + repo_url
+            url += '/issues'
+            url += '?'
+            url += 'q=%s' % number
+
+            rr = self._request_url(url)
+            soup = BeautifulSoup(rr.text, 'html.parser')
+            data = self._parse_issue_summary_page(soup)
+            issues.update(data['issues'])
 
         if number in issues:
             return issues[number]
@@ -234,7 +261,7 @@ class GithubWebScraper(object):
 
         return prs
 
-    def scrape_pullrequest_review(self, number):
+    def scrape_pullrequest_review(self, repo_path, number):
 
         reviews = {
             'users': {},
@@ -243,7 +270,7 @@ class GithubWebScraper(object):
 
         url = self.baseurl
         url += '/'
-        url += self.repo_path
+        url += repo_path
         url += '/pull/'
         url += str(number)
 
@@ -391,8 +418,8 @@ class GithubWebScraper(object):
             print(url)
             rr = requests.get(url, headers=headers)
             if rr.reason == 'Too Many Requests':
-                logging.debug('too many requests, sleeping %ss' % sleep)
-                print('too many requests, sleeping %ss' % sleep)
+                logging.debug('too many www requests, sleeping %ss' % sleep)
+                #print('too many requests, sleeping %ss' % sleep)
                 time.sleep(sleep)
                 sleep = sleep * 2
             else:
