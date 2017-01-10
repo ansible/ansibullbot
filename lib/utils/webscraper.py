@@ -25,6 +25,14 @@ class GithubWebScraper(object):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
 
+    def get_last_number(self, repo_path):
+        repo_url = self.baseurl + '/' + repo_path
+        issues = self.get_issue_summaries(repo_url)
+        if issues:
+            return sorted([int(x) for x in issues.keys()])[-1]
+        else:
+            return None
+
     def get_issue_summaries(self, repo_url, cachefile=None):
         # https://github.com/ansible/ansible-modules-extras/issues?q=is%3Aopen
 
@@ -35,6 +43,9 @@ class GithubWebScraper(object):
                 self.cachedir,
                 '%s_issue_summaries.json' % repo_url.split('/')[-1]
             )
+
+        if 'ansibullbot' not in cachefile:
+            import epdb; epdb.st()
 
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
@@ -58,14 +69,21 @@ class GithubWebScraper(object):
             if not data['next_page'] or not data['issues']:
                 break
 
+            changed = []
             changes = False
             for k,v in data['issues'].iteritems():
                 v['href'] = self.baseurl + v['href']
                 if str(k) not in issues:
+                    changed.append(v['number'])
                     changes = True
                 elif v != issues[str(k)]:
+                    changed.append(v['number'])
                     changes = True
                 issues[str(k)] = v
+
+            if changed:
+                #import epdb; epdb.st()
+                logging.info('changed: %s' % ','.join(changed))
 
             if not changes:
                 break
