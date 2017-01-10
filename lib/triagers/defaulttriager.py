@@ -365,8 +365,9 @@ class DefaultTriager(object):
     def get_valid_labels(self, repo=None):
 
         # use the repo wrapper to enable caching+updating
-        self.gh = self._connect()
-        self.ghw = GithubWrapper(self.gh)
+        if not self.ghw:
+            self.gh = self._connect()
+            self.ghw = GithubWrapper(self.gh)
 
         if not repo:
             # OLD workflow
