@@ -148,10 +148,9 @@ class GithubWebScraper(object):
                 if 'next' in x.get('rel', []) and checkstring in x['href']
             ]
             while next_page:
-                print('next_page: %s' % next_page)
                 np = next_page[0]
                 np = self.baseurl + np
-                print('np: %s' % np)
+                logging.debug('np: %s' % np)
 
                 rr = requests.get(np)
                 soup = BeautifulSoup(rr.text, 'html.parser')
@@ -415,11 +414,10 @@ class GithubWebScraper(object):
         sleep = 60
         failed = True
         while failed:
-            print(url)
+            logging.debug(url)
             rr = requests.get(url, headers=headers)
             if rr.reason == 'Too Many Requests':
                 logging.debug('too many www requests, sleeping %ss' % sleep)
-                #print('too many requests, sleeping %ss' % sleep)
                 time.sleep(sleep)
                 sleep = sleep * 2
             else:
@@ -432,7 +430,7 @@ class GithubWebScraper(object):
         urls = []
         for ref in refs:
             if 'href' in ref.attrs:
-                print(ref.attrs['href'])
+                logging.debug(ref.attrs['href'])
                 urls.append(ref.attrs['href'])
 
         checkpath = '/' + self.repo_path

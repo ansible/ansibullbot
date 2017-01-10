@@ -526,6 +526,7 @@ class DefaultWrapper(object):
             assignees.remove(user)
             self._edit_assignees(assignees)
 
+    @RateLimited
     def _edit_assignees(self, assignees):
         # https://github.com/PyGithub/PyGithub/pull/469/files
         # https://raw.githubusercontent.com/tmshn/PyGithub/ba007dc8a8bb5d5fdf75706db84dab6a69929d7d/github/Issue.py
@@ -534,8 +535,9 @@ class DefaultWrapper(object):
 
         vparms = inspect.getargspec(self.instance.edit)
         if 'assignees' in vparms.args:
-            print('time to implement the native call for edit on assignees')
-            sys.exit(1)
+            new_assignees = self.assignees + assignees
+            new_assignees = sorted(set(new_assignees))
+            self.instance.edit(assignees=assignees)
         else:
             post_parameters = dict()
             post_parameters["assignees"] = [x for x in assignees]
