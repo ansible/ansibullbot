@@ -44,6 +44,7 @@ Expect the bot to do a few things:
   * **needs_rebase** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
   * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
 
+Please prefix your pullrequest's title with **WIP** if you are not yet finished making changes. This will tell the bot to ignore the needs_rebase and shipit workflows until you remove it from the title.
 
 If you are finished committing to your pullrequest or have made changes due to a request, please use the **ready_for_review** command.
 
