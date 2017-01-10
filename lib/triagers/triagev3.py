@@ -223,11 +223,15 @@ class TriageV3(DefaultTriager):
 
         # connect to github
         self.gh = self._connect()
+
         # wrap the connection
         self.ghw = GithubWrapper(self.gh)
 
         # create the scraper for www data
         self.gws = GithubWebScraper(cachedir=self.cachedir)
+        #print(self.gws.get_last_number('ansible/ansible'))
+        #sys.exit(1)
+        #import epdb; epdb.st()
 
         # get the ansible members
         self.ansible_members = self.get_ansible_members()
@@ -1049,22 +1053,29 @@ class TriageV3(DefaultTriager):
                     issues = self.repos[repo]['repo'].get_issues()
                     self.repos[repo]['since'] = datetime.datetime.utcnow()
                 else:
-                    import epdb; epdb.st()
                     # get updated since last run + newly created
                     issues = self.repos[repo]['repo'].get_issues(
                         since=self.repos[repo]['since']
                     )
                     # reset the since marker
                     self.repos[repo]['since'] = datetime.datetime.utcnow()
+
+                    # force pagination now
+                    issues = [x for x in issues]
+
                     # get newly created issues
                     logging.info('getting last issue number for %s' % repo)
-                    last_number = \
-                        self.repos[repo]['repo'].get_last_issue_number()
+                    last_number = self.gws.get_last_number(repo)
+
+                    since_numbers = [x.number for x in issues]
                     current_numbers = sorted(set(self.repos[repo]['processed']))
                     missing_numbers = xrange(current_numbers[-1], last_number)
                     missing_numbers = [x for x in missing_numbers
-                                       if x not in
-                                       self.repos[repo]['processed']]
+                                       if x not in current_numbers and
+                                       x not in since_numbers]
+
+                    logging.info('issue numbers not returned via "since": %s'
+                                 % ','.join(missing_numbers))
 
                     for x in missing_numbers:
                         issue = None
@@ -1073,8 +1084,9 @@ class TriageV3(DefaultTriager):
                         except Exception as e:
                             print(e)
                             import epdb; epdb.st()
-                        if issue and issue not in issues and \
-                                issue.state == 'open':
+                        if issue and \
+                                issue.state == 'open' and \
+                                issue not in issues:
                             issues.append(issue)
 
                 self.repos[repo]['issues'] = issues
