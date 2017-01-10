@@ -205,11 +205,13 @@ class TriageV3(DefaultTriager):
             else:
                 setattr(self, x, val)
 
+        # This is for the RateLimited decorator ...
         os.environ['GITHUB_USERNAME'] = self.args.gh_user or ''
         os.environ['GITHUB_PASSWORD'] = self.args.gh_pass or ''
         os.environ['GITHUB_TOKEN'] = self.args.gh_token or ''
 
-        self.gws = GithubWebScraper()
+        # create the scraper for www data
+        self.gws = GithubWebScraper(cachedir=self.cachedir)
 
         if self.args.pause:
             self.always_pause = True
@@ -265,7 +267,7 @@ class TriageV3(DefaultTriager):
         '''Primary execution method'''
 
         # get all of the open issues [or just one]
-        self.collect_issues()
+        self.collect_repos()
 
         # stop here if we're just collecting issues to populate cache
         if self.args.collect_only:
@@ -364,12 +366,12 @@ class TriageV3(DefaultTriager):
                         )
                         iw = niw
                         self.issue = iw
-                        iw.save_issue()
+                        #iw.save_issue()
                         self.force_pr_update(iw)
 
-                    if loopcount > 1 or \
-                            iw.number not in self.issue_summaries[repopath]:
-                        self.update_single_issue_summary(self.issue)
+                    #if loopcount > 1 or \
+                    #        iw.number not in self.issue_summaries[repopath]:
+                    #    self.update_single_issue_summary(self.issue)
 
                     # this is where the history cache goes
                     hcache = os.path.join(self.cachedir, iw.repo_full_name)
@@ -437,22 +439,11 @@ class TriageV3(DefaultTriager):
             )
 
     def update_single_issue_summary(self, issuewrapper):
-
+        '''Force scrape the summary for an issue'''
         number = issuewrapper.number
         rp = issuewrapper.repo_full_name
-
-        # scrape all summaries rom www for later opchecking
-        cachefile = os.path.join(
-            self.cachedir,
-            '%s__scraped_issues.json' % rp
-        )
-
         self.issue_summaries[rp][number] = \
-            self.gws.get_single_issue_summary(
-                rp,
-                issuewrapper.number,
-                cachefile=cachefile
-            )
+            self.gws.get_single_issue_summary(rp, number, force=True)
 
     @RateLimited
     def update_issue_object(self, issue):
@@ -1002,13 +993,13 @@ class TriageV3(DefaultTriager):
                     rl = thisrepo.get_rate_limit()
                     pprint(rl)
 
-    def collect_issues(self):
-        '''Populate the local cache of issues'''
+    def collect_repos(self):
+        '''Populate the local cache of repos'''
         # this should do a few things:
         #   1. collect all issues (open+closed) via a webcrawler
         #   2. index the issues into a rdmbs so we can query on update times(?)
         #   3. set an abstracted object that takes in queries
-        logging.info('start collecting issues')
+        logging.info('start collecting repos')
         logging.debug('creating github connection object')
         self.gh = self._connect()
 
@@ -1028,7 +1019,6 @@ class TriageV3(DefaultTriager):
                 continue
 
             logging.info('getting repo obj for %s' % repo)
-            #cachedir = os.path.join(self.cachedir, repo)
 
             if repo not in self.repos:
                 self.repos[repo] = {
@@ -1038,6 +1028,9 @@ class TriageV3(DefaultTriager):
                     'since': None
                 }
             else:
+                # force a clean repo object to limit caching problems
+                self.repos[repo]['repo'] = self.ghw.get_repo(repo, verbose=False)
+                # clear the issues
                 self.repos[repo]['issues'] = {}
 
             logging.info('getting issue objs for %s' % repo)
@@ -1046,11 +1039,13 @@ class TriageV3(DefaultTriager):
                 issue = self.repos[repo]['repo'].get_issue(self.pr)
                 self.repos[repo]['issues'] = [issue]
             else:
+
                 if not self.repos[repo]['since']:
                     # get all of them
                     issues = self.repos[repo]['repo'].get_issues()
                     self.repos[repo]['since'] = datetime.datetime.utcnow()
                 else:
+                    import epdb; epdb.st()
                     # get updated since last run + newly created
                     issues = self.repos[repo]['repo'].get_issues(
                         since=self.repos[repo]['since']
@@ -1080,7 +1075,7 @@ class TriageV3(DefaultTriager):
 
                 self.repos[repo]['issues'] = issues
 
-            logging.info('getting issue objs for %s complete' % repo)
+            logging.info('getting repo objs for %s complete' % repo)
 
         logging.info('finished collecting issues')
 
@@ -1681,8 +1676,9 @@ class TriageV3(DefaultTriager):
             'mergeable_state': mstate,
             'changed_requested': change_requested,
             'ci_state': ci_state,
-            'reviews_api': hreviews,
-            'reviews_www': hreviews,
+            'reviews': None,
+            'www_reviews': None,
+            'www_summary': None,
             'ready_for_review': ready_for_review
         }
 
@@ -1722,7 +1718,8 @@ class TriageV3(DefaultTriager):
         logging.info('mergeable_state == %s' % mstate)
 
         # FIXME - DEBUG !!!
-        if ci_state == 'success' and mstate == 'unknown':
+        #if ci_state == 'success' and mstate == 'unknown':
+        if mstate == 'unknown':
             import epdb; epdb.st()
 
         # clean/unstable/dirty/unknown
@@ -1888,6 +1885,11 @@ class TriageV3(DefaultTriager):
         logging.info('ready_for_review is %s' % ready_for_review)
         #import epdb; epdb.st()
 
+        # Scrape web data for debug purposes
+        rfn = self.issue.repo_full_name
+        www_summary = self.gws.get_single_issue_summary(rfn, self.issue.number)
+        www_reviews = self.gws.scrape_pullrequest_review(rfn, self.issue.number)
+
         rmeta = {
             'is_needs_revision': needs_revision,
             'is_needs_revision_msgs': needs_revision_msgs,
@@ -1899,9 +1901,9 @@ class TriageV3(DefaultTriager):
             'mergeable_state': mstate,
             'changed_requested': change_requested,
             'ci_state': ci_state,
-            'pr_summary': self.issue_summaries.get(self.number),
-            'reviews_api': iw.reviews,
-            'reviews_www': iw.scrape_reviews(),
+            'reviews': iw.reviews,
+            'www_summary': www_summary,
+            'www_reviews': www_reviews,
             'ready_for_review': ready_for_review
         }
 

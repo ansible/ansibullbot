@@ -786,6 +786,6 @@ class DefaultWrapper(object):
         commits = [x for x in self.pullrequest.get_commits()]
         return commits
 
-    def scrape_reviews(self):
-        reviews = self.repo.scrape_pullrequest_review(self.number)
-        return reviews
+    #def scrape_reviews(self):
+    #    reviews = self.repo.scrape_pullrequest_review(self.number)
+    #    return reviews

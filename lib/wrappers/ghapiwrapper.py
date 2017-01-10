@@ -8,8 +8,8 @@ import logging
 import os
 import re
 import requests
-import time
-import urllib2
+#import time
+#import urllib2
 from datetime import datetime
 
 from bs4 import BeautifulSoup
@@ -46,17 +46,12 @@ class RepoWrapper(object):
         self.verbose = verbose
         self._assignees = False
         self._pullrequest_summaries = False
+        self.repo = self.get_repo(repo_path)
 
-        if not os.path.isdir(self.cachedir):
-            os.makedirs(self.cachedir)
-        if os.path.isfile(self.cachefile):
-            with open(self.cachefile, 'rb') as f:
-                self.repo = pickle.load(f)
-            self.updated_at_previous = self.repo.updated_at
-            self.updated = self.repo.update()
-        else:
-            self.repo = self.gh.get_repo(repo_path)
-            self.save_repo()
+    @RateLimited
+    def get_repo(self, repo_path):
+        repo = self.gh.get_repo(repo_path)
+        return repo
 
     def get_rate_limit(self):
         return self.gh.get_rate_limit().raw_data
@@ -102,6 +97,7 @@ class RepoWrapper(object):
         else:
             return None
 
+    """
     @property
     def pullrequest_summaries(self):
         if self._pullrequest_summaries is False:
@@ -373,6 +369,7 @@ class RepoWrapper(object):
 
         #import epdb; epdb.st()
         return data
+    """
 
     @RateLimited
     def get_issue(self, number):
