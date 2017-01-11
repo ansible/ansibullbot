@@ -310,6 +310,7 @@ class GithubWebScraper(object):
             tparts = txt.split(None, 1)
             reviews['users'][tparts[0]] = tparts[1]
 
+        # <div class="discussion-item discussion-item-review_requested">
         # <div id="pullrequestreview-15502866" class="timeline-comment
         # js-comment">
         rdivs = soup.findAll(
@@ -346,6 +347,7 @@ class GithubWebScraper(object):
             else:
                 outdated = False
 
+            reviewer = None
             atxt = rdiv.find('div', {'class': ['discussion-item-header']}).text
             atxt = atxt.lower()
             if 'suggested changes' in atxt:
@@ -354,8 +356,15 @@ class GithubWebScraper(object):
                 action = 'requested changes'
             elif 'requested a review' in atxt:
                 action = 'requested review'
+                tparts = atxt.split()
+                findex = tparts.index('from')
+                reviewer = tparts[findex+1]
+                #import epdb; epdb.st()
             elif 'requested review' in atxt:
                 action = 'requested review'
+                tparts = atxt.split()
+                findex = tparts.index('from')
+                reviewer = tparts[findex+1]
             elif 'approved these changes' in atxt:
                 action = 'approved'
             elif 'left review comments' in atxt:
@@ -369,59 +378,12 @@ class GithubWebScraper(object):
             reviews['reviews'][rid] = {
                 'actor': author,
                 'action': action,
+                'reviewer': reviewer,
                 'timestamp': timestamp,
                 'outdated': outdated
             }
 
         return reviews
-
-    def scrape_open_issue_numbers(self, url=None, recurse=True):
-
-        '''Make a (semi-inaccurate) range of open issue numbers'''
-
-        # The github api paginates through all open issues and quickly
-        # hits a rate limit on large issue queues. Webscraping also
-        # hits an undocumented rate limit. What this will do instead,
-        # is find the issues on the first and last page of results and
-        # then fill in the numbers between for a best guess range of
-        # numbers that are likely to be open.
-
-        # https://github.com/ansible/ansible/issues?q=is%3Aopen
-        # https://github.com/ansible/ansible/issues?page=2&q=is%3Aopen
-
-        if not url:
-            url = self.baseurl
-            url += '/'
-            url += self.repo_path
-            url += '/issues?'
-            #url += 'per_page=100'
-            #url += '&'
-            url += urllib2.quote('q=is open')
-
-        rr = self._request_url(url)
-        soup = BeautifulSoup(rr.text, 'html.parser')
-        numbers = self._parse_issue_numbers_from_soup(soup)
-
-        if recurse:
-
-            pages = soup.findAll('a', {'href': lambda L: L and 'page=' in L})
-
-            if pages:
-                pages = [x for x in pages if 'class' not in x.attrs]
-                last_page = pages[-1]
-                last_url = self.baseurl + last_page.attrs['href']
-                new_numbers = self.scrape_open_issue_numbers(
-                    url=last_url,
-                    recurse=False
-                )
-                new_numbers = sorted(set(new_numbers))
-                # fill in the gap ...
-                fillers = [x for x in xrange(new_numbers[-1], numbers[0])]
-                numbers += new_numbers
-                numbers += fillers
-
-        numbers = sorted(set(numbers))
-        return numbers
 
     def _request_url(self, url):
         ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0)'
