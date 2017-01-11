@@ -53,6 +53,26 @@ To streamline the maintenance process, we've added some commands to the ansibot 
 * **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
 * **ready_for_review** - If you are finished making commits to your pullrequest or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
 
+### When will your PR be merged?
+
+#### New Modules
+
+New modules require two **shipits** from anyone in the community before the bot will label it "shipit". At that point, the module will be merged once a member of the Ansible organization has reviewed it and decided to include it.
+
+#### Existing Modules
+
+Module's have metadata with a "supported_by" field per the (metadata proposal)[https://github.com/ansible/proposals/issues/30]. The possible values of supported_by are:
+* unmaintained: no community members are responsible for this module, so changes will have to be reviewed by the core team until someone volunteers to maintain it. See "core".
+* core: Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect review to take longer than most other modules because of the volume the core team has on a daily basis.
+* commiter: These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once two community members give "shipit", the core team will be alerted to review.
+* community: These modules are also developed, maintained and supported by the community. If you are a maintainer for the module, use the "shipit" command to have the PR automerged, otherwise the bot will wait for shipits from 2 maintainers and then automerge.
+
+NOTE: If you have changes to other files in the PR, the supported_by field is ignored because the Ansible core team *must* approve those changes.
+
+#### Non-module changes
+
+The ansible core team approves these pullrequests and it may take some time for them to get to your request. 
+
 ## For community maintainers
 Thanks in advance for taking a look at issues+pullrequests and for your ongoing maintainince. If you are unable to troubleshoot or review this issue/pullrequest with the information provided, please ping the submitter of the issue in a comment to let them know. 
 
