@@ -1137,6 +1137,7 @@ class DefaultTriager(object):
             # https://developer.github.com/v3/repos/merging/
             # def merge(self, commit_message=github.GithubObject.NotSet)
             if self.actions['merge']:
+                import epdb; epdb.st()
                 self.issue.merge()
 
     def smart_match_module(self):
