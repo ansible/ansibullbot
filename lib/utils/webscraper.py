@@ -402,6 +402,8 @@ class GithubWebScraper(object):
                 action = 'review comment'
             elif 'reviewed' in atxt:
                 action = 'reviewed'
+            elif 'dismissed' in atxt:
+                action = 'dismissed'
             else:
                 action = None
                 import epdb; epdb.st()
