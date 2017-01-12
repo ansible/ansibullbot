@@ -369,8 +369,10 @@ class AnsibleVersionIndexer(object):
         #  origin/release1.6.10
         #  origin/release1.6.2
 
+        '''
         # make sure the checkout cache is still valid
         self.update_checkout()
+        '''
 
         aversion = None
 
@@ -469,7 +471,6 @@ class AnsibleVersionIndexer(object):
         if acommit:
             aversion = self.ansible_version_by_commit(acommit)
 
-        #import epdb; epdb.st()
         return aversion
 
 
