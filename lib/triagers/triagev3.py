@@ -1725,19 +1725,7 @@ class TriageV3(DefaultTriager):
 
         else:
 
-            '''
-            # merge in the reviews to the history
-            iw.history.merge_reviews(iw.reviews)
-            '''
-
-            '''
-            # review -requests- are not in the api data
-            www_rd = self.gws.scrape_pullrequest_review(
-                iw.repo_full_name,
-                iw.number
-            )
-            import epdb; epdb.st()
-            '''
+            pending_reviews = []
 
             for event in iw.history.history:
 
@@ -1799,6 +1787,7 @@ class TriageV3(DefaultTriager):
 
                 if event['event'].startswith('review_'):
                     if event['event'] == 'review_changes_requested':
+                        pending_reviews.append(event['actor'])
                         needs_revision = True
                         needs_revision_msgs.append(
                             '[%s] changes requested' % event['actor']
@@ -1806,11 +1795,28 @@ class TriageV3(DefaultTriager):
                         continue
 
                     if event['event'] == 'review_approved':
+                        if event['actor'] in pending_reviews:
+                            pending_reviews.remove(event['actor'])
                         needs_revision = False
                         needs_revision_msgs.append(
-                            '[%s] approved' % event['actor']
+                            '[%s] approved changes' % event['actor']
                         )
                         continue
+
+                    if event['event'] == 'review_dismissed':
+                        if event['actor'] in pending_reviews:
+                            pending_reviews.remove(event['actor'])
+                        needs_revision = False
+                        needs_revision_msgs.append(
+                            '[%s] dismissed review' % event['actor']
+                        )
+                        continue
+
+            if pending_reviews:
+                needs_revision = True
+                needs_revision_msgs.append(
+                    'reviews pending: %s' % ','.join(pending_reviews)
+                )
 
         # Merge commits are bad, force a rebase
         for mc in iw.merge_commits:
