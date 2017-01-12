@@ -41,8 +41,12 @@ Expect the bot to do a few things:
 
 2. Add labels indicating the status of the pullrequest.
 
-  * **needs_rebase** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html for further information.
+  * **needs_rebase** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
   * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
+  * **community_review** - The bot is waiting for 2+ people to use the shipit command on this PR.
+  * **contributor_review** - The bot is waiting for anyone on the Ansible organization to use the shipit command on this PR.
+  * **core_review** - The bot is waiting for anyone on the Ansible core-team to use the shipit command on this PR.
+  * **shipit** - The shipit count has hit the minimum threshold and the PR is ready for manual merge or automerge.
 
 Please prefix your pullrequest's title with **WIP** if you are not yet finished making changes. This will tell the bot to ignore the needs_rebase and shipit workflows until you remove it from the title.
 
@@ -61,13 +65,13 @@ New modules require two **shipits** from anyone in the community before the bot 
 
 #### Existing Modules
 
-Module's have metadata with a "supported_by" field per the (metadata proposal)[https://github.com/ansible/proposals/issues/30]. The possible values of supported_by are:
+Module's have metadata with a "supported_by" field per the [metadata proposal](https://github.com/ansible/proposals/issues/30). The possible values of supported_by are:
 * unmaintained: no community members are responsible for this module, so changes will have to be reviewed by the core team until someone volunteers to maintain it. See "core".
 * core: Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect review to take longer than most other modules because of the volume the core team has on a daily basis.
 * commiter: These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once two community members give "shipit", the core team will be alerted to review.
 * community: These modules are also developed, maintained and supported by the community. If you are a maintainer for the module, use the "shipit" command to have the PR automerged, otherwise the bot will wait for shipits from 2 maintainers and then automerge.
 
-NOTE: If you have changes to other files in the PR, the supported_by field is ignored because the Ansible core team *must* approve those changes.
+NOTE: If you have changes to other files in the PR, the "supported_by" property is ignored because the Ansible core team **must** approve those changes.
 
 #### Non-module changes
 
