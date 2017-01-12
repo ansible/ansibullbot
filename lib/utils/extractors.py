@@ -25,7 +25,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
     match_map = {}
     for section in SECTIONS:
         # http://www.tutorialspoint.com/python/string_find.htm
-        # str.find(str, beg=0 end=len(string))        
+        # str.find(str, beg=0 end=len(string))
         match = upper_body.find(section)
         if match != -1:
             match_map[section] = match
@@ -147,13 +147,13 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
                 if k == 'issue type' and v != 'bugfix pull request' and 'bug' in v.lower():
                     v = 'bugfix pull request'
                 elif k == 'issue type' and v != 'feature pull request' and 'feature' in v.lower():
-                    v = 'feature pull request' 
+                    v = 'feature pull request'
                 elif k == 'issue type' and v != 'new module pull request' and 'new module' in v.lower():
-                    v = 'new module pull request' 
+                    v = 'new module pull request'
                 elif k == 'issue type' and v != 'docs pull request' and 'docs' in v.lower():
-                    v = 'docs pull request' 
+                    v = 'docs pull request'
                 elif k == 'issue type' and v != 'test pull request' and 'test' in v.lower():
-                    v = 'test pull request' 
+                    v = 'test pull request'
 
         # save
         tdict[k] = v
@@ -237,7 +237,7 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
         number = int(number)
     elif number.startswith('http'):
         urlparts = number.split('/')
-        number = urlparts[-1]        
+        number = urlparts[-1]
         number = int(number)
     elif rawtext.find('#'):
         number = rawtext[rawtext.find('#'):]
