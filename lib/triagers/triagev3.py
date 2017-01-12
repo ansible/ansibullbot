@@ -667,6 +667,8 @@ class TriageV3(DefaultTriager):
                             supported_by = metadata.get('supported_by')
                             if supported_by == 'community':
                                 logging.info('auto-merge tests passed')
+                                if 'automerge' not in self.issue.labels:
+                                    self.actions['newlabel'].append('automerge')
                                 self.actions['merge'] = True
 
                 if 'shipit' not in self.issue.labels:
@@ -674,6 +676,8 @@ class TriageV3(DefaultTriager):
             else:
                 if 'shipit' in self.issue.labels:
                     self.actions['unlabel'].append('shipit')
+                if 'automerge' in self.issue.labels:
+                    self.actions['unlabel'].append('automerge')
 
             # needs revision
             if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
@@ -1332,6 +1336,7 @@ class TriageV3(DefaultTriager):
 
         if iw.is_pullrequest():
             iw.history.merge_reviews(iw.reviews)
+            iw.history.merge_commits(iw.commits)
 
         return iw
 
@@ -1490,11 +1495,17 @@ class TriageV3(DefaultTriager):
         shipit_actors = []
         for event in iw.history.history:
 
-            if event['event'] != 'commented':
+            if event['event'] not in ['commented', 'committed']:
                 continue
             if event['actor'] in BOTNAMES:
                 continue
-            if event['actor'] in shipit_actors:
+
+            # commits reset the counters
+            if event['event'] == 'committed':
+                ansible_shipits = 0
+                maintainer_shipits = 0
+                community_shipits = 0
+                shipit_actors = []
                 continue
 
             actor = event['actor']
@@ -1505,7 +1516,8 @@ class TriageV3(DefaultTriager):
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
                     ansible_shipits += 1
-                    shipit_actors.append(actor)
+                    if actor not in shipit_actors:
+                        shipit_actors.append(actor)
                     continue
 
             # maintainer shipits
@@ -1513,7 +1525,8 @@ class TriageV3(DefaultTriager):
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
                     maintainer_shipits += 1
-                    shipit_actors.append(actor)
+                    if actor not in shipit_actors:
+                        shipit_actors.append(actor)
                     continue
 
             # community shipits
@@ -1521,7 +1534,8 @@ class TriageV3(DefaultTriager):
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
                     community_shipits += 1
-                    shipit_actors.append(actor)
+                    if actor not in shipit_actors:
+                        shipit_actors.append(actor)
                     continue
 
         nmeta['shipit_count_community'] = community_shipits

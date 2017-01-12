@@ -833,6 +833,9 @@ class DefaultWrapper(object):
         # rebase if >1 committer
         # error otherwise
 
+        # DEBUG
+        return None
+
         if len(self.commits) == 1 and not self.merge_commits:
 
             url = url = os.path.join(self.pullrequest.url, 'merge')

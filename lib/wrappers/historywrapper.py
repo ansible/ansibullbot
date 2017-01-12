@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import logging
 import os
 import pickle
@@ -529,6 +530,25 @@ class HistoryWrapper(object):
         # convert the timestamp the same way the lib does it
         dt = GithubObject.GithubObject._makeDatetimeAttribute(timestamp)
         return dt.value
+
+    def merge_commits(self, commits):
+        for xc in commits:
+            # 'Thu, 12 Jan 2017 15:06:46 GMT'
+            tfmt = '%a, %d %b %Y %H:%M:%S %Z'
+            ts = xc.last_modified
+            dts = datetime.datetime.strptime(ts, tfmt)
+
+            event = {}
+            event['id'] = xc.sha
+            if hasattr(xc.committer, 'login'):
+                event['actor'] = xc.committer.login
+            else:
+                event['actor'] = xc.committer
+            event['created_at'] = dts
+            event['event'] = 'committed'
+            self.history.append(event)
+
+        self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def merge_reviews(self, reviews):
         for review in reviews:

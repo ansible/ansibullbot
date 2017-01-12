@@ -5,6 +5,8 @@ import logging
 import re
 import requests
 import os
+import shutil
+import tempfile
 import time
 import urllib2
 
@@ -25,6 +27,47 @@ class GithubWebScraper(object):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
 
+    def split_repo_url(self, repo_url):
+        rparts = repo_url.split('/')
+        rparts = [x.strip() for x in rparts if x.strip()]
+        return (rparts[-2], rparts[-1])
+
+    def load_summaries(self, repo_url):
+        issues = {}
+        ns,repo = self.split_repo_url(repo_url)
+        cachefile = os.path.join(self.cachedir, ns, repo, 'summaries.json')
+        if os.path.isfile(cachefile):
+            try:
+                with open(cachefile, 'rb') as f:
+                    issues = json.load(f)
+            except Exception as e:
+                logging.error(e)
+                issues = {}
+                import epdb; epdb.st()
+        return issues
+
+    def dump_summaries(self, repo_url, issues, filename="summaries"):
+        ns,repo = self.split_repo_url(repo_url)
+        cachefile = os.path.join(
+            self.cachedir,
+            ns,
+            repo,
+            '%s.json' % filename
+        )
+        if not issues:
+            import epdb; epdb.st()
+
+        tfh, tfn = tempfile.mkstemp()
+        with open(tfn, 'wb') as f:
+            f.write(json.dumps(issues, sort_keys=True, indent=2))
+
+        if os.path.isfile(cachefile):
+            os.remove(cachefile)
+        shutil.move(tfn, cachefile)
+
+    def dump_summaries_tmp(self, repo_url, issues):
+        self.dump_summaries(repo_url, issues, filename="summaries-tmp")
+
     def get_last_number(self, repo_path):
         repo_url = self.baseurl + '/' + repo_path
         issues = self.get_issue_summaries(repo_url)
@@ -36,24 +79,8 @@ class GithubWebScraper(object):
     def get_issue_summaries(self, repo_url, cachefile=None):
         # https://github.com/ansible/ansible-modules-extras/issues?q=is%3Aopen
 
-        issues = {}
-
-        if cachefile is None:
-            cachefile = os.path.join(
-                self.cachedir,
-                '%s_issue_summaries.json' % repo_url.split('/')[-1]
-            )
-
-        if 'ansibullbot' not in cachefile:
-            import epdb; epdb.st()
-
-        if os.path.isfile(cachefile):
-            try:
-                with open(cachefile, 'rb') as f:
-                    issues = json.load(f)
-            except Exception as e:
-                logging.error(e)
-                issues = {}
+        # get cached
+        issues = self.load_summaries(repo_url)
 
         url = repo_url
         url += '/issues'
@@ -64,7 +91,10 @@ class GithubWebScraper(object):
         rr = self._request_url(url)
         soup = BeautifulSoup(rr.text, 'html.parser')
         data = self._parse_issue_summary_page(soup)
-        issues.update(data['issues'])
+        if data['issues']:
+            issues.update(data['issues'])
+
+        self.dump_summaries_tmp(repo_url, issues)
 
         while data['next_page']:
             rr = self._request_url(self.baseurl + data['next_page'])
@@ -76,26 +106,28 @@ class GithubWebScraper(object):
             changed = []
             changes = False
             for k,v in data['issues'].iteritems():
-                v['href'] = self.baseurl + v['href']
+                #v['href'] = self.baseurl + v['href']
                 if str(k) not in issues:
                     changed.append(str(v['number']))
                     changes = True
                 elif v != issues[str(k)]:
                     changed.append(str(v['number']))
                     changes = True
+                    #import epdb; epdb.st()
                 issues[str(k)] = v
 
             if changed:
                 #import epdb; epdb.st()
                 logging.info('changed: %s' % ','.join(x for x in changed))
 
+            self.dump_summaries_tmp(repo_url, issues)
+
             if not changes:
                 break
 
-        with open(cachefile, 'wb') as f:
-            f.write(json.dumps(issues, sort_keys=True, indent=2))
+        # save the cache
+        self.dump_summaries(repo_url, issues)
 
-        #import epdb; epdb.st()
         return issues
 
     def get_single_issue_summary(
@@ -108,21 +140,8 @@ class GithubWebScraper(object):
 
         '''Scrape the summary for a specific issue'''
 
-        issues = {}
-
-        #if cachefile is None:
-        #    cachefile = '/tmp/%s_issue_summaries.json' \
-        #        % repo_url.split('/')[-1]
-
-        if cachefile is None:
-            cachefile = os.path.join(
-                self.cachedir,
-                '%s_issue_summaries.json' % repo_url.split('/')[-1]
-            )
-
-        if os.path.isfile(cachefile):
-            with open(cachefile, 'rb') as f:
-                issues = json.load(f)
+        # get cached
+        issues = self.load_summaries(repo_url)
 
         if number not in issues or force:
 
@@ -135,6 +154,9 @@ class GithubWebScraper(object):
             soup = BeautifulSoup(rr.text, 'html.parser')
             data = self._parse_issue_summary_page(soup)
             issues.update(data['issues'])
+
+            # save the cache
+            self.dump_summaries(repo_url, issues)
 
         if number in issues:
             return issues[number]
@@ -191,6 +213,7 @@ class GithubWebScraper(object):
 
     def get_latest_issue(self, namespace, repo):
 
+        '''
         issue_urls = self._get_issue_urls(namespace, repo, pages=1)
 
         issue_ids = []
@@ -205,6 +228,10 @@ class GithubWebScraper(object):
             return issue_ids[-1]
         else:
             return None
+        '''
+        issues = self.get_issue_summaries(namespace + '/' + repo)
+        keys = sorted(set([int(x['number']) for x in issues.keys()]))
+        return keys[-1]
 
     def get_usernames_from_filename_blame(
             self,
@@ -539,6 +566,11 @@ class GithubWebScraper(object):
                     {'class': lambda L: L and 'js-navigation-open' in L}
                 )
                 href = link.attrs['href']
+
+                if not href.startswith(self.baseurl):
+                    #import epdb; epdb.st()
+                    href = self.baseurl + href
+
                 if 'issues' in href:
                     itype = 'issue'
                 else:
