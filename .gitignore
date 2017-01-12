@@ -1,2 +1,10 @@
 *.pyc
 *.pyo
+.ropeproject/*
+venv/*
+fix*
+data*
+headers*
+*.swp
+run*
+
