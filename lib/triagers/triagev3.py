@@ -536,14 +536,7 @@ class TriageV3(DefaultTriager):
             # - if X days after message, close PRs, move issues.
             logging.info('module issue created -before- merge')
 
-            logging.info('build history')
-            hw = self.get_history(
-                iw,
-                usecache=True,
-                cachedir=hcache
-            )
-            logging.info('history built')
-            lc = hw.last_date_for_boilerplate('repomerge')
+            lc = iw.history.last_date_for_boilerplate('repomerge')
             if lc:
                 lcdelta = (datetime.datetime.now() - lc).days
             else:
@@ -1303,14 +1296,12 @@ class TriageV3(DefaultTriager):
             self.meta['is_core'] = True
             #import epdb; epdb.st()
 
-        # shipit?
-        #self.meta.update(self.get_shipit_facts(iw, self.meta))
-        self.meta.update(self.get_needs_revision_facts(iw, self.meta))
-        #self.meta.update(self.get_community_review_facts(iw, self.meta))
-        self.meta.update(self.get_notification_facts(iw, self.meta))
-
         # python3 ?
         self.meta['is_py3'] = self.is_python3()
+
+        # shipit?
+        self.meta.update(self.get_needs_revision_facts(iw, self.meta))
+        self.meta.update(self.get_notification_facts(iw, self.meta))
 
         # needsinfo?
         self.meta['is_needs_info'] = self.is_needsinfo()
@@ -1320,17 +1311,6 @@ class TriageV3(DefaultTriager):
         self.meta.update(self.get_shipit_facts(iw, self.meta))
         self.meta.update(self.get_review_facts(iw, self.meta))
 
-        '''
-        # migrated?
-        mi = self.is_migrated(iw)
-        if mi:
-            miw = self.get_migrated_issue(mi)
-            self.meta['is_migrated'] = True
-            self.meta['migrated_from'] = mi
-            self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
-            self.meta['migrated_issue_number'] = miw.number
-            self.meta['migrated_issue_state'] = miw.state
-        '''
         if iw.migrated:
             miw = iw._migrated_issue
             self.meta['is_migrated'] = True
