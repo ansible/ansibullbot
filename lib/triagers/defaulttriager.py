@@ -1133,6 +1133,12 @@ class DefaultTriager(object):
                 logging.info('action: unassign - ' + user)
                 self.issue.unassign_user(user)
 
+        if 'merge' in self.actions:
+            # https://developer.github.com/v3/repos/merging/
+            # def merge(self, commit_message=github.GithubObject.NotSet)
+            if self.actions['merge']:
+                self.issue.merge()
+
     def smart_match_module(self):
         '''Fuzzy matching for modules'''
 

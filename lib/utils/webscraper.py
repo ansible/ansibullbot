@@ -48,8 +48,12 @@ class GithubWebScraper(object):
             import epdb; epdb.st()
 
         if os.path.isfile(cachefile):
-            with open(cachefile, 'rb') as f:
-                issues = json.load(f)
+            try:
+                with open(cachefile, 'rb') as f:
+                    issues = json.load(f)
+            except Exception as e:
+                logging.error(e)
+                issues = {}
 
         url = repo_url
         url += '/issues'

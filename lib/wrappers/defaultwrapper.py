@@ -74,6 +74,7 @@ class DefaultWrapper(object):
     REQUIRED_SECTIONS = []
 
     def __init__(self, repo=None, issue=None, cachedir=None):
+        self.meta = {}
         self.cachedir = cachedir
         self.repo = repo
         self.instance = issue
@@ -82,10 +83,15 @@ class DefaultWrapper(object):
         #self.current_labels = []
         self._assignees = False
         self._comments = False
+        self._committer_emails = False
         self._commits = False
         self._events = False
         self._history = False
         self._labels = False
+        self._merge_commits = False
+        self._migrated = None
+        self._migrated_from = None
+        self._migrated_issue = None
         self._pr = False
         self._pr_status = False
         self._pr_reviews = False
@@ -632,6 +638,8 @@ class DefaultWrapper(object):
             self._pr = self.repo.get_pullrequest(self.number)
             self.get_pullrequest_status(force_fetch=True)
             self.get_reviews()
+            self._merge_commits = False
+            self._committer_emails = False
 
     @property
     @RateLimited
@@ -796,3 +804,86 @@ class DefaultWrapper(object):
         elif '[WIP]' in self.title:
             return True
         return False
+
+    @property
+    def merge_commits(self):
+        # https://api.github.com/repos/ansible/ansible/pulls/91/commits
+        if self._merge_commits is False:
+            self._merge_commits = []
+            for commit in self.commits:
+                if len(commit.commit.parents) > 1 or \
+                        commit.commit.message.startswith('Merge branch'):
+                    self._merge_commits.append(commit)
+        return self._merge_commits
+
+    @property
+    def committer_emails(self):
+        if self._committer_emails is False:
+            self._committer_emails = []
+            for commit in self.commits:
+                self.committer_emails.append(commit.commit.author.email)
+        return self._committer_emails
+
+    def merge(self):
+
+        # https://developer.github.com/v3/repos/merging/
+        # def merge(self, commit_message=github.GithubObject.NotSet)
+
+        # squash if 1 committer or just a few commits?
+        # rebase if >1 committer
+        # error otherwise
+
+        if len(self.commits) == 1 and not self.merge_commits:
+
+            url = url = os.path.join(self.pullrequest.url, 'merge')
+            headers = {}
+            headers['Accept'] = 'application/vnd.github.polaris-preview+json'
+            params = {}
+            params['merge_method'] = 'squash'
+            resp = self.pullrequest._requester.requestJson(
+                "PUT",
+                url,
+                headers=headers,
+                input=params
+            )
+
+            if resp[0] != 200 or 'successfully merged' not in resp[2]:
+                logging.error('merge failed on %s' % self.number)
+                import epdb; epdb.st()
+                sys.exit(1)
+            else:
+                logging.error('merge successful for %s' % self.number)
+
+        else:
+            logging.error('merge skipped for %s' % self.number)
+            pass
+
+    @property
+    def migrated_from(self):
+        self.migrated
+        return self._migrated_from
+
+    @property
+    def migrated(self):
+        if self._migrated is None:
+            if 'Copied from original issue' in self.body:
+                self._migrated = True
+                migrated_issue = None
+                idx = self.body.find('Copied from original issue')
+                msg = self.body[idx:]
+                try:
+                    migrated_issue = msg.split()[4]
+                except Exception as e:
+                    logging.error(e)
+                    import epdb; epdb.st()
+                if migrated_issue.endswith('_'):
+                    migrated_issue = migrated_issue.rstrip('_')
+                self._migrated_from = migrated_issue
+            else:
+                for comment in self.comments:
+                    if comment.body.lower().startswith('migrated from'):
+                        self._migrated = True
+                        bparts = comment.body.split()
+                        self._migrated_from = bparts[2]
+                        break
+        return self._migrated
