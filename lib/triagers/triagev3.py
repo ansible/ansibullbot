@@ -36,7 +36,6 @@ import time
 from pprint import pprint
 from lib.triagers.defaulttriager import DefaultTriager
 from lib.wrappers.ghapiwrapper import GithubWrapper
-from lib.wrappers.historywrapper import HistoryWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 
 from lib.utils.extractors import extract_pr_number_from_comment
@@ -103,7 +102,7 @@ class TriageV3(DefaultTriager):
         'needs_rebase',
         'needs_revision',
         'shipit',
-        'shipit_owner_pr'
+        'owner_pr'
     ]
 
     # modules having files starting like the key, will get the value label
@@ -393,9 +392,12 @@ class TriageV3(DefaultTriager):
                         cachedir=self.cachedir
                     )
 
-                    # force an update on the PR data
+                    # pre-processing for non-module repos
                     if iw.repo_full_name not in MREPOS:
+                        # force an update on the PR data
                         iw.update_pullrequest()
+                        # build the history
+                        self.build_history(iw)
 
                     # set the global issue
                     self.issue = iw
@@ -412,7 +414,10 @@ class TriageV3(DefaultTriager):
 
                     # build up actions from the meta
                     self.create_actions()
+                    #self.issue.meta = self.meta
                     self.save_meta(iw, self.meta)
+
+                    # DEBUG!
                     logging.info('url: %s' % self.issue.html_url)
                     logging.info('title: %s' % self.issue.title)
                     logging.info(
@@ -656,23 +661,26 @@ class TriageV3(DefaultTriager):
 
             # SHIPIT
             if self.meta['shipit'] and \
+                    self.meta['mergeable'] and \
                     not self.meta['is_needs_revision'] and \
+                    not self.meta['is_needs_rebase'] and \
                     not self.meta['is_needs_info']:
+
                 logging.info('shipit')
-                if self.meta['shipit_owner_pr'] \
-                        and 'shipit_owner_pr' not in self.issue.labels:
-                    self.actions['newlabel'].append('shipit')
-                    self.actions['newlabel'].append('shipit_owner_pr')
-                elif not self.meta['shipit_owner_pr'] \
-                        and self.meta['shipit'] \
-                        and 'shipit' not in self.issue.labels \
-                        and 'shipit' not in self.actions['newlabel']:
+                if self.meta['is_module'] and self.meta['module_match']:
+                    if len(self.issue.files) == 1:
+                        if not self.meta['is_new_module']:
+                            metadata = self.meta['module_match']['metadata']
+                            supported_by = metadata.get('supported_by')
+                            if supported_by == 'community':
+                                logging.info('auto-merge tests passed')
+                                self.actions['merge'] = True
+
+                if 'shipit' not in self.issue.labels:
                     self.actions['newlabel'].append('shipit')
             else:
                 if 'shipit' in self.issue.labels:
                     self.actions['unlabel'].append('shipit')
-                if 'shipit_owner_pr' in self.issue.labels:
-                    self.actions['unlabel'].append('shipit_owner_pr')
 
             # needs revision
             if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
@@ -681,6 +689,18 @@ class TriageV3(DefaultTriager):
             else:
                 if 'needs_revision' in self.issue.labels:
                     self.actions['unlabel'].append('needs_revision')
+
+        else:
+            if 'shipit' in self.issue.labels:
+                self.actions['unlabel'].append('shipit')
+
+        # owner PRs
+        if self.meta['owner_pr']:
+            if 'owner_pr' not in self.issue.labels:
+                self.actions['newlabel'].append('owner_pr')
+        else:
+            if 'owner_pr' in self.issue.labels:
+                self.actions['unlabel'].append('owner_pr')
 
         if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
             if 'needs_rebase' not in self.issue.labels:
@@ -741,13 +761,14 @@ class TriageV3(DefaultTriager):
                 ):
                     self.actions['unlabel'].append('module')
 
-        '''
-        if self.meta['is_module_util']:
-            if 'c:module_utils/' not in self.issue.labels:
-                # do not re-add module_util
-                if not self.issue.history.was_unlabeled('c:module_utils/'):
-                    self.actions['newlabel'].append('module_util')
-        '''
+        # component labels
+        if self.meta['component_labels']:
+            for cl in self.meta['component_labels']:
+                ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
+                if not ul and \
+                        cl not in self.issue.labels and \
+                        cl not in self.actions['newlabel']:
+                    self.actions['newlabel'].append(cl)
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
@@ -834,6 +855,9 @@ class TriageV3(DefaultTriager):
     def check_safe_match(self):
         safe = True
         for k,v in self.actions.iteritems():
+            if k == 'merge' and v:
+                safe = False
+                continue
             if k == 'newlabel' or k == 'unlabel':
                 if 'needs_revision' in v or 'needs_rebase' in v:
                     safe = False
@@ -995,11 +1019,7 @@ class TriageV3(DefaultTriager):
                             issue=issue,
                             cachedir=cachedir
                     )
-                    HistoryWrapper(
-                        iw,
-                        usecache=False,
-                        cachedir=cachedir
-                    )
+                    iw.history
                     rl = thisrepo.get_rate_limit()
                     pprint(rl)
 
@@ -1105,10 +1125,6 @@ class TriageV3(DefaultTriager):
 
         logging.info('finished querying updated issues')
         return issueids
-
-    def get_history(self, issue, usecache=True, cachedir=None):
-        history = HistoryWrapper(issue, usecache=usecache, cachedir=cachedir)
-        return history
 
     def process(self, issuewrapper):
         '''Do initial processing of the issue'''
@@ -1259,6 +1275,15 @@ class TriageV3(DefaultTriager):
                     print(f)
                     #import epdb; epdb.st()
 
+        # get labels for files ...
+        if not iw.is_pullrequest():
+            self.meta['component_labels'] = []
+        else:
+            self.meta['component_labels'] = self.get_component_labels(
+                self.valid_labels,
+                iw.files
+            )
+
         # who owns this?
         self.meta['owner'] = 'ansible'
         if self.meta['module_match']:
@@ -1295,6 +1320,7 @@ class TriageV3(DefaultTriager):
         self.meta.update(self.get_shipit_facts(iw, self.meta))
         self.meta.update(self.get_review_facts(iw, self.meta))
 
+        '''
         # migrated?
         mi = self.is_migrated(iw)
         if mi:
@@ -1304,6 +1330,30 @@ class TriageV3(DefaultTriager):
             self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
             self.meta['migrated_issue_number'] = miw.number
             self.meta['migrated_issue_state'] = miw.state
+        '''
+        if iw.migrated:
+            miw = iw._migrated_issue
+            self.meta['is_migrated'] = True
+            self.meta['migrated_from'] = str(miw)
+            self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
+            self.meta['migrated_issue_number'] = miw.number
+            self.meta['migrated_issue_state'] = miw.state
+
+    def build_history(self, issuewrapper):
+        '''Set the history and merge other event sources'''
+        iw = issuewrapper
+        iw._history = False
+        iw.history
+
+        if iw.migrated:
+            mi = self.get_migrated_issue(iw.migrated_from)
+            iw.history.merge_history(mi.history.history)
+            iw._migrated_issue = mi
+
+        if iw.is_pullrequest():
+            iw.history.merge_reviews(iw.reviews)
+
+        return iw
 
     def guess_issue_type(self, issuewrapper):
         iw = issuewrapper
@@ -1343,6 +1393,7 @@ class TriageV3(DefaultTriager):
                 self.debug('keeping %s label' % label)
                 self.issue.add_desired_label(name=label)
 
+    '''
     def is_migrated(self, issuewrapper):
         migrated_issue = None
         iw = issuewrapper
@@ -1374,6 +1425,7 @@ class TriageV3(DefaultTriager):
 
         #import epdb; epdb.st()
         return migrated_issue
+    '''
 
     def get_migrated_issue(self, migrated_issue):
         if migrated_issue.startswith('https://'):
@@ -1393,21 +1445,6 @@ class TriageV3(DefaultTriager):
         else:
             print(migrated_issue)
             import epdb; epdb.st()
-
-        '''
-        if mirepopath not in self.repos:
-            self.repos[mirepopath] = {
-                'repo': self.ghw.get_repo(mirepopath, verbose=False),
-                'issues': {}
-            }
-        mrepo = self.repos[mirepopath]['repo']
-        missue = mrepo.get_issue(minumber)
-        mw = IssueWrapper(
-            repo=mrepo,
-            issue=missue,
-            cachedir=os.path.join(self.cachedir, mirepopath)
-        )
-        '''
 
         mw = self.get_issue_by_repopath_and_number(
             mirepopath,
@@ -1448,7 +1485,7 @@ class TriageV3(DefaultTriager):
         iw = issuewrapper
         nmeta = {
             'shipit': False,
-            'shipit_owner_pr': False,
+            'owner_pr': False,
             'shipit_ansible': False,
             'shipit_community': False
         }
@@ -1458,121 +1495,61 @@ class TriageV3(DefaultTriager):
         if not meta['module_match']:
             return nmeta
 
+        maintainers = meta['module_match']['maintainers']
+        for idm,m in enumerate(maintainers):
+            if m == 'ansible':
+                maintainers[idm] = \
+                    [x for x in self.ansible_members if x not in BOTNAMES]
+
+        if iw.submitter in maintainers:
+            nmeta['owner_pr'] = True
+
         ansible_shipits = 0
-        shipits = 0
-        migrated_issue = None
+        maintainer_shipits = 0
+        community_shipits = 0
+        shipit_actors = []
+        for event in iw.history.history:
 
-        maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
-        maintainers += meta['module_match']['maintainers']
+            if event['event'] != 'commented':
+                continue
+            if event['actor'] in BOTNAMES:
+                continue
+            if event['actor'] in shipit_actors:
+                continue
 
-        for comment in iw.comments:
-            body = comment.body
+            actor = event['actor']
+            body = event['body']
 
             # ansible shipits
-            if comment.user.login in self.ansible_members and \
-                    comment.user.login not in BOTNAMES:
+            if actor in self.ansible_members:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    logging.info('%s shipit' % actor)
                     ansible_shipits += 1
+                    shipit_actors.append(actor)
+                    continue
+
+            # maintainer shipits
+            if actor in maintainers:
+                if 'shipit' in body or '+1' in body or 'LGTM' in body:
+                    logging.info('%s shipit' % actor)
+                    maintainer_shipits += 1
+                    shipit_actors.append(actor)
+                    continue
 
             # community shipits
-            if comment.user.login != iw.submitter:
+            if actor != iw.submitter:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
-                    shipits += 1
+                    logging.info('%s shipit' % actor)
+                    community_shipits += 1
+                    shipit_actors.append(actor)
+                    continue
 
-            # Migrated from ansible/ansible-modules-extras#3662
-            # u'Migrated from
-            #   https://github.com/ansible/ansible-modules-extras/pull/2979 by
-            #   tintoy (not original author)'
-            if comment.user.login == iw.submitter and \
-                    body.lower().startswith('migrated from'):
-                bparts = body.split()
-                migrated_issue = bparts[2]
-                #import epdb; epdb.st()
+        nmeta['shipit_count_community'] = community_shipits
+        nmeta['shipit_count_maintainer'] = maintainer_shipits
+        nmeta['shipit_count_ansible'] = ansible_shipits
 
-            if comment.user.login in maintainers:
-                if 'shipit' in body or '+1' in body or 'LGTM' in body:
-                    nmeta['shipit'] = True
-                    if comment.user.login == iw.submitter:
-                        nmeta['shipit_owner_pr'] = True
-                    break
-
-        # prmover doesn't copy comments, so they have to
-        # be scraped from the old pullrequest
-        if migrated_issue and not nmeta['shipit']:
-
-            if migrated_issue.startswith('https://'):
-                miparts = migrated_issue.split('/')
-                minumber = int(miparts[-1])
-                minamespace = miparts[-4]
-                mirepo = miparts[-3]
-                mirepopath = minamespace + '/' + mirepo
-            elif '#' in migrated_issue:
-                miparts = migrated_issue.split('#')
-                minumber = int(miparts[-1])
-                mirepopath = miparts[0]
-            else:
-                print(migrated_issue)
-                import epdb; epdb.st()
-
-            if mirepopath not in self.repos:
-                self.repos[mirepopath] = {
-                    'repo': self.ghw.get_repo(mirepopath, verbose=False),
-                    'issues': {}
-                }
-            mrepo = self.repos[mirepopath]['repo']
-            missue = mrepo.get_issue(minumber)
-            mw = IssueWrapper(
-                repo=mrepo,
-                issue=missue,
-                cachedir=os.path.join(self.cachedir, mirepopath)
-            )
-
-            for comment in mw.comments:
-
-                # ansible shipits
-                if comment.user.login in self.ansible_members and \
-                        comment.user.login not in BOTNAMES:
-                    if 'shipit' in body.lower() or \
-                            '+1' in body or 'LGTM' in body:
-                        ansible_shipits += 1
-
-                # community shipits
-                if comment.user.login != iw.submitter:
-                    if 'shipit' in body.lower() or \
-                            '+1' in body or 'LGTM' in body:
-                        shipits += 1
-
-                if comment.user.login in maintainers:
-                    if 'shipit' in body.lower() or \
-                            '+1' in body or 'LGTM' in body:
-                        nmeta['shipit'] = True
-                        if comment.user.login == iw.submitter:
-                            nmeta['shipit_owner_pr'] = True
-                        break
-
-        # https://github.com/ansible/ansible-modules-extras/pull/1749
-        # Thanks again to @dinoocch for this PR. This PR was reviewed by an
-        # Ansible member. Marking for inclusion.
-        if not nmeta['shipit'] and ansible_shipits > 0:
+        if (community_shipits + maintainer_shipits + ansible_shipits) > 1:
             nmeta['shipit'] = True
-            nmeta['shipit_ansible'] = True
-
-        # community voted shipits
-        if not nmeta['shipit'] and shipits > 1 and \
-                (self.meta['is_module'] and self.meta['is_new_module']):
-            nmeta['shipit'] = True
-            nmeta['shipit_community'] = True
-
-        if nmeta['shipit'] and \
-                (meta['is_needs_info'] or
-                 meta['is_needs_revision'] or
-                 meta['is_needs_rebase']):
-
-            nmeta['shipit'] = False
-            nmeta['shipit_community'] = False
-            nmeta['shipit_ansible'] = False
-
-        #import epdb; epdb.st()
 
         return nmeta
 
@@ -1667,8 +1644,10 @@ class TriageV3(DefaultTriager):
 
         # a "dirty" mergeable_state can exist with "successfull" ci_state.
 
+        committer_count = None
         needs_revision = False
         needs_revision_msgs = []
+        merge_commits = False
         needs_rebase = False
         needs_rebase_msgs = []
         has_shippable = False
@@ -1682,6 +1661,7 @@ class TriageV3(DefaultTriager):
         ready_for_review = None
 
         rmeta = {
+            'committer_count': committer_count,
             'is_needs_revision': needs_revision,
             'is_needs_revision_msgs': needs_revision_msgs,
             'is_needs_rebase': needs_rebase,
@@ -1689,6 +1669,7 @@ class TriageV3(DefaultTriager):
             'has_shippable': has_shippable,
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
+            'merge_commits': merge_commits,
             'mergeable': None,
             'mergeable_state': mstate,
             'changed_requested': change_requested,
@@ -1750,8 +1731,19 @@ class TriageV3(DefaultTriager):
 
         else:
 
+            '''
             # merge in the reviews to the history
             iw.history.merge_reviews(iw.reviews)
+            '''
+
+            '''
+            # review -requests- are not in the api data
+            www_rd = self.gws.scrape_pullrequest_review(
+                iw.repo_full_name,
+                iw.number
+            )
+            import epdb; epdb.st()
+            '''
 
             for event in iw.history.history:
 
@@ -1826,6 +1818,15 @@ class TriageV3(DefaultTriager):
                         )
                         continue
 
+        # Merge commits are bad, force a rebase
+        for mc in iw.merge_commits:
+            merge_commits = True
+            needs_rebase = True
+            needs_rebase_msgs.append('merge commit %s' % mc.commit.sha)
+
+        # Count committers
+        committer_count = len(sorted(set(iw.committer_emails)))
+
         if ci_status:
             for x in ci_status:
                 if 'travis-ci.org' in x['target_url']:
@@ -1855,14 +1856,8 @@ class TriageV3(DefaultTriager):
         www_summary = self.gws.get_single_issue_summary(rfn, self.issue.number)
         www_reviews = self.gws.scrape_pullrequest_review(rfn, self.issue.number)
 
-        '''
-        # FIXME - DEBUG !!!
-        #if ci_state == 'success' and mstate == 'unknown':
-        if mstate == 'unknown' and not has_travis:
-            import epdb; epdb.st()
-        '''
-
         rmeta = {
+            'committer_count': committer_count,
             'is_needs_revision': needs_revision,
             'is_needs_revision_msgs': needs_revision_msgs,
             'is_needs_rebase': needs_rebase,
@@ -1870,6 +1865,7 @@ class TriageV3(DefaultTriager):
             'has_shippable': has_shippable,
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
+            'merge_commits': merge_commits,
             'mergeable': self.issue.pullrequest.mergeable,
             'mergeable_state': mstate,
             'changed_requested': change_requested,
@@ -2031,25 +2027,30 @@ class TriageV3(DefaultTriager):
         vcommands.remove('!needs_revision')
 
         iw = issuewrapper
+
+        '''
         if not iw.history:
             iw.history = self.get_history(
                 iw,
                 cachedir=self.cachedir,
                 usecache=True
             )
+        '''
 
+        '''
         # if this was migrated, merge the old history
-        migrated_issue = self.is_migrated(iw)
-        if migrated_issue:
-            mi = self.get_migrated_issue(migrated_issue)
-            if not mi.history:
-                mi.history = self.get_history(
-                    mi,
-                    cachedir=self.cachedir,
-                    usecache=True
-                )
-            iw.history.merge_history(mi.history.history)
-        #import epdb; epdb.st()
+        if iw.migrated:
+            migrated_issue = self.is_migrated(iw)
+            if migrated_issue:
+                mi = self.get_migrated_issue(migrated_issue)
+                if not mi.history:
+                    mi.history = self.get_history(
+                        mi,
+                        cachedir=self.cachedir,
+                        usecache=True
+                    )
+                iw.history.merge_history(mi.history.history)
+        '''
 
         maintainers = []
         if meta['module_match']:
@@ -2111,3 +2112,17 @@ class TriageV3(DefaultTriager):
                     commands.remove(negative)
 
         return commands
+
+    def get_component_labels(self, valid_labels, files):
+        labels = [x for x in valid_labels if x.startswith('c:')]
+
+        clabels = []
+        for cl in labels:
+            l = cl.replace('c:', '', 1)
+            al = os.path.join('lib/ansible', l)
+            for f in files:
+                if f.startswith(l) or f.startswith(al):
+                    clabels.append(cl)
+
+        #import epdb; epdb.st()
+        return clabels
