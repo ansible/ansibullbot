@@ -562,6 +562,8 @@ class HistoryWrapper(object):
                 event['event'] = 'review_changes_requested'
             elif review['state'] == 'APPROVED':
                 event['event'] = 'review_approved'
+            elif review['state'] == 'DISMISSED':
+                event['event'] = 'review_dismissed'
             else:
                 import epdb; epdb.st()
             self.history.append(event)
