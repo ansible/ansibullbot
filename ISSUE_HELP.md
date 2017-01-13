@@ -30,10 +30,6 @@ Expect the bot to do a few things:
 
   Notifications will happen via a comment with the '@<NAME>' syntax. If you know of other interested parties, feel free to ping them in a comment or in your issue description.
 
-To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
-
-* **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
-
 ## For pullrequest submitters
 Expect the bot to do a few things:
 
