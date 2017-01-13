@@ -90,7 +90,7 @@ class GithubWebScraper(object):
             import epdb; epdb.st()
 
         tfh, tfn = tempfile.mkstemp()
-        tfh.close()
+        os.close(tfh)
         with open(tfn, 'wb') as f:
             f.write(json.dumps(issues, sort_keys=True, indent=2))
 
