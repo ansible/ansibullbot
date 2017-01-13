@@ -1112,8 +1112,10 @@ class TriageV3(DefaultTriager):
                                        if x not in current_numbers and
                                        x not in since_numbers]
 
-                    logging.info('issue numbers not returned via "since": %s'
-                                 % ','.join(missing_numbers))
+                    logging.info(
+                        'issue numbers not returned via "since": %s'
+                        % ','.join([str(x) for x in missing_numbers])
+                    )
 
                     for x in missing_numbers:
                         issue = None
