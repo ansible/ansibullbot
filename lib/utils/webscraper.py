@@ -47,6 +47,38 @@ class GithubWebScraper(object):
         return issues
 
     def dump_summaries(self, repo_url, issues, filename="summaries"):
+
+        """
+        [jtanner@fedmac ansibullbot]$ sudo ls -al /proc/10895/fd
+        total 0
+        dr-x------ 2 jtanner docker  0 Jan 13 08:51 .
+        dr-xr-xr-x 9 jtanner docker  0 Jan 13 08:42 ..
+        lrwx------ 1 jtanner docker 64 Jan 13 08:51 0 -> /dev/pts/2
+        lrwx------ 1 jtanner docker 64 Jan 13 08:51 1 -> /dev/pts/2
+        lr-x------ 1 jtanner docker 64 Jan 13 08:51 10 -> /dev/urandom
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 11 -> /tmp/tmpag2rAb (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 12 -> /tmp/tmpD2plk9 (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 13 -> /tmp/tmpfkSSPA (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 14 -> /tmp/tmpIDY_wb (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 15 -> /tmp/tmpbQBvI2 (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 16 -> /tmp/tmpknP5os (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 17 -> /tmp/tmpDJgEnc (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 18 -> /tmp/tmprWLicP (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 19 -> /tmp/tmpm6d8Qx (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 2 -> /dev/pts/2
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 20 -> /tmp/tmp_w9Sth (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 21 -> /tmp/tmpRGnb3p (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 22 -> /tmp/tmpiVYdTE (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 23 -> /tmp/tmpEyGXuP (deleted)
+        l-wx------ 1 jtanner d 64 Jan 13 08:51 3 -> /var/log/ansibullbot.log
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 4 -> /tmp/tmpIlHOg_ (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 5 -> /tmp/tmp5P8Mya (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 6 -> /tmp/tmpDW4MRD (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 7 -> /tmp/tmpUyBIFB (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 8 -> /tmp/tmpYcWaLe (deleted)
+        lrwx------ 1 jtanner d 64 Jan 13 08:51 9 -> /tmp/tmp_Qcxrt (deleted)
+        """
+
         ns,repo = self.split_repo_url(repo_url)
         cachefile = os.path.join(
             self.cachedir,
@@ -58,6 +90,7 @@ class GithubWebScraper(object):
             import epdb; epdb.st()
 
         tfh, tfn = tempfile.mkstemp()
+        tfh.close()
         with open(tfn, 'wb') as f:
             f.write(json.dumps(issues, sort_keys=True, indent=2))
 
