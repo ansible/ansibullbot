@@ -767,6 +767,9 @@ def main3():
                     "question.)"
     )
 
+    parser.add_argument("--skip-no-update", action="store_true",
+                        help="skip processing if updated_at hasn't changed")
+
     parser.add_argument("--collect_only", action="store_true",
                         help="stop after caching issues")
 

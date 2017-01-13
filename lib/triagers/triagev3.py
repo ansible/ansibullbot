@@ -392,6 +392,14 @@ class TriageV3(DefaultTriager):
                         cachedir=self.cachedir
                     )
 
+                    if self.args.skip_no_update:
+                        lmeta = self.load_meta(iw)
+                        if lmeta:
+                            if lmeta['updated_at'] == iw.updated_at.isoformat():
+                                msg = 'skipping: no changes since last run'
+                                logging.info(msg)
+                                continue
+
                     # pre-processing for non-module repos
                     if iw.repo_full_name not in MREPOS:
                         # force an update on the PR data
@@ -529,6 +537,7 @@ class TriageV3(DefaultTriager):
             # close new module issues+prs immediately
             logging.info('module issue created -after- merge')
             self.close_module_issue_with_message(iw)
+            self.save_meta(iw, {'updated_at': iw.updated_at.isoformat()})
             return
         else:
             # process history
@@ -574,6 +583,18 @@ class TriageV3(DefaultTriager):
                 else:
                     # do nothing
                     pass
+            self.save_meta(iw, {'updated_at': iw.updated_at.isoformat()})
+
+    def load_meta(self, issuewrapper):
+        mfile = os.path.join(
+            issuewrapper.full_cachedir,
+            'meta.json'
+        )
+        meta = {}
+        if os.path.isfile(mfile):
+            with open(mfile, 'rb') as f:
+                meta = json.load(f)
+        return meta
 
     def dump_meta(self, issuewrapper, meta):
         mfile = os.path.join(
