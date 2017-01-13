@@ -3,12 +3,12 @@
 
 Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed.
 
-If at anytime you think this bot is misbehaving, please leave a comment containing the keyword `bot_broken` and an Ansible staff member will intervene.
+If at anytime you think this bot is misbehaving, please leave a comment containing the keyword **bot_broken** and an Ansible staff member will intervene.
 
 ## For issue submitters
 Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question .
 
-If the feature/module maintainer or ansibot needs further information, please respond to the request, so that you can help us to help you!
+If the feature/module maintainer or ansibot needs further information, please respond to the request, so that you can help the devs to help you!
 
 The bot requires a minimal subset of information from the issue template 
 * issue type
@@ -20,7 +20,7 @@ If any of those items are missing or empty, ansibot will keep the issue in a "ne
 
 Expect the bot to do a few things:
 
-1. Add common labels such as needs_triage, bug_report, feature_idea, etc.
+1. Add common labels such as **needs_triage**, **bug_report**, **feature_idea**, etc.
 
   These labels are determined by templated data in the description. Please fill out the templates as accurately as possible so that the appropriate labels are used.
 
