@@ -418,6 +418,12 @@ class GithubWebScraper(object):
                 action = 'suggested changes'
             elif 'requested changes' in atxt:
                 action = 'requested changes'
+            elif 'self-requested a review' in atxt:
+                # <a href="/resmo" class="author">resmo</a>
+                action = 'requested review'
+                ra = rdiv.find('a', {'class': 'author'})
+                if ra:
+                    reviewer = ra.text.strip()
             elif 'requested a review' in atxt:
                 action = 'requested review'
                 tparts = atxt.split()
