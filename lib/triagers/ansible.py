@@ -69,7 +69,7 @@ ERROR_CODES = {
 }
 
 
-class TriageV3(DefaultTriager):
+class AnsibleTriage(DefaultTriager):
 
     EMPTY_ACTIONS = {
         'newlabel': [],
