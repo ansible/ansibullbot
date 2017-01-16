@@ -433,6 +433,14 @@ class TriagePullRequests:
                 name="community_review_existing"
             )
 
+    def create_issue_for_ansibullbot(self):
+        title = "missing maintainer: #%s in %s" % (self.pull_request.pr_number, self.github_repo)
+        body = "See https://github.com/ansible/ansible-modules-%s/pull/%s" % (self.github_repo, self.pull_request.pr_number)
+        repo = self._connect().get_repo("ansible/ansibullbot")
+        issue = repo.create_issue(title=title, body=body)
+        self.debug(msg="Created an issue %s on ansible/ansibullbot" % issue.number)
+        return issue
+
     def process_comments(self):
         """ Processes PR comments for matching criteria for adding labels"""
         module_maintainers = self.get_module_maintainers()
@@ -739,6 +747,9 @@ class TriagePullRequests:
             self.pull_request.add_label(label=newlabel)
         for comment in self.actions['comments']:
             self.debug(msg="API Call comment: " + comment)
+            if 'bot:maintainer_unknown' in comment:
+                issue = self.create_issue_for_ansibullbot()
+                comment = comment + "\n created issue: https://github.com/ansible/ansibullbot/issue/%s" % issue.number
             self.pull_request.add_comment(comment=comment)
 
     def run(self):
