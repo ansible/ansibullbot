@@ -31,8 +31,9 @@ from datetime import datetime
 import github
 
 from lib.utils.extractors import extract_template_data
-from lib.wrappers.decorators import RateLimited
 from lib.wrappers.historywrapper import HistoryWrapper
+
+from lib.decorators.github import RateLimited
 
 
 class DefaultWrapper(object):

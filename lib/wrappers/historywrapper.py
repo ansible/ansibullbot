@@ -6,7 +6,7 @@ import os
 import pickle
 from operator import itemgetter
 from github import GithubObject
-from lib.wrappers.decorators import RateLimited
+from lib.decorators.github import RateLimited
 
 # historywrapper.py
 #
