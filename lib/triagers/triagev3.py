@@ -47,7 +47,7 @@ from lib.utils.webscraper import GithubWebScraper
 from lib.wrappers.decorators import RateLimited
 
 
-BOTNAMES = ['ansibot', 'gregdek']
+BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 REPOS = [
     'ansible/ansible',
     'ansible/ansible-modules-core',
@@ -195,6 +195,7 @@ class TriageV3(DefaultTriager):
         # where to store junk
         self.cachedir = '~/.ansibullbot/cache'
         self.cachedir = os.path.expanduser(self.cachedir)
+        self.cachedir_base = self.cachedir
 
         # repo objects
         self.repos = {}
@@ -330,6 +331,9 @@ class TriageV3(DefaultTriager):
             if self.args.module_repos_only and 'module' not in repopath:
                 continue
 
+            # set the relative cachedir
+            self.cachedir = os.path.join(self.cachedir_base, repopath)
+            #import epdb; epdb.st()
             # this is where the issue history cache goes
             hcache = os.path.join(self.cachedir, repopath)
             # scrape all summaries from www for later opchecking
