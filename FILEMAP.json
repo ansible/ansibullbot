@@ -43,6 +43,12 @@
     "lib/ansible/modules/network/(?!basics).*/.*": {
         "labels": ["networking"]
     },
+    ".*/(winrm|powershell).*": {
+        "labels": ["windows"]
+    },
+    ".*/*.ps1": {
+        "labels": ["windows"]
+    },
     ".*gce.*": {
         "labels": ["cloud", "gce"]
     },
