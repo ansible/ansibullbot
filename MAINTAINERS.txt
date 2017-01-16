@@ -259,9 +259,6 @@ network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
 network/eos/: privateip gundalow Qalthos
 network/exoscale/: resmo
-network/f5/bigip_monitor_http.py: srvg
-network/f5/bigip_monitor_tcp.py: srvg
-network/f5/bigip_virtual_server.py: Etienne-Carriere
 network/f5/: mhite caphrim007 gundalow Qalthos privateip
 network/haproxy.py: ravibhure
 network/illumos/: xen0l
