@@ -29,8 +29,7 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
-#from lib.wrappers.ghapiwrapper import ratecheck
-from lib.wrappers.decorators import RateLimited
+from lib.decorators.github import RateLimited
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.file_tools import FileIndexer
