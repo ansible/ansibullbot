@@ -59,14 +59,6 @@ def main():
 
     parser.add_argument("--repo", "-r", type=str,
                         help="Github repo to triage (defaults to all)")
-    """
-    parser.add_argument("--gh-user", "-u", type=str,
-                        help="Github username or token of triager")
-    parser.add_argument("--gh-pass", "-P", type=str,
-                        help="Github password of triager")
-    parser.add_argument("--gh-token", "-T", type=str,
-                        help="Github token of triager")
-    """
 
     parser.add_argument("--dryrun", "-n", action="store_true",
                         help="Do not apply any changes.")
