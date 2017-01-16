@@ -833,7 +833,7 @@ class DefaultWrapper(object):
         # rebase if >1 committer
         # error otherwise
 
-        # DEBUG
+        # DEBUG - skipping merges for now until shipit algo is fully vetted
         return None
 
         if len(self.commits) == 1 and not self.merge_commits:
@@ -843,6 +843,28 @@ class DefaultWrapper(object):
             headers['Accept'] = 'application/vnd.github.polaris-preview+json'
             params = {}
             params['merge_method'] = 'squash'
+            resp = self.pullrequest._requester.requestJson(
+                "PUT",
+                url,
+                headers=headers,
+                input=params
+            )
+
+            if resp[0] != 200 or 'successfully merged' not in resp[2]:
+                logging.error('merge failed on %s' % self.number)
+                import epdb; epdb.st()
+                sys.exit(1)
+            else:
+                logging.error('merge successful for %s' % self.number)
+
+        elif (len(self.commits) == len(self.committer_emails)) and \
+                len(self.commits) <= 10:
+
+            url = url = os.path.join(self.pullrequest.url, 'merge')
+            headers = {}
+            headers['Accept'] = 'application/vnd.github.polaris-preview+json'
+            params = {}
+            params['merge_method'] = 'rebase'
             resp = self.pullrequest._requester.requestJson(
                 "PUT",
                 url,
