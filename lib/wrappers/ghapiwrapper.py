@@ -13,7 +13,7 @@ import requests
 from datetime import datetime
 
 from bs4 import BeautifulSoup
-from lib.wrappers.decorators import RateLimited
+from lib.decorators.github import RateLimited
 
 
 class GithubWrapper(object):

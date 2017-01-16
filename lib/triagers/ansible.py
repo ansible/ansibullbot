@@ -46,7 +46,7 @@ from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
 from lib.utils.webscraper import GithubWebScraper
 
-from lib.wrappers.decorators import RateLimited
+from lib.decorators.github import RateLimited
 
 
 BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
