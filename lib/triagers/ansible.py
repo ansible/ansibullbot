@@ -33,6 +33,8 @@ import os
 import re
 import time
 
+import lib.constants as C
+
 from pprint import pprint
 from lib.triagers.defaulttriager import DefaultTriager
 from lib.wrappers.ghapiwrapper import GithubWrapper
@@ -159,12 +161,14 @@ class AnsibleTriage(DefaultTriager):
         self.daemonize_interval = None
         self.dry_run = False
         self.force = False
-        self.gh_pass = None
-        self.github_pass = None
-        self.gh_token = None
-        self.github_token = None
-        self.gh_user = None
-        self.github_user = None
+
+        self.gh_pass = C.DEFAULT_GITHUB_PASSWORD
+        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
+        self.gh_token = C.DEFAULT_GITHUB_TOKEN
+        self.github_token = C.DEFAULT_GITHUB_TOKEN
+        self.gh_user = C.DEFAULT_GITHUB_USERNAME
+        self.github_user = C.DEFAULT_GITHUB_USERNAME
+
         self.logfile = None
         self.no_since = False
         self.only_closed = False
@@ -179,18 +183,6 @@ class AnsibleTriage(DefaultTriager):
         self.skiprepo = []
         self.start_at = False
         self.verbose = False
-        self.issue_summaries = {}
-
-        '''
-        # get the ansible members
-        self.ansible_members = self.get_ansible_members()
-
-        # get valid labels
-        self.valid_labels = self.get_valid_labels('ansible/ansible')
-
-        # extend managed labels
-        self.MANAGED_LABELS += self.ISSUE_TYPES.values()
-        '''
 
         # where to store junk
         self.cachedir = '~/.ansibullbot/cache'
@@ -199,6 +191,9 @@ class AnsibleTriage(DefaultTriager):
 
         # repo objects
         self.repos = {}
+
+        # scraped summaries for all issues
+        self.issue_summaries = {}
 
         self.set_logger()
         logging.info('starting bot')
@@ -215,11 +210,6 @@ class AnsibleTriage(DefaultTriager):
 
         if self.args.pause:
             self.always_pause = True
-
-        # This is for the RateLimited decorator ...
-        os.environ['GITHUB_USERNAME'] = self.args.gh_user or ''
-        os.environ['GITHUB_PASSWORD'] = self.args.gh_pass or ''
-        os.environ['GITHUB_TOKEN'] = self.args.gh_token or ''
 
         # connect to github
         self.gh = self._connect()

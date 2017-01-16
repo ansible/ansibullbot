@@ -299,12 +299,13 @@ class DefaultTriager(object):
     @RateLimited
     def _connect(self):
         """Connects to GitHub's API"""
-        return Github(login_or_token=self.github_token or self.github_user,
-                      password=self.github_pass)
-        #return GithubWrapper(
-        #        login_or_token=self.github_token or self.github_user,
-        #        password=self.github_pass
-        #       )
+        if self.github_token != 'False':
+            return Github(login_or_token=self.github_token)
+        else:
+            return Github(
+                login_or_token=self.github_user,
+                password=self.github_pass
+            )
 
     def _get_repo_path(self):
         if self.github_repo in ['core', 'extras']:
