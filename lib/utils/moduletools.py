@@ -104,6 +104,11 @@ class ModuleIndexer(object):
         '''Exact module name matching'''
         if not pattern:
             return None
+
+        # https://github.com/ansible/ansible/issues/19755
+        if pattern == 'setup':
+            pattern = 'system/setup.py'
+
         match = self._find_match(pattern, exact=exact)
         if not match and not exact:
             # check for just the basename
