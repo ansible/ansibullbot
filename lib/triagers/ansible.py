@@ -358,6 +358,11 @@ class AnsibleTriage(DefaultTriager):
                     redo = False
                     continue
 
+                if self.args.only_prs and not 'pull' in issue.html_url:
+                    logging.info(str(number) + ' is issue, skipping')
+                    redo = False
+                    continue
+
                 # users may want to re-run this issue after manual intervention
                 redo = True
 
