@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import datetime
 import logging
 import os
 import pickle
+import pytz
 from operator import itemgetter
 from github import GithubObject
 from lib.decorators.github import RateLimited
@@ -79,7 +79,6 @@ class HistoryWrapper(object):
                 if cache['updated_at'] >= self.issue.instance.updated_at:
                     logging.info('use cached history')
                     self.history = cache['history']
-                    #import epdb; epdb.st()
                 else:
                     logging.info('history out of date, updating')
                     self.history = self.process()
@@ -91,7 +90,9 @@ class HistoryWrapper(object):
             for x in tmp_history:
                 if x['actor'] in exclude_users:
                     self.history.remove(x)
-        #import epdb; epdb.st()
+
+        self.fix_history_tz()
+        self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def get_rate_limit(self):
         return self.issue.repo.gh.get_rate_limit()
@@ -114,7 +115,6 @@ class HistoryWrapper(object):
     def _dump_cache(self):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
-        #cachefile = os.path.join(self.cachedir, 'history.pickle')
 
         # keep the timestamp
         cachedata = {'updated_at': self.issue.instance.updated_at,
@@ -217,7 +217,7 @@ class HistoryWrapper(object):
             elif event['event'] == 'unlabeled' and uselabels:
                 if event['label'] in command_keys:
                     commands.append('!' + event['label'])
-        #import epdb; epdb.st()
+
         return commands
 
     def is_referenced(self, username):
@@ -532,11 +532,17 @@ class HistoryWrapper(object):
         return dt.value
 
     def merge_commits(self, commits):
-        for xc in commits:
+        for idx,xc in enumerate(commits):
+
+            '''
             # 'Thu, 12 Jan 2017 15:06:46 GMT'
             tfmt = '%a, %d %b %Y %H:%M:%S %Z'
             ts = xc.last_modified
             dts = datetime.datetime.strptime(ts, tfmt)
+            '''
+            # committer.date: "2016-12-19T08:05:45Z"
+            dts = xc.commit.committer.date
+            adts = pytz.utc.localize(dts)
 
             event = {}
             event['id'] = xc.sha
@@ -544,10 +550,12 @@ class HistoryWrapper(object):
                 event['actor'] = xc.committer.login
             else:
                 event['actor'] = xc.committer
-            event['created_at'] = dts
+            #event['created_at'] = dts
+            event['created_at'] = adts
             event['event'] = 'committed'
             self.history.append(event)
 
+        self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def merge_reviews(self, reviews):
@@ -567,6 +575,8 @@ class HistoryWrapper(object):
             else:
                 import epdb; epdb.st()
             self.history.append(event)
+
+        self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def merge_history(self, oldhistory):
@@ -574,3 +584,10 @@ class HistoryWrapper(object):
         self.history += oldhistory
         # sort by created_at
         self.history = sorted(self.history, key=itemgetter('created_at'))
+
+    def fix_history_tz(self):
+        '''History needs to be timezone aware!!!'''
+        for idx,x in enumerate(self.history):
+            if not x['created_at'].tzinfo:
+                ats = pytz.utc.localize(x['created_at'])
+                self.history[idx]['created_at'] = ats
