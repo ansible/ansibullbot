@@ -30,6 +30,7 @@ import datetime
 import json
 import logging
 import os
+import pytz
 import re
 import time
 
@@ -358,11 +359,11 @@ class AnsibleTriage(DefaultTriager):
                     redo = False
                     continue
 
-                if self.args.only_prs and not 'pull' in issue.html_url:
+                if self.args.only_prs and 'pull' not in issue.html_url:
                     logging.info(str(number) + ' is issue, skipping')
                     redo = False
                     continue
-                if self.args.only_issues and 'pull' in issue.html_url:
+                if self.args.only_issues and 'pull' not in issue.html_url:
                     logging.info(str(number) + ' is pullrequest, skipping')
                     redo = False
                     continue
@@ -550,7 +551,9 @@ class AnsibleTriage(DefaultTriager):
 
             lc = iw.history.last_date_for_boilerplate('repomerge')
             if lc:
-                lcdelta = (datetime.datetime.now() - lc).days
+                # needs to be tz aware
+                now = pytz.utc.localize(datetime.datetime.now())
+                lcdelta = (now - lc).days
             else:
                 lcdelta = None
 
