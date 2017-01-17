@@ -1498,18 +1498,28 @@ class AnsibleTriage(DefaultTriager):
             return nmeta
 
         maintainers = meta['module_match']['maintainers']
-        for idm,m in enumerate(maintainers):
-            if m == 'ansible':
-                maintainers[idm] = \
-                    [x for x in self.ansible_members if x not in BOTNAMES]
+        maintainers = \
+            ModuleIndexer.replace_ansible(
+                maintainers,
+                self.ansible_members,
+                bots=BOTNAMES
+            )
 
-        if iw.submitter in maintainers:
+        if not meta['is_new_module'] and iw.submitter in maintainers:
             nmeta['owner_pr'] = True
 
+        # community is the other maintainers in the same namespace
+        mnamespace = meta['module_match']['namespace']
+        community = \
+            self.module_indexer.get_maintainers_for_namespace(mnamespace)
+        community = [x for x in community if x != 'ansible']
+
+        # shipit tallies
         ansible_shipits = 0
         maintainer_shipits = 0
         community_shipits = 0
         shipit_actors = []
+
         for event in iw.history.history:
 
             if event['event'] not in ['commented', 'committed']:
@@ -1547,7 +1557,7 @@ class AnsibleTriage(DefaultTriager):
                     continue
 
             # community shipits
-            if actor != iw.submitter:
+            if actor != iw.submitter and actor in community:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
                     community_shipits += 1
@@ -1561,6 +1571,11 @@ class AnsibleTriage(DefaultTriager):
 
         if (community_shipits + maintainer_shipits + ansible_shipits) > 1:
             nmeta['shipit'] = True
+
+        logging.info(
+            'total shipits: %s' %
+            (community_shipits + maintainer_shipits + ansible_shipits)
+        )
 
         return nmeta
 

@@ -566,3 +566,27 @@ class ModuleIndexer(object):
                             mimports.append(mpath + spath)
 
         return mimports
+
+    def get_maintainers_for_namespace(self, namespace):
+        maintainers = []
+        for k,v in self.modules.items():
+            if 'namespace' not in v or 'maintainers' not in v:
+                continue
+            if v['namespace'] == namespace:
+                for m in v['maintainers']:
+                    if m not in maintainers:
+                        maintainers.append(m)
+        return maintainers
+
+    @staticmethod
+    def replace_ansible(maintainers, ansible_members, bots=[]):
+        '''Replace -ansible- with the -humans- in the org'''
+        newlist = []
+        for m in maintainers:
+            if m != 'ansible':
+                newlist.append(m)
+            else:
+                newlist += ansible_members
+        newlist = sorted(set(newlist))
+        newlist = [x for x in newlist if x not in bots]
+        return newlist
