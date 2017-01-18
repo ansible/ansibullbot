@@ -174,8 +174,7 @@ database/misc/mongodb_parameter.py: nerzhul
 database/misc/mongodb_user.py: lujeni
 database/misc/redis.py: slok
 database/misc/riak.py: jsmartin drewkerrigan
-database/mssql/mssql_db.py: vedit
-database/mysql/mysql_db.py: Jmainguy
+database/mssql/mssql_db.py: vedit Jmainguy
 database/mysql/mysql_replication.py: banyek
 database/mysql/mysql_user.py: Jmainguy
 database/mysql/mysql_variables.py: banyek
