@@ -155,6 +155,7 @@ cloud/rackspace/: smashwilson
 cloud/smartos/imgadm.py: jasperla
 cloud/smartos/smartos_image_facts.py: xen0l
 cloud/softlayer/sl_vm.py: mcltn
+cloud/univention/: 2-B
 cloud/vmware/: ansible
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: ansible
@@ -407,7 +408,6 @@ system/timezone.py: tmshn jasperla
 system/ufw.py: ovcharenko pyykkis
 system/user.py: ansible
 system/zfs.py: johanwiren
-univention/: 2-B
 utilities/helper/accelerate.py: jimi-c
 utilities/helper/fireball.py: ansible
 utilities/logic/assert.py: ansible
