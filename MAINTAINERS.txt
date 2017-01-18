@@ -31,7 +31,6 @@ cloud/amazon/ec2_tag.py: ansible
 cloud/amazon/ec2_vol_facts.py: wimnat
 cloud/amazon/ec2_vol.py: ansible
 cloud/amazon/ec2_vpc_dhcp_options_facts.py: naslanidis
-cloud/amazon/ec2_vpc_dhcp_options_facts.py: naslanidis
 cloud/amazon/ec2_vpc_dhcp_options.py: joelthompson
 cloud/amazon/ec2_vpc_igw.py: erydo
 cloud/amazon/ec2_vpc_nacl_facts.py: brandond
@@ -88,7 +87,6 @@ cloud/amazon/sts_assume_role.py: bekelchik
 cloud/amazon/sts_session_token.py: pwnall
 cloud/atomic/: krsacme
 cloud/azure/: ansible
-cloud/azure/: ansible
 cloud/azure/azure_rm_deployment.py: devigned lmazuel
 cloud/centurylink/: clc-runner
 cloud/cloudstack/: resmo
@@ -119,7 +117,6 @@ cloud/misc/rhevm.py: TimothyVandenbrande
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
 cloud/misc/virt.py: ansible
-cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz thingee
 cloud/openstack/: emonty shrews juliakreger j2sol rcarrillocruz thingee
 cloud/openstack/_keystone_user.py: DEPRECATED
 cloud/openstack/_nova_keypair.py: DEPRECATED
