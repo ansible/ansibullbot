@@ -89,6 +89,7 @@ cloud/atomic/: krsacme
 cloud/azure/: ansible
 cloud/azure/azure_rm_deployment.py: devigned lmazuel
 cloud/centurylink/: clc-runner
+cloud/cloudscale/: gaudenz
 cloud/cloudstack/: resmo
 cloud/digital_ocean/digital_ocean_domain.py: mgregson alukovenko
 cloud/digital_ocean/digital_ocean.py: alukovenko
