@@ -95,7 +95,7 @@ def main():
     args = parser.parse_args()
 
     # Run the triager ...
-    AnsibleTriage(args)
+    AnsibleTriage(args).start()
 
 
 if __name__ == "__main__":

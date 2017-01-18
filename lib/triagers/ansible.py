@@ -209,7 +209,7 @@ class AnsibleTriage(DefaultTriager):
             else:
                 setattr(self, x, val)
 
-        if self.args.pause:
+        if hasattr(self.args, 'pause') and self.args.pause:
             self.always_pause = True
 
         # connect to github
@@ -251,12 +251,15 @@ class AnsibleTriage(DefaultTriager):
         # get valid labels
         self.valid_labels = self.get_valid_labels('ansible/ansible')
 
-        if args.force_rate_limit:
+    def start(self):
+
+        if hasattr(self.args, 'force_rate_limit') and \
+                self.args.force_rate_limit:
             logging.warning('attempting to trigger rate limit')
             self.trigger_rate_limit()
             return
 
-        if self.args.daemonize:
+        if hasattr(self.args, 'daemonize') and self.args.daemonize:
             logging.info('starting daemonize loop')
             self.loop()
         else:
@@ -265,21 +268,25 @@ class AnsibleTriage(DefaultTriager):
         logging.info('stopping bot')
 
     def set_logger(self):
-        if self.args.debug:
+        if hasattr(self.args, 'debug') and self.args.debug:
             logging.level = logging.DEBUG
         else:
             logging.level = logging.INFO
         logFormatter = \
             logging.Formatter("%(asctime)s %(levelname)s %(message)s")
         rootLogger = logging.getLogger()
-        if self.args.debug:
+        if hasattr(self.args, 'debug') and self.args.debug:
             rootLogger.setLevel(logging.DEBUG)
         else:
             rootLogger.setLevel(logging.INFO)
 
+        if hasattr(self.args, 'logfile'):
+            logfile = self.args.logfile
+        else:
+            logfile = '/tmp/ansibullbot.log'
         fileHandler = logging.FileHandler("{0}/{1}".format(
-                os.path.dirname(self.args.logfile),
-                os.path.basename(self.args.logfile))
+                os.path.dirname(logfile),
+                os.path.basename(logfile))
         )
         fileHandler.setFormatter(logFormatter)
         rootLogger.addHandler(fileHandler)
