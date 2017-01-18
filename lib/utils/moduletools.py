@@ -567,6 +567,17 @@ class ModuleIndexer(object):
 
         return mimports
 
+    @property
+    def all_maintainers(self):
+        maintainers = []
+        for m in maintainers.values():
+            if not isinstance(m, list):
+                m = [m]
+            for mi in m:
+                if mi not in maintainers:
+                    maintainers.append(mi)
+        return maintainers
+
     def get_maintainers_for_namespace(self, namespace):
         maintainers = []
         for k,v in self.modules.items():

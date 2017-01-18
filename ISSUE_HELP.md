@@ -30,6 +30,7 @@ Expect the bot to do a few things:
 
   Notifications will happen via a comment with the '@<NAME>' syntax. If you know of other interested parties, feel free to ping them in a comment or in your issue description.
 
+
 ## For pullrequest submitters
 Expect the bot to do a few things:
 
@@ -50,6 +51,7 @@ If you are finished committing to your pullrequest or have made changes due to a
 
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
+* **bot_status** - Use this command if you would like the bot to comment with some helpful metadata about the issue. 
 * **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
 * **ready_for_review** - If you are finished making commits to your pullrequest or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
 
@@ -81,6 +83,7 @@ To streamline the maintenance process, we've added some commands to the ansibot 
 * **shipit** - If you approve of the code in this pullrequest, use this command to have it  merged.
 * **bot_broken** - Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
 * **bot_skip** - Ansible staff members use this to have the bot skip triaging an issue.
+* **bot_status** - Use this command if you would like the bot to comment with some helpful metadata about the issue. 
 * **needs_info** - Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
 * **!needs_info** - If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
 * **needs_revision** - Use this command if you would like the submitter to make changes.
