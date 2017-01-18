@@ -152,6 +152,7 @@ cloud/rackspace/rax_scaling_policy.py: sivel
 cloud/rackspace/: smashwilson
 cloud/smartos/imgadm.py: jasperla
 cloud/smartos/smartos_image_facts.py: xen0l
+cloud/smartos/vmadm.py: jasperla
 cloud/softlayer/sl_vm.py: mcltn
 cloud/univention/: 2-B
 cloud/vmware/: ansible
