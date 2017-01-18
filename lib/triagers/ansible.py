@@ -124,6 +124,7 @@ class AnsibleTriage(DefaultTriager):
         'needs_info',
         '!needs_info',
         'notabug',
+        'bot_status',
         'bot_broken',
         '!bot_broken',
         'bot_skip',
@@ -879,6 +880,15 @@ class AnsibleTriage(DefaultTriager):
             if self.meta['migrated_issue_state'] != 'closed':
                 self.actions['close_migrated'] = True
 
+        # bot_status
+        if self.meta['needs_bot_status']:
+            comment = self.render_boilerplate(
+                self.meta,
+                boilerplate='bot_status'
+            )
+            if comment not in self.actions['comments']:
+                self.actions['comments'].append(comment)
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
         #import epdb; epdb.st()
@@ -1310,8 +1320,12 @@ class AnsibleTriage(DefaultTriager):
 
         # get labels for files ...
         if not iw.is_pullrequest():
+            self.meta['is_issue'] = True
+            self.meta['is_pullrequest'] = False
             self.meta['component_labels'] = []
         else:
+            self.meta['is_issue'] = False
+            self.meta['is_pullrequest'] = True
             self.meta['component_labels'] = self.get_component_labels(
                 self.valid_labels,
                 iw.files
@@ -1350,6 +1364,12 @@ class AnsibleTriage(DefaultTriager):
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
         self.meta.update(self.get_review_facts(iw, self.meta))
+
+        # bot_status needed?
+        self.meta.update(self.needs_bot_status(iw))
+
+        # who is this waiting on?
+        self.meta.update(self.waiting_on(iw, self.meta))
 
         if iw.migrated:
             miw = iw._migrated_issue
@@ -1508,7 +1528,10 @@ class AnsibleTriage(DefaultTriager):
             'shipit': False,
             'owner_pr': False,
             'shipit_ansible': False,
-            'shipit_community': False
+            'shipit_community': False,
+            'shipit_count_community': False,
+            'shipit_count_maintainer': False,
+            'shipit_count_ansible': False,
         }
 
         if not iw.is_pullrequest():
@@ -1717,7 +1740,7 @@ class AnsibleTriage(DefaultTriager):
             'merge_commits': merge_commits,
             'mergeable': None,
             'mergeable_state': mstate,
-            'changed_requested': change_requested,
+            'change_requested': change_requested,
             'ci_state': ci_state,
             'reviews': None,
             'www_reviews': None,
@@ -1919,7 +1942,7 @@ class AnsibleTriage(DefaultTriager):
             'merge_commits': merge_commits,
             'mergeable': self.issue.pullrequest.mergeable,
             'mergeable_state': mstate,
-            'changed_requested': change_requested,
+            'change_requested': change_requested,
             'ci_state': ci_state,
             'reviews': iw.reviews,
             'www_summary': www_summary,
@@ -2069,6 +2092,7 @@ class AnsibleTriage(DefaultTriager):
 
         vcommands = [x for x in self.VALID_COMMANDS]
         # these are handled by other fact gathering functions
+        vcommands.remove('bot_status')
         vcommands.remove('needs_info')
         vcommands.remove('!needs_info')
         vcommands.remove('shipit')
@@ -2078,30 +2102,6 @@ class AnsibleTriage(DefaultTriager):
         vcommands.remove('!needs_revision')
 
         iw = issuewrapper
-
-        '''
-        if not iw.history:
-            iw.history = self.get_history(
-                iw,
-                cachedir=self.cachedir,
-                usecache=True
-            )
-        '''
-
-        '''
-        # if this was migrated, merge the old history
-        if iw.migrated:
-            migrated_issue = self.is_migrated(iw)
-            if migrated_issue:
-                mi = self.get_migrated_issue(migrated_issue)
-                if not mi.history:
-                    mi.history = self.get_history(
-                        mi,
-                        cachedir=self.cachedir,
-                        usecache=True
-                    )
-                iw.history.merge_history(mi.history.history)
-        '''
 
         maintainers = []
         if meta['module_match']:
@@ -2177,3 +2177,48 @@ class AnsibleTriage(DefaultTriager):
 
         #import epdb; epdb.st()
         return clabels
+
+    def needs_bot_status(self, issuewrapper):
+        iw = issuewrapper
+        bs = False
+        for ev in iw.history.history:
+            if ev['event'] != 'commented':
+                continue
+            if 'bot_status' in ev['body']:
+                if ev['actor'] not in BOTNAMES:
+                    if ev['actor'] in self.ansible_members or \
+                            ev['actor'] in self.module_indexer.all_maintainers:
+                        bs = True
+                        continue
+            # <!--- boilerplate: bot_status --->
+            if bs:
+                if ev['actor'] in BOTNAMES:
+                    if 'boilerplate: bot_status' in ev['body']:
+                        bs = False
+                        continue
+        return {'needs_bot_status': bs}
+
+    def waiting_on(self, issuewrapper, meta):
+        iw = issuewrapper
+        wo = None
+        if meta['is_issue']:
+            if meta['is_needs_info']:
+                wo = iw.submitter
+            elif 'needs_contributor' in meta['maintainer_commands']:
+                wo = 'contributor'
+            else:
+                wo = 'maintainer'
+        else:
+            if meta['is_needs_info']:
+                wo = iw.submitter
+            elif meta['is_needs_revision']:
+                wo = iw.submitter
+            elif meta['is_needs_rebase']:
+                wo = iw.submitter
+            else:
+                if meta['is_core']:
+                    wo = 'ansible'
+                else:
+                    wo = 'maintainer'
+
+        return {'waiting_on': wo}
