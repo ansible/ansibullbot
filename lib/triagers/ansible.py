@@ -1887,6 +1887,7 @@ class AnsibleTriage(DefaultTriager):
                         continue
 
             if pending_reviews:
+                change_requested = pending_reviews
                 needs_revision = True
                 needs_revision_msgs.append(
                     'reviews pending: %s' % ','.join(pending_reviews)

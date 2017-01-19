@@ -19,6 +19,7 @@ component: {{ component }}
 {% if is_issue %}
 needs_info: {{ is_needs_info }}
 {% else %}
+changes_requested_by: {{ change_requested|join(' ') or null }}
 needs_info: {{ is_needs_info }}
 shippable_status: {{ ci_state }}
 mergeable_state: {{ mergeable_state }}
