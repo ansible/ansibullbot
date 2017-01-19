@@ -245,6 +245,7 @@ monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
 network/a10/: mischapeters ericchou1 gundalow Qalthos privateip
 network/asa/: gundalow Qalthos privateip
+network/avi/: grastogi23 khaltore ericsysmin
 network/basics/get_url.py: jpmens
 network/basics/slurp.py: ansible
 network/basics/uri.py: romeotheriault
