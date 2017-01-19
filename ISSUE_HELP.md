@@ -5,7 +5,7 @@ Making progress in resolving issues for modules depends upon your interaction! P
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
 Command | Issues or Pullrequests | Users | Description
---- | --- | ---
+--- | --- | --- | ---
 **shipit** | | | If you approve of the code in this pullrequest, use this command to have it  merged.
 **bot_broken** | | | Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
 **bot_skip** | | | Ansible staff members use this to have the bot skip triaging an issue.
