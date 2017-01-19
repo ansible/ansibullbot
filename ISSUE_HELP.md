@@ -4,25 +4,25 @@ Making progress in resolving issues for modules depends upon your interaction! P
 
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
-Command | Issue Type | Users | Description
+Command | Scope | Allowed | Description
 --- | --- | --- | ---
-**shipit** | | | If you approve of the code in this pullrequest, use this command to have it  merged.
-**bot_broken** | | | Use this command if you think the ansibot is misbehaving, and an Ansible staff member will investigate.
-**bot_skip** | | | Ansible staff members use this to have the bot skip triaging an issue.
-**bot_status** | | | Use this command if you would like the bot to comment with some helpful metadata about the issue. 
-**needs_info** | | | Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
-**!needs_info** | | | If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
-**needs_revision** | | | Use this command if you would like the submitter to make changes.
-**!needs_revision** | | | If you want to clear the needs_revision label, use this command.
-**needs_rebase** | | | Use this command if the submitters branch is out of date. The bot should automatically apply this label, so you may never need to use it.
-**!needs_rebase** | | | Clear the needs_rebase label.
-**notabug** | | | If you believe this is not a bug, please leave a comment stating `notabug`, along with any additional information as to why it is not, and we will close this issue.
-**bug_resolved** | | | If you believe this issue is resolved, please leave a comment stating bug_resolved, and we will close this issue. 
-**resolved_by_pr** | | | If you believe this issue has been resolved by a pull request, please leave a comment stating `resolved_by_pr` followed by the pull request number. 
-**wontfix** | | | If this is a bug that you can't or won't fix, please leave a comment including the word `wontfix`, along with an explanation for why it won't be fixed.
-**needs_contributor** | | | If this bug or feature request is something that you want implemented but do not have the time or expertise to do, comment with `needs_contributor`, and the issue will be put into a `waiting_on_contributor` state.
-**duplicate_of** | | | If this bug or feature request is a duplicate of another issue, comment with `duplicate_of` followed by the issue number that it duplicates, and the issue will be closed.
-**ready_for_review** | | | If you are finished making commits to your pullrequest or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
+**bot_broken** | issues+pullrequests | anyone | Use this command if you think the bot is misbehaving, and an Ansible staff member will investigate.
+**bot_skip** | issues+pullrequests | ansible staff | Ansible staff members use this to have the bot skip triaging an issue.
+**bot_status** | pullrequests | sumitters and maintainers | Use this command if you would like the bot to comment with some helpful metadata about the issue. 
+**needs_info** | issues+pullrequests | maintainers | Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
+**!needs_info** | issues+pullrequests | maintainers | If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
+**needs_revision** | pullrequests | maintainers | Use this command if you would like the submitter to make changes.
+**!needs_revision** | pullrequests | maintainers | If you want to clear the needs_revision label, use this command.
+**needs_rebase** | pullrequests | maintainers | Use this command if the submitters branch is out of date. The bot should automatically apply this label, so you may never need to use it.
+**!needs_rebase** | pullrequests | maintainers | Clear the needs_rebase label.
+**notabug** | issues | maintainers | If you believe this is not a bug, please leave a comment stating `notabug`, along with any additional information as to why it is not, and we will close this issue.
+**bug_resolved** | issues | maintainers | If you believe this issue is resolved, please leave a comment stating bug_resolved, and we will close this issue. 
+**resolved_by_pr** | issues | maintainers | If you believe this issue has been resolved by a pull request, please leave a comment stating `resolved_by_pr` followed by the pull request number. 
+**wontfix** | issues | maintainers | If this is a bug that you can't or won't fix, please leave a comment including the word `wontfix`, along with an explanation for why it won't be fixed.
+**needs_contributor** | issues | maintainers | If this bug or feature request is something that you want implemented but do not have the time or expertise to do, comment with `needs_contributor`, and the issue will be put into a `waiting_on_contributor` state.
+**duplicate_of** | issues | maintainers | If this bug or feature request is a duplicate of another issue, comment with `duplicate_of` followed by the issue number that it duplicates, and the issue will be closed.
+**ready_for_review** | pullrequests | submitters | If you are finished making commits to your pullrequest or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
+**shipit** | pullrequests | maintainers | If you approve of the code in this pullrequest, use this command to have it  merged.
 
 ## For issue submitters
 Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question .
