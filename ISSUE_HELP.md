@@ -35,15 +35,15 @@ The bot requires a minimal subset of information from the issue template
 * ansible version
 * summary
 
-If any of those items are missing or empty, ansibot will keep the issue in a "needs info" state until the data is provided in the issue's description. The bot is expecting an issue description styled after the default issue template, so please use that whenever possible.
+If any of those items are missing or empty, ansibot will keep the issue in a `needs_info` state until the data is provided in the issue's description. The bot is expecting an issue description styled after the default issue template, so please use that whenever possible.
 
 Expect the bot to do a few things:
 
-1. Add common labels such as **needs_triage**, **bug_report**, **feature_idea**, etc.
+1. Add common labels such as `needs_triage`, `bug_report`, `feature_idea`, etc.
 
   These labels are determined by templated data in the description. Please fill out the templates as accurately as possible so that the appropriate labels are used.
 
-  **needs_triage** will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
+  `needs_triage` will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
 
 2. Notify and assign the maintainer(s) of the relevant file(s) or module(s).
 
@@ -57,12 +57,12 @@ Expect the bot to do a few things:
 
 2. Add labels indicating the status of the pullrequest.
 
-  * **needs_rebase** - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
-  * **needs_revision** - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
-  * **community_review** - The bot is waiting for 2+ people to use the shipit command on this PR.
-  * **contributor_review** - The bot is waiting for anyone on the Ansible organization to use the shipit command on this PR.
-  * **core_review** - The bot is waiting for anyone on the Ansible core-team to use the shipit command on this PR.
-  * **shipit** - The shipit count has hit the minimum threshold and the PR is ready for manual merge or automerge.
+  * `needs_rebase` - Your pullrequest is out of sync with ansible/ansible's devel branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
+  * `needs_revision` - Either your pullrequest fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting "ready_for_review"
+  * `community_review` - The bot is waiting for 2+ people to use the shipit command on this PR.
+  * `contributor_review` - The bot is waiting for anyone on the Ansible organization to use the shipit command on this PR.
+  * `core_review` - The bot is waiting for anyone on the Ansible core-team to use the shipit command on this PR.
+  * `shipit` - The shipit count has hit the minimum threshold and the PR is ready for manual merge or automerge.
 
 Please prefix your pullrequest's title with **WIP** if you are not yet finished making changes. This will tell the bot to ignore the needs_rebase and shipit workflows until you remove it from the title.
 
