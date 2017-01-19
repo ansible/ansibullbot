@@ -1,6 +1,6 @@
 # Ansibot Help
 
-Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed. `If at anytime you think this bot is misbehaving, please leave a comment containing the keyword **bot_broken** and an Ansible staff member will intervene.
+Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed. If at anytime you think this bot is misbehaving, please leave a comment containing the keyword **bot_broken** and an Ansible staff member will intervene.
 
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
