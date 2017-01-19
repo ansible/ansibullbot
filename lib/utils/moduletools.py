@@ -375,7 +375,9 @@ class ModuleIndexer(object):
             ydata['author'] = [ydata['author']]
 
         for author in ydata['author']:
-            if '@' in author:
+            if 'ansible core team' in author.lower():
+                authors.append('ansible')
+            elif '@' in author:
                 words = author.split()
                 for word in words:
                     if '@' in word and '(' in word and ')' in word:
@@ -387,6 +389,19 @@ class ModuleIndexer(object):
                         if word.startswith('@'):
                             word = word.replace('@', '', 1)
                             authors.append(word)
+            elif 'github.com/' in author:
+                # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
+                idx = author.find('github.com/')
+                author = author[idx+11:]
+                author = author.replace(')', '')
+                authors.append(author)
+            elif '(' in author and len(author.split()) == 3:
+                # Mathieu Bultel (matbu)
+                idx = author.find('(')
+                author = author[idx+1:]
+                author = author.replace(')', '')
+            else:
+                print(author)
 
         return authors
 
