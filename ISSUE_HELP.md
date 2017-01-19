@@ -49,6 +49,7 @@ Expect the bot to do a few things:
 
   Notifications will happen via a comment with the '@<NAME>' syntax. If you know of other interested parties, feel free to ping them in a comment or in your issue description.
 
+If you are not sure who the issue is waiting on, please use the **bot_status** command.
 
 ## For pullrequest submitters
 Expect the bot to do a few things:
@@ -67,6 +68,8 @@ Expect the bot to do a few things:
 Please prefix your pullrequest's title with **WIP** if you are not yet finished making changes. This will tell the bot to ignore the needs_rebase and shipit workflows until you remove it from the title.
 
 If you are finished committing to your pullrequest or have made changes due to a request, please use the **ready_for_review** command.
+
+If you are not sure who the pullrequest is waiting on, please use the **bot_status** command.
 
 ### When will your PR be merged?
 
