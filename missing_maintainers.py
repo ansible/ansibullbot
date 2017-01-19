@@ -21,5 +21,12 @@ for mkey in mkeys:
         if v['metadata']['supported_by'] != 'community':
             continue
         if not v['maintainers'] or v['maintainers'] == ['ansible']:
-            print('%s,%s,%s' %
-                  (mkey, v['metadata']['supported_by'], v['maintainers']))
+            print(
+                '%s,%s,%s,%s' %
+                (
+                    mkey,
+                    v['metadata']['supported_by'],
+                    v['maintainers'],
+                    v['authors']
+                )
+            )
