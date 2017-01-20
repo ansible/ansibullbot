@@ -401,7 +401,7 @@ class ModuleIndexer(object):
                 author = author[idx+1:]
                 author = author.replace(')', '')
             else:
-                print(author)
+                pass
 
         return authors
 
