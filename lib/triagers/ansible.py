@@ -889,6 +889,21 @@ class AnsibleTriage(DefaultTriager):
             if comment not in self.actions['comments']:
                 self.actions['comments'].append(comment)
 
+        # label commands
+        if self.meta['label_cmds']:
+            if self.meta['label_cmds']['add']:
+                for label in self.meta['label_cmds']['add']:
+                    if label not in self.issue.labels:
+                        self.actions['newlabel'].append(label)
+                    if label in self.actions['unlabel']:
+                        self.actions['unlabel'].remove(label)
+            if self.meta['label_cmds']['del']:
+                for label in self.meta['label_cmds']['del']:
+                    if label in self.issue.labels:
+                        self.actions['unlabel'].append(label)
+                    if label in self.actions['newlabel']:
+                        self.actions['newlabel'].remove(label)
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
         #import epdb; epdb.st()
@@ -1370,6 +1385,9 @@ class AnsibleTriage(DefaultTriager):
 
         # who is this waiting on?
         self.meta.update(self.waiting_on(iw, self.meta))
+
+        # community triage
+        self.meta.update(self.get_label_commands(iw, self.meta))
 
         if iw.migrated:
             miw = iw._migrated_issue
@@ -2223,3 +2241,56 @@ class AnsibleTriage(DefaultTriager):
                     wo = 'maintainer'
 
         return {'waiting_on': wo}
+
+    def get_label_commands(self, issuewrapper, meta):
+        add_labels = []
+        del_labels = []
+
+        wl = [
+            'needs_triage',
+            'test',
+            'module',
+            'cloud',
+            'aws',
+            'azure',
+            'digital_ocean',
+            'docker',
+            'gce',
+            'openstack',
+            'vmware',
+            'networking'
+        ]
+        wl += [x for x in self.valid_labels if x.startswith('affects_')]
+        wl += [x for x in self.valid_labels if x.startswith('c:')]
+
+        iw = issuewrapper
+        maintainers = self.ansible_members
+        maintainers += self.module_indexer.all_maintainers
+        maintainers = sorted(set(maintainers))
+        for ev in iw.history.history:
+            if ev['actor'] in maintainers and ev['event'] == 'commented':
+                if '+label' in ev['body'] or '-label' in ev['body']:
+                    for line in ev['body'].split('\n'):
+                        if 'label' not in line:
+                            continue
+                        words = line.split()
+
+                        label = words[1]
+                        action = words[0]
+                        if action == '+label':
+                            add_labels.append(label)
+                            if label in del_labels:
+                                del_labels.remove(label)
+                        elif action == '-label':
+                            del_labels.append(label)
+                            if label in add_labels:
+                                add_labels.remove(label)
+
+        fact = {
+            'label_cmds': {
+                'add': add_labels,
+                'del': del_labels
+            }
+        }
+
+        return fact

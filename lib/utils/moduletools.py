@@ -585,7 +585,7 @@ class ModuleIndexer(object):
     @property
     def all_maintainers(self):
         maintainers = []
-        for m in maintainers.values():
+        for m in self.maintainers.values():
             if not isinstance(m, list):
                 m = [m]
             for mi in m:
