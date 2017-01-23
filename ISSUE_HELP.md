@@ -101,7 +101,7 @@ Reactions help us determine how many people are interested in a pullrequest or h
 
 ## When to use label commands
 
-The `+label` and `-label` are restricted to a subset of available labels and are not meant to replace the other bot commands.
+The `+label` and `-label` commands are restricted to a subset of available labels and are not meant to replace the other bot commands.
 
 * needs_triage - a human being still needs to validate the issue is properly labeled and has all the information required.
 * module - classifies the issue as a module related issue.
