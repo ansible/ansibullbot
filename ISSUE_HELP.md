@@ -7,7 +7,7 @@ To streamline the maintenance process, we've added some commands to the ansibot 
 Command | Scope | Allowed | Description
 --- | --- | --- | ---
 **bot_broken** | issues pullrequests | anyone | Use this command if you think the bot is misbehaving, and an Ansible staff member will investigate.
-**bot_skip** | issues pullrequests | ansible staff | Ansible staff members use this to have the bot skip triaging an issue.
+**bot_skip** | issues pullrequests | staff | Ansible staff members use this to have the bot skip triaging an issue.
 **bot_status** | pullrequests | submitters maintainers | Use this command if you would like the bot to comment with some helpful metadata about the issue. 
 **needs_info** | issues pullrequests | maintainers | Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
 **!needs_info** | issues pullrequests | maintainers | If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
@@ -23,6 +23,8 @@ Command | Scope | Allowed | Description
 **duplicate_of** | issues | maintainers | If this bug or feature request is a duplicate of another issue, comment with `duplicate_of` followed by the issue number that it duplicates, and the issue will be closed.
 **ready_for_review** | pullrequests | submitters | If you are finished making commits to your pullrequest or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
 **shipit** | pullrequests | maintainers | If you approve of the code in this pullrequest, use this command to have it  merged.
+**+label** | issues pullrequests | staff maintainers | Add a whitelisted label. See [When to use label commands](#When to use label commands).
+**-label** | issues pullrequests | staff maintainers | Remove a whitelisted label. See [When to use label commands](#When to use label commands).
 
 ## For issue submitters
 Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the ansible-project mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question .
@@ -96,3 +98,20 @@ Thanks in advance for taking a look at issues+pullrequests and for your ongoing 
 
 ## For anyone else
 Reactions help us determine how many people are interested in a pullrequest or have run across a similar bug. Please leave a +1 reaction if that applies to you. Any additional details you can provide, such as your usecase, environment, steps to reproduce, or workarounds you have found, can help out with resolving issues or getting pullrequests merged.
+
+## When to use label commands
+
+The `+label` and `-label` are restricted to a subset of available labels and are not meant to replace the other bot commands.
+
+* needs_triage - a human being still needs to validate the issue is properly labeled and has all the information required.
+* module - classifies the issue as a module related issue.
+* affects_X.X - indicates that the issue is relevant to a particular ansible major.minor version.
+* c:... - these labels categorize issues/pullrequests by their relevant sourcecode files.
+
+To use the commands, please type the the command and label on one line each in a comment. 
+Example:
+```
+-label needs_triage
++label cloud
++label gce
+```
