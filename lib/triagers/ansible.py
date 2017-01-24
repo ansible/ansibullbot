@@ -371,7 +371,7 @@ class AnsibleTriage(DefaultTriager):
                     logging.info(str(number) + ' is issue, skipping')
                     redo = False
                     continue
-                if self.args.only_issues and 'pull' not in issue.html_url:
+                if self.args.only_issues and 'pull' in issue.html_url:
                     logging.info(str(number) + ' is pullrequest, skipping')
                     redo = False
                     continue
@@ -1238,8 +1238,8 @@ class AnsibleTriage(DefaultTriager):
             if self.template_data.get('component name'):
                 cname = self.template_data.get('component name')
                 craw = self.template_data.get('component_raw')
-                if self.module_indexer.find_match(cname):
-                    match = self.module_indexer.find_match(cname)
+                if self.module_indexer.find_match(cname, exact=True):
+                    match = self.module_indexer.find_match(cname, exact=True)
                     self.meta['is_module'] = True
                     self.meta['is_plugin'] = True
                     self.meta['module_match'] = copy.deepcopy(match)
