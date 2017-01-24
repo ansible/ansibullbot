@@ -232,6 +232,7 @@ monitoring/librato_annotation.py: sedward
 monitoring/logentries.py: ivanvanderbyl
 monitoring/logicmonitor_facts.py: ethanculler woz5999
 monitoring/logicmonitor.py: ethanculler woz5999
+monitoring/logstash_plugin.py: nerzhul
 monitoring/monit.py: brian-brazil dstoflet
 monitoring/nagios.py: tbielawa
 monitoring/newrelic_deployment.py: mcodd
