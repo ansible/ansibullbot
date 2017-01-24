@@ -519,6 +519,7 @@ class AnsibleTriage(DefaultTriager):
     def save_meta(self, issuewrapper, meta):
         # save the meta+actions
         dmeta = meta.copy()
+        dmeta['title'] = issuewrapper.title
         dmeta['created_at'] = issuewrapper.created_at.isoformat()
         dmeta['updated_at'] = issuewrapper.updated_at.isoformat()
         dmeta['template_data'] = issuewrapper.template_data
