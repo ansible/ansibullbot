@@ -539,7 +539,6 @@ class AnsibleTriage(DefaultTriager):
             dmeta['pullrequest_status'] = []
             dmeta['pullrequest_reviews'] = []
 
-        #import epdb; epdb.st()
         self.dump_meta(issuewrapper, dmeta)
 
     def run_module_repo_issue(self, iw, hcache=None):
