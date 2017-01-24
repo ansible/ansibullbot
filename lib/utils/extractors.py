@@ -102,7 +102,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
                 elif 'validate-modules' in v:
                     # https://github.com/ansible/ansible/issues/18179
                     pass
-                elif '/modules/' in v:
+                elif '/modules/' in v or '/module_utils/' in v:
                     # https://github.com/ansible/ansible/issues/20563
                     pass
                 else:

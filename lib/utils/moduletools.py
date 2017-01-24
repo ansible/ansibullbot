@@ -109,6 +109,24 @@ class ModuleIndexer(object):
         if pattern == 'setup':
             pattern = 'system/setup.py'
 
+        if 'module_utils' in pattern:
+            # https://github.com/ansible/ansible/issues/20368
+            return None
+        elif '/' in pattern and not self._find_match(pattern, exact=True):
+            # https://github.com/ansible/ansible/issues/20520
+            if not pattern.startswith('lib/'):
+                keys = self.modules.keys()
+                for k in keys:
+                    if pattern in k:
+                        ppy = pattern + '.py'
+                        if k.endswith(pattern) or k.endswith(ppy):
+                            return self.modules[k]
+        elif pattern.endswith('.py') and self._find_match(pattern, exact=False):
+            # https://github.com/ansible/ansible/issues/19889
+            candidate = self._find_match(pattern, exact=False)
+            if candidate['filename'] == pattern:
+                return candidate
+
         match = self._find_match(pattern, exact=exact)
         if not match and not exact:
             # check for just the basename
@@ -410,6 +428,10 @@ class ModuleIndexer(object):
 
         # https://github.com/ansible/ansible/issues/18179
         if 'validate-modules' in component:
+            return None
+
+        # https://github.com/ansible/ansible/issues/20368
+        if 'module_utils' in component:
             return None
 
         # authorized_keys vs. authorized_key
