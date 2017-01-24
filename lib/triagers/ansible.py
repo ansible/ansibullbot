@@ -1245,44 +1245,16 @@ class AnsibleTriage(DefaultTriager):
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
 
-                """
-                cname = self.template_data.get('component name')
-                craw = self.template_data.get('component_raw')
-                if self.module_indexer.find_match(cname, exact=True):
-                    match = self.module_indexer.find_match(cname, exact=True)
-                    self.meta['is_module'] = True
-                    self.meta['is_plugin'] = True
-                    self.meta['module_match'] = copy.deepcopy(match)
-                    self.meta['component'] = match['name']
-                elif self.template_data.get('component_raw') \
-                        and ('module' in iw.title or
-                             'module' in craw or
-                             'action' in craw):
-                    # FUZZY MATCH?
-                    logging.info('fuzzy match module component')
-                    fm = self.module_indexer.fuzzy_match(
-                        title=iw.title,
-                        component=self.template_data['component_raw']
-                    )
-                    if fm:
-                        match = self.module_indexer.find_match(fm)
-                        self.meta['is_module'] = True
-                        self.meta['is_plugin'] = True
-                        self.meta['module_match'] = copy.deepcopy(match)
-                        self.meta['component'] = match['name']
-                else:
-                    pass
-                """
-
         elif len(iw.files) > 100:
             # das merge?
             self.meta['bad_pr'] = True
+
         else:
             # assume pullrequest
             for f in iw.files:
 
                 if f.startswith('lib/ansible/modules/core') or \
-                        f.startswith('lib/ansible/modules/core'):
+                        f.startswith('lib/ansible/modules/extras'):
                     self.meta['is_bad_pr'] = True
                     continue
 
