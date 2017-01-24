@@ -1237,6 +1237,15 @@ class AnsibleTriage(DefaultTriager):
 
         if iw.is_issue():
             if self.template_data.get('component name'):
+
+                match = self.find_module_match(iw.title, self.template_data)
+                if match:
+                    self.meta['is_module'] = True
+                    self.meta['is_plugin'] = True
+                    self.meta['module_match'] = copy.deepcopy(match)
+                    self.meta['component'] = match['name']
+
+                """
                 cname = self.template_data.get('component name')
                 craw = self.template_data.get('component_raw')
                 if self.module_indexer.find_match(cname, exact=True):
@@ -1263,6 +1272,7 @@ class AnsibleTriage(DefaultTriager):
                         self.meta['component'] = match['name']
                 else:
                     pass
+                """
 
         elif len(iw.files) > 100:
             # das merge?
@@ -1398,6 +1408,32 @@ class AnsibleTriage(DefaultTriager):
             self.meta['migrated_issue_number'] = miw.number
             self.meta['migrated_issue_state'] = miw.state
 
+    def find_module_match(self, title, template_data):
+
+        match = None
+
+        cname = template_data.get('component name')
+        craw = template_data.get('component_raw')
+
+        if self.module_indexer.find_match(cname, exact=True):
+            match = self.module_indexer.find_match(cname, exact=True)
+        elif template_data.get('component_raw') \
+                and ('module' in title or
+                     'module' in craw or
+                     'action' in craw):
+            # FUZZY MATCH?
+            logging.info('fuzzy match module component')
+            fm = self.module_indexer.fuzzy_match(
+                title=title,
+                component=craw
+            )
+            if fm:
+                match = self.module_indexer.find_match(fm)
+        else:
+            pass
+
+        return match
+
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
         iw = issuewrapper
@@ -1452,40 +1488,6 @@ class AnsibleTriage(DefaultTriager):
             if label not in self.MANAGED_LABELS:
                 self.debug('keeping %s label' % label)
                 self.issue.add_desired_label(name=label)
-
-    '''
-    def is_migrated(self, issuewrapper):
-        migrated_issue = None
-        iw = issuewrapper
-
-        # body: Copied from original issue: ansible/ansible-modules-core#4974
-        if 'Copied from original issue' in iw.body:
-            idx = iw.body.find('Copied from original issue')
-            msg = iw.body[idx:]
-            try:
-                migrated_issue = msg.split()[4]
-            except Exception as e:
-                print(e)
-                import epdb; epdb.st()
-            if migrated_issue.endswith('_'):
-                migrated_issue = migrated_issue.rstrip('_')
-            #import epdb; epdb.st()
-        else:
-            for comment in iw.comments:
-                body = comment.body
-                # Migrated from ansible/ansible-modules-extras#3662
-                # u'Migrated from
-                # https://github.com/ansible/ansible-modules-extras/pull/2979 by
-                #   tintoy (not original author)'
-                if comment.user.login == iw.submitter and \
-                        body.lower().startswith('migrated from'):
-                    bparts = body.split()
-                    migrated_issue = bparts[2]
-                    break
-
-        #import epdb; epdb.st()
-        return migrated_issue
-    '''
 
     def get_migrated_issue(self, migrated_issue):
         if migrated_issue.startswith('https://'):
