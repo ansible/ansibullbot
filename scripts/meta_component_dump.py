@@ -36,21 +36,34 @@ for ISSUE in ISSUES:
         if mm:
             mm = mm['filepath']
 
+        rdata = None
+        rdfile = os.path.join(ISSUE, 'raw_data.pickle')
+        if os.path.isfile(rdfile):
+            with open(rdfile, 'rb') as f:
+                rdata = pickle.load(f)
+
+        idata = None
+        ifile = os.path.join(ISSUE, 'issue.pickle')
+        if os.path.isfile(ifile):
+            with open(rdfile, 'rb') as f:
+                idata = pickle.load(f)
+
         # need the title ...
         if 'title' not in jdata:
-            rdfile = os.path.join(ISSUE, 'raw_data.pickle')
-            if os.path.isfile(rdfile):
-                with open(rdfile, 'rb') as f:
-                    rdata = pickle.load(f)
+            if rdata:
                 jdata['title'] = rdata[1]['title']
-        if 'title' not in jdata:
-            rdfile = os.path.join(ISSUE, 'issue.pickle')
-            if os.path.isfile(rdfile):
-                with open(rdfile, 'rb') as f:
-                    rdata = pickle.load(f)
-                jdata['title'] = rdata.title
+            elif idata:
+                jdata['title'] = idata.title
+
+        # need the html_url ...
+        if 'html_url' not in jdata:
+            if rdata:
+                jdata['html_url'] = rdata[1]['html_url']
+            elif idata:
+                jdata['html_url'] = idata.html_url
 
         DATA[number] = {
+            'html_url': jdata.get('html_url'),
             'title': jdata.get('title'),
             'issue_type': jdata['template_data'].get('issue type'),
             'ansible_version': jdata['template_data'].get('ansible version'),
