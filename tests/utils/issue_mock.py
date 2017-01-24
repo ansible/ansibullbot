@@ -26,7 +26,7 @@ class EventMock(object):
 
 class ActorMock(object):
     id = None
-    login = None    
+    login = None
 
 class RequesterMock(object):
     rdata = "{}"
@@ -47,7 +47,7 @@ class IssueMock(object):
         with open(datafile, 'rb') as f:
             fdata = f.read()
         if fdata:
-            self.ydata = yaml.load(fdata)        
+            self.ydata = yaml.load(fdata)
         else:
             self.ydata = {}
 

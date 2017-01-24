@@ -62,9 +62,18 @@ for ISSUE in ISSUES:
             elif idata:
                 jdata['html_url'] = idata.html_url
 
+        # need the body ...
+        if 'body' not in jdata:
+            if rdata:
+                jdata['body'] = rdata[1]['body']
+            elif idata:
+                jdata['body'] = idata.body
+
+
         DATA[number] = {
             'html_url': jdata.get('html_url'),
             'title': jdata.get('title'),
+            'body': jdata.get('body'),
             'issue_type': jdata['template_data'].get('issue type'),
             'ansible_version': jdata['template_data'].get('ansible version'),
             'component_raw': jdata['template_data'].get('component_raw'),
