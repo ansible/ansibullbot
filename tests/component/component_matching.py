@@ -6,8 +6,8 @@ import unittest
 from lib.triagers.ansible import AnsibleTriage
 from lib.utils.extractors import extract_template_data
 
-class TestComponentMatching(unittest.TestCase):
 
+class TestComponentMatching(unittest.TestCase):
 
     def test_component_matching(self):
 
@@ -39,7 +39,7 @@ class TestComponentMatching(unittest.TestCase):
             #if not clabels:
             #    continue
 
-            #print(v['html_url'])
+            print(v['html_url'])
 
             # extract fields from the body
             td = extract_template_data(
@@ -47,7 +47,7 @@ class TestComponentMatching(unittest.TestCase):
                 issue_number=key,
                 issue_class=None
             )
-            craw = td.get('component_raw')
 
-            component = AT.find_component_match(v['title'], v['body'], td)
-            #import epdb; epdb.st()
+            components = AT.find_component_match(v['title'], v['body'], td)
+            if components and clabels:
+                import epdb; epdb.st()
