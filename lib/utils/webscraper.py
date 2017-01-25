@@ -443,6 +443,8 @@ class GithubWebScraper(object):
                 action = 'reviewed'
             elif 'dismissed' in atxt:
                 action = 'dismissed'
+            elif 'removed' in atxt:
+                action = 'removed'
             else:
                 action = None
                 import epdb; epdb.st()

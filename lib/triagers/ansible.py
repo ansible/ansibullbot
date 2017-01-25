@@ -243,6 +243,7 @@ class AnsibleTriage(DefaultTriager):
         # set the indexers
         self.version_indexer = AnsibleVersionIndexer()
         self.file_indexer = FileIndexer()
+        self.file_indexer.get_files()
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
@@ -1405,6 +1406,64 @@ class AnsibleTriage(DefaultTriager):
             pass
 
         return match
+
+    def find_component_match(self, title, body, template_data):
+        STOPWORDS = ['ansible', 'plugin']
+        STOPCHARS = ['"', "'", '(', ')', '?', '*', '`']
+        matches = []
+
+        craw = template_data.get('component_raw')
+        if craw:
+            cparts = craw.replace('-', ' ')
+            cparts = cparts.split()
+
+            for idx,x in enumerate(cparts):
+                if not '/' in x:
+                    x = '/' + x
+                for SC in STOPCHARS:
+                    if SC in x:
+                        x = x.replace(SC, '')
+                for SW in STOPWORDS:
+                    if x == SW:
+                        x = ''
+                cparts[idx] = x
+
+            cparts = [x.strip() for x in cparts if x.strip()]
+
+            for x in cparts:
+                for f in self.file_indexer.files:
+                    if '/modules/' in f:
+                        continue
+                    if 'test/' in f and 'test' not in craw:
+                        continue
+                    if 'galaxy' in f and 'galaxy' not in body:
+                        continue
+
+                    try:
+                        f.endswith(x)
+                    except UnicodeDecodeError:
+                        continue
+
+                    if f.endswith(x):
+                        matches.append(f)
+                        break
+                    if f.endswith(x + '.py'):
+                        matches.append(f)
+                        break
+                    if f.endswith(x + '.ps1'):
+                        matches.append(f)
+                        break
+                    if os.path.dirname(f).endswith(x):
+                        fname = os.path.basename(f).split('.')[0]
+                        if fname in body:
+                            #import epdb; epdb.st()
+                            matches.append(f)
+                            break
+        #if not match:
+        #    import epdb; epdb.st()
+
+        print('%s --> %s' % (craw, matches))
+        return matches
 
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
