@@ -638,8 +638,17 @@ class GithubWebScraper(object):
                 else:
                     review_txt = None
 
+                labels = []
+                alabels = li.findAll(
+                    'a',
+                    {'class': lambda L: L.startswith('label')}
+                )
+                for alabel in alabels:
+                    labels.append(alabel.text)
+
                 data['issues'][number] = {
                     'state': state,
+                    'labels': sorted(set(labels)),
                     'merged': merged,
                     'href': href,
                     'type': itype,

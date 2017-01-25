@@ -43,6 +43,9 @@ class TestModuleMatching(unittest.TestCase):
             assert 'component_raw' in td
             assert 'component name' in td
 
+            if td['component name'] != v['component_name']:
+                import epdb; epdb.st()
+
             # confirm the raw converted to the component name
             assert td['component_raw'] == v['component_raw']
             assert td['component name'] == v['component_name']
