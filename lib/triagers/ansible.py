@@ -890,6 +890,18 @@ class AnsibleTriage(DefaultTriager):
             if self.meta['migrated_issue_state'] != 'closed':
                 self.actions['close_migrated'] = True
 
+        '''
+        #import epdb; epdb.st()
+        pprint([x for x in self.meta.items() if x[0].startswith('shipit')])
+        comment = self.render_boilerplate(
+            self.meta,
+            boilerplate='bot_status'
+        )
+        print('')
+        print(comment)
+        import sys; sys.exit(1)
+        '''
+
         # bot_status
         if self.meta['needs_bot_status']:
             comment = self.render_boilerplate(
@@ -1586,8 +1598,8 @@ class AnsibleTriage(DefaultTriager):
             if actor in self.ansible_members:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
-                    ansible_shipits += 1
                     if actor not in shipit_actors:
+                        ansible_shipits += 1
                         shipit_actors.append(actor)
                     continue
 
@@ -1595,8 +1607,8 @@ class AnsibleTriage(DefaultTriager):
             if actor in maintainers:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
-                    maintainer_shipits += 1
                     if actor not in shipit_actors:
+                        maintainer_shipits += 1
                         shipit_actors.append(actor)
                     continue
 
@@ -1604,8 +1616,8 @@ class AnsibleTriage(DefaultTriager):
             if actor != iw.submitter and actor in community:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
-                    community_shipits += 1
                     if actor not in shipit_actors:
+                        community_shipits += 1
                         shipit_actors.append(actor)
                     continue
 

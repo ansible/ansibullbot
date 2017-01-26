@@ -1,7 +1,6 @@
 **waiting_on**: {{ waiting_on }}
-
 {% if is_module and not is_new_module %}
-module: {{ module_match['name'] }}
+**module**: {{ module_match['name'] }}
 **supported_by**: {{ module_match['metadata']['supported_by'] }}
 {% if module_match['metadata']['supported_by'] == 'core' %}
 **maintainers**: ansible core team
