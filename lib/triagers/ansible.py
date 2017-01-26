@@ -737,10 +737,10 @@ class AnsibleTriage(DefaultTriager):
 
         if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
             if 'needs_rebase' not in self.issue.labels:
-                    self.actions['newlabel'].append('needs_rebase')
+                self.actions['newlabel'].append('needs_rebase')
         else:
             if 'needs_rebase' in self.issue.labels:
-                    self.actions['unlabel'].append('needs_rebase')
+                self.actions['unlabel'].append('needs_rebase')
 
         # travis-ci.org ...
         if self.meta['has_travis'] and not self.meta['has_travis_notification']:
@@ -751,6 +751,15 @@ class AnsibleTriage(DefaultTriager):
             )
             if comment not in self.actions['comments']:
                 self.actions['comments'].append(comment)
+
+        # https://github.com/ansible/ansibullbot/issues/293
+        if self.issue.is_pullrequest():
+            if not self.meta['has_shippable'] and not self.meta['has_travis']:
+                if 'needs_ci' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_ci')
+            else:
+                if 'needs_ci' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_ci')
 
         if self.meta['is_new_module'] or self.meta['is_module']:
             # add topic labels
