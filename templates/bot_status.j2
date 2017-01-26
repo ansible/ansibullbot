@@ -24,8 +24,11 @@ changes_requested_by: {{ change_requested|join(' ') }}
 changes_requested_by: null
 {% endif %}
 needs_info: {{ is_needs_info }}
-shippable_status: {{ ci_state }}
+needs_revision: {{ is_needs_revision }}
+needs_rebase: {{ is_needs_rebase }}
+merge_commits: {{ merge_commits }}
 mergeable_state: {{ mergeable_state }}
+shippable_status: {{ ci_state }}
 maintainer_shipits: {{ shipit_count_maintainer }}
 community_shipits: {{ shipit_count_community }}
 ansible_shipits: {{ shipit_count_ansible }}
