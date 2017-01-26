@@ -1546,6 +1546,7 @@ class AnsibleTriage(DefaultTriager):
             'shipit_count_community': False,
             'shipit_count_maintainer': False,
             'shipit_count_ansible': False,
+            'shipit_actors': None,
         }
 
         if not iw.is_pullrequest():
@@ -1624,6 +1625,7 @@ class AnsibleTriage(DefaultTriager):
         nmeta['shipit_count_community'] = community_shipits
         nmeta['shipit_count_maintainer'] = maintainer_shipits
         nmeta['shipit_count_ansible'] = ansible_shipits
+        nmeta['shipit_actors'] = shipit_actors
 
         if (community_shipits + maintainer_shipits + ansible_shipits) > 1:
             nmeta['shipit'] = True
