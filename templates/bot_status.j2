@@ -6,7 +6,7 @@ module: {{ module_match['name'] }}
 {% if module_match['metadata']['supported_by'] == 'core' %}
 **maintainers**: ansible core team
 {% else %}
-**maintainers**: {{ module_match['metadata']['maintainers'] or 'no maintainer(s)' }}
+**maintainers**: {{ module_match['maintainers']|join(' ') or 'no maintainer(s)' }}
 {% endif %}
 {% else %}
 {% if is_new_module %}
@@ -19,7 +19,11 @@ component: {{ component }}
 {% if is_issue %}
 needs_info: {{ is_needs_info }}
 {% else %}
-changes_requested_by: {{ change_requested|join(' ') or null }}
+{% if change_requested %}
+changes_requested_by: {{ change_requested|join(' ') }}
+{% else %}
+changes_requested_by: null
+{% endif %}
 needs_info: {{ is_needs_info }}
 shippable_status: {{ ci_state }}
 mergeable_state: {{ mergeable_state }}
