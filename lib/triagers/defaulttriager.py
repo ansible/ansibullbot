@@ -362,6 +362,25 @@ class DefaultTriager(object):
         return ansible_members
 
     @RateLimited
+    def get_ansible_core_team(self):
+
+        teamlist = ['ansible-commit', 'ansible-community']
+        teams = []
+        ansible_members = []
+
+        conn = self._connect()
+        org = conn.get_organization('ansible')
+        for x in org.get_teams():
+            if x.name in teamlist:
+                teams.append(x)
+        for x in teams:
+            for y in x.get_members():
+                ansible_members.append(y.login)
+
+        ansible_members = sorted(set(ansible_members))
+        return ansible_members
+
+    @RateLimited
     def get_valid_labels(self, repo=None):
 
         # use the repo wrapper to enable caching+updating

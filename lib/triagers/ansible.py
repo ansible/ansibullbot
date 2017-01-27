@@ -157,6 +157,10 @@ class AnsibleTriage(DefaultTriager):
     FILEMAP = {}
 
     def __init__(self, args):
+
+        self._ansible_members = []
+        self._ansible_core_team = []
+
         self.args = args
         self.last_run = None
         self.daemonize = None
@@ -225,8 +229,10 @@ class AnsibleTriage(DefaultTriager):
         #sys.exit(1)
         #import epdb; epdb.st()
 
+        '''
         # get the ansible members
         self.ansible_members = self.get_ansible_members()
+        '''
 
         # get valid labels
         self.valid_labels = self.get_valid_labels('ansible/ansible')
@@ -246,11 +252,25 @@ class AnsibleTriage(DefaultTriager):
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
+        '''
         # get the ansible members
         self.ansible_members = self.get_ansible_members()
+        '''
 
         # get valid labels
         self.valid_labels = self.get_valid_labels('ansible/ansible')
+
+    @property
+    def ansible_members(self):
+        if not self._ansible_members:
+            self._ansible_members = self.get_ansible_members()
+        return [x for x in self._ansible_members]
+
+    @property
+    def ansible_core_team(self):
+        if not self._ansible_core_team:
+            self._ansible_core_team = self.get_ansible_core_team()
+        return [x for x in self._ansible_core_team if x not in BOTNAMES]
 
     def start(self):
 
@@ -675,6 +695,14 @@ class AnsibleTriage(DefaultTriager):
             if 'needs_triage' not in self.issue.labels:
                 self.actions['newlabel'].append('needs_triage')
             self.actions['unlabel'].append('triage')
+
+        # triage requirements met ...
+        if self.meta['maintainer_triaged']:
+            if 'needs_triage' in self.actions['newlabel']:
+                self.actions['newlabel'].remove('needs_triage')
+            if 'needs_triage' in self.issue.labels:
+                if 'needs_triage' not in self.actions['unlabel']:
+                    self.actions['unlabel'].append('needs_triage')
 
         # REVIEWS
         for rtype in ['core_review', 'committer_review', 'community_review']:
@@ -1416,8 +1444,11 @@ class AnsibleTriage(DefaultTriager):
         # who is this waiting on?
         self.meta.update(self.waiting_on(iw, self.meta))
 
-        # community triage
+        # community label manipulation
         self.meta.update(self.get_label_commands(iw, self.meta))
+
+        # triage from everyone else? ...
+        self.meta.update(self.get_triage_facts(iw, self.meta))
 
         if iw.migrated:
             miw = iw._migrated_issue
@@ -1586,7 +1617,7 @@ class AnsibleTriage(DefaultTriager):
         maintainers = \
             ModuleIndexer.replace_ansible(
                 maintainers,
-                self.ansible_members,
+                self.ansible_core_team,
                 bots=BOTNAMES
             )
 
@@ -1598,8 +1629,9 @@ class AnsibleTriage(DefaultTriager):
         community = \
             self.module_indexer.get_maintainers_for_namespace(mnamespace)
         community = [x for x in community if x != 'ansible' and
-                     x not in self.ansible_members and
-                     x != iw.submitter]
+                     x not in self.ansible_core_team and
+                     x != iw.submitter and
+                     x != 'DEPRECATED']
 
         # shipit tallies
         ansible_shipits = 0
@@ -1626,7 +1658,7 @@ class AnsibleTriage(DefaultTriager):
             body = event['body']
 
             # ansible shipits
-            if actor in self.ansible_members:
+            if actor in self.ansible_core_team:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
                     if actor not in shipit_actors:
@@ -1726,7 +1758,7 @@ class AnsibleTriage(DefaultTriager):
 
         needs_info = False
 
-        maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
+        maintainers = [x for x in self.ansible_core_team if x not in BOTNAMES]
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
 
@@ -1805,7 +1837,7 @@ class AnsibleTriage(DefaultTriager):
         if not iw.is_pullrequest():
             return rmeta
 
-        maintainers = [x for x in self.ansible_members if x not in BOTNAMES]
+        maintainers = [x for x in self.ansible_core_team if x not in BOTNAMES]
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
 
@@ -2240,7 +2272,7 @@ class AnsibleTriage(DefaultTriager):
                 continue
             if 'bot_status' in ev['body']:
                 if ev['actor'] not in BOTNAMES:
-                    if ev['actor'] in self.ansible_members or \
+                    if ev['actor'] in self.ansible_core_team or \
                             ev['actor'] in self.module_indexer.all_maintainers:
                         bs = True
                         continue
@@ -2299,7 +2331,7 @@ class AnsibleTriage(DefaultTriager):
         wl += [x for x in self.valid_labels if x.startswith('c:')]
 
         iw = issuewrapper
-        maintainers = self.ansible_members
+        maintainers = [x for x in self.ansible_core_team]
         maintainers += self.module_indexer.all_maintainers
         maintainers = sorted(set(maintainers))
         for ev in iw.history.history:
@@ -2329,3 +2361,33 @@ class AnsibleTriage(DefaultTriager):
         }
 
         return fact
+
+    def get_triage_facts(self, issuewrapper, meta):
+        tfacts = {
+            'maintainer_triaged': False
+        }
+
+        if not meta['module_match']:
+            return tfacts
+        if not meta['module_match'].get('metadata'):
+            return tfacts
+        if not meta['module_match']['metadata'].get('supported_by'):
+            return tfacts
+        if not meta['module_match'].get('maintainers'):
+            return tfacts
+
+        iw = issuewrapper
+        maintainers = [x for x in meta['module_match']['maintainers']]
+        maintainers += [x for x in self.ansible_core_team]
+        maintainers = [x for x in maintainers if x != iw.submitter]
+        maintainers = sorted(set(maintainers))
+        if iw.history.has_commented(maintainers):
+            tfacts['maintainer_triaged'] = True
+        elif iw.history.has_labeled(maintainers):
+            tfacts['maintainer_triaged'] = True
+        elif iw.history.has_unlabeled(maintainers):
+            tfacts['maintainer_triaged'] = True
+        elif iw.is_pullrequest() and iw.history.has_reviewed(maintainers):
+            tfacts['maintainer_triaged'] = True
+
+        return tfacts

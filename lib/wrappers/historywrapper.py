@@ -255,6 +255,36 @@ class HistoryWrapper(object):
         else:
             return False
 
+    def has_labeled(self, username):
+        """Has person X ever labeled issue?"""
+        matching_events = self._find_events_by_actor('labeled', username)
+        if len(matching_events) > 0:
+            return True
+        else:
+            return False
+
+    def has_unlabeled(self, username):
+        """Has person X ever unlabeled issue?"""
+        matching_events = self._find_events_by_actor('unlabeled', username)
+        if len(matching_events) > 0:
+            return True
+        else:
+            return False
+
+    def has_reviewed(self, username):
+        """Has person X ever reviewed issue?"""
+        events = [
+            'review_comment',
+            'review_changes_requested',
+            'review_approved',
+            'review_dismissed'
+        ]
+        for x in events:
+            matching_events = self._find_events_by_actor(x, username)
+            if len(matching_events) > 0:
+                return True
+        return False
+
     def has_subscribed(self, username):
         """Has person X ever subscribed to this issue?"""
         matching_events = self._find_events_by_actor('subscribed', username)
