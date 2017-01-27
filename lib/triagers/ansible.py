@@ -1758,7 +1758,8 @@ class AnsibleTriage(DefaultTriager):
 
         needs_info = False
 
-        maintainers = [x for x in self.ansible_core_team if x not in BOTNAMES]
+        maintainers = [x for x in self.ansible_members]
+        maintainers = [x for x in self.ansible_core_team]
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
             ns = self.meta['module_match'].get('namespace')
@@ -1769,7 +1770,8 @@ class AnsibleTriage(DefaultTriager):
             set(
                 [x for x in maintainers
                  if x != 'DEPRECATED' and
-                 x != self.issue.submitter]
+                 x != self.issue.submitter and
+                 x not in BOTNAMES]
             )
         )
 
