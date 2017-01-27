@@ -710,6 +710,32 @@ class AnsibleTriage(DefaultTriager):
                 if 'shipit' not in self.issue.labels:
                     self.actions['newlabel'].append('shipit')
             else:
+
+                # call for community review ...
+                if self.meta['mergeable'] and \
+                        not self.meta['is_needs_revision'] and \
+                        not self.meta['is_needs_rebase'] and \
+                        not self.meta['is_needs_info'] and \
+                        self.meta['ci_state'] != 'pending':
+
+                    comment = None
+
+                    mm = self.meta.get('module_match') or {}
+                    metadata = mm.get('metadata') or {}
+                    supported_by = metadata.get('supported_by')
+
+                    if supported_by == 'community' or \
+                            self.meta['is_new_module']:
+
+                        if self.meta['notify_community_shipit']:
+                            comment = self.render_boilerplate(
+                                self.meta,
+                                boilerplate='community_shipit_notify'
+                            )
+
+                    if comment and comment not in self.actions['comments']:
+                        self.actions['comments'].append(comment)
+
                 if 'shipit' in self.issue.labels:
                     self.actions['unlabel'].append('shipit')
                 if 'automerge' in self.issue.labels:
@@ -1547,6 +1573,8 @@ class AnsibleTriage(DefaultTriager):
             'shipit_count_maintainer': False,
             'shipit_count_ansible': False,
             'shipit_actors': None,
+            'community_usernames': [],
+            'notify_community_shipit': False,
         }
 
         if not iw.is_pullrequest():
@@ -1569,7 +1597,9 @@ class AnsibleTriage(DefaultTriager):
         mnamespace = meta['module_match']['namespace']
         community = \
             self.module_indexer.get_maintainers_for_namespace(mnamespace)
-        community = [x for x in community if x != 'ansible']
+        community = [x for x in community if x != 'ansible' and
+                     x not in self.ansible_members and
+                     x != iw.submitter]
 
         # shipit tallies
         ansible_shipits = 0
@@ -1626,9 +1656,16 @@ class AnsibleTriage(DefaultTriager):
         nmeta['shipit_count_maintainer'] = maintainer_shipits
         nmeta['shipit_count_ansible'] = ansible_shipits
         nmeta['shipit_actors'] = shipit_actors
+        nmeta['community_usernames'] = community
 
         if (community_shipits + maintainer_shipits + ansible_shipits) > 1:
             nmeta['shipit'] = True
+        elif meta['is_new_module'] or \
+                (len(maintainers) == 1 and maintainer_shipits == 1):
+            if community:
+                bpc = iw.history.get_boilerplate_comments()
+                if 'community_shipit_notify' not in bpc:
+                    nmeta['notify_community_shipit'] = True
 
         logging.info(
             'total shipits: %s' %
