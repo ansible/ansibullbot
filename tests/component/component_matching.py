@@ -14,6 +14,7 @@ class TestComponentMatching(unittest.TestCase):
         print('')
 
         AT = AnsibleTriage(args={})
+        AT.file_indexer.get_files()
 
         jfile = 'tests/fixtures/issue_template_meta.json'
         with open(jfile, 'rb') as f:
@@ -48,6 +49,15 @@ class TestComponentMatching(unittest.TestCase):
                 issue_class=None
             )
 
-            components = AT.find_component_match(v['title'], v['body'], td)
+            components = AT.file_indexer.find_component_match(
+                v['title'],
+                v['body'],
+                td
+            )
             if components and clabels:
-                import epdb; epdb.st()
+                comp_labels = AT.file_indexer.get_component_labels(
+                    AT.valid_labels,
+                    components
+                )
+                print('\t' + str(comp_labels))
+                #import epdb; epdb.st()

@@ -1474,10 +1474,11 @@ class AnsibleTriage(DefaultTriager):
         else:
             self.meta['is_issue'] = False
             self.meta['is_pullrequest'] = True
-            self.meta['component_labels'] = self.get_component_labels(
-                self.valid_labels,
-                iw.files
-            )
+            self.meta['component_labels'] = \
+                self.module_indexer.get_component_labels(
+                    self.valid_labels,
+                    iw.files
+                )
 
         # who owns this?
         self.meta['owner'] = 'ansible'
@@ -2435,6 +2436,7 @@ class AnsibleTriage(DefaultTriager):
 
         return commands
 
+    '''
     def get_component_labels(self, valid_labels, files):
         labels = [x for x in valid_labels if x.startswith('c:')]
 
@@ -2447,6 +2449,7 @@ class AnsibleTriage(DefaultTriager):
                     clabels.append(cl)
 
         return clabels
+    '''
 
     def needs_bot_status(self, issuewrapper):
         iw = issuewrapper
