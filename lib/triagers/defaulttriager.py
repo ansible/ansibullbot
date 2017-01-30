@@ -384,7 +384,7 @@ class DefaultTriager(object):
         ansible_members = sorted(set(ansible_members))
         return ansible_members
 
-    @RateLimited
+    #@RateLimited
     def get_valid_labels(self, repo=None):
 
         # use the repo wrapper to enable caching+updating

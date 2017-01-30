@@ -3,7 +3,6 @@
 import os
 
 from fuzzywuzzy import fuzz as fw_fuzz
-from fuzzywuzzy import process as fw_process
 
 from lib.utils.systemtools import run_command
 from lib.utils.moduletools import ModuleIndexer
@@ -66,23 +65,23 @@ class FileIndexer(ModuleIndexer):
 
         CMAP = {
             'action plugin': [],
-            'ansible-console': ['bin/ansible-console'],
-            'ansible-doc': ['bin/ansible-doc'],
-            'ansible-galaxy': [],
-            'ansible-playbook': [],
-            'ansible-playbook command': ['bin/ansible-playbook'],
-            'ansible-pull': ['bin/ansible-pull'],
-            'ansible-vault': ['bin/ansible-vault'],
+            'ansible-console': ['lib/ansible/cli/console'],
+            'ansible-doc': ['lib/ansible/cli/doc'],
+            'ansible-galaxy': ['lib/ansible/cli/galaxy'],
+            'ansible-playbook': ['lib/ansible/cli/playbook'],
+            'ansible-playbook command': ['lib/ansible/cli/playbook'],
+            'ansible-pull': ['lib/ansible/cli/pull'],
+            'ansible-vault': ['lib/ansible/parsing/vault'],
             'ansible-test': [],
-            'ansible command': ['bin/ansible'],
-            'ansible console': ['bin/ansible-console'],
+            'ansible command': ['lib/ansible/cli/adhoc'],
+            'ansible console': ['lib/ansible/cli/console'],
             'ansible core': [None],
-            'ansible galaxy': [],
+            'ansible galaxy': ['lib/ansible/cli/galaxy'],
             'ansible logging': [],
-            'ansible pull': [],
-            'async': ['lib/ansible/plugins/action/async.py'],
-            'async task': ['lib/ansible/plugins/action/async.py'],
-            'asynchronus task': ['lib/ansible/plugins/action/async.py'],
+            'ansible pull': ['lib/ansible/cli/pull'],
+            'async': ['lib/ansible/executor/playbook_executor'],
+            'async task': ['lib/ansible/executor/playbook_executor'],
+            'asynchronous task': ['lib/ansible/executor/playbook_executor'],
             'block': ['lib/ansible/playbook/block.py'],
             'callback plugin': ['lib/ansible/plugins/callback'],
             'connection plugin': ['lib/ansible/plugins/connection'],
@@ -186,6 +185,8 @@ class FileIndexer(ModuleIndexer):
                 return matches
 
         craws = template_data.get('component_raw')
+        if craws is None:
+            return matches
 
         # compare to component mapping
         rawl = craws.lower()
@@ -199,6 +200,7 @@ class FileIndexer(ModuleIndexer):
             return matches
         elif rawl.rstrip('s') in CMAP:
             matches += CMAP[rawl.rstrip('s')]
+            #import epdb; epdb.st()
             return matches
 
         # https://pypi.python.org/pypi/fuzzywuzzy
@@ -212,13 +214,8 @@ class FileIndexer(ModuleIndexer):
             if ratios[-1][0] >= 90:
                 cnames = CMAP[ratios[-1][1]]
                 matches += cnames
-
-
-        #if matches:
-        #    import epdb; epdb.st()
-
-        if title == 'includes wrapped in a block statement drop environment variables':
-            import epdb; epdb.st()
+        if matches:
+            return matches
 
         # try to match to repo files
         if craws:

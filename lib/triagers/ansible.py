@@ -912,12 +912,18 @@ class AnsibleTriage(DefaultTriager):
 
         # component labels
         if self.meta['component_labels']:
-            for cl in self.meta['component_labels']:
-                ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
-                if not ul and \
-                        cl not in self.issue.labels and \
-                        cl not in self.actions['newlabel']:
-                    self.actions['newlabel'].append(cl)
+            # only add these if no c: labels have ever been changed by human
+            clabels = self.issue.history.get_changed_labels(
+                prefix='c:',
+                bots=BOTNAMES
+            )
+            if not clabels:
+                for cl in self.meta['component_labels']:
+                    ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
+                    if not ul and \
+                            cl not in self.issue.labels and \
+                            cl not in self.actions['newlabel']:
+                        self.actions['newlabel'].append(cl)
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
@@ -1470,7 +1476,24 @@ class AnsibleTriage(DefaultTriager):
         if not iw.is_pullrequest():
             self.meta['is_issue'] = True
             self.meta['is_pullrequest'] = False
-            self.meta['component_labels'] = []
+            if self.meta['is_module']:
+                self.meta['component_labels'] = []
+            else:
+                components = self.file_indexer.find_component_match(
+                    iw.title,
+                    iw.body,
+                    iw.template_data
+                )
+                self.meta['guessed_components'] = components
+                if components:
+                    comp_labels = self.file_indexer.get_component_labels(
+                        self.valid_labels,
+                        components
+                    )
+                    self.meta['component_labels'] = comp_labels
+                else:
+                    self.meta['component_labels'] = []
+
         else:
             self.meta['is_issue'] = False
             self.meta['is_pullrequest'] = True
@@ -1856,7 +1879,6 @@ class AnsibleTriage(DefaultTriager):
                  x not in BOTNAMES]
             )
         )
-
         for event in self.issue.history.history:
 
             if needs_info and event['actor'] == self.issue.submitter:
