@@ -3,7 +3,33 @@
 import json
 import glob
 import pickle
+import logging
 import os
+import sys
+
+# hack
+sys.path[0] = sys.path[0].replace('/scripts', '')
+from lib.utils.webscraper import GithubWebScraper
+
+
+def set_logger():
+    logging.level = logging.DEBUG
+    logFormatter = \
+        logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    rootLogger = logging.getLogger()
+    rootLogger.setLevel(logging.DEBUG)
+    logfile = '/tmp/ansibullbot.log'
+    fileHandler = logging.FileHandler("{0}/{1}".format(
+            os.path.dirname(logfile),
+            os.path.basename(logfile))
+    )
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
+    consoleHandler = logging.StreamHandler()
+    consoleHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(consoleHandler)
+
+set_logger()
 
 DATA = {}
 
@@ -14,6 +40,15 @@ CPATH = os.path.join(
     'ansible',
     'issues'
 )
+
+FDATA = {}
+if len(sys.argv) > 1:
+    ffile = sys.argv[1]
+    with open(ffile, 'rb') as f:
+        FDATA = json.load(f)
+
+GWS = GithubWebScraper(cachedir=os.path.expanduser('~/.ansibullbot/cache'))
+SUMMARIES = GWS.get_issue_summaries('https://github.com/ansible/ansible')
 
 ISSUES = glob.glob('%s/*' % CPATH)
 for ISSUE in ISSUES:
@@ -32,9 +67,12 @@ for ISSUE in ISSUES:
         if not jdata['template_data'].get('component_raw'):
             continue
 
-        mm = jdata.get('module_match')
-        if mm:
-            mm = mm['filepath']
+        if number in FDATA:
+            mm = FDATA[number]['module_match']
+        else:
+            mm = jdata.get('module_match')
+            if mm:
+                mm = mm['filepath']
 
         rdata = None
         rdfile = os.path.join(ISSUE, 'raw_data.pickle')
@@ -69,11 +107,11 @@ for ISSUE in ISSUES:
             elif idata:
                 jdata['body'] = idata.body
 
-
         DATA[number] = {
             'html_url': jdata.get('html_url'),
             'title': jdata.get('title'),
             'body': jdata.get('body'),
+            'labels': SUMMARIES[number].get('labels', []),
             'issue_type': jdata['template_data'].get('issue type'),
             'ansible_version': jdata['template_data'].get('ansible version'),
             'component_raw': jdata['template_data'].get('component_raw'),

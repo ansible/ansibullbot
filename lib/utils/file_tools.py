@@ -13,7 +13,7 @@ class FileIndexer(ModuleIndexer):
         else:
             self.update_checkout()
 
-        cmd = 'find %s -type f' % self.checkoutdir
+        cmd = 'find %s' % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         files = so.split('\n')
         files = [x.strip() for x in files if x.strip()]
