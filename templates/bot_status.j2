@@ -32,7 +32,11 @@ shippable_status: {{ ci_state }}
 maintainer_shipits: {{ shipit_count_maintainer }}
 community_shipits: {{ shipit_count_community }}
 ansible_shipits: {{ shipit_count_ansible }}
+{% if shipit_actors %}
 shipit_actors: {{ shipit_actors|join(' ') }}
+{% else %}
+shipit_actors: {{ shipit_actors }}
+{% endif %}
 {% endif %}
 
 [click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
