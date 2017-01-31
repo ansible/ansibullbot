@@ -1,3 +1,4 @@
+cloud/amazon/: willthames
 cloud/amazon/cloudformation_facts.py: jmenga
 cloud/amazon/cloudformation.py: tedder ryansb
 cloud/amazon/cloudtrail.py: ansible
