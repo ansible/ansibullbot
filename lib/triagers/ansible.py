@@ -428,9 +428,24 @@ class AnsibleTriage(DefaultTriager):
                         lmeta = self.load_meta(iw)
                         if lmeta:
                             if lmeta['updated_at'] == iw.updated_at.isoformat():
-                                msg = 'skipping: no changes since last run'
-                                logging.info(msg)
-                                continue
+                                skip = True
+
+                                if iw.repo_full_name not in MREPOS:
+                                    # re-check ansible/ansible after a window
+                                    # of time since the last check.
+                                    delta = \
+                                        (datetime.datetime.now() - iw.updated_at)
+                                    delta = delta.days
+                                    if delta > 5:
+                                        msg = '!skipping: %s' % delta
+                                        msg +=' days since last check'
+                                        logging.info(msg)
+                                        skip = False
+
+                                if skip:
+                                    msg = 'skipping: no changes since last run'
+                                    logging.info(msg)
+                                    continue
 
                     # pre-processing for non-module repos
                     if iw.repo_full_name not in MREPOS:
