@@ -433,12 +433,18 @@ class AnsibleTriage(DefaultTriager):
                                 if iw.repo_full_name not in MREPOS:
                                     # re-check ansible/ansible after a window
                                     # of time since the last check.
-                                    delta = \
-                                        (datetime.datetime.now() - iw.updated_at)
+                                    lt = lmeta['time']
+                                    lt = datetime.datetime.strptime(
+                                        lt,
+                                        '%Y-%m-%dT%H:%M:%S.%f'
+                                    )
+                                    now = datetime.datetime.now()
+                                    delta = (now - lt)
                                     delta = delta.days
+
                                     if delta > 5:
                                         msg = '!skipping: %s' % delta
-                                        msg +=' days since last check'
+                                        msg += ' days since last check'
                                         logging.info(msg)
                                         skip = False
 
