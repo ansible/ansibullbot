@@ -5,7 +5,7 @@ cloud/amazon/cloudwatchevent_rule.py: jsdalton
 cloud/amazon/dynamodb_table.py: loia
 cloud/amazon/ec2_ami_copy.py: amir343
 cloud/amazon/ec2_ami_find.py: tombamford
-cloud/amazon/ec2_ami.py: jjshoe
+cloud/amazon/ec2_ami.py: 
 cloud/amazon/_ec2_ami_search.py: DEPRECATED
 cloud/amazon/ec2_asg_facts.py: wimnat
 cloud/amazon/ec2_asg.py: ansible
@@ -225,7 +225,7 @@ monitoring/bigpanda.py: hkariti
 monitoring/boundary_meter.py: ccollicutt
 monitoring/circonus_annotation.py: NickatEpic
 monitoring/datadog_event.py: n0ts
-monitoring/datadog_monitor.py: skornehl jjshoe
+monitoring/datadog_monitor.py: skornehl
 monitoring/honeybadger_deployment.py: stympy
 monitoring/icinga2_feature.py: nerzhul
 monitoring/librato_annotation.py: sedward
