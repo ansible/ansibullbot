@@ -1891,6 +1891,8 @@ class AnsibleTriage(DefaultTriager):
 
         # clean/unstable/dirty/unknown
         mstate = iw.mergeable_state
+        if not mstate:
+            mstate = 'unknown'
         logging.info('mergeable_state == %s' % mstate)
 
         # clean/unstable/dirty/unknown

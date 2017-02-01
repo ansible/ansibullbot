@@ -783,7 +783,8 @@ class DefaultWrapper(object):
             fetchcount += 1
             if fetchcount >= 10:
                 logging.error('exceeded fetch threshold for mstate')
-                sys.exit(1)
+                #sys.exit(1)
+                return False
 
             logging.warning(
                 're-fetch[%s] PR#%s because mergeable state is unknown' % (
