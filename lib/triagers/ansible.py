@@ -969,18 +969,6 @@ class AnsibleTriage(DefaultTriager):
             if self.meta['migrated_issue_state'] != 'closed':
                 self.actions['close_migrated'] = True
 
-        '''
-        #import epdb; epdb.st()
-        pprint([x for x in self.meta.items() if x[0].startswith('shipit')])
-        comment = self.render_boilerplate(
-            self.meta,
-            boilerplate='bot_status'
-        )
-        print('')
-        print(comment)
-        import sys; sys.exit(1)
-        '''
-
         # bot_status
         if self.meta['needs_bot_status']:
             comment = self.render_boilerplate(
@@ -1004,6 +992,11 @@ class AnsibleTriage(DefaultTriager):
                         self.actions['unlabel'].append(label)
                     if label in self.actions['newlabel']:
                         self.actions['newlabel'].remove(label)
+
+        # https://github.com/ansible/ansibullbot/issues/312
+        if self.meta['remove_ci_verified']:
+            if 'ci_verified' in self.issue.labels:
+                self.actions['unlabel'].append('ci_verified')
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
@@ -1474,6 +1467,9 @@ class AnsibleTriage(DefaultTriager):
 
         # triage from everyone else? ...
         self.meta.update(self.get_triage_facts(iw, self.meta))
+
+        # ci_verified
+        self.meta.update(self.get_ci_verified_facts(iw))
 
         if iw.migrated:
             miw = iw._migrated_issue
@@ -2431,3 +2427,26 @@ class AnsibleTriage(DefaultTriager):
             tfacts['maintainer_triaged'] = True
 
         return tfacts
+
+    def get_ci_verified_facts(self, issuewrapper):
+        # https://github.com/ansible/ansibullbot/issues/312
+        cfacts = {
+            'remove_ci_verified': False
+        }
+
+        if 'ci_verified' not in issuewrapper.labels:
+            return cfacts
+
+        v_date = None
+        c_date = None
+        for ev in issuewrapper.history.history:
+            if ev['event'] == 'labeled':
+                if ev['label'] == 'ci_verified':
+                    v_date = ev['created_at']
+            if ev['event'] == 'committed':
+                c_date = ev['created_at']
+
+        if c_date > v_date:
+            cfacts['remove_ci_verified'] = True
+
+        return cfacts
