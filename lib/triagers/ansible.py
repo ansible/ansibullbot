@@ -735,7 +735,15 @@ class AnsibleTriage(DefaultTriager):
                     self.actions['unlabel'].append(rtype)
 
         # Ignore needs_revision if this is a work in progress
-        if not self.issue.wip:
+        if self.issue.wip:
+            if 'WIP' not in self.issue.labels:
+                self.actions['newlabel'].append('WIP')
+            if 'shipit' in self.issue.labels:
+                self.actions['unlabel'].append('shipit')
+        else:
+
+            if 'WIP' in self.issue.labels:
+                self.actions['unlabel'].append('WIP')
 
             # SHIPIT
             if self.meta['shipit'] and \
@@ -797,10 +805,6 @@ class AnsibleTriage(DefaultTriager):
             else:
                 if 'needs_revision' in self.issue.labels:
                     self.actions['unlabel'].append('needs_revision')
-
-        else:
-            if 'shipit' in self.issue.labels:
-                self.actions['unlabel'].append('shipit')
 
         # owner PRs
         if self.meta['owner_pr']:
