@@ -515,7 +515,8 @@ class AnsibleTriage(DefaultTriager):
 
                         if self.meta.get('mergeable_state') == 'unknown':
                             pprint(self.actions)
-                            import epdb; epdb.st()
+                            #import epdb; epdb.st()
+                            pass
 
                     pprint(self.actions)
 
