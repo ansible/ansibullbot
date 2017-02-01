@@ -278,9 +278,9 @@ network/nmcli.py: alcamie101
 network/nxos/: jedelman8 GGabriele privateip gundalow Qalthos
 network/omapi_host.py: nerzhul
 network/openswitch/: privateip gundalow Qalthos
-network/ovs/openvswitch_bridge.py: stygstra
+network/ovs/openvswitch_bridge.py: 
 network/ovs/openvswitch_db.py: ansible
-network/ovs/openvswitch_port.py: stygstra
+network/ovs/openvswitch_port.py: 
 network/panos/: ivanbojer
 network/snmp_facts.py: ogenstad
 network/sros/: privateip gundalow Qalthos
@@ -387,7 +387,7 @@ system/locale_gen.py: AugustusKling
 system/lvg.py: abulimov
 system/lvol.py: jhoekx abulimov
 system/make.py: LinusU
-system/modprobe.py: stygstra
+system/modprobe.py: 
 system/mount.py: ansible
 system/ohai.py: ansible
 system/open_iscsi.py: srvg
