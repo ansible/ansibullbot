@@ -1469,7 +1469,7 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(self.get_triage_facts(iw, self.meta))
 
         # ci_verified
-        self.meta.update(self.get_ci_verified_facts(iw))
+        self.meta.update(self.get_ci_verified_facts(iw, self.meta))
 
         if iw.migrated:
             miw = iw._migrated_issue
@@ -2428,13 +2428,17 @@ class AnsibleTriage(DefaultTriager):
 
         return tfacts
 
-    def get_ci_verified_facts(self, issuewrapper):
+    def get_ci_verified_facts(self, issuewrapper, meta):
         # https://github.com/ansible/ansibullbot/issues/312
         cfacts = {
             'remove_ci_verified': False
         }
 
         if 'ci_verified' not in issuewrapper.labels:
+            return cfacts
+
+        if meta['ci_state'] == 'success':
+            cfacts['remove_ci_verified'] = True
             return cfacts
 
         v_date = None
