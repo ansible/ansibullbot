@@ -74,7 +74,6 @@ cloud/amazon/rds_subnet_group.py: tastychutney scottanderson42
 cloud/amazon/redshift.py: j-carl
 cloud/amazon/redshift_subnet_group.py: j-carl
 cloud/amazon/route53_facts.py: Etherdaemon
-cloud/amazon/route53_health_check.py: zimbatm
 cloud/amazon/route53.py: bpennypacker
 cloud/amazon/route53_zone.py: minichate
 cloud/amazon/s3_bucket.py: wimnat
