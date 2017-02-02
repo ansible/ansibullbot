@@ -430,23 +430,24 @@ class AnsibleTriage(DefaultTriager):
                             if lmeta['updated_at'] == iw.updated_at.isoformat():
                                 skip = True
 
-                                if iw.repo_full_name not in MREPOS:
-                                    # re-check ansible/ansible after a window
-                                    # of time since the last check.
-                                    lt = lmeta['time']
-                                    lt = datetime.datetime.strptime(
-                                        lt,
-                                        '%Y-%m-%dT%H:%M:%S.%f'
-                                    )
-                                    now = datetime.datetime.now()
-                                    delta = (now - lt)
-                                    delta = delta.days
+                                if self.args.skip_no_update_timeout:
+                                    if iw.repo_full_name not in MREPOS:
+                                        # re-check ansible/ansiblei after
+                                        # a window of time since the last check.
+                                        lt = lmeta['time']
+                                        lt = datetime.datetime.strptime(
+                                            lt,
+                                            '%Y-%m-%dT%H:%M:%S.%f'
+                                        )
+                                        now = datetime.datetime.now()
+                                        delta = (now - lt)
+                                        delta = delta.days
 
-                                    if delta > 5:
-                                        msg = '!skipping: %s' % delta
-                                        msg += ' days since last check'
-                                        logging.info(msg)
-                                        skip = False
+                                        if delta > 5:
+                                            msg = '!skipping: %s' % delta
+                                            msg += ' days since last check'
+                                            logging.info(msg)
+                                            skip = False
 
                                 if skip:
                                     msg = 'skipping: no changes since last run'
