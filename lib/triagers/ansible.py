@@ -1782,13 +1782,20 @@ class AnsibleTriage(DefaultTriager):
         needs_info = False
 
         maintainers = [x for x in self.ansible_members]
-        maintainers = [x for x in self.ansible_core_team]
+        maintainers += [x for x in self.ansible_core_team]
         if self.meta.get('module_match'):
             maintainers += self.meta['module_match'].get('maintainers', [])
             ns = self.meta['module_match'].get('namespace')
             if ns:
                 maintainers += \
                     self.module_indexer.get_maintainers_for_namespace(ns)
+            if self.meta['module_match']['authors']:
+                maintainers += self.meta['module_match']['authors']
+
+            rfn = self.meta['module_match']['repo_filename']
+            if self.module_indexer.committers.get(rfn):
+                maintainers += self.module_indexer.committers.get(rfn).keys()
+
         maintainers = sorted(
             set(
                 [x for x in maintainers

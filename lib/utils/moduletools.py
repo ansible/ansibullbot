@@ -2,11 +2,14 @@
 
 import ast
 import copy
+import datetime
+import logging
 import os
+import pickle
 import shutil
 import yaml
-#from lib.utils.systemtools import *
 from lib.utils.systemtools import run_command
+from lib.utils.webscraper import GithubWebScraper
 
 
 class ModuleIndexer(object):
@@ -34,10 +37,19 @@ class ModuleIndexer(object):
     def __init__(self, maintainers=None):
         self.modules = {}
         self.maintainers = maintainers or {}
-        #self.checkoutdir = '/tmp/ansible.modules.checkout'
         self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
         self.importmap = {}
+        self.scraper_cache = '~/.ansibullbot/cache/ansible.modules.scraper'
+        self.scraper_cache = os.path.expanduser(self.scraper_cache)
+        self.gws = GithubWebScraper(cachedir=self.scraper_cache)
+
+        # committers by module
+        self.committers = {}
+        # commits by module
+        self.commits = {}
+        # map of email to github login
+        self.emailmap = {}
 
     def create_checkout(self):
         """checkout ansible"""
@@ -275,10 +287,151 @@ class ModuleIndexer(object):
         # parse imports
         self.set_module_imports()
 
+        # last modified
+        self.get_module_commits()
+
+        # parse blame
+        self.get_module_blames()
+
         # depends on metadata now ...
         self.set_maintainers()
 
         return self.modules
+
+    def get_module_commits(self):
+        for k,v in self.modules.iteritems():
+            self.commits[k] = []
+            cpath = os.path.join(self.checkoutdir, k)
+            if not os.path.isfile(cpath):
+                continue
+
+            mtime = os.path.getmtime(cpath)
+            refresh = False
+            pfile = os.path.join(
+                self.scraper_cache,
+                k.replace('/', '_') + '.commits.pickle'
+            )
+
+            if not os.path.isfile(pfile):
+                refresh = True
+            else:
+                with open(pfile, 'rb') as f:
+                    pdata = pickle.load(f)
+                if pdata[0] == mtime:
+                    self.commits[k] = pdata[1]
+                else:
+                    refresh = True
+
+            if refresh:
+                logging.info('refresh commit cache for %s' % k)
+                cmd = 'cd %s; git log --follow %s' % (self.checkoutdir, k)
+                (rc, so, se) = run_command(cmd)
+                for line in so.split('\n'):
+                    if line.startswith('commit '):
+                        commit = {
+                            'name': None,
+                            'email': None,
+                            'login': None,
+                            'hash': line.split()[-1],
+                            'date': None
+                        }
+
+                    # Author: Matt Clay <matt@mystile.com>
+                    if line.startswith('Author: '):
+                        line = line.replace('Author: ', '')
+                        line = line.replace('<', '')
+                        line = line.replace('>', '')
+                        lparts = line.split()
+
+                        if '@' in lparts[-1]:
+                            commit['email'] = lparts[-1]
+                            commit['name'] = ' '.join(lparts[:-1])
+                        else:
+                            pass
+                            #import epdb; epdb.st()
+
+                        if commit['email'] and \
+                                'noreply.github.com' in commit['email']:
+                            commit['login'] = commit['email'].split('@')[0]
+
+                    # Date:   Sat Jan 28 23:28:53 2017 -0800
+                    if line.startswith('Date:'):
+                        dstr = line.split(':', 1)[1].strip()
+                        dstr = ' '.join(dstr.split(' ')[:-1])
+                        ds = datetime.datetime.strptime(
+                            dstr,
+                            '%a %b %d %H:%M:%S %Y'
+                        )
+                        commit['date'] = ds
+                        self.commits[k].append(commit)
+
+                with open(pfile, 'wb') as f:
+                    pickle.dump((mtime, self.commits[k]), f)
+
+    def get_module_blames(self):
+        ''' Scrape the blame page for each module and store it '''
+
+        # scrape the data
+        for k,v in self.modules.iteritems():
+            cpath = os.path.join(self.checkoutdir, k)
+            if not os.path.isfile(cpath):
+                self.committers[k] = {}
+                continue
+            mtime = os.path.getmtime(cpath)
+            pfile = os.path.join(
+                self.scraper_cache,
+                k.replace('/', '_') + '.blame.pickle'
+            )
+            sargs = ['ansible', 'ansible', 'devel', k]
+
+            refresh = False
+            if not os.path.isfile(pfile):
+                refresh = True
+            else:
+                with open(pfile, 'rb') as f:
+                    pdata = pickle.load(f)
+                if pdata[0] == mtime:
+                    self.committers[k] = pdata[1]
+                else:
+                    refresh = True
+
+            if refresh:
+                uns = self.gws.get_usernames_from_filename_blame(*sargs)
+                self.modules['committers'][k] = uns
+                with open(pfile, 'wb') as f:
+                    pickle.dump((mtime, uns), f)
+
+        # add scraped logins to the map
+        for k,v in self.modules.iteritems():
+            for idx,x in enumerate(self.commits[k]):
+                if x['email'] in ['@']:
+                    continue
+                if x['email'] not in self.emailmap:
+                    self.emailmap[x['email']] = None
+                if x['login']:
+                    self.emailmap[x['email']] = x['login']
+                    continue
+
+                xhash = x['hash']
+                for ck,cv in self.committers[k].iteritems():
+                    if xhash in cv:
+                        self.emailmap[x['email']] = ck
+                        break
+
+        # fill in what we can ...
+        for k,v in self.modules.iteritems():
+            for idx,x in enumerate(self.commits[k]):
+                if not x['login']:
+                    if x['email'] in ['@']:
+                        continue
+                    if self.emailmap[x['email']]:
+                        login = self.emailmap[x['email']]
+                        xhash = x['hash']
+                        self.commits[k][idx]['login'] = login
+                        if login not in self.committers[k]:
+                            self.committers[k][login] = []
+                        if xhash not in self.committers[k][login]:
+                            self.committers[k][login].append(xhash)
 
     def set_maintainers(self):
         '''Define the maintainers for each module'''
