@@ -9,8 +9,8 @@ Command | Scope | Allowed | Description
 **bot_broken** | issues pullrequests | anyone | Use this command if you think the bot is misbehaving, and an Ansible staff member will investigate.
 **bot_skip** | issues pullrequests | staff | Ansible staff members use this to have the bot skip triaging an issue.
 **bot_status** | pullrequests | submitters maintainers | Use this command if you would like the bot to comment with some helpful metadata about the issue. 
-**needs_info** | issues pullrequests | maintainers | Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
-**!needs_info** | issues pullrequests | maintainers | If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
+**needs_info** | issues pullrequests | maintainers previous_comitters | Use this command if you need more information from the submitter. We will notify the submitter and apply the needs_info label.
+**!needs_info** | issues pullrequests | maintainers previous_comitters | If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the *needs_info* label will be replaced with `waiting_on_maintainer`.
 **needs_revision** | pullrequests | maintainers | Use this command if you would like the submitter to make changes.
 **!needs_revision** | pullrequests | maintainers | If you want to clear the needs_revision label, use this command.
 **needs_rebase** | pullrequests | maintainers | Use this command if the submitters branch is out of date. The bot should automatically apply this label, so you may never need to use it.
