@@ -371,6 +371,7 @@ class ModuleIndexer(object):
     def get_module_blames(self):
         ''' Scrape the blame page for each module and store it '''
 
+        # scrape the data
         for k,v in self.modules.iteritems():
             cpath = os.path.join(self.checkoutdir, k)
             if not os.path.isfile(cpath):
@@ -400,6 +401,7 @@ class ModuleIndexer(object):
                 with open(pfile, 'wb') as f:
                     pickle.dump((mtime, uns), f)
 
+        # add scraped logins to the map
         for k,v in self.modules.iteritems():
             for idx,x in enumerate(self.commits[k]):
                 if x['email'] in ['@']:
