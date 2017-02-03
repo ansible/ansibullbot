@@ -397,7 +397,7 @@ class ModuleIndexer(object):
 
             if refresh:
                 uns = self.gws.get_usernames_from_filename_blame(*sargs)
-                self.modules['committers'][k] = uns
+                self.committers[k] = uns
                 with open(pfile, 'wb') as f:
                     pickle.dump((mtime, uns), f)
 
