@@ -285,7 +285,9 @@ class GithubWebScraper(object):
             branch,
             filepath
         )
-        rr = requests.get(url)
+
+        rr = self._request_url(url)
+        #rr = requests.get(url)
         soup = BeautifulSoup(rr.text, 'html.parser')
 
         commits = soup.findAll('td', {'class': 'blame-commit-info'})
@@ -293,11 +295,18 @@ class GithubWebScraper(object):
             avatar = commit.find('img', {'class': 'avatar blame-commit-avatar'})
             committer = avatar.attrs.get('alt')
             if committer:
+
                 if committer.startswith('@'):
+
+                    msg = commit.find('a', {'class': 'message'})
+                    mhref = msg.attrs['href']
+                    chash = mhref.split('/')[-1]
+
                     committer = committer.replace('@', '')
                     if committer not in commiters:
-                        commiters[committer] = 0
-                    commiters[committer] += 1
+                        commiters[committer] = []
+                    if chash not in commiters[committer]:
+                        commiters[committer].append(chash)
 
         return commiters
 
