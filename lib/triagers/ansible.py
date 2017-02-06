@@ -1847,6 +1847,7 @@ class AnsibleTriage(DefaultTriager):
         needs_rebase = False
         needs_rebase_msgs = []
         has_shippable = False
+        has_landscape = False
         has_travis = False
         has_travis_notification = False
         ci_state = None
@@ -1863,6 +1864,7 @@ class AnsibleTriage(DefaultTriager):
             'is_needs_rebase': needs_rebase,
             'is_needs_rebase_msgs': needs_rebase_msgs,
             'has_shippable': has_shippable,
+            'has_landscape': has_landscape,
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
             'merge_commits': merge_commits,
@@ -1887,7 +1889,13 @@ class AnsibleTriage(DefaultTriager):
         # get the exact state from shippable ...
         #   success/pending/failure/... ?
         ci_status = iw.pullrequest_status
-        ci_states = [x['state'] for x in ci_status]
+
+        # code quality hooks
+        if [x for x in ci_status if 'landscape.io' in x['target_url']]:
+            has_landscape = True
+
+        ci_states = [x['state'] for x in ci_status
+                     if 'shippable.com' in x['target_url']]
         if not ci_states:
             ci_state = None
         else:
@@ -2068,6 +2076,7 @@ class AnsibleTriage(DefaultTriager):
             'is_needs_rebase': needs_rebase,
             'is_needs_rebase_msgs': needs_rebase_msgs,
             'has_shippable': has_shippable,
+            'has_landscape': has_landscape,
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
             'merge_commits': merge_commits,
