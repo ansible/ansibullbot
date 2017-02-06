@@ -21,6 +21,7 @@ Command | Scope | Allowed | Description
 **wontfix** | issues | maintainers | If this is a bug that you can't or won't fix, please leave a comment including the word `wontfix`, along with an explanation for why it won't be fixed.
 **needs_contributor** | issues | maintainers | If this bug or feature request is something that you want implemented but do not have the time or expertise to do, comment with `needs_contributor`, and the issue will be put into a `waiting_on_contributor` state.
 **duplicate_of** | issues | maintainers | If this bug or feature request is a duplicate of another issue, comment with `duplicate_of` followed by the issue number that it duplicates, and the issue will be closed.
+**close_me** | issues | maintainers | If the issue can be closed for a reason you will specify in the comment, use this command.
 **ready_for_review** | pullrequests | submitters | If you are finished making commits to your pullrequest or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
 **shipit** | pullrequests | maintainers | If you approve of the code in this pullrequest, use this command to have it  merged.
 **+label** | issues pullrequests | staff maintainers | Add a whitelisted label. See [When to use label commands](#When to use label commands).
