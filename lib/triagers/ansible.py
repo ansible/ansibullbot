@@ -752,7 +752,8 @@ class AnsibleTriage(DefaultTriager):
                     self.meta['mergeable'] and \
                     not self.meta['is_needs_revision'] and \
                     not self.meta['is_needs_rebase'] and \
-                    not self.meta['is_needs_info']:
+                    not self.meta['is_needs_info'] and \
+                    self.meta['has_shippable']:
 
                 logging.info('shipit')
                 if self.meta['is_module'] and self.meta['module_match']:
@@ -775,7 +776,8 @@ class AnsibleTriage(DefaultTriager):
                         not self.meta['is_needs_revision'] and \
                         not self.meta['is_needs_rebase'] and \
                         not self.meta['is_needs_info'] and \
-                        self.meta['ci_state'] != 'pending':
+                        self.meta['ci_state'] != 'pending' and \
+                        self.meta['has_shippable']:
 
                     comment = None
 
