@@ -141,7 +141,7 @@ class AnsibleTriage(DefaultTriager):
         'shipit',
         '!shipit',
         'duplicate_of',
-        'closeme'
+        'close_me'
     ]
 
     ISSUE_REQUIRED_FIELDS = [
@@ -960,6 +960,8 @@ class AnsibleTriage(DefaultTriager):
         if 'bug_resolved' in self.meta['maintainer_commands']:
             self.actions['close'] = True
         if 'duplicate_of' in self.meta['maintainer_commands']:
+            self.actions['close'] = True
+        if 'close_me' in self.meta['maintainer_commands']:
             self.actions['close'] = True
         if 'resolved_by_pr' in self.meta['maintainer_commands']:
             # 'resolved_by_pr': {'merged': True, 'number': 19141},
