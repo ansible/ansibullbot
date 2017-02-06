@@ -90,24 +90,27 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             if k == 'component name':
                 v = v.lower()
 
-            # https://github.com/ansible/ansible-modules-core/issues/4159
             if k == 'component name' and 'module' in v:
-                # some modules have the word "_module" in their name and others do not
-                # https://github.com/ansible/ansibullbot/issues/198
-                # https://github.com/ansible/ansible-modules-core/issues/5328
-                reg = re.compile('\S+_module')
-                match = reg.match(v)
-                if match:
-                    v = v[match.pos:match.end()]
-                elif 'validate-modules' in v:
+                if '/modules/' in v or \
+                        'module_util' in v or \
+                        'module_utils/' in v or \
+                        'validate-modules' in v or\
+                        'module_common' in v:
+                    # https://github.com/ansible/ansible/issues/20563
                     # https://github.com/ansible/ansible/issues/18179
                     pass
-                elif '/modules/' in v or '/module_utils/' in v:
-                    # https://github.com/ansible/ansible/issues/20563
-                    pass
                 else:
-                    #import epdb; epdb.st()
-                    v = v.replace('module', ' ')
+                    # some modules have the word "_module" in their name
+                    # https://github.com/ansible/ansibullbot/issues/198
+                    # https://github.com/ansible/ansible-modules-core/issues/4159
+                    # https://github.com/ansible/ansible-modules-core/issues/5328
+                    reg = re.compile('\S+_module')
+                    match = reg.match(v)
+                    if match:
+                        v = v[match.pos:match.end()]
+                    else:
+                        #import epdb; epdb.st()
+                        v = v.replace('module', ' ')
 
             # remove useless chars
             badchars = ['#', ',', ':', ';', '*', "'", '"', '`', '---', '__']

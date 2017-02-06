@@ -249,6 +249,7 @@ class AnsibleTriage(DefaultTriager):
         # set the indexers
         self.version_indexer = AnsibleVersionIndexer()
         self.file_indexer = FileIndexer()
+        self.file_indexer.get_files()
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
@@ -1508,6 +1509,203 @@ class AnsibleTriage(DefaultTriager):
             pass
 
         return match
+
+    def find_component_match(self, title, body, template_data):
+
+        # DistributionNotFound: The 'jinja2<2.9' distribution was not found and
+        #   is required by ansible
+        # File
+        # "/usr/lib/python2.7/site-packages/ansible/plugins/callback/foreman.py",
+        #   line 30, in <module>
+
+        CMAP = {
+            'action plugin': [],
+            'ansible-console': ['bin/ansible-console'],
+            'ansible-doc': ['bin/ansible-doc'],
+            'ansible-galaxy': [],
+            'ansible-playbook': [],
+            'ansible-playbook command': ['bin/ansible-playbook'],
+            'ansible-pull': ['bin/ansible-pull'],
+            'ansible-vault': ['bin/ansible-vault'],
+            'ansible-test': [],
+            'ansible command': ['bin/ansible'],
+            'ansible console': ['bin/ansible-console'],
+            'ansible core': [None],
+            'ansible galaxy': [],
+            'ansible logging': [],
+            'ansible pull': [],
+            'async': ['lib/ansible/plugins/action/async.py'],
+            'async task': ['lib/ansible/plugins/action/async.py'],
+            'asynchronus task': ['lib/ansible/plugins/action/async.py'],
+            'block': ['lib/ansible/playbook/block.py'],
+            'callback plugin': ['lib/ansible/plugins/callback'],
+            'connection plugin': ['lib/ansible/plugins/connection'],
+            'core': [None],
+            'core inventory': ['lib/ansible/inventory'],
+            'delegate_to': [],
+            'facts': ['lib/ansible/module_utils/facts.py'],
+            'gather_facts': ['lib/ansible/module_utils/facts.py'],
+            'handlers': ['lib/ansible/playbook/handler.py'],
+            'host_vars': ['lib/ansible/vars/hostvars.py'],
+            'jinja': ['lib/ansible/template'],
+            'jinja2': ['lib/ansible/template'],
+            'include_role': ['lib/ansible/playbook/role/include.py'],
+            'include role': ['lib/ansible/playbook/role/include.py'],
+            'inventory': ['lib/ansible/inventory'],
+            'inventory parsing': ['lib/ansible/inventory'],
+            'n/a': [None],
+            'na': [None],
+            'paramiko': ['lib/ansible/plugins/connection/paramiko_ssh.py'],
+            'role': ['lib/ansible/playbook/role'],
+            'roles_path': ['lib/ansible/playbook/role'],
+            'role path': ['lib/ansible/playbook/role'],
+            'roles path': ['lib/ansible/playbook/role'],
+            'role include': ['lib/ansible/playbook/role/include.py'],
+            'role dep': ['lib/ansible/playbook/role/requirement.py'],
+            'role dependencies': ['lib/ansible/playbook/role/requirement.py'],
+            'role dependency': ['lib/ansible/playbook/role/requirement.py'],
+            'runner': [None],
+            'ssh connection plugin': ['lib/ansible/plugins/connection/ssh.py'],
+            'templates': [],
+            'with_fileglob': ['lib/ansible/plugins/lookup/fileglob.py'],
+            'with_items': ['lib/ansible/plugins/lookup/__init__.py'],
+            'validate-modules': ['test/sanity/validate-modules'],
+            'vars-prompt': [],
+            'vault': ['lib/ansible/parsing/vault'],
+            'vault cat': ['lib/ansible/parsing/vault'],
+            'vault decrypt': ['lib/ansible/parsing/vault'],
+            'vault edit': ['lib/ansible/parsing/vault'],
+            'vault encrypt': ['lib/ansible/parsing/vault'],
+        }
+
+        STOPWORDS = ['ansible', 'core', 'plugin']
+        STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',']
+        matches = []
+
+        if 'Traceback (most recent call last)' in body:
+            lines = body.split('\n')
+            for line in lines:
+                line = line.strip()
+                if line.startswith('DistributionNotFound'):
+                    matches = ['setup.py']
+                    break
+                elif line.startswith('File'):
+                    fn = line.split()[1]
+                    for SC in STOPCHARS:
+                        fn = fn.replace(SC, '')
+                    if 'ansible_module_' in fn:
+                        fn = os.path.basename(fn)
+                        fn = fn.replace('ansible_module_', '')
+                        matches = [fn]
+                    elif 'cli/playbook.py' in fn:
+                        fn = 'lib/ansible/cli/playbook.py'
+                    elif 'module_utils' in fn:
+                        idx = fn.find('module_utils/')
+                        fn = 'lib/ansible/' + fn[idx:]
+                    elif 'ansible/' in fn:
+                        idx = fn.find('ansible/')
+                        fn1 = fn[idx:]
+
+                        if 'bin/' in fn1:
+                            if not fn1.startswith('bin'):
+
+                                idx = fn1.find('bin/')
+                                fn1 = fn1[idx:]
+
+                                if fn1.endswith('.py'):
+                                    fn1 = fn1.rstrip('.py')
+
+                        elif 'cli/' in fn1:
+                            idx = fn1.find('cli/')
+                            fn1 = fn1[idx:]
+                            fn1 = 'lib/ansible/' + fn1
+
+                        elif 'lib' not in fn1:
+                            fn1 = 'lib/' + fn1
+
+                        if fn1 not in self.file_indexer.files:
+                            #import epdb; epdb.st()
+                            pass
+            if matches:
+                return matches
+
+        craws = template_data.get('component_raw')
+
+        # compare to component mapping
+        rawl = craws.lower()
+        if rawl.endswith('.'):
+            rawl = rawl.rstrip('.')
+        if rawl in CMAP:
+            matches += CMAP[rawl]
+            return matches
+        elif (rawl + 's') in CMAP:
+            matches += CMAP[rawl + 's']
+            return matches
+        elif rawl.rstrip('s') in CMAP:
+            matches += CMAP[rawl.rstrip('s')]
+            return matches
+
+        # try to match to repo files
+        if craws:
+            clines = craws.split('\n')
+            for craw in clines:
+                cparts = craw.replace('-', ' ')
+                cparts = cparts.split()
+
+                for idx,x in enumerate(cparts):
+                    for SC in STOPCHARS:
+                        if SC in x:
+                            x = x.replace(SC, '')
+                    for SW in STOPWORDS:
+                        if x == SW:
+                            x = ''
+                    if x and '/' not in x:
+                        x = '/' + x
+                    cparts[idx] = x
+
+                cparts = [x.strip() for x in cparts if x.strip()]
+
+                for x in cparts:
+                    for f in self.file_indexer.files:
+                        if '/modules/' in f:
+                            continue
+                        if 'test/' in f and 'test' not in craw:
+                            continue
+                        if 'galaxy' in f and 'galaxy' not in body:
+                            continue
+                        if 'dynamic inv' in body.lower() and 'contrib' not in f:
+                            continue
+                        if 'inventory' in f and not 'inventory' in body.lower():
+                            continue
+                        if 'contrib' in f and not 'inventory' in body.lower():
+                            continue
+
+                        try:
+                            f.endswith(x)
+                        except UnicodeDecodeError:
+                            continue
+
+                        fname = os.path.basename(f).split('.')[0]
+
+                        if f.endswith(x):
+                            if fname.lower() in body.lower():
+                                matches.append(f)
+                                break
+                        if f.endswith(x + '.py'):
+                            if fname.lower() in body.lower():
+                                matches.append(f)
+                                break
+                        if f.endswith(x + '.ps1'):
+                            if fname.lower() in body.lower():
+                                matches.append(f)
+                                break
+                        if os.path.dirname(f).endswith(x):
+                            if fname.lower() in body.lower():
+                                matches.append(f)
+                                break
+
+        print('%s --> %s' % (craw, sorted(set(matches))))
+        return matches
 
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
