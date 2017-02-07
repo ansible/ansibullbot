@@ -29,7 +29,7 @@ def main():
 
     parser = argparse.ArgumentParser(description=description)
 
-    parser.add_argument("--skip-no-update", action="store_true",
+    parser.add_argument("--skip_no_update", action="store_true",
                         help="skip processing if updated_at hasn't changed")
 
     parser.add_argument("--skip_no_update_timeout", action="store_true",
