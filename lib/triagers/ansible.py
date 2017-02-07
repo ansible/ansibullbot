@@ -752,6 +752,21 @@ class AnsibleTriage(DefaultTriager):
                 self.actions['newlabel'].append('WIP')
             if 'shipit' in self.issue.labels:
                 self.actions['unlabel'].append('shipit')
+
+        elif self.meta['merge_commits']:
+
+            if self.meta['merge_commits'] and \
+                    not self.meta['has_merge_commit_notification']:
+                comment = self.render_boilerplate(
+                    self.meta,
+                    boilerplate='merge_commit_notify'
+                )
+                self.actions['comments'].append(comment)
+
+                if 'merge_commit' not in self.issue.labels:
+                    self.actions['newlabel'].append('merge_commit')
+                import epdb; epdb.st()
+
         else:
 
             if 'WIP' in self.issue.labels:
@@ -1229,9 +1244,26 @@ class AnsibleTriage(DefaultTriager):
 
             logging.info('getting issue objs for %s' % repo)
             if self.pr:
-                logging.info('fetch %s' % self.pr)
-                issue = self.repos[repo]['repo'].get_issue(self.pr)
-                self.repos[repo]['issues'] = [issue]
+                if ',' in self.pr:
+                    numbers = [int(x) for x in self.pr.split(',')]
+                else:
+                    numbers = [int(self.pr)]
+
+                issues = []
+                for x in numbers:
+                    logging.info('fetch %s' % x)
+                    issue = self.repos[repo]['repo'].get_issue(x)
+                    '''
+                    try:
+                        print(issue)
+                    except Exception as e:
+                        print(e)
+                        import epdb; epdb.st()
+                    '''
+                    issues.append(issues)
+
+                self.repos[repo]['issues'] = issues
+
             else:
 
                 if not self.repos[repo]['since']:
@@ -1311,6 +1343,8 @@ class AnsibleTriage(DefaultTriager):
         # clear the actions+meta
         self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
         self.meta = copy.deepcopy(self.EMPTY_META)
+
+        self.meta['submitter'] = iw.submitter
 
         # clear maintainers
         self.maintainers = []
@@ -1867,7 +1901,8 @@ class AnsibleTriage(DefaultTriager):
         committer_count = None
         needs_revision = False
         needs_revision_msgs = []
-        merge_commits = False
+        merge_commits = []
+        has_merge_commit_notification = False
         needs_rebase = False
         needs_rebase_msgs = []
         has_shippable = False
@@ -1892,6 +1927,7 @@ class AnsibleTriage(DefaultTriager):
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
             'merge_commits': merge_commits,
+            'has_merge_commit_notification': has_merge_commit_notification,
             'mergeable': None,
             'mergeable_state': mstate,
             'change_requested': change_requested,
@@ -2056,10 +2092,30 @@ class AnsibleTriage(DefaultTriager):
                 )
 
         # Merge commits are bad, force a rebase
-        for mc in iw.merge_commits:
-            merge_commits = True
+        if iw.merge_commits:
             needs_rebase = True
-            needs_rebase_msgs.append('merge commit %s' % mc.commit.sha)
+
+            for mc in iw.merge_commits:
+                merge_commits.append(mc.html_url)
+                needs_rebase_msgs.append('merge commit %s' % mc.commit.sha)
+
+            bpc = iw.history.get_boilerplate_comments()
+            if 'merge_commit_notify' not in bpc:
+                has_merge_commit_notification = False
+            else:
+                mc_comments = iw.history.search_user_comments(
+                    BOTNAMES,
+                    'boilerplate: merge_commit_notify'
+                )
+                last_mc_comment = mc_comments[-1]
+                mc_missing = []
+                for mc in iw.merge_commits:
+                    if mc.html_url not in last_mc_comment:
+                        mc_missing.append(mc)
+                if mc_missing:
+                    has_merge_commit_notification = False
+                else:
+                    has_merge_commit_notification = True
 
         # Count committers
         committer_count = len(sorted(set(iw.committer_emails)))
@@ -2104,6 +2160,7 @@ class AnsibleTriage(DefaultTriager):
             'has_travis': has_travis,
             'has_travis_notification': has_travis_notification,
             'merge_commits': merge_commits,
+            'has_merge_commit_notification': has_merge_commit_notification,
             'mergeable': self.issue.pullrequest.mergeable,
             'mergeable_state': mstate,
             'change_requested': change_requested,
