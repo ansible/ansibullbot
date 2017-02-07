@@ -376,7 +376,8 @@ class AnsibleTriage(DefaultTriager):
                     else:
                         # unset for daemonize loops
                         self.args.start_at = None
-                if issue.state == 'closed':
+
+                if issue.state == 'closed' and not self.args.ignore_state:
                     logging.info(str(number) + ' is closed, skipping')
                     redo = False
                     continue
@@ -1791,16 +1792,14 @@ class AnsibleTriage(DefaultTriager):
                 ispy3 = True
                 break
 
-            if py3str in self.template_data.get('component_raw', ''):
-                ispy3 = True
-                break
+            for k,v in self.template_data.iteritems():
+                if not v:
+                    continue
+                if py3str in v.lower():
+                    ispy3 = True
+                    break
 
-            if py3str in self.template_data.get('component name', ''):
-                ispy3 = True
-                break
-
-            if py3str in self.template_data.get('summary', ''):
-                ispy3 = True
+            if ispy3:
                 break
 
         if ispy3:

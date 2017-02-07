@@ -89,6 +89,9 @@ def main():
     parser.add_argument("--pause", "-p", action="store_true",
                         help="Always pause between prs|issues")
 
+    parser.add_argument("--ignore_state", action="store_true",
+                        help="Do not skip processing closed issues")
+
     parser.add_argument(
         "--pr", "--id", type=str,
         help="Triage only the specified pr|issue (separated by commas)"
