@@ -53,8 +53,11 @@ class ShippableRuns(object):
         nruns = self.get_pullrequest_runs(number)
         if not nruns:
             return None
-        ts = sorted([x['endedAt'] for x in nruns if x['endedAt']])[-1]
-        return ts
+        ts = sorted([x['endedAt'] for x in nruns if x['endedAt']])
+        if ts:
+            return ts[-1]
+        else:
+            return None
 
     def get_updated_since(self, since):
         updated = []
