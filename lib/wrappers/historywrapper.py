@@ -151,6 +151,17 @@ class HistoryWrapper(object):
         comments = [x['body'] for x in matching_events]
         return comments
 
+    def search_user_comments(self, username, searchterm):
+        """Get all the comments from a user"""
+        matching_events = self._find_events_by_actor(
+            'commented',
+            username,
+            maxcount=999
+        )
+        comments = [x['body'] for x in matching_events
+                    if searchterm in x['body'].lower()]
+        return comments
+
     def get_user_comments_groupby(self, username, groupby='d'):
         '''Count comments for a user by day/week/month/year'''
 

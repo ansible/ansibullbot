@@ -88,8 +88,11 @@ def main():
                         help="Debug output")
     parser.add_argument("--pause", "-p", action="store_true",
                         help="Always pause between prs|issues")
-    parser.add_argument("--pr", "--id", type=int,
-                        help="Triage only the specified pr|issue")
+
+    parser.add_argument(
+        "--pr", "--id", type=str,
+        help="Triage only the specified pr|issue (separated by commas)"
+    )
 
     parser.add_argument("--start-at", "--resume_id", type=int,
                         help="Start triage at the specified pr|issue")
