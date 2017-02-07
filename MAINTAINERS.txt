@@ -276,6 +276,7 @@ network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
 network/netvisor/: amitsi privateip gundalow Qalthos
 network/nmcli.py: alcamie101
+network/nsupdate.py: nerzhul
 network/nxos/: jedelman8 GGabriele privateip gundalow Qalthos
 network/omapi_host.py: nerzhul
 network/openswitch/: privateip gundalow Qalthos
