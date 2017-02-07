@@ -183,7 +183,7 @@ class HistoryWrapper(object):
 
         return groups
 
-    def get_commands(self, username, command_keys, uselabels=True):
+    def get_commands(self, username, command_keys, uselabels=True, botnames=[]):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
 
@@ -205,6 +205,8 @@ class HistoryWrapper(object):
         events = comments + labels + unlabels
         events = sorted(events, key=itemgetter('created_at'))
         for event in events:
+            if event['actor'] in botnames:
+                continue
             if event['event'] == 'commented':
                 for y in command_keys:
                     if event['body'].startswith('_From @'):
