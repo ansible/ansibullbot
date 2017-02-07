@@ -765,7 +765,6 @@ class AnsibleTriage(DefaultTriager):
 
                 if 'merge_commit' not in self.issue.labels:
                     self.actions['newlabel'].append('merge_commit')
-                import epdb; epdb.st()
 
         else:
 
@@ -1244,6 +1243,7 @@ class AnsibleTriage(DefaultTriager):
 
             logging.info('getting issue objs for %s' % repo)
             if self.pr:
+                # the issue id can be a list separated by commas
                 if ',' in self.pr:
                     numbers = [int(x) for x in self.pr.split(',')]
                 else:
@@ -1253,14 +1253,7 @@ class AnsibleTriage(DefaultTriager):
                 for x in numbers:
                     logging.info('fetch %s' % x)
                     issue = self.repos[repo]['repo'].get_issue(x)
-                    '''
-                    try:
-                        print(issue)
-                    except Exception as e:
-                        print(e)
-                        import epdb; epdb.st()
-                    '''
-                    issues.append(issues)
+                    issues.append(issue)
 
                 self.repos[repo]['issues'] = issues
 
