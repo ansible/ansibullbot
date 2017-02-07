@@ -45,6 +45,7 @@ from lib.utils.extractors import extract_pr_number_from_comment
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
+from lib.utils.shippable_api import ShippableRuns
 from lib.utils.webscraper import GithubWebScraper
 
 from lib.decorators.github import RateLimited
@@ -225,14 +226,6 @@ class AnsibleTriage(DefaultTriager):
 
         # create the scraper for www data
         self.gws = GithubWebScraper(cachedir=self.cachedir)
-        #print(self.gws.get_last_number('ansible/ansible'))
-        #sys.exit(1)
-        #import epdb; epdb.st()
-
-        '''
-        # get the ansible members
-        self.ansible_members = self.get_ansible_members()
-        '''
 
         # get valid labels
         self.valid_labels = self.get_valid_labels('ansible/ansible')
@@ -252,13 +245,11 @@ class AnsibleTriage(DefaultTriager):
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
-        '''
-        # get the ansible members
-        self.ansible_members = self.get_ansible_members()
-        '''
-
         # get valid labels
         self.valid_labels = self.get_valid_labels('ansible/ansible')
+
+        # instantiate shippable api
+        self.SR = ShippableRuns()
 
     @property
     def ansible_members(self):
@@ -328,6 +319,9 @@ class AnsibleTriage(DefaultTriager):
 
     def run(self):
         '''Primary execution method'''
+
+        # update shippable run data
+        self.SR.update()
 
         # get all of the open issues [or just one]
         self.collect_repos()
@@ -427,32 +421,48 @@ class AnsibleTriage(DefaultTriager):
                     if self.args.skip_no_update:
                         lmeta = self.load_meta(iw)
                         if lmeta:
+
+                            skip = False
+
                             if lmeta['updated_at'] == iw.updated_at.isoformat():
                                 skip = True
 
-                                if self.args.skip_no_update_timeout:
-                                    if iw.repo_full_name not in MREPOS:
-                                        # re-check ansible/ansiblei after
-                                        # a window of time since the last check.
-                                        lt = lmeta['time']
-                                        lt = datetime.datetime.strptime(
-                                            lt,
-                                            '%Y-%m-%dT%H:%M:%S.%f'
-                                        )
-                                        now = datetime.datetime.now()
-                                        delta = (now - lt)
-                                        delta = delta.days
+                            if skip and self.args.skip_no_update_timeout:
+                                if iw.repo_full_name not in MREPOS:
+                                    # re-check ansible/ansible after
+                                    # a window of time since the last check.
+                                    lt = lmeta['time']
+                                    lt = datetime.datetime.strptime(
+                                        lt,
+                                        '%Y-%m-%dT%H:%M:%S.%f'
+                                    )
+                                    now = datetime.datetime.now()
+                                    delta = (now - lt)
+                                    delta = delta.days
 
-                                        if delta > 5:
-                                            msg = '!skipping: %s' % delta
-                                            msg += ' days since last check'
-                                            logging.info(msg)
-                                            skip = False
+                                    if delta > 5:
+                                        msg = '!skipping: %s' % delta
+                                        msg += ' days since last check'
+                                        logging.info(msg)
+                                        skip = False
 
-                                if skip:
-                                    msg = 'skipping: no changes since last run'
-                                    logging.info(msg)
-                                    continue
+                            elif skip and iw.is_pullrequest():
+                                # if last process time is older than last
+                                # completion time on shippable, we need to
+                                # reprocess because the ci status has probabaly
+                                # changed.
+                                mua = datetime.datetime.strptime(
+                                    lmeta['updated_at'],
+                                    '%Y-%m-%dT%H:%M:%S'
+                                )
+                                lsr = self.SR.get_last_completion(iw.number)
+                                if lsr > mua:
+                                    skip = False
+
+                            if skip:
+                                msg = 'skipping: no changes since last run'
+                                logging.info(msg)
+                                continue
 
                     # pre-processing for non-module repos
                     if iw.repo_full_name not in MREPOS:
@@ -1233,6 +1243,8 @@ class AnsibleTriage(DefaultTriager):
                     issues = self.repos[repo]['repo'].get_issues(
                         since=self.repos[repo]['since']
                     )
+                    # save the since
+                    last_since = self.repos[repo]['since']
                     # reset the since marker
                     self.repos[repo]['since'] = datetime.datetime.utcnow()
 
@@ -1249,6 +1261,14 @@ class AnsibleTriage(DefaultTriager):
                     missing_numbers = [x for x in missing_numbers
                                        if x not in current_numbers and
                                        x not in since_numbers]
+
+                    # what has changed in shippable?
+                    if repo == 'ansible/ansible':
+                        shippable_numbers = \
+                            self.SR.get_updated_since(last_since)
+                        for x in shippable_numbers:
+                            if x not in missing_numbers:
+                                missing_numbers.append(x)
 
                     logging.info(
                         'issue numbers not returned via "since": %s'
