@@ -456,7 +456,7 @@ class AnsibleTriage(DefaultTriager):
                                     '%Y-%m-%dT%H:%M:%S'
                                 )
                                 lsr = self.SR.get_last_completion(iw.number)
-                                if lsr > mua:
+                                if lsr and lsr > mua:
                                     skip = False
 
                             if skip:
