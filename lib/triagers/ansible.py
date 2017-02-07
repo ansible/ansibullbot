@@ -2278,11 +2278,13 @@ class AnsibleTriage(DefaultTriager):
             maintainers,
             vcommands,
             uselabels=False,
+            botnames=BOTNAMES
         )
         meta['submitter_commands'] = iw.history.get_commands(
             iw.submitter,
             vcommands,
             uselabels=False,
+            botnames=BOTNAMES
         )
 
         negative_commands = \
