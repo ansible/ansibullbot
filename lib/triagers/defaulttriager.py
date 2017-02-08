@@ -364,7 +364,11 @@ class DefaultTriager(object):
     @RateLimited
     def get_ansible_core_team(self):
 
-        teamlist = ['ansible-commit', 'ansible-community']
+        teamlist = [
+            'ansible-commit',
+            'ansible-community',
+            'ansible-commit-external'
+        ]
         teams = []
         ansible_members = []
 
