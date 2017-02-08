@@ -2374,8 +2374,10 @@ class AnsibleTriage(DefaultTriager):
         if bb:
             for x in bb:
                 if x == negative:
-                    commands.remove(positive)
-                    commands.remove(negative)
+                    if positive in commands:
+                        commands.remove(positive)
+                    if negative in commands:
+                        commands.remove(negative)
 
         return commands
 
