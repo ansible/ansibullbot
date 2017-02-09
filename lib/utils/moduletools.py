@@ -348,7 +348,6 @@ class ModuleIndexer(object):
                             commit['name'] = ' '.join(lparts[:-1])
                         else:
                             pass
-                            #import epdb; epdb.st()
 
                         if commit['email'] and \
                                 'noreply.github.com' in commit['email']:
@@ -451,7 +450,6 @@ class ModuleIndexer(object):
                 self.modules[k]['maintainers_key'] = best_match
                 self.modules[k]['maintainers'] = self.maintainers[best_match]
             else:
-                #import epdb; epdb.st()
                 if v['metadata'].get('supported_by') in ['committer', 'core']:
                     self.modules[k]['maintainers_key'] = best_match
                     self.modules[k]['maintainers'] = ['ansible']
@@ -475,7 +473,6 @@ class ModuleIndexer(object):
             'subtopic': subtopic
         }
 
-        #import epdb; epdb.st()
         return tdata
 
     def get_module_authors(self, module_file):
@@ -527,7 +524,6 @@ class ModuleIndexer(object):
             ydata = yaml.load(author_lines)
         except Exception as e:
             print e
-            #import epdb; epdb.st()
             return authors
 
         # quit early if the yaml was not valid
@@ -636,7 +632,6 @@ class ModuleIndexer(object):
             else:
                 print("module - title matches: %s" % title_matches)
 
-        #import epdb; epdb.st()
         return match
 
     def is_multi(self, rawtext):

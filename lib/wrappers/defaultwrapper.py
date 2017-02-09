@@ -148,7 +148,6 @@ class DefaultWrapper(object):
     def get_comments(self):
         """Returns all current comments of the PR"""
 
-        #import epdb; epdb.st()
         comments = self.load_update_fetch('comments')
 
         self.current_comments = [x for x in comments]
@@ -303,6 +302,7 @@ class DefaultWrapper(object):
         if not baseobj:
             print('%s was not a property for the issue or the pullrequest'
                   % property_name)
+            logging.error('breakpoint!')
             import epdb; epdb.st()
             sys.exit(1)
 
@@ -317,7 +317,8 @@ class DefaultWrapper(object):
                 try:
                     methodToCall = getattr(baseobj, property_name)
                 except Exception as e:
-                    print(e)
+                    logging.error(e)
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 events = methodToCall
             else:
@@ -325,7 +326,8 @@ class DefaultWrapper(object):
                 try:
                     methodToCall = getattr(baseobj, 'get_' + property_name)
                 except Exception as e:
-                    print(e)
+                    logging.error(e)
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 events = [x for x in methodToCall()]
 
@@ -347,6 +349,7 @@ class DefaultWrapper(object):
             assignee = []
             for x in self.instance.assignee:
                 assignee.append(x.login)
+            logging.error('breakpoint!')
             import epdb; epdb.st()
         return assignee
 
@@ -738,7 +741,6 @@ class DefaultWrapper(object):
             headers=headers
         )
         jdata = json.loads(resp[2])
-        #import epdb; epdb.st()
         return jdata
 
     @property
@@ -757,6 +759,7 @@ class DefaultWrapper(object):
             self.pullrequest.update()
 
             if self.instance.updated_at > self.pullrequest.updated_at:
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
 
     @property
@@ -854,6 +857,7 @@ class DefaultWrapper(object):
 
             if resp[0] != 200 or 'successfully merged' not in resp[2]:
                 logging.error('merge failed on %s' % self.number)
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
                 sys.exit(1)
             else:
@@ -876,6 +880,7 @@ class DefaultWrapper(object):
 
             if resp[0] != 200 or 'successfully merged' not in resp[2]:
                 logging.error('merge failed on %s' % self.number)
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
                 sys.exit(1)
             else:
@@ -902,6 +907,7 @@ class DefaultWrapper(object):
                     migrated_issue = msg.split()[4]
                 except Exception as e:
                     logging.error(e)
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 if migrated_issue.endswith('_'):
                     migrated_issue = migrated_issue.rstrip('_')

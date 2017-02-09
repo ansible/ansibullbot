@@ -62,7 +62,8 @@ class HistoryWrapper(object):
 
         self.cachedir = os.path.dirname(self.cachefile)
         if 'issues' not in self.cachedir:
-            print(self.cachedir)
+            logging.error(self.cachedir)
+            logging.error('breakpoint!')
             import epdb; epdb.st()
 
         if not usecache:
@@ -124,9 +125,9 @@ class HistoryWrapper(object):
             with open(self.cachefile, 'wb') as f:
                 pickle.dump(cachedata, f)
         except Exception as e:
-            logging.debug(e)
+            logging.error(e)
+            logging.error('breakpoint!')
             import epdb; epdb.st()
-            pass
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
@@ -244,7 +245,6 @@ class HistoryWrapper(object):
     def is_mentioned(self, username):
         """Has person X ever been mentioned in this issue?"""
 
-        #import epdb; epdb.st()
         matching_events = self._find_events_by_actor('mentioned', username)
 
         if len(matching_events) > 0:
@@ -361,7 +361,6 @@ class HistoryWrapper(object):
                     else:
                         if comment['created_at'] > last_notification:
                             last_notification = comment['created_at']
-        #import epdb; epdb.st()
         return last_notification
 
     def last_commented_at(self, username):
@@ -389,7 +388,6 @@ class HistoryWrapper(object):
                     last_comment = event['body']
             if last_comment:
                 break
-        #import epdb; epdb.st()
         return last_comment
 
     def last_commentor(self):
@@ -509,7 +507,6 @@ class HistoryWrapper(object):
             cdict = self.get_event_from_cache(event.id, cache)
             if cdict:
                 edict = cdict.copy()
-                #import epdb; epdb.st()
             else:
                 edict = {}
                 edict['id'] = event.id
@@ -545,7 +542,6 @@ class HistoryWrapper(object):
             # 2016-07-26T20:08:20Z
             if not isinstance(reaction, dict):
                 # FIXME - not sure what's happening here
-                #import epdb; epdb.st()
                 pass
             else:
                 edict = {}
@@ -616,6 +612,7 @@ class HistoryWrapper(object):
             elif review['state'] == 'DISMISSED':
                 event['event'] = 'review_dismissed'
             else:
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             self.history.append(event)
 
