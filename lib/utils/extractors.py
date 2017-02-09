@@ -106,7 +106,6 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
                     # https://github.com/ansible/ansible/issues/20563
                     pass
                 else:
-                    #import epdb; epdb.st()
                     v = v.replace('module', ' ')
 
             # remove useless chars
@@ -259,7 +258,8 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
         except Exception as e:
             number = None
     else:
-        print('NOT SURE HOW TO PARSE %s' % rawtext)
+        logging.error('NOT SURE HOW TO PARSE %s' % rawtext)
+        logging.error('breakpoint!')
         import epdb; epdb.st()
 
     return number

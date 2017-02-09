@@ -346,7 +346,6 @@ class AnsibleTriage(DefaultTriager):
 
             # set the relative cachedir
             self.cachedir = os.path.join(self.cachedir_base, repopath)
-            #import epdb; epdb.st()
             # this is where the issue history cache goes
             hcache = os.path.join(self.cachedir, repopath)
             # scrape all summaries from www for later opchecking
@@ -507,14 +506,12 @@ class AnsibleTriage(DefaultTriager):
                             logging.info('needs_rebase_msg: %s' % msg)
 
                     # DEBUG!
-                    #import epdb; epdb.st()
                     if self.meta.get('mergeable_state') == 'unknown' or \
                             'needs_rebase' in self.actions['newlabel'] or \
                             'needs_rebase' in self.actions['unlabel'] or \
                             'needs_revision' in self.actions['newlabel'] or \
                             'needs_revision' in self.actions['unlabel']:
                         rn = self.issue.repo_full_name
-                        #import epdb; epdb.st()
                         summary = self.issue_summaries.get(rn, {}).\
                             get(self.issue.number, None)
                         if not summary:
@@ -527,7 +524,6 @@ class AnsibleTriage(DefaultTriager):
 
                         if self.meta.get('mergeable_state') == 'unknown':
                             pprint(self.actions)
-                            #import epdb; epdb.st()
                             pass
 
                     pprint(self.actions)
@@ -674,7 +670,6 @@ class AnsibleTriage(DefaultTriager):
         logging.info('dump meta to %s' % mfile)
         with open(mfile, 'wb') as f:
             json.dump(meta, f, sort_keys=True, indent=2)
-        #import epdb; epdb.st()
 
     def get_filemap(self):
         '''Read filemap and make re matchers'''
@@ -1031,7 +1026,6 @@ class AnsibleTriage(DefaultTriager):
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
-        #import epdb; epdb.st()
 
     def check_safe_match(self):
         safe = True
@@ -1306,7 +1300,8 @@ class AnsibleTriage(DefaultTriager):
                         try:
                             issue = self.repos[repo]['repo'].get_issue(x)
                         except Exception as e:
-                            print(e)
+                            logging.error(e)
+                            logging.error('breakpoint!')
                             import epdb; epdb.st()
                         if issue and \
                                 issue.state == 'open' and \
@@ -1432,7 +1427,6 @@ class AnsibleTriage(DefaultTriager):
                         else:
                             # >1 set of maintainers
                             logging.info('multiple modules referenced')
-                            #import epdb; epdb.st()
                             pass
 
                 if self.module_indexer.find_match(f):
@@ -1452,7 +1446,6 @@ class AnsibleTriage(DefaultTriager):
                     match.update(
                         self.module_indexer.split_topics_from_path(f)
                     )
-                    #import epdb; epdb.st()
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
                 elif f.endswith('.md'):
@@ -1461,7 +1454,6 @@ class AnsibleTriage(DefaultTriager):
                 else:
                     # FIXME - what do with these files?
                     print(f)
-                    #import epdb; epdb.st()
 
         # get labels for files ...
         if not iw.is_pullrequest():
@@ -1488,12 +1480,10 @@ class AnsibleTriage(DefaultTriager):
             else:
                 logging.error('NO MAINTAINER LISTED FOR %s'
                               % self.meta['module_match']['name'])
-                #import epdb; epdb.st()
 
         # everything else is "core"
         if not self.meta['is_module']:
             self.meta['is_core'] = True
-            #import epdb; epdb.st()
 
         # python3 ?
         self.meta['is_py3'] = self.is_python3()
@@ -1601,7 +1591,6 @@ class AnsibleTriage(DefaultTriager):
                     owner_space = (line.split(': ')[0]).strip()
                     maintainers_string = (line.split(': ')[-1]).strip()
                     maintainers[owner_space] = maintainers_string.split(' ')
-                    #import epdb; epdb.st()
 
         # meta is special
         maintainers['meta'] = ['ansible']
@@ -1631,6 +1620,7 @@ class AnsibleTriage(DefaultTriager):
             mirepopath = '/'.join(miparts[0:2])
         else:
             print(migrated_issue)
+            logging.error('breakpoint!')
             import epdb; epdb.st()
 
         mw = self.get_issue_by_repopath_and_number(
@@ -1879,7 +1869,6 @@ class AnsibleTriage(DefaultTriager):
                 elif 'needs_info' in event['body']:
                     needs_info = True
 
-        #import epdb; epdb.st()
         return needs_info
 
     def get_needs_revision_facts(self, issuewrapper, meta):
@@ -2221,6 +2210,7 @@ class AnsibleTriage(DefaultTriager):
         elif supported_by == 'committer':
             rfacts['committer_review'] = True
         else:
+            logging.error('breakpoint!')
             import epdb; epdb.st()
 
         return rfacts
@@ -2298,7 +2288,6 @@ class AnsibleTriage(DefaultTriager):
                             not iw.history.last_comment(maintainer):
                         nfacts['to_notify'].append(maintainer)
 
-        #import epdb; epdb.st()
         return nfacts
 
     def process_comment_commands(self, issuewrapper, meta):
@@ -2392,7 +2381,6 @@ class AnsibleTriage(DefaultTriager):
                 if f.startswith(l) or f.startswith(al):
                     clabels.append(cl)
 
-        #import epdb; epdb.st()
         return clabels
 
     def needs_bot_status(self, issuewrapper):

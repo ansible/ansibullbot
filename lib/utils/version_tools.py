@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+import logging
 import os
 import re
 from lib.utils.systemtools import *
@@ -120,7 +121,6 @@ class AnsibleVersionIndexer(object):
                 if k.startswith(version) or version.startswith(k):
                     return True
 
-        #import epdb; epdb.st()
         return False
 
 
@@ -336,7 +336,8 @@ class AnsibleVersionIndexer(object):
                         try:
                             aversion = words[0]
                         except Exception as e:
-                            print logprefix + str(e)
+                            logging.error(e)
+                            logging.error('breakpoint!')
                             import epdb; epdb.st()
                     elif characters[0].isdigit():
                         aversion = words[0]
@@ -401,7 +402,8 @@ class AnsibleVersionIndexer(object):
             rlines = [x.replace('stable-', '') for x in rlines]
 
             if rc != 0:
-                print "rc != 0"
+                logging.error("rc != 0")
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
 
             if len(rlines) > 0:
@@ -423,9 +425,10 @@ class AnsibleVersionIndexer(object):
                     '''
                     aversion = devel_version
                 else:
-                    print "WTF!? ..."
+                    logging.error("WTF!? ...")
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
-            #import epdb; epdb.st()
+
             self.COMMITVERSIONS[commithash] = aversion
 
         return aversion

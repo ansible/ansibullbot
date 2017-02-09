@@ -62,9 +62,6 @@ def RateLimited(fn):
         count = 0
         while not success:
             count += 1
-
-            #import epdb; epdb.st()
-            #rl = get_rate_limit(fn, args)
             rl = get_rate_limit()
 
             logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
@@ -108,8 +105,10 @@ def RateLimited(fn):
                         #success = True
                         return None
                     else:
+                        logging.error('breakpoint!')
                         import epdb; epdb.st()
                 else:
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
 
                 logging.warning('sleeping %s minutes' % (stime/60))

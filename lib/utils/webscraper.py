@@ -43,6 +43,7 @@ class GithubWebScraper(object):
             except Exception as e:
                 logging.error(e)
                 issues = {}
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
         return issues
 
@@ -87,6 +88,7 @@ class GithubWebScraper(object):
             '%s.json' % filename
         )
         if not issues:
+            logging.error('breakpoint!')
             import epdb; epdb.st()
 
         tfh, tfn = tempfile.mkstemp()
@@ -146,11 +148,9 @@ class GithubWebScraper(object):
                 elif v != issues[str(k)]:
                     changed.append(str(v['number']))
                     changes = True
-                    #import epdb; epdb.st()
                 issues[str(k)] = v
 
             if changed:
-                #import epdb; epdb.st()
                 logging.info('changed: %s' % ','.join(x for x in changed))
 
             self.dump_summaries_tmp(repo_url, issues)
@@ -320,7 +320,6 @@ class GithubWebScraper(object):
             filepath
         )
         rr = requests.get(url)
-        #import epdb; epdb.st()
         return rr.text
 
     def scrape_pullrequest_summaries(self):
@@ -348,6 +347,7 @@ class GithubWebScraper(object):
             if data['prs']:
                 prs.update(data['prs'])
             else:
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
 
         return prs
@@ -438,7 +438,6 @@ class GithubWebScraper(object):
                 tparts = atxt.split()
                 findex = tparts.index('from')
                 reviewer = tparts[findex+1]
-                #import epdb; epdb.st()
             elif 'requested review' in atxt:
                 action = 'requested review'
                 tparts = atxt.split()
@@ -459,6 +458,7 @@ class GithubWebScraper(object):
                 reviewer = tparts[findex+1]
             else:
                 action = None
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
 
             reviews['reviews'][rid] = {
@@ -599,6 +599,7 @@ class GithubWebScraper(object):
                     state = 'open'
                     merged = False
                 else:
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
 
                 created_at = None
@@ -612,7 +613,6 @@ class GithubWebScraper(object):
                     merged_at = timestamp
                 if state == 'closed':
                     closed_at = timestamp
-                #import epdb; epdb.st()
 
                 # <a class="link-gray-dark no-underline h4 js-navigation-open"
                 # href="/ansible/ansible-modules-extras/issues/3661">
@@ -623,7 +623,6 @@ class GithubWebScraper(object):
                 href = link.attrs['href']
 
                 if not href.startswith(self.baseurl):
-                    #import epdb; epdb.st()
                     href = self.baseurl + href
 
                 if 'issues' in href:
@@ -631,7 +630,6 @@ class GithubWebScraper(object):
                 else:
                     itype = 'pullrequest'
                 title = link.text.strip()
-                #import epdb; epdb.st()
 
                 status_txt = None
                 status_state = None
