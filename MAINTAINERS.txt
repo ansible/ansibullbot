@@ -283,7 +283,7 @@ network/openswitch/: privateip gundalow Qalthos
 network/ovs/openvswitch_bridge.py: 
 network/ovs/openvswitch_db.py: ansible
 network/ovs/openvswitch_port.py: 
-network/panos/: ivanbojer
+network/panos/: ivanbojer jtschichold
 network/snmp_facts.py: ogenstad
 network/sros/: privateip gundalow Qalthos
 network/vyos/: privateip gundalow Qalthos
