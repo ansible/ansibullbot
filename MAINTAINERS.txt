@@ -33,7 +33,7 @@ cloud/amazon/ec2_vol_facts.py: wimnat
 cloud/amazon/ec2_vol.py: ansible
 cloud/amazon/ec2_vpc_dhcp_options_facts.py: naslanidis
 cloud/amazon/ec2_vpc_dhcp_options.py: joelthompson
-cloud/amazon/ec2_vpc_igw.py: erydo
+cloud/amazon/ec2_vpc_igw.py:
 cloud/amazon/ec2_vpc_nacl_facts.py: brandond
 cloud/amazon/ec2_vpc_nacl.py: mmochan
 cloud/amazon/ec2_vpc_nat_gateway.py: linuxdynasty
@@ -42,9 +42,9 @@ cloud/amazon/ec2_vpc_net.py: ansible
 cloud/amazon/ec2_vpc_peer.py: mmochan
 cloud/amazon/ec2_vpc.py: carsongee
 cloud/amazon/ec2_vpc_route_table_facts.py: wimnat
-cloud/amazon/ec2_vpc_route_table.py: erydo wimnat
+cloud/amazon/ec2_vpc_route_table.py: wimnat
 cloud/amazon/ec2_vpc_subnet_facts.py: wimnat
-cloud/amazon/ec2_vpc_subnet.py: erydo
+cloud/amazon/ec2_vpc_subnet.py:
 cloud/amazon/ec2_vpc_vgw.py: naslanidis
 cloud/amazon/ec2_win_password.py: rickmendes
 cloud/amazon/ecs_cluster.py: simplesteph Java1Guy rmorlok
@@ -359,7 +359,7 @@ remote_management/stacki/: bsanders bbyhuy
 source_control/bzr.py: andreparames
 source_control/git_config.py: djmattyg007
 source_control/github_hooks.py: pcgentry
-source_control/github_key.py: erydo
+source_control/github_key.py:
 source_control/github_release.py: adrianmoisey
 source_control/gitlab_: dj-wasabi
 source_control/git.py: ansible
