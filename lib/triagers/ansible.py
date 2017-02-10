@@ -2065,6 +2065,11 @@ class AnsibleTriage(DefaultTriager):
                                 current_hash = event['commit_id']
                                 #pending_reviews = []
 
+                    else:
+                        # https://github.com/ansible/ansible/pull/20680
+                        # FIXME - not sure why this happens.
+                        continue
+
                     if event['event'] == 'review_changes_requested':
                         #pending_reviews.append(event['actor'])
                         hash_reviews[event['commit_id']].append(event['actor'])
