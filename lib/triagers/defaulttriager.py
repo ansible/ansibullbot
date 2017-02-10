@@ -520,6 +520,7 @@ class DefaultTriager(object):
         if not version:
             # old workflow
             if not hasattr(self, 'ansible_version'):
+                logging.debug('breakpoint!')
                 import epdb; epdb.st()
             return self.version_indexer.get_major_minor(self.ansible_version)
         else:

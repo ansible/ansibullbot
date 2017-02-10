@@ -767,6 +767,10 @@ class AnsibleTriage(DefaultTriager):
             if 'WIP' in self.issue.labels:
                 self.actions['unlabel'].append('WIP')
 
+            if not self.meta['merge_commits']:
+                if 'merge_commit' in self.issue.labels:
+                    self.actions['unlabel'].append('merge_commit')
+
             # SHIPIT
             if self.meta['shipit'] and \
                     self.meta['mergeable'] and \
@@ -1357,6 +1361,13 @@ class AnsibleTriage(DefaultTriager):
             # use the submit date's current version
             self.meta['ansible_version'] = \
                 self.version_indexer.ansible_version_by_date(iw.created_at)
+
+        # https://github.com/ansible/ansible/issues/21207
+        if not self.meta['ansible_version']:
+            # fallback to version by date
+            self.meta['ansible_version'] = \
+                self.version_indexer.ansible_version_by_date(iw.created_at)
+
         self.meta['ansible_label_version'] = \
             self.get_ansible_version_major_minor(
                 version=self.meta['ansible_version']
@@ -1978,7 +1989,9 @@ class AnsibleTriage(DefaultTriager):
 
         else:
 
-            pending_reviews = []
+            current_hash = None
+            #pending_reviews = []
+            hash_reviews = {}
 
             for event in iw.history.history:
 
@@ -2039,8 +2052,22 @@ class AnsibleTriage(DefaultTriager):
                             continue
 
                 if event['event'].startswith('review_'):
+
+                    if 'commit_id' in event:
+
+                        if event['commit_id'] not in hash_reviews:
+                            hash_reviews[event['commit_id']] = []
+
+                        if not current_hash:
+                            current_hash = event['commit_id']
+                        else:
+                            if event['commit_id'] != current_hash:
+                                current_hash = event['commit_id']
+                                #pending_reviews = []
+
                     if event['event'] == 'review_changes_requested':
-                        pending_reviews.append(event['actor'])
+                        #pending_reviews.append(event['actor'])
+                        hash_reviews[event['commit_id']].append(event['actor'])
                         needs_revision = True
                         needs_revision_msgs.append(
                             '[%s] changes requested' % event['actor']
@@ -2048,8 +2075,14 @@ class AnsibleTriage(DefaultTriager):
                         continue
 
                     if event['event'] == 'review_approved':
-                        if event['actor'] in pending_reviews:
-                            pending_reviews.remove(event['actor'])
+                        #if event['actor'] in pending_reviews:
+                        #    pending_reviews.remove(event['actor'])
+
+                        if event['actor'] in hash_reviews[event['commit_id']]:
+                            hash_reviews[event['commit_id']].remove(
+                                event['actor']
+                            )
+
                         needs_revision = False
                         needs_revision_msgs.append(
                             '[%s] approved changes' % event['actor']
@@ -2057,19 +2090,46 @@ class AnsibleTriage(DefaultTriager):
                         continue
 
                     if event['event'] == 'review_dismissed':
-                        if event['actor'] in pending_reviews:
-                            pending_reviews.remove(event['actor'])
+                        #if event['actor'] in pending_reviews:
+                        #    pending_reviews.remove(event['actor'])
+
+                        if event['actor'] in hash_reviews[event['commit_id']]:
+                            hash_reviews[event['commit_id']].remove(
+                                event['actor']
+                            )
+
                         needs_revision = False
                         needs_revision_msgs.append(
                             '[%s] dismissed review' % event['actor']
                         )
                         continue
 
+            # reviews on missing commits can be disgarded
+            outstanding = []
+            current_shas = [x.sha for x in iw.commits]
+            for k,v in hash_reviews.items():
+                if not v:
+                    continue
+                if k in current_shas:
+                    #outstanding.append((k,v))
+                    outstanding += v
+            outstanding = sorted(set(outstanding))
+            #import epdb; epdb.st()
+
+            '''
             if pending_reviews:
-                change_requested = pending_reviews
+                #change_requested = pending_reviews
+                change_requested = outstanding
                 needs_revision = True
                 needs_revision_msgs.append(
                     'reviews pending: %s' % ','.join(pending_reviews)
+                )
+            '''
+
+            if outstanding:
+                needs_revision = True
+                needs_revision_msgs.append(
+                    'outstanding reviews: %s' % ','.join(outstanding)
                 )
 
         # Merge commits are bad, force a rebase

@@ -603,6 +603,7 @@ class HistoryWrapper(object):
             event['id'] = review['id']
             event['actor'] = review['user']['login']
             event['created_at'] = self.parse_timestamp(review['submitted_at'])
+            event['commit_id'] = review['commit_id']
             if review['state'] == 'COMMENTED':
                 event['event'] = 'review_comment'
             elif review['state'] == 'CHANGES_REQUESTED':
