@@ -62,6 +62,7 @@ REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
 MAINTAINERS_FILES = ['MAINTAINERS.txt']
 FILEMAP_FILENAME = 'FILEMAP.json'
+COMPONENTMAP_FILENAME = 'COMPONENTMAP.json'
 
 ERROR_CODES = {
     'shippable_failure': 1,
@@ -241,7 +242,7 @@ class AnsibleTriage(DefaultTriager):
 
         # set the indexers
         self.version_indexer = AnsibleVersionIndexer()
-        self.file_indexer = FileIndexer()
+        self.file_indexer = FileIndexer(cmap=COMPONENTMAP_FILENAME)
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 

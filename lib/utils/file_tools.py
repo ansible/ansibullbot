@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import json
 import os
 
 from fuzzywuzzy import fuzz as fw_fuzz
@@ -11,6 +12,12 @@ from lib.utils.moduletools import ModuleIndexer
 class FileIndexer(ModuleIndexer):
 
     files = []
+
+    def __init__(self, cmap=None):
+        self.CMAP = {}
+        if cmap:
+            with open(cmap, 'rb') as f:
+                self.CMAP = json.load(f)
 
     def get_files(self):
         # manage the checkout
@@ -62,76 +69,6 @@ class FileIndexer(ModuleIndexer):
         # File
         # "/usr/lib/python2.7/site-packages/ansible/plugins/callback/foreman.py",
         #   line 30, in <module>
-
-        CMAP = {
-            'action plugin': [],
-            'ansible-console': ['lib/ansible/cli/console'],
-            'ansible-doc': ['lib/ansible/cli/doc'],
-            'ansible-galaxy': ['lib/ansible/cli/galaxy'],
-            'ansible-playbook': ['lib/ansible/cli/playbook'],
-            'ansible-playbook command': ['lib/ansible/cli/playbook'],
-            'ansible-pull': ['lib/ansible/cli/pull'],
-            'ansible-vault': ['lib/ansible/parsing/vault'],
-            'ansible-test': [],
-            'ansible command': ['lib/ansible/cli/adhoc'],
-            'ansible console': ['lib/ansible/cli/console'],
-            'ansible core': [None],
-            'ansible galaxy': ['lib/ansible/cli/galaxy'],
-            'ansible logging': [],
-            'ansible pull': ['lib/ansible/cli/pull'],
-            'async': ['lib/ansible/executor/playbook_executor'],
-            'async task': ['lib/ansible/executor/playbook_executor'],
-            'asynchronous task': ['lib/ansible/executor/playbook_executor'],
-            'block': ['lib/ansible/playbook/block.py'],
-            'callback plugin': ['lib/ansible/plugins/callback'],
-            'connection plugin': ['lib/ansible/plugins/connection'],
-            'connection local': ['lib/ansible/plugins/connection/local.py'],
-            'core': [None],
-            'core inventory': ['lib/ansible/inventory'],
-            'dynamic inventory': ['contrib/inventory'],
-            'dynamic inventory script': ['contrib/inventory'],
-            'delegate_to': [],
-            'facts': ['lib/ansible/module_utils/facts.py'],
-            'facts.py': ['lib/ansible/module_utils/facts.py'],
-            'gather_facts': ['lib/ansible/module_utils/facts.py'],
-            'handlers': ['lib/ansible/playbook/handler.py'],
-            'host_vars': ['lib/ansible/vars/hostvars.py'],
-            'include_role': ['lib/ansible/playbook/role/include.py'],
-            'include role': ['lib/ansible/playbook/role/include.py'],
-            'inventory': ['lib/ansible/inventory'],
-            'inventory parsing': ['lib/ansible/inventory'],
-            'inventory script': ['contrib/inventory'],
-            'jinja': ['lib/ansible/template'],
-            'jinja2': ['lib/ansible/template'],
-            'local connection': ['lib/ansible/plugins/connection/local.py'],
-            'n/a': [None],
-            'na': [None],
-            'openstack dynamic inventory script':
-                ['contrib/inventory/openstack.py'],
-            'paramiko': ['lib/ansible/plugins/connection/paramiko_ssh.py'],
-            'role': ['lib/ansible/playbook/role'],
-            'roles_path': ['lib/ansible/playbook/role'],
-            'role path': ['lib/ansible/playbook/role'],
-            'roles path': ['lib/ansible/playbook/role'],
-            'role include': ['lib/ansible/playbook/role/include.py'],
-            'role dep': ['lib/ansible/playbook/role/requirement.py'],
-            'role dependencies': ['lib/ansible/playbook/role/requirement.py'],
-            'role dependency': ['lib/ansible/playbook/role/requirement.py'],
-            'runner': [None],
-            'ssh connection plugin': ['lib/ansible/plugins/connection/ssh.py'],
-            'ssh connection': ['lib/ansible/plugins/connection/ssh.py'],
-            'ssh plugin': ['lib/ansible/plugins/connection/ssh.py'],
-            'templates': [],
-            'with_fileglob': ['lib/ansible/plugins/lookup/fileglob.py'],
-            'with_items': ['lib/ansible/plugins/lookup/__init__.py'],
-            'validate-modules': ['test/sanity/validate-modules'],
-            'vars-prompt': [],
-            'vault': ['lib/ansible/parsing/vault'],
-            'vault cat': ['lib/ansible/parsing/vault'],
-            'vault decrypt': ['lib/ansible/parsing/vault'],
-            'vault edit': ['lib/ansible/parsing/vault'],
-            'vault encrypt': ['lib/ansible/parsing/vault'],
-        }
 
         STOPWORDS = ['ansible', 'core', 'plugin']
         STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',']
@@ -192,14 +129,14 @@ class FileIndexer(ModuleIndexer):
         rawl = craws.lower()
         if rawl.endswith('.'):
             rawl = rawl.rstrip('.')
-        if rawl in CMAP:
-            matches += CMAP[rawl]
+        if rawl in self.CMAP:
+            matches += self.CMAP[rawl]
             return matches
-        elif (rawl + 's') in CMAP:
-            matches += CMAP[rawl + 's']
+        elif (rawl + 's') in self.CMAP:
+            matches += self.CMAP[rawl + 's']
             return matches
-        elif rawl.rstrip('s') in CMAP:
-            matches += CMAP[rawl.rstrip('s')]
+        elif rawl.rstrip('s') in self.CMAP:
+            matches += self.CMAP[rawl.rstrip('s')]
             #import epdb; epdb.st()
             return matches
 
@@ -207,12 +144,12 @@ class FileIndexer(ModuleIndexer):
         matches = []
         for cr in craws.lower().split('\n'):
             ratios = []
-            for k in CMAP.keys():
+            for k in self.CMAP.keys():
                 ratio = fw_fuzz.ratio(cr, k)
                 ratios.append((ratio, k))
             ratios = sorted(ratios, key=lambda tup: tup[0])
             if ratios[-1][0] >= 90:
-                cnames = CMAP[ratios[-1][1]]
+                cnames = self.CMAP[ratios[-1][1]]
                 matches += cnames
         if matches:
             return matches
