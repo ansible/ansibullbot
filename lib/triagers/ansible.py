@@ -1498,7 +1498,7 @@ class AnsibleTriage(DefaultTriager):
             self.meta['is_issue'] = False
             self.meta['is_pullrequest'] = True
             self.meta['component_labels'] = \
-                self.module_indexer.get_component_labels(
+                self.file_indexer.get_component_labels(
                     self.valid_labels,
                     iw.files
                 )
