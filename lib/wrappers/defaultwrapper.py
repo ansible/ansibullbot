@@ -898,7 +898,7 @@ class DefaultWrapper(object):
     @property
     def migrated(self):
         if self._migrated is None:
-            if 'Copied from original issue' in self.body:
+            if self.body and 'Copied from original issue' in self.body:
                 self._migrated = True
                 migrated_issue = None
                 idx = self.body.find('Copied from original issue')
