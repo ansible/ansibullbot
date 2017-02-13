@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import json
+import logging
 import os
 
 from fuzzywuzzy import fuzz as fw_fuzz
+from textblob import TextBlob
 
 from lib.utils.systemtools import run_command
 from lib.utils.moduletools import ModuleIndexer
@@ -13,11 +15,15 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, cmap=None):
+    def __init__(self, checkoutdir=None, cmap=None):
+        self.checkoutdir = checkoutdir
         self.CMAP = {}
         if cmap:
             with open(cmap, 'rb') as f:
                 self.CMAP = json.load(f)
+
+        self.get_files()
+        self.match_cache = {}
 
     def get_files(self):
         # manage the checkout
@@ -35,6 +41,7 @@ class FileIndexer(ModuleIndexer):
         self.files = files
 
     def get_component_labels(self, valid_labels, files):
+        '''Matches a filepath to the relevant c: labels'''
         labels = [x for x in valid_labels if x.startswith('c:')]
 
         clabels = []
@@ -62,7 +69,24 @@ class FileIndexer(ModuleIndexer):
 
         return clabels
 
+    def _string_to_cmap_key(self, text):
+        text = text.lower()
+        matches = []
+        if text.endswith('.'):
+            text = text.rstrip('.')
+        if text in self.CMAP:
+            matches += self.CMAP[text]
+            return matches
+        elif (text + 's') in self.CMAP:
+            matches += self.CMAP[text + 's']
+            return matches
+        elif text.rstrip('s') in self.CMAP:
+            matches += self.CMAP[text.rstrip('s')]
+            return matches
+        return matches
+
     def find_component_match(self, title, body, template_data):
+        '''Make a list of matching files for arbitrary text in an issue'''
 
         # DistributionNotFound: The 'jinja2<2.9' distribution was not found and
         #   is required by ansible
@@ -126,19 +150,26 @@ class FileIndexer(ModuleIndexer):
             return matches
 
         # compare to component mapping
-        rawl = craws.lower()
-        if rawl.endswith('.'):
-            rawl = rawl.rstrip('.')
-        if rawl in self.CMAP:
-            matches += self.CMAP[rawl]
+        matches = self._string_to_cmap_key(craws)
+        if matches:
             return matches
-        elif (rawl + 's') in self.CMAP:
-            matches += self.CMAP[rawl + 's']
-            return matches
-        elif rawl.rstrip('s') in self.CMAP:
-            matches += self.CMAP[rawl.rstrip('s')]
-            #import epdb; epdb.st()
-            return matches
+
+        # do not re-process the same strings over and over again
+        if craws.lower() in self.match_cache:
+            return self.match_cache[craws.lower()]
+
+        # make ngrams from largest to smallest and recheck
+        blob = TextBlob(craws.lower())
+        wordcount = len(blob.tokens) + 1
+
+        for ng_size in reversed(xrange(2,wordcount)):
+            ngrams = [' '.join(x) for x in blob.ngrams(ng_size)]
+            for ng in ngrams:
+
+                matches = self._string_to_cmap_key(ng)
+                if matches:
+                    self.match_cache[craws.lower()] = matches
+                    return matches
 
         # https://pypi.python.org/pypi/fuzzywuzzy
         matches = []
@@ -152,6 +183,7 @@ class FileIndexer(ModuleIndexer):
                 cnames = self.CMAP[ratios[-1][1]]
                 matches += cnames
         if matches:
+            self.match_cache[craws.lower()] = matches
             return matches
 
         # try to match to repo files
@@ -213,5 +245,6 @@ class FileIndexer(ModuleIndexer):
                                 matches.append(f)
                                 break
 
-        print('%s --> %s' % (craws, sorted(set(matches))))
+        logging.info('%s --> %s' % (craws, sorted(set(matches))))
+        self.match_cache[craws.lower()] = matches
         return matches

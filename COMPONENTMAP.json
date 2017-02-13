@@ -1,5 +1,7 @@
 {
-  "action plugin": [], 
+  "action plugin": [
+    "lib/ansible/plugins/action"
+  ], 
   "ansible command": [
     "lib/ansible/cli/adhoc"
   ], 
@@ -39,6 +41,9 @@
     "lib/ansible/parsing/vault"
   ], 
   "async": [
+    "lib/ansible/executor/playbook_executor"
+  ], 
+  "async module": [
     "lib/ansible/executor/playbook_executor"
   ], 
   "async task": [
@@ -108,11 +113,16 @@
   "jinja2": [
     "lib/ansible/template"
   ], 
-  "local connection": [
+  "local action": [
+    "lib/ansible/plugins/action",
     "lib/ansible/plugins/connection/local.py"
   ], 
-  "n/a": [
-    null
+  "local action": [
+    "lib/ansible/plugins/action",
+    "lib/ansible/plugins/connection/local.py"
+  ], 
+  "local connection": [
+    "lib/ansible/plugins/connection/local.py"
   ], 
   "na": [
     null

@@ -92,6 +92,9 @@ def main():
     parser.add_argument("--ignore_state", action="store_true",
                         help="Do not skip processing closed issues")
 
+    parser.add_argument("--issue_component_matching", action="store_true",
+                        help="Try to enumerate the component labels for issues")
+
     parser.add_argument(
         "--pr", "--id", type=str,
         help="Triage only the specified pr|issue (separated by commas)"

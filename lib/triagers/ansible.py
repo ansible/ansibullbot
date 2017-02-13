@@ -242,7 +242,12 @@ class AnsibleTriage(DefaultTriager):
 
         # set the indexers
         self.version_indexer = AnsibleVersionIndexer()
-        self.file_indexer = FileIndexer(cmap=COMPONENTMAP_FILENAME)
+        self.file_indexer = FileIndexer(
+            checkoutdir=os.path.expanduser(
+                '~/.ansibullbot/cache/ansible.files.checkout'
+            ),
+            cmap=COMPONENTMAP_FILENAME,
+        )
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
@@ -916,7 +921,9 @@ class AnsibleTriage(DefaultTriager):
 
             # only add these labels to pullrequest or un-triaged issues
             if self.issue.is_pullrequest() or \
-                    (self.issue.is_issue() and not self.issue.labels):
+                    (self.issue.is_issue() and
+                     (not self.issue.labels or
+                      'needs_triage' in self.issue.labels)):
 
                 # only add these if no c: labels have ever been changed by human
                 clabels = self.issue.history.get_changed_labels(
@@ -1483,9 +1490,10 @@ class AnsibleTriage(DefaultTriager):
         if not iw.is_pullrequest():
             self.meta['is_issue'] = True
             self.meta['is_pullrequest'] = False
-            if self.meta['is_module']:
-                self.meta['component_labels'] = []
-            else:
+            self.meta['component_labels'] = []
+
+            if not self.meta['is_module'] and \
+                    self.args.issue_component_matching:
                 components = self.file_indexer.find_component_match(
                     iw.title,
                     iw.body,
