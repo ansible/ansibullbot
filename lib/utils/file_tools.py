@@ -62,7 +62,8 @@ class FileIndexer(ModuleIndexer):
         for cl in clabels:
             for x in tmp_clabels:
                 if cl != x and x.startswith(cl):
-                    tmp_clabels.remove(cl)
+                    if cl in tmp_clabels:
+                        tmp_clabels.remove(cl)
         if tmp_clabels != clabels:
             clabels = [x for x in tmp_clabels]
             clabels = sorted(set(clabels))
