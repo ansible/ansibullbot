@@ -912,18 +912,24 @@ class AnsibleTriage(DefaultTriager):
 
         # component labels
         if self.meta['component_labels']:
-            # only add these if no c: labels have ever been changed by human
-            clabels = self.issue.history.get_changed_labels(
-                prefix='c:',
-                bots=BOTNAMES
-            )
-            if not clabels:
-                for cl in self.meta['component_labels']:
-                    ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
-                    if not ul and \
-                            cl not in self.issue.labels and \
-                            cl not in self.actions['newlabel']:
-                        self.actions['newlabel'].append(cl)
+
+            # only add these labels to pullrequest or un-triaged issues
+            if self.issue.is_pullrequest() or \
+                    (self.issue.is_issue() and not self.issue.labels):
+
+                # only add these if no c: labels have ever been changed by human
+                clabels = self.issue.history.get_changed_labels(
+                    prefix='c:',
+                    bots=BOTNAMES
+                )
+
+                if not clabels:
+                    for cl in self.meta['component_labels']:
+                        ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
+                        if not ul and \
+                                cl not in self.issue.labels and \
+                                cl not in self.actions['newlabel']:
+                            self.actions['newlabel'].append(cl)
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
