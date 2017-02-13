@@ -269,8 +269,8 @@ network/exoscale/: resmo
 network/f5/: mhite caphrim007 gundalow Qalthos privateip
 network/haproxy.py: ravibhure
 network/illumos/: xen0l
-network/ios/: privateip gundalow Qalthos
-network/iosxr/: privateip gundalow Qalthos
+network/ios/: rcarrillocruz privateip gundalow Qalthos
+network/iosxr/: rcarrillocruz privateip gundalow Qalthos
 network/ipify_facts.py: resmo
 network/junos/: privateip gundalow Qalthos ganeshnalawade
 network/ldap_entry.py jtyr
