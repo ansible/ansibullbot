@@ -116,7 +116,11 @@ class RepoWrapper(object):
 
     @RateLimited
     def get_labels(self):
-        return self.load_update_fetch('labels')
+        #return self.load_update_fetch('labels')
+        labels = []
+        for label in self.repo.get_labels():
+            labels.append(label)
+        return labels
 
     @property
     def assignees(self):

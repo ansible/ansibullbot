@@ -632,3 +632,19 @@ class HistoryWrapper(object):
             if not x['created_at'].tzinfo:
                 ats = pytz.utc.localize(x['created_at'])
                 self.history[idx]['created_at'] = ats
+
+    def get_changed_labels(self, prefix=None, bots=[]):
+        '''make a list of labels that have been set/unset'''
+        labeled = []
+        for event in self.history:
+            if bots:
+                if event['actor'] in bots:
+                    continue
+            if event['event'] in ['labeled', 'unlabeled']:
+                if prefix:
+                    if event['label'].startswith(prefix):
+                        labeled.append(event['label'])
+                else:
+                    labeled.append(event['label'])
+        return sorted(set(labeled))
+

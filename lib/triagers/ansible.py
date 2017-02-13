@@ -62,6 +62,7 @@ REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
 MAINTAINERS_FILES = ['MAINTAINERS.txt']
 FILEMAP_FILENAME = 'FILEMAP.json'
+COMPONENTMAP_FILENAME = 'COMPONENTMAP.json'
 
 ERROR_CODES = {
     'shippable_failure': 1,
@@ -241,7 +242,12 @@ class AnsibleTriage(DefaultTriager):
 
         # set the indexers
         self.version_indexer = AnsibleVersionIndexer()
-        self.file_indexer = FileIndexer()
+        self.file_indexer = FileIndexer(
+            checkoutdir=os.path.expanduser(
+                '~/.ansibullbot/cache/ansible.files.checkout'
+            ),
+            cmap=COMPONENTMAP_FILENAME,
+        )
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
@@ -912,12 +918,26 @@ class AnsibleTriage(DefaultTriager):
 
         # component labels
         if self.meta['component_labels']:
-            for cl in self.meta['component_labels']:
-                ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
-                if not ul and \
-                        cl not in self.issue.labels and \
-                        cl not in self.actions['newlabel']:
-                    self.actions['newlabel'].append(cl)
+
+            # only add these labels to pullrequest or un-triaged issues
+            if self.issue.is_pullrequest() or \
+                    (self.issue.is_issue() and
+                     (not self.issue.labels or
+                      'needs_triage' in self.issue.labels)):
+
+                # only add these if no c: labels have ever been changed by human
+                clabels = self.issue.history.get_changed_labels(
+                    prefix='c:',
+                    bots=BOTNAMES
+                )
+
+                if not clabels:
+                    for cl in self.meta['component_labels']:
+                        ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
+                        if not ul and \
+                                cl not in self.issue.labels and \
+                                cl not in self.actions['newlabel']:
+                            self.actions['newlabel'].append(cl)
 
         if self.meta['ansible_label_version']:
             label = 'affects_%s' % self.meta['ansible_label_version']
@@ -1471,13 +1491,32 @@ class AnsibleTriage(DefaultTriager):
             self.meta['is_issue'] = True
             self.meta['is_pullrequest'] = False
             self.meta['component_labels'] = []
+
+            if not self.meta['is_module'] and \
+                    self.args.issue_component_matching:
+                components = self.file_indexer.find_component_match(
+                    iw.title,
+                    iw.body,
+                    iw.template_data
+                )
+                self.meta['guessed_components'] = components
+                if components:
+                    comp_labels = self.file_indexer.get_component_labels(
+                        self.valid_labels,
+                        components
+                    )
+                    self.meta['component_labels'] = comp_labels
+                else:
+                    self.meta['component_labels'] = []
+
         else:
             self.meta['is_issue'] = False
             self.meta['is_pullrequest'] = True
-            self.meta['component_labels'] = self.get_component_labels(
-                self.valid_labels,
-                iw.files
-            )
+            self.meta['component_labels'] = \
+                self.file_indexer.get_component_labels(
+                    self.valid_labels,
+                    iw.files
+                )
 
         # who owns this?
         self.meta['owner'] = 'ansible'
@@ -1855,7 +1894,6 @@ class AnsibleTriage(DefaultTriager):
                  x not in BOTNAMES]
             )
         )
-
         for event in self.issue.history.history:
 
             if needs_info and event['actor'] == self.issue.submitter:
@@ -2435,6 +2473,7 @@ class AnsibleTriage(DefaultTriager):
 
         return commands
 
+    '''
     def get_component_labels(self, valid_labels, files):
         labels = [x for x in valid_labels if x.startswith('c:')]
 
@@ -2447,6 +2486,7 @@ class AnsibleTriage(DefaultTriager):
                     clabels.append(cl)
 
         return clabels
+    '''
 
     def needs_bot_status(self, issuewrapper):
         iw = issuewrapper
