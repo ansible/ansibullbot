@@ -1798,6 +1798,8 @@ class AnsibleTriage(DefaultTriager):
                         shipit_actors.append(actor)
                     continue
 
+        community = [x for x in community if x != iw.submitter]
+
         nmeta['shipit_count_community'] = community_shipits
         nmeta['shipit_count_maintainer'] = maintainer_shipits
         nmeta['shipit_count_ansible'] = ansible_shipits
