@@ -772,6 +772,7 @@ class ModuleIndexer(object):
                 for m in v['maintainers']:
                     if m not in maintainers:
                         maintainers.append(m)
+        maintainers = [x for x in maintainers if x.strip()]
         return maintainers
 
     @staticmethod
