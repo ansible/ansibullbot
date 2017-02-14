@@ -1745,7 +1745,6 @@ class AnsibleTriage(DefaultTriager):
             self.module_indexer.get_maintainers_for_namespace(mnamespace)
         community = [x for x in community if x != 'ansible' and
                      x not in self.ansible_core_team and
-                     x != iw.submitter and
                      x != 'DEPRECATED']
 
         # shipit tallies
@@ -1791,7 +1790,7 @@ class AnsibleTriage(DefaultTriager):
                     continue
 
             # community shipits
-            if actor != iw.submitter and actor in community:
+            if actor in community:
                 if 'shipit' in body or '+1' in body or 'LGTM' in body:
                     logging.info('%s shipit' % actor)
                     if actor not in shipit_actors:
@@ -1803,7 +1802,7 @@ class AnsibleTriage(DefaultTriager):
         nmeta['shipit_count_maintainer'] = maintainer_shipits
         nmeta['shipit_count_ansible'] = ansible_shipits
         nmeta['shipit_actors'] = shipit_actors
-        nmeta['community_usernames'] = community
+        nmeta['community_usernames'] = sorted(community)
 
         if (community_shipits + maintainer_shipits + ansible_shipits) > 1:
             nmeta['shipit'] = True
