@@ -295,6 +295,7 @@ notification/hall.py: bkimble
 notification/hipchat.py: pb8226
 notification/irc.py: jpmens sivel
 notification/jabber.py: bcoca
+notification/mattermost.py: bjolivot
 notification/mail.py: dagwieers
 notification/mqtt.py: jpmens
 notification/nexmo.py: sivel
