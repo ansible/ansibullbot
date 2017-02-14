@@ -53,7 +53,8 @@
         "labels": ["cloud", "gce"]
     },
     ".*ec2.*": {
-        "labels": ["cloud", "aws"]
+        "labels": ["cloud", "aws"],
+        "notify": ["willthames"]
     },
     ".*rax.*": {
         "labels": ["cloud", "rax"]
