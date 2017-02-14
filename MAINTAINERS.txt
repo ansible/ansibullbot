@@ -56,6 +56,7 @@ cloud/amazon/efs_facts.py: ryansydnor
 cloud/amazon/efs.py: ryansydnor akazakov
 cloud/amazon/elasticache.py: jsdalton alachaum
 cloud/amazon/elasticache_subnet_group.py: timmahoney
+cloud/amazon/elasticache_parameter_group.py: s-hertel
 cloud/amazon/execute_lambda.py: ryansb
 cloud/amazon/GUIDELINES.md: willthames wimnat
 cloud/amazon/iam_cert.py: ansible
