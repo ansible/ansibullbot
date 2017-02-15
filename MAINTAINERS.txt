@@ -280,6 +280,7 @@ network/netvisor/: amitsi privateip gundalow Qalthos
 network/nmcli.py: alcamie101
 network/nsupdate.py: nerzhul
 network/nxos/: jedelman8 GGabriele privateip gundalow Qalthos
+network/ordnance/: djh00t alexanderturner
 network/omapi_host.py: nerzhul
 network/openswitch/: privateip gundalow Qalthos
 network/ovs/: privateip
