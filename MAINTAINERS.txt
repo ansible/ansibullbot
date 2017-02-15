@@ -437,6 +437,7 @@ web_infrastructure/jira.py: tarka Slezhuk
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/supervisorctl.py: mattupstate inetfuture
 web_infrastructure/taiga_issue.py: lekum
+web_infrastructure/ansible_tower/: ghjm jlaska matburt wwitzel3
 windows/setup.ps1: ansible
 windows/slurp.ps1: ansible
 windows/win_acl_inheritance.ps1:
