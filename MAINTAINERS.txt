@@ -258,7 +258,7 @@ network/basics/slurp.py: ansible
 network/basics/uri.py: ansible
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
-network/cumulus/:  isharacomix jrrivers privateip gundalow Qalthos
+network/cumulus/: isharacomix jrrivers privateip gundalow Qalthos
 network/dellos10/: dhivyap skg-net privateip gundalow Qalthos
 network/dellos6/: dhivyap skg-net privateip gundalow Qalthos
 network/dellos9/: dhivyap skg-net privateip gundalow Qalthos
