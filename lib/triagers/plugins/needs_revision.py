@@ -306,7 +306,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
     # we don't like @you in the commit messages
     # https://github.com/ansible/ansibullbot/issues/375
     for x in iw.commits:
-        if '@' in x.commit.message:
+        words = x.commit.message.split()
+        if not words:
+            continue
+        if [x for x in words if x.startswith('@') and not x.endswith('@')]:
             has_commit_mention = True
             needs_revision = True
             needs_revision_msgs.append('@ in commit message')
