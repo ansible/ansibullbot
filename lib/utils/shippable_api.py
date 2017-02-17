@@ -4,7 +4,9 @@
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
 import datetime
+import logging
 import requests
+import time
 
 ANSIBLE_PROJECT_ID = '573f79d02a8192902e20e34b'
 SHIPPABLE_URL = 'https://api.shippable.com'
@@ -21,9 +23,15 @@ class ShippableRuns(object):
 
     def update(self):
         '''Fetch the latest data then send for processing'''
-        resp = requests.get(self.url)
-        self.runs = []
-        self._rawdata = resp.json()
+        success = False
+        while not success:
+            resp = requests.get(self.url)
+            try:
+                self._rawdata = resp.json()
+                success = True
+            except Exception as e:
+                logging.error(e)
+                time.sleep(2*60)
         self._process_raw_data()
 
     def _process_raw_data(self):
