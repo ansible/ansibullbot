@@ -510,6 +510,8 @@ windows/win_shortcut.ps1: dagwieers
 windows/win_shortcut.py: dagwieers
 windows/win_stat.ps1: nitzmahone
 windows/win_stat.py: nitzmahone
+windows/win_tempfile: dagwieers
+windows_win_tempfile: dagwieers
 windows/win_template.ps1: jhawkesworth
 windows/win_template.py: jhawkesworth
 windows/win_timezone.ps1: schwartzmx
