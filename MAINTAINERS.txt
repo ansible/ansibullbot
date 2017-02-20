@@ -256,6 +256,7 @@ network/avi/: grastogi23 khaltore ericsysmin
 network/basics/get_url.py: jpmens
 network/basics/slurp.py: ansible
 network/basics/uri.py: ansible
+network/bigswitch/: tedelhourani vuile jayakody
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
 network/cumulus/: CumulusNetworks privateip gundalow Qalthos
