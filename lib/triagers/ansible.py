@@ -50,8 +50,9 @@ from lib.utils.webscraper import GithubWebScraper
 
 from lib.decorators.github import RateLimited
 
+from lib.triagers.plugins.needs_revision import get_needs_revision_facts
 
-BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
+#BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 REPOS = [
     'ansible/ansible',
     'ansible/ansible-modules-core',
@@ -75,6 +76,8 @@ ERROR_CODES = {
 
 
 class AnsibleTriage(DefaultTriager):
+
+    BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 
     EMPTY_ACTIONS = {
         'newlabel': [],
@@ -267,7 +270,7 @@ class AnsibleTriage(DefaultTriager):
     def ansible_core_team(self):
         if not self._ansible_core_team:
             self._ansible_core_team = self.get_ansible_core_team()
-        return [x for x in self._ansible_core_team if x not in BOTNAMES]
+        return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
 
     def start(self):
 
@@ -755,7 +758,7 @@ class AnsibleTriage(DefaultTriager):
             if 'shipit' in self.issue.labels:
                 self.actions['unlabel'].append('shipit')
 
-        elif self.meta['merge_commits']:
+        elif self.meta['merge_commits'] or self.meta['has_commit_mention']:
 
             if self.meta['merge_commits'] and \
                     not self.meta['has_merge_commit_notification']:
@@ -767,6 +770,15 @@ class AnsibleTriage(DefaultTriager):
 
                 if 'merge_commit' not in self.issue.labels:
                     self.actions['newlabel'].append('merge_commit')
+
+            if self.meta['has_commit_mention'] and \
+                    not self.meta['has_commit_mention_notification']:
+
+                comment = self.render_boilerplate(
+                    self.meta,
+                    boilerplate='commit_msg_mentions'
+                )
+                self.actions['comments'].append(comment)
 
         else:
 
@@ -904,7 +916,7 @@ class AnsibleTriage(DefaultTriager):
                 # don't add manually removed label
                 if not self.issue.history.was_unlabeled(
                     'module',
-                    bots=BOTNAMES
+                    bots=self.BOTNAMES
                 ):
                     self.actions['newlabel'].append('module')
         else:
@@ -912,7 +924,7 @@ class AnsibleTriage(DefaultTriager):
                 # don't remove manually added label
                 if not self.issue.history.was_labeled(
                     'module',
-                    bots=BOTNAMES
+                    bots=self.BOTNAMES
                 ):
                     self.actions['unlabel'].append('module')
 
@@ -928,12 +940,15 @@ class AnsibleTriage(DefaultTriager):
                 # only add these if no c: labels have ever been changed by human
                 clabels = self.issue.history.get_changed_labels(
                     prefix='c:',
-                    bots=BOTNAMES
+                    bots=self.BOTNAMES
                 )
 
                 if not clabels:
                     for cl in self.meta['component_labels']:
-                        ul = self.issue.history.was_unlabeled(cl, bots=BOTNAMES)
+                        ul = self.issue.history.was_unlabeled(
+                            cl,
+                            bots=self.BOTNAMES
+                        )
                         if not ul and \
                                 cl not in self.issue.labels and \
                                 cl not in self.actions['newlabel']:
@@ -1539,7 +1554,8 @@ class AnsibleTriage(DefaultTriager):
         self.meta['is_py3'] = self.is_python3()
 
         # shipit?
-        self.meta.update(self.get_needs_revision_facts(iw, self.meta))
+        #self.meta.update(self.get_needs_revision_facts(iw, self.meta))
+        self.meta.update(get_needs_revision_facts(self, iw, self.meta))
         self.meta.update(self.get_notification_facts(iw, self.meta))
 
         # needsinfo?
@@ -1733,7 +1749,7 @@ class AnsibleTriage(DefaultTriager):
             ModuleIndexer.replace_ansible(
                 maintainers,
                 self.ansible_core_team,
-                bots=BOTNAMES
+                bots=self.BOTNAMES
             )
 
         if not meta['is_new_module'] and iw.submitter in maintainers:
@@ -1757,7 +1773,7 @@ class AnsibleTriage(DefaultTriager):
 
             if event['event'] not in ['commented', 'committed']:
                 continue
-            if event['actor'] in BOTNAMES:
+            if event['actor'] in self.BOTNAMES:
                 continue
 
             # commits reset the counters
@@ -1892,7 +1908,7 @@ class AnsibleTriage(DefaultTriager):
                 [x for x in maintainers
                  if x != 'DEPRECATED' and
                  x != self.issue.submitter and
-                 x not in BOTNAMES]
+                 x not in self.BOTNAMES]
             )
         )
         for event in self.issue.history.history:
@@ -1900,7 +1916,7 @@ class AnsibleTriage(DefaultTriager):
             if needs_info and event['actor'] == self.issue.submitter:
                 needs_info = False
 
-            if event['actor'] in BOTNAMES:
+            if event['actor'] in self.BOTNAMES:
                 continue
             if event['actor'] not in maintainers:
                 continue
@@ -1921,6 +1937,7 @@ class AnsibleTriage(DefaultTriager):
 
         return needs_info
 
+    """
     def get_needs_revision_facts(self, issuewrapper, meta):
         # Thanks @adityacs for this PR. This PR requires revisions, either
         # because it fails to build or by reviewer request. Please make the
@@ -2257,6 +2274,7 @@ class AnsibleTriage(DefaultTriager):
         }
 
         return rmeta
+    """
 
     def get_supported_by(self, issuewrapper, meta):
 
@@ -2420,13 +2438,13 @@ class AnsibleTriage(DefaultTriager):
             maintainers,
             vcommands,
             uselabels=False,
-            botnames=BOTNAMES
+            botnames=self.BOTNAMES
         )
         meta['submitter_commands'] = iw.history.get_commands(
             iw.submitter,
             vcommands,
             uselabels=False,
-            botnames=BOTNAMES
+            botnames=self.BOTNAMES
         )
 
         negative_commands = \
@@ -2496,14 +2514,14 @@ class AnsibleTriage(DefaultTriager):
             if ev['event'] != 'commented':
                 continue
             if 'bot_status' in ev['body']:
-                if ev['actor'] not in BOTNAMES:
+                if ev['actor'] not in self.BOTNAMES:
                     if ev['actor'] in self.ansible_core_team or \
                             ev['actor'] in self.module_indexer.all_maintainers:
                         bs = True
                         continue
             # <!--- boilerplate: bot_status --->
             if bs:
-                if ev['actor'] in BOTNAMES:
+                if ev['actor'] in self.BOTNAMES:
                     if 'boilerplate: bot_status' in ev['body']:
                         bs = False
                         continue

@@ -57,6 +57,7 @@ cloud/amazon/efs.py: ryansydnor akazakov
 cloud/amazon/elasticache.py: jsdalton alachaum
 cloud/amazon/elasticache_subnet_group.py: timmahoney
 cloud/amazon/elasticache_parameter_group.py: s-hertel
+cloud/amazon/elasticache_snapshot.py: s-hertel
 cloud/amazon/execute_lambda.py: ryansb
 cloud/amazon/GUIDELINES.md: willthames wimnat
 cloud/amazon/iam_cert.py: ansible
@@ -259,7 +260,7 @@ network/basics/slurp.py: ansible
 network/basics/uri.py: ansible
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
-network/cumulus/: CumulusNetworks privateip gundalow Qalthos
+network/cumulus/: isharacomix jrrivers privateip gundalow Qalthos
 network/dellos10/: dhivyap skg-net privateip gundalow Qalthos
 network/dellos6/: dhivyap skg-net privateip gundalow Qalthos
 network/dellos9/: dhivyap skg-net privateip gundalow Qalthos
@@ -281,6 +282,7 @@ network/netvisor/: amitsi privateip gundalow Qalthos
 network/nmcli.py: alcamie101
 network/nsupdate.py: nerzhul
 network/nxos/: jedelman8 GGabriele privateip gundalow Qalthos
+network/ordnance/: djh00t alexanderturner
 network/omapi_host.py: nerzhul
 network/openswitch/: privateip gundalow Qalthos
 network/ovs/: privateip
@@ -437,6 +439,7 @@ web_infrastructure/jira.py: tarka Slezhuk
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/supervisorctl.py: mattupstate inetfuture
 web_infrastructure/taiga_issue.py: lekum
+web_infrastructure/ansible_tower/: ghjm jlaska matburt wwitzel3
 windows/setup.ps1: ansible
 windows/slurp.ps1: ansible
 windows/win_acl_inheritance.ps1:
@@ -491,6 +494,8 @@ windows/win_reg_stat.ps1: jborean93
 windows/win_reg_stat.py: jborean93
 windows/win_regedit.ps1: joshludwig smadam813
 windows/win_regedit.py: joshludwig smadam813
+windows/win_region.ps1: jborean93
+windows/win_region.py: jborean93
 windows/win_regmerge.ps1: jhawkesworth
 windows/win_regmerge.py: jhawkesworth
 windows/win_robocopy.ps1: blakfeld
