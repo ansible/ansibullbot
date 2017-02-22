@@ -133,6 +133,7 @@ cloud/openstack/_quantum_router.py: DEPRECATED
 cloud/ovh/ovh_ip_loadbalancing_backend.py: pascalheraud
 cloud/ovirt/: machacekondra
 cloud/profitbricks/: baldwinSPC
+cloud/pubnub/: parfeon
 cloud/rackspace/rax_cbs_attachments.py: claco sivel
 cloud/rackspace/rax_cbs.py: claco sivel
 cloud/rackspace/rax_cdb_database.py: jails
