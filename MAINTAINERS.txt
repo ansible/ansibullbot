@@ -110,7 +110,7 @@ cloud/google/gce_img.py: supertom
 cloud/google/gce_tag.py: dohoangkhiemgmail.com
 cloud/google/gc_storage.py: bennojoy supertom
 cloud/google/: supertom
-cloud/linode/linode.py: zbal
+cloud/linode/linode.py: zbal intheclouddan
 cloud/lxc/lxc_container.py: cloudnull
 cloud/lxd/: hnakamur
 cloud/misc/ovirt.py: joshainglis karmab
