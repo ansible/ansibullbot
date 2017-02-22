@@ -492,6 +492,8 @@ windows/win_reg_stat.ps1: jborean93
 windows/win_reg_stat.py: jborean93
 windows/win_regedit.ps1: joshludwig smadam813
 windows/win_regedit.py: joshludwig smadam813
+windows/win_region.ps1: jborean93
+windows/win_region.py: jborean93
 windows/win_regmerge.ps1: jhawkesworth
 windows/win_regmerge.py: jhawkesworth
 windows/win_robocopy.ps1: blakfeld
