@@ -1,0 +1,220 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-13578390"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19491"
+        }
+      }, 
+      "body": "needs_revision", 
+      "commit_id": "996323bb5f01174bf7fa32d05604343beeda2576", 
+      "html_url": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-13578390", 
+      "id": 13578390, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19491", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2016-12-19T15:48:35Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/940557?v=3", 
+        "events_url": "https://api.github.com/users/gundalow/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/gundalow/followers", 
+        "following_url": "https://api.github.com/users/gundalow/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/gundalow/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/gundalow", 
+        "id": 940557, 
+        "login": "gundalow", 
+        "organizations_url": "https://api.github.com/users/gundalow/orgs", 
+        "received_events_url": "https://api.github.com/users/gundalow/received_events", 
+        "repos_url": "https://api.github.com/users/gundalow/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/gundalow/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/gundalow/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/gundalow"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-13604068"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19491"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "996323bb5f01174bf7fa32d05604343beeda2576", 
+      "html_url": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-13604068", 
+      "id": 13604068, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19491", 
+      "state": "COMMENTED", 
+      "submitted_at": "2016-12-19T17:47:34Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/7425606?v=3", 
+        "events_url": "https://api.github.com/users/wimnat/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/wimnat/followers", 
+        "following_url": "https://api.github.com/users/wimnat/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/wimnat/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/wimnat", 
+        "id": 7425606, 
+        "login": "wimnat", 
+        "organizations_url": "https://api.github.com/users/wimnat/orgs", 
+        "received_events_url": "https://api.github.com/users/wimnat/received_events", 
+        "repos_url": "https://api.github.com/users/wimnat/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/wimnat/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/wimnat/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/wimnat"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-14773242"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19491"
+        }
+      }, 
+      "body": "We can definitely add an `elb_classic_lb` alias that will point at `ec2_elb_lb`, the renaming process takes multiple cycles because we must have one release (at least) for each phase (numbers assume starting now):\r\n\r\n1. Allow the new name (release the alias) in 2.3 and add a warning on the old name\r\n2. Release 2.4 and continue warning on the old name\r\n3. Release 2.5 and rename `ec2_elb_lb` to `_ec2_elb_lb`\r\n4. Release 2.6 without `_ec2_elb_lb`", 
+      "commit_id": "dc47950e54a27021f4afa0c2dd57f399bca21cb8", 
+      "html_url": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-14773242", 
+      "id": 14773242, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19491", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2016-12-30T17:06:28Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/636610?v=3", 
+        "events_url": "https://api.github.com/users/ryansb/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ryansb/followers", 
+        "following_url": "https://api.github.com/users/ryansb/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ryansb/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ryansb", 
+        "id": 636610, 
+        "login": "ryansb", 
+        "organizations_url": "https://api.github.com/users/ryansb/orgs", 
+        "received_events_url": "https://api.github.com/users/ryansb/received_events", 
+        "repos_url": "https://api.github.com/users/ryansb/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ryansb/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ryansb/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ryansb"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-20406406"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19491"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "dc47950e54a27021f4afa0c2dd57f399bca21cb8", 
+      "html_url": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-20406406", 
+      "id": 20406406, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19491", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-07T00:40:55Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/7425606?v=3", 
+        "events_url": "https://api.github.com/users/wimnat/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/wimnat/followers", 
+        "following_url": "https://api.github.com/users/wimnat/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/wimnat/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/wimnat", 
+        "id": 7425606, 
+        "login": "wimnat", 
+        "organizations_url": "https://api.github.com/users/wimnat/orgs", 
+        "received_events_url": "https://api.github.com/users/wimnat/received_events", 
+        "repos_url": "https://api.github.com/users/wimnat/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/wimnat/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/wimnat/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/wimnat"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-20407034"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19491"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "dc47950e54a27021f4afa0c2dd57f399bca21cb8", 
+      "html_url": "https://github.com/ansible/ansible/pull/19491#pullrequestreview-20407034", 
+      "id": 20407034, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19491", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-07T00:46:02Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/7425606?v=3", 
+        "events_url": "https://api.github.com/users/wimnat/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/wimnat/followers", 
+        "following_url": "https://api.github.com/users/wimnat/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/wimnat/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/wimnat", 
+        "id": 7425606, 
+        "login": "wimnat", 
+        "organizations_url": "https://api.github.com/users/wimnat/orgs", 
+        "received_events_url": "https://api.github.com/users/wimnat/received_events", 
+        "repos_url": "https://api.github.com/users/wimnat/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/wimnat/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/wimnat/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/wimnat"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "wimnat", 
+  "user_reviews": {
+    "gundalow": "requested changes", 
+    "ryansb": "requested changes"
+  }, 
+  "user_reviews_unmodified": {
+    "gundalow": "review_changes_requested", 
+    "ryansb": "review_changes_requested"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-13578390": {
+        "action": "requested changes", 
+        "actor": "gundalow", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2016-12-19T15:48:35Z"
+      }, 
+      "pullrequestreview-14773242": {
+        "action": "requested changes", 
+        "actor": "ryansb", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2016-12-30T17:06:28Z"
+      }
+    }, 
+    "users": {
+      "gundalow": "requested changes", 
+      "ryansb": "requested changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "gundalow": "requested changes", 
+    "ryansb": "requested changes"
+  }
+}

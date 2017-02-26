@@ -1,0 +1,216 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22892148"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21701"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "721d256d8648f68fa392ca1e44aa2a95cbb34479", 
+      "html_url": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22892148", 
+      "id": 22892148, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21701", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-21T07:40:49Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/23809?v=3", 
+        "events_url": "https://api.github.com/users/resmo/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/resmo/followers", 
+        "following_url": "https://api.github.com/users/resmo/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/resmo/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/resmo", 
+        "id": 23809, 
+        "login": "resmo", 
+        "organizations_url": "https://api.github.com/users/resmo/orgs", 
+        "received_events_url": "https://api.github.com/users/resmo/received_events", 
+        "repos_url": "https://api.github.com/users/resmo/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/resmo/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/resmo/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/resmo"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22912343"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21701"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "721d256d8648f68fa392ca1e44aa2a95cbb34479", 
+      "html_url": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22912343", 
+      "id": 22912343, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21701", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-21T09:41:31Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/994167?v=3", 
+        "events_url": "https://api.github.com/users/Slezhuk/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/Slezhuk/followers", 
+        "following_url": "https://api.github.com/users/Slezhuk/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/Slezhuk/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/Slezhuk", 
+        "id": 994167, 
+        "login": "Slezhuk", 
+        "organizations_url": "https://api.github.com/users/Slezhuk/orgs", 
+        "received_events_url": "https://api.github.com/users/Slezhuk/received_events", 
+        "repos_url": "https://api.github.com/users/Slezhuk/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/Slezhuk/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/Slezhuk/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/Slezhuk"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22951910"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21701"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "721d256d8648f68fa392ca1e44aa2a95cbb34479", 
+      "html_url": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22951910", 
+      "id": 22951910, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21701", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-21T13:16:51Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/23809?v=3", 
+        "events_url": "https://api.github.com/users/resmo/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/resmo/followers", 
+        "following_url": "https://api.github.com/users/resmo/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/resmo/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/resmo", 
+        "id": 23809, 
+        "login": "resmo", 
+        "organizations_url": "https://api.github.com/users/resmo/orgs", 
+        "received_events_url": "https://api.github.com/users/resmo/received_events", 
+        "repos_url": "https://api.github.com/users/resmo/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/resmo/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/resmo/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/resmo"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22965811"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21701"
+        }
+      }, 
+      "body": "shipit", 
+      "commit_id": "721d256d8648f68fa392ca1e44aa2a95cbb34479", 
+      "html_url": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-22965811", 
+      "id": 22965811, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21701", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-02-21T14:21:15Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/23809?v=3", 
+        "events_url": "https://api.github.com/users/resmo/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/resmo/followers", 
+        "following_url": "https://api.github.com/users/resmo/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/resmo/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/resmo", 
+        "id": 23809, 
+        "login": "resmo", 
+        "organizations_url": "https://api.github.com/users/resmo/orgs", 
+        "received_events_url": "https://api.github.com/users/resmo/received_events", 
+        "repos_url": "https://api.github.com/users/resmo/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/resmo/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/resmo/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/resmo"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-23034724"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21701"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "721d256d8648f68fa392ca1e44aa2a95cbb34479", 
+      "html_url": "https://github.com/ansible/ansible/pull/21701#pullrequestreview-23034724", 
+      "id": 23034724, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21701", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-21T18:34:30Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/994167?v=3", 
+        "events_url": "https://api.github.com/users/Slezhuk/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/Slezhuk/followers", 
+        "following_url": "https://api.github.com/users/Slezhuk/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/Slezhuk/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/Slezhuk", 
+        "id": 994167, 
+        "login": "Slezhuk", 
+        "organizations_url": "https://api.github.com/users/Slezhuk/orgs", 
+        "received_events_url": "https://api.github.com/users/Slezhuk/received_events", 
+        "repos_url": "https://api.github.com/users/Slezhuk/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/Slezhuk/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/Slezhuk/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/Slezhuk"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "Slezhuk", 
+  "user_reviews": {
+    "resmo": "approved these changes"
+  }, 
+  "user_reviews_unmodified": {
+    "resmo": "review_approved"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-22892148": {
+        "action": "reviewed", 
+        "actor": "resmo", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-21T07:40:49Z"
+      }, 
+      "pullrequestreview-22965811": {
+        "action": "approved", 
+        "actor": "resmo", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-21T14:21:15Z"
+      }
+    }, 
+    "users": {
+      "resmo": "approved these changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "resmo": "approved these changes"
+  }
+}

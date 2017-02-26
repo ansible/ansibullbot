@@ -1,0 +1,151 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/18930#pullrequestreview-16684129"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/18930"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "646963ff3767f851fa5e75d79e58bcfdd68ec28d", 
+      "html_url": "https://github.com/ansible/ansible/pull/18930#pullrequestreview-16684129", 
+      "id": 16684129, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/18930", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-01-14T02:02:39Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/7663097?v=3", 
+        "events_url": "https://api.github.com/users/BondAnthony/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/BondAnthony/followers", 
+        "following_url": "https://api.github.com/users/BondAnthony/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/BondAnthony/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/BondAnthony", 
+        "id": 7663097, 
+        "login": "BondAnthony", 
+        "organizations_url": "https://api.github.com/users/BondAnthony/orgs", 
+        "received_events_url": "https://api.github.com/users/BondAnthony/received_events", 
+        "repos_url": "https://api.github.com/users/BondAnthony/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/BondAnthony/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/BondAnthony/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/BondAnthony"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/18930#pullrequestreview-16686280"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/18930"
+        }
+      }, 
+      "body": "Just a few minor changes..", 
+      "commit_id": "646963ff3767f851fa5e75d79e58bcfdd68ec28d", 
+      "html_url": "https://github.com/ansible/ansible/pull/18930#pullrequestreview-16686280", 
+      "id": 16686280, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/18930", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-01-14T04:25:52Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/7663097?v=3", 
+        "events_url": "https://api.github.com/users/BondAnthony/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/BondAnthony/followers", 
+        "following_url": "https://api.github.com/users/BondAnthony/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/BondAnthony/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/BondAnthony", 
+        "id": 7663097, 
+        "login": "BondAnthony", 
+        "organizations_url": "https://api.github.com/users/BondAnthony/orgs", 
+        "received_events_url": "https://api.github.com/users/BondAnthony/received_events", 
+        "repos_url": "https://api.github.com/users/BondAnthony/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/BondAnthony/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/BondAnthony/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/BondAnthony"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/18930#pullrequestreview-17610709"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/18930"
+        }
+      }, 
+      "body": "Looks good and it works well", 
+      "commit_id": "bc2da603691636b1a092c99ac170fa9bab5226d9", 
+      "html_url": "https://github.com/ansible/ansible/pull/18930#pullrequestreview-17610709", 
+      "id": 17610709, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/18930", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-01-20T04:16:53Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/7663097?v=3", 
+        "events_url": "https://api.github.com/users/BondAnthony/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/BondAnthony/followers", 
+        "following_url": "https://api.github.com/users/BondAnthony/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/BondAnthony/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/BondAnthony", 
+        "id": 7663097, 
+        "login": "BondAnthony", 
+        "organizations_url": "https://api.github.com/users/BondAnthony/orgs", 
+        "received_events_url": "https://api.github.com/users/BondAnthony/received_events", 
+        "repos_url": "https://api.github.com/users/BondAnthony/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/BondAnthony/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/BondAnthony/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/BondAnthony"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "pmarques", 
+  "user_reviews": {
+    "BondAnthony": "approved these changes"
+  }, 
+  "user_reviews_unmodified": {
+    "BondAnthony": "review_approved"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-16684129": {
+        "action": "approved", 
+        "actor": "BondAnthony", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-01-14T02:02:39Z"
+      }, 
+      "pullrequestreview-16686280": {
+        "action": "suggested changes", 
+        "actor": "BondAnthony", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-01-14T04:25:52Z"
+      }, 
+      "pullrequestreview-17610709": {
+        "action": "approved", 
+        "actor": "BondAnthony", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-01-20T04:16:53Z"
+      }
+    }, 
+    "users": {
+      "BondAnthony": "approved these changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "BondAnthony": "approved these changes"
+  }
+}

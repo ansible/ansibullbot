@@ -1,0 +1,65 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20503#pullrequestreview-17838017"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20503"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "853ab20c70da32f1b322f9fb60736bb6a3c3fd38", 
+      "html_url": "https://github.com/ansible/ansible/pull/20503#pullrequestreview-17838017", 
+      "id": 17838017, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20503", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-01-22T21:02:10Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/20851561?v=3", 
+        "events_url": "https://api.github.com/users/simplesteph/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/simplesteph/followers", 
+        "following_url": "https://api.github.com/users/simplesteph/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/simplesteph/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/simplesteph", 
+        "id": 20851561, 
+        "login": "simplesteph", 
+        "organizations_url": "https://api.github.com/users/simplesteph/orgs", 
+        "received_events_url": "https://api.github.com/users/simplesteph/received_events", 
+        "repos_url": "https://api.github.com/users/simplesteph/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/simplesteph/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/simplesteph/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/simplesteph"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "anryko", 
+  "user_reviews": {
+    "simplesteph": "approved these changes"
+  }, 
+  "user_reviews_unmodified": {
+    "simplesteph": "review_approved"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-17838017": {
+        "action": "approved", 
+        "actor": "simplesteph", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-01-22T21:02:10Z"
+      }
+    }, 
+    "users": {
+      "simplesteph": "approved these changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "simplesteph": "approved these changes"
+  }
+}

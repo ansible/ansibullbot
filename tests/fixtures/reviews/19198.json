@@ -1,0 +1,65 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19198#pullrequestreview-20156645"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19198"
+        }
+      }, 
+      "body": "Thank you Albin for this module !\r\nI tested it and it works like a charm. I managed to : \r\n-  remove / add records\r\n-  change ttl\r\n\r\nI put comments for review. I used some comments from review done on my module to save your time.\r\nYou can check out the guidelines here : http://docs.ansible.com/ansible/dev_guide/developing_modules_checklist.html\r\n(for instance, using pep8 may save time too).", 
+      "commit_id": "d6b9c2ad148d1621f08a981f906f74fbc7df364d", 
+      "html_url": "https://github.com/ansible/ansible/pull/19198#pullrequestreview-20156645", 
+      "id": 20156645, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19198", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-04T22:04:55Z", 
+      "user": {
+        "avatar_url": "https://avatars0.githubusercontent.com/u/4538416?v=3", 
+        "events_url": "https://api.github.com/users/pascalheraud/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/pascalheraud/followers", 
+        "following_url": "https://api.github.com/users/pascalheraud/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/pascalheraud/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/pascalheraud", 
+        "id": 4538416, 
+        "login": "pascalheraud", 
+        "organizations_url": "https://api.github.com/users/pascalheraud/orgs", 
+        "received_events_url": "https://api.github.com/users/pascalheraud/received_events", 
+        "repos_url": "https://api.github.com/users/pascalheraud/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/pascalheraud/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/pascalheraud/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/pascalheraud"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "NiR-", 
+  "user_reviews": {
+    "pascalheraud": "requested changes"
+  }, 
+  "user_reviews_unmodified": {
+    "pascalheraud": "review_changes_requested"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-20156645": {
+        "action": "suggested changes", 
+        "actor": "pascalheraud", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-04T22:04:55Z"
+      }
+    }, 
+    "users": {
+      "pascalheraud": "requested changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "pascalheraud": "requested changes"
+  }
+}

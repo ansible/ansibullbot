@@ -1,0 +1,180 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-19442274"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19717"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "2d1053e27c089619f3ad36c72421a7a7bebc1bbf", 
+      "html_url": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-19442274", 
+      "id": 19442274, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19717", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-01-31T22:56:07Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/3788909?v=3", 
+        "events_url": "https://api.github.com/users/jtyr/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/jtyr/followers", 
+        "following_url": "https://api.github.com/users/jtyr/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/jtyr/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/jtyr", 
+        "id": 3788909, 
+        "login": "jtyr", 
+        "organizations_url": "https://api.github.com/users/jtyr/orgs", 
+        "received_events_url": "https://api.github.com/users/jtyr/received_events", 
+        "repos_url": "https://api.github.com/users/jtyr/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/jtyr/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/jtyr/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/jtyr"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-20063860"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19717"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "da12abb8da2d20f4917ab3c0c24a0c650ecb8698", 
+      "html_url": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-20063860", 
+      "id": 20063860, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19717", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-03T17:40:58Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/3788909?v=3", 
+        "events_url": "https://api.github.com/users/jtyr/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/jtyr/followers", 
+        "following_url": "https://api.github.com/users/jtyr/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/jtyr/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/jtyr", 
+        "id": 3788909, 
+        "login": "jtyr", 
+        "organizations_url": "https://api.github.com/users/jtyr/orgs", 
+        "received_events_url": "https://api.github.com/users/jtyr/received_events", 
+        "repos_url": "https://api.github.com/users/jtyr/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/jtyr/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/jtyr/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/jtyr"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-20072129"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19717"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "da12abb8da2d20f4917ab3c0c24a0c650ecb8698", 
+      "html_url": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-20072129", 
+      "id": 20072129, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19717", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-03T18:22:38Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/165831?v=3", 
+        "events_url": "https://api.github.com/users/jfenal/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/jfenal/followers", 
+        "following_url": "https://api.github.com/users/jfenal/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/jfenal/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/jfenal", 
+        "id": 165831, 
+        "login": "jfenal", 
+        "organizations_url": "https://api.github.com/users/jfenal/orgs", 
+        "received_events_url": "https://api.github.com/users/jfenal/received_events", 
+        "repos_url": "https://api.github.com/users/jfenal/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/jfenal/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/jfenal/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/jfenal"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-20073029"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19717"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "da12abb8da2d20f4917ab3c0c24a0c650ecb8698", 
+      "html_url": "https://github.com/ansible/ansible/pull/19717#pullrequestreview-20073029", 
+      "id": 20073029, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19717", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-03T18:29:01Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/3788909?v=3", 
+        "events_url": "https://api.github.com/users/jtyr/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/jtyr/followers", 
+        "following_url": "https://api.github.com/users/jtyr/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/jtyr/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/jtyr", 
+        "id": 3788909, 
+        "login": "jtyr", 
+        "organizations_url": "https://api.github.com/users/jtyr/orgs", 
+        "received_events_url": "https://api.github.com/users/jtyr/received_events", 
+        "repos_url": "https://api.github.com/users/jtyr/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/jtyr/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/jtyr/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/jtyr"
+      }
+    }
+  ], 
+  "matches": false, 
+  "submitter": "jfenal", 
+  "user_reviews": {
+    "jtyr": "left review comments"
+  }, 
+  "user_reviews_unmodified": {
+    "jtyr": "review_comment"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-19442274": {
+        "action": "suggested changes", 
+        "actor": "jtyr", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-01-31T22:56:07Z"
+      }, 
+      "pullrequestreview-20063860": {
+        "action": "suggested changes", 
+        "actor": "jtyr", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-03T17:40:58Z"
+      }
+    }, 
+    "users": {
+      "jtyr": "requested changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "jtyr": "requested changes"
+  }
+}

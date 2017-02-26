@@ -1,0 +1,108 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21351#pullrequestreview-23657878"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21351"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "c878ddaaf488a3be157790077ba7f624ca0e0ad7", 
+      "html_url": "https://github.com/ansible/ansible/pull/21351#pullrequestreview-23657878", 
+      "id": 23657878, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21351", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-02-24T06:52:57Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/6775756?v=3", 
+        "events_url": "https://api.github.com/users/nitzmahone/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/nitzmahone/followers", 
+        "following_url": "https://api.github.com/users/nitzmahone/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/nitzmahone/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/nitzmahone", 
+        "id": 6775756, 
+        "login": "nitzmahone", 
+        "organizations_url": "https://api.github.com/users/nitzmahone/orgs", 
+        "received_events_url": "https://api.github.com/users/nitzmahone/received_events", 
+        "repos_url": "https://api.github.com/users/nitzmahone/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/nitzmahone/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/nitzmahone/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/nitzmahone"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21351#pullrequestreview-23662133"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21351"
+        }
+      }, 
+      "body": "The powershell.ps1 changes got picked up in here as well, they've already been merged, so it's a conflict.", 
+      "commit_id": "c878ddaaf488a3be157790077ba7f624ca0e0ad7", 
+      "html_url": "https://github.com/ansible/ansible/pull/21351#pullrequestreview-23662133", 
+      "id": 23662133, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21351", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-24T07:40:52Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/6775756?v=3", 
+        "events_url": "https://api.github.com/users/nitzmahone/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/nitzmahone/followers", 
+        "following_url": "https://api.github.com/users/nitzmahone/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/nitzmahone/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/nitzmahone", 
+        "id": 6775756, 
+        "login": "nitzmahone", 
+        "organizations_url": "https://api.github.com/users/nitzmahone/orgs", 
+        "received_events_url": "https://api.github.com/users/nitzmahone/received_events", 
+        "repos_url": "https://api.github.com/users/nitzmahone/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/nitzmahone/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/nitzmahone/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/nitzmahone"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "dagwieers", 
+  "user_reviews": {
+    "nitzmahone": "requested changes"
+  }, 
+  "user_reviews_unmodified": {
+    "nitzmahone": "review_changes_requested"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-23657878": {
+        "action": "approved", 
+        "actor": "nitzmahone", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-24T06:52:57Z"
+      }, 
+      "pullrequestreview-23662133": {
+        "action": "requested changes", 
+        "actor": "nitzmahone", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-24T07:40:52Z"
+      }
+    }, 
+    "users": {
+      "nitzmahone": "requested changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "nitzmahone": "requested changes"
+  }
+}

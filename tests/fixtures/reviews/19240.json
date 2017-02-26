@@ -1,0 +1,159 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19240#pullrequestreview-13168733"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19240"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "599eb6115e53fd6fd15770a4c7ef292177d5b888", 
+      "html_url": "https://github.com/ansible/ansible/pull/19240#pullrequestreview-13168733", 
+      "id": 13168733, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19240", 
+      "state": "COMMENTED", 
+      "submitted_at": "2016-12-15T17:02:50Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/1426772?v=3", 
+        "events_url": "https://api.github.com/users/xen0l/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/xen0l/followers", 
+        "following_url": "https://api.github.com/users/xen0l/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/xen0l/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/xen0l", 
+        "id": 1426772, 
+        "login": "xen0l", 
+        "organizations_url": "https://api.github.com/users/xen0l/orgs", 
+        "received_events_url": "https://api.github.com/users/xen0l/received_events", 
+        "repos_url": "https://api.github.com/users/xen0l/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/xen0l/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/xen0l/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/xen0l"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19240#pullrequestreview-19484265"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19240"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "599eb6115e53fd6fd15770a4c7ef292177d5b888", 
+      "html_url": "https://github.com/ansible/ansible/pull/19240#pullrequestreview-19484265", 
+      "id": 19484265, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19240", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-01T05:32:48Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/3760893?v=3", 
+        "events_url": "https://api.github.com/users/tmshn/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/tmshn/followers", 
+        "following_url": "https://api.github.com/users/tmshn/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/tmshn/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/tmshn", 
+        "id": 3760893, 
+        "login": "tmshn", 
+        "organizations_url": "https://api.github.com/users/tmshn/orgs", 
+        "received_events_url": "https://api.github.com/users/tmshn/received_events", 
+        "repos_url": "https://api.github.com/users/tmshn/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/tmshn/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/tmshn/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/tmshn"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19240#pullrequestreview-20182046"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19240"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "599eb6115e53fd6fd15770a4c7ef292177d5b888", 
+      "html_url": "https://github.com/ansible/ansible/pull/19240#pullrequestreview-20182046", 
+      "id": 20182046, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19240", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-05T23:28:04Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/388198?v=3", 
+        "events_url": "https://api.github.com/users/dagwieers/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/dagwieers/followers", 
+        "following_url": "https://api.github.com/users/dagwieers/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/dagwieers/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/dagwieers", 
+        "id": 388198, 
+        "login": "dagwieers", 
+        "organizations_url": "https://api.github.com/users/dagwieers/orgs", 
+        "received_events_url": "https://api.github.com/users/dagwieers/received_events", 
+        "repos_url": "https://api.github.com/users/dagwieers/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/dagwieers/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/dagwieers/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/dagwieers"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "natefoo", 
+  "user_reviews": {
+    "dagwieers": "requested changes", 
+    "tmshn": "requested changes", 
+    "xen0l": "left review comments"
+  }, 
+  "user_reviews_unmodified": {
+    "dagwieers": "review_changes_requested", 
+    "tmshn": "review_changes_requested", 
+    "xen0l": "review_comment"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-13168733": {
+        "action": "reviewed", 
+        "actor": "xen0l", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2016-12-15T17:02:50Z"
+      }, 
+      "pullrequestreview-19484265": {
+        "action": "suggested changes", 
+        "actor": "tmshn", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-01T05:32:48Z"
+      }, 
+      "pullrequestreview-20182046": {
+        "action": "suggested changes", 
+        "actor": "dagwieers", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-05T23:28:04Z"
+      }
+    }, 
+    "users": {
+      "dagwieers": "requested changes", 
+      "tmshn": "requested changes", 
+      "xen0l": "left review comments"
+    }
+  }, 
+  "www_user_reviews": {
+    "dagwieers": "requested changes", 
+    "tmshn": "requested changes", 
+    "xen0l": "left review comments"
+  }
+}

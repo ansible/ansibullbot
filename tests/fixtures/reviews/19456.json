@@ -1,0 +1,245 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-19435293"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19456"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "8b4e8e0749b702414b20c86329696d6f13150ed9", 
+      "html_url": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-19435293", 
+      "id": 19435293, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19456", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-01-31T22:02:09Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/431172?v=3", 
+        "events_url": "https://api.github.com/users/pb8226/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/pb8226/followers", 
+        "following_url": "https://api.github.com/users/pb8226/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/pb8226/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/pb8226", 
+        "id": 431172, 
+        "login": "pb8226", 
+        "organizations_url": "https://api.github.com/users/pb8226/orgs", 
+        "received_events_url": "https://api.github.com/users/pb8226/received_events", 
+        "repos_url": "https://api.github.com/users/pb8226/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/pb8226/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/pb8226/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/pb8226"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-19736272"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19456"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "8b4e8e0749b702414b20c86329696d6f13150ed9", 
+      "html_url": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-19736272", 
+      "id": 19736272, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19456", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-02T09:04:23Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/388198?v=3", 
+        "events_url": "https://api.github.com/users/dagwieers/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/dagwieers/followers", 
+        "following_url": "https://api.github.com/users/dagwieers/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/dagwieers/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/dagwieers", 
+        "id": 388198, 
+        "login": "dagwieers", 
+        "organizations_url": "https://api.github.com/users/dagwieers/orgs", 
+        "received_events_url": "https://api.github.com/users/dagwieers/received_events", 
+        "repos_url": "https://api.github.com/users/dagwieers/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/dagwieers/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/dagwieers/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/dagwieers"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-20111656"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19456"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "f531ceb345202c25aa3b635a75225f193f1cc01f", 
+      "html_url": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-20111656", 
+      "id": 20111656, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19456", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-03T21:51:20Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/806360?v=3", 
+        "events_url": "https://api.github.com/users/mattclay/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/mattclay/followers", 
+        "following_url": "https://api.github.com/users/mattclay/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/mattclay/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/mattclay", 
+        "id": 806360, 
+        "login": "mattclay", 
+        "organizations_url": "https://api.github.com/users/mattclay/orgs", 
+        "received_events_url": "https://api.github.com/users/mattclay/received_events", 
+        "repos_url": "https://api.github.com/users/mattclay/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/mattclay/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/mattclay/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/mattclay"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-20181582"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19456"
+        }
+      }, 
+      "body": "Almost there ;-)", 
+      "commit_id": "eb8f7989d6753ca8d13ece4615033427abfaee57", 
+      "html_url": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-20181582", 
+      "id": 20181582, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19456", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-05T23:07:45Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/388198?v=3", 
+        "events_url": "https://api.github.com/users/dagwieers/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/dagwieers/followers", 
+        "following_url": "https://api.github.com/users/dagwieers/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/dagwieers/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/dagwieers", 
+        "id": 388198, 
+        "login": "dagwieers", 
+        "organizations_url": "https://api.github.com/users/dagwieers/orgs", 
+        "received_events_url": "https://api.github.com/users/dagwieers/received_events", 
+        "repos_url": "https://api.github.com/users/dagwieers/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/dagwieers/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/dagwieers/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/dagwieers"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-20203889"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19456"
+        }
+      }, 
+      "body": "shipit", 
+      "commit_id": "f32aa061a7da2a282625872c293490cf0a1ae94d", 
+      "html_url": "https://github.com/ansible/ansible/pull/19456#pullrequestreview-20203889", 
+      "id": 20203889, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19456", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-02-06T06:58:10Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/388198?v=3", 
+        "events_url": "https://api.github.com/users/dagwieers/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/dagwieers/followers", 
+        "following_url": "https://api.github.com/users/dagwieers/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/dagwieers/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/dagwieers", 
+        "id": 388198, 
+        "login": "dagwieers", 
+        "organizations_url": "https://api.github.com/users/dagwieers/orgs", 
+        "received_events_url": "https://api.github.com/users/dagwieers/received_events", 
+        "repos_url": "https://api.github.com/users/dagwieers/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/dagwieers/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/dagwieers/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/dagwieers"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "jcftang", 
+  "user_reviews": {
+    "dagwieers": "approved these changes", 
+    "mattclay": "left review comments", 
+    "pb8226": "approved these changes"
+  }, 
+  "user_reviews_unmodified": {
+    "dagwieers": "review_approved", 
+    "mattclay": "review_comment", 
+    "pb8226": "review_approved"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-19435293": {
+        "action": "approved", 
+        "actor": "pb8226", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-01-31T22:02:09Z"
+      }, 
+      "pullrequestreview-19736272": {
+        "action": "suggested changes", 
+        "actor": "dagwieers", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-02T09:04:23Z"
+      }, 
+      "pullrequestreview-20111656": {
+        "action": "reviewed", 
+        "actor": "mattclay", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-03T21:51:20Z"
+      }, 
+      "pullrequestreview-20181582": {
+        "action": "suggested changes", 
+        "actor": "dagwieers", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-05T23:07:45Z"
+      }, 
+      "pullrequestreview-20203889": {
+        "action": "approved", 
+        "actor": "dagwieers", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-06T06:58:10Z"
+      }
+    }, 
+    "users": {
+      "dagwieers": "approved these changes", 
+      "mattclay": "left review comments", 
+      "pb8226": "approved these changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "dagwieers": "approved these changes", 
+    "mattclay": "left review comments", 
+    "pb8226": "approved these changes"
+  }
+}
