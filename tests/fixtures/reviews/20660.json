@@ -1,0 +1,436 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21388339"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "d3f217e4e3b0838478c1adaf2dd699849c46dcec", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21388339", 
+      "id": 21388339, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-11T16:02:10Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/940557?v=3", 
+        "events_url": "https://api.github.com/users/gundalow/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/gundalow/followers", 
+        "following_url": "https://api.github.com/users/gundalow/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/gundalow/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/gundalow", 
+        "id": 940557, 
+        "login": "gundalow", 
+        "organizations_url": "https://api.github.com/users/gundalow/orgs", 
+        "received_events_url": "https://api.github.com/users/gundalow/received_events", 
+        "repos_url": "https://api.github.com/users/gundalow/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/gundalow/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/gundalow/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/gundalow"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21575785"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "d3f217e4e3b0838478c1adaf2dd699849c46dcec", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21575785", 
+      "id": 21575785, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-13T18:16:11Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21576337"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "d3f217e4e3b0838478c1adaf2dd699849c46dcec", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21576337", 
+      "id": 21576337, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-13T18:18:37Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21577318"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "d3f217e4e3b0838478c1adaf2dd699849c46dcec", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21577318", 
+      "id": 21577318, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-13T18:23:00Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21577631"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "d3f217e4e3b0838478c1adaf2dd699849c46dcec", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21577631", 
+      "id": 21577631, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-13T18:24:24Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21637122"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "The comments I left on your other panos PR also apply here. ", 
+      "commit_id": "8a45e9f4b580eb7be2d2bc3be70b1f2e20bb1928", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21637122", 
+      "id": 21637122, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-13T22:56:21Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/940557?v=3", 
+        "events_url": "https://api.github.com/users/gundalow/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/gundalow/followers", 
+        "following_url": "https://api.github.com/users/gundalow/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/gundalow/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/gundalow", 
+        "id": 940557, 
+        "login": "gundalow", 
+        "organizations_url": "https://api.github.com/users/gundalow/orgs", 
+        "received_events_url": "https://api.github.com/users/gundalow/received_events", 
+        "repos_url": "https://api.github.com/users/gundalow/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/gundalow/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/gundalow/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/gundalow"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907264"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "8a45e9f4b580eb7be2d2bc3be70b1f2e20bb1928", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907264", 
+      "id": 21907264, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-15T01:26:08Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907435"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "8a45e9f4b580eb7be2d2bc3be70b1f2e20bb1928", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907435", 
+      "id": 21907435, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-15T01:27:35Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907556"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "8a45e9f4b580eb7be2d2bc3be70b1f2e20bb1928", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907556", 
+      "id": 21907556, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-15T01:28:50Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907902"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "8a45e9f4b580eb7be2d2bc3be70b1f2e20bb1928", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-21907902", 
+      "id": 21907902, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-15T01:31:38Z", 
+      "user": {
+        "avatar_url": "https://avatars0.githubusercontent.com/u/39340?v=3", 
+        "events_url": "https://api.github.com/users/sivel/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/sivel/followers", 
+        "following_url": "https://api.github.com/users/sivel/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/sivel/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/sivel", 
+        "id": 39340, 
+        "login": "sivel", 
+        "organizations_url": "https://api.github.com/users/sivel/orgs", 
+        "received_events_url": "https://api.github.com/users/sivel/received_events", 
+        "repos_url": "https://api.github.com/users/sivel/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/sivel/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/sivel/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/sivel"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-22164387"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20660"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "8a45e9f4b580eb7be2d2bc3be70b1f2e20bb1928", 
+      "html_url": "https://github.com/ansible/ansible/pull/20660#pullrequestreview-22164387", 
+      "id": 22164387, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20660", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-16T02:56:15Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/7128639?v=3", 
+        "events_url": "https://api.github.com/users/ivanbojer/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ivanbojer/followers", 
+        "following_url": "https://api.github.com/users/ivanbojer/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ivanbojer/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ivanbojer", 
+        "id": 7128639, 
+        "login": "ivanbojer", 
+        "organizations_url": "https://api.github.com/users/ivanbojer/orgs", 
+        "received_events_url": "https://api.github.com/users/ivanbojer/received_events", 
+        "repos_url": "https://api.github.com/users/ivanbojer/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ivanbojer/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ivanbojer/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ivanbojer"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "ivanbojer", 
+  "user_reviews": {
+    "gundalow": "requested changes", 
+    "sivel": "left review comments"
+  }, 
+  "user_reviews_unmodified": {
+    "gundalow": "review_changes_requested", 
+    "sivel": "review_comment"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-21388339": {
+        "action": "requested changes", 
+        "actor": "gundalow", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-11T16:02:10Z"
+      }, 
+      "pullrequestreview-21637122": {
+        "action": "requested changes", 
+        "actor": "gundalow", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-13T22:56:21Z"
+      }
+    }, 
+    "users": {
+      "gundalow": "requested changes", 
+      "sivel": "left review comments"
+    }
+  }, 
+  "www_user_reviews": {
+    "gundalow": "requested changes", 
+    "sivel": "left review comments"
+  }
+}

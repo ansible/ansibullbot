@@ -1,0 +1,65 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/15502#pullrequestreview-21137486"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/15502"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "e6c2886210b7baa61b9917bcf4c4ff2229e8eeb9", 
+      "html_url": "https://github.com/ansible/ansible/pull/15502#pullrequestreview-21137486", 
+      "id": 21137486, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/15502", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-02-09T22:31:37Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/1683045?v=3", 
+        "events_url": "https://api.github.com/users/dharmabumstead/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/dharmabumstead/followers", 
+        "following_url": "https://api.github.com/users/dharmabumstead/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/dharmabumstead/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/dharmabumstead", 
+        "id": 1683045, 
+        "login": "dharmabumstead", 
+        "organizations_url": "https://api.github.com/users/dharmabumstead/orgs", 
+        "received_events_url": "https://api.github.com/users/dharmabumstead/received_events", 
+        "repos_url": "https://api.github.com/users/dharmabumstead/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/dharmabumstead/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/dharmabumstead/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/dharmabumstead"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "electrofelix", 
+  "user_reviews": {
+    "dharmabumstead": "approved these changes"
+  }, 
+  "user_reviews_unmodified": {
+    "dharmabumstead": "review_approved"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-21137486": {
+        "action": "approved", 
+        "actor": "dharmabumstead", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-09T22:31:37Z"
+      }
+    }, 
+    "users": {
+      "dharmabumstead": "approved these changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "dharmabumstead": "approved these changes"
+  }
+}

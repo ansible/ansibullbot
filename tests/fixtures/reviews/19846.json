@@ -1,0 +1,108 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19846#pullrequestreview-15748373"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19846"
+        }
+      }, 
+      "body": "This module works, but there are a few new docs & minor changes needed before it can be merged. ", 
+      "commit_id": "a89447f464b0b370b4c5cd4721979f6dbf413d16", 
+      "html_url": "https://github.com/ansible/ansible/pull/19846#pullrequestreview-15748373", 
+      "id": 15748373, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19846", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-01-09T17:26:16Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/636610?v=3", 
+        "events_url": "https://api.github.com/users/ryansb/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ryansb/followers", 
+        "following_url": "https://api.github.com/users/ryansb/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ryansb/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ryansb", 
+        "id": 636610, 
+        "login": "ryansb", 
+        "organizations_url": "https://api.github.com/users/ryansb/orgs", 
+        "received_events_url": "https://api.github.com/users/ryansb/received_events", 
+        "repos_url": "https://api.github.com/users/ryansb/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ryansb/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ryansb/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ryansb"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19846#pullrequestreview-17754199"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19846"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "a89447f464b0b370b4c5cd4721979f6dbf413d16", 
+      "html_url": "https://github.com/ansible/ansible/pull/19846#pullrequestreview-17754199", 
+      "id": 17754199, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19846", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-01-20T20:03:26Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/636610?v=3", 
+        "events_url": "https://api.github.com/users/ryansb/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/ryansb/followers", 
+        "following_url": "https://api.github.com/users/ryansb/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/ryansb/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/ryansb", 
+        "id": 636610, 
+        "login": "ryansb", 
+        "organizations_url": "https://api.github.com/users/ryansb/orgs", 
+        "received_events_url": "https://api.github.com/users/ryansb/received_events", 
+        "repos_url": "https://api.github.com/users/ryansb/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/ryansb/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/ryansb/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/ryansb"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "NickBall", 
+  "user_reviews": {
+    "ryansb": "requested changes"
+  }, 
+  "user_reviews_unmodified": {
+    "ryansb": "review_changes_requested"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-15748373": {
+        "action": "requested changes", 
+        "actor": "ryansb", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-01-09T17:26:16Z"
+      }, 
+      "pullrequestreview-17754199": {
+        "action": "requested changes", 
+        "actor": "ryansb", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-01-20T20:03:26Z"
+      }
+    }, 
+    "users": {
+      "ryansb": "requested changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "ryansb": "requested changes"
+  }
+}

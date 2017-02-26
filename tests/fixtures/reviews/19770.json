@@ -1,0 +1,112 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19770#pullrequestreview-14858188"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19770"
+        }
+      }, 
+      "body": "I really like the change done.\r\n\r\nSome small adjustment should be added to be backward compatible and avoid that people have to change existing plays.", 
+      "commit_id": "9a81095cc40ca48775c969131e05af10d6349c0c", 
+      "html_url": "https://github.com/ansible/ansible/pull/19770#pullrequestreview-14858188", 
+      "id": 14858188, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19770", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-01-02T16:23:00Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/6696043?v=3", 
+        "events_url": "https://api.github.com/users/Nosmoht/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/Nosmoht/followers", 
+        "following_url": "https://api.github.com/users/Nosmoht/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/Nosmoht/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/Nosmoht", 
+        "id": 6696043, 
+        "login": "Nosmoht", 
+        "organizations_url": "https://api.github.com/users/Nosmoht/orgs", 
+        "received_events_url": "https://api.github.com/users/Nosmoht/received_events", 
+        "repos_url": "https://api.github.com/users/Nosmoht/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/Nosmoht/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/Nosmoht/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/Nosmoht"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/19770#pullrequestreview-19434248"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/19770"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "c0ae99d615d8cbdb795bfaa62e4806a6aaafe0b9", 
+      "html_url": "https://github.com/ansible/ansible/pull/19770#pullrequestreview-19434248", 
+      "id": 19434248, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/19770", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-01-31T21:57:26Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/806360?v=3", 
+        "events_url": "https://api.github.com/users/mattclay/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/mattclay/followers", 
+        "following_url": "https://api.github.com/users/mattclay/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/mattclay/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/mattclay", 
+        "id": 806360, 
+        "login": "mattclay", 
+        "organizations_url": "https://api.github.com/users/mattclay/orgs", 
+        "received_events_url": "https://api.github.com/users/mattclay/received_events", 
+        "repos_url": "https://api.github.com/users/mattclay/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/mattclay/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/mattclay/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/mattclay"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "afreof", 
+  "user_reviews": {
+    "Nosmoht": "left review comments", 
+    "mattclay": "left review comments"
+  }, 
+  "user_reviews_unmodified": {
+    "Nosmoht": "review_comment", 
+    "mattclay": "review_comment"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-14858188": {
+        "action": "reviewed", 
+        "actor": "Nosmoht", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-01-02T16:23:00Z"
+      }, 
+      "pullrequestreview-19434248": {
+        "action": "reviewed", 
+        "actor": "mattclay", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-01-31T21:57:26Z"
+      }
+    }, 
+    "users": {
+      "Nosmoht": "left review comments", 
+      "mattclay": "left review comments"
+    }
+  }, 
+  "www_user_reviews": {
+    "Nosmoht": "left review comments", 
+    "mattclay": "left review comments"
+  }
+}

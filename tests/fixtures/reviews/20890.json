@@ -1,0 +1,72 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20890#pullrequestreview-19724038"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20890"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "4de1b9a96bc639dfd7a53be03dbaae24b9406718", 
+      "html_url": "https://github.com/ansible/ansible/pull/20890#pullrequestreview-19724038", 
+      "id": 19724038, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20890", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-02T07:16:24Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/391807?v=3", 
+        "events_url": "https://api.github.com/users/willthames/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/willthames/followers", 
+        "following_url": "https://api.github.com/users/willthames/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/willthames/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/willthames", 
+        "id": 391807, 
+        "login": "willthames", 
+        "organizations_url": "https://api.github.com/users/willthames/orgs", 
+        "received_events_url": "https://api.github.com/users/willthames/received_events", 
+        "repos_url": "https://api.github.com/users/willthames/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/willthames/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/willthames/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/willthames"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "michael-dev2rights", 
+  "user_reviews": {
+    "willthames": "requested changes"
+  }, 
+  "user_reviews_unmodified": {
+    "willthames": "review_changes_requested"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "1": {
+        "action": "requested review", 
+        "actor": "abadger", 
+        "outdated": false, 
+        "reviewer": "ryansb", 
+        "timestamp": "2017-02-01T23:08:48Z"
+      }, 
+      "pullrequestreview-19724038": {
+        "action": "suggested changes", 
+        "actor": "willthames", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-02T07:16:24Z"
+      }
+    }, 
+    "users": {
+      "willthames": "requested changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "willthames": "requested changes"
+  }
+}

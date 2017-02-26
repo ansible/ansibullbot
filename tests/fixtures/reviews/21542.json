@@ -1,0 +1,72 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/21542#pullrequestreview-22442216"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/21542"
+        }
+      }, 
+      "body": "needs_revision", 
+      "commit_id": "63991d09e10abc0acb17fb617c5c8ee29b1aa06b", 
+      "html_url": "https://github.com/ansible/ansible/pull/21542#pullrequestreview-22442216", 
+      "id": 22442216, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/21542", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-17T09:30:27Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/23809?v=3", 
+        "events_url": "https://api.github.com/users/resmo/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/resmo/followers", 
+        "following_url": "https://api.github.com/users/resmo/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/resmo/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/resmo", 
+        "id": 23809, 
+        "login": "resmo", 
+        "organizations_url": "https://api.github.com/users/resmo/orgs", 
+        "received_events_url": "https://api.github.com/users/resmo/received_events", 
+        "repos_url": "https://api.github.com/users/resmo/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/resmo/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/resmo/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/resmo"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "bjolivot", 
+  "user_reviews": {
+    "resmo": "left review comments"
+  }, 
+  "user_reviews_unmodified": {
+    "resmo": "review_comment"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "1": {
+        "action": "requested review", 
+        "actor": "resmo", 
+        "outdated": false, 
+        "reviewer": "resmo", 
+        "timestamp": "2017-02-17T08:14:03Z"
+      }, 
+      "pullrequestreview-22442216": {
+        "action": "reviewed", 
+        "actor": "resmo", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-17T09:30:27Z"
+      }
+    }, 
+    "users": {
+      "resmo": "left review comments"
+    }
+  }, 
+  "www_user_reviews": {
+    "resmo": "left review comments"
+  }
+}

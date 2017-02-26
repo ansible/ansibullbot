@@ -1,0 +1,479 @@
+{
+  "api_reviews": [
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-18381683"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "needs_revision\r\n\r\nPlease add this to `CHANGELOG.md` in the root of the repo under the new modules in 2.3 section\r\n", 
+      "commit_id": "6c22e80926dc4b9df33e2140a2d49952ea96a191", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-18381683", 
+      "id": 18381683, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-01-25T11:54:33Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/940557?v=3", 
+        "events_url": "https://api.github.com/users/gundalow/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/gundalow/followers", 
+        "following_url": "https://api.github.com/users/gundalow/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/gundalow/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/gundalow", 
+        "id": 940557, 
+        "login": "gundalow", 
+        "organizations_url": "https://api.github.com/users/gundalow/orgs", 
+        "received_events_url": "https://api.github.com/users/gundalow/received_events", 
+        "repos_url": "https://api.github.com/users/gundalow/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/gundalow/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/gundalow/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/gundalow"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-19003977"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "Overall looks good, just wondering about if the API calls could be simplified. \r\n\r\nAlso, to put things in perspective, can you give an example of how this would be chained to other modules in a sample playbook? ", 
+      "commit_id": "6f25e6eccefeda237325a29bb6ac1f303c823621", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-19003977", 
+      "id": 19003977, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-01-29T22:26:08Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/20851561?v=3", 
+        "events_url": "https://api.github.com/users/simplesteph/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/simplesteph/followers", 
+        "following_url": "https://api.github.com/users/simplesteph/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/simplesteph/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/simplesteph", 
+        "id": 20851561, 
+        "login": "simplesteph", 
+        "organizations_url": "https://api.github.com/users/simplesteph/orgs", 
+        "received_events_url": "https://api.github.com/users/simplesteph/received_events", 
+        "repos_url": "https://api.github.com/users/simplesteph/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/simplesteph/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/simplesteph/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/simplesteph"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-19364529"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "6f25e6eccefeda237325a29bb6ac1f303c823621", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-19364529", 
+      "id": 19364529, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-01-31T16:51:57Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/3940391?v=3", 
+        "events_url": "https://api.github.com/users/anryko/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/anryko/followers", 
+        "following_url": "https://api.github.com/users/anryko/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/anryko/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/anryko", 
+        "id": 3940391, 
+        "login": "anryko", 
+        "organizations_url": "https://api.github.com/users/anryko/orgs", 
+        "received_events_url": "https://api.github.com/users/anryko/received_events", 
+        "repos_url": "https://api.github.com/users/anryko/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/anryko/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/anryko/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/anryko"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-20022901"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "shipit", 
+      "commit_id": "b7123f1654f641cd2e34162b8b1a00eee2d4976b", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-20022901", 
+      "id": 20022901, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-02-03T14:32:21Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/940557?v=3", 
+        "events_url": "https://api.github.com/users/gundalow/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/gundalow/followers", 
+        "following_url": "https://api.github.com/users/gundalow/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/gundalow/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/gundalow", 
+        "id": 940557, 
+        "login": "gundalow", 
+        "organizations_url": "https://api.github.com/users/gundalow/orgs", 
+        "received_events_url": "https://api.github.com/users/gundalow/received_events", 
+        "repos_url": "https://api.github.com/users/gundalow/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/gundalow/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/gundalow/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/gundalow"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-20246103"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "b7123f1654f641cd2e34162b8b1a00eee2d4976b", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-20246103", 
+      "id": 20246103, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "APPROVED", 
+      "submitted_at": "2017-02-06T11:31:27Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/20851561?v=3", 
+        "events_url": "https://api.github.com/users/simplesteph/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/simplesteph/followers", 
+        "following_url": "https://api.github.com/users/simplesteph/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/simplesteph/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/simplesteph", 
+        "id": 20851561, 
+        "login": "simplesteph", 
+        "organizations_url": "https://api.github.com/users/simplesteph/orgs", 
+        "received_events_url": "https://api.github.com/users/simplesteph/received_events", 
+        "repos_url": "https://api.github.com/users/simplesteph/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/simplesteph/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/simplesteph/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/simplesteph"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21184836"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "b7123f1654f641cd2e34162b8b1a00eee2d4976b", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21184836", 
+      "id": 21184836, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-10T06:16:31Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/391807?v=3", 
+        "events_url": "https://api.github.com/users/willthames/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/willthames/followers", 
+        "following_url": "https://api.github.com/users/willthames/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/willthames/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/willthames", 
+        "id": 391807, 
+        "login": "willthames", 
+        "organizations_url": "https://api.github.com/users/willthames/orgs", 
+        "received_events_url": "https://api.github.com/users/willthames/received_events", 
+        "repos_url": "https://api.github.com/users/willthames/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/willthames/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/willthames/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/willthames"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21214570"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "b7123f1654f641cd2e34162b8b1a00eee2d4976b", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21214570", 
+      "id": 21214570, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-10T10:13:14Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/3940391?v=3", 
+        "events_url": "https://api.github.com/users/anryko/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/anryko/followers", 
+        "following_url": "https://api.github.com/users/anryko/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/anryko/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/anryko", 
+        "id": 3940391, 
+        "login": "anryko", 
+        "organizations_url": "https://api.github.com/users/anryko/orgs", 
+        "received_events_url": "https://api.github.com/users/anryko/received_events", 
+        "repos_url": "https://api.github.com/users/anryko/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/anryko/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/anryko/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/anryko"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21882505"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "cb5d3439856f2785ca1d45eb31fefeedd09653f9", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21882505", 
+      "id": 21882505, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-14T22:34:38Z", 
+      "user": {
+        "avatar_url": "https://avatars3.githubusercontent.com/u/806360?v=3", 
+        "events_url": "https://api.github.com/users/mattclay/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/mattclay/followers", 
+        "following_url": "https://api.github.com/users/mattclay/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/mattclay/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/mattclay", 
+        "id": 806360, 
+        "login": "mattclay", 
+        "organizations_url": "https://api.github.com/users/mattclay/orgs", 
+        "received_events_url": "https://api.github.com/users/mattclay/received_events", 
+        "repos_url": "https://api.github.com/users/mattclay/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/mattclay/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/mattclay/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/mattclay"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21952248"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "cb5d3439856f2785ca1d45eb31fefeedd09653f9", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-21952248", 
+      "id": 21952248, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-15T09:17:25Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/3940391?v=3", 
+        "events_url": "https://api.github.com/users/anryko/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/anryko/followers", 
+        "following_url": "https://api.github.com/users/anryko/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/anryko/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/anryko", 
+        "id": 3940391, 
+        "login": "anryko", 
+        "organizations_url": "https://api.github.com/users/anryko/orgs", 
+        "received_events_url": "https://api.github.com/users/anryko/received_events", 
+        "repos_url": "https://api.github.com/users/anryko/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/anryko/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/anryko/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/anryko"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-22152339"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "a4470f0fa86add99fb1672ad8a3f892722aa164a", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-22152339", 
+      "id": 22152339, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "CHANGES_REQUESTED", 
+      "submitted_at": "2017-02-17T03:38:36Z", 
+      "user": {
+        "avatar_url": "https://avatars1.githubusercontent.com/u/391807?v=3", 
+        "events_url": "https://api.github.com/users/willthames/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/willthames/followers", 
+        "following_url": "https://api.github.com/users/willthames/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/willthames/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/willthames", 
+        "id": 391807, 
+        "login": "willthames", 
+        "organizations_url": "https://api.github.com/users/willthames/orgs", 
+        "received_events_url": "https://api.github.com/users/willthames/received_events", 
+        "repos_url": "https://api.github.com/users/willthames/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/willthames/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/willthames/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/willthames"
+      }
+    }, 
+    {
+      "_links": {
+        "html": {
+          "href": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-22464337"
+        }, 
+        "pull_request": {
+          "href": "https://api.github.com/repos/ansible/ansible/pulls/20618"
+        }
+      }, 
+      "body": "", 
+      "commit_id": "a4470f0fa86add99fb1672ad8a3f892722aa164a", 
+      "html_url": "https://github.com/ansible/ansible/pull/20618#pullrequestreview-22464337", 
+      "id": 22464337, 
+      "pull_request_url": "https://api.github.com/repos/ansible/ansible/pulls/20618", 
+      "state": "COMMENTED", 
+      "submitted_at": "2017-02-17T10:20:14Z", 
+      "user": {
+        "avatar_url": "https://avatars2.githubusercontent.com/u/3940391?v=3", 
+        "events_url": "https://api.github.com/users/anryko/events{/privacy}", 
+        "followers_url": "https://api.github.com/users/anryko/followers", 
+        "following_url": "https://api.github.com/users/anryko/following{/other_user}", 
+        "gists_url": "https://api.github.com/users/anryko/gists{/gist_id}", 
+        "gravatar_id": "", 
+        "html_url": "https://github.com/anryko", 
+        "id": 3940391, 
+        "login": "anryko", 
+        "organizations_url": "https://api.github.com/users/anryko/orgs", 
+        "received_events_url": "https://api.github.com/users/anryko/received_events", 
+        "repos_url": "https://api.github.com/users/anryko/repos", 
+        "site_admin": false, 
+        "starred_url": "https://api.github.com/users/anryko/starred{/owner}{/repo}", 
+        "subscriptions_url": "https://api.github.com/users/anryko/subscriptions", 
+        "type": "User", 
+        "url": "https://api.github.com/users/anryko"
+      }
+    }
+  ], 
+  "matches": true, 
+  "submitter": "anryko", 
+  "user_reviews": {
+    "gundalow": "approved these changes", 
+    "mattclay": "left review comments", 
+    "simplesteph": "approved these changes", 
+    "willthames": "requested changes"
+  }, 
+  "user_reviews_unmodified": {
+    "gundalow": "review_approved", 
+    "mattclay": "review_comment", 
+    "simplesteph": "review_approved", 
+    "willthames": "review_changes_requested"
+  }, 
+  "www_reviews": {
+    "reviews": {
+      "pullrequestreview-18381683": {
+        "action": "requested changes", 
+        "actor": "gundalow", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-01-25T11:54:33Z"
+      }, 
+      "pullrequestreview-19003977": {
+        "action": "suggested changes", 
+        "actor": "simplesteph", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-01-29T22:26:08Z"
+      }, 
+      "pullrequestreview-20022901": {
+        "action": "approved", 
+        "actor": "gundalow", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-03T14:32:21Z"
+      }, 
+      "pullrequestreview-20246103": {
+        "action": "approved", 
+        "actor": "simplesteph", 
+        "outdated": false, 
+        "reviewer": null, 
+        "timestamp": "2017-02-06T11:31:27Z"
+      }, 
+      "pullrequestreview-21184836": {
+        "action": "reviewed", 
+        "actor": "willthames", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-10T06:16:31Z"
+      }, 
+      "pullrequestreview-21882505": {
+        "action": "reviewed", 
+        "actor": "mattclay", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-14T22:34:38Z"
+      }, 
+      "pullrequestreview-22152339": {
+        "action": "suggested changes", 
+        "actor": "willthames", 
+        "outdated": true, 
+        "reviewer": null, 
+        "timestamp": "2017-02-17T03:38:36Z"
+      }
+    }, 
+    "users": {
+      "gundalow": "approved these changes", 
+      "mattclay": "left review comments", 
+      "simplesteph": "approved these changes", 
+      "willthames": "requested changes"
+    }
+  }, 
+  "www_user_reviews": {
+    "gundalow": "approved these changes", 
+    "mattclay": "left review comments", 
+    "simplesteph": "approved these changes", 
+    "willthames": "requested changes"
+  }
+}
