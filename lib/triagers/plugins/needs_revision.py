@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+import json
 import logging
+import os
+from pprint import pprint
 
 
 def get_needs_revision_facts(triager, issuewrapper, meta):
@@ -61,6 +64,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
     if not iw.is_pullrequest():
         return rmeta
 
+    # Scrape web data for debug purposes
+    rfn = iw.repo_full_name
+    www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
+    www_reviews = triager.gws.scrape_pullrequest_review(rfn, iw.number)
+
     maintainers = [x for x in triager.ansible_core_team
                    if x not in triager.BOTNAMES]
     if meta.get('module_match'):
@@ -117,9 +125,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
 
     else:
 
-        current_hash = None
+        #current_hash = None
         #pending_reviews = []
-        hash_reviews = {}
+        #hash_reviews = {}
+        user_reviews = {}
 
         for event in iw.history.history:
 
@@ -179,91 +188,25 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
                         )
                         continue
 
-            if event['event'].startswith('review_'):
+        # This is a complicated algo ... sigh
+        user_reviews = get_review_state(
+            iw.reviews,
+            iw.submitter,
+            number=iw.number,
+            www_validate=None,
+            store=True
+        )
 
-                if 'commit_id' in event:
-
-                    if event['commit_id'] not in hash_reviews:
-                        hash_reviews[event['commit_id']] = []
-
-                    if not current_hash:
-                        current_hash = event['commit_id']
-                    else:
-                        if event['commit_id'] != current_hash:
-                            current_hash = event['commit_id']
-                            #pending_reviews = []
-
-                else:
-                    # https://github.com/ansible/ansible/pull/20680
-                    # FIXME - not sure why this happens.
-                    continue
-
-                if event['event'] == 'review_changes_requested':
-                    #pending_reviews.append(event['actor'])
-                    hash_reviews[event['commit_id']].append(event['actor'])
-                    needs_revision = True
-                    needs_revision_msgs.append(
-                        '[%s] changes requested' % event['actor']
-                    )
-                    continue
-
-                if event['event'] == 'review_approved':
-                    #if event['actor'] in pending_reviews:
-                    #    pending_reviews.remove(event['actor'])
-
-                    if event['actor'] in hash_reviews[event['commit_id']]:
-                        hash_reviews[event['commit_id']].remove(
-                            event['actor']
-                        )
-
-                    needs_revision = False
-                    needs_revision_msgs.append(
-                        '[%s] approved changes' % event['actor']
-                    )
-                    continue
-
-                if event['event'] == 'review_dismissed':
-                    #if event['actor'] in pending_reviews:
-                    #    pending_reviews.remove(event['actor'])
-
-                    if event['actor'] in hash_reviews[event['commit_id']]:
-                        hash_reviews[event['commit_id']].remove(
-                            event['actor']
-                        )
-
-                    needs_revision = False
-                    needs_revision_msgs.append(
-                        '[%s] dismissed review' % event['actor']
-                    )
-                    continue
-
-        # reviews on missing commits can be disgarded
-        outstanding = []
-        current_shas = [x.sha for x in iw.commits]
-        for k,v in hash_reviews.items():
-            if not v:
-                continue
-            if k in current_shas:
-                #outstanding.append((k,v))
-                outstanding += v
-        outstanding = sorted(set(outstanding))
+        if user_reviews:
+            change_requested = changes_requested_by(user_reviews)
+            if change_requested:
+                needs_revision = True
+                needs_revision_msgs.append(
+                    'outstanding reviews: %s' % ','.join(change_requested)
+                )
+        #import pprint; pprint.pprint(www_reviews)
+        #import pprint; pprint.pprint(change_requested)
         #import epdb; epdb.st()
-
-        '''
-        if pending_reviews:
-            #change_requested = pending_reviews
-            change_requested = outstanding
-            needs_revision = True
-            needs_revision_msgs.append(
-                'reviews pending: %s' % ','.join(pending_reviews)
-            )
-        '''
-
-        if outstanding:
-            needs_revision = True
-            needs_revision_msgs.append(
-                'outstanding reviews: %s' % ','.join(outstanding)
-            )
 
     # Merge commits are bad, force a rebase
     if iw.merge_commits:
@@ -335,10 +278,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
     logging.info('needs_revision is %s' % needs_revision)
     logging.info('ready_for_review is %s' % ready_for_review)
 
+    '''
     # Scrape web data for debug purposes
     rfn = iw.repo_full_name
     www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
     www_reviews = triager.gws.scrape_pullrequest_review(rfn, iw.number)
+    '''
 
     rmeta = {
         'committer_count': committer_count,
@@ -365,3 +310,92 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
     }
 
     return rmeta
+
+
+def changes_requested_by(user_reviews):
+    outstanding = []
+    for k,v in user_reviews.items():
+        if v == 'CHANGES_REQUESTED':
+            if k not in outstanding:
+                outstanding.append(k)
+        elif v not in ['APPROVED', 'COMMENTED']:
+            logging.error('breakpoint!')
+            print('%s unhandled' % v)
+            import epdb; epdb.st()
+    return outstanding
+
+
+def get_review_state(reviews, submitter, number=None, www_validate=None,
+                     store=False):
+    '''Calculate the final review state for each reviewer'''
+
+    # final review state for each reviewer
+    user_reviews = {}
+
+    for review in reviews:
+        actor = review['user']['login']
+        state = review['state']
+
+        if actor != submitter:
+
+            if state in ['CHANGES_REQUESTED', 'APPROVED']:
+                user_reviews[actor] = state
+
+            elif state == 'COMMENTED':
+                # comments do not override change requests
+                if actor in user_reviews:
+                    if user_reviews[actor] == 'CHANGES_REQUESTED':
+                        pass
+                else:
+                    user_reviews[actor] = state
+
+            elif state == 'DISMISSED':
+                # a dismissed review 'magically' turns into a comment
+                user_reviews[actor] = 'COMMENTED'
+
+            else:
+                logging.error('breakpoint!')
+                print('%s not handled yet' % state)
+                import epdb; epdb.st()
+                pass
+
+    if www_validate:
+
+        # translation table for www scraped reviews
+        TMAP = {
+            'approved these changes': 'APPROVED',
+            'left review comments': 'COMMENTED',
+            'requested changes': 'CHANGES_REQUESTED',
+        }
+
+        translated = {}
+
+        for k,v in www_validate['users'].iteritems():
+            if v in TMAP:
+                translated[k] = TMAP[v]
+            else:
+                logging.error('breakpoint!')
+                print('no mapping for %s' % v)
+                import epdb; epdb.st()
+
+        if user_reviews != translated:
+            pprint(translated)
+            pprint(user_reviews)
+            logging.error('breakpoint!')
+            print('calculated != scraped')
+            import epdb; epdb.st()
+
+        if store and number:
+            dfile = os.path.join('/tmp/reviews', '%s.json' % number)
+            ddata = {
+                'submitter': submitter,
+                'api_reviews': reviews[:],
+                'user_reviews': user_reviews.copy(),
+                'www_reviews': www_validate.copy(),
+                'www_translated': translated.copy(),
+                'matches': user_reviews == translated
+            }
+            with open(dfile, 'wb') as f:
+                f.write(json.dumps(ddata, indent=2, sort_keys=True))
+
+    return user_reviews
