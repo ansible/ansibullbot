@@ -111,17 +111,27 @@ class GithubWebScraper(object):
         else:
             return None
 
-    def get_issue_summaries(self, repo_url, cachefile=None):
-        # https://github.com/ansible/ansible-modules-extras/issues?q=is%3Aopen
+    def get_issue_summaries(self, repo_url, baseurl=None, cachefile=None):
+        '''Paginate through github's web interface and scrape summaries'''
+
+        # repo_url - https://github.com/ansible/ansible for example
+        # baseurl - an entrypoint for one-off utils to scrape specific issue
+        #           query urls. NOTE: this disables writing a cache
 
         # get cached
-        issues = self.load_summaries(repo_url)
+        if not baseurl:
+            issues = self.load_summaries(repo_url)
+        else:
+            issues = {}
 
-        url = repo_url
-        url += '/issues'
-        url += '?'
-        url += 'q='
-        url += urllib2.quote('sort:updated-desc')
+        if not baseurl:
+            url = repo_url
+            url += '/issues'
+            url += '?'
+            url += 'q='
+            url += urllib2.quote('sort:updated-desc')
+        else:
+            url = baseurl
 
         rr = self._request_url(url)
         soup = BeautifulSoup(rr.text, 'html.parser')
@@ -129,7 +139,8 @@ class GithubWebScraper(object):
         if data['issues']:
             issues.update(data['issues'])
 
-        self.dump_summaries_tmp(repo_url, issues)
+        if not baseurl:
+            self.dump_summaries_tmp(repo_url, issues)
 
         while data['next_page']:
             rr = self._request_url(self.baseurl + data['next_page'])
@@ -153,13 +164,15 @@ class GithubWebScraper(object):
             if changed:
                 logging.info('changed: %s' % ','.join(x for x in changed))
 
-            self.dump_summaries_tmp(repo_url, issues)
+            if not baseurl:
+                self.dump_summaries_tmp(repo_url, issues)
 
             if not changes:
                 break
 
         # save the cache
-        self.dump_summaries(repo_url, issues)
+        if not baseurl:
+            self.dump_summaries(repo_url, issues)
 
         return issues
 
@@ -379,9 +392,11 @@ class GithubWebScraper(object):
             # nerzhul requested changes
             # bcoca left review comments
             # gundalow approved these changes
+            # requested review from gundalow
             txt = span.attrs['aria-label']
             tparts = txt.split(None, 1)
-            reviews['users'][tparts[0]] = tparts[1]
+            if not tparts[0].lower() == 'awaiting':
+                reviews['users'][tparts[0]] = tparts[1]
 
         # <div class="discussion-item discussion-item-review_requested">
         # <div id="pullrequestreview-15502866" class="timeline-comment
@@ -390,6 +405,9 @@ class GithubWebScraper(object):
             'div',
             {'class': lambda L: L and 'discussion-item-review' in L}
         )
+
+        #import epdb; epdb.st()
+
         count = 0
         for rdiv in rdivs:
             count += 1
@@ -468,6 +486,14 @@ class GithubWebScraper(object):
                 'timestamp': timestamp,
                 'outdated': outdated
             }
+
+        # force to ascii
+        x = {}
+        for k,v in reviews['users'].iteritems():
+            k = k.encode('ascii','ignore')
+            v = v.encode('ascii', 'ignore')
+            x[k] = v
+        reviews['users'] = x.copy()
 
         return reviews
 

@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+
+import argparse
+from pprint import pprint
+from lib.utils.webscraper import GithubWebScraper
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("number")
+    args = parser.parse_args()
+
+    gws = GithubWebScraper()
+    reviews = gws.scrape_pullrequest_review('ansible/ansible', args.number)
+    pprint(reviews)
+
+
+if __name__ == "__main__":
+    main()

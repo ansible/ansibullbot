@@ -46,6 +46,7 @@ from lib.utils.moduletools import ModuleIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
 from lib.utils.shippable_api import ShippableRuns
+from lib.utils.systemtools import run_command
 from lib.utils.webscraper import GithubWebScraper
 
 from lib.decorators.github import RateLimited
@@ -578,6 +579,7 @@ class AnsibleTriage(DefaultTriager):
     def save_meta(self, issuewrapper, meta):
         # save the meta+actions
         dmeta = meta.copy()
+        dmeta['submitter'] = issuewrapper.submitter
         dmeta['title'] = issuewrapper.title
         dmeta['html_url'] = issuewrapper.html_url
         dmeta['created_at'] = issuewrapper.created_at.isoformat()
@@ -1277,11 +1279,19 @@ class AnsibleTriage(DefaultTriager):
 
             logging.info('getting issue objs for %s' % repo)
             if self.pr:
-                # the issue id can be a list separated by commas
-                if ',' in self.pr:
-                    numbers = [int(x) for x in self.pr.split(',')]
+
+                if os.path.isfile(self.pr) and os.access(self.pr, os.X_OK):
+                    # allow for scripts when trying to target specific issues
+                    (rc, so, se) = run_command(self.pr)
+                    numbers = json.loads(so)
+                    numbers = [int(x) for x in numbers]
+
                 else:
-                    numbers = [int(self.pr)]
+                    # the issue id can be a list separated by commas
+                    if ',' in self.pr:
+                        numbers = [int(x) for x in self.pr.split(',')]
+                    else:
+                        numbers = [int(self.pr)]
 
                 issues = []
                 for x in numbers:
