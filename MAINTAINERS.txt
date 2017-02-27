@@ -448,8 +448,8 @@ windows/win_acl_inheritance.ps1:
 windows/win_acl_inheritance.py:
 windows/win_acl.ps1: schwartzmx trondhindenes
 windows/win_acl.py: schwartzmx trondhindenes
-windows/win_chocolatey.ps1: smadam813
-windows/win_chocolatey.py: smadam813
+windows/win_chocolatey.ps1: smadam813 nitzmahone
+windows/win_chocolatey.py: smadam813 nitzmahone
 windows/win_copy.ps1: jhawkesworth
 windows/win_copy.py: jhawkesworth
 windows/win_dotnet_ngen.ps1: petemounce
