@@ -273,8 +273,8 @@ network/exoscale/: resmo
 network/f5/: mhite caphrim007
 network/haproxy.py: ravibhure
 network/illumos/: xen0l
-network/ios/: rcarrillocruz
-network/iosxr/: rcarrillocruz
+network/ios/: privateip rcarrillocruz
+network/iosxr/: privateip rcarrillocruz
 network/ipify_facts.py: resmo
 network/junos/: Qalthos
 network/ldap_entry.py jtyr
