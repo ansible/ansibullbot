@@ -51,6 +51,7 @@ from lib.utils.webscraper import GithubWebScraper
 
 from lib.decorators.github import RateLimited
 
+from lib.triagers.plugins.backports import get_backport_facts
 from lib.triagers.plugins.needs_revision import get_needs_revision_facts
 
 #BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
@@ -1065,6 +1066,11 @@ class AnsibleTriage(DefaultTriager):
             if 'ci_verified' in self.issue.labels:
                 self.actions['unlabel'].append('ci_verified')
 
+        # https://github.com/ansible/ansibullbot/issues/367
+        if self.meta['is_backport']:
+            if 'backport' not in self.issue.labels:
+                self.actions['newlabel'].append('backport')
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
@@ -1562,6 +1568,9 @@ class AnsibleTriage(DefaultTriager):
 
         # python3 ?
         self.meta['is_py3'] = self.is_python3()
+
+        # backports
+        self.meta.update(get_backport_facts(iw, self.meta))
 
         # shipit?
         #self.meta.update(self.get_needs_revision_facts(iw, self.meta))
