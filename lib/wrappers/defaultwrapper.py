@@ -810,14 +810,27 @@ class DefaultWrapper(object):
             return True
         return False
 
+    @RateLimited
+    def get_commit_parents(self, commit):
+        # https://github.com/ansible/ansibullbot/issues/391
+        parents = commit.commit.parents
+        return parents
+
+    @RateLimited
+    def get_commit_message(self, commit):
+        # https://github.com/ansible/ansibullbot/issues/391
+        msg = commit.commit.message
+        return msg
+
     @property
     def merge_commits(self):
         # https://api.github.com/repos/ansible/ansible/pulls/91/commits
         if self._merge_commits is False:
             self._merge_commits = []
             for commit in self.commits:
-                if len(commit.commit.parents) > 1 or \
-                        commit.commit.message.startswith('Merge branch'):
+                parents = self.get_commit_parents(commit)
+                message = self.get_commit_message(commit)
+                if len(parents) > 1 or message.startswith('Merge branch'):
                     self._merge_commits.append(commit)
         return self._merge_commits
 
