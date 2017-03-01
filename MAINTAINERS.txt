@@ -430,6 +430,7 @@ utilities/logic/include_vars.py: bennojoy
 utilities/logic/pause.py: tbielawa
 utilities/logic/set_fact.py: dagwieers
 utilities/logic/wait_for.py: gregswift
+utilities/logic/wait_for_connection.py: dagwieers
 web_infrastructure/apache2_mod_proxy.py: oboukili
 web_infrastructure/apache2_module.py: robinro n0trax
 web_infrastructure/deploy_helper.py: ramondelafuente
