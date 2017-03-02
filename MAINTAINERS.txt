@@ -359,6 +359,7 @@ packaging/os/yum.py: ansible
 packaging/os/yum_repository.py: jtyr
 packaging/os/zypper.py: robinro
 packaging/os/zypper_repository.py: matze robinro
+remote_management/hpilo/: dagwieers
 remote_management/ipmi/: cloudnull
 remote_management/stacki/: bsanders bbyhuy
 source_control/bzr.py: andreparames
