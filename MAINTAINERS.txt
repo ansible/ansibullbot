@@ -280,6 +280,7 @@ network/iosxr/: rcarrillocruz privateip gundalow Qalthos
 network/ipify_facts.py: resmo
 network/junos/: privateip gundalow Qalthos ganeshnalawade
 network/ldap_entry.py jtyr
+network/lenovo: dkasberg
 network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
 network/netvisor/: amitsi privateip gundalow Qalthos
