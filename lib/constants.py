@@ -227,3 +227,12 @@ DEFAULT_GITHUB_TOKEN = get_config(
     False,
     value_type='string'
 )
+
+DEFAULT_SHIPPABLE_TOKEN = get_config(
+    p,
+    DEFAULTS,
+    'shippable_token',
+    '%s_SHIPPABLE_TOKEN' % PROG_NAME.upper(),
+    False,
+    value_type='string'
+)
