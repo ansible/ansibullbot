@@ -10,7 +10,7 @@ import requests
 import time
 
 from lxml import objectify
-from pprint import pprint
+#from pprint import pprint
 
 import lib.constants as C
 
@@ -106,8 +106,11 @@ class ShippableRuns(object):
 
         url = 'https://api.shippable.com/jobs?runIds=%s' % run_id
         resp = requests.get(url, headers=headers)
-
         rdata = resp.json()
+
+        #if not isinstance(rdata, list):
+        #    import epdb; epdb.st()
+
         for rd in rdata:
 
             job_id = rd['id']
@@ -134,8 +137,9 @@ class ShippableRuns(object):
 
                 if isjson:
                     # sometimes the content is json
-                    pprint(cdata)
-                    results.append(cdata)
+                    cdata['jobid'] = job_id
+                    #results.append(cdata)
+                    continue
 
                 else:
                     # sometimes it is xml ...
@@ -151,9 +155,24 @@ class ShippableRuns(object):
                     for k,v in root.testsuite.attrib.items():
                         ts_attribs[k] = v
 
+                    if hasattr(root.testsuite, 'properties'):
+                        ts_attribs['properties'] = {}
+                        for x in root.testsuite.properties.property:
+                            k = x.attrib.get('name')
+                            v = x.attrib.get('value')
+                            ts_attribs['properties'][k] = v
+
                     ts_attribs['testcase'] = {}
                     for k,v in root.testsuite.testcase.attrib.items():
                         ts_attribs['testcase'][k] = v
+
+                    if hasattr(root.testsuite.testcase, 'failure'):
+                        ts_attribs['testcase']['failure'] = {}
+                        for k,v in \
+                                root.testsuite.testcase.failure.attrib.items():
+                            ts_attribs['testcase']['failure'][k] = v
+                        ts_attribs['testcase']['failure']['text'] = \
+                            root.testsuite.testcase.failure.text
 
                     # not all testcases have system-out
                     so = None
@@ -162,6 +181,8 @@ class ShippableRuns(object):
                         so = json.loads(so.text)
                         ts_attribs['testcase']['system-out'] = so
 
+                    #import epdb; epdb.st()
+                    ts_attribs['jobid'] = job_id
                     results.append(ts_attribs)
 
         if dumpfile:
