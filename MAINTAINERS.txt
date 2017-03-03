@@ -120,6 +120,7 @@ cloud/misc/proxmox_kvm.py: helldorado
 cloud/misc/proxmox.py: UnderGreen
 cloud/misc/proxmox_template.py: UnderGreen
 cloud/misc/rhevm.py: TimothyVandenbrande
+cloud/misc/serverless.py: ryansb
 cloud/misc/virt_net.py: drybjed
 cloud/misc/virt_pool.py: drybjed
 cloud/misc/virt.py: ansible
