@@ -1,0 +1,220 @@
+{
+  "errors": "6", 
+  "failures": "5", 
+  "tests": "18", 
+  "testsuites": [
+    {
+      "errors": "1", 
+      "failures": "0", 
+      "name": "another-suite", 
+      "skipped": "0", 
+      "testcases": [
+        {
+          "classname": "another-class", 
+          "error": {
+            "message": "another error message", 
+            "type": "error"
+          }, 
+          "jobid": null, 
+          "name": "another-name"
+        }
+      ], 
+      "tests": "1", 
+      "time": "0"
+    }, 
+    {
+      "errors": "5", 
+      "failures": "5", 
+      "hostname": "hostname", 
+      "id": "id", 
+      "name": "test-suite-name", 
+      "package": "package", 
+      "properties": {
+        "hello": "world", 
+        "yes": "no"
+      }, 
+      "skipped": "5", 
+      "testcases": [
+        {
+          "classname": "classname", 
+          "jobid": null, 
+          "name": "test-case-name", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "error": {
+            "message": "error message", 
+            "type": "error"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-error", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "failure": {
+            "message": "failure message", 
+            "type": "failure"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-failure", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "jobid": null, 
+          "name": "test-case-name-skipped", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "class name", 
+          "error": {
+            "message": "error message", 
+            "type": "error"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-error-no- output", 
+          "system-out": {
+            "text": "std\nout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "class name", 
+          "failure": {
+            "message": "failure message", 
+            "type": "failure"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-failure-no- output", 
+          "system-out": {
+            "text": "std\nout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "class name", 
+          "jobid": null, 
+          "name": "test-case-name-skipped-no- output", 
+          "system-out": {
+            "text": "std\nout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "error": {
+            "type": "error"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-error-no-message", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "failure": {
+            "type": "failure"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-failure-no-message", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "jobid": null, 
+          "name": "test-case-name-skipped-no-message", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "error": {
+            "message": "error message", 
+            "type": "error"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-error-no-stderr", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "failure": {
+            "message": "failure message", 
+            "type": "failure"
+          }, 
+          "jobid": null, 
+          "name": "test-case-name-failure-no-stderr", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "jobid": null, 
+          "name": "test-case-name-skipped-no-stderr", 
+          "system-out": {
+            "text": "stdout"
+          }, 
+          "time": "1.200000"
+        }, 
+        {
+          "classname": "classname", 
+          "jobid": null, 
+          "name": "optimal-success"
+        }, 
+        {
+          "classname": "classname", 
+          "error": {
+            "message": "optimal error message", 
+            "type": "error"
+          }, 
+          "jobid": null, 
+          "name": "optimal-error"
+        }, 
+        {
+          "classname": "classname", 
+          "failure": {
+            "message": "optimal failure message", 
+            "type": "failure"
+          }, 
+          "jobid": null, 
+          "name": "optimal-failure"
+        }, 
+        {
+          "classname": "classname", 
+          "jobid": null, 
+          "name": "optimal-skipped"
+        }
+      ], 
+      "tests": "17", 
+      "time": "15.6", 
+      "timestamp": "2017-03-03T20:30:50"
+    }
+  ], 
+  "time": "15.6"
+}
