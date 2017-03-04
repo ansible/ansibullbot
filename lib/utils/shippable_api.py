@@ -6,6 +6,7 @@
 import datetime
 import json
 import logging
+import lxml
 import requests
 import time
 
@@ -107,86 +108,106 @@ class ShippableRuns(object):
         url = 'https://api.shippable.com/jobs?runIds=%s' % run_id
         resp = requests.get(url, headers=headers)
         rdata = resp.json()
-
-        #if not isinstance(rdata, list):
-        #    import epdb; epdb.st()
-
         for rd in rdata:
-
-            job_id = rd['id']
-            #job_number = rd['jobNumber']
-
+            job_id = rd.get('id')
             jurl = 'https://api.shippable.com/jobs/%s/jobTestReports' % job_id
             jresp = requests.get(jurl, headers=headers)
             jdata = jresp.json()
-
-            for block in jdata:
-
-                contents = block['contents']
-                if not contents:
-                    continue
-
-                # test for json
-                cdata = None
-                isjson = False
-                try:
-                    cdata = json.loads(contents)
-                    isjson = True
-                except ValueError:
-                    pass
-
-                if isjson:
-                    # sometimes the content is json
-                    cdata['jobid'] = job_id
-                    #results.append(cdata)
-                    continue
-
-                else:
-                    # sometimes it is xml ...
-                    root = None
-                    try:
-                        root = objectify.fromstring(contents)
-                    except ValueError:
-                        # sometimes it has non-serializable unicode
-                        contents = contents.encode('ascii', 'ignore')
-                        root = objectify.fromstring(contents)
-
-                    ts_attribs = {}
-                    for k,v in root.testsuite.attrib.items():
-                        ts_attribs[k] = v
-
-                    if hasattr(root.testsuite, 'properties'):
-                        ts_attribs['properties'] = {}
-                        for x in root.testsuite.properties.property:
-                            k = x.attrib.get('name')
-                            v = x.attrib.get('value')
-                            ts_attribs['properties'][k] = v
-
-                    ts_attribs['testcase'] = {}
-                    for k,v in root.testsuite.testcase.attrib.items():
-                        ts_attribs['testcase'][k] = v
-
-                    if hasattr(root.testsuite.testcase, 'failure'):
-                        ts_attribs['testcase']['failure'] = {}
-                        for k,v in \
-                                root.testsuite.testcase.failure.attrib.items():
-                            ts_attribs['testcase']['failure'][k] = v
-                        ts_attribs['testcase']['failure']['text'] = \
-                            root.testsuite.testcase.failure.text
-
-                    # not all testcases have system-out
-                    so = None
-                    if hasattr(root.testsuite.testcase, 'system-out'):
-                        so = getattr(root.testsuite.testcase, 'system-out')
-                        so = json.loads(so.text)
-                        ts_attribs['testcase']['system-out'] = so
-
-                    #import epdb; epdb.st()
-                    ts_attribs['jobid'] = job_id
-                    results.append(ts_attribs)
+            res = self.parse_test_json(jdata, job_id=job_id)
+            if res:
+                results.append(res)
 
         if dumpfile:
             with open(dumpfile, 'wb') as f:
                 json.dump(results, f, indent=2, sort_keys=True)
 
         return results
+
+    def parse_tests_json(self, jdata, job_id=None):
+
+        result = {
+            'testsuites': []
+        }
+
+        #import pprint
+        #pprint.pprint(jdata)
+
+        for block in jdata:
+
+            #pprint.pprint(block)
+
+            contents = block['contents']
+            if not contents:
+                continue
+
+            # test for json
+            isjson = False
+            try:
+                json.loads(contents)
+                isjson = True
+            except ValueError:
+                pass
+
+            if not isjson:
+                # sometimes it is xml ...
+                root = None
+                try:
+                    root = objectify.fromstring(contents)
+                except ValueError:
+                    # sometimes it has non-serializable unicode
+                    contents = contents.encode('ascii', 'ignore')
+                    root = objectify.fromstring(contents)
+
+                xmls = lxml.etree.tostring(root)
+                with open('/tmp/root.xml', 'wb') as f:
+                    f.write(xmls)
+
+                for k,v in root.attrib.items():
+                    result[k] = v
+                #import epdb; epdb.st()
+
+                for testsuite in root.testsuite:
+
+                    ts_attribs = {
+                        'testcases': []
+                    }
+
+                    for k,v in testsuite.attrib.items():
+                        ts_attribs[k] = v
+
+                    if hasattr(testsuite, 'properties'):
+                        ts_attribs['properties'] = {}
+                        for x in testsuite.properties.property:
+                            k = x.attrib.get('name')
+                            v = x.attrib.get('value')
+                            ts_attribs['properties'][k] = v
+
+                        #import epdb; epdb.st()
+
+                    for testcase in testsuite.testcase:
+
+                        tc = {
+                            'jobid': job_id
+                        }
+
+                        for k,v in testcase.attrib.items():
+                            tc[k] = v
+
+                        for node in ['failure', 'error', 'system-out']:
+                            if hasattr(testcase, node):
+                                tc[node] = {}
+                                n = getattr(testcase, node)
+                                for k,v in n.attrib.items():
+                                    tc[node][k] = v
+                                if node == 'system-out':
+                                    tc[node]['text'] = n.text
+                                    try:
+                                        tc[node]['text'] = json.loads(tc[node]['text'])
+                                    except:
+                                        pass
+
+                        ts_attribs['testcases'].append(tc)
+
+                    result['testsuites'].append(ts_attribs)
+
+        return result
