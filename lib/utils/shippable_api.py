@@ -129,12 +129,7 @@ class ShippableRuns(object):
             'testsuites': []
         }
 
-        #import pprint
-        #pprint.pprint(jdata)
-
         for block in jdata:
-
-            #pprint.pprint(block)
 
             contents = block['contents']
             if not contents:
@@ -158,13 +153,12 @@ class ShippableRuns(object):
                     contents = contents.encode('ascii', 'ignore')
                     root = objectify.fromstring(contents)
 
-                xmls = lxml.etree.tostring(root)
-                with open('/tmp/root.xml', 'wb') as f:
-                    f.write(xmls)
+                #xmls = lxml.etree.tostring(root)
+                #with open('/tmp/root.xml', 'wb') as f:
+                #    f.write(xmls)
 
                 for k,v in root.attrib.items():
                     result[k] = v
-                #import epdb; epdb.st()
 
                 for testsuite in root.testsuite:
 
