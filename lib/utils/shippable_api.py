@@ -173,19 +173,11 @@ class ShippableRuns(object):
                 key = block['path'][1:]
                 key = key.replace('.json', '')
                 result[key].append(bdata)
-                #import epdb; epdb.st()
                 self._dump_block_contents(dumpdir, block, bdata)
                 continue
 
-            root = None
-            try:
-                root = objectify.fromstring(contents)
-            except ValueError:
-                # sometimes it has non-serializable unicode
-                acontents = contents.encode('ascii', 'ignore')
-                root = objectify.fromstring(acontents)
-                import q; q([url, run_id, job_id, block['path'], idb])
-                #import epdb; epdb.st()
+            # treat as xml ...
+            root = objectify.fromstring(contents.encode('utf-8'))
 
             for k,v in root.attrib.items():
                 result[k] = v
