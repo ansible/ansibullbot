@@ -467,6 +467,23 @@ class HistoryWrapper(object):
                     boilerplates.append(bp)
         return boilerplates
 
+    def get_boilerplate_comments_content(self, botname='ansibot', bfilter=None):
+        boilerplates = []
+        comments = self._find_events_by_actor('commented',
+                                              botname,
+                                              maxcount=999)
+        for comment in comments:
+            if 'boilerplate:' in comment['body']:
+                lines = [x for x in comment['body'].split('\n')
+                         if x.strip() and 'boilerplate:' in x]
+                bp = lines[0].split()[2]
+                if bfilter:
+                    if bp == bfilter:
+                        boilerplates.append(comment['body'])
+                else:
+                    boilerplates.append(comment['body'])
+        return boilerplates
+
     def last_date_for_boilerplate(self, boiler, botname='ansibot'):
         last_date = None
         bps = self.get_boilerplate_comments(botname=botname, dates=True)
@@ -647,4 +664,3 @@ class HistoryWrapper(object):
                 else:
                     labeled.append(event['label'])
         return sorted(set(labeled))
-

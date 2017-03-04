@@ -1,0 +1,21 @@
+#### Shippable Test Failures
+{% for x in data %}
+{% for fd in x['failureDetails'] %}
+##### {{ fd['suiteName'] + ' / ' + fd['className'] + ' / ' + fd['testName'] }}
+###### {{ fd['kind'] + ': ' + fd['message'] }}
+```{{ fd['full'] }}
+```
+{% endfor %}
+<!--- total: {{ x['total'] }} -->
+<!--- duration: {{ x['durationSeconds'] }} -->
+<!--- errors: {{ x['totalErrors'] }} -->
+<!--- failures: {{ x['totalFailures'] }} -->
+<!--- passing: {{ x['totalPassing'] }} -->
+<!--- skipped: {{ x['totalSkipped'] }} -->
+<!--- run_id: {{ x['run_id'] }} -->
+<!--- job_id: {{ x['job_id'] }} -->
+<!--- job_url: {{ x['job_url'] }} -->
+{% endfor %}
+
+[click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
+<!--- boilerplate: shippable_test_result --->

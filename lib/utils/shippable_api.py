@@ -26,11 +26,14 @@ ANSIBLE_RUNS_URL = '%s/runs?projectIds=%s&isPullRequest=True' % (
 
 class ShippableRuns(object):
 
-    def __init__(self, url=ANSIBLE_RUNS_URL, cache=False):
+    def __init__(self, url=ANSIBLE_RUNS_URL, cachedir=None, cache=False):
+        if cachedir:
+            self.cachedir = cachedir
+        else:
+            self.cachedir = '/tmp/shippable.cache'
         self.url = url
-
         if cache:
-            requests_cache.install_cache('/tmp/shippable.cache')
+            requests_cache.install_cache(self.cachedir)
 
     def update(self):
         '''Fetch the latest data then send for processing'''
@@ -91,7 +94,27 @@ class ShippableRuns(object):
         updated = sorted(set(updated))
         return updated
 
-    def get_test_results(self, run_id, dumpdir=None):
+    def _get_url(self, url, usecache=False):
+        cdir = os.path.join(self.cachedir, '.raw')
+        if not os.path.isdir(cdir):
+            os.makedirs(cdir)
+        cfile = url.replace('https://api.shippable.com/', '')
+        cfile = cfile.replace('/', '_')
+        cfile = os.path.join(cdir, cfile + '.json')
+        if not os.path.isfile(cfile):
+            headers = dict(
+                Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
+            )
+            resp = requests.get(url, headers=headers)
+            jdata = resp.json()
+            with open(cfile, 'wb') as f:
+                json.dump(jdata, f)
+        else:
+            with open(cfile, 'wb') as f:
+                jdata = jdata.load(f)
+        return jdata
+
+    def get_test_results(self, run_id, usecache=False, filter_paths=[]):
 
         '''Fetch and munge the test results into proper json'''
 
@@ -104,40 +127,33 @@ class ShippableRuns(object):
         #https://api.shippable.com/jobs/...83ba/jobCoverageReports
 
         results = []
-
-        headers = dict(
-            Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
-        )
-
         url = 'https://api.shippable.com/jobs?runIds=%s' % run_id
-        resp = requests.get(url, headers=headers)
-        rdata = resp.json()
+        rdata = self._get_url(url, usecache=usecache)
+
         for rd in rdata:
             job_id = rd.get('id')
             jurl = 'https://api.shippable.com/jobs/%s/jobTestReports' % job_id
-            jresp = requests.get(jurl, headers=headers)
-            jdata = jresp.json()
+            jdata = self._get_url(jurl, usecache=usecache)
 
-            jdumpdir = None
-            if dumpdir:
-                jdumpdir = os.path.join(dumpdir, run_id, job_id)
-                if not os.path.isdir(jdumpdir):
-                    os.makedirs(jdumpdir)
+            if not os.path.isdir(self.cachedir):
+                os.makedirs(self.cachedir)
 
             res = self.parse_tests_json(
                 jdata,
                 run_id=run_id,
                 job_id=job_id,
                 url=jurl,
-                dumpdir=jdumpdir
+                filter_paths=filter_paths
             )
             if res:
                 results.append(res)
 
-        if dumpdir:
-            dumpfile = os.path.join(dumpdir, run_id, 'results.json')
-            with open(dumpfile, 'wb') as f:
-                json.dump(results, f, indent=2, sort_keys=True)
+        dumpfile = os.path.join(self.cachedir, run_id, 'results.json')
+        dumpdir = os.path.dirname(dumpfile)
+        if not os.path.isdir(dumpdir):
+            os.makedirs(dumpdir)
+        with open(dumpfile, 'wb') as f:
+            json.dump(results, f, indent=2, sort_keys=True)
 
         return results
 
@@ -145,9 +161,12 @@ class ShippableRuns(object):
         return lxml.etree.tostring(obj)
 
     def parse_tests_json(self, jdata, run_id=None, job_id=None,
-                         url=None, dumpdir=None):
+                         url=None, filter_paths=[]):
 
         result = {
+            'url': url,
+            'run_id': run_id,
+            'job_id': job_id,
             'testsuites': [],
             'testcases': [],
             'testresults': [],
@@ -158,6 +177,9 @@ class ShippableRuns(object):
 
         for idb,block in enumerate(jdata):
 
+            if filter_paths and block['path'] not in filter_paths:
+                continue
+
             print(block['path'])
             contents = block['contents']
             for k,v in block.items():
@@ -167,13 +189,22 @@ class ShippableRuns(object):
             if not contents:
                 continue
 
+            #if not block['path']:
+            #    import epdb; epdb.st()
+
+            #if block['path'] == '/testresults.json':
+            #    import epdb; epdb.st()
+
             if block['path'].endswith('json'):
                 # /testresults.json
                 bdata = json.loads(contents)
+                bdata['job_url'] = url
+                bdata['run_id'] = run_id
+                bdata['job_id'] = job_id
                 key = block['path'][1:]
                 key = key.replace('.json', '')
                 result[key].append(bdata)
-                self._dump_block_contents(dumpdir, block, bdata)
+                self._dump_block_contents(self.cachedir, block, bdata)
                 continue
 
             # treat as xml ...
@@ -190,18 +221,25 @@ class ShippableRuns(object):
                     root.testcase,
                     run_id=run_id,
                     job_id=job_id,
-                    url=url
+                    url=url,
                 )
+                tc['path'] = block['path']
+                tc['run_id'] = run_id
+                tc['job_url'] = url
+                tc['job_id'] = job_id
                 result['testcases'].append(tc)
-                self._dump_block_contents(dumpdir, block, tc)
+                self._dump_block_contents(self.cachedir, block, tc)
                 continue
             else:
-                ccount = root.testsuite.countchildren()
-                import epdb; epdb.st()
+                #ccount = root.testsuite.countchildren()
+                #import epdb; epdb.st()
+                pass
 
             for testsuite in root.testsuite:
 
                 ts_attribs = {
+                    'job_url': url,
+                    'path': block['path'],
                     'testcases': []
                 }
 
@@ -223,13 +261,15 @@ class ShippableRuns(object):
                             job_id=job_id,
                             url=url
                         )
+                        tc['run_id'] = run_id
+                        tc['job_url'] = url
+                        tc['job_id'] = job_id
                         ts_attribs['testcases'].append(tc)
 
                 result['testsuites'].append(ts_attribs)
 
             # dump the contents
-            if dumpdir:
-                self._dump_block_contents(dumpdir, block, root)
+            self._dump_block_contents(self.cachedir, block, root)
 
         return result
 
@@ -258,6 +298,8 @@ class ShippableRuns(object):
         return tc
 
     def _dump_block_contents(self, dumpdir, block, data):
+        if not dumpdir:
+            return None
         cpath = os.path.join(dumpdir, block['path'][1:])
         ddir = os.path.dirname(cpath)
         if not os.path.isdir(ddir):
@@ -283,4 +325,3 @@ class ShippableRuns(object):
             )
         with open(cpath, 'wb') as f:
             f.write(cleanxml)
-

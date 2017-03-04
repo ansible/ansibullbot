@@ -6,7 +6,7 @@ import os
 from pprint import pprint
 
 
-def get_needs_revision_facts(triager, issuewrapper, meta):
+def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     # Thanks @adityacs for this PR. This PR requires revisions, either
     # because it fails to build or by reviewer request. Please make the
     # suggested revisions. When you are done, please comment with text
@@ -46,9 +46,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'has_shippable': has_shippable,
+        'shippable_test_results': None,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
+        'has_testresult_notification': False,
         'merge_commits': merge_commits,
         'has_merge_commit_notification': has_merge_commit_notification,
         'mergeable': None,
@@ -273,6 +275,40 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
         else:
             has_travis_notification = False
 
+    # test failure comments
+    # https://github.com/ansible/ansibullbot/issues/404
+    if has_shippable and ci_state == 'failure':
+        # FIXME - make the return structure simpler.
+        last_run = [x['target_url'] for x in ci_status][0]
+        last_run = last_run.split('/')[-1]
+        test_results = shippable.get_test_results(
+            last_run,
+            usecache=True,
+            filter_paths=['/testresults.json']
+        )
+        trjson = [x for x in test_results
+                  if x.get('path') == '/testresults.json'][0]
+        shippable_test_results = trjson['testresults']
+        bpcs = iw.history.get_boilerplate_comments_content(
+            bfilter='shippable_test_result'
+        )
+        if bpcs:
+            # was this specific result shown?
+            exp = [x['job_url'] for x in shippable_test_results]
+            found = []
+            for ex in exp:
+                for bp in bpcs:
+                    if ex in bp:
+                        if ex not in found:
+                            found.append(ex)
+                        break
+            if len(found) == len(exp):
+                has_testresult_notification = True
+            else:
+                has_testresult_notification = False
+        else:
+            has_testresult_notification = False
+
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
     logging.info('needs_revision is %s' % needs_revision)
@@ -292,9 +328,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
         'is_needs_rebase': needs_rebase,
         'is_needs_rebase_msgs': needs_rebase_msgs,
         'has_shippable': has_shippable,
+        'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
+        'has_testresult_notification': has_testresult_notification,
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'merge_commits': merge_commits,
