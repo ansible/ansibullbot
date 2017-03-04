@@ -7,11 +7,12 @@ import datetime
 import json
 import logging
 import lxml
+import os
 import requests
+import requests_cache
 import time
 
 from lxml import objectify
-#from pprint import pprint
 
 import lib.constants as C
 
@@ -25,8 +26,11 @@ ANSIBLE_RUNS_URL = '%s/runs?projectIds=%s&isPullRequest=True' % (
 
 class ShippableRuns(object):
 
-    def __init__(self, url=ANSIBLE_RUNS_URL):
+    def __init__(self, url=ANSIBLE_RUNS_URL, cache=False):
         self.url = url
+
+        if cache:
+            requests_cache.install_cache('/tmp/shippable.cache')
 
     def update(self):
         '''Fetch the latest data then send for processing'''
@@ -87,7 +91,7 @@ class ShippableRuns(object):
         updated = sorted(set(updated))
         return updated
 
-    def get_test_results(self, run_id, dumpfile=None):
+    def get_test_results(self, run_id, dumpdir=None):
 
         '''Fetch and munge the test results into proper json'''
 
@@ -113,95 +117,178 @@ class ShippableRuns(object):
             jurl = 'https://api.shippable.com/jobs/%s/jobTestReports' % job_id
             jresp = requests.get(jurl, headers=headers)
             jdata = jresp.json()
-            res = self.parse_test_json(jdata, job_id=job_id)
+
+            jdumpdir = None
+            if dumpdir:
+                jdumpdir = os.path.join(dumpdir, run_id, job_id)
+                if not os.path.isdir(jdumpdir):
+                    os.makedirs(jdumpdir)
+
+            res = self.parse_tests_json(
+                jdata,
+                run_id=run_id,
+                job_id=job_id,
+                url=jurl,
+                dumpdir=jdumpdir
+            )
             if res:
                 results.append(res)
 
-        if dumpfile:
+        if dumpdir:
+            dumpfile = os.path.join(dumpdir, run_id, 'results.json')
             with open(dumpfile, 'wb') as f:
                 json.dump(results, f, indent=2, sort_keys=True)
 
         return results
 
-    def parse_tests_json(self, jdata, job_id=None):
+    def _objectify_to_xml(self, obj):
+        return lxml.etree.tostring(obj)
+
+    def parse_tests_json(self, jdata, run_id=None, job_id=None,
+                         url=None, dumpdir=None):
 
         result = {
-            'testsuites': []
+            'testsuites': [],
+            'testcases': [],
+            'testresults': [],
         }
 
-        for block in jdata:
+        if isinstance(jdata, dict):
+            return jdata
 
+        for idb,block in enumerate(jdata):
+
+            print(block['path'])
             contents = block['contents']
+            for k,v in block.items():
+                if k != 'contents':
+                    result[k] = v
+
             if not contents:
                 continue
 
-            # test for json
-            isjson = False
+            if block['path'].endswith('json'):
+                # /testresults.json
+                bdata = json.loads(contents)
+                key = block['path'][1:]
+                key = key.replace('.json', '')
+                result[key].append(bdata)
+                #import epdb; epdb.st()
+                self._dump_block_contents(dumpdir, block, bdata)
+                continue
+
+            root = None
             try:
-                json.loads(contents)
-                isjson = True
+                root = objectify.fromstring(contents)
             except ValueError:
+                # sometimes it has non-serializable unicode
+                acontents = contents.encode('ascii', 'ignore')
+                root = objectify.fromstring(acontents)
+                import q; q([url, run_id, job_id, block['path'], idb])
+                #import epdb; epdb.st()
+
+            for k,v in root.attrib.items():
+                result[k] = v
+
+            if hasattr(root, 'testsuite'):
+                #import epdb; epdb.st()
                 pass
+            elif hasattr(root, 'testcase'):
+                tc = self.parse_testcase(
+                    root.testcase,
+                    run_id=run_id,
+                    job_id=job_id,
+                    url=url
+                )
+                result['testcases'].append(tc)
+                self._dump_block_contents(dumpdir, block, tc)
+                continue
+            else:
+                ccount = root.testsuite.countchildren()
+                import epdb; epdb.st()
 
-            if not isjson:
-                # sometimes it is xml ...
-                root = None
-                try:
-                    root = objectify.fromstring(contents)
-                except ValueError:
-                    # sometimes it has non-serializable unicode
-                    contents = contents.encode('ascii', 'ignore')
-                    root = objectify.fromstring(contents)
+            for testsuite in root.testsuite:
 
-                #xmls = lxml.etree.tostring(root)
-                #with open('/tmp/root.xml', 'wb') as f:
-                #    f.write(xmls)
+                ts_attribs = {
+                    'testcases': []
+                }
 
-                for k,v in root.attrib.items():
-                    result[k] = v
+                for k,v in testsuite.attrib.items():
+                    ts_attribs[k] = v
 
-                for testsuite in root.testsuite:
+                if hasattr(testsuite, 'properties'):
+                    ts_attribs['properties'] = {}
+                    for x in testsuite.properties.property:
+                        k = x.attrib.get('name')
+                        v = x.attrib.get('value')
+                        ts_attribs['properties'][k] = v
 
-                    ts_attribs = {
-                        'testcases': []
-                    }
-
-                    for k,v in testsuite.attrib.items():
-                        ts_attribs[k] = v
-
-                    if hasattr(testsuite, 'properties'):
-                        ts_attribs['properties'] = {}
-                        for x in testsuite.properties.property:
-                            k = x.attrib.get('name')
-                            v = x.attrib.get('value')
-                            ts_attribs['properties'][k] = v
-
-                        #import epdb; epdb.st()
-
+                if hasattr(testsuite, 'testcase'):
                     for testcase in testsuite.testcase:
-
-                        tc = {
-                            'jobid': job_id
-                        }
-
-                        for k,v in testcase.attrib.items():
-                            tc[k] = v
-
-                        for node in ['failure', 'error', 'system-out']:
-                            if hasattr(testcase, node):
-                                tc[node] = {}
-                                n = getattr(testcase, node)
-                                for k,v in n.attrib.items():
-                                    tc[node][k] = v
-                                if node == 'system-out':
-                                    tc[node]['text'] = n.text
-                                    try:
-                                        tc[node]['text'] = json.loads(tc[node]['text'])
-                                    except:
-                                        pass
-
+                        tc = self.parse_testcase(
+                            testcase,
+                            run_id=run_id,
+                            job_id=job_id,
+                            url=url
+                        )
                         ts_attribs['testcases'].append(tc)
 
-                    result['testsuites'].append(ts_attribs)
+                result['testsuites'].append(ts_attribs)
+
+            # dump the contents
+            if dumpdir:
+                self._dump_block_contents(dumpdir, block, root)
 
         return result
+
+    def parse_testcase(self, testcase, run_id=None, job_id=None, url=None):
+        '''Parse a testcase node'''
+        tc = {
+            'jobid': job_id
+        }
+
+        for k,v in testcase.attrib.items():
+            tc[k] = v
+
+        for node in ['failure', 'error', 'system-out', 'skipped']:
+            if hasattr(testcase, node):
+                tc[node] = {}
+                n = getattr(testcase, node)
+                for k,v in n.attrib.items():
+                    tc[node][k] = v
+                if node == 'system-out' or node == 'skipped':
+                    tc[node]['text'] = n.text
+                    try:
+                        tc[node]['text'] = json.loads(tc[node]['text'])
+                    except:
+                        pass
+
+        return tc
+
+    def _dump_block_contents(self, dumpdir, block, data):
+        cpath = os.path.join(dumpdir, block['path'][1:])
+        ddir = os.path.dirname(cpath)
+        if not os.path.isdir(ddir):
+            os.makedirs(ddir)
+        try:
+            with open(cpath, 'wb') as f:
+                f.write(block['contents'])
+        except Exception as e:
+            with open(cpath, 'wb') as f:
+                f.write(e.reason)
+
+        if isinstance(data, dict):
+            cleanxml = json.dumps(data, indent=2, sort_keys=2)
+            cpath = os.path.join(
+                dumpdir,
+                block['path'][1:] + '-formatted.json'
+            )
+        else:
+            cleanxml = self._objectify_to_xml(data)
+            cpath = os.path.join(
+                dumpdir,
+                block['path'][1:] + '-formatted.xml'
+            )
+        with open(cpath, 'wb') as f:
+            f.write(cleanxml)
+
