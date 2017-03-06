@@ -31,21 +31,19 @@ class TestShippableParsing(unittest.TestCase):
         return res
 
     def test_complex_parsing(self):
-        src_fn = 'tests/fixtures/shippable_complex_testresults.json'
-        exp_fn = 'tests/fixtures/shippable_complex_testresults_expected.json'
+        src_fn = 'tests/fixtures/shippable/complex_testresults.json'
+        exp_fn = 'tests/fixtures/shippable/complex_testresults_expected.json'
         self.do_parsing(src_fn, expfile=exp_fn)
 
     def test_complex_parsing_with_filters(self):
 
-        filter_paths=['/testresults.json'],
-        filter_classes=['sanity']
+        filter_paths = ['/testresults.json'],
+        filter_classes = ['sanity']
 
-        src_fn = 'tests/fixtures/shippable_complex_testresults.json'
+        src_fn = 'tests/fixtures/shippable/complex_testresults.json'
         res = self.do_parsing(
             src_fn,
             filter_paths=filter_paths,
             filter_classes=filter_classes
         )
         assert res == []
-
-
