@@ -348,7 +348,8 @@ class ShippableRuns(object):
     def parse_testcase(self, testcase, run_id=None, job_id=None, url=None):
         '''Parse a testcase node'''
         tc = {
-            'jobid': job_id
+            'job_id': job_id,
+            'run_id': run_id
         }
 
         for k,v in testcase.attrib.items():
