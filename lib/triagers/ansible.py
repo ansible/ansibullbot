@@ -2535,6 +2535,7 @@ class AnsibleTriage(DefaultTriager):
             if 'bot_status' in ev['body']:
                 if ev['actor'] not in self.BOTNAMES:
                     if ev['actor'] in self.ansible_core_team or \
+                            ev['actor'] == iw.submitter or \
                             ev['actor'] in self.module_indexer.all_maintainers:
                         bs = True
                         continue
