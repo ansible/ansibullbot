@@ -101,7 +101,16 @@ class ShippableRuns(object):
         cfile = url.replace('https://api.shippable.com/', '')
         cfile = cfile.replace('/', '_')
         cfile = os.path.join(cdir, cfile + '.json')
-        if not os.path.isfile(cfile):
+
+        jdata = None
+        if os.path.isfile(cfile):
+            try:
+                with open(cfile, 'rb') as f:
+                    jdata = json.load(f)
+            except ValueError:
+                pass
+
+        if not os.path.isfile(cfile) or not jdata:
 
             headers = dict(
                 Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
@@ -111,10 +120,10 @@ class ShippableRuns(object):
             success = False
             retries = 0
             while not success and retries < 2:
-                print('%s' % url)
+                logging.debug('%s' % url)
                 resp = requests.get(url, headers=headers)
                 if resp.status_code not in [200, 302]:
-                    print('RC: %s' % (resp.status_code))
+                    logging.error('RC: %s' % (resp.status_code))
                     retries += 1
                     time.sleep(2)
                     continue
@@ -127,9 +136,7 @@ class ShippableRuns(object):
 
             with open(cfile, 'wb') as f:
                 json.dump(jdata, f)
-        else:
-            with open(cfile, 'rb') as f:
-                jdata = json.load(f)
+
         return jdata
 
     def get_test_results(self, run_id, usecache=False, filter_paths=[],
@@ -174,7 +181,10 @@ class ShippableRuns(object):
         dumpdir = os.path.dirname(dumpfile)
         if not os.path.isdir(dumpdir):
             os.makedirs(dumpdir)
+
         with open(dumpfile, 'wb') as f:
+            logging.debug(dumpfile)
+            #import epdb; epdb.st()
             json.dump(results, f, indent=2, sort_keys=True)
 
         if filter_classes:
@@ -190,7 +200,10 @@ class ShippableRuns(object):
                 continue
 
             # we only care about testresults with failuredetails
-            trs = [x for x in job['testresults'] if 'failureDetails' in x]
+            try:
+                trs = [x for x in job['testresults'] if 'failureDetails' in x]
+            except:
+                continue
             if not trs:
                 continue
 
@@ -260,6 +273,8 @@ class ShippableRuns(object):
                 bdata['job_id'] = job_id
                 key = block['path'][1:]
                 key = key.replace('.json', '')
+                if key not in result:
+                    result[key] = []
                 result[key].append(bdata)
                 self._dump_block_contents(self.cachedir, block, bdata)
                 continue
@@ -355,12 +370,21 @@ class ShippableRuns(object):
         return tc
 
     def _dump_block_contents(self, dumpdir, block, data):
-        if not dumpdir:
+        if not dumpdir or block['path'] is None:
             return None
-        cpath = os.path.join(dumpdir, block['path'][1:])
+        try:
+            cpath = os.path.join(
+                dumpdir,
+                data.get('run_id'),
+                data.get('job_id'),
+                block['path'][1:]
+            )
+        except:
+            return None
         ddir = os.path.dirname(cpath)
         if not os.path.isdir(ddir):
             os.makedirs(ddir)
+        logging.debug(cpath)
         try:
             with open(cpath, 'wb') as f:
                 f.write(block['contents'])
@@ -371,13 +395,13 @@ class ShippableRuns(object):
         if isinstance(data, dict):
             cleanxml = json.dumps(data, indent=2, sort_keys=2)
             cpath = os.path.join(
-                dumpdir,
+                ddir,
                 block['path'][1:] + '-formatted.json'
             )
         else:
             cleanxml = self._objectify_to_xml(data)
             cpath = os.path.join(
-                dumpdir,
+                ddir,
                 block['path'][1:] + '-formatted.xml'
             )
         with open(cpath, 'wb') as f:

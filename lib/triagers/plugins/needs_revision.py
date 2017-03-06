@@ -37,6 +37,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     has_commit_mention = False
     has_commit_mention_notification = False
     needs_testresult_notification = False
+    shippable_test_results = None
 
     rmeta = {
         'committer_count': committer_count,
@@ -47,7 +48,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'has_shippable': has_shippable,
-        'shippable_test_results': None,
+        'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
@@ -282,11 +283,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         # FIXME - make the return structure simpler.
         last_run = [x['target_url'] for x in ci_status][0]
         last_run = last_run.split('/')[-1]
-        #test_results = shippable.get_test_results(
-        #    last_run,
-        #    usecache=True,
-        #    filter_paths=['/testresults.json']
-        #)
 
         s_results = shippable.get_test_results(
             last_run,
@@ -295,7 +291,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
             filter_classes=['sanity']
         )
 
-        if len(s_results) < 0:
+        if len(s_results) < 1:
             needs_testresult_notification = False
         else:
             shippable_test_results = s_results[0]['testresults']
