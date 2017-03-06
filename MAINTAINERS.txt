@@ -180,13 +180,13 @@ commands/expect.py: sivel
 commands/raw.py: ansible
 commands/script.py: ansible
 commands/shell.py: ansible
-database/database/mongodb_parameter.py: nerzhul
-database/database/mongodb_user.py: lujeni
 database/influxdb/: kamsz
 database/misc/elasticsearch_plugin.py: ThePixelDeveloper
 database/misc/kibana_plugin.py: barryib
 database/misc/redis.py: slok
 database/misc/riak.py: jsmartin drewkerrigan
+database/mongodb/mongodb_parameter.py: nerzhul
+database/mongodb/mongodb_user.py: lujeni
 database/mssql/mssql_db.py: vedit Jmainguy
 database/mysql/mysql_replication.py: banyek
 database/mysql/mysql_user.py: Jmainguy
