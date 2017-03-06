@@ -883,21 +883,18 @@ class AnsibleTriage(DefaultTriager):
 
         # shippable failures shippable_test_result
         if self.meta['ci_state'] == 'failure' and \
-                not self.meta['has_testresult_notification']:
+                self.meta['needs_testresult_notification']:
             tvars = {
                 'submitter': self.issue.submitter,
                 'data': self.meta['shippable_test_results']
             }
-            try:
-                comment = self.render_boilerplate(
-                    tvars,
-                    boilerplate='shippable_test_result'
-                )
-            except Exception as e:
-                logging.debug('breakpoint!')
-                logging.error(e)
-                import epdb; epdb.st()
 
+            comment = self.render_boilerplate(
+                tvars,
+                boilerplate='shippable_test_result'
+            )
+
+            #import epdb; epdb.st()
             if comment not in self.actions['comments']:
                 self.actions['comments'].append(comment)
 

@@ -36,6 +36,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     ready_for_review = None
     has_commit_mention = False
     has_commit_mention_notification = False
+    needs_testresult_notification = False
 
     rmeta = {
         'committer_count': committer_count,
@@ -50,7 +51,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
-        'has_testresult_notification': False,
+        'needs_testresult_notification': needs_testresult_notification,
         'merge_commits': merge_commits,
         'has_merge_commit_notification': has_merge_commit_notification,
         'mergeable': None,
@@ -281,45 +282,48 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         # FIXME - make the return structure simpler.
         last_run = [x['target_url'] for x in ci_status][0]
         last_run = last_run.split('/')[-1]
-        test_results = shippable.get_test_results(
+        #test_results = shippable.get_test_results(
+        #    last_run,
+        #    usecache=True,
+        #    filter_paths=['/testresults.json']
+        #)
+
+        s_results = shippable.get_test_results(
             last_run,
             usecache=True,
-            filter_paths=['/testresults.json']
+            filter_paths=['/testresults.json'],
+            filter_classes=['sanity']
         )
-        trjson = [x for x in test_results
-                  if x.get('path') == '/testresults.json'][0]
-        shippable_test_results = trjson['testresults']
-        bpcs = iw.history.get_boilerplate_comments_content(
-            bfilter='shippable_test_result'
-        )
-        if bpcs:
-            # was this specific result shown?
-            exp = [x['job_url'] for x in shippable_test_results]
-            found = []
-            for ex in exp:
-                for bp in bpcs:
-                    if ex in bp:
-                        if ex not in found:
-                            found.append(ex)
-                        break
-            if len(found) == len(exp):
-                has_testresult_notification = True
-            else:
-                has_testresult_notification = False
+
+        if len(s_results) < 0:
+            needs_testresult_notification = False
         else:
-            has_testresult_notification = False
+            shippable_test_results = s_results[0]['testresults']
+
+            bpcs = iw.history.get_boilerplate_comments_content(
+                bfilter='shippable_test_result'
+            )
+            if bpcs:
+                # was this specific result shown?
+                exp = [x['job_url'] for x in shippable_test_results]
+                found = []
+                for ex in exp:
+                    for bp in bpcs:
+                        if ex in bp:
+                            if ex not in found:
+                                found.append(ex)
+                            break
+                if len(found) == len(exp):
+                    needs_testresult_notification = False
+                else:
+                    needs_testresult_notification = True
+            else:
+                needs_testresult_notification = True
 
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
     logging.info('needs_revision is %s' % needs_revision)
     logging.info('ready_for_review is %s' % ready_for_review)
-
-    '''
-    # Scrape web data for debug purposes
-    rfn = iw.repo_full_name
-    www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
-    www_reviews = triager.gws.scrape_pullrequest_review(rfn, iw.number)
-    '''
 
     rmeta = {
         'committer_count': committer_count,
@@ -332,7 +336,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
-        'has_testresult_notification': has_testresult_notification,
+        'needs_testresult_notification': needs_testresult_notification,
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'merge_commits': merge_commits,

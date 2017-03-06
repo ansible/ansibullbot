@@ -102,19 +102,38 @@ class ShippableRuns(object):
         cfile = cfile.replace('/', '_')
         cfile = os.path.join(cdir, cfile + '.json')
         if not os.path.isfile(cfile):
+
             headers = dict(
                 Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
             )
-            resp = requests.get(url, headers=headers)
+
+            resp = None
+            success = False
+            retries = 0
+            while not success and retries < 2:
+                print('%s' % url)
+                resp = requests.get(url, headers=headers)
+                if resp.status_code not in [200, 302]:
+                    print('RC: %s' % (resp.status_code))
+                    retries += 1
+                    time.sleep(2)
+                    continue
+                success = True
+
+            if not success:
+                return None
+
             jdata = resp.json()
+
             with open(cfile, 'wb') as f:
                 json.dump(jdata, f)
         else:
-            with open(cfile, 'wb') as f:
-                jdata = jdata.load(f)
+            with open(cfile, 'rb') as f:
+                jdata = json.load(f)
         return jdata
 
-    def get_test_results(self, run_id, usecache=False, filter_paths=[]):
+    def get_test_results(self, run_id, usecache=False, filter_paths=[],
+                         filter_classes=[]):
 
         '''Fetch and munge the test results into proper json'''
 
@@ -134,6 +153,9 @@ class ShippableRuns(object):
             job_id = rd.get('id')
             jurl = 'https://api.shippable.com/jobs/%s/jobTestReports' % job_id
             jdata = self._get_url(jurl, usecache=usecache)
+            # 400 return codes ...
+            if not jdata:
+                continue
 
             if not os.path.isdir(self.cachedir):
                 os.makedirs(self.cachedir)
@@ -155,6 +177,48 @@ class ShippableRuns(object):
         with open(dumpfile, 'wb') as f:
             json.dump(results, f, indent=2, sort_keys=True)
 
+        if filter_classes:
+            results = self._filter_failures_by_classes(results, filter_classes)
+
+        return results
+
+    def _filter_failures_by_classes(self, results, filter_classes):
+        jobs = []
+        for job in results:
+            # we only care about jobs with results
+            if 'testresults' not in job:
+                continue
+
+            # we only care about testresults with failuredetails
+            trs = [x for x in job['testresults'] if 'failureDetails' in x]
+            if not trs:
+                continue
+
+            # reduced testresults
+            filtered_trs = []
+
+            for tr in trs:
+
+                # reduced failuredetails
+                filtered_fd = []
+
+                for fd in tr['failureDetails']:
+                    if fd['className'] in filter_classes:
+                        filtered_fd.append(fd)
+
+                if filtered_fd:
+                    # clean up the failures list
+                    ntr = tr.copy()
+                    ntr['failureDetails'] = filtered_fd
+                    filtered_trs.append(ntr)
+
+            if filtered_trs:
+                # keep this job with the filtered tests
+                njob = job.copy()
+                njob['testresults'] = filtered_trs
+                jobs.append(njob)
+
+        results = jobs
         return results
 
     def _objectify_to_xml(self, obj):
@@ -180,7 +244,6 @@ class ShippableRuns(object):
             if filter_paths and block['path'] not in filter_paths:
                 continue
 
-            print(block['path'])
             contents = block['contents']
             for k,v in block.items():
                 if k != 'contents':
@@ -188,12 +251,6 @@ class ShippableRuns(object):
 
             if not contents:
                 continue
-
-            #if not block['path']:
-            #    import epdb; epdb.st()
-
-            #if block['path'] == '/testresults.json':
-            #    import epdb; epdb.st()
 
             if block['path'].endswith('json'):
                 # /testresults.json
