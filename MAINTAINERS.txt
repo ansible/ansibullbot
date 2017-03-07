@@ -255,7 +255,6 @@ monitoring/statusio_maintenance.py: bhcopeland
 monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
 network/a10/: mischapeters ericchou1
-network/asa/: FIXME
 network/aos/: dgarros jeremyschulman
 network/avi/: grastogi23 khaltore ericsysmin
 network/basics/get_url.py: jpmens
