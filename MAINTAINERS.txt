@@ -254,8 +254,8 @@ monitoring/stackdriver.py: bwhaley
 monitoring/statusio_maintenance.py: bhcopeland
 monitoring/uptimerobot.py: nate-kingsley
 monitoring/zabbix_: eikef
-network/a10/: mischapeters ericchou1 gundalow Qalthos privateip
-network/asa/: gundalow Qalthos privateip
+network/a10/: mischapeters ericchou1
+network/asa/: gundalow
 network/aos/: dgarros jeremyschulman
 network/avi/: grastogi23 khaltore ericsysmin
 network/basics/get_url.py: jpmens
@@ -264,21 +264,21 @@ network/basics/uri.py: ansible
 network/bigswitch/: tedelhourani vuile jayakody
 network/citrix/netscaler.py: ansible
 network/cloudflare_dns.py: mgruener
-network/cumulus/: isharacomix jrrivers privateip gundalow Qalthos
-network/dellos10/: dhivyap skg-net privateip gundalow Qalthos
-network/dellos6/: dhivyap skg-net privateip gundalow Qalthos
-network/dellos9/: dhivyap skg-net privateip gundalow Qalthos
+network/cumulus/: isharacomix jrrivers privateip
+network/dellos10/: dhivyap skg-net
+network/dellos6/: dhivyap skg-net
+network/dellos9/: dhivyap skg-net
 network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
-network/eos/: privateip gundalow Qalthos
+network/eos/: privateip
 network/exoscale/: resmo
-network/f5/: mhite caphrim007 gundalow Qalthos privateip
+network/f5/: mhite caphrim007
 network/haproxy.py: ravibhure
 network/illumos/: xen0l
-network/ios/: rcarrillocruz privateip gundalow Qalthos
-network/iosxr/: rcarrillocruz privateip gundalow Qalthos
+network/ios/: privateip rcarrillocruz
+network/iosxr/: privateip rcarrillocruz
 network/ipify_facts.py: resmo
-network/junos/: privateip gundalow Qalthos ganeshnalawade
+network/junos/: Qalthos ganeshnalawade
 network/ldap_attr.py: jtyr
 network/ldap_entry.py: jtyr
 network/lenovo: dkasberg
@@ -287,7 +287,7 @@ network/netconf/netconf_config.py: lpenz
 network/netvisor/: amitsi privateip gundalow Qalthos
 network/nmcli.py: alcamie101
 network/nsupdate.py: nerzhul
-network/nxos/: jedelman8 GGabriele privateip gundalow Qalthos
+network/nxos/: jedelman8 GGabriele privateip
 network/ordnance/: djh00t alexanderturner
 network/omapi_host.py: nerzhul
 network/openswitch/: privateip gundalow Qalthos
@@ -295,7 +295,7 @@ network/ovs/: privateip
 network/panos/: ivanbojer jtschichold
 network/snmp_facts.py: ogenstad
 network/sros/: privateip gundalow Qalthos
-network/vyos/: privateip gundalow Qalthos
+network/vyos/: Qalthos
 network/wakeonlan: dagwieers
 notification/campfire.py: fabulops
 notification/flowdock.py: mcodd
