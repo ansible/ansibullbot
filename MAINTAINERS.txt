@@ -109,6 +109,8 @@ cloud/google/gcdns_: walbert947
 cloud/google/gce_img.py: supertom
 cloud/google/gce_tag.py: dohoangkhiemgmail.com
 cloud/google/gc_storage.py: bennojoy supertom
+cloud/google/gce_template.py: GwenaelPellenArkeup
+cloud/google/gcspanner.py: supertom
 cloud/google/: supertom
 cloud/linode/linode.py: zbal intheclouddan
 cloud/lxc/lxc_container.py: cloudnull
@@ -181,10 +183,10 @@ commands/shell.py: ansible
 database/influxdb/: kamsz
 database/misc/elasticsearch_plugin.py: ThePixelDeveloper
 database/misc/kibana_plugin.py: barryib
-database/misc/mongodb_parameter.py: nerzhul
-database/misc/mongodb_user.py: lujeni
 database/misc/redis.py: slok
 database/misc/riak.py: jsmartin drewkerrigan
+database/mongodb/mongodb_parameter.py: nerzhul
+database/mongodb/mongodb_user.py: lujeni
 database/mssql/mssql_db.py: vedit Jmainguy
 database/mysql/mysql_replication.py: banyek
 database/mysql/mysql_user.py: Jmainguy
@@ -276,8 +278,10 @@ network/illumos/: xen0l
 network/ios/: privateip rcarrillocruz
 network/iosxr/: privateip rcarrillocruz
 network/ipify_facts.py: resmo
-network/junos/: Qalthos
-network/ldap_entry.py jtyr
+network/junos/: Qalthos ganeshnalawade
+network/ldap_attr.py: jtyr
+network/ldap_entry.py: jtyr
+network/lenovo: dkasberg
 network/lldp.py: andyhky
 network/netconf/netconf_config.py: lpenz
 network/netvisor/: amitsi privateip gundalow Qalthos
@@ -359,6 +363,7 @@ packaging/os/yum.py: ansible
 packaging/os/yum_repository.py: jtyr
 packaging/os/zypper.py: robinro
 packaging/os/zypper_repository.py: matze robinro
+remote_management/hpilo/: dagwieers haad
 remote_management/ipmi/: cloudnull
 remote_management/stacki/: bsanders bbyhuy
 source_control/bzr.py: andreparames
@@ -428,6 +433,7 @@ utilities/logic/include_vars.py: bennojoy
 utilities/logic/pause.py: tbielawa
 utilities/logic/set_fact.py: dagwieers
 utilities/logic/wait_for.py: gregswift
+utilities/logic/wait_for_connection.py: dagwieers
 web_infrastructure/apache2_mod_proxy.py: oboukili
 web_infrastructure/apache2_module.py: robinro n0trax
 web_infrastructure/deploy_helper.py: ramondelafuente
@@ -448,8 +454,8 @@ windows/win_acl_inheritance.ps1:
 windows/win_acl_inheritance.py:
 windows/win_acl.ps1: schwartzmx trondhindenes
 windows/win_acl.py: schwartzmx trondhindenes
-windows/win_chocolatey.ps1: smadam813
-windows/win_chocolatey.py: smadam813
+windows/win_chocolatey.ps1: smadam813 nitzmahone
+windows/win_chocolatey.py: smadam813 nitzmahone
 windows/win_copy.ps1: jhawkesworth
 windows/win_copy.py: jhawkesworth
 windows/win_dotnet_ngen.ps1: petemounce
