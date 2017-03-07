@@ -25,8 +25,12 @@ ANSIBLE_RUNS_URL = '%s/runs?projectIds=%s&isPullRequest=True' % (
 
 
 class ShippableRuns(object):
+    '''An abstraction for the shippable API'''
 
-    def __init__(self, url=ANSIBLE_RUNS_URL, cachedir=None, cache=False):
+    def __init__(self, url=ANSIBLE_RUNS_URL, cachedir=None, cache=False,
+                 writecache=True):
+
+        self.writecache = writecache
         if cachedir:
             self.cachedir = cachedir
         else:
@@ -144,6 +148,12 @@ class ShippableRuns(object):
 
         '''Fetch and munge the test results into proper json'''
 
+        # A "run" has many "jobs"
+        # A "job" has a "path"
+        # A "job" has many "testresults"
+        # A "testresult" has many "failureDetails"
+        # A "failureDetal" has a "classname"
+
         # RUNID: 58b88d3fc2fe010500932af2
         # https://api.shippable.com/jobs?runIds=58b88d3fc2fe010500932af
         #JOBID: 58b88d4165094f0500a883ba
@@ -160,6 +170,7 @@ class ShippableRuns(object):
             job_id = rd.get('id')
             jurl = 'https://api.shippable.com/jobs/%s/jobTestReports' % job_id
             jdata = self._get_url(jurl, usecache=usecache)
+
             # 400 return codes ...
             if not jdata:
                 continue
@@ -174,18 +185,26 @@ class ShippableRuns(object):
                 url=jurl,
                 filter_paths=filter_paths
             )
+
+            if 'testresults.json' in json.dumps(jdata):
+                fds = []
+                for j in jdata:
+                    xfds = [x.get('failureDetails')
+                            for x in j.get('testresults', {})]
+                    if xfds:
+                        fds += xfds
+
             if res:
                 results.append(res)
 
-        dumpfile = os.path.join(self.cachedir, run_id, 'results.json')
-        dumpdir = os.path.dirname(dumpfile)
-        if not os.path.isdir(dumpdir):
-            os.makedirs(dumpdir)
-
-        with open(dumpfile, 'wb') as f:
-            logging.debug(dumpfile)
-            #import epdb; epdb.st()
-            json.dump(results, f, indent=2, sort_keys=True)
+        if self.writecache:
+            dumpfile = os.path.join(self.cachedir, run_id, 'results.json')
+            dumpdir = os.path.dirname(dumpfile)
+            if not os.path.isdir(dumpdir):
+                os.makedirs(dumpdir)
+            with open(dumpfile, 'wb') as f:
+                logging.debug(dumpfile)
+                json.dump(results, f, indent=2, sort_keys=True)
 
         if filter_classes:
             results = self._filter_failures_by_classes(results, filter_classes)
@@ -202,7 +221,7 @@ class ShippableRuns(object):
             # we only care about testresults with failuredetails
             try:
                 trs = [x for x in job['testresults'] if 'failureDetails' in x]
-            except:
+            except Exception:
                 continue
             if not trs:
                 continue
@@ -238,7 +257,8 @@ class ShippableRuns(object):
         return lxml.etree.tostring(obj)
 
     def parse_tests_json(self, jdata, run_id=None, job_id=None,
-                         url=None, filter_paths=[]):
+                         url=None, filter_paths=None):
+        '''Parse the raw data from a jobTestReports.json file'''
 
         result = {
             'url': url,
@@ -371,7 +391,7 @@ class ShippableRuns(object):
         return tc
 
     def _dump_block_contents(self, dumpdir, block, data):
-        if not dumpdir or block['path'] is None:
+        if not dumpdir or block['path'] is None or not self.writecache:
             return None
         try:
             cpath = os.path.join(
