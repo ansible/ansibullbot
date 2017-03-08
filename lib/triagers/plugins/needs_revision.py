@@ -458,10 +458,11 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
     shippable_test_results = shippable.get_test_results(
         last_run,
         usecache=True,
-        filter_paths=['/testresults.json'],
+        filter_paths=['/testresults/ansible-test-.*.json'],
     )
     # always 1 element?
-    shippable_test_results = shippable_test_results[0]
+    if shippable_test_results:
+        shippable_test_results = shippable_test_results[0]
 
     # no results means no notification required
     if len(shippable_test_results) < 1:
