@@ -6,13 +6,11 @@
 import datetime
 import json
 import logging
-import lxml
 import os
+import re
 import requests
 import requests_cache
 import time
-
-from lxml import objectify
 
 import lib.constants as C
 
@@ -143,8 +141,7 @@ class ShippableRuns(object):
 
         return jdata
 
-    def get_test_results(self, run_id, usecache=False, filter_paths=[],
-                         filter_classes=[]):
+    def get_test_results(self, run_id, usecache=False, filter_paths=[]):
 
         '''Fetch and munge the test results into proper json'''
 
@@ -162,6 +159,9 @@ class ShippableRuns(object):
         #https://api.shippable.com/jobs/...83ba/jobTestReports
         #https://api.shippable.com/jobs/...83ba/jobCoverageReports
 
+        if filter_paths:
+            fps = [re.compile(x) for x in filter_paths]
+
         results = []
         url = 'https://api.shippable.com/jobs?runIds=%s' % run_id
         rdata = self._get_url(url, usecache=usecache)
@@ -175,255 +175,16 @@ class ShippableRuns(object):
             if not jdata:
                 continue
 
-            if not os.path.isdir(self.cachedir):
-                os.makedirs(self.cachedir)
-
-            res = self.parse_tests_json(
-                jdata,
-                run_id=run_id,
-                job_id=job_id,
-                url=jurl,
-                filter_paths=filter_paths
-            )
-
-            if 'testresults.json' in json.dumps(jdata):
-                fds = []
-                for j in jdata:
-                    xfds = [x.get('failureDetails')
-                            for x in j.get('testresults', {})]
-                    if xfds:
-                        fds += xfds
-
-            if res:
-                results.append(res)
-
-        if self.writecache:
-            dumpfile = os.path.join(self.cachedir, run_id, 'results.json')
-            dumpdir = os.path.dirname(dumpfile)
-            if not os.path.isdir(dumpdir):
-                os.makedirs(dumpdir)
-            with open(dumpfile, 'wb') as f:
-                logging.debug(dumpfile)
-                json.dump(results, f, indent=2, sort_keys=True)
-
-        if filter_classes:
-            results = self._filter_failures_by_classes(results, filter_classes)
+            for td in jdata:
+                if filter_paths:
+                    matches = [x.match(td['path']) for x in fps]
+                    matches = [x for x in matches if x]
+                else:
+                    matches = True
+                if matches:
+                    td['run_id'] = run_id
+                    td['job_id'] = job_id
+                    td['contents'] = json.loads(td['contents'])
+                    results.append(td)
 
         return results
-
-    def _filter_failures_by_classes(self, results, filter_classes):
-        jobs = []
-        for job in results:
-            # we only care about jobs with results
-            if 'testresults' not in job:
-                continue
-
-            # we only care about testresults with failuredetails
-            try:
-                trs = [x for x in job['testresults'] if 'failureDetails' in x]
-            except Exception:
-                continue
-            if not trs:
-                continue
-
-            # reduced testresults
-            filtered_trs = []
-
-            for tr in trs:
-
-                # reduced failuredetails
-                filtered_fd = []
-
-                for fd in tr['failureDetails']:
-                    if fd['className'] in filter_classes:
-                        filtered_fd.append(fd)
-
-                if filtered_fd:
-                    # clean up the failures list
-                    ntr = tr.copy()
-                    ntr['failureDetails'] = filtered_fd
-                    filtered_trs.append(ntr)
-
-            if filtered_trs:
-                # keep this job with the filtered tests
-                njob = job.copy()
-                njob['testresults'] = filtered_trs
-                jobs.append(njob)
-
-        results = jobs
-        return results
-
-    def _objectify_to_xml(self, obj):
-        return lxml.etree.tostring(obj)
-
-    def parse_tests_json(self, jdata, run_id=None, job_id=None,
-                         url=None, filter_paths=None):
-        '''Parse the raw data from a jobTestReports.json file'''
-
-        result = {
-            'url': url,
-            'run_id': run_id,
-            'job_id': job_id,
-            'testsuites': [],
-            'testcases': [],
-            'testresults': [],
-        }
-
-        if isinstance(jdata, dict):
-            return jdata
-
-        for idb,block in enumerate(jdata):
-
-            if filter_paths and block['path'] not in filter_paths:
-                continue
-
-            contents = block['contents']
-            for k,v in block.items():
-                if k != 'contents':
-                    result[k] = v
-
-            if not contents:
-                continue
-
-            if block['path'].endswith('json'):
-                # /testresults.json
-                bdata = json.loads(contents)
-                bdata['job_url'] = url
-                bdata['run_id'] = run_id
-                bdata['job_id'] = job_id
-                key = block['path'][1:]
-                key = key.replace('.json', '')
-                if key not in result:
-                    result[key] = []
-                result[key].append(bdata)
-                self._dump_block_contents(self.cachedir, block, bdata)
-                continue
-
-            # treat as xml ...
-            root = objectify.fromstring(contents.encode('utf-8'))
-
-            for k,v in root.attrib.items():
-                result[k] = v
-
-            if hasattr(root, 'testsuite'):
-                #import epdb; epdb.st()
-                pass
-            elif hasattr(root, 'testcase'):
-                tc = self.parse_testcase(
-                    root.testcase,
-                    run_id=run_id,
-                    job_id=job_id,
-                    url=url,
-                )
-                tc['path'] = block['path']
-                tc['run_id'] = run_id
-                tc['job_url'] = url
-                tc['job_id'] = job_id
-                result['testcases'].append(tc)
-                self._dump_block_contents(self.cachedir, block, tc)
-                continue
-            else:
-                #ccount = root.testsuite.countchildren()
-                #import epdb; epdb.st()
-                pass
-
-            for testsuite in root.testsuite:
-
-                ts_attribs = {
-                    'job_url': url,
-                    'path': block['path'],
-                    'testcases': []
-                }
-
-                for k,v in testsuite.attrib.items():
-                    ts_attribs[k] = v
-
-                if hasattr(testsuite, 'properties'):
-                    ts_attribs['properties'] = {}
-                    for x in testsuite.properties.property:
-                        k = x.attrib.get('name')
-                        v = x.attrib.get('value')
-                        ts_attribs['properties'][k] = v
-
-                if hasattr(testsuite, 'testcase'):
-                    for testcase in testsuite.testcase:
-                        tc = self.parse_testcase(
-                            testcase,
-                            run_id=run_id,
-                            job_id=job_id,
-                            url=url
-                        )
-                        tc['run_id'] = run_id
-                        tc['job_url'] = url
-                        tc['job_id'] = job_id
-                        ts_attribs['testcases'].append(tc)
-
-                result['testsuites'].append(ts_attribs)
-
-            # dump the contents
-            self._dump_block_contents(self.cachedir, block, root)
-
-        return result
-
-    def parse_testcase(self, testcase, run_id=None, job_id=None, url=None):
-        '''Parse a testcase node'''
-        tc = {
-            'job_id': job_id,
-            'run_id': run_id
-        }
-
-        for k,v in testcase.attrib.items():
-            tc[k] = v
-
-        for node in ['failure', 'error', 'system-out', 'skipped']:
-            if hasattr(testcase, node):
-                tc[node] = {}
-                n = getattr(testcase, node)
-                for k,v in n.attrib.items():
-                    tc[node][k] = v
-                if node == 'system-out' or node == 'skipped':
-                    tc[node]['text'] = n.text
-                    try:
-                        tc[node]['text'] = json.loads(tc[node]['text'])
-                    except:
-                        pass
-
-        return tc
-
-    def _dump_block_contents(self, dumpdir, block, data):
-        if not dumpdir or block['path'] is None or not self.writecache:
-            return None
-        try:
-            cpath = os.path.join(
-                dumpdir,
-                data.get('run_id'),
-                data.get('job_id'),
-                block['path'][1:]
-            )
-        except:
-            return None
-        ddir = os.path.dirname(cpath)
-        if not os.path.isdir(ddir):
-            os.makedirs(ddir)
-        logging.debug(cpath)
-        try:
-            with open(cpath, 'wb') as f:
-                f.write(block['contents'])
-        except Exception as e:
-            with open(cpath, 'wb') as f:
-                f.write(e.reason)
-
-        if isinstance(data, dict):
-            cleanxml = json.dumps(data, indent=2, sort_keys=2)
-            cpath = os.path.join(
-                ddir,
-                block['path'][1:] + '-formatted.json'
-            )
-        else:
-            cleanxml = self._objectify_to_xml(data)
-            cpath = os.path.join(
-                ddir,
-                block['path'][1:] + '-formatted.xml'
-            )
-        with open(cpath, 'wb') as f:
-            f.write(cleanxml)

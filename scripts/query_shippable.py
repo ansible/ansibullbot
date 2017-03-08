@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 
+# Fetch and parse all test results from shippable
+
 import logging
 import os
-import json
+import sys
+
 from pprint import pprint
 from lib.utils.shippable_api import ShippableRuns
 
@@ -12,19 +15,32 @@ SR.update()
 
 logging.basicConfig(level=logging.DEBUG)
 
-runs = SR.runs
+#import epdb; epdb.st()
+
+runs = []
+if len(sys.argv) > 1:
+    for run in sys.argv[1:]:
+        runs.append({'id': run})
+else:
+    runs = SR.runs
 
 for run in runs:
 
+    # You can update the bot to look only for `ansible-test-*.json` files from
+    # the test results.
     print(run['id'])
     trs = SR.get_test_results(
         run['id'],
         usecache=True,
-        filter_paths=['/testresults.json'],
-        filter_classes=['sanity']
+        filter_paths=['/testresults/ansible-test-.*.json'],
+        #filter_classes=['sanity']
     )
     pprint(trs)
+    if trs:
+        #import epdb; epdb.st()
+        pass
 
+    '''
     if not trs:
         continue
 
@@ -43,6 +59,7 @@ for run in runs:
             print(td['run_id'], td['job_id'])
             with open('/tmp/testableruns.txt', 'a') as f:
                 f.write('%s %s\n' % (td['run_id'], td['job_id']))
+    '''
 
 #import epdb; epdb.st()
 

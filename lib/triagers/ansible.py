@@ -261,7 +261,7 @@ class AnsibleTriage(DefaultTriager):
 
         # instantiate shippable api
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
-        self.SR = ShippableRuns(cachedir=spath)
+        self.SR = ShippableRuns(cachedir=spath, writecache=True)
 
     @property
     def ansible_members(self):
@@ -889,10 +889,15 @@ class AnsibleTriage(DefaultTriager):
                 'data': self.meta['shippable_test_results']
             }
 
-            comment = self.render_boilerplate(
-                tvars,
-                boilerplate='shippable_test_result'
-            )
+            try:
+                comment = self.render_boilerplate(
+                    tvars,
+                    boilerplate='shippable_test_result'
+                )
+            except Exception as e:
+                logging.debug('breakpoint!')
+                logging.debug(e)
+                import epdb; epdb.st()
 
             #import epdb; epdb.st()
             if comment not in self.actions['comments']:

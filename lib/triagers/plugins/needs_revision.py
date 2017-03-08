@@ -280,6 +280,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     # test failure comments
     # https://github.com/ansible/ansibullbot/issues/404
     if has_shippable and ci_state == 'failure':
+        (shippable_test_results, needs_testresult_notification) = \
+            needs_shippable_test_results_notification(shippable, ci_status, iw)
+
+        '''
         # FIXME - make the return structure simpler.
         last_run = [x['target_url'] for x in ci_status][0]
         last_run = last_run.split('/')[-1]
@@ -315,6 +319,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                     needs_testresult_notification = True
             else:
                 needs_testresult_notification = True
+        '''
 
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
@@ -437,3 +442,48 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
                 f.write(json.dumps(ddata, indent=2, sort_keys=True))
 
     return user_reviews
+
+
+def needs_shippable_test_results_notification(shippable, ci_status, iw):
+    '''Does an issue need the test result comment?'''
+
+    shippable_test_results = None
+    needs_testresult_notification = False
+
+    # find the last chronological run id
+    last_run = [x['target_url'] for x in ci_status][0]
+    last_run = last_run.split('/')[-1]
+
+    # filter by the last run id
+    shippable_test_results = shippable.get_test_results(
+        last_run,
+        usecache=True,
+        filter_paths=['/testresults.json'],
+    )
+    # always 1 element?
+    shippable_test_results = shippable_test_results[0]
+
+    # no results means no notification required
+    if len(shippable_test_results) < 1:
+        needs_testresult_notification = False
+    else:
+
+        bpcs = iw.history.get_boilerplate_comments_content(
+            bfilter='shippable_test_result'
+        )
+        if bpcs:
+            # was this specific result shown?
+            job_id = shippable_test_results['job_id']
+            found = False
+            for bp in bpcs:
+                if job_id in bp:
+                    found = True
+                    break
+            if found:
+                needs_testresult_notification = False
+            else:
+                needs_testresult_notification = True
+        else:
+            needs_testresult_notification = True
+
+    return (shippable_test_results, needs_testresult_notification)
