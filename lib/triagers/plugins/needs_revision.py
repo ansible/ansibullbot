@@ -6,7 +6,7 @@ import os
 from pprint import pprint
 
 
-def get_needs_revision_facts(triager, issuewrapper, meta):
+def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     # Thanks @adityacs for this PR. This PR requires revisions, either
     # because it fails to build or by reviewer request. Please make the
     # suggested revisions. When you are done, please comment with text
@@ -36,6 +36,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
     ready_for_review = None
     has_commit_mention = False
     has_commit_mention_notification = False
+    needs_testresult_notification = False
+    shippable_test_results = None
 
     rmeta = {
         'committer_count': committer_count,
@@ -46,9 +48,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'has_shippable': has_shippable,
+        'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
+        'needs_testresult_notification': needs_testresult_notification,
         'merge_commits': merge_commits,
         'has_merge_commit_notification': has_merge_commit_notification,
         'mergeable': None,
@@ -273,17 +277,54 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
         else:
             has_travis_notification = False
 
+    # test failure comments
+    # https://github.com/ansible/ansibullbot/issues/404
+    if has_shippable and ci_state == 'failure':
+        (shippable_test_results, needs_testresult_notification) = \
+            needs_shippable_test_results_notification(shippable, ci_status, iw)
+
+        '''
+        # FIXME - make the return structure simpler.
+        last_run = [x['target_url'] for x in ci_status][0]
+        last_run = last_run.split('/')[-1]
+
+        s_results = shippable.get_test_results(
+            last_run,
+            usecache=True,
+            filter_paths=['/testresults.json'],
+            filter_classes=['sanity']
+        )
+
+        if len(s_results) < 1:
+            needs_testresult_notification = False
+        else:
+            shippable_test_results = s_results[0]['testresults']
+
+            bpcs = iw.history.get_boilerplate_comments_content(
+                bfilter='shippable_test_result'
+            )
+            if bpcs:
+                # was this specific result shown?
+                exp = [x['job_url'] for x in shippable_test_results]
+                found = []
+                for ex in exp:
+                    for bp in bpcs:
+                        if ex in bp:
+                            if ex not in found:
+                                found.append(ex)
+                            break
+                if len(found) == len(exp):
+                    needs_testresult_notification = False
+                else:
+                    needs_testresult_notification = True
+            else:
+                needs_testresult_notification = True
+        '''
+
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
     logging.info('needs_revision is %s' % needs_revision)
     logging.info('ready_for_review is %s' % ready_for_review)
-
-    '''
-    # Scrape web data for debug purposes
-    rfn = iw.repo_full_name
-    www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
-    www_reviews = triager.gws.scrape_pullrequest_review(rfn, iw.number)
-    '''
 
     rmeta = {
         'committer_count': committer_count,
@@ -292,9 +333,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta):
         'is_needs_rebase': needs_rebase,
         'is_needs_rebase_msgs': needs_rebase_msgs,
         'has_shippable': has_shippable,
+        'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
+        'needs_testresult_notification': needs_testresult_notification,
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'merge_commits': merge_commits,
@@ -399,3 +442,47 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
                 f.write(json.dumps(ddata, indent=2, sort_keys=True))
 
     return user_reviews
+
+
+def needs_shippable_test_results_notification(shippable, ci_status, iw):
+    '''Does an issue need the test result comment?'''
+
+    shippable_test_results = None
+    needs_testresult_notification = False
+
+    # find the last chronological run id
+    last_run = [x['target_url'] for x in ci_status][0]
+    last_run = last_run.split('/')[-1]
+
+    # filter by the last run id
+    shippable_test_results = shippable.get_test_results(
+        last_run,
+        usecache=True,
+        filter_paths=['/testresults/ansible-test-.*.json'],
+    )
+
+    # no results means no notification required
+    if len(shippable_test_results) < 1:
+        needs_testresult_notification = False
+    else:
+
+        bpcs = iw.history.get_boilerplate_comments_content(
+            bfilter='shippable_test_result'
+        )
+        if bpcs:
+            # was this specific result shown?
+            job_ids = [x['job_id'] for x in shippable_test_results]
+            job_ids = sorted(set(job_ids))
+            found = []
+            for bp in bpcs:
+                for job_id in [x for x in job_ids if x not in found]:
+                    if job_id in bp and job_id not in found:
+                        found.append(job_id)
+            if len(found) == len(job_ids):
+                needs_testresult_notification = False
+            else:
+                needs_testresult_notification = True
+        else:
+            needs_testresult_notification = True
+
+    return (shippable_test_results, needs_testresult_notification)
