@@ -1,18 +1,20 @@
-{% for fd in data['contents']['failureDetails'] %}
+{% for x in data %}
+{% for fd in x['contents']['failureDetails'] %}
 {{ fd['message'] }}
-```{{ fd['full'] }}
+```
+{{ fd['full'] }}
 ```
 {% endfor %}
-<!--- total: {{ data['total'] }} -->
-<!--- duration: {{ data['contents']['durationSeconds'] }} -->
-<!--- errors: {{ data['contents']['totalErrors'] }} -->
-<!--- failures: {{ data['contents']['totalFailures'] }} -->
-<!--- passing: {{ data['contents']['totalPassing'] }} -->
-<!--- skipped: {{ data['contents']['totalSkipped'] }} -->
-<!--- run_id: {{ data['contents']['run_id'] }} -->
-<!--- job_id: {{ data['run_id'] }} -->
-<!--- job_id: {{ data['job_id'] }} -->
-<!--- job_id: {{ data['path'] }} -->
+{% for res in x['contents']['results'] %}
+{{ res['message'] }}
+```
+{{ res['output'] }}
+```
+{% endfor %}
+<!--- job_id: {{ x['run_id'] }} -->
+<!--- job_id: {{ x['job_id'] }} -->
+<!--- job_id: {{ x['path'] }} -->
+{% endfor %}
 
 [click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
 <!--- boilerplate: shippable_test_result --->

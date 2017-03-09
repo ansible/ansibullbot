@@ -104,13 +104,19 @@ class ShippableRuns(object):
         cfile = cfile.replace('/', '_')
         cfile = os.path.join(cdir, cfile + '.json')
 
+        rc = None
         jdata = None
         if os.path.isfile(cfile):
             try:
                 with open(cfile, 'rb') as f:
-                    jdata = json.load(f)
+                    fdata = json.load(f)
+                rc = fdata[0]
+                jdata = fdata[1]
             except ValueError:
                 pass
+
+            if rc == 400:
+                return None
 
         if not os.path.isfile(cfile) or not jdata:
 
@@ -124,7 +130,7 @@ class ShippableRuns(object):
             while not success and retries < 2:
                 logging.debug('%s' % url)
                 resp = requests.get(url, headers=headers)
-                if resp.status_code not in [200, 302]:
+                if resp.status_code not in [200, 302, 400]:
                     logging.error('RC: %s' % (resp.status_code))
                     retries += 1
                     time.sleep(2)
@@ -134,10 +140,14 @@ class ShippableRuns(object):
             if not success:
                 return None
 
-            jdata = resp.json()
-
-            with open(cfile, 'wb') as f:
-                json.dump(jdata, f)
+            if resp.status_code != 400:
+                jdata = resp.json()
+                with open(cfile, 'wb') as f:
+                    json.dump([resp.status_code, jdata], f)
+            else:
+                with open(cfile, 'wb') as f:
+                    json.dump([resp.status_code, {}], f)
+                return None
 
         return jdata
 

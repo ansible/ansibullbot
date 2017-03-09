@@ -460,9 +460,6 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
         usecache=True,
         filter_paths=['/testresults/ansible-test-.*.json'],
     )
-    # always 1 element?
-    if shippable_test_results:
-        shippable_test_results = shippable_test_results[0]
 
     # no results means no notification required
     if len(shippable_test_results) < 1:
@@ -474,13 +471,14 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
         )
         if bpcs:
             # was this specific result shown?
-            job_id = shippable_test_results['job_id']
-            found = False
+            job_ids = [x['job_id'] for x in shippable_test_results]
+            job_ids = sorted(set(job_ids))
+            found = []
             for bp in bpcs:
-                if job_id in bp:
-                    found = True
-                    break
-            if found:
+                for job_id in [x for x in job_ids if x not in found]:
+                    if job_id in bp and job_id not in found:
+                        found.append(job_id)
+            if len(found) == len(job_ids):
                 needs_testresult_notification = False
             else:
                 needs_testresult_notification = True
