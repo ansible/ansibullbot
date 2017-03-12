@@ -194,7 +194,14 @@ class ShippableRuns(object):
                 if matches:
                     td['run_id'] = run_id
                     td['job_id'] = job_id
-                    td['contents'] = json.loads(td['contents'])
+
+                    try:
+                        td['contents'] = json.loads(td['contents'])
+                    except ValueError as e:
+                        print(e)
+                        #import epdb; epdb.st()
+                        pass
+
                     results.append(td)
 
         return results
