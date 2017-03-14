@@ -299,7 +299,10 @@ class ModuleIndexer(object):
         return self.modules
 
     def get_module_commits(self):
-        for k,v in self.modules.iteritems():
+        keys = self.modules.keys()
+        keys = sorted(keys)
+        for k in keys:
+            #v = self.modules[k]
             self.commits[k] = []
             cpath = os.path.join(self.checkoutdir, k)
             if not os.path.isfile(cpath):
@@ -450,9 +453,13 @@ class ModuleIndexer(object):
                 self.modules[k]['maintainers_key'] = best_match
                 self.modules[k]['maintainers'] = self.maintainers[best_match]
             else:
-                if v['metadata'].get('supported_by') in ['committer', 'core']:
+                if v['metadata'].get('supported_by') not in ['community']:
                     self.modules[k]['maintainers_key'] = best_match
-                    self.modules[k]['maintainers'] = ['ansible']
+                    if v['metadata'].get('supported_by') == 'core':
+                        self.modules[k]['maintainers'] = ['ansible']
+                    else:
+                        # curated? ... what now?
+                        pass
 
     def split_topics_from_path(self, module_file):
         subpath = module_file.replace('lib/ansible/modules/', '')
