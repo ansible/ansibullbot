@@ -101,8 +101,8 @@ cloud/dimensiondata/dimensiondata_network.py: tintoy
 cloud/docker/docker_container.py: ansible
 cloud/docker/docker_image_facts.py: ansible
 cloud/docker/docker_image.py: ansible
-cloud/docker/docker_login.py: ansible
 cloud/docker/docker_login.py: olsaki
+cloud/docker/docker_network.py: olsaki
 cloud/docker/docker.py: cove softzilla zfil ThomasSteinbach
 cloud/docker/docker_service.py: ansible
 cloud/google/gcdns_: walbert947
@@ -405,8 +405,10 @@ system/modprobe.py:
 system/mount.py: ansible
 system/ohai.py: ansible
 system/open_iscsi.py: srvg
+system/openwrt_init.py: agaffney
 system/osx_defaults.py: ansible
 system/pam_limits.py: ansible
+system/parted.py: ColOfAbRiX
 system/ping.py: ansible
 system/puppet.py: emonty nibalizer
 system/seboolean.py: ansible
