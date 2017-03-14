@@ -2038,7 +2038,7 @@ class AnsibleTriage(DefaultTriager):
             rfacts['community_review'] = True
         elif supported_by == 'core':
             rfacts['core_review'] = True
-        elif supported_by == 'committer':
+        elif supported_by == 'curated':
             rfacts['committer_review'] = True
         else:
             logging.error('breakpoint!')
