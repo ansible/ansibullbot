@@ -3,22 +3,24 @@
 
 ```
 $ ./triage.py --help
-usage: triage.py [-h] [--skip-no-update] [--collect_only]
-                 [--skip_module_repos] [--module_repos_only]
+usage: triage.py [-h] [--skip_no_update] [--skip_no_update_timeout]
+                 [--collect_only] [--skip_module_repos] [--module_repos_only]
                  [--force_rate_limit] [--sort {asc,desc}] [--logfile LOGFILE]
                  [--daemonize] [--daemonize_interval DAEMONIZE_INTERVAL]
-                 [--skiprepo SKIPREPO] [--repo REPO] [--gh-user GH_USER]
-                 [--gh-pass GH_PASS] [--gh-token GH_TOKEN]
-                 [--only_prs] [--only_issues] [--only_open] [--only_closed]
-                 [--verbose] [--dry-run] [--force] [--safe_force] [--debug]
-                 [--pause] [--pr PR] [--start-at START_AT] [--no_since]
+                 [--skiprepo SKIPREPO] [--repo REPO] [--only_prs]
+                 [--only_issues] [--only_open] [--only_closed] [--verbose]
+                 [--dry-run] [--force] [--safe_force] [--debug] [--pause]
+                 [--ignore_state] [--issue_component_matching] [--pr PR]
+                 [--start-at START_AT] [--no_since]
 
 Triage issue and pullrequest queues for Ansible. (NOTE: only useful if you
 have commit access to the repo in question.)
 
 optional arguments:
   -h, --help            show this help message and exit
-  --skip-no-update      skip processing if updated_at hasn't changed
+  --skip_no_update      skip processing if updated_at hasn't changed
+  --skip_no_update_timeout
+                        ignore skip if last process is X days old
   --collect_only        stop after caching issues
   --skip_module_repos   ignore the module repos
   --module_repos_only   only process the module repos
@@ -30,23 +32,21 @@ optional arguments:
                         seconds to sleep between loop iterations
   --skiprepo SKIPREPO   Github repo to skip triaging
   --repo REPO, -r REPO  Github repo to triage (defaults to all)
-  --gh-user GH_USER, -u GH_USER
-                        Github username or token of triager
-  --gh-pass GH_PASS, -P GH_PASS
-                        Github password of triager
-  --gh-token GH_TOKEN, -T GH_TOKEN
-                        Github token of triager
   --only_prs            Triage pullrequests only
   --only_issues         Triage issues only
   --only_open           Triage open issues|prs only
   --only_closed         Triage closed issues|prs only
   --verbose, -v         Verbose output
-  --dry-run, -n         Ignore all actions
+  --dry-run, -n         Don't make any changes
   --force, -f           Do not ask questions
   --safe_force          Prompt only on specific actions
   --debug, -d           Debug output
   --pause, -p           Always pause between prs|issues
-  --pr PR, --id PR      Triage only the specified pr|issue
+  --ignore_state        Do not skip processing closed issues
+  --issue_component_matching
+                        Try to enumerate the component labels for issues
+  --pr PR, --id PR      Triage only the specified pr|issue (separated by
+                        commas)
   --start-at START_AT, --resume_id START_AT
                         Start triage at the specified pr|issue
   --no_since            Do not use the since keyword to fetch issues
