@@ -8,7 +8,7 @@ usage: triage.py [-h] [--skip-no-update] [--collect_only]
                  [--force_rate_limit] [--sort {asc,desc}] [--logfile LOGFILE]
                  [--daemonize] [--daemonize_interval DAEMONIZE_INTERVAL]
                  [--skiprepo SKIPREPO] [--repo REPO] [--gh-user GH_USER]
-                 [--gh-pass GH_PASS] [--gh-token GH_TOKEN] [--dryrun]
+                 [--gh-pass GH_PASS] [--gh-token GH_TOKEN]
                  [--only_prs] [--only_issues] [--only_open] [--only_closed]
                  [--verbose] [--dry-run] [--force] [--safe_force] [--debug]
                  [--pause] [--pr PR] [--start-at START_AT] [--no_since]
@@ -36,13 +36,12 @@ optional arguments:
                         Github password of triager
   --gh-token GH_TOKEN, -T GH_TOKEN
                         Github token of triager
-  --dryrun, -n          Do not apply any changes.
   --only_prs            Triage pullrequests only
   --only_issues         Triage issues only
   --only_open           Triage open issues|prs only
   --only_closed         Triage closed issues|prs only
   --verbose, -v         Verbose output
-  --dry-run             Ignore all actions
+  --dry-run, -n         Ignore all actions
   --force, -f           Do not ask questions
   --safe_force          Prompt only on specific actions
   --debug, -d           Debug output
