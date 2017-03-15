@@ -63,9 +63,6 @@ def main():
     parser.add_argument("--repo", "-r", type=str,
                         help="Github repo to triage (defaults to all)")
 
-    parser.add_argument("--dryrun", "-n", action="store_true",
-                        help="Do not apply any changes.")
-
     parser.add_argument("--only_prs", action="store_true",
                         help="Triage pullrequests only")
     parser.add_argument("--only_issues", action="store_true",
@@ -78,8 +75,8 @@ def main():
 
     parser.add_argument("--verbose", "-v", action="store_true",
                         help="Verbose output")
-    parser.add_argument("--dry-run", action="store_true",
-                        help="Ignore all actions")
+    parser.add_argument("--dry-run", "-n", action="store_true",
+                        help="Don't make any changes")
     parser.add_argument("--force", "-f", action="store_true",
                         help="Do not ask questions")
     parser.add_argument("--safe_force", action="store_true",
