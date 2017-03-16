@@ -899,9 +899,10 @@ class AnsibleTriage(DefaultTriager):
                 logging.debug(e)
                 import epdb; epdb.st()
 
-            #import epdb; epdb.st()
-            if comment not in self.actions['comments']:
-                self.actions['comments'].append(comment)
+            # https://github.com/ansible/ansibullbot/issues/423
+            if len(comment) < 65536:
+                if comment not in self.actions['comments']:
+                    self.actions['comments'].append(comment)
 
         # https://github.com/ansible/ansibullbot/issues/293
         if self.issue.is_pullrequest():
