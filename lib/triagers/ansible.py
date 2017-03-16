@@ -1326,7 +1326,8 @@ class AnsibleTriage(DefaultTriager):
                 for x in numbers:
                     logging.info('fetch %s' % x)
                     issue = self.repos[repo]['repo'].get_issue(x)
-                    issues.append(issue)
+                    if issue:
+                        issues.append(issue)
 
                 self.repos[repo]['issues'] = issues
 
