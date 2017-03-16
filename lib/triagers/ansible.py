@@ -895,6 +895,19 @@ class AnsibleTriage(DefaultTriager):
                 if comment not in self.actions['comments']:
                     self.actions['comments'].append(comment)
 
+        # https://github.com/ansible/ansibullbot/issues/418
+        if self.meta['is_pullrequest']:
+            if self.meta['ci_state'] == 'failure':
+                if self.meta['is_ci_verified']:
+                    if 'ci_verified' not in self.issue.labels:
+                        self.actions['newlabel'].append('ci_verified')
+                else:
+                    if 'ci_verified' in self.issue.labels:
+                        self.actions['unlabel'].append('ci_verified')
+            else:
+                if 'ci_verified' in self.issue.labels:
+                    self.actions['unlabel'].append('ci_verified')
+
         # https://github.com/ansible/ansibullbot/issues/293
         if self.issue.is_pullrequest():
             if not self.meta['has_shippable'] and not self.meta['has_travis']:

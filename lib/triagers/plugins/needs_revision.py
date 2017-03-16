@@ -29,6 +29,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     has_travis = False
     has_travis_notification = False
     ci_state = None
+    is_ci_verified = False
     mstate = None
     change_requested = None
     #hreviews = None
@@ -59,6 +60,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'mergeable_state': mstate,
         'change_requested': change_requested,
         'ci_state': ci_state,
+        'is_ci_verified': is_ci_verified,
         'reviews': None,
         'www_reviews': None,
         'www_summary': None,
@@ -283,43 +285,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         (shippable_test_results, needs_testresult_notification) = \
             needs_shippable_test_results_notification(shippable, ci_status, iw)
 
-        '''
-        # FIXME - make the return structure simpler.
-        last_run = [x['target_url'] for x in ci_status][0]
-        last_run = last_run.split('/')[-1]
-
-        s_results = shippable.get_test_results(
-            last_run,
-            usecache=True,
-            filter_paths=['/testresults.json'],
-            filter_classes=['sanity']
-        )
-
-        if len(s_results) < 1:
-            needs_testresult_notification = False
-        else:
-            shippable_test_results = s_results[0]['testresults']
-
-            bpcs = iw.history.get_boilerplate_comments_content(
-                bfilter='shippable_test_result'
-            )
-            if bpcs:
-                # was this specific result shown?
-                exp = [x['job_url'] for x in shippable_test_results]
-                found = []
-                for ex in exp:
-                    for bp in bpcs:
-                        if ex in bp:
-                            if ex not in found:
-                                found.append(ex)
-                            break
-                if len(found) == len(exp):
-                    needs_testresult_notification = False
-                else:
-                    needs_testresult_notification = True
-            else:
-                needs_testresult_notification = True
-        '''
+    # https://github.com/ansible/ansibullbot/issues/418
+    not_verified = [x for x in shippable_test_results
+                    if not x['contents']['verified']]
+    if not not_verified:
+       is_ci_verified = True
 
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
@@ -346,6 +316,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'mergeable_state': mstate,
         'change_requested': change_requested,
         'ci_state': ci_state,
+        'is_ci_verified': is_ci_verified,
         'reviews': iw.reviews,
         'www_summary': www_summary,
         'www_reviews': www_reviews,
