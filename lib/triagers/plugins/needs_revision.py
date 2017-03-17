@@ -281,15 +281,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
     # test failure comments
     # https://github.com/ansible/ansibullbot/issues/404
-    if has_shippable and ci_state == 'failure':
-        (shippable_test_results, needs_testresult_notification) = \
-            needs_shippable_test_results_notification(shippable, ci_status, iw)
-
     # https://github.com/ansible/ansibullbot/issues/418
-    not_verified = [x for x in shippable_test_results
-                    if not x['contents']['verified']]
-    if not not_verified:
-       is_ci_verified = True
+    ci_verified = False
+    if has_shippable and ci_state == 'failure':
+        (shippable_test_results, ci_verified, needs_testresult_notification) = \
+            needs_shippable_test_results_notification(shippable, ci_status, iw)
 
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
@@ -316,7 +312,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'mergeable_state': mstate,
         'change_requested': change_requested,
         'ci_state': ci_state,
-        'is_ci_verified': is_ci_verified,
+        'is_ci_verified': ci_verified,
         'reviews': iw.reviews,
         'www_summary': www_summary,
         'www_reviews': www_reviews,
@@ -418,6 +414,7 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
 def needs_shippable_test_results_notification(shippable, ci_status, iw):
     '''Does an issue need the test result comment?'''
 
+    ci_verified = None
     shippable_test_results = None
     needs_testresult_notification = False
 
@@ -426,7 +423,7 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
     last_run = last_run.split('/')[-1]
 
     # filter by the last run id
-    shippable_test_results = shippable.get_test_results(
+    (shippable_test_results, ci_verified) = shippable.get_test_results(
         last_run,
         usecache=True,
         filter_paths=['/testresults/ansible-test-.*.json'],
@@ -456,4 +453,4 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
         else:
             needs_testresult_notification = True
 
-    return (shippable_test_results, needs_testresult_notification)
+    return (shippable_test_results, ci_verified, needs_testresult_notification)

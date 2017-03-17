@@ -118,7 +118,7 @@ class ShippableRuns(object):
             if rc == 400:
                 return None
 
-        if not os.path.isfile(cfile) or not jdata:
+        if not os.path.isfile(cfile) or not jdata or not usecache:
 
             headers = dict(
                 Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
@@ -155,29 +155,39 @@ class ShippableRuns(object):
 
         '''Fetch and munge the test results into proper json'''
 
-        # A "run" has many "jobs"
-        # A "job" has a "path"
-        # A "job" has many "testresults"
-        # A "testresult" has many "failureDetails"
-        # A "failureDetal" has a "classname"
-
-        # RUNID: 58b88d3fc2fe010500932af2
-        # https://api.shippable.com/jobs?runIds=58b88d3fc2fe010500932af
-        #JOBID: 58b88d4165094f0500a883ba
-        #JOBNUM: 41
-        #https://api.shippable.com/jobs/...83ba/consoles?download=true
-        #https://api.shippable.com/jobs/...83ba/jobTestReports
-        #https://api.shippable.com/jobs/...83ba/jobCoverageReports
+        # statusCode(s):
+        #   80: failed
+        #   30: success
 
         if filter_paths:
             fps = [re.compile(x) for x in filter_paths]
+
+        # ci verified data map
+        CVMAP = {}
+
+        # https://api.shippable.com/runs/58caf30337380a0800e31219
+        run_url = 'https://api.shippable.com/runs/' + run_id
+        run_data = self._get_url(run_url, usecache=usecache)
 
         results = []
         url = 'https://api.shippable.com/jobs?runIds=%s' % run_id
         rdata = self._get_url(url, usecache=usecache)
 
-        for rd in rdata:
+        for rix,rd in enumerate(rdata):
+
             job_id = rd.get('id')
+            job_number = rd.get('jobNumber')
+
+            dkey = '%s.%s' % (rd['runNumber'], rd['jobNumber'])
+            if dkey not in CVMAP:
+                CVMAP[dkey] = {
+                    'files_matched': [],
+                    'files_filtered': [],
+                    'test_data': []
+                }
+
+            CVMAP[dkey]['statusCode'] = rd['statusCode']
+
             jurl = 'https://api.shippable.com/jobs/%s/jobTestReports' % job_id
             jdata = self._get_url(jurl, usecache=usecache)
 
@@ -185,13 +195,20 @@ class ShippableRuns(object):
             if not jdata:
                 continue
 
-            for td in jdata:
+            for jid,td in enumerate(jdata):
+
                 if filter_paths:
                     matches = [x.match(td['path']) for x in fps]
                     matches = [x for x in matches if x]
                 else:
                     matches = True
+
+                if not matches:
+                    CVMAP[dkey]['files_filtered'].append(td['path'])
+
                 if matches:
+                    CVMAP[dkey]['files_matched'].append(td['path'])
+
                     td['run_id'] = run_id
                     td['job_id'] = job_id
 
@@ -202,6 +219,27 @@ class ShippableRuns(object):
                         #import epdb; epdb.st()
                         pass
 
+                    CVMAP[dkey]['test_data'].append(td)
                     results.append(td)
 
-        return results
+        ci_verified = True
+        if run_data['statusCode'] == 80:
+            for k,v in CVMAP.items():
+                if v['statusCode'] == 30:
+                    continue
+                if v['statusCode'] != 80:
+                    ci_verified = False
+                    break
+                if not v['files_matched']:
+                    ci_verified = False
+                    break
+
+                for td in v['test_data']:
+                    if not td['contents']:
+                        continue
+                    if not td['contents']['verified']:
+                        ci_verified = False
+                        break
+
+        #import epdb; epdb.st()
+        return (results, ci_verified)
