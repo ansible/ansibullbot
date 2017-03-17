@@ -284,7 +284,7 @@ network/ldap_attr.py: jtyr
 network/ldap_entry.py: jtyr
 network/lenovo: dkasberg
 network/lldp.py: andyhky
-network/netconf/netconf_config.py: lpenz
+network/netconf/netconf_config.py: lpenz userlerueda
 network/netvisor/: amitsi privateip gundalow Qalthos
 network/nmcli.py: alcamie101
 network/nsupdate.py: nerzhul
