@@ -53,6 +53,8 @@ from lib.decorators.github import RateLimited
 
 from lib.triagers.plugins.backports import get_backport_facts
 from lib.triagers.plugins.needs_revision import get_needs_revision_facts
+from lib.triagers.plugins.shipit import automergeable
+from lib.triagers.plugins.shipit import needs_community_review
 
 #BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 REPOS = [
@@ -743,6 +745,14 @@ class AnsibleTriage(DefaultTriager):
                 if 'needs_triage' not in self.actions['unlabel']:
                     self.actions['unlabel'].append('needs_triage')
 
+        # owner PRs
+        if self.meta['owner_pr']:
+            if 'owner_pr' not in self.issue.labels:
+                self.actions['newlabel'].append('owner_pr')
+        else:
+            if 'owner_pr' in self.issue.labels:
+                self.actions['unlabel'].append('owner_pr')
+
         # REVIEWS
         for rtype in ['core_review', 'committer_review', 'community_review']:
             if self.meta[rtype]:
@@ -752,14 +762,32 @@ class AnsibleTriage(DefaultTriager):
                 if rtype in self.issue.labels:
                     self.actions['unlabel'].append(rtype)
 
-        # Ignore needs_revision if this is a work in progress
+        # WIPs
         if self.issue.wip:
             if 'WIP' not in self.issue.labels:
                 self.actions['newlabel'].append('WIP')
             if 'shipit' in self.issue.labels:
                 self.actions['unlabel'].append('shipit')
+        else:
+            if 'WIP' in self.issue.labels:
+                self.actions['unlabel'].append('WIP')
 
-        elif self.meta['merge_commits'] or self.meta['has_commit_mention']:
+        # Merge Commits
+        if self.meta['merge_commits']:
+            if not self.meta['has_merge_commit_notification']:
+                comment = self.render_boilerplate(
+                    self.meta,
+                    boilerplate='merge_commit_notify'
+                )
+                self.actions['comments'].append(comment)
+                if 'merge_commit' not in self.issue.labels:
+                    self.actions['newlabel'].append('merge_commit')
+        else:
+            if 'merge_commit' in self.issue.labels:
+                self.actions['unlabel'].append('merge_commit')
+
+        # MERGE COMMITS
+        if self.meta['merge_commits']:
 
             if self.meta['merge_commits'] and \
                     not self.meta['has_merge_commit_notification']:
@@ -772,8 +800,9 @@ class AnsibleTriage(DefaultTriager):
                 if 'merge_commit' not in self.issue.labels:
                     self.actions['newlabel'].append('merge_commit')
 
-            if self.meta['has_commit_mention'] and \
-                    not self.meta['has_commit_mention_notification']:
+        # @YOU IN COMMIT MSGS
+        if self.meta['has_commit_mention']:
+            if not self.meta['has_commit_mention_notification']:
 
                 comment = self.render_boilerplate(
                     self.meta,
@@ -781,71 +810,43 @@ class AnsibleTriage(DefaultTriager):
                 )
                 self.actions['comments'].append(comment)
 
-        else:
+        # SHIPIT+AUTOMERGE
+        if self.meta['shipit']:
 
-            if 'WIP' in self.issue.labels:
-                self.actions['unlabel'].append('WIP')
+            if 'shipit' not in self.issue.labels:
+                self.actions['newlabel'].append('shipit')
 
-            if not self.meta['merge_commits']:
-                if 'merge_commit' in self.issue.labels:
-                    self.actions['unlabel'].append('merge_commit')
-
-            # SHIPIT
-            if self.meta['shipit'] and \
-                    self.meta['mergeable'] and \
-                    not self.meta['is_needs_revision'] and \
-                    not self.meta['is_needs_rebase'] and \
-                    not self.meta['is_needs_info'] and \
-                    self.meta['has_shippable']:
-
-                logging.info('shipit')
-                if self.meta['is_module'] and self.meta['module_match']:
-                    if len(self.issue.files) == 1:
-                        if not self.meta['is_new_module']:
-                            metadata = self.meta['module_match']['metadata']
-                            supported_by = metadata.get('supported_by')
-                            if supported_by == 'community':
-                                logging.info('auto-merge tests passed')
-                                if 'automerge' not in self.issue.labels:
-                                    self.actions['newlabel'].append('automerge')
-                                self.actions['merge'] = True
-
-                if 'shipit' not in self.issue.labels:
-                    self.actions['newlabel'].append('shipit')
+            if automergeable(self.meta, self.issue):
+                logging.info('auto-merge tests passed')
+                if 'automerge' not in self.issue.labels:
+                    self.actions['newlabel'].append('automerge')
+                self.actions['merge'] = True
             else:
 
-                # call for community review ...
-                if self.meta['mergeable'] and \
-                        not self.meta['is_needs_revision'] and \
-                        not self.meta['is_needs_rebase'] and \
-                        not self.meta['is_needs_info'] and \
-                        self.meta['ci_state'] != 'pending' and \
-                        self.meta['has_shippable']:
-
-                    comment = None
-
-                    mm = self.meta.get('module_match') or {}
-                    metadata = mm.get('metadata') or {}
-                    supported_by = metadata.get('supported_by')
-
-                    if supported_by == 'community' or \
-                            self.meta['is_new_module']:
-
-                        if self.meta['notify_community_shipit']:
-                            comment = self.render_boilerplate(
-                                self.meta,
-                                boilerplate='community_shipit_notify'
-                            )
-
-                    if comment and comment not in self.actions['comments']:
-                        self.actions['comments'].append(comment)
-
-                if 'shipit' in self.issue.labels:
-                    self.actions['unlabel'].append('shipit')
                 if 'automerge' in self.issue.labels:
                     self.actions['unlabel'].append('automerge')
 
-            # needs revision
+        else:
+
+            # not shipit and not automerge ...
+            if 'shipit' in self.issue.labels:
+                self.actions['unlabel'].append('shipit')
+            if 'automerge' in self.issue.labels:
+                self.actions['unlabel'].append('automerge')
+
+        # NAMESPACE MAINTAINER NOTIFY
+        if needs_community_review(self.meta, self.issue):
+
+            comment = self.render_boilerplate(
+                self.meta,
+                boilerplate='community_shipit_notify'
+            )
+
+            if comment and comment not in self.actions['comments']:
+                self.actions['comments'].append(comment)
+
+        # NEEDS REVISION
+        if not self.issue.wip:
             if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
                 if 'needs_revision' not in self.issue.labels:
                     self.actions['newlabel'].append('needs_revision')
@@ -853,14 +854,7 @@ class AnsibleTriage(DefaultTriager):
                 if 'needs_revision' in self.issue.labels:
                     self.actions['unlabel'].append('needs_revision')
 
-        # owner PRs
-        if self.meta['owner_pr']:
-            if 'owner_pr' not in self.issue.labels:
-                self.actions['newlabel'].append('owner_pr')
-        else:
-            if 'owner_pr' in self.issue.labels:
-                self.actions['unlabel'].append('owner_pr')
-
+        # NEEDS REBASE
         if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
             if 'needs_rebase' not in self.issue.labels:
                 self.actions['newlabel'].append('needs_rebase')
@@ -910,6 +904,7 @@ class AnsibleTriage(DefaultTriager):
                 if 'needs_ci' in self.issue.labels:
                     self.actions['unlabel'].append('needs_ci')
 
+        # MODULE CATEGORY LABELS
         if self.meta['is_new_module'] or self.meta['is_module']:
             # add topic labels
             for t in ['topic', 'subtopic']:
@@ -928,6 +923,7 @@ class AnsibleTriage(DefaultTriager):
                 if label not in self.issue.labels:
                     self.actions['newlabel'].append(label)
 
+        # NEW MODULE
         if self.meta['is_new_module']:
             if 'new_module' not in self.issue.labels:
                 self.actions['newlabel'].append('new_module')
