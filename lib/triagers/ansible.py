@@ -256,9 +256,6 @@ class AnsibleTriage(DefaultTriager):
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer.get_ansible_modules()
 
-        # get valid labels
-        self.valid_labels = self.get_valid_labels('ansible/ansible')
-
         # instantiate shippable api
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
