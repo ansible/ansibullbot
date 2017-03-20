@@ -704,7 +704,7 @@ class AnsibleTriage(DefaultTriager):
         return jdata
 
     def create_actions(self):
-        '''Parse facts and make actiosn from them'''
+        '''Parse facts and make actions from them'''
 
         if 'bot_broken' in self.meta['maintainer_commands'] or \
                 'bot_broken' in self.meta['submitter_commands'] or \
