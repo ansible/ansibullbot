@@ -5,6 +5,10 @@ def automergeable(meta, issuewrapper):
     '''Can this be automerged?'''
     issue = issuewrapper
 
+    # https://github.com/ansible/ansibullbot/issues/430
+    if meta['is_backport']:
+        return False
+
     if issue.wip:
         return False
 
