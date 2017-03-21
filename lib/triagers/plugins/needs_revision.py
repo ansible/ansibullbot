@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import os
+import pytz
 from pprint import pprint
 
 
@@ -412,6 +413,74 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
 
     return user_reviews
 
+class ShippableHistory(object):
+    def __init__(self, issuewrapper, shippable, ci_status):
+        self.iw = issuewrapper
+        self.shippable = shippable
+        self.ci_status = ci_status
+        self.history = []
+        self.join_history()
+
+    def join_history(self):
+
+        this_history = [x for x in self.iw.history.history]
+
+        # these should already be in the history
+        '''
+        for x in self.iw.commits:
+            xdate = x.commit.committer.date
+            xdate = pytz.utc.localize(xdate)
+            xhash = x.sha
+            this_history.append(
+                {
+                    'actor': iw.submitter,
+                    'event': 'committed',
+                    'created_at': xdate,
+                    'sha': xhash
+                }
+            )
+        '''
+
+        for x in self.ci_status:
+            turl = x['target_url']
+            run_id = turl.split('/')[-1]
+            rd = self.shippable.get_run_data(run_id, usecache=True)
+
+            ts = x['updated_at']
+            ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ')
+            ts = pytz.utc.localize(ts)
+
+            #import epdb; epdb.st()
+            this_history.append(
+                {
+                    'actor': rd.get('triggeredBy', {}).get('login'),
+                    'event': 'ci_run',
+                    'created_at': ts,
+                    'state': x['state'],
+                    'run_id': run_id,
+                    'status_id': x['id'],
+                    'sha': rd['commitSha']
+                }
+            )
+
+        this_history = sorted(this_history, key=lambda k: k['created_at'])
+        self.history = this_history
+
+    def info_for_last_ci_verified_run(self):
+        verified_idx = None
+        for idx,x in enumerate(self.history):
+            if x['event'] == 'labeled':
+                if x['label'] == 'ci_verified':
+                    verified_idx = idx
+        run_idx = None
+        for idx,x in enumerate(self.history):
+            if x['event'] == 'ci_run':
+                if x['created_at'] <= self.history[verified_idx]['created_at']:
+                    run_idx = idx
+        run_info = self.history[run_idx]
+        #import epdb; epdb.st()
+        return run_info
+
 
 def needs_shippable_test_results_notification(shippable, ci_status, iw):
     '''Does an issue need the test result comment?'''
@@ -432,22 +501,8 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
             filter_paths=['/testresults/ansible-test-.*.json'],
         )
 
-    commit_history = []
-    for x in iw.commits:
-        xdate = x.commit.committer.date
-        xhash = x.sha
-        commit_history.append((xdate, xhash))
-
-    run_data = []
-    runs = []
-    for x in ci_status:
-        turl = x['target_url']
-        run_id = turl.split('/')[-1]
-        rd = shippable.get_run_data(run_id, usecache=False)
-        ts = rd['endedAt']
-        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%fZ')
-        runs.append((run_id, ts, rd['commitSha'], rd['statusCode'], x['state']))
-        run_data.append(rd)
+    sh = ShippableHistory(iw, shippable, ci_status)
+    vinfo = sh.info_for_last_ci_verified_run()
     import epdb; epdb.st()
 
     # no results means no notification required

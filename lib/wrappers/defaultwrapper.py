@@ -725,7 +725,7 @@ class DefaultWrapper(object):
                 pickle.dump(pdata, f, protocol=2)
 
         # remove intermediate duplicates
-        jdata = sort_unique_statuses(jdata)
+        #jdata = sort_unique_statuses(jdata)
 
         return jdata
 
