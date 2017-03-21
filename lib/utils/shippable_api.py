@@ -151,6 +151,12 @@ class ShippableRuns(object):
 
         return jdata
 
+    def get_run_data(self, run_id, usecache=False):
+        # https://api.shippable.com/runs/58caf30337380a0800e31219
+        run_url = 'https://api.shippable.com/runs/' + run_id
+        run_data = self._get_url(run_url, usecache=usecache)
+        return run_data
+
     def get_test_results(self, run_id, usecache=False, filter_paths=[]):
 
         '''Fetch and munge the test results into proper json'''
@@ -165,9 +171,15 @@ class ShippableRuns(object):
         # ci verified data map
         CVMAP = {}
 
+        '''
         # https://api.shippable.com/runs/58caf30337380a0800e31219
         run_url = 'https://api.shippable.com/runs/' + run_id
         run_data = self._get_url(run_url, usecache=usecache)
+        '''
+        run_data = self.get_run_data(run_id, usecache=usecache)
+
+        # need this for ci_verified association
+        commitSha = run_data['commitSha']
 
         results = []
         url = 'https://api.shippable.com/jobs?runIds=%s' % run_id
@@ -176,7 +188,7 @@ class ShippableRuns(object):
         for rix,rd in enumerate(rdata):
 
             job_id = rd.get('id')
-            job_number = rd.get('jobNumber')
+            #job_number = rd.get('jobNumber')
 
             dkey = '%s.%s' % (rd['runNumber'], rd['jobNumber'])
             if dkey not in CVMAP:
@@ -242,4 +254,4 @@ class ShippableRuns(object):
                         break
 
         #import epdb; epdb.st()
-        return (results, ci_verified)
+        return (commitSha, results, ci_verified)

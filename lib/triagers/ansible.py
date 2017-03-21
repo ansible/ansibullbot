@@ -721,13 +721,13 @@ class AnsibleTriage(DefaultTriager):
             return None
 
         # UNKNOWN!!! ... sigh.
-        if self.issue.is_pullrequest() and \
-                self.meta['mergeable_state'] == 'unknown':
-            msg = 'skipping %s because it has a' % self.issue.number
-            msg += ' mergeable_state of unknown'
-            logging.warning(msg)
-            self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
-            return None
+        if self.issue.is_pullrequest():
+            if self.meta['mergeable_state'] == 'unknown':
+                msg = 'skipping %s because it has a' % self.issue.number
+                msg += ' mergeable_state of unknown'
+                logging.warning(msg)
+                self.actions = copy.deepcopy(self.EMPTY_ACTIONS)
+                return None
 
         # TRIAGE!!!
         if not self.issue.labels:
@@ -746,12 +746,13 @@ class AnsibleTriage(DefaultTriager):
                     self.actions['unlabel'].append('needs_triage')
 
         # owner PRs
-        if self.meta['owner_pr']:
-            if 'owner_pr' not in self.issue.labels:
-                self.actions['newlabel'].append('owner_pr')
-        else:
-            if 'owner_pr' in self.issue.labels:
-                self.actions['unlabel'].append('owner_pr')
+        if self.issue.is_pullrequest():
+            if self.meta['owner_pr']:
+                if 'owner_pr' not in self.issue.labels:
+                    self.actions['newlabel'].append('owner_pr')
+            else:
+                if 'owner_pr' in self.issue.labels:
+                    self.actions['unlabel'].append('owner_pr')
 
         # REVIEWS
         for rtype in ['core_review', 'committer_review', 'community_review']:
@@ -763,144 +764,148 @@ class AnsibleTriage(DefaultTriager):
                     self.actions['unlabel'].append(rtype)
 
         # WIPs
-        if self.issue.wip:
-            if 'WIP' not in self.issue.labels:
-                self.actions['newlabel'].append('WIP')
-            if 'shipit' in self.issue.labels:
-                self.actions['unlabel'].append('shipit')
-        else:
-            if 'WIP' in self.issue.labels:
-                self.actions['unlabel'].append('WIP')
+        if self.issue.is_pullrequest():
+            if self.issue.wip:
+                if 'WIP' not in self.issue.labels:
+                    self.actions['newlabel'].append('WIP')
+                if 'shipit' in self.issue.labels:
+                    self.actions['unlabel'].append('shipit')
+            else:
+                if 'WIP' in self.issue.labels:
+                    self.actions['unlabel'].append('WIP')
 
         # Merge Commits
-        if self.meta['merge_commits']:
-            if not self.meta['has_merge_commit_notification']:
-                comment = self.render_boilerplate(
-                    self.meta,
-                    boilerplate='merge_commit_notify'
-                )
-                self.actions['comments'].append(comment)
-                if 'merge_commit' not in self.issue.labels:
-                    self.actions['newlabel'].append('merge_commit')
-        else:
-            if 'merge_commit' in self.issue.labels:
-                self.actions['unlabel'].append('merge_commit')
+        if self.issue.is_pullrequest():
+            if self.meta['merge_commits']:
+                if not self.meta['has_merge_commit_notification']:
+                    comment = self.render_boilerplate(
+                        self.meta,
+                        boilerplate='merge_commit_notify'
+                    )
+                    self.actions['comments'].append(comment)
+                    if 'merge_commit' not in self.issue.labels:
+                        self.actions['newlabel'].append('merge_commit')
+            else:
+                if 'merge_commit' in self.issue.labels:
+                    self.actions['unlabel'].append('merge_commit')
 
         # MERGE COMMITS
-        if self.meta['merge_commits']:
+        if self.issue.is_pullrequest():
+            if self.meta['merge_commits']:
 
-            if self.meta['merge_commits'] and \
-                    not self.meta['has_merge_commit_notification']:
-                comment = self.render_boilerplate(
-                    self.meta,
-                    boilerplate='merge_commit_notify'
-                )
-                self.actions['comments'].append(comment)
+                if self.meta['merge_commits'] and \
+                        not self.meta['has_merge_commit_notification']:
+                    comment = self.render_boilerplate(
+                        self.meta,
+                        boilerplate='merge_commit_notify'
+                    )
+                    self.actions['comments'].append(comment)
 
-                if 'merge_commit' not in self.issue.labels:
-                    self.actions['newlabel'].append('merge_commit')
+                    if 'merge_commit' not in self.issue.labels:
+                        self.actions['newlabel'].append('merge_commit')
 
         # @YOU IN COMMIT MSGS
-        if self.meta['has_commit_mention']:
-            if not self.meta['has_commit_mention_notification']:
+        if self.issue.is_pullrequest():
+            if self.meta['has_commit_mention']:
+                if not self.meta['has_commit_mention_notification']:
 
-                comment = self.render_boilerplate(
-                    self.meta,
-                    boilerplate='commit_msg_mentions'
-                )
-                self.actions['comments'].append(comment)
+                    comment = self.render_boilerplate(
+                        self.meta,
+                        boilerplate='commit_msg_mentions'
+                    )
+                    self.actions['comments'].append(comment)
 
         # SHIPIT+AUTOMERGE
-        if self.meta['shipit']:
+        if self.issue.is_pullrequest():
+            if self.meta['shipit']:
 
-            if 'shipit' not in self.issue.labels:
-                self.actions['newlabel'].append('shipit')
+                if 'shipit' not in self.issue.labels:
+                    self.actions['newlabel'].append('shipit')
 
-            if automergeable(self.meta, self.issue):
-                logging.info('auto-merge tests passed')
-                if 'automerge' not in self.issue.labels:
-                    self.actions['newlabel'].append('automerge')
-                self.actions['merge'] = True
+                if automergeable(self.meta, self.issue):
+                    logging.info('auto-merge tests passed')
+                    if 'automerge' not in self.issue.labels:
+                        self.actions['newlabel'].append('automerge')
+                    self.actions['merge'] = True
+                else:
+
+                    if 'automerge' in self.issue.labels:
+                        self.actions['unlabel'].append('automerge')
+
             else:
 
+                # not shipit and not automerge ...
+                if 'shipit' in self.issue.labels:
+                    self.actions['unlabel'].append('shipit')
                 if 'automerge' in self.issue.labels:
                     self.actions['unlabel'].append('automerge')
 
-        else:
-
-            # not shipit and not automerge ...
-            if 'shipit' in self.issue.labels:
-                self.actions['unlabel'].append('shipit')
-            if 'automerge' in self.issue.labels:
-                self.actions['unlabel'].append('automerge')
-
         # NAMESPACE MAINTAINER NOTIFY
-        if needs_community_review(self.meta, self.issue):
+        if self.issue.is_pullrequest():
+            if needs_community_review(self.meta, self.issue):
 
-            comment = self.render_boilerplate(
-                self.meta,
-                boilerplate='community_shipit_notify'
-            )
+                comment = self.render_boilerplate(
+                    self.meta,
+                    boilerplate='community_shipit_notify'
+                )
 
-            if comment and comment not in self.actions['comments']:
-                self.actions['comments'].append(comment)
+                if comment and comment not in self.actions['comments']:
+                    self.actions['comments'].append(comment)
 
         # NEEDS REVISION
-        if not self.issue.wip:
-            if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
-                if 'needs_revision' not in self.issue.labels:
-                    self.actions['newlabel'].append('needs_revision')
-            else:
-                if 'needs_revision' in self.issue.labels:
-                    self.actions['unlabel'].append('needs_revision')
+        if self.issue.is_pullrequest():
+            if not self.issue.wip:
+                if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
+                    if 'needs_revision' not in self.issue.labels:
+                        self.actions['newlabel'].append('needs_revision')
+                else:
+                    if 'needs_revision' in self.issue.labels:
+                        self.actions['unlabel'].append('needs_revision')
 
         # NEEDS REBASE
-        if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
-            if 'needs_rebase' not in self.issue.labels:
-                self.actions['newlabel'].append('needs_rebase')
-        else:
-            if 'needs_rebase' in self.issue.labels:
-                self.actions['unlabel'].append('needs_rebase')
+        if self.issue.is_pullrequest():
+            if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
+                if 'needs_rebase' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_rebase')
+            else:
+                if 'needs_rebase' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_rebase')
 
         # travis-ci.org ...
-        if self.meta['has_travis'] and not self.meta['has_travis_notification']:
-            tvars = {'submitter': self.issue.submitter}
-            comment = self.render_boilerplate(
-                tvars,
-                boilerplate='travis_notify'
-            )
-            if comment not in self.actions['comments']:
-                self.actions['comments'].append(comment)
-
-        # shippable failures shippable_test_result
-        if self.meta['ci_state'] == 'failure' and \
-                self.meta['needs_testresult_notification']:
-            tvars = {
-                'submitter': self.issue.submitter,
-                'data': self.meta['shippable_test_results']
-            }
-
-            try:
+        if self.issue.is_pullrequest():
+            if self.meta['has_travis'] and \
+                    not self.meta['has_travis_notification']:
+                tvars = {'submitter': self.issue.submitter}
                 comment = self.render_boilerplate(
                     tvars,
-                    boilerplate='shippable_test_result'
+                    boilerplate='travis_notify'
                 )
-            except Exception as e:
-                logging.debug('breakpoint!')
-                logging.debug(e)
-                import epdb; epdb.st()
-
-            # https://github.com/ansible/ansibullbot/issues/423
-            if len(comment) < 65536:
                 if comment not in self.actions['comments']:
                     self.actions['comments'].append(comment)
 
-        # https://github.com/ansible/ansibullbot/issues/418
-        if self.meta['is_pullrequest']:
-            if self.meta['ci_state'] == 'failure':
-                if self.meta['is_ci_verified']:
-                    if 'ci_verified' not in self.issue.labels:
-                        self.actions['newlabel'].append('ci_verified')
+        # shippable failures shippable_test_result
+        if self.issue.is_pullrequest():
+            if self.meta['ci_state'] == 'failure' and \
+                    self.meta['needs_testresult_notification']:
+                tvars = {
+                    'submitter': self.issue.submitter,
+                    'data': self.meta['shippable_test_results']
+                }
+
+                try:
+                    comment = self.render_boilerplate(
+                        tvars,
+                        boilerplate='shippable_test_result'
+                    )
+                except Exception as e:
+                    logging.debug('breakpoint!')
+                    logging.debug(e)
+                    import epdb; epdb.st()
+
+                # https://github.com/ansible/ansibullbot/issues/423
+                if len(comment) < 65536:
+                    if comment not in self.actions['comments']:
+                        self.actions['comments'].append(comment)
 
         # https://github.com/ansible/ansibullbot/issues/293
         if self.issue.is_pullrequest():
@@ -1108,10 +1113,22 @@ class AnsibleTriage(DefaultTriager):
                     if label in self.actions['newlabel']:
                         self.actions['newlabel'].remove(label)
 
-        # https://github.com/ansible/ansibullbot/issues/312
-        if self.meta['remove_ci_verified']:
-            if 'ci_verified' in self.issue.labels:
-                self.actions['unlabel'].append('ci_verified')
+        if self.issue.is_pullrequest():
+
+            '''
+            # https://github.com/ansible/ansibullbot/issues/312
+            if self.meta['remove_ci_verified']:
+                if 'ci_verified' in self.issue.labels:
+                    self.actions['unlabel'].append('ci_verified')
+            '''
+
+            # https://github.com/ansible/ansibullbot/issues/418
+            if self.meta['is_ci_verified']:
+                if 'ci_verified' not in self.issue.labels:
+                    self.actions['newlabel'].append('ci_verified')
+            else:
+                if 'ci_verified' in self.issue.labels:
+                    self.actions['unlabel'].append('ci_verified')
 
         # https://github.com/ansible/ansibullbot/issues/367
         if self.meta['is_backport']:

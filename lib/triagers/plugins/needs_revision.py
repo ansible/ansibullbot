@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import json
 import logging
 import os
@@ -90,6 +91,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
     ci_states = [x['state'] for x in ci_status
                  if 'shippable.com' in x['target_url']]
+
     if not ci_states:
         ci_state = None
     else:
@@ -423,11 +425,30 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
     last_run = last_run.split('/')[-1]
 
     # filter by the last run id
-    (shippable_test_results, ci_verified) = shippable.get_test_results(
-        last_run,
-        usecache=True,
-        filter_paths=['/testresults/ansible-test-.*.json'],
-    )
+    (commitSha, shippable_test_results, ci_verified) = \
+        shippable.get_test_results(
+            last_run,
+            usecache=True,
+            filter_paths=['/testresults/ansible-test-.*.json'],
+        )
+
+    commit_history = []
+    for x in iw.commits:
+        xdate = x.commit.committer.date
+        xhash = x.sha
+        commit_history.append((xdate, xhash))
+
+    run_data = []
+    runs = []
+    for x in ci_status:
+        turl = x['target_url']
+        run_id = turl.split('/')[-1]
+        rd = shippable.get_run_data(run_id, usecache=False)
+        ts = rd['endedAt']
+        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%fZ')
+        runs.append((run_id, ts, rd['commitSha'], rd['statusCode'], x['state']))
+        run_data.append(rd)
+    import epdb; epdb.st()
 
     # no results means no notification required
     if len(shippable_test_results) < 1:
