@@ -279,7 +279,7 @@ network/illumos/: xen0l
 network/ios/: privateip rcarrillocruz
 network/iosxr/: privateip rcarrillocruz
 network/ipify_facts.py: resmo
-network/junos/: Qalthos ganeshnalawade
+network/junos/: Qalthos ganeshrn
 network/ldap_attr.py: jtyr
 network/ldap_entry.py: jtyr
 network/lenovo: dkasberg
