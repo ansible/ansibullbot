@@ -1978,30 +1978,42 @@ class AnsibleTriage(DefaultTriager):
                  x not in self.BOTNAMES]
             )
         )
+
         for event in self.issue.history.history:
 
-            if needs_info and event['actor'] == self.issue.submitter:
-                needs_info = False
+            if needs_info and \
+                    event['actor'] == self.issue.submitter and \
+                    event['event'] == 'commented':
 
-            if event['actor'] in self.BOTNAMES:
+                #print('%s set false' % event['actor'])
+                needs_info = False
                 continue
-            if event['actor'] not in maintainers:
+
+            if event['actor'] in self.BOTNAMES or \
+                    event['actor'] not in maintainers:
                 continue
 
             if event['event'] == 'labeled':
                 if event['label'] == 'needs_info':
+                    #print('%s set true' % event['actor'])
                     needs_info = True
                     continue
             if event['event'] == 'unlabeled':
                 if event['label'] == 'needs_info':
+                    #print('%s set false' % event['actor'])
                     needs_info = False
                     continue
             if event['event'] == 'commented':
                 if '!needs_info' in event['body']:
+                    #print('%s set false' % event['actor'])
                     needs_info = False
+                    continue
                 elif 'needs_info' in event['body']:
+                    #print('%s set true' % event['actor'])
                     needs_info = True
+                    continue
 
+        #import epdb; epdb.st()
         return needs_info
 
     def needs_info_timeout_facts(self, iw, meta):
@@ -2029,7 +2041,12 @@ class AnsibleTriage(DefaultTriager):
             return nif
 
         now = pytz.utc.localize(datetime.datetime.now())
-        delta = (now - la).days
+
+        if bpd:
+            delta = (now - bpd).days
+        else:
+            delta = (now - la).days
+
         if delta > NI_EXPIRE:
             nif['needs_info_action'] = 'close'
         elif delta > NI_WARN:
