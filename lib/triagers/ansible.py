@@ -1012,6 +1012,29 @@ class AnsibleTriage(DefaultTriager):
         elif 'needs_info' in self.issue.labels:
             self.actions['unlabel'].append('needs_info')
 
+        # needs_info warn/close?
+        if self.meta['is_needs_info'] and self.meta['needs_info_action']:
+
+            if self.meta['needs_info_action'] == 'close':
+                self.actions['close'] = True
+
+            itype = 'issue'
+            if self.issue.is_pullrequest():
+                itype = 'pullrequest'
+
+            tvars = {
+                'submitter': self.issue.submitter,
+                'action': self.meta['needs_info_action'],
+                'itype': itype
+            }
+
+            comment = self.render_boilerplate(
+                tvars,
+                boilerplate='needs_info_base'
+            )
+
+            self.actions['comments'].append(comment)
+
         # assignees?
         if self.meta['to_assign']:
             for user in self.meta['to_assign']:
@@ -1604,6 +1627,7 @@ class AnsibleTriage(DefaultTriager):
         # needsinfo?
         self.meta['is_needs_info'] = self.is_needsinfo()
         self.meta.update(self.process_comment_commands(iw, self.meta))
+        self.meta.update(self.needs_info_timeout_facts(iw, self.meta))
 
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
@@ -1979,6 +2003,39 @@ class AnsibleTriage(DefaultTriager):
                     needs_info = True
 
         return needs_info
+
+    def needs_info_timeout_facts(self, iw, meta):
+
+        # warn at 30 days
+        NI_WARN = int(C.DEFAULT_NEEDS_INFO_WARN)
+        # close at 60 days
+        NI_EXPIRE = int(C.DEFAULT_NEEDS_INFO_EXPIRE)
+
+        nif = {
+            'needs_info_action': None
+        }
+
+        if not meta['is_needs_info']:
+            return nif
+
+        if 'needs_info' not in iw.labels:
+            return nif
+
+        la = iw.history.label_last_applied('needs_info')
+
+        bpd = iw.history.last_date_for_boilerplate('needs_info_base')
+        if not bpd:
+            nif['needs_info_action'] = 'warn'
+            return nif
+
+        now = pytz.utc.localize(datetime.datetime.now())
+        delta = (now - la).days
+        if delta > NI_EXPIRE:
+            nif['needs_info_action'] = 'close'
+        elif delta > NI_WARN:
+            nif['needs_info_action'] = 'warn'
+
+        return nif
 
     def get_supported_by(self, issuewrapper, meta):
 
