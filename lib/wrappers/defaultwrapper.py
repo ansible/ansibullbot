@@ -20,6 +20,7 @@ from __future__ import print_function
 import inspect
 import json
 import logging
+import operator
 import os
 import pickle
 import shutil
@@ -654,6 +655,35 @@ class DefaultWrapper(object):
         return self.pull_raw
 
     def get_pullrequest_status(self, force_fetch=False):
+
+        def sort_unique_statuses(statuses):
+            '''reduce redundant statuses to the final run for each id'''
+            result = []
+            groups = []
+            thisgroup = []
+            for idx,x in enumerate(statuses):
+                if not thisgroup:
+                    thisgroup.append(x)
+                    if idx == len(statuses) - 1:
+                        groups.append(thisgroup)
+                    continue
+                else:
+                    if thisgroup[-1]['target_url'] == x['target_url']:
+                        thisgroup.append(x)
+                    else:
+                        groups.append(thisgroup)
+                        thisgroup = []
+                        thisgroup.append(x)
+
+                    if idx == len(statuses) - 1:
+                        groups.append(thisgroup)
+
+            for group in groups:
+                group.sort(key=operator.itemgetter('updated_at'))
+                result.append(group[-1])
+
+            return result
+
         fetched = False
         jdata = None
         pdata = None
@@ -693,6 +723,9 @@ class DefaultWrapper(object):
             pdata = (self.pullrequest.updated_at, jdata)
             with open(pfile, 'wb') as f:
                 pickle.dump(pdata, f, protocol=2)
+
+        # remove intermediate duplicates
+        jdata = sort_unique_statuses(jdata)
 
         return jdata
 
