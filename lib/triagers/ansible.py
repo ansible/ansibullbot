@@ -2034,10 +2034,8 @@ class AnsibleTriage(DefaultTriager):
             return nif
 
         la = iw.history.label_last_applied('needs_info')
-
         bpd = iw.history.last_date_for_boilerplate('needs_info_base')
         if not bpd:
-            nif['needs_info_action'] = 'warn'
             return nif
 
         now = pytz.utc.localize(datetime.datetime.now())

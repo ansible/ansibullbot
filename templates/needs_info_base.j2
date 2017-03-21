@@ -1,7 +1,7 @@
 {% if action == 'warn' %}
-@{{ submitter }} This issue is waiting for your response. Please respond or the {{ itype }} will be closed.
+@{{ submitter }} This {{ itype }} is waiting for your response. Please respond or the {{ itype }} will be closed.
 {% elif action  == 'close' %}
-@{{ submitter }} You have not responded to this issue so we will assume it no longer affects you. If you are still interested in this, please create a new {{ itype }}.
+@{{ submitter }} You have not responded to this {{ itype }} so we will assume it no longer affects you. If you are still interested in this, please create a new {{ itype }}.
 {% endif %}
 
 [click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
