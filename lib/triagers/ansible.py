@@ -1012,6 +1012,29 @@ class AnsibleTriage(DefaultTriager):
         elif 'needs_info' in self.issue.labels:
             self.actions['unlabel'].append('needs_info')
 
+        # needs_info warn/close?
+        if self.meta['is_needs_info'] and self.meta['needs_info_action']:
+
+            if self.meta['needs_info_action'] == 'close':
+                self.actions['close'] = True
+
+            itype = 'issue'
+            if self.issue.is_pullrequest():
+                itype = 'pullrequest'
+
+            tvars = {
+                'submitter': self.issue.submitter,
+                'action': self.meta['needs_info_action'],
+                'itype': itype
+            }
+
+            comment = self.render_boilerplate(
+                tvars,
+                boilerplate='needs_info_base'
+            )
+
+            self.actions['comments'].append(comment)
+
         # assignees?
         if self.meta['to_assign']:
             for user in self.meta['to_assign']:
@@ -1604,6 +1627,7 @@ class AnsibleTriage(DefaultTriager):
         # needsinfo?
         self.meta['is_needs_info'] = self.is_needsinfo()
         self.meta.update(self.process_comment_commands(iw, self.meta))
+        self.meta.update(self.needs_info_timeout_facts(iw, self.meta))
 
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
@@ -1954,31 +1978,79 @@ class AnsibleTriage(DefaultTriager):
                  x not in self.BOTNAMES]
             )
         )
+
         for event in self.issue.history.history:
 
-            if needs_info and event['actor'] == self.issue.submitter:
-                needs_info = False
+            if needs_info and \
+                    event['actor'] == self.issue.submitter and \
+                    event['event'] == 'commented':
 
-            if event['actor'] in self.BOTNAMES:
+                #print('%s set false' % event['actor'])
+                needs_info = False
                 continue
-            if event['actor'] not in maintainers:
+
+            if event['actor'] in self.BOTNAMES or \
+                    event['actor'] not in maintainers:
                 continue
 
             if event['event'] == 'labeled':
                 if event['label'] == 'needs_info':
+                    #print('%s set true' % event['actor'])
                     needs_info = True
                     continue
             if event['event'] == 'unlabeled':
                 if event['label'] == 'needs_info':
+                    #print('%s set false' % event['actor'])
                     needs_info = False
                     continue
             if event['event'] == 'commented':
                 if '!needs_info' in event['body']:
+                    #print('%s set false' % event['actor'])
                     needs_info = False
+                    continue
                 elif 'needs_info' in event['body']:
+                    #print('%s set true' % event['actor'])
                     needs_info = True
+                    continue
 
+        #import epdb; epdb.st()
         return needs_info
+
+    def needs_info_timeout_facts(self, iw, meta):
+
+        # warn at 30 days
+        NI_WARN = int(C.DEFAULT_NEEDS_INFO_WARN)
+        # close at 60 days
+        NI_EXPIRE = int(C.DEFAULT_NEEDS_INFO_EXPIRE)
+
+        nif = {
+            'needs_info_action': None
+        }
+
+        if not meta['is_needs_info']:
+            return nif
+
+        if 'needs_info' not in iw.labels:
+            return nif
+
+        la = iw.history.label_last_applied('needs_info')
+        bpd = iw.history.last_date_for_boilerplate('needs_info_base')
+        if not bpd:
+            return nif
+
+        now = pytz.utc.localize(datetime.datetime.now())
+
+        if bpd:
+            delta = (now - bpd).days
+        else:
+            delta = (now - la).days
+
+        if delta > NI_EXPIRE:
+            nif['needs_info_action'] = 'close'
+        elif delta > NI_WARN:
+            nif['needs_info_action'] = 'warn'
+
+        return nif
 
     def get_supported_by(self, issuewrapper, meta):
 

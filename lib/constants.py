@@ -95,7 +95,7 @@ def get_config(p, section, key, env_var, default,
         value = mk_boolean(value)
 
     elif value:
-        if value_type == 'integer':
+        if value_type == 'integer' or value_type == 'int':
             value = int(value)
 
         elif value_type == 'float':
@@ -235,4 +235,22 @@ DEFAULT_SHIPPABLE_TOKEN = get_config(
     '%s_SHIPPABLE_TOKEN' % PROG_NAME.upper(),
     False,
     value_type='string'
+)
+
+DEFAULT_NEEDS_INFO_WARN = get_config(
+    p,
+    'needs_info',
+    'warn',
+    '%s_NEEDS_INFO_WARN' % PROG_NAME.upper(),
+    30,
+    value_type='int'
+)
+
+DEFAULT_NEEDS_INFO_EXPIRE = get_config(
+    p,
+    'needs_info',
+    'expire',
+    '%s_NEEDS_INFO_EXPIRE' % PROG_NAME.upper(),
+    60,
+    value_type='int'
 )
