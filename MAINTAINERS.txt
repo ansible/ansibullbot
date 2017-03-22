@@ -273,7 +273,7 @@ network/dnsimple.py: drcapulet
 network/dnsmadeeasy.py: briceburg
 network/eos/: privateip
 network/exoscale/: resmo
-network/f5/: mhite caphrim007
+network/f5/: caphrim007
 network/haproxy.py: ravibhure
 network/illumos/: xen0l
 network/ios/: privateip rcarrillocruz
