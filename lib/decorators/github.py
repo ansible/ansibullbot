@@ -23,10 +23,16 @@ def get_rate_limit():
         logging.error('token auth not yet implemented here!')
         sys.exit(1)
     else:
-        rr = requests.get(
-            'https://api.github.com/rate_limit',
-            auth=(username, password)
-        )
+        success = False
+        while not success:
+            try:
+                rr = requests.get(
+                    'https://api.github.com/rate_limit',
+                    auth=(username, password)
+                )
+                success = True
+            except Exception:
+                time.sleep(60)
     return rr.json()
 
 

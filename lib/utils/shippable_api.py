@@ -118,6 +118,7 @@ class ShippableRuns(object):
             if rc == 400:
                 return None
 
+        resp = None
         if not os.path.isfile(cfile) or not jdata or not usecache:
 
             headers = dict(
@@ -149,6 +150,12 @@ class ShippableRuns(object):
                     json.dump([resp.status_code, {}], f)
                 return None
 
+        if resp and resp.status_code == 404:
+            import epdb; epdb.st()
+
+        if not jdata:
+            import epdb; epdb.st()
+
         return jdata
 
     def get_run_data(self, run_id, usecache=False):
@@ -163,7 +170,9 @@ class ShippableRuns(object):
 
         # statusCode(s):
         #   80: failed
+        #   80: timeout
         #   30: success
+        #   20: processing
 
         if filter_paths:
             fps = [re.compile(x) for x in filter_paths]
@@ -234,8 +243,9 @@ class ShippableRuns(object):
                     CVMAP[dkey]['test_data'].append(td)
                     results.append(td)
 
-        ci_verified = True
+        ci_verified = False
         if run_data['statusCode'] == 80:
+            ci_verified = True
             for k,v in CVMAP.items():
                 if v['statusCode'] == 30:
                     continue
@@ -249,9 +259,14 @@ class ShippableRuns(object):
                 for td in v['test_data']:
                     if not td['contents']:
                         continue
-                    if not td['contents']['verified']:
+                    if 'verified' not in td['contents']:
                         ci_verified = False
                         break
+                    elif not td['contents']['verified']:
+                        ci_verified = False
+                        break
+        #else:
+        #    import epdb; epdb.st()
 
         #import epdb; epdb.st()
-        return (commitSha, results, ci_verified)
+        return (run_data, commitSha, results, ci_verified)

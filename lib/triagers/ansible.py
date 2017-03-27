@@ -1139,6 +1139,20 @@ class AnsibleTriage(DefaultTriager):
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
     def check_safe_match(self):
+
+        if hasattr(self, 'safe_force_script'):
+
+            if self.safe_force_script:
+
+                with open(self.safe_force_script, 'rb') as f:
+                    fdata = f.read()
+                res = eval(fdata)
+                if res:
+                    self.force = True
+                else:
+                    self.force = False
+                return self.force
+
         safe = True
         for k,v in self.actions.iteritems():
             if k == 'merge' and v:

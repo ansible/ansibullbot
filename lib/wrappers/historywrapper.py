@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import logging
 import os
 import pickle
@@ -664,3 +665,63 @@ class HistoryWrapper(object):
                 else:
                     labeled.append(event['label'])
         return sorted(set(labeled))
+
+
+class ShippableHistory(object):
+
+    '''A helper to associate ci_verified labels to runs'''
+
+    def __init__(self, issuewrapper, shippable, ci_status):
+        self.iw = issuewrapper
+        self.shippable = shippable
+        self.ci_status = ci_status
+        self.history = []
+        self.join_history()
+
+    def join_history(self):
+
+        this_history = [x for x in self.iw.history.history]
+
+        for x in self.ci_status:
+            turl = x['target_url']
+            run_id = turl.split('/')[-1]
+            rd = self.shippable.get_run_data(run_id, usecache=True)
+
+            # sometimes the target urls are invalid
+            #   https://app.shippable.com/runs/58cc4fe537380a0800e4284c
+            #   https://app.shippable.com/github/ansible/ansible/runs/16628
+            if not rd:
+                continue
+
+            ts = x['updated_at']
+            ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%SZ')
+            ts = pytz.utc.localize(ts)
+
+            this_history.append(
+                {
+                    'actor': rd.get('triggeredBy', {}).get('login'),
+                    'event': 'ci_run',
+                    'created_at': ts,
+                    'state': x['state'],
+                    'run_id': run_id,
+                    'status_id': x['id'],
+                    'sha': rd['commitSha']
+                }
+            )
+
+        this_history = sorted(this_history, key=lambda k: k['created_at'])
+        self.history = this_history
+
+    def info_for_last_ci_verified_run(self):
+        verified_idx = None
+        for idx,x in enumerate(self.history):
+            if x['event'] == 'labeled':
+                if x['label'] == 'ci_verified':
+                    verified_idx = idx
+        run_idx = None
+        for idx,x in enumerate(self.history):
+            if x['event'] == 'ci_run':
+                if x['created_at'] <= self.history[verified_idx]['created_at']:
+                    run_idx = idx
+        run_info = self.history[run_idx]
+        return run_info
