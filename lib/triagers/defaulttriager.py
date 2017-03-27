@@ -1019,6 +1019,8 @@ class DefaultTriager(object):
     def check_safe_match(self):
         """ Turn force on or off depending on match characteristics """
 
+        import epdb; epdb.st()
+
         safe_match = False
 
         if self.action_count() == 0:

@@ -81,6 +81,8 @@ def main():
                         help="Do not ask questions")
     parser.add_argument("--safe_force", action="store_true",
                         help="Prompt only on specific actions")
+    parser.add_argument("--safe_force_script", type=str,
+                        help="Script to check safe force")
     parser.add_argument("--debug", "-d", action="store_true",
                         help="Debug output")
     parser.add_argument("--pause", "-p", action="store_true",
