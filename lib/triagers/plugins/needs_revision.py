@@ -287,8 +287,14 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     # https://github.com/ansible/ansibullbot/issues/418
     ci_verified = False
     if has_shippable and ci_state == 'failure':
-        (shippable_test_results, ci_verified, needs_testresult_notification) = \
-            needs_shippable_test_results_notification(shippable, ci_status, iw)
+        #(shippable_test_results, ci_verified, needs_testresult_notification) = \
+        #    needs_shippable_test_results_notification(shippable, ci_status, iw)
+
+        sh_meta = get_shippable_run_meta(shippable, ci_status, iw)
+        shippable_test_results = sh_meta['shippable_test_results']
+        ci_verified = sh_meta['ci_verified']
+        needs_testresult_notification = \
+            sh_meta['needs_testresult_notification']
 
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
@@ -414,8 +420,10 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
     return user_reviews
 
 
-def needs_shippable_test_results_notification(shippable, ci_status, iw):
+def get_shippable_run_meta(shippable, ci_status, iw):
     '''Does an issue need the test result comment?'''
+
+    # should only be here if the run state is failed ...
 
     ci_verified = None
     shippable_test_results = None
@@ -437,6 +445,7 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
 
     # do validation so that we're not stepping on toes
     if 'ci_verified' in iw.labels and not ci_verified:
+
         sh = ShippableHistory(iw, shippable, ci_status)
         vinfo = sh.info_for_last_ci_verified_run()
 
@@ -471,4 +480,11 @@ def needs_shippable_test_results_notification(shippable, ci_status, iw):
         else:
             needs_testresult_notification = True
 
-    return (shippable_test_results, ci_verified, needs_testresult_notification)
+    meta = {
+        'shippable_test_results': shippable_test_results,
+        'ci_verified': ci_verified,
+        'needs_testresult_notification': needs_testresult_notification
+    }
+
+    #return (shippable_test_results, ci_verified, needs_testresult_notification)
+    return meta
