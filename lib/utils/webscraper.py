@@ -197,6 +197,7 @@ class GithubWebScraper(object):
             url += 'q=%s' % number
 
             rr = self._request_url(url)
+
             soup = BeautifulSoup(rr.text, 'html.parser')
             data = self._parse_issue_summary_page(soup)
             issues.update(data['issues'])
@@ -508,13 +509,22 @@ class GithubWebScraper(object):
         failed = True
         while failed:
             logging.debug(url)
-            rr = requests.get(url, headers=headers)
-            if rr.reason == 'Too Many Requests':
-                logging.debug('too many www requests, sleeping %ss' % sleep)
+            try:
+                rr = requests.get(url, headers=headers)
+                if rr.reason == 'Too Many Requests':
+                    logging.debug(
+                        'too many www requests, sleeping %ss' % sleep
+                    )
+                    time.sleep(sleep)
+                    sleep = sleep * 2
+                else:
+                    failed = False
+            except requests.exceptions.ConnectionError:
+                # Failed to establish a new connection: [Errno 111] Connection
+                # refused',))
+                logging.debug('connection refused')
                 time.sleep(sleep)
                 sleep = sleep * 2
-            else:
-                failed = False
 
         return rr
 
