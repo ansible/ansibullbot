@@ -1125,10 +1125,12 @@ class AnsibleTriage(DefaultTriager):
                 if 'ci_verified' in self.issue.labels:
                     self.actions['unlabel'].append('ci_verified')
 
+            '''
             if 'ci_verified' in self.actions['unlabel'] or \
                     'ci_verified' in self.actions['newlabel']:
 
                 import epdb; epdb.st()
+            '''
 
         # https://github.com/ansible/ansibullbot/issues/367
         if self.meta['is_backport']:
