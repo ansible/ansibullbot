@@ -53,6 +53,7 @@ from lib.decorators.github import RateLimited
 
 from lib.triagers.plugins.backports import get_backport_facts
 from lib.triagers.plugins.needs_revision import get_needs_revision_facts
+from lib.triagers.plugins.needs_revision import get_shippable_run_facts
 from lib.triagers.plugins.shipit import automergeable
 from lib.triagers.plugins.shipit import needs_community_review
 
@@ -1115,20 +1116,19 @@ class AnsibleTriage(DefaultTriager):
 
         if self.issue.is_pullrequest():
 
-            '''
             # https://github.com/ansible/ansibullbot/issues/312
-            if self.meta['remove_ci_verified']:
-                if 'ci_verified' in self.issue.labels:
-                    self.actions['unlabel'].append('ci_verified')
-            '''
-
             # https://github.com/ansible/ansibullbot/issues/418
-            if self.meta['is_ci_verified']:
+            if self.meta['ci_verified']:
                 if 'ci_verified' not in self.issue.labels:
                     self.actions['newlabel'].append('ci_verified')
             else:
                 if 'ci_verified' in self.issue.labels:
                     self.actions['unlabel'].append('ci_verified')
+
+            if 'ci_verified' in self.actions['unlabel'] or \
+                    'ci_verified' in self.actions['newlabel']:
+
+                import epdb; epdb.st()
 
         # https://github.com/ansible/ansibullbot/issues/367
         if self.meta['is_backport']:
@@ -1657,10 +1657,15 @@ class AnsibleTriage(DefaultTriager):
                 self,
                 iw,
                 self.meta,
-                shippable=self.SR
+                #shippable=self.SR
             )
         )
         self.meta.update(self.get_notification_facts(iw, self.meta))
+
+        # ci_verified and test results
+        self.meta.update(
+            get_shippable_run_facts(iw, self.meta, shippable=self.SR)
+        )
 
         # needsinfo?
         self.meta['is_needs_info'] = self.is_needsinfo()
@@ -1683,8 +1688,10 @@ class AnsibleTriage(DefaultTriager):
         # triage from everyone else? ...
         self.meta.update(self.get_triage_facts(iw, self.meta))
 
+        '''
         # ci_verified
         self.meta.update(self.get_ci_verified_facts(iw, self.meta))
+        '''
 
         if iw.migrated:
             miw = iw._migrated_issue
@@ -2450,6 +2457,7 @@ class AnsibleTriage(DefaultTriager):
 
         return tfacts
 
+    '''
     def get_ci_verified_facts(self, issuewrapper, meta):
         # https://github.com/ansible/ansibullbot/issues/312
         cfacts = {
@@ -2476,3 +2484,4 @@ class AnsibleTriage(DefaultTriager):
             cfacts['remove_ci_verified'] = True
 
         return cfacts
+    '''

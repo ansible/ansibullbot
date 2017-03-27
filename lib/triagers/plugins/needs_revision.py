@@ -5,6 +5,7 @@ import logging
 import os
 from pprint import pprint
 
+from lib.utils.shippable_api import ShippableRuns
 from lib.wrappers.historywrapper import ShippableHistory
 
 
@@ -31,7 +32,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     has_travis = False
     has_travis_notification = False
     ci_state = None
-    is_ci_verified = False
+    #is_ci_verified = False
     mstate = None
     change_requested = None
     #hreviews = None
@@ -39,8 +40,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     ready_for_review = None
     has_commit_mention = False
     has_commit_mention_notification = False
-    needs_testresult_notification = False
-    shippable_test_results = None
+    #needs_testresult_notification = False
+    #shippable_test_results = None
 
     rmeta = {
         'committer_count': committer_count,
@@ -51,18 +52,18 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'has_shippable': has_shippable,
-        'shippable_test_results': shippable_test_results,
+        #'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
-        'needs_testresult_notification': needs_testresult_notification,
+        #'needs_testresult_notification': needs_testresult_notification,
         'merge_commits': merge_commits,
         'has_merge_commit_notification': has_merge_commit_notification,
         'mergeable': None,
         'mergeable_state': mstate,
         'change_requested': change_requested,
         'ci_state': ci_state,
-        'is_ci_verified': is_ci_verified,
+        #'is_ci_verified': is_ci_verified,
         'reviews': None,
         'www_reviews': None,
         'www_summary': None,
@@ -282,19 +283,19 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         else:
             has_travis_notification = False
 
-    # test failure comments
+    '''
+    # test failure comments + ci_verified label
     # https://github.com/ansible/ansibullbot/issues/404
     # https://github.com/ansible/ansibullbot/issues/418
     ci_verified = False
     if has_shippable and ci_state == 'failure':
-        #(shippable_test_results, ci_verified, needs_testresult_notification) = \
-        #    needs_shippable_test_results_notification(shippable, ci_status, iw)
 
         sh_meta = get_shippable_run_meta(shippable, ci_status, iw)
         shippable_test_results = sh_meta['shippable_test_results']
         ci_verified = sh_meta['ci_verified']
         needs_testresult_notification = \
             sh_meta['needs_testresult_notification']
+    '''
 
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
@@ -308,11 +309,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'is_needs_rebase': needs_rebase,
         'is_needs_rebase_msgs': needs_rebase_msgs,
         'has_shippable': has_shippable,
-        'shippable_test_results': shippable_test_results,
+        #'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
-        'needs_testresult_notification': needs_testresult_notification,
+        #'needs_testresult_notification': needs_testresult_notification,
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'merge_commits': merge_commits,
@@ -321,7 +322,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'mergeable_state': mstate,
         'change_requested': change_requested,
         'ci_state': ci_state,
-        'is_ci_verified': ci_verified,
+        #'is_ci_verified': ci_verified,
         'reviews': iw.reviews,
         'www_summary': www_summary,
         'www_reviews': www_reviews,
@@ -420,11 +421,31 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
     return user_reviews
 
 
-def get_shippable_run_meta(shippable, ci_status, iw):
+#def get_shippable_run_facts(shippable, ci_status, iw):
+def get_shippable_run_facts(iw, meta, shippable=None):
     '''Does an issue need the test result comment?'''
 
-    # should only be here if the run state is failed ...
+    # https://github.com/ansible/ansibullbot/issues/312
+    # https://github.com/ansible/ansibullbot/issues/404
+    # https://github.com/ansible/ansibullbot/issues/418
 
+    rmeta = {
+        'shippable_test_results': None,
+        'ci_verified': None,
+        'needs_testresult_notification': None
+    }
+
+    # should only be here if the run state is failed ...
+    if not meta['has_shippable']:
+        return rmeta
+    if meta['ci_state'] != 'failure':
+        return rmeta
+
+    if not shippable:
+        spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
+        shippable = ShippableRuns(cachedir=spath, writecache=True)
+
+    ci_status = iw.pullrequest_status
     ci_verified = None
     shippable_test_results = None
     needs_testresult_notification = False
@@ -439,9 +460,7 @@ def get_shippable_run_meta(shippable, ci_status, iw):
             last_run,
             usecache=True,
             filter_paths=['/testresults/ansible-test-.*.json'],
-        )
-
-    #import epdb; epdb.st()
+    )
 
     # do validation so that we're not stepping on toes
     if 'ci_verified' in iw.labels and not ci_verified:
@@ -453,8 +472,6 @@ def get_shippable_run_meta(shippable, ci_status, iw):
             ci_verified = True
         else:
             import epdb; epdb.st()
-
-    #import epdb; epdb.st()
 
     # no results means no notification required
     if len(shippable_test_results) < 1:
@@ -480,11 +497,10 @@ def get_shippable_run_meta(shippable, ci_status, iw):
         else:
             needs_testresult_notification = True
 
-    meta = {
+    rmeta = {
         'shippable_test_results': shippable_test_results,
         'ci_verified': ci_verified,
         'needs_testresult_notification': needs_testresult_notification
     }
 
-    #return (shippable_test_results, ci_verified, needs_testresult_notification)
-    return meta
+    return rmeta
