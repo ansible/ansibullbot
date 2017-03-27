@@ -169,6 +169,7 @@ cloud/vmware/vmware_: ansible
 cloud/vmware/vmware_guest: jctanner nerzhul dav1x
 cloud/vmware/vmware_guest_facts: nerzhul
 cloud/vmware/vmware_guest_snapshot: nerzhul
+cloud/vmware/vmware_resource_pool:  dav1x
 cloud/vmware/vmware_vm_shell.py: ritzk chrrrles
 cloud/vmware/vsphere_copy.py: dagwieers
 cloud/vmware/vsphere_guest.py: ansible
