@@ -52,6 +52,9 @@ from lib.utils.webscraper import GithubWebScraper
 from lib.decorators.github import RateLimited
 
 from lib.triagers.plugins.backports import get_backport_facts
+from lib.triagers.plugins.needs_info import is_needsinfo
+from lib.triagers.plugins.needs_info import needs_info_template_facts
+from lib.triagers.plugins.needs_info import needs_info_timeout_facts
 from lib.triagers.plugins.needs_revision import get_needs_revision_facts
 from lib.triagers.plugins.needs_revision import get_shippable_run_facts
 from lib.triagers.plugins.shipit import automergeable
@@ -1022,6 +1025,22 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['is_needs_info']:
             if 'needs_info' not in self.issue.labels:
                 self.actions['newlabel'].append('needs_info')
+
+            # template data warning
+            if self.meta['template_warning_required']:
+                tvars = {
+                    'submitter': self.issue.submitter,
+                    'itype': self.issue.github_type,
+                    'missing_sections': self.meta['template_missing_sections']
+                }
+
+                comment = self.render_boilerplate(
+                    tvars,
+                    boilerplate='issue_missing_data'
+                )
+
+                self.actions['comments'].append(comment)
+
         elif 'needs_info' in self.issue.labels:
             self.actions['unlabel'].append('needs_info')
 
@@ -1031,14 +1050,10 @@ class AnsibleTriage(DefaultTriager):
             if self.meta['needs_info_action'] == 'close':
                 self.actions['close'] = True
 
-            itype = 'issue'
-            if self.issue.is_pullrequest():
-                itype = 'pullrequest'
-
             tvars = {
                 'submitter': self.issue.submitter,
                 'action': self.meta['needs_info_action'],
-                'itype': itype
+                'itype': self.issue.github_type
             }
 
             comment = self.render_boilerplate(
@@ -1670,9 +1685,12 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # needsinfo?
-        self.meta['is_needs_info'] = self.is_needsinfo()
+        #self.meta['is_needs_info'] = self.is_needsinfo()
+        self.meta['is_needs_info'] = is_needsinfo(self)
         self.meta.update(self.process_comment_commands(iw, self.meta))
-        self.meta.update(self.needs_info_timeout_facts(iw, self.meta))
+        self.meta.update(needs_info_template_facts(iw, self.meta))
+        #self.meta.update(self.needs_info_timeout_facts(iw, self.meta))
+        self.meta.update(needs_info_timeout_facts(iw, self.meta))
 
         # shipit?
         self.meta.update(self.get_shipit_facts(iw, self.meta))
@@ -1998,6 +2016,7 @@ class AnsibleTriage(DefaultTriager):
 
         return mf
 
+    '''
     def is_needsinfo(self):
 
         needs_info = False
@@ -2062,7 +2081,9 @@ class AnsibleTriage(DefaultTriager):
 
         #import epdb; epdb.st()
         return needs_info
+    '''
 
+    '''
     def needs_info_timeout_facts(self, iw, meta):
 
         # warn at 30 days
@@ -2098,6 +2119,7 @@ class AnsibleTriage(DefaultTriager):
             nif['needs_info_action'] = 'warn'
 
         return nif
+    '''
 
     def get_supported_by(self, issuewrapper, meta):
 
