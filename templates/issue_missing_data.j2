@@ -1,10 +1,16 @@
-@{{ submitter }}: Greetings! Thanks for taking the time to open this issue. In order to handle your issue effectively, we need a bit more information. 
+@{{ submitter }} Greetings! Thanks for taking the time to open this {{ itype }}. In order for the community to handle your {{ itype }} effectively, we need a bit more information. 
 
 Here are the items we could not find in your description:
 {% for item in missing_sections %}
 {{ '- ' + item }}
 {% endfor %}
 
-Please ensure that you have properly selected ONE issue type, and that you have added the module name, spelled correctly, in the appropriate field.
+Please set the description of this {{ itype }} with this template:
+{% if itype == 'issue' %}
+https://raw.githubusercontent.com/ansible/ansible/devel/.github/ISSUE_TEMPLATE.md
+{% else %}
+https://raw.githubusercontent.com/ansible/ansible/devel/.github/PULL_REQUEST_TEMPLATE.md
+{% endif %}
+
 [click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
 <!--- boilerplate: issue_missing_data --->
