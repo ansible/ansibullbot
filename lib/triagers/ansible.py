@@ -991,11 +991,13 @@ class AnsibleTriage(DefaultTriager):
                             self.actions['newlabel'].append(cl)
 
         if self.meta['ansible_label_version']:
-            label = 'affects_%s' % self.meta['ansible_label_version']
-            if label not in self.issue.labels:
-                # do not re-add version labels
-                if not self.issue.history.was_unlabeled(label):
-                    self.actions['newlabel'].append(label)
+            vlabels = [x for x in self.issue.labels if x.startswith('affects_')]
+            if not vlabels:
+                label = 'affects_%s' % self.meta['ansible_label_version']
+                if label not in self.issue.labels:
+                    # do not re-add version labels
+                    if not self.issue.history.was_unlabeled(label):
+                        self.actions['newlabel'].append(label)
 
         if self.meta['issue_type']:
             label = self.ISSUE_TYPES.get(self.meta['issue_type'])
