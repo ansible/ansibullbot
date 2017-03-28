@@ -884,10 +884,17 @@ class DefaultWrapper(object):
         # rebase if >1 committer
         # error otherwise
 
-        # DEBUG - skipping merges for now until shipit algo is fully vetted
-        return None
+        # no merge commits allowed!
+        if self.merge_commits:
+            return None
 
-        if len(self.commits) == 1 and not self.merge_commits:
+        # unique the list of emails so that we can tell how many people
+        # have worked on this particular pullrequest
+        emails = sorted(set(self.committer_emails))
+
+        if len(self.commits) == 1 or len(emails) == 1:
+
+            # squash single committer PRs
 
             url = url = os.path.join(self.pullrequest.url, 'merge')
             headers = {}
@@ -909,8 +916,9 @@ class DefaultWrapper(object):
             else:
                 logging.error('merge successful for %s' % self.number)
 
-        elif (len(self.commits) == len(self.committer_emails)) and \
-                len(self.commits) <= 10:
+        elif (len(self.commits) == len(emails)) and len(self.commits) <= 10:
+
+            # rebase multi-committer PRs
 
             url = url = os.path.join(self.pullrequest.url, 'merge')
             headers = {}
@@ -930,7 +938,7 @@ class DefaultWrapper(object):
                 import epdb; epdb.st()
                 sys.exit(1)
             else:
-                logging.error('merge successful for %s' % self.number)
+                logging.info('merge successful for %s' % self.number)
 
         else:
             logging.error('merge skipped for %s' % self.number)
