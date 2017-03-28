@@ -34,12 +34,21 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
 
     # sort mapping by element id
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
-    #import pprint; pprint.pprint(match_map)
+
+
+    if match_map and 'ISSUE TYPE' not in [x[0] for x in match_map]:
+        if match_map[0][1] > 10:
+            match_map.insert(0, ('ISSUE TYPE', 0))
 
     # extract the sections based on their indexes
     total_indexes = len(match_map) - 1
     for idx,x in enumerate(match_map):
-        start_index = x[1] + (len(x[0]))
+
+        if x[1] > 0:
+            start_index = x[1] + (len(x[0]))
+        else:
+            start_index = 0
+
         # if last index, slice to the end
         if idx >= total_indexes:
             tdict[x[0]] = body[start_index:]
