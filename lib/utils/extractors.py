@@ -58,12 +58,14 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             tdict[x[0]] = body[start_index:stop_index]
 
     # lowercase the keys
+    ndict = {}
     for k,v in tdict.iteritems():
         ku = k.lower()
         if ku == 'plugin name':
             ku = 'component name'
-        tdict.pop(k, None)
-        tdict[ku] = v
+        ndict[ku] = v
+    if ndict != tdict:
+        tdict = ndict.copy()
 
     # make a raw component section for later processing
     component_raw = tdict.get('component name', '')

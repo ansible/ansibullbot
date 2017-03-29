@@ -1383,6 +1383,7 @@ class AnsibleTriage(DefaultTriager):
 
                 if os.path.isfile(self.pr) and os.access(self.pr, os.X_OK):
                     # allow for scripts when trying to target specific issues
+                    logging.info('executing %s' % self.pr)
                     (rc, so, se) = run_command(self.pr)
                     numbers = json.loads(so)
                     numbers = [int(x) for x in numbers]
@@ -1393,6 +1394,9 @@ class AnsibleTriage(DefaultTriager):
                         numbers = [int(x) for x in self.pr.split(',')]
                     else:
                         numbers = [int(self.pr)]
+
+                if self.args.start_at:
+                    numbers = [x for x in numbers if x <= self.args.start_at]
 
                 issues = []
                 for x in numbers:

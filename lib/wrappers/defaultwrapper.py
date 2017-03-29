@@ -396,23 +396,16 @@ class DefaultWrapper(object):
             labels.append(label.name)
         return labels
 
-    @RateLimited
+    #@RateLimited
     def get_template_data(self):
         """Extract templated data from an issue body"""
-
-        #if self.instance.pull_request:
-
-        if self.is_pullrequest():
-            issue_class = 'pullrequest'
-        else:
-            issue_class = 'issue'
 
         if not self.template_data:
             self.template_data = \
                 extract_template_data(
                     self.instance.body,
                     issue_number=self.number,
-                    issue_class=issue_class
+                    issue_class=self.github_type
                 )
         return self.template_data
 
