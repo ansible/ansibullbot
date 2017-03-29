@@ -1391,6 +1391,8 @@ class AnsibleTriage(DefaultTriager):
             logging.info('getting issue objs for %s' % repo)
             if self.pr or self.args.start_at:
 
+                self.update_issue_summaries(repopath=repo)
+
                 if self.pr:
                     if os.path.isfile(self.pr) and os.access(self.pr, os.X_OK):
                         # allow for scripts when trying to target spec issues
@@ -1407,7 +1409,6 @@ class AnsibleTriage(DefaultTriager):
                             numbers = [int(self.pr)]
                 else:
                     # generate valid list
-                    self.update_issue_summaries(repopath=repo)
                     numbers = \
                         [int(x) for x in self.issue_summaries[repo].keys()]
 
