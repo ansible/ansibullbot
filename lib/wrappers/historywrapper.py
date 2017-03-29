@@ -669,7 +669,7 @@ class HistoryWrapper(object):
 
 class ShippableHistory(object):
 
-    '''A helper to associate ci_verified labels to runs'''
+    '''A helper to associate ci_verified labels to runs/commits'''
 
     def __init__(self, issuewrapper, shippable, ci_status):
         self.iw = issuewrapper
@@ -713,6 +713,14 @@ class ShippableHistory(object):
         self.history = this_history
 
     def info_for_last_ci_verified_run(self):
+
+        '''Attempt to correlate the ci_label to a specific run'''
+
+        # The ci_status for an issue will "rollover", meaning older instances
+        # will go missing and can no longer be recalled. We just have to
+        # assume in those cases that the ci_verified label was added on a very
+        # old run. =(
+
         verified_idx = None
         for idx,x in enumerate(self.history):
             if x['event'] == 'labeled':
@@ -723,5 +731,8 @@ class ShippableHistory(object):
             if x['event'] == 'ci_run':
                 if x['created_at'] <= self.history[verified_idx]['created_at']:
                     run_idx = idx
-        run_info = self.history[run_idx]
-        return run_info
+        if run_idx:
+            run_info = self.history[run_idx]
+            return run_info
+        else:
+            return None
