@@ -2,11 +2,28 @@
 
 import argparse
 import json
+import logging
+import os
 from pprint import pprint
 from lib.utils.webscraper import GithubWebScraper
 
 
 def main():
+
+    logging.level = logging.DEBUG
+    logFormatter = \
+        logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    rootLogger = logging.getLogger()
+    rootLogger.setLevel(logging.DEBUG)
+
+    logfile = '/tmp/scraper.log'
+    fileHandler = logging.FileHandler("{0}/{1}".format(
+            os.path.dirname(logfile),
+            os.path.basename(logfile))
+    )
+    fileHandler.setFormatter(logFormatter)
+    rootLogger.addHandler(fileHandler)
+
     parser = argparse.ArgumentParser()
     parser.add_argument("url")
     args = parser.parse_args()
@@ -14,7 +31,6 @@ def main():
     gws = GithubWebScraper()
     summaries = gws.get_issue_summaries(None, baseurl=args.url)
     print(json.dumps(sorted([int(x) for x in summaries.keys()])))
-
 
 
 if __name__ == "__main__":
