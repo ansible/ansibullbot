@@ -1114,12 +1114,15 @@ class DefaultTriager(object):
         return action_meta
 
     def template_wizard(self):
+
+        DF = DescriptionFixer(self.issue, self.meta)
+
         print('################################################')
-        print(self.issue.new_description)
+        print(DF.new_description)
         print('################################################')
         cont = raw_input("Apply this new description? (Y/N)")
         if cont == 'Y':
-            self.issue.set_description(self.issue.new_description)
+            self.issue.set_description(DF.new_description)
 
     def execute_actions(self):
         """Turns the actions into API calls"""
