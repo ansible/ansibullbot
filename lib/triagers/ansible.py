@@ -1142,13 +1142,6 @@ class AnsibleTriage(DefaultTriager):
                 if 'ci_verified' in self.issue.labels:
                     self.actions['unlabel'].append('ci_verified')
 
-            '''
-            if 'ci_verified' in self.actions['unlabel'] or \
-                    'ci_verified' in self.actions['newlabel']:
-
-                import epdb; epdb.st()
-            '''
-
         # https://github.com/ansible/ansibullbot/issues/367
         if self.meta['is_backport']:
             if 'backport' not in self.issue.labels:
@@ -2017,111 +2010,6 @@ class AnsibleTriage(DefaultTriager):
             )
 
         return mf
-
-    '''
-    def is_needsinfo(self):
-
-        needs_info = False
-
-        maintainers = [x for x in self.ansible_members]
-        maintainers += [x for x in self.ansible_core_team]
-        if self.meta.get('module_match'):
-            maintainers += self.meta['module_match'].get('maintainers', [])
-            ns = self.meta['module_match'].get('namespace')
-            if ns:
-                maintainers += \
-                    self.module_indexer.get_maintainers_for_namespace(ns)
-            if self.meta['module_match']['authors']:
-                maintainers += self.meta['module_match']['authors']
-
-            rfn = self.meta['module_match']['repo_filename']
-            if self.module_indexer.committers.get(rfn):
-                maintainers += self.module_indexer.committers.get(rfn).keys()
-
-        maintainers = sorted(
-            set(
-                [x for x in maintainers
-                 if x != 'DEPRECATED' and
-                 x != self.issue.submitter and
-                 x not in self.BOTNAMES]
-            )
-        )
-
-        for event in self.issue.history.history:
-
-            if needs_info and \
-                    event['actor'] == self.issue.submitter and \
-                    event['event'] == 'commented':
-
-                #print('%s set false' % event['actor'])
-                needs_info = False
-                continue
-
-            if event['actor'] in self.BOTNAMES or \
-                    event['actor'] not in maintainers:
-                continue
-
-            if event['event'] == 'labeled':
-                if event['label'] == 'needs_info':
-                    #print('%s set true' % event['actor'])
-                    needs_info = True
-                    continue
-            if event['event'] == 'unlabeled':
-                if event['label'] == 'needs_info':
-                    #print('%s set false' % event['actor'])
-                    needs_info = False
-                    continue
-            if event['event'] == 'commented':
-                if '!needs_info' in event['body']:
-                    #print('%s set false' % event['actor'])
-                    needs_info = False
-                    continue
-                elif 'needs_info' in event['body']:
-                    #print('%s set true' % event['actor'])
-                    needs_info = True
-                    continue
-
-        #import epdb; epdb.st()
-        return needs_info
-    '''
-
-    '''
-    def needs_info_timeout_facts(self, iw, meta):
-
-        # warn at 30 days
-        NI_WARN = int(C.DEFAULT_NEEDS_INFO_WARN)
-        # close at 60 days
-        NI_EXPIRE = int(C.DEFAULT_NEEDS_INFO_EXPIRE)
-
-        nif = {
-            'needs_info_action': None
-        }
-
-        if not meta['is_needs_info']:
-            return nif
-
-        if 'needs_info' not in iw.labels:
-            return nif
-
-        la = iw.history.label_last_applied('needs_info')
-        bpd = iw.history.last_date_for_boilerplate('needs_info_base')
-        if not bpd:
-            return nif
-
-        now = pytz.utc.localize(datetime.datetime.now())
-
-        if bpd:
-            delta = (now - bpd).days
-        else:
-            delta = (now - la).days
-
-        if delta > NI_EXPIRE:
-            nif['needs_info_action'] = 'close'
-        elif delta > NI_WARN:
-            nif['needs_info_action'] = 'warn'
-
-        return nif
-    '''
 
     def get_supported_by(self, issuewrapper, meta):
 
