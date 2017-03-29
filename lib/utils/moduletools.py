@@ -121,6 +121,11 @@ class ModuleIndexer(object):
         if pattern == 'setup':
             pattern = 'system/setup.py'
 
+        # https://github.com/ansible/ansible/issues/18527
+        #   docker-container -> docker_container
+        if '-' in pattern:
+            pattern = pattern.replace('-', '_')
+
         if 'module_utils' in pattern:
             # https://github.com/ansible/ansible/issues/20368
             return None
