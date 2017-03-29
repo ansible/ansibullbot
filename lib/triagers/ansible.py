@@ -1169,7 +1169,8 @@ class AnsibleTriage(DefaultTriager):
         # https://github.com/ansible/ansibullbot/issues/29
         if self.meta['is_module']:
             if self.meta['module_match']['deprecated']:
-                import epdb; epdb.st()
+                if 'deprecated' not in self.issue.labels:
+                    self.actions['newlabel'].append('deprecated')
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
