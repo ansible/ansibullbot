@@ -1053,8 +1053,17 @@ class AnsibleTriage(DefaultTriager):
 
                 self.actions['comments'].append(comment)
 
+            if self.meta['template_missing_sections']:
+                if 'needs_template' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_template')
+
         elif 'needs_info' in self.issue.labels:
             self.actions['unlabel'].append('needs_info')
+
+        # clear the needs_template label
+        if not self.meta['is_needs_info']:
+            if 'needs_template' in self.issue.labels:
+                self.actions['unlabel'].append('needs_template')
 
         # needs_info warn/close?
         if self.meta['is_needs_info'] and self.meta['needs_info_action']:
