@@ -42,6 +42,7 @@ from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
 
 from lib.utils.extractors import extract_pr_number_from_comment
+from lib.utils.iterators import RepoIssuesIterator
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
@@ -368,6 +369,10 @@ class AnsibleTriage(DefaultTriager):
 
             for issue in item[1]['issues']:
 
+                if issue is None:
+                    import epdb; epdb.st()
+                    continue
+
                 iw = None
                 self.issue = None
                 self.meta = {}
@@ -378,18 +383,23 @@ class AnsibleTriage(DefaultTriager):
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(number)
 
+                '''
                 # skip issues based on args
                 if self.args.start_at:
-                    if number < self.args.start_at:
+                    if number > self.args.start_at:
                         logging.info('(start_at) skip %s' % number)
                         redo = False
                         continue
+                '''
+
+                '''
                 if self.args.start_at:
                     if number > self.start_at:
                         continue
                     else:
                         # unset for daemonize loops
                         self.args.start_at = None
+                '''
 
                 if issue.state == 'closed' and not self.args.ignore_state:
                     logging.info(str(number) + ' is closed, skipping')
@@ -1379,33 +1389,69 @@ class AnsibleTriage(DefaultTriager):
                 self.repos[repo]['issues'] = {}
 
             logging.info('getting issue objs for %s' % repo)
-            if self.pr:
+            if self.pr or self.args.start_at:
 
-                if os.path.isfile(self.pr) and os.access(self.pr, os.X_OK):
-                    # allow for scripts when trying to target specific issues
-                    logging.info('executing %s' % self.pr)
-                    (rc, so, se) = run_command(self.pr)
-                    numbers = json.loads(so)
-                    numbers = [int(x) for x in numbers]
+                if self.pr:
+                    if os.path.isfile(self.pr) and os.access(self.pr, os.X_OK):
+                        # allow for scripts when trying to target spec issues
+                        logging.info('executing %s' % self.pr)
+                        (rc, so, se) = run_command(self.pr)
+                        numbers = json.loads(so)
+                        numbers = [int(x) for x in numbers]
 
-                else:
-                    # the issue id can be a list separated by commas
-                    if ',' in self.pr:
-                        numbers = [int(x) for x in self.pr.split(',')]
                     else:
-                        numbers = [int(self.pr)]
+                        # the issue id can be a list separated by commas
+                        if ',' in self.pr:
+                            numbers = [int(x) for x in self.pr.split(',')]
+                        else:
+                            numbers = [int(self.pr)]
+                else:
+                    # generate valid list
+                    self.update_issue_summaries(repopath=repo)
+                    numbers = \
+                        [int(x) for x in self.issue_summaries[repo].keys()]
 
+                logging.info('%s numbers before filtering' % len(numbers))
                 if self.args.start_at:
                     numbers = [x for x in numbers if x <= self.args.start_at]
+                    logging.info('%s numbers after start-at' % len(numbers))
 
-                issues = []
-                for x in numbers:
-                    logging.info('fetch %s' % x)
-                    issue = self.repos[repo]['repo'].get_issue(x)
-                    if issue:
-                        issues.append(issue)
+                if self.args.only_issues:
+                    numbers = \
+                        [x for x in numbers
+                         if self.issue_summaries[repo][str(x)]['type'] ==
+                         'issue']
+                    logging.info('%s numbers are issues' % len(numbers))
+                if self.args.only_prs:
+                    numbers = \
+                        [x for x in numbers
+                         if self.issue_summaries[repo][str(x)]['type'] ==
+                         'pullrequest']
+                    logging.info('%s numbers are pulls' % len(numbers))
 
-                self.repos[repo]['issues'] = issues
+                if not self.args.only_closed:
+                    # just get the open ones unless otherwise specified
+                    numbers = \
+                        [x for x in numbers
+                         if self.issue_summaries[repo][str(x)]['state'] ==
+                         'open']
+                    logging.info('%s numbers are open' % len(numbers))
+                else:
+                    numbers = \
+                        [x for x in numbers
+                         if self.issue_summaries[repo][str(x)]['state'] ==
+                         'closed']
+                    logging.info('%s numbers are closed' % len(numbers))
+
+                logging.info('%s issues to fetch' % len(numbers))
+
+                # Use iterator to avoid requesting all issues upfront
+                numbers = sorted(numbers)
+                numbers = [x for x in reversed(numbers)]
+                self.repos[repo]['issues'] = RepoIssuesIterator(
+                    self.repos[repo]['repo'],
+                    numbers
+                )
 
             else:
 
