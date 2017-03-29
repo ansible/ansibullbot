@@ -1,3 +1,4 @@
 #!/bin/bash
 
-PYTHONPATH=$(pwd) scripts/scrape_github_issues_url 'https://github.com/ansible/ansible/issues?q=is%3Aopen%20label%3Aneeds_info'
+URL='https://github.com/ansible/ansible/labels/needs_info'
+PYTHONPATH=$(pwd) scripts/scrape_github_issues_url $URL
