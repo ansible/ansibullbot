@@ -293,7 +293,7 @@ network/nxos/: jedelman8 GGabriele privateip
 network/ordnance/: djh00t alexanderturner
 network/omapi_host.py: nerzhul
 network/openswitch/: privateip gundalow Qalthos
-network/ovs/: privateip
+network/ovs/: privateip rcarrillocruz
 network/panos/: ivanbojer jtschichold
 network/snmp_facts.py: ogenstad
 network/sros/: privateip gundalow Qalthos
