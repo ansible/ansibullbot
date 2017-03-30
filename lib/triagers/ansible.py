@@ -1061,7 +1061,8 @@ class AnsibleTriage(DefaultTriager):
             self.actions['unlabel'].append('needs_info')
 
         # clear the needs_template label
-        if not self.meta['is_needs_info']:
+        if not self.meta['is_needs_info'] or \
+                not self.meta['template_missing_sections']:
             if 'needs_template' in self.issue.labels:
                 self.actions['unlabel'].append('needs_template')
 
@@ -1439,6 +1440,10 @@ class AnsibleTriage(DefaultTriager):
                          if self.issue_summaries[repo][str(x)]['type'] ==
                          'pullrequest']
                     logging.info('%s numbers are pulls' % len(numbers))
+
+                # limit to those with summaries
+                numbers = [x for x in numbers
+                           if str(x) in self.issue_summaries[repo]]
 
                 if not self.args.only_closed:
                     # just get the open ones unless otherwise specified

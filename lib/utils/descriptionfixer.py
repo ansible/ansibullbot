@@ -68,7 +68,13 @@ class DescriptionFixer(object):
         # set summary
         summary = self.sections.get('summary')
         if not summary:
-            self.sections['summary'] = self.original
+            if self.original:
+                if not self.issuewrapper.template_data.keys():
+                    self.sections['summary'] = self.original
+                else:
+                    import epdb; epdb.st()
+            else:
+                self.sections['summary'] = self.issuewrapper.title
 
         # set issue type
         if not self.sections.get('issue type'):
@@ -86,7 +92,14 @@ class DescriptionFixer(object):
         # set component name
         if not self.sections.get('component name'):
             if not self.meta['is_module']:
-                self.sections['component name'] = 'core'
+                if self.issuewrapper.github_type == 'pullrequest':
+                    self.sections['component name'] = \
+                        '\n'.join(self.issuewrapper.files)
+                else:
+
+                    import epdb; epdb.st()
+
+                    self.sections['component name'] = 'core'
             else:
                 self.sections['component name'] = \
                     self.meta['module_match']['name'] + ' module'
@@ -119,3 +132,5 @@ class DescriptionFixer(object):
             else:
                 self.new_description += data + '\n'
             self.new_description += '\n'
+
+        #import epdb; epdb.st()

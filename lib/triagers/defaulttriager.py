@@ -93,6 +93,8 @@ class DefaultTriager(object):
         "P1","P2","P3","P4",
     ]
 
+    FIXED_ISSUES = []
+
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
                  start_at=None, always_pause=False, force=False,
@@ -291,9 +293,11 @@ class DefaultTriager(object):
         if self.match:
             self.module = self.match['name']
 
+        '''
         # Helper to fix issue descriptions ...
         DF = DescriptionFixer(self.issue, self.module_indexer, self.match)
         self.issue.new_description = DF.new_description
+        '''
 
     @RateLimited
     def _connect(self):
@@ -1019,8 +1023,6 @@ class DefaultTriager(object):
     def check_safe_match(self):
         """ Turn force on or off depending on match characteristics """
 
-        import epdb; epdb.st()
-
         safe_match = False
 
         if self.action_count() == 0:
@@ -1107,6 +1109,12 @@ class DefaultTriager(object):
                 # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
+        elif self.args.force_description_fixer:
+            if self.issue.html_url not in self.FIXED_ISSUES:
+                changed = self.template_wizard()
+                if changed:
+                    action_meta['REDO'] = True
+                self.FIXED_ISSUES.append(self.issue.html_url)
         else:
             print("Skipping.")
 
@@ -1120,9 +1128,13 @@ class DefaultTriager(object):
         print('################################################')
         print(DF.new_description)
         print('################################################')
+        print(self.issue.html_url)
         cont = raw_input("Apply this new description? (Y/N)")
         if cont == 'Y':
             self.issue.set_description(DF.new_description)
+            return True
+        else:
+            return False
 
     def execute_actions(self):
         """Turns the actions into API calls"""
