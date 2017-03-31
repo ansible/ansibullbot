@@ -72,7 +72,8 @@ class DescriptionFixer(object):
                 if not self.issuewrapper.template_data.keys():
                     self.sections['summary'] = self.original
                 else:
-                    import epdb; epdb.st()
+                    self.sections['summary'] = self.issuewrapper.title
+                    #import epdb; epdb.st()
             else:
                 self.sections['summary'] = self.issuewrapper.title
 
@@ -96,9 +97,7 @@ class DescriptionFixer(object):
                     self.sections['component name'] = \
                         '\n'.join(self.issuewrapper.files)
                 else:
-
-                    import epdb; epdb.st()
-
+                    #import epdb; epdb.st()
                     self.sections['component name'] = 'core'
             else:
                 self.sections['component name'] = \

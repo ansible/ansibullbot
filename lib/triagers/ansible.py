@@ -1030,7 +1030,7 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['is_py3']:
             if 'python3' not in self.issue.labels:
                 # do not re-add py3
-                if not self.issue.history.was_unlabeled(label):
+                if not self.issue.history.was_unlabeled('python3'):
                     self.actions['newlabel'].append('python3')
 
         # needs info?

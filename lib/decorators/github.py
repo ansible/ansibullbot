@@ -95,7 +95,7 @@ def RateLimited(fn):
                         logging.warning('content creation rate limit exceeded')
                         stime = 2*60
                     elif 'Label does not exist' in e.data['message']:
-                        return x
+                        return None
                     elif 'rate limit exceeded' in e.data['message']:
                         logging.warning('general rate limit exceeded')
                         stime = get_reset_time(fn, args)

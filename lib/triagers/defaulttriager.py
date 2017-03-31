@@ -1125,11 +1125,44 @@ class DefaultTriager(object):
 
         DF = DescriptionFixer(self.issue, self.meta)
 
+        '''
         print('################################################')
         print(DF.new_description)
         print('################################################')
-        print(self.issue.html_url)
-        cont = raw_input("Apply this new description? (Y/N)")
+        '''
+
+        old = self.issue.body
+        old_lines = old.split('\n')
+        new = DF.new_description
+        new_lines = new.split('\n')
+
+        total_lines = len(new_lines)
+        if len(old_lines) > total_lines:
+            total_lines = len(old_lines)
+
+        if len(new_lines) < total_lines:
+            delta = total_lines - len(new_lines)
+            for x in xrange(0, delta):
+                new_lines.append('')
+
+        if len(old_lines) < total_lines:
+            delta = total_lines - len(old_lines)
+            for x in xrange(0, delta):
+                old_lines.append('')
+
+        line = '--------------------------------------------------------'
+        padding = 100
+        print("%s|%s" % (line.ljust(padding), line))
+        for c1, c2 in zip(old_lines, new_lines):
+            if len(c1) > padding:
+                c1 = c1[:padding-4]
+            if len(c2) > padding:
+                c2 = c2[:padding-4]
+            print("%s|%s" % (c1.rstrip().ljust(padding), c2.rstrip()))
+        print("%s|%s" % (line.rstrip().ljust(padding), line))
+
+        print('# ' + self.issue.html_url)
+        cont = raw_input("Apply this new description? (Y/N) ")
         if cont == 'Y':
             self.issue.set_description(DF.new_description)
             return True

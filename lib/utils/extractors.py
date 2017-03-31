@@ -33,6 +33,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
         match = upper_body.find(section)
         if match != -1:
             match_map[section] = match
+
     if not match_map:
         return {}
 
@@ -41,7 +42,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
     for k,v in match_map.items():
         before = upper_body[v-1]
         after = upper_body[v + len(k)]
-        header = before + '$section' + after
+        header = before + '${section}' + after
         headers.append(header)
 
     # pick the most common header and re-search with it
@@ -57,7 +58,10 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
         match_map = {}
         t = Template(sheader)
         for section in SECTIONS:
-            tofind = t.substitute(section=section)
+            try:
+                tofind = t.substitute(section=section)
+            except Exception as e:
+                import epdb; epdb.st()
             match = upper_body.find(tofind)
             if match != -1:
                 match_map[section] = match + 1
