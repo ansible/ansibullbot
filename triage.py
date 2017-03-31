@@ -103,6 +103,10 @@ def main():
                         help="Start triage at the specified pr|issue")
     parser.add_argument("--no_since", action="store_true",
                         help="Do not use the since keyword to fetch issues")
+
+    parser.add_argument("--force_description_fixer", action="store_true",
+                        help="Always invoke the description fixer")
+
     args = parser.parse_args()
 
     # Run the triager ...

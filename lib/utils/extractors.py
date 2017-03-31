@@ -3,6 +3,8 @@
 import operator
 import re
 import shlex
+#from jinja2 import Template
+from string import Template
 
 def extract_template_data(body, issue_number=None, issue_class='issue'):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
@@ -11,8 +13,10 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
                 'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
                 'ACTUAL RESULTS']
 
+    '''
     ISSUE_TYPES = ['Bug Report', 'Feature Idea',
                    'Feature Request', 'Documentation Report']
+    '''
 
     tdict = {} #this is the final result to return
 
@@ -29,12 +33,44 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
         match = upper_body.find(section)
         if match != -1:
             match_map[section] = match
+
     if not match_map:
         return {}
 
+    # what are the header(s) being used?
+    headers = []
+    for k,v in match_map.items():
+        before = upper_body[v-1]
+        after = upper_body[v + len(k)]
+        header = before + '${section}' + after
+        headers.append(header)
+
+    # pick the most common header and re-search with it
+    if len(sorted(set(headers))) > 1:
+        choices = sorted(set(headers))
+        choice_totals = []
+        for choice in choices:
+            ctotal = len([x for x in headers if x == choice])
+            choice_totals.append((ctotal, choice))
+        choice_totals.sort(key=lambda tup: tup[0])
+        sheader = choice_totals[-1][1]
+
+        match_map = {}
+        t = Template(sheader)
+        for section in SECTIONS:
+            try:
+                tofind = t.substitute(section=section)
+            except Exception as e:
+                import epdb; epdb.st()
+            match = upper_body.find(tofind)
+            if match != -1:
+                match_map[section] = match + 1
+
+        if not match_map:
+            return {}
+
     # sort mapping by element id
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
-
 
     if match_map and 'ISSUE TYPE' not in [x[0] for x in match_map]:
         if match_map[0][1] > 10:
