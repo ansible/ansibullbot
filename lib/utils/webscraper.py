@@ -324,9 +324,21 @@ class GithubWebScraper(object):
 
         return commiters
 
-    def get_raw_content(self, namespace, repo, branch, filepath):
+    def get_raw_content(self, namespace, repo, branch, filepath,
+                        usecache=False):
         # https://raw.githubusercontent.com/
         #   ansible/ansibullbot/master/MAINTAINERS-CORE.txt
+
+        tdir = '/tmp/webscraper_cache'
+        tfile = os.path.join(tdir, filepath.replace('/', '__'))
+
+        if usecache and os.path.exists(tfile):
+            tdata = ''
+            with open(tfile, 'rb') as f:
+                tdata = f.read()
+            #import epdb; epdb.st()
+            return tdata
+
         url = os.path.join(
             'https://raw.githubusercontent.com',
             namespace,
@@ -334,6 +346,17 @@ class GithubWebScraper(object):
             filepath
         )
         rr = requests.get(url)
+
+        if rr.status_code != 200:
+            import epdb; epdb.st()
+
+        if usecache:
+            if not os.path.isdir(tdir):
+                os.makedirs(tdir)
+            with open(tfile, 'wb') as f:
+                f.write(rr.text.encode('ascii', 'ignore'))
+
+        #import epdb; epdb.st()
         return rr.text
 
     def scrape_pullrequest_summaries(self):

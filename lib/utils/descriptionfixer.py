@@ -18,9 +18,12 @@ class DescriptionFixer(object):
         self.issuewrapper = issuewrapper
         self.original = self.issuewrapper.instance.body
         self.meta = meta
+        self.missing = []
         self.sections = {}
+        self.section_map = {}
         self.section_order = []
         self.new_description = ''
+        self.retemplate = True
 
         self.cachedir = '~/.ansibullbot/cache'
         self.cachedir = os.path.expanduser(self.cachedir)
@@ -30,7 +33,9 @@ class DescriptionFixer(object):
             rfile = PTEMPLATE
         else:
             rfile = ITEMPLATE
-        raw = self.gws.get_raw_content('ansible', 'ansible', 'devel', rfile)
+        raw = self.gws.get_raw_content(
+            'ansible', 'ansible', 'devel', rfile, usecache=True
+        )
         rlines = raw.split('\n')
         for rline in rlines:
             if not rline.startswith('#####'):
@@ -39,6 +44,9 @@ class DescriptionFixer(object):
             section = section.lower()
             self.section_order.append(section)
             self.sections[section] = ''
+
+        if self.section_order[0] not in ['issue type', 'summary']:
+            import epdb; epdb.st()
 
         self.process()
         self.create_body()
@@ -64,6 +72,24 @@ class DescriptionFixer(object):
 
             if k not in self.section_order:
                 self.section_order.append(k)
+
+        # what is missing?
+        missing = [x for x in self.section_order]
+        missing = [x for x in missing if not self.sections.get(x)]
+        missing = [x for x in missing if x != 'additional information']
+        self.missing = missing
+
+        # inject section(s) versus recreating the whole body
+        if len(missing) < 2:
+            self.section_map = {}
+            dlines = self.original.split('\n')
+            for section in self.section_order:
+                for idx,x in enumerate(dlines):
+                    if x.startswith('##### %s' % section.upper()):
+                        self.section_map[section] = idx
+            if self.section_map:
+                self.retemplate = False
+                return None
 
         # set summary
         summary = self.sections.get('summary')
@@ -105,31 +131,59 @@ class DescriptionFixer(object):
 
         # set ansible version
         if not self.sections.get('ansible version'):
-            if self.meta['ansible_version']:
+            vlabels = [x for x in self.issuewrapper.labels
+                       if x.startswith('affects_')]
+            vlabels = sorted(set(vlabels))
+            if vlabels:
+                version = vlabels[0].split('_')[1]
+                self.sections['ansible version'] = version
+            elif self.meta['ansible_version']:
                 self.sections['ansible version'] = self.meta['ansible_version']
             else:
-                labeled = False
-                vlabels = [x for x in self.issuewrapper.labels
-                           if x.startswith('affects_')]
-                if vlabels:
-                    version = vlabels[0].split('_')[1]
-                    self.sections['ansible version'] = version
-                else:
-                    self.sections['ansible version'] = 'N/A'
+                self.sections['ansible version'] = 'N/A'
 
     def create_body(self):
 
-        # render to text
-        for section in self.section_order:
-            data = self.sections.get(section)
-            if data is None:
-                data = ''
-            self.new_description += '##### ' + section.upper() + '\n'
-            if section == 'issue type':
-                self.new_description += data.title()
+        if self.retemplate:
+            # render to text
+            for section in self.section_order:
+                data = self.sections.get(section)
+                if data is None:
+                    data = ''
+                self.new_description += '##### ' + section.upper() + '\n'
+                if section == 'issue type':
+                    self.new_description += data.title()
+                    self.new_description += '\n'
+                else:
+                    self.new_description += data + '\n'
                 self.new_description += '\n'
-            else:
-                self.new_description += data + '\n'
-            self.new_description += '\n'
+        else:
+            dlines = self.original.split('\n')
+            for msection in self.missing:
+                midx = self.section_order.index(msection)
+                post_section = self.section_order[midx + 1]
 
-        #import epdb; epdb.st()
+                if post_section not in self.section_map:
+                    import epdb; epdb.st()
+
+                post_line = self.section_map[post_section]
+
+                new_section = ['##### %s' % msection.upper()]
+                if msection == 'component name':
+                    if not self.meta['is_module']:
+                        if self.issuewrapper.github_type == 'pullrequest':
+                            new_section += self.issuewrapper.files
+                        else:
+                            new_section.append('core')
+                    else:
+                        new_section.append(
+                            self.meta['module_match']['name'] + ' module'
+                        )
+                new_section.append('')
+
+                #import epdb; epdb.st()
+                for x in reversed(new_section):
+                    dlines.insert(post_line, x)
+
+            #import epdb; epdb.st()
+            self.new_description = '\n'.join(dlines)
