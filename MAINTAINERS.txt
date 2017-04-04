@@ -447,6 +447,7 @@ web_infrastructure/htpasswd.py: ansible
 web_infrastructure/jboss.py: jhoekx
 web_infrastructure/jenkins_job.py: sermilrod
 web_infrastructure/jenkins_plugin.py: jtyr
+web_infrastructure/jenkins_script.py: hogarthj
 web_infrastructure/jira.py: tarka Slezhuk
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/supervisorctl.py: mattupstate inetfuture
