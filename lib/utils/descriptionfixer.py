@@ -61,6 +61,10 @@ class DescriptionFixer(object):
             if k == 'environment':
                 k = 'os / environment'
 
+            # use consistent key
+            if k == 'ansible configuration':
+                k = 'configuration'
+
             # cleanup duble newlines
             if v:
                 v = v.replace('\n\n', '\n')
@@ -142,7 +146,24 @@ class DescriptionFixer(object):
             else:
                 self.sections['ansible version'] = 'N/A'
 
+        '''
+        # cleanup remnant colons
+        for k,v in self.sections.iteritems():
+            if v.startswith(':\n'):
+                self.sections[k] = v[2:]
+                #import epdb; epdb.st()
+        '''
+
     def create_body(self):
+
+        # cleanup remnant colons
+        for k,v in self.sections.iteritems():
+            if v.startswith(':\n'):
+                self.sections[k] = v[2:]
+            elif v.startswith(': \n'):
+                self.sections[k] = v[3:]
+            elif v.startswith(':'):
+                self.sections[k] = v[1:]
 
         if self.retemplate:
             # render to text

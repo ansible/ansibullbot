@@ -8,10 +8,10 @@ from string import Template
 
 def extract_template_data(body, issue_number=None, issue_class='issue'):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
-                'ANSIBLE VERSION', 'CONFIGURATION',
+                'ANSIBLE VERSION', 'ANSIBLE CONFIGURATION', 'CONFIGURATION',
                 'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT',
                 'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
-                'ACTUAL RESULTS']
+                'ACTUAL RESULTS', 'ADDITIONAL INFORMATION']
 
     '''
     ISSUE_TYPES = ['Bug Report', 'Feature Idea',
@@ -68,6 +68,12 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
 
         if not match_map:
             return {}
+
+    elif len(headers) <= 1:
+        if headers and ('#' not in headers[0] and ':' not in headers[0]):
+            return {}
+        else:
+            import epdb; epdb.st()
 
     # sort mapping by element id
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
