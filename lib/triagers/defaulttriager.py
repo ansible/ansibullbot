@@ -1111,9 +1111,11 @@ class DefaultTriager(object):
                 action_meta['REDO'] = True
         elif self.args.force_description_fixer:
             if self.issue.html_url not in self.FIXED_ISSUES:
-                changed = self.template_wizard()
-                if changed:
-                    action_meta['REDO'] = True
+                if self.meta['template_missing_sections']:
+                    #import epdb; epdb.st()
+                    changed = self.template_wizard()
+                    if changed:
+                        action_meta['REDO'] = True
                 self.FIXED_ISSUES.append(self.issue.html_url)
         else:
             print("Skipping.")

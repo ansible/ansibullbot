@@ -1,24 +1,27 @@
 #!/usr/bin/env python
 
+import logging
 import operator
 import re
-import shlex
+#import shlex
 #from jinja2 import Template
 from string import Template
 
+
 def extract_template_data(body, issue_number=None, issue_class='issue'):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
-                'ANSIBLE VERSION', 'CONFIGURATION',
+                'ANSIBLE VERSION', 'ANSIBLE CONFIGURATION', 'CONFIGURATION',
                 'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT',
                 'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
-                'ACTUAL RESULTS']
+                'ACTUAL RESULTS', 'ADDITIONAL INFORMATION']
 
     '''
     ISSUE_TYPES = ['Bug Report', 'Feature Idea',
                    'Feature Request', 'Documentation Report']
     '''
 
-    tdict = {} #this is the final result to return
+    # this is the final result to return
+    tdict = {}
 
     if not body:
         return tdict
@@ -68,6 +71,16 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
 
         if not match_map:
             return {}
+
+    elif len(headers) <= 1:
+        if headers and \
+                ('#' not in headers[0] and
+                 ':' not in headers[0] and
+                 '*' not in headers[0]):
+            return {}
+        else:
+            logging.error('breakpoint!')
+            import epdb; epdb.st()
 
     # sort mapping by element id
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
@@ -131,7 +144,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
         v = v.strip()
 
         # clean more on critical sections
-        if k != 'summary' and not 'step' in k and not 'result' in k:
+        if k != 'summary' and 'step' not in k and 'result' not in k:
 
             # https://github.com/ansible/ansible-modules-extras/issues/2262
             if k == 'component name':
