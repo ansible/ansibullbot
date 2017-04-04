@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
+import logging
 import operator
 import re
-import shlex
+#import shlex
 #from jinja2 import Template
 from string import Template
+
 
 def extract_template_data(body, issue_number=None, issue_class='issue'):
     SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
@@ -18,7 +20,8 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
                    'Feature Request', 'Documentation Report']
     '''
 
-    tdict = {} #this is the final result to return
+    # this is the final result to return
+    tdict = {}
 
     if not body:
         return tdict
@@ -70,9 +73,13 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             return {}
 
     elif len(headers) <= 1:
-        if headers and ('#' not in headers[0] and ':' not in headers[0]):
+        if headers and \
+                ('#' not in headers[0] and
+                 ':' not in headers[0] and
+                 '*' not in headers[0]):
             return {}
         else:
+            logging.error('breakpoint!')
             import epdb; epdb.st()
 
     # sort mapping by element id
@@ -137,7 +144,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
         v = v.strip()
 
         # clean more on critical sections
-        if k != 'summary' and not 'step' in k and not 'result' in k:
+        if k != 'summary' and 'step' not in k and 'result' not in k:
 
             # https://github.com/ansible/ansible-modules-extras/issues/2262
             if k == 'component name':
