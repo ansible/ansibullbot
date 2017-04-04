@@ -197,7 +197,7 @@ database/postgresql/postgresql_db.py: ansible
 database/postgresql/postgresql_ext.py: dschep
 database/postgresql/postgresql_lang.py: jensdepuydt
 database/postgresql/postgresql_privs.py: b6d
-database/postgresql/postgresql_user.py: ansible
+database/postgresql/postgresql_user.py: nerzhul
 database/proxysql/proxysql_backend_servers.py: bmildren
 database/proxysql/proxysql_global_variables.py: bmildren
 database/proxysql/proxysql_manage_config.py: bmildren
