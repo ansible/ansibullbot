@@ -556,6 +556,18 @@ class DefaultWrapper(object):
                 print('ERROR: failed to edit assignees')
                 sys.exit(1)
 
+    @RateLimited
+    def _delete_comment_by_url(self, url):
+        # https://developer.github.com/v3/issues/comments/#delete-a-comment
+        headers, data = self.instance._requester.requestJsonAndCheck(
+            "DELETE",
+            url,
+        )
+        if headers['status'] != '204 No Content':
+            print('ERROR: failed to remove %s' % url)
+            sys.exit(1)
+        return True
+
     def is_pullrequest(self):
         if self.github_type == 'pullrequest':
             return True

@@ -521,6 +521,11 @@ class AnsibleTriage(DefaultTriager):
                         'component: %s' %
                         self.template_data.get('component_raw')
                     )
+                    if self.meta['template_missing_sections']:
+                        logging.info(
+                            'missing sections: ' +
+                            ', '.join(self.meta['template_missing_sections'])
+                        )
                     if self.meta['is_needs_revision']:
                         logging.info('needs_revision')
                         for msg in self.meta['is_needs_revision_msgs']:
@@ -699,6 +704,16 @@ class AnsibleTriage(DefaultTriager):
 
     def get_filemap(self):
         '''Read filemap and make re matchers'''
+
+        global FILEMAP_FILENAME
+
+        if not os.path.isfile(FILEMAP_FILENAME):
+            import lib.triagers.ansible as at
+            basedir = os.path.dirname(at.__file__)
+            basedir = os.path.dirname(basedir)
+            basedir = os.path.dirname(basedir)
+            FILEMAP_FILENAME = os.path.join(basedir, FILEMAP_FILENAME)
+
         with open(FILEMAP_FILENAME, 'rb') as f:
             jdata = json.loads(f.read())
         for k,v in jdata.iteritems():
@@ -1849,6 +1864,16 @@ class AnsibleTriage(DefaultTriager):
     def get_maintainers_mapping(self):
         maintainers = {}
         for fname in MAINTAINERS_FILES:
+            if not os.path.isfile(fname):
+                import lib.triagers.ansible as at
+                basedir = os.path.dirname(at.__file__)
+                basedir = os.path.dirname(basedir)
+                basedir = os.path.dirname(basedir)
+                fname = os.path.join(basedir, fname)
+                if not os.path.isfile(fname):
+                    continue
+                #import epdb; epdb.st()
+
             with open(fname, 'rb') as f:
                 for line in f.readlines():
                     #print(line)

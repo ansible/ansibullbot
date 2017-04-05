@@ -64,6 +64,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             try:
                 tofind = t.substitute(section=section)
             except Exception as e:
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             match = upper_body.find(tofind)
             if match != -1:
