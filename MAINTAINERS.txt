@@ -33,6 +33,7 @@ cloud/amazon/ec2_vol_facts.py: wimnat
 cloud/amazon/ec2_vol.py: ansible
 cloud/amazon/ec2_vpc_dhcp_options_facts.py: naslanidis
 cloud/amazon/ec2_vpc_dhcp_options.py: joelthompson
+cloud/amazon/ec2_vpc_endpoint.py: willthames
 cloud/amazon/ec2_vpc_igw.py:
 cloud/amazon/ec2_vpc_nacl_facts.py: brandond
 cloud/amazon/ec2_vpc_nacl.py: mmochan
