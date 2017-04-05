@@ -107,8 +107,6 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             stop_index = match_map[idx+1][1]
             tdict[x[0]] = body[start_index:stop_index]
 
-    import epdb; epdb.st()
-
     # lowercase the keys
     ndict = {}
     for k,v in tdict.iteritems():
