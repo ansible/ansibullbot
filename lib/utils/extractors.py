@@ -64,6 +64,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             try:
                 tofind = t.substitute(section=section)
             except Exception as e:
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             match = upper_body.find(tofind)
             if match != -1:
@@ -105,6 +106,8 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             # slice to the next section
             stop_index = match_map[idx+1][1]
             tdict[x[0]] = body[start_index:stop_index]
+
+    import epdb; epdb.st()
 
     # lowercase the keys
     ndict = {}
