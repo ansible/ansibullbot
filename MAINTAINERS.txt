@@ -324,7 +324,7 @@ notification/typetalk.py: tksmd
 packaging/language/bower.py: mwarkentin
 packaging/language/bundler.py: thoiberg
 packaging/language/composer.py: dmtrs resmo
-packaging/language/cpanm.py: franckcuny
+packaging/language/cpanm.py:
 packaging/language/easy_install.py: mattupstate
 packaging/language/gem.py: ansible
 packaging/language/maven_artifact.py: chrisisbeef
