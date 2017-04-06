@@ -803,7 +803,7 @@ class AnsibleTriage(DefaultTriager):
                 if 'WIP' in self.issue.labels:
                     self.actions['unlabel'].append('WIP')
 
-        # Merge Commits
+        # MERGE COMMITS
         if self.issue.is_pullrequest():
             if self.meta['merge_commits']:
                 if not self.meta['has_merge_commit_notification']:
@@ -817,21 +817,6 @@ class AnsibleTriage(DefaultTriager):
             else:
                 if 'merge_commit' in self.issue.labels:
                     self.actions['unlabel'].append('merge_commit')
-
-        # MERGE COMMITS
-        if self.issue.is_pullrequest():
-            if self.meta['merge_commits']:
-
-                if self.meta['merge_commits'] and \
-                        not self.meta['has_merge_commit_notification']:
-                    comment = self.render_boilerplate(
-                        self.meta,
-                        boilerplate='merge_commit_notify'
-                    )
-                    self.actions['comments'].append(comment)
-
-                    if 'merge_commit' not in self.issue.labels:
-                        self.actions['newlabel'].append('merge_commit')
 
         # @YOU IN COMMIT MSGS
         if self.issue.is_pullrequest():
