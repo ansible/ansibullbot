@@ -301,9 +301,9 @@ class GithubWebScraper(object):
         )
 
         rr = self._request_url(url)
-        #rr = requests.get(url)
-        soup = BeautifulSoup(rr.text, 'html.parser')
 
+        logging.debug('parsing blame page for %s' % filepath)
+        soup = BeautifulSoup(rr.text, 'html.parser')
         commits = soup.findAll('td', {'class': 'blame-commit-info'})
         for commit in commits:
             avatar = commit.find('img', {'class': 'avatar blame-commit-avatar'})
