@@ -375,6 +375,15 @@ class ModuleIndexer(object):
                 with open(pfile, 'wb') as f:
                     pickle.dump((mtime, self.commits[k]), f)
 
+    def last_commit_for_file(self, filepath):
+        # git log --pretty=format:'%H' -1
+        # lib/ansible/modules/cloud/amazon/ec2_metric_alarm.py
+        cmd = 'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
+            (self.checkoutdir, filepath)
+        (rc, so, se) = run_command(cmd)
+        #import epdb; epdb.st()
+        return so.strip()
+
     def get_module_blames(self):
         ''' Scrape the blame page for each module and store it '''
 
@@ -384,7 +393,9 @@ class ModuleIndexer(object):
             if not os.path.isfile(cpath):
                 self.committers[k] = {}
                 continue
-            mtime = os.path.getmtime(cpath)
+
+            #mtime = os.path.getmtime(cpath)
+            ghash = self.last_commit_for_file(k)
             pfile = os.path.join(
                 self.scraper_cache,
                 k.replace('/', '_') + '.blame.pickle'
@@ -397,7 +408,7 @@ class ModuleIndexer(object):
             else:
                 with open(pfile, 'rb') as f:
                     pdata = pickle.load(f)
-                if pdata[0] == mtime:
+                if pdata[0] == ghash:
                     self.committers[k] = pdata[1]
                 else:
                     refresh = True
@@ -406,7 +417,7 @@ class ModuleIndexer(object):
                 uns = self.gws.get_usernames_from_filename_blame(*sargs)
                 self.committers[k] = uns
                 with open(pfile, 'wb') as f:
-                    pickle.dump((mtime, uns), f)
+                    pickle.dump((ghash, uns), f)
 
         # add scraped logins to the map
         for k,v in self.modules.iteritems():
