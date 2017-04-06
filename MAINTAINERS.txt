@@ -375,7 +375,7 @@ source_control/github_hooks.py: pcgentry
 source_control/github_key.py:
 source_control/github_release.py: adrianmoisey
 source_control/gitlab_: dj-wasabi
-source_control/git.py: ansible
+source_control/git.py: robinro
 source_control/hg.py: yeukhon
 source_control/subversion.py: dsummersl
 storage/infinidat/: GR360RY vmalloc
