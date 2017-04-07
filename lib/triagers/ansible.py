@@ -383,24 +383,6 @@ class AnsibleTriage(DefaultTriager):
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(number)
 
-                '''
-                # skip issues based on args
-                if self.args.start_at:
-                    if number > self.args.start_at:
-                        logging.info('(start_at) skip %s' % number)
-                        redo = False
-                        continue
-                '''
-
-                '''
-                if self.args.start_at:
-                    if number > self.start_at:
-                        continue
-                    else:
-                        # unset for daemonize loops
-                        self.args.start_at = None
-                '''
-
                 if issue.state == 'closed' and not self.args.ignore_state:
                     logging.info(str(number) + ' is closed, skipping')
                     redo = False
@@ -438,6 +420,7 @@ class AnsibleTriage(DefaultTriager):
 
                     # create the wrapper
                     iw = IssueWrapper(
+                        github=self.ghw,
                         repo=repo,
                         issue=issue,
                         cachedir=self.cachedir
@@ -1173,6 +1156,35 @@ class AnsibleTriage(DefaultTriager):
                 if 'deprecated' not in self.issue.labels:
                     self.actions['newlabel'].append('deprecated')
 
+        # https://github.com/ansible/ansibullbot/issues/406
+        if self.issue.is_pullrequest():
+            if not self.meta['has_shippable_yaml']:
+
+                # no_shippable_yaml
+                if not self.meta['has_shippable_yaml_notification']:
+                    tvars = {'submitter': self.issue.submitter}
+                    comment = self.render_boilerplate(
+                        tvars,
+                        boilerplate='no_shippable_yaml'
+                    )
+                    self.actions['comments'].append(comment)
+
+                if 'needs_shippable' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_shippable')
+
+            else:
+                if 'needs_shippable' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_shippable')
+
+        # label PRs with missing repos
+        if self.issue.is_pullrequest():
+            if not self.meta['has_remote_repo']:
+                if 'needs_repo' not in self.issue.labels:
+                    self.actions['newlabel'].append('needs_repo')
+            else:
+                if 'needs_repo' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_repo')
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
@@ -1353,6 +1365,7 @@ class AnsibleTriage(DefaultTriager):
 
                 for issue in issues:
                     iw = IssueWrapper(
+                            github=self.ghw,
                             repo=thisrepo,
                             issue=issue,
                             cachedir=cachedir
@@ -1916,6 +1929,7 @@ class AnsibleTriage(DefaultTriager):
         mrepo = self.repos[repo_path]['repo']
         missue = mrepo.get_issue(number)
         mw = IssueWrapper(
+            github=self.ghw,
             repo=mrepo,
             issue=missue,
             cachedir=os.path.join(self.cachedir, repo_path)
