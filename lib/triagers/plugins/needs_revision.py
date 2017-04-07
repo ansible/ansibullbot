@@ -59,6 +59,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_shippable': has_shippable,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
+        'has_travis_notification': has_travis_notification,
         'merge_commits': merge_commits,
         'has_merge_commit_notification': has_merge_commit_notification,
         'mergeable': None,
