@@ -75,14 +75,12 @@ class DefaultWrapper(object):
 
     REQUIRED_SECTIONS = []
 
-    def __init__(self, repo=None, issue=None, cachedir=None):
+    def __init__(self, github=None, repo=None, issue=None, cachedir=None):
         self.meta = {}
         self.cachedir = cachedir
+        self.github = github
         self.repo = repo
         self.instance = issue
-        #self.number = self.instance.number
-        #self.current_labels = self.get_current_labels()
-        #self.current_labels = []
         self._assignees = False
         self._comments = False
         self._committer_emails = False
@@ -112,7 +110,6 @@ class DefaultWrapper(object):
         self.pr_status_raw = None
         self.pull_raw = None
         self.pr_files = []
-        #self.history = None
 
         self.full_cachedir = os.path.join(
             self.cachedir,
@@ -979,3 +976,66 @@ class DefaultWrapper(object):
                         self._migrated_from = bparts[2]
                         break
         return self._migrated
+
+    def pullrequest_filepath_exists(self, filepath):
+        ''' Check if a file exists on the submitters branch '''
+
+        # https://github.com/ansible/ansibullbot/issues/406
+
+        # https://developer.github.com/v3/repos/contents/
+        #   GET /repos/:owner/:repo/readme
+        # "contents_url":
+        # "https://api.github.com/repos/ganeshrn/ansible/contents/{+path}",
+
+        # self.pullrequest.head
+        #   - ref --> branch name
+        #   - repo.full_name
+
+        sha = self.pullrequest.head.sha
+        pdata = None
+        resp = None
+        cachefile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.number),
+            'shippable_yml.pickle'
+        )
+
+        try:
+            if os.path.isfile(cachefile):
+                with open(cachefile, 'rb') as f:
+                    pdata = pickle.load(f)
+        except Exception as e:
+            logging.error('failed to unpickle %s %s' % (cachefile, str(e)))
+
+        if not pdata or pdata[0] != sha:
+
+            if self.pullrequest.head.repo:
+
+                url = 'https://api.github.com/repos/'
+                url += self.pullrequest.head.repo.full_name
+                url += '/contents/'
+                url += filepath
+
+                resp = self.pullrequest._requester.requestJson(
+                    "GET",
+                    url,
+                    input={'ref': self.pullrequest.head.ref}
+                )
+
+            else:
+                # https://github.com/ansible/ansible/pull/19891
+                # Sometimes the repo repo/branch has disappeared
+                resp = [None]
+
+            pdata = [sha, resp]
+            with open(cachefile, 'wb') as f:
+                pickle.dump(pdata, f, protocol=2)
+
+        else:
+            resp = pdata[1]
+
+        result = False
+        if resp[0]:
+            result = True
+        return result

@@ -43,6 +43,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     #needs_testresult_notification = False
     #shippable_test_results = None
 
+    has_shippable_yaml = None
+    has_shippable_yaml_notification = None
+
+    has_remote_repo = None
+
     rmeta = {
         'committer_count': committer_count,
         'is_needs_revision': needs_revision,
@@ -52,22 +57,20 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'has_shippable': has_shippable,
-        #'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
-        'has_travis_notification': has_travis_notification,
-        #'needs_testresult_notification': needs_testresult_notification,
         'merge_commits': merge_commits,
         'has_merge_commit_notification': has_merge_commit_notification,
         'mergeable': None,
         'mergeable_state': mstate,
         'change_requested': change_requested,
-        'ci_state': ci_state,
-        #'is_ci_verified': is_ci_verified,
         'reviews': None,
         'www_reviews': None,
         'www_summary': None,
-        'ready_for_review': ready_for_review
+        'ready_for_review': ready_for_review,
+        'has_shippable_yaml': has_shippable_yaml,
+        'has_shippable_yaml_notification': has_shippable_yaml_notification,
+        'has_remote_repo': has_remote_repo
     }
 
     if not iw.is_pullrequest():
@@ -267,11 +270,11 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
             needs_revision = True
             needs_revision_msgs.append('@ in commit message')
             break
+
     # make sure they're notified about the problem
     if has_commit_mention:
         if 'commit_msg_mentions' in iw.history.get_boilerplate_comments():
             has_commit_mention_notification = True
-        #import epdb; epdb.st()
 
     if has_travis:
         needs_rebase = True
@@ -283,19 +286,21 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         else:
             has_travis_notification = False
 
-    '''
-    # test failure comments + ci_verified label
-    # https://github.com/ansible/ansibullbot/issues/404
-    # https://github.com/ansible/ansibullbot/issues/418
-    ci_verified = False
-    if has_shippable and ci_state == 'failure':
+    # keep track of who deleted their repo/branch
+    if iw.pullrequest.head.repo:
+        has_remote_repo = True
+    else:
+        has_remote_repo = False
 
-        sh_meta = get_shippable_run_meta(shippable, ci_status, iw)
-        shippable_test_results = sh_meta['shippable_test_results']
-        ci_verified = sh_meta['ci_verified']
-        needs_testresult_notification = \
-            sh_meta['needs_testresult_notification']
-    '''
+    # https://github.com/ansible/ansibullbot/issues/406
+    has_shippable_yaml = iw.pullrequest_filepath_exists('shippable.yml')
+    if not has_shippable_yaml:
+        needs_rebase = True
+        needs_rebase_msgs.append('missing shippable.yml')
+        if 'no_shippable_yaml' in iw.history.get_boilerplate_comments():
+            has_shippable_yaml_notification = True
+        else:
+            has_shippable_yaml_notification = False
 
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
@@ -309,11 +314,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'is_needs_rebase': needs_rebase,
         'is_needs_rebase_msgs': needs_rebase_msgs,
         'has_shippable': has_shippable,
-        #'shippable_test_results': shippable_test_results,
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
-        #'needs_testresult_notification': needs_testresult_notification,
         'has_commit_mention': has_commit_mention,
         'has_commit_mention_notification': has_commit_mention_notification,
         'merge_commits': merge_commits,
@@ -322,11 +325,13 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'mergeable_state': mstate,
         'change_requested': change_requested,
         'ci_state': ci_state,
-        #'is_ci_verified': ci_verified,
         'reviews': iw.reviews,
         'www_summary': www_summary,
         'www_reviews': www_reviews,
-        'ready_for_review': ready_for_review
+        'ready_for_review': ready_for_review,
+        'has_shippable_yaml': has_shippable_yaml,
+        'has_shippable_yaml_notification': has_shippable_yaml_notification,
+        'has_remote_repo': has_remote_repo
     }
 
     return rmeta
