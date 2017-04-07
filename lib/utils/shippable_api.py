@@ -187,6 +187,10 @@ class ShippableRuns(object):
         '''
         run_data = self.get_run_data(run_id, usecache=usecache)
 
+        # https://github.com/ansible/ansibullbot/issues/472
+        if not run_data:
+            return (run_data, None, [], False)
+
         # need this for ci_verified association
         commitSha = run_data['commitSha']
 
@@ -265,8 +269,5 @@ class ShippableRuns(object):
                     elif not td['contents']['verified']:
                         ci_verified = False
                         break
-        #else:
-        #    import epdb; epdb.st()
 
-        #import epdb; epdb.st()
         return (run_data, commitSha, results, ci_verified)
