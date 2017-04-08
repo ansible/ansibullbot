@@ -85,7 +85,13 @@ def needs_info_template_facts(iw, meta):
 
     itype = iw.template_data.get('issue type')
     missing = []
-    expected = ['issue type', 'ansible version', 'component name']
+
+    # theoretically we only need to know the issue type for a PR
+    if iw.is_pullrequest():
+        expected = ['issue type']
+    else:
+        expected = ['issue type', 'ansible version', 'component name']
+
     for exp in expected:
         if exp not in iw.template_data:
             if itype == 'feature idea' and exp == 'ansible version':
