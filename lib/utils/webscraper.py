@@ -170,6 +170,24 @@ class GithubWebScraper(object):
             if not changes:
                 break
 
+        # get missing
+        if not baseurl:
+            numbers = sorted([int(x) for x in issues.keys()])
+            missing = [x for x in xrange(1, numbers[-1]) if x not in numbers]
+            for x in missing:
+                summary = self.get_single_issue_summary(repo_url, x, force=True)
+                if summary:
+                    issues[str(x)] = summary
+
+        # get missing timestamps
+        if not baseurl:
+            numbers = sorted([int(x) for x in issues.keys()])
+            missing = [x for x in numbers if not issues[str(x)]['updated_at']]
+            for x in missing:
+                summary = self.get_single_issue_summary(repo_url, x, force=True)
+                if summary:
+                    issues[str(x)] = summary
+
         # save the cache
         if not baseurl:
             self.dump_summaries(repo_url, issues)
@@ -189,21 +207,22 @@ class GithubWebScraper(object):
         # get cached
         issues = self.load_summaries(repo_url)
 
-        if number not in issues or force:
-
-            url = self.baseurl + '/' + repo_url
-            url += '/issues'
-            url += '?'
-            url += 'q=%s' % number
+        if number in issues and not force:
+            return issues[number]
+        else:
+            if repo_url.startswith('http'):
+                url = repo_url
+            else:
+                url = self.baseurl + '/' + repo_url
+            url += '/issues/'
+            url += str(number)
 
             rr = self._request_url(url)
-
             soup = BeautifulSoup(rr.text, 'html.parser')
-            data = self._parse_issue_summary_page(soup)
-            issues.update(data['issues'])
-
-            # save the cache
-            self.dump_summaries(repo_url, issues)
+            if soup.text.lower().strip() != 'not found':
+                summary = self.parse_issue_page_to_summary(soup, url=rr.url)
+                if summary:
+                    issues[number] = summary
 
         if number in issues:
             return issues[number]
@@ -742,4 +761,98 @@ class GithubWebScraper(object):
             next_page = next_a.attrs['href']
         data['next_page'] = next_page
 
+        return data
+
+    def parse_issue_page_to_summary(self, soup, url=None):
+        data = {
+            'state': None,
+            'labels': [],
+            'merged': None,
+            'href': None,
+            'type': None,
+            'number': None,
+            'title': None,
+            'state': None,
+            'ci_state': None,
+            'ci_message': None,
+            'review_message': None,
+            'created_at': None,
+            'updated_at': None,
+            'closed_at': None,
+            'merged_at': None
+        }
+
+        if url:
+            if '/pull/' in url:
+                data['type'] = 'pullrequest'
+            else:
+                data['type'] = 'issue'
+
+        # <div class="state state-closed">
+        state_div = soup.find(
+            'div', {'class': lambda L: L and L.startswith('state state')}
+        )
+
+        if not state_div:
+            import epdb; epdb.st()
+
+        if 'state-merged' in state_div.attrs['class']:
+            data['state'] = 'closed'
+            data['merged'] = True
+        elif 'state-closed' in state_div.attrs['class']:
+            data['state'] = 'closed'
+            if data['type'] == 'pullrequest':
+                data['merged'] = False
+        else:
+            data['state'] = 'open'
+            if data['type'] == 'pullrequest':
+                data['merged'] = False
+
+        title = soup.find('span', {'class': 'js-issue-title'})
+        data['title'] = title.text.strip()
+
+        number = soup.find('span', {'class': 'gh-header-number'})
+        data['number'] = int(number.text.replace('#', ''))
+
+        # <div class="TableObject-item TableObject-item--primary">
+        to = soup.find('div', {'class': 'TableObject-item TableObject-item--primary'})
+
+        # <div class="timeline-comment-header-text">
+        timeline_header = soup.find('div', {'class': 'timeline-comment-header-text'})
+        timeline_relative_time = timeline_header.find('relative-time')
+        data['created_at'] = timeline_relative_time.attrs['datetime']
+
+        if data['merged']:
+            # <div class="discussion-item-header" id="event-11140358">
+            event_divs = soup.findAll('div', {'id': lambda L: L and L.startswith('event-')})
+            for x in event_divs:
+                rt = x.find('relative-time')
+                data['merged_at'] = rt.attrs['datetime']
+                data['closed_at'] = rt.attrs['datetime']
+                data['updated_at'] = rt.attrs['datetime']
+        elif data['state'] == 'closed':
+            close_div = soup.find('div', {'class': 'discussion-item discussion-item-closed'})
+            closed_rtime = close_div.find('relative-time')
+            data['closed_at'] = closed_rtime.attrs['datetime']
+            data['updated_at'] = closed_rtime.attrs['datetime']
+
+        comments = []
+        comment_divs = soup.findAll('div', {'class': 'timeline-comment-wrapper js-comment-container'})
+        for cd in comment_divs:
+            rt = cd.find('relative-time')
+            if rt:
+                comments.append(rt.attrs['datetime'])
+
+        commits = []
+        if data['type'] == 'pullrequest':
+            commit_divs = soup.findAll('div', {'class': 'discussion-item discussion-commits'})
+            for cd in commit_divs:
+                rt = cd.find('relative-time')
+                if rt:
+                    commits.append(rt.attrs['datetime'])
+
+        if not data['updated_at']:
+            import epdb; epdb.st()
+
+        #import epdb; epdb.st()
         return data

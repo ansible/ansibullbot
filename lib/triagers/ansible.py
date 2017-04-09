@@ -232,38 +232,49 @@ class AnsibleTriage(DefaultTriager):
             self.always_pause = True
 
         # connect to github
+        logging.info('creating api connection')
         self.gh = self._connect()
 
         # wrap the connection
+        logging.info('creating api wrapper')
         self.ghw = GithubWrapper(self.gh)
 
         # create the scraper for www data
+        logging.info('creating webscraper')
         self.gws = GithubWebScraper(cachedir=self.cachedir)
 
         # get valid labels
+        logging.info('getting labels')
         self.valid_labels = self.get_valid_labels('ansible/ansible')
 
         # extend managed labels
         self.MANAGED_LABELS += self.ISSUE_TYPES.values()
 
         # get the maintainers
+        logging.info('getting maintainers mapping')
         self.module_maintainers = self.get_maintainers_mapping()
 
         # get the filemap
+        logging.info('getting filemap')
         self.FILEMAP = self.get_filemap()
 
         # set the indexers
+        logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer()
+        logging.info('creating file indexer')
         self.file_indexer = FileIndexer(
             checkoutdir=os.path.expanduser(
                 '~/.ansibullbot/cache/ansible.files.checkout'
             ),
             cmap=COMPONENTMAP_FILENAME,
         )
+        logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
+        logging.info('building module data')
         self.module_indexer.get_ansible_modules()
 
         # instantiate shippable api
+        logging.info('creating shippable wrapper')
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
 
@@ -1374,6 +1385,43 @@ class AnsibleTriage(DefaultTriager):
                     rl = thisrepo.get_rate_limit()
                     pprint(rl)
 
+
+    def get_stale_numbers(self, reponame):
+        # https://github.com/ansible/ansibullbot/issues/458
+        # def load_meta(self, issuewrapper):
+        # cachedir = /home/jtanner/.ansibullbot/cache
+        # idir = /home/jtanner/.ansibullbot/cache/ansible/ansible/issues/{NUMBER}
+
+        stale = []
+        #self.update_issue_summaries(repopath=reponame)
+
+        for number,summary in self.issue_summaries[reponame].items():
+            mfile = os.path.join(
+                self.cachedir,
+                reponame,
+                'issues',
+                str(number),
+                'meta.json'
+            )
+
+            if not os.path.isfile(mfile):
+                stale.append(number)
+                continue
+
+            with open(mfile, 'rb') as f:
+                meta = json.load(f)
+
+            ts = meta['time']
+            ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+            now = datetime.datetime.now()
+            delta = (now - ts).days
+
+            if delta > 7:
+                stale.append(number)
+
+        stale = sorted(set(stale))
+        return stale
+
     def collect_repos(self):
         '''Populate the local cache of repos'''
         # this should do a few things:
@@ -1403,7 +1451,8 @@ class AnsibleTriage(DefaultTriager):
                     'repo': self.ghw.get_repo(repo, verbose=False),
                     'issues': [],
                     'processed': [],
-                    'since': None
+                    'since': None,
+                    'loopcount': 0
                 }
             else:
                 # force a clean repo object to limit caching problems
@@ -1411,10 +1460,106 @@ class AnsibleTriage(DefaultTriager):
                     self.ghw.get_repo(repo, verbose=False)
                 # clear the issues
                 self.repos[repo]['issues'] = {}
+                # increment the loopcount
+                self.repos[repo]['loopcount'] += 1
+
+            # def __init__(self, repo, numbers, issuecache={})
+            issuecache = {}
 
             logging.info('getting issue objs for %s' % repo)
+            self.update_issue_summaries(repopath=repo)
+            issuecache = {}
+            numbers = self.issue_summaries[repo].keys()
+            numbers = [int(x) for x in numbers]
+            logging.info('%s known numbers' % len(numbers))
+
+            if self.args.pr:
+                if os.path.isfile(self.args.pr) and \
+                        os.access(self.args.pr, os.X_OK):
+                    # allow for scripts when trying to target spec issues
+                    logging.info('executing %s' % self.args.pr)
+                    (rc, so, se) = run_command(self.args.pr)
+                    numbers = json.loads(so)
+                    numbers = [int(x) for x in numbers]
+                    logging.info(
+                        '%s numbers after running script' % len(numbers)
+                    )
+                else:
+                    # the issue id can be a list separated by commas
+                    if ',' in self.pr:
+                        numbers = [int(x) for x in self.pr.split(',')]
+                    else:
+                        numbers = [int(self.pr)]
+                logging.info('%s numbers from --id/--pr')
+
+            if self.args.daemonize:
+                if not self.repos[repo]['since']:
+                    ts = [x[1]['updated_at'] for x in self.issue_summaries[repo].items()]
+                    ts += [x[1]['created_at'] for x in self.issue_summaries[repo].items()]
+                    ts = sorted(set(ts))
+                    self.repos[repo]['since'] = ts[-1]
+                else:
+                    since = datetime.datetime.strptime(
+                        self.repos[repo]['since'],
+                        '%Y-%m-%dT%H:%M:%SZ'
+                    )
+                    api_since = self.repos[repo]['repo'].get_issues(
+                        since=since
+                    )
+
+                    numbers = []
+                    for x in api_since:
+                        number = x.number
+                        numbers.append(number)
+                        issuecache[number] = x
+
+                    numbers = sorted(set(numbers))
+                    logging.info('%s numbers after [api] since == %s' % (len(numbers),since))
+
+                    for k,v in self.issue_summaries[repo].items():
+                        if v['created_at'] > self.repos[repo]['since']:
+                            numbers.append(k)
+
+                    numbers = sorted(set(numbers))
+                    logging.info('%s numbers after [www] since == %s' % (len(numbers),since))
+
+            if self.args.start_at and self.repos[repo]['loopcount'] == 0:
+                numbers = [x for x in numbers if x <= self.args.start_at]
+                logging.info('%s numbers after start-at' % len(numbers))
+
+            # filter just the open numbers
+            if not self.args.only_closed:
+                numbers = [x for x in numbers
+                           if str(x) in self.issue_summaries[repo] and
+                           self.issue_summaries[repo][str(x)]['state'] == 'open']
+                logging.info('%s numbers after checking state' % len(numbers))
+
+            # filter by type
+            if self.args.only_issues:
+                numbers = [x for x in numbers
+                           if self.issue_summaries[repo][str(x)]['type'] == 'issue']
+                logging.info('%s numbers after checking type' % len(numbers))
+            elif self.args.only_prs:
+                numbers = [x for x in numbers
+                           if self.issue_summaries[repo][str(x)]['type'] == 'pullrequest']
+                logging.info('%s numbers after checking type' % len(numbers))
+
+
+            #print('create iterator!')
+            #import epdb; epdb.st()
+            # Use iterator to avoid requesting all issues upfront
+            numbers = sorted(numbers)
+            numbers = [x for x in reversed(numbers)]
+            self.repos[repo]['issues'] = RepoIssuesIterator(
+                self.repos[repo]['repo'],
+                numbers,
+                issuecache=issuecache
+            )
+
+            """
             if self.pr or self.args.start_at:
 
+                self.repos[repo]['since'] = datetime.datetime.utcnow()
                 self.update_issue_summaries(repopath=repo)
 
                 if self.pr:
@@ -1435,6 +1580,12 @@ class AnsibleTriage(DefaultTriager):
                     # generate valid list
                     numbers = \
                         [int(x) for x in self.issue_summaries[repo].keys()]
+
+                if self.args.skip_no_update:
+                    # https://github.com/ansible/ansibullbot/issues/458
+                    stale = self.get_stale_numbers(repo)
+                    numbers += stale
+                    numbers = sorted(set(numbers))
 
                 logging.info('%s numbers before filtering' % len(numbers))
                 if self.args.start_at:
@@ -1477,20 +1628,22 @@ class AnsibleTriage(DefaultTriager):
                 # Use iterator to avoid requesting all issues upfront
                 numbers = sorted(numbers)
                 numbers = [x for x in reversed(numbers)]
+                '''
                 self.repos[repo]['issues'] = RepoIssuesIterator(
                     self.repos[repo]['repo'],
                     numbers
                 )
+                '''
 
             else:
 
                 if not self.repos[repo]['since']:
                     # get all of them
-                    issues = self.repos[repo]['repo'].get_issues()
+                    issuecache = self.repos[repo]['repo'].get_issues()
                     self.repos[repo]['since'] = datetime.datetime.utcnow()
                 else:
                     # get updated since last run + newly created
-                    issues = self.repos[repo]['repo'].get_issues(
+                    issuecache = self.repos[repo]['repo'].get_issues(
                         since=self.repos[repo]['since']
                     )
                     # save the since
@@ -1499,13 +1652,13 @@ class AnsibleTriage(DefaultTriager):
                     self.repos[repo]['since'] = datetime.datetime.utcnow()
 
                     # force pagination now
-                    issues = [x for x in issues]
+                    issuecache = [x for x in issuecache]
 
                     # get newly created issues
                     logging.info('getting last issue number for %s' % repo)
                     last_number = self.gws.get_last_number(repo)
 
-                    since_numbers = [x.number for x in issues]
+                    since_numbers = [x.number for x in issuecache]
                     current_numbers = sorted(set(self.repos[repo]['processed']))
                     missing_numbers = xrange(current_numbers[-1], last_number)
                     missing_numbers = [x for x in missing_numbers
@@ -1536,12 +1689,41 @@ class AnsibleTriage(DefaultTriager):
                         if issue and \
                                 issue.state == 'open' and \
                                 issue not in issues:
-                            issues.append(issue)
+                            issuecache.append(issue)
 
-                self.repos[repo]['issues'] = issues
+                    if self.args.skip_no_update:
+                        # https://github.com/ansible/ansibullbot/issues/458
+                        stale = self.get_stale_numbers(repo)
+
+                        for x in stale:
+
+                            issue = None
+                            try:
+                                issue = self.repos[repo]['repo'].get_issue(x)
+                            except Exception as e:
+                                logging.error(e)
+                                logging.error('breakpoint!')
+                                import epdb; epdb.st()
+                            if issue and \
+                                    issue.state == 'open' and \
+                                    issue not in issues:
+                                issuecache.append(issue)
+
+                #self.repos[repo]['issues'] = issues
+
+                import epdb; epdb.st()
+                # Use iterator to avoid requesting all issues upfront
+                numbers = sorted(numbers)
+                numbers = [x for x in reversed(numbers)]
+                self.repos[repo]['issues'] = RepoIssuesIterator(
+                    self.repos[repo]['repo'],
+                    numbers
+                )
+            """
 
             logging.info('getting repo objs for %s complete' % repo)
 
+        #import epdb; epdb.st()
         logging.info('finished collecting issues')
 
     def get_updated_issues(self, since=None):
