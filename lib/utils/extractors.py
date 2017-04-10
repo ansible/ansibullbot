@@ -43,10 +43,13 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
     # what are the header(s) being used?
     headers = []
     for k,v in match_map.items():
-        before = upper_body[v-1]
-        after = upper_body[v + len(k)]
-        header = before + '${section}' + after
-        headers.append(header)
+        try:
+            before = upper_body[v-1]
+            after = upper_body[v + len(k)]
+            header = before + '${section}' + after
+            headers.append(header)
+        except:
+            pass
 
     # pick the most common header and re-search with it
     if len(sorted(set(headers))) > 1:
