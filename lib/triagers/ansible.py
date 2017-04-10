@@ -378,10 +378,13 @@ class AnsibleTriage(DefaultTriager):
             hcache = os.path.join(self.cachedir, repopath)
             # scrape all summaries from www for later opchecking
             self.update_issue_summaries(repopath=repopath)
+            # get a list of stale numbers
+            stale = self.get_stale_numbers(repopath)
 
             for issue in item[1]['issues']:
 
                 if issue is None:
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                     continue
 
@@ -404,6 +407,7 @@ class AnsibleTriage(DefaultTriager):
                     logging.info(str(number) + ' is issue, skipping')
                     redo = False
                     continue
+
                 if self.args.only_issues and 'pull' in issue.html_url:
                     logging.info(str(number) + ' is pullrequest, skipping')
                     redo = False
@@ -430,7 +434,7 @@ class AnsibleTriage(DefaultTriager):
                     # clear redo
                     redo = False
 
-                    # create the wrapper
+                    # create the wrapper on each loop iteration
                     iw = IssueWrapper(
                         github=self.ghw,
                         repo=repo,
@@ -480,6 +484,7 @@ class AnsibleTriage(DefaultTriager):
                                     skip = False
 
                             if skip:
+                                import epdb; epdb.st()
                                 msg = 'skipping: no changes since last run'
                                 logging.info(msg)
                                 continue
@@ -1396,6 +1401,10 @@ class AnsibleTriage(DefaultTriager):
         #self.update_issue_summaries(repopath=reponame)
 
         for number,summary in self.issue_summaries[reponame].items():
+
+            if summary['state'] == 'closed':
+                continue
+
             mfile = os.path.join(
                 self.cachedir,
                 reponame,
@@ -1539,6 +1548,17 @@ class AnsibleTriage(DefaultTriager):
                 numbers = [x for x in numbers if x <= self.args.start_at]
                 logging.info('%s numbers after start-at' % len(numbers))
 
+            # Get stale numbers if not targeting
+            if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
+                stale = self.get_stale_numbers(repo)
+                numbers += [int(x) for x in stale]
+                numbers = sorted(set(numbers))
+                logging.info('%s numbers after stale check' % len(numbers))
+
+            ################################################################
+            # PRE-FILTERING TO PREVENT EXCESSIVE API CALLS
+            ################################################################
+
             # filter just the open numbers
             if not self.args.only_closed:
                 numbers = [
@@ -1564,7 +1584,7 @@ class AnsibleTriage(DefaultTriager):
                 logging.info('%s numbers after checking type' % len(numbers))
 
             # Use iterator to avoid requesting all issues upfront
-            numbers = sorted(numbers)
+            numbers = sorted([int(x) for x in numbers])
             numbers = [x for x in reversed(numbers)]
             self.repos[repo]['issues'] = RepoIssuesIterator(
                 self.repos[repo]['repo'],

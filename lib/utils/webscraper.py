@@ -182,7 +182,7 @@ class GithubWebScraper(object):
         # get missing timestamps
         if not baseurl:
             numbers = sorted([int(x) for x in issues.keys()])
-            missing = [x for x in numbers if not issues[str(x)]['updated_at']]
+            missing = [x for x in numbers if str(x) not in issues or not issues[str(x)]['updated_at']]
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
@@ -852,7 +852,10 @@ class GithubWebScraper(object):
                     commits.append(rt.attrs['datetime'])
 
         if not data['updated_at']:
-            import epdb; epdb.st()
+            events = comments + commits
+            events = sorted(set(events))
+            data['updated_at'] = events[-1]
+            #import epdb; epdb.st()
 
         #import epdb; epdb.st()
         return data
