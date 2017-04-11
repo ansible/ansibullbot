@@ -130,7 +130,13 @@ class ShippableRuns(object):
             retries = 0
             while not success and retries < 2:
                 logging.debug('%s' % url)
-                resp = requests.get(url, headers=headers)
+
+                try:
+                    resp = requests.get(url, headers=headers)
+                except requests.exceptions.ConnectionError:
+                    time.sleep(2)
+                    continue
+
                 if resp.status_code not in [200, 302, 400]:
                     logging.error('RC: %s' % (resp.status_code))
                     retries += 1
