@@ -481,8 +481,17 @@ class AnsibleTriage(DefaultTriager):
                                 if lsr and lsr > mua:
                                     skip = False
 
+                            # Re-triage issues/PRs that haven't been checked
+                            # in a while in case something was missed.
+                            ts = lmeta['time']
+                            ts = datetime.datetime.strptime(
+                                ts, '%Y-%m-%dT%H:%M:%S.%f'
+                            )
+                            delta = (datetime.datetime.now() - ts).days
+                            if delta > 7:
+                                skip = False
+
                             if skip:
-                                import epdb; epdb.st()
                                 msg = 'skipping: no changes since last run'
                                 logging.info(msg)
                                 continue
