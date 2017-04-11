@@ -378,8 +378,6 @@ class AnsibleTriage(DefaultTriager):
             hcache = os.path.join(self.cachedir, repopath)
             # scrape all summaries from www for later opchecking
             self.update_issue_summaries(repopath=repopath)
-            # get a list of stale numbers
-            stale = self.get_stale_numbers(repopath)
 
             for issue in item[1]['issues']:
 
@@ -557,6 +555,8 @@ class AnsibleTriage(DefaultTriager):
                             pass
 
                     pprint(self.actions)
+                    if 'needs_template' in self.actions['newlabel']:
+                        import epdb; epdb.st()
 
                     # do the actions
                     action_meta = self.apply_actions()
@@ -1499,7 +1499,7 @@ class AnsibleTriage(DefaultTriager):
                         numbers = [int(x) for x in self.pr.split(',')]
                     else:
                         numbers = [int(self.pr)]
-                logging.info('%s numbers from --id/--pr')
+                logging.info('%s numbers from --id/--pr' % len(numbers))
 
             if self.args.daemonize:
                 if not self.repos[repo]['since']:
