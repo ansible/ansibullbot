@@ -1202,6 +1202,15 @@ class AnsibleTriage(DefaultTriager):
                 if 'needs_repo' in self.issue.labels:
                     self.actions['unlabel'].append('needs_repo')
 
+        # https://github.com/ansible/ansibullbot/issues/458
+        if self.issue.is_pullrequest():
+            if self.meta['ci_stale']:
+                if 'stale_ci' not in self.issue.labels:
+                    self.actions['newlabel'].append('stale_ci')
+            else:
+                if 'stale_ci' in self.issue.labels:
+                    self.actions['unlabel'].append('stale_ci')
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
