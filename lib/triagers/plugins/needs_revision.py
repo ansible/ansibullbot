@@ -106,11 +106,14 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     # https://github.com/ansible/ansibullbot/issues/458
     ci_dates = [x['created_at'] for x in ci_status]
     ci_dates = sorted(set(ci_dates))
-    last_ci_date = ci_dates[-1]
-    last_ci_date = datetime.datetime.strptime(last_ci_date, '%Y-%m-%dT%H:%M:%SZ')
-    ci_delta = (datetime.datetime.now() - last_ci_date).days
-    if ci_delta > 7:
-        ci_stale = True
+    if ci_dates:
+        last_ci_date = ci_dates[-1]
+        last_ci_date = datetime.datetime.strptime(last_ci_date, '%Y-%m-%dT%H:%M:%SZ')
+        ci_delta = (datetime.datetime.now() - last_ci_date).days
+        if ci_delta > 7:
+            ci_stale = True
+        else:
+            ci_stale = False
     else:
         ci_stale = False
 
