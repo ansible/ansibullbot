@@ -73,6 +73,19 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
             if match != -1:
                 match_map[section] = match + 1
 
+        # re-do for missing sections with less common header(s)
+        for section in SECTIONS:
+            if section in match_map:
+                continue
+            for choice in choices:
+                t = Template(choice)
+                tofind = t.substitute(section=section)
+                match = upper_body.find(tofind)
+                if match != -1:
+                    match_map[section] = match + 1
+                    #import epdb; epdb.st()
+                    break
+
         if not match_map:
             return {}
 
