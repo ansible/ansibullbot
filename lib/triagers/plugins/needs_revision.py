@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import json
 import logging
 import os
@@ -32,16 +33,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     has_travis = False
     has_travis_notification = False
     ci_state = None
-    #is_ci_verified = False
+    ci_stale = None
     mstate = None
     change_requested = None
-    #hreviews = None
-    #reviews = None
     ready_for_review = None
     has_commit_mention = False
     has_commit_mention_notification = False
-    #needs_testresult_notification = False
-    #shippable_test_results = None
 
     has_shippable_yaml = None
     has_shippable_yaml_notification = None
@@ -65,6 +62,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'mergeable': None,
         'mergeable_state': mstate,
         'change_requested': change_requested,
+        'ci_state': ci_state,
+        'ci_stale': ci_stale,
         'reviews': None,
         'www_reviews': None,
         'www_summary': None,
@@ -103,6 +102,17 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     else:
         ci_state = ci_states[0]
     logging.info('ci_state == %s' % ci_state)
+
+    # https://github.com/ansible/ansibullbot/issues/458
+    ci_dates = [x['created_at'] for x in ci_status]
+    ci_dates = sorted(set(ci_dates))
+    last_ci_date = ci_dates[-1]
+    last_ci_date = datetime.datetime.strptime(last_ci_date, '%Y-%m-%dT%H:%M:%SZ')
+    ci_delta = (datetime.datetime.now() - last_ci_date).days
+    if ci_delta > 7:
+        ci_stale = True
+    else:
+        ci_stale = False
 
     # clean/unstable/dirty/unknown
     mstate = iw.mergeable_state
@@ -326,6 +336,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'mergeable_state': mstate,
         'change_requested': change_requested,
         'ci_state': ci_state,
+        'ci_stale': ci_stale,
         'reviews': iw.reviews,
         'www_summary': www_summary,
         'www_reviews': www_reviews,
