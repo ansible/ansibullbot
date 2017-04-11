@@ -83,8 +83,9 @@ def extract_template_data(body, issue_number=None, issue_class='issue'):
                  '*' not in headers[0]):
             return {}
         else:
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            #logging.error('breakpoint!')
+            #import epdb; epdb.st()
+            pass
 
     # sort mapping by element id
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
