@@ -564,8 +564,6 @@ class AnsibleTriage(DefaultTriager):
                             pass
 
                     pprint(self.actions)
-                    if 'needs_template' in self.actions['newlabel']:
-                        import epdb; epdb.st()
 
                     # do the actions
                     action_meta = self.apply_actions()
