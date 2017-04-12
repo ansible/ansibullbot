@@ -254,3 +254,13 @@ DEFAULT_NEEDS_INFO_EXPIRE = get_config(
     60,
     value_type='int'
 )
+
+# How many days till a re-triage is forced
+DEFAULT_STALE_WINDOW = get_config(
+    p,
+    DEFAULTS,
+    'stale_window',
+    '%s_STALE_WINDOW' % PROG_NAME.upper(),
+    7,
+    value_type='int'
+)

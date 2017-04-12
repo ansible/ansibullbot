@@ -442,54 +442,64 @@ class AnsibleTriage(DefaultTriager):
 
                     if self.args.skip_no_update:
                         lmeta = self.load_meta(iw)
+
                         if lmeta:
 
+                            now = datetime.datetime.now()
+                            mod_repo = (iw.repo_full_name in MREPOS)
                             skip = False
 
                             if lmeta['updated_at'] == iw.updated_at.isoformat():
                                 skip = True
 
-                            if skip and self.args.skip_no_update_timeout:
-                                if iw.repo_full_name not in MREPOS:
-                                    # re-check ansible/ansible after
-                                    # a window of time since the last check.
-                                    lt = lmeta['time']
-                                    lt = datetime.datetime.strptime(
-                                        lt,
-                                        '%Y-%m-%dT%H:%M:%S.%f'
-                                    )
-                                    now = datetime.datetime.now()
-                                    delta = (now - lt)
-                                    delta = delta.days
-
-                                    if delta > 5:
-                                        msg = '!skipping: %s' % delta
-                                        msg += ' days since last check'
-                                        logging.info(msg)
+                            if skip and not mod_repo:
+                                if iw.is_pullrequest():
+                                    ua = iw.pullrequest.updated_at.isoformat()
+                                    if lmeta['updated_at'] < ua:
                                         skip = False
 
-                            elif skip and iw.is_pullrequest():
-                                # if last process time is older than last
-                                # completion time on shippable, we need to
-                                # reprocess because the ci status has probabaly
-                                # changed.
-                                mua = datetime.datetime.strptime(
-                                    lmeta['updated_at'],
-                                    '%Y-%m-%dT%H:%M:%S'
+                            if skip and not mod_repo:
+
+                                # re-check ansible/ansible after
+                                # a window of time since the last check.
+                                lt = lmeta['time']
+                                lt = datetime.datetime.strptime(
+                                    lt,
+                                    '%Y-%m-%dT%H:%M:%S.%f'
                                 )
-                                lsr = self.SR.get_last_completion(iw.number)
-                                if lsr and lsr > mua:
+                                delta = (now - lt)
+                                delta = delta.days
+                                if delta > C.DEFAULT_STALE_WINDOW:
+                                    msg = '!skipping: %s' % delta
+                                    msg += ' days since last check'
+                                    logging.info(msg)
                                     skip = False
 
-                            # Re-triage issues/PRs that haven't been checked
-                            # in a while in case something was missed.
-                            ts = lmeta['time']
-                            ts = datetime.datetime.strptime(
-                                ts, '%Y-%m-%dT%H:%M:%S.%f'
-                            )
-                            delta = (datetime.datetime.now() - ts).days
-                            if delta > 7:
-                                skip = False
+                                # if last process time is older than
+                                # last completion time on shippable, we need
+                                # to reprocess because the ci status has
+                                # probabaly changed.
+                                if skip and iw.is_pullrequest():
+                                    ua = iw.pullrequest.updated_at.isoformat()
+                                    mua = datetime.datetime.strptime(
+                                        lmeta['updated_at'],
+                                        '%Y-%m-%dT%H:%M:%S'
+                                    )
+                                    lsr = self.SR.get_last_completion(iw.number)
+                                    if (lsr and lsr > mua) or \
+                                            ua > lmeta['updated_at']:
+                                        skip = False
+
+                            # do a final check on the timestamp in meta
+                            if skip:
+                                # 2017-04-12T11:05:08.980077
+                                mts = datetime.datetime.strptime(
+                                    lmeta['time'],
+                                    '%Y-%m-%dT%H:%M:%S.%f'
+                                )
+                                delta = (now - mts).days
+                                if delta > C.DEFAULT_STALE_WINDOW:
+                                    skip = False
 
                             if skip:
                                 msg = 'skipping: no changes since last run'
@@ -518,7 +528,6 @@ class AnsibleTriage(DefaultTriager):
 
                     # build up actions from the meta
                     self.create_actions()
-                    #self.issue.meta = self.meta
                     self.save_meta(iw, self.meta)
 
                     # DEBUG!
@@ -1423,7 +1432,6 @@ class AnsibleTriage(DefaultTriager):
 
             mfile = os.path.join(
                 self.cachedir,
-                reponame,
                 'issues',
                 str(number),
                 'meta.json'
@@ -1441,10 +1449,12 @@ class AnsibleTriage(DefaultTriager):
             now = datetime.datetime.now()
             delta = (now - ts).days
 
-            if delta > 7:
+            if delta > C.DEFAULT_STALE_WINDOW:
                 stale.append(number)
 
         stale = sorted(set(stale))
+        if len(stale) <= 10:
+            logging.info('stale: %s' % ','.join([str(x) for x in stale]))
         return stale
 
     def collect_repos(self):
@@ -1477,6 +1487,7 @@ class AnsibleTriage(DefaultTriager):
                     'issues': [],
                     'processed': [],
                     'since': None,
+                    'stale': [],
                     'loopcount': 0
                 }
             else:
@@ -1565,11 +1576,13 @@ class AnsibleTriage(DefaultTriager):
                 logging.info('%s numbers after start-at' % len(numbers))
 
             # Get stale numbers if not targeting
-            if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
-                stale = self.get_stale_numbers(repo)
-                numbers += [int(x) for x in stale]
-                numbers = sorted(set(numbers))
-                logging.info('%s numbers after stale check' % len(numbers))
+            if repo not in MREPOS:
+                if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
+                    stale = self.get_stale_numbers(repo)
+                    self.repos[repo]['stale'] = [int(x) for x in stale]
+                    numbers += [int(x) for x in stale]
+                    numbers = sorted(set(numbers))
+                    logging.info('%s numbers after stale check' % len(numbers))
 
             ################################################################
             # PRE-FILTERING TO PREVENT EXCESSIVE API CALLS
