@@ -553,7 +553,7 @@ class GithubWebScraper(object):
             logging.debug(url)
             try:
                 rr = requests.get(url, headers=headers)
-                if rr.reason == 'Too Many Requests' or rr.status_code = 500:
+                if rr.reason == 'Too Many Requests' or rr.status_code == 500:
                     logging.debug(
                         'too many www requests, sleeping %ss' % sleep
                     )
