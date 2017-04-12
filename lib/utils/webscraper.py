@@ -553,7 +553,7 @@ class GithubWebScraper(object):
             logging.debug(url)
             try:
                 rr = requests.get(url, headers=headers)
-                if rr.reason == 'Too Many Requests':
+                if rr.reason == 'Too Many Requests' or rr.status_code = 500:
                     logging.debug(
                         'too many www requests, sleeping %ss' % sleep
                     )
@@ -788,6 +788,7 @@ class GithubWebScraper(object):
             else:
                 data['type'] = 'issue'
 
+        # <div class="state state-open">
         # <div class="state state-closed">
         state_div = soup.find(
             'div', {'class': lambda L: L and L.startswith('state state')}
