@@ -1428,21 +1428,27 @@ class AnsibleTriage(DefaultTriager):
         # idir = /home/jtanner/.ansibullbot/cache/ansible/ansible/issues/{NUM}
 
         stale = []
-        #self.update_issue_summaries(repopath=reponame)
+        reasons = {}
 
         for number,summary in self.issue_summaries[reponame].items():
+
+            if number in stale:
+                continue
 
             if summary['state'] == 'closed':
                 continue
 
+            number = int(number)
             mfile = os.path.join(
-                self.cachedir,
+                self.cachedir_base,
+                reponame,
                 'issues',
                 str(number),
                 'meta.json'
             )
 
             if not os.path.isfile(mfile):
+                reasons[number] = '%s missing' % mfile
                 stale.append(number)
                 continue
 
@@ -1455,11 +1461,13 @@ class AnsibleTriage(DefaultTriager):
             delta = (now - ts).days
 
             if delta > C.DEFAULT_STALE_WINDOW:
+                reasons[number] = '%s delta' % delta
                 stale.append(number)
 
-        stale = sorted(set(stale))
-        if len(stale) <= 10:
+        stale = sorted(set([int(x) for x in stale]))
+        if len(stale) <= 10 and len(stale) > 0:
             logging.info('stale: %s' % ','.join([str(x) for x in stale]))
+
         return stale
 
     def collect_repos(self):
@@ -2018,7 +2026,7 @@ class AnsibleTriage(DefaultTriager):
             github=self.ghw,
             repo=mrepo,
             issue=missue,
-            cachedir=os.path.join(self.cachedir, repo_path)
+            cachedir=os.path.join(self.cachedir_base, repo_path)
         )
         return mw
 
@@ -2176,6 +2184,7 @@ class AnsibleTriage(DefaultTriager):
 
         return ispy3
 
+    """
     def missing_fields(self):
         # start with missing template data
         if self.issue.is_issue():
@@ -2186,11 +2195,12 @@ class AnsibleTriage(DefaultTriager):
         if not self.issue.history:
             self.issue.history = self.get_history(
                 self.issue,
-                cachedir=self.cachedir,
+                cachedir=self.cachedir_base,
                 usecache=True
             )
 
         return mf
+    """
 
     def get_supported_by(self, issuewrapper, meta):
 
@@ -2256,12 +2266,15 @@ class AnsibleTriage(DefaultTriager):
     def get_notification_facts(self, issuewrapper, meta):
         '''Build facts about mentions/pings'''
         iw = issuewrapper
+        """
         if not iw.history:
+            import epdb; epdb.st()
             iw.history = self.get_history(
                 iw,
-                cachedir=self.cachedir,
+                cachedir=self.cachedir_base,
                 usecache=True
             )
+        """
 
         nfacts = {
             'to_notify': [],
