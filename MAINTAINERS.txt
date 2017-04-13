@@ -291,7 +291,7 @@ network/netconf/netconf_config.py: lpenz userlerueda
 network/netvisor/: amitsi privateip gundalow Qalthos
 network/nmcli.py: alcamie101
 network/nsupdate.py: nerzhul
-network/nxos/: jedelman8 GGabriele privateip rcarrillocruz
+network/nxos/: jedelman8 GGabriele rahushen privateip rcarrillocruz
 network/ordnance/: djh00t alexanderturner
 network/omapi_host.py: nerzhul
 network/openswitch/: privateip gundalow Qalthos
