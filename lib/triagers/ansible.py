@@ -490,8 +490,13 @@ class AnsibleTriage(DefaultTriager):
                                             ua > lmeta['updated_at']:
                                         skip = False
 
+                            # was this in the stale list?
+                            if skip and not mod_repo:
+                                if iw.number in self.repos[repopath]['stale']:
+                                    skip = False
+
                             # do a final check on the timestamp in meta
-                            if skip:
+                            if skip and not mod_repo:
                                 # 2017-04-12T11:05:08.980077
                                 mts = datetime.datetime.strptime(
                                     lmeta['time'],
