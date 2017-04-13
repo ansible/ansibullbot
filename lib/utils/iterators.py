@@ -5,7 +5,8 @@ class RepoIssuesIterator(object):
 
     def __init__(self, repo, numbers, issuecache={}):
         self.repo = repo
-        self.numbers = numbers
+        self.numbers = sorted(set([int(x) for x in numbers]))
+        self.numbers = reversed(self.numbers)
         self.issuecache = issuecache
         self.i = 0
 
