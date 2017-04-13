@@ -152,14 +152,17 @@ class GithubWebScraper(object):
             changed = []
             changes = False
             for k,v in data['issues'].iteritems():
-                #v['href'] = self.baseurl + v['href']
-                if str(k) not in issues:
-                    changed.append(str(v['number']))
+
+                if not isinstance(k, unicode):
+                    k = u'%s' % k
+
+                if k not in issues:
+                    changed.append(k)
                     changes = True
-                elif v != issues[str(k)]:
-                    changed.append(str(v['number']))
+                elif v != issues[k]:
+                    changed.append(k)
                     changes = True
-                issues[str(k)] = v
+                issues[k] = v
 
             if changed:
                 logging.info('changed: %s' % ','.join(x for x in changed))
@@ -177,7 +180,9 @@ class GithubWebScraper(object):
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
-                    issues[str(x)] = summary
+                    if not isinstance(x, unicode):
+                        x = u'%s' % x
+                    issues[x] = summary
 
         # get missing timestamps
         if not baseurl:
@@ -186,7 +191,9 @@ class GithubWebScraper(object):
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
-                    issues[str(x)] = summary
+                    if not isinstance(x, unicode):
+                        x = u'%s' % x
+                    issues[x] = summary
 
         # save the cache
         if not baseurl:
