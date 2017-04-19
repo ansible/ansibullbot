@@ -184,6 +184,7 @@ commands/expect.py: sivel
 commands/raw.py: ansible
 commands/script.py: ansible
 commands/shell.py: ansible
+crypto/openssl_privatekey.py: Spredzy
 database/influxdb/: kamsz
 database/misc/elasticsearch_plugin.py: ThePixelDeveloper
 database/misc/kibana_plugin.py: barryib
