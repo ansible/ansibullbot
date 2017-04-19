@@ -394,6 +394,7 @@ system/debconf.py: bcoca
 system/facter.py: ansible
 system/filesystem.py: abulimov
 system/firewalld.py: maxamillion
+system/gconftool2.py: kevensen
 system/getent.py: bcoca
 system/gluster_volume.py: rosmo
 system/group.py: ansible
