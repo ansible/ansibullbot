@@ -82,6 +82,7 @@ cloud/amazon/route53_zone.py: minichate
 cloud/amazon/s3_bucket.py: wimnat
 cloud/amazon/s3_lifecycle.py: wimnat
 cloud/amazon/s3_logging.py: wimnat
+cloud/amazon/s3_sync.py: tedder
 cloud/amazon/s3.py: ansible
 cloud/amazon/s3_website.py: wimnat
 cloud/amazon/sns_topic.py: joelthompson
