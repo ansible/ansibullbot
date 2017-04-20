@@ -798,7 +798,8 @@ class GithubWebScraper(object):
         # <div class="state state-open">
         # <div class="state state-closed">
         state_div = soup.find(
-            'div', {'class': lambda L: L and L.startswith('state state')}
+            'div', {'class': lambda L: L and
+                    L.lower().startswith('state state')}
         )
 
         if not state_div:
