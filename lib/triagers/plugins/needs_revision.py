@@ -492,8 +492,9 @@ def get_shippable_run_facts(iw, meta, shippable=None):
             if last_run == vinfo['run_id']:
                 ci_verified = True
             else:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                #logging.error('breakpoint!')
+                #import epdb; epdb.st()
+                pass
 
     # no results means no notification required
     if len(shippable_test_results) < 1:
