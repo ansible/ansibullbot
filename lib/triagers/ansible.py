@@ -1107,11 +1107,14 @@ class AnsibleTriage(DefaultTriager):
             self.actions['comments'].append(comment)
 
         # assignees?
+        '''
+        # https://github.com/ansible/ansibullbot/issues/500
         if self.meta['to_assign']:
             for user in self.meta['to_assign']:
                 # don't re-assign people
                 if not self.issue.history.was_unassigned(user):
                     self.actions['assign'].append(user)
+        '''
 
         # notify?
         if self.meta['to_notify']:
