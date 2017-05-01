@@ -31,6 +31,7 @@ from datetime import datetime
 # remember to pip install PyGithub, kids!
 import github
 
+from lib.utils.extractors import extract_template_sections
 from lib.utils.extractors import extract_template_data
 from lib.wrappers.historywrapper import HistoryWrapper
 
@@ -96,7 +97,8 @@ class DefaultWrapper(object):
         self._pr_status = False
         self._pr_reviews = False
         self._reactions = False
-        self.template_data = {}
+        self._template_data = None
+        self._required_template_sections = []
         self.desired_labels = []
         self.desired_assignees = []
         self.current_events = []
@@ -393,18 +395,45 @@ class DefaultWrapper(object):
             labels.append(label.name)
         return labels
 
-    #@RateLimited
     def get_template_data(self):
         """Extract templated data from an issue body"""
 
-        if not self.template_data:
-            self.template_data = \
-                extract_template_data(
-                    self.instance.body,
-                    issue_number=self.number,
-                    issue_class=self.github_type
-                )
-        return self.template_data
+        if self.is_issue():
+            tfile = '.github/ISSUE_TEMPLATE.md'
+        else:
+            tfile = '.github/PULL_REQUEST_TEMPLATE.md'
+
+        tf = self.repo.get_file_contents(tfile)
+        tf_content = tf.decoded_content
+        tf_sections = extract_template_sections(tf_content)
+
+        self._required_template_sections = \
+            [x.lower() for x in tf_sections.keys()
+             if tf_sections[x]['required']]
+
+        template_data = \
+            extract_template_data(
+                self.instance.body,
+                issue_number=self.number,
+                issue_class=self.github_type,
+                SECTIONS=tf_sections.keys()
+            )
+
+        return template_data
+
+    @property
+    def template_data(self):
+        if self._template_data is None:
+            self._template_data = self.get_template_data()
+        return self._template_data
+
+    @property
+    def missing_template_sections(self):
+        td = self.template_data
+        expected_keys = [x.lower() for x in self._required_template_sections]
+        missing = [x for x in expected_keys
+                   if x not in td or not td[x]]
+        return missing
 
     def resolve_desired_labels(self, desired_label):
         for resolved_label, aliases in self.ALIAS_LABELS.iteritems():

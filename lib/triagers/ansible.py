@@ -291,59 +291,8 @@ class AnsibleTriage(DefaultTriager):
             self._ansible_core_team = self.get_ansible_core_team()
         return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
 
-    def start(self):
-
-        if hasattr(self.args, 'force_rate_limit') and \
-                self.args.force_rate_limit:
-            logging.warning('attempting to trigger rate limit')
-            self.trigger_rate_limit()
-            return
-
-        if hasattr(self.args, 'daemonize') and self.args.daemonize:
-            logging.info('starting daemonize loop')
-            self.loop()
-        else:
-            logging.info('starting single run')
-            self.run()
-        logging.info('stopping bot')
-
-    def set_logger(self):
-        if hasattr(self.args, 'debug') and self.args.debug:
-            logging.level = logging.DEBUG
-        else:
-            logging.level = logging.INFO
-        logFormatter = \
-            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-        rootLogger = logging.getLogger()
-        if hasattr(self.args, 'debug') and self.args.debug:
-            rootLogger.setLevel(logging.DEBUG)
-        else:
-            rootLogger.setLevel(logging.INFO)
-
-        if hasattr(self.args, 'logfile'):
-            logfile = self.args.logfile
-        else:
-            logfile = '/tmp/ansibullbot.log'
-        fileHandler = logging.FileHandler("{0}/{1}".format(
-                os.path.dirname(logfile),
-                os.path.basename(logfile))
-        )
-        fileHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(fileHandler)
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(consoleHandler)
-
     def get_rate_limit(self):
         return self.gh.get_rate_limit().raw_data
-
-    def loop(self):
-        '''Call the run method in a defined interval'''
-        while True:
-            self.run()
-            interval = self.args.daemonize_interval
-            logging.info('sleep %ss (%sm)' % (interval, interval / 60))
-            time.sleep(interval)
 
     def run(self):
         '''Primary execution method'''
@@ -580,7 +529,7 @@ class AnsibleTriage(DefaultTriager):
                     pprint(self.actions)
 
                     # do the actions
-                    action_meta = self.apply_actions()
+                    action_meta = self.apply_actions(self.issue, self.actions)
                     if action_meta['REDO']:
                         redo = True
 
@@ -1370,7 +1319,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('title: %s' % self.issue.title)
         logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(self.actions)
-        action_meta = self.apply_actions()
+        action_meta = self.apply_actions(self.issue, self.actions)
         return action_meta
 
     def close_module_issue_with_message(self, issue, bp='repomerge_new'):
@@ -1396,7 +1345,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('title: %s' % self.issue.title)
         logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(self.actions)
-        action_meta = self.apply_actions()
+        action_meta = self.apply_actions(self.issue, self.actions)
         return action_meta
 
     def trigger_rate_limit(self):
@@ -2567,32 +2516,3 @@ class AnsibleTriage(DefaultTriager):
             tfacts['maintainer_triaged'] = True
 
         return tfacts
-
-    '''
-    def get_ci_verified_facts(self, issuewrapper, meta):
-        # https://github.com/ansible/ansibullbot/issues/312
-        cfacts = {
-            'remove_ci_verified': False
-        }
-
-        if 'ci_verified' not in issuewrapper.labels:
-            return cfacts
-
-        if meta['ci_state'] == 'success':
-            cfacts['remove_ci_verified'] = True
-            return cfacts
-
-        v_date = None
-        c_date = None
-        for ev in issuewrapper.history.history:
-            if ev['event'] == 'labeled':
-                if ev['label'] == 'ci_verified':
-                    v_date = ev['created_at']
-            if ev['event'] == 'committed':
-                c_date = ev['created_at']
-
-        if c_date > v_date:
-            cfacts['remove_ci_verified'] = True
-
-        return cfacts
-    '''

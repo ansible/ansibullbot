@@ -17,28 +17,20 @@
 
 from __future__ import print_function
 
-import os
-import sys
-import time
-from datetime import datetime
-
-# remember to pip install PyGithub, kids!
-from github import Github
-
-from jinja2 import Environment, FileSystemLoader
-
-from lib.utils.moduletools import ModuleIndexer
-from lib.utils.extractors import extract_template_data
-
 from defaultwrapper import DefaultWrapper
+
 
 class IssueWrapper(DefaultWrapper):
 
-    REQUIRED_SECTIONS = ['issue type', 'component name', 'ansible version', 'summary']
+    REQUIRED_SECTIONS = [
+        'issue type',
+        'component name',
+        'ansible version',
+        'summary'
+    ]
 
     def noop(self):
         pass
 
     def __str__(self):
         return self.instance.html_url
-
