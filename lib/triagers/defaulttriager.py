@@ -17,10 +17,12 @@
 
 from __future__ import print_function
 
+import ConfigParser
 import glob
 import logging
 import os
 import sys
+import time
 import pickle
 from datetime import datetime
 
@@ -31,6 +33,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from lib.decorators.github import RateLimited
 from lib.wrappers.ghapiwrapper import GithubWrapper
+from lib.wrappers.issuewrapper import IssueWrapper
 from lib.utils.moduletools import ModuleIndexer
 from lib.utils.file_tools import FileIndexer
 from lib.utils.version_tools import AnsibleVersionIndexer
@@ -74,6 +77,7 @@ BOTLIST = None
 
 class DefaultTriager(object):
 
+    '''
     BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
     VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
     IGNORE_LABELS = [
@@ -94,7 +98,89 @@ class DefaultTriager(object):
     ]
 
     FIXED_ISSUES = []
+    '''
 
+    EMPTY_ACTIONS = {
+        'newlabel': [],
+        'unlabel': [],
+        'comments': [],
+        'assign': [],
+        'unassign': [],
+        'close': False,
+        'close_migrated': False,
+        'open': False,
+        'merge': False,
+    }
+
+    def __init__(self, args):
+
+        self.args = args
+        self.last_run = None
+        self.daemonize = None
+        self.daemonize_interval = None
+        self.dry_run = False
+        self.force = False
+
+        self.configfile = self.args.configfile
+        self.config = ConfigParser.ConfigParser()
+        self.config.read([self.configfile])
+
+        try:
+            self.gh_user = self.config.get('defaults', 'github_username')
+        except:
+            self.gh_user = None
+        self.github_user = self.gh_user
+
+        try:
+            self.gh_pass = self.config.get('defaults', 'github_password')
+        except:
+            self.gh_pass = None
+        self.github_pass = self.gh_pass
+
+        try:
+            self.gh_token = self.config.get('defaults', 'github_token')
+        except:
+            self.gh_token = None
+        self.github_token = self.gh_token
+
+        self.repopath = self.args.repo
+        self.logfile = self.args.logfile
+
+        # where to store junk
+        self.cachedir = self.args.cachedir
+        self.cachedir = os.path.expanduser(self.cachedir)
+        self.cachedir_base = self.cachedir
+
+        self.set_logger()
+        logging.info('starting bot')
+
+        logging.debug('setting bot attributes')
+        attribs = dir(self.args)
+        attribs = [x for x in attribs if not x.startswith('_')]
+        for x in attribs:
+            val = getattr(self.args, x)
+            if x.startswith('gh_'):
+                setattr(self, x.replace('gh_', 'github_'), val)
+            else:
+                setattr(self, x, val)
+
+        if hasattr(self.args, 'pause') and self.args.pause:
+            self.always_pause = True
+
+        # connect to github
+        logging.info('creating api connection')
+        self.gh = self._connect()
+
+        # wrap the connection
+        logging.info('creating api wrapper')
+        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir)
+
+        # get valid labels
+        logging.info('getting labels')
+        self.valid_labels = self.get_valid_labels(self.repopath)
+
+
+    '''
     def __init__(self, verbose=None, github_user=None, github_pass=None,
                  github_token=None, github_repo=None, number=None,
                  start_at=None, always_pause=False, force=False,
@@ -150,6 +236,55 @@ class DefaultTriager(object):
 
         # processed metadata
         self.meta = {}
+    '''
+
+    def set_logger(self):
+        if hasattr(self.args, 'debug') and self.args.debug:
+            logging.level = logging.DEBUG
+        else:
+            logging.level = logging.INFO
+        logFormatter = \
+            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+        rootLogger = logging.getLogger()
+        if hasattr(self.args, 'debug') and self.args.debug:
+            rootLogger.setLevel(logging.DEBUG)
+        else:
+            rootLogger.setLevel(logging.INFO)
+
+        if hasattr(self.args, 'logfile'):
+            logfile = self.args.logfile
+        else:
+            logfile = '/tmp/ansibullbot.log'
+
+        logdir = os.path.dirname(logfile)
+        if not os.path.isdir(logdir):
+            os.makedirs(logdir)
+
+        fileHandler = logging.FileHandler("{0}/{1}".format(
+                os.path.dirname(logfile),
+                os.path.basename(logfile))
+        )
+        fileHandler.setFormatter(logFormatter)
+        rootLogger.addHandler(fileHandler)
+        consoleHandler = logging.StreamHandler()
+        consoleHandler.setFormatter(logFormatter)
+        rootLogger.addHandler(consoleHandler)
+
+    def start(self):
+
+        if hasattr(self.args, 'force_rate_limit') and \
+                self.args.force_rate_limit:
+            logging.warning('attempting to trigger rate limit')
+            self.trigger_rate_limit()
+            return
+
+        if hasattr(self.args, 'daemonize') and self.args.daemonize:
+            logging.info('starting daemonize loop')
+            self.loop()
+        else:
+            logging.info('starting single run')
+            self.run()
+        logging.info('stopping bot')
 
     def _process(self, usecache=True):
         '''Do some initial processing of the issue'''
@@ -302,7 +437,7 @@ class DefaultTriager(object):
     @RateLimited
     def _connect(self):
         """Connects to GitHub's API"""
-        if self.github_token != 'False':
+        if self.github_token != 'False' and self.github_token is not None:
             return Github(login_or_token=self.github_token)
         else:
             return Github(
@@ -623,6 +758,14 @@ class DefaultTriager(object):
             for label in labels:
                 self.current_labels.append(label.name)
         return self.current_labels
+
+    def loop(self):
+        '''Call the run method in a defined interval'''
+        while True:
+            self.run()
+            interval = self.args.daemonize_interval
+            logging.info('sleep %ss (%sm)' % (interval, interval / 60))
+            time.sleep(interval)
 
     def run(self):
         pass
@@ -1055,10 +1198,10 @@ class DefaultTriager(object):
         else:
             self.force = False
 
-    def action_count(self):
+    def action_count(self, actions):
         """ Return the number of actions that are to be performed """
         count = 0
-        for k,v in self.actions.iteritems():
+        for k,v in actions.iteritems():
             if k in ['close', 'open', 'merge', 'close_migrated'] and v:
                 count += 1
             elif k != 'close' and k != 'open' and \
@@ -1066,26 +1209,26 @@ class DefaultTriager(object):
                 count += len(v)
         return count
 
-    def apply_actions(self):
+    def apply_actions(self, issue, actions):
 
         action_meta = {'REDO': False}
 
-        if self.safe_force:
+        if hasattr(self, 'safe_force') and self.safe_force:
             self.check_safe_match()
 
-        if self.action_count() > 0:
+        if self.action_count(actions) > 0:
             if self.dry_run:
                 print("Dry-run specified, skipping execution of actions")
             else:
                 if self.force:
                     print("Running actions non-interactive as you forced.")
-                    self.execute_actions()
+                    self.execute_actions(issue, actions)
                     return action_meta
                 cont = raw_input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
                 if cont in ('Y', 'y'):
-                    self.execute_actions()
+                    self.execute_actions(issue, actions)
                 if cont == 'T':
                     self.template_wizard()
                     action_meta['REDO'] = True
@@ -1109,14 +1252,14 @@ class DefaultTriager(object):
                 # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
-        elif self.args.force_description_fixer:
+        elif hasattr(self, 'force_description_fixer') and self.args.force_description_fixer:
             if self.issue.html_url not in self.FIXED_ISSUES:
                 if self.meta['template_missing_sections']:
                     #import epdb; epdb.st()
                     changed = self.template_wizard()
                     if changed:
                         action_meta['REDO'] = True
-                self.FIXED_ISSUES.append(self.issue.html_url)
+                self.FIXED_ISSUES.append(ssue.html_url)
         else:
             print("Skipping.")
 
@@ -1171,47 +1314,45 @@ class DefaultTriager(object):
         else:
             return False
 
-    def execute_actions(self):
+    def execute_actions(self, issue, actions):
         """Turns the actions into API calls"""
 
-        #time.sleep(1)
-        for comment in self.actions['comments']:
+        for comment in actions['comments']:
             logging.info("acton: comment - " + comment)
-            self.issue.add_comment(comment=comment)
-        if self.actions['close']:
+            issue.add_comment(comment=comment)
+        if actions['close']:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             logging.info('action: close')
-            self.issue.instance.edit(state='closed')
+            issue.instance.edit(state='closed')
             return
 
-        if self.actions['close_migrated']:
+        if actions['close_migrated']:
             mi = self.get_issue_by_repopath_and_number(
                 self.meta['migrated_issue_repo_path'],
                 self.meta['migrated_issue_number']
             )
             logging.info('close migrated: %s' % mi.html_url)
             mi.instance.edit(state='closed')
-            #import epdb; epdb.st()
 
-        for unlabel in self.actions['unlabel']:
+        for unlabel in actions['unlabel']:
             logging.info('action: unlabel - ' + unlabel)
-            self.issue.remove_label(label=unlabel)
-        for newlabel in self.actions['newlabel']:
+            issue.remove_label(label=unlabel)
+        for newlabel in actions['newlabel']:
             logging.info('action: label - ' + newlabel)
-            self.issue.add_label(label=newlabel)
+            issue.add_label(label=newlabel)
 
-        if 'assign' in self.actions:
-            for user in self.actions['assign']:
+        if 'assign' in actions:
+            for user in actions['assign']:
                 logging.info('action: assign - ' + user)
-                self.issue.assign_user(user)
-        if 'unassign' in self.actions:
-            for user in self.actions['unassign']:
+                issue.assign_user(user)
+        if 'unassign' in actions:
+            for user in actions['unassign']:
                 logging.info('action: unassign - ' + user)
-                self.issue.unassign_user(user)
+                issue.unassign_user(user)
 
-        if 'merge' in self.actions:
-            if self.actions['merge']:
-                self.issue.merge()
+        if 'merge' in actions:
+            if actions['merge']:
+                issue.merge()
 
     def smart_match_module(self):
         '''Fuzzy matching for modules'''
@@ -1325,3 +1466,12 @@ class DefaultTriager(object):
                       x.user.login, command))
             else:
                 print("\t%s %s" % (x.created_at.isoformat(), x.user.login))
+
+    def wrap_issue(self, github, repo, issue):
+        iw = IssueWrapper(
+            github=github,
+            repo=repo,
+            issue=issue,
+            cachedir=self.cachedir
+        )
+        return iw

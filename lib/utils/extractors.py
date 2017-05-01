@@ -7,18 +7,35 @@ import re
 #from jinja2 import Template
 from string import Template
 
+SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
+            'ANSIBLE VERSION', 'ANSIBLE CONFIGURATION', 'CONFIGURATION',
+            'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT',
+            'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
+            'ACTUAL RESULTS', 'ADDITIONAL INFORMATION']
 
-def extract_template_data(body, issue_number=None, issue_class='issue'):
-    SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
-                'ANSIBLE VERSION', 'ANSIBLE CONFIGURATION', 'CONFIGURATION',
-                'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT',
-                'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
-                'ACTUAL RESULTS', 'ADDITIONAL INFORMATION']
 
-    '''
-    ISSUE_TYPES = ['Bug Report', 'Feature Idea',
-                   'Feature Request', 'Documentation Report']
-    '''
+
+def extract_template_sections(body, header='#####'):
+    ''' Get the section names from a .github/*.md file in a repo'''
+
+    sections = {}
+    lines = body.split('\n')
+    current_section = None
+    for line in lines:
+        if line.startswith(header):
+            section = line.replace(header, '', 1)
+            section = section.strip()
+            sections[section] = {'required': False}
+            current_section = section
+
+        elif line.startswith('<!--') and current_section:
+            if 'required: True' in line:
+                sections[current_section]['required'] = True
+
+    return sections
+
+
+def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS=SECTIONS):
 
     # this is the final result to return
     tdict = {}

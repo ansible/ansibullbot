@@ -17,12 +17,14 @@ from lib.decorators.github import RateLimited
 
 
 class GithubWrapper(object):
-    def __init__(self, gh):
+    def __init__(self, gh, cachedir='~/.ansibullbot/cache'):
         self.gh = gh
+        self.cachedir = os.path.expanduser(cachedir)
+        self.cachefile = os.path.join(self.cachedir, 'github.pickle')
 
     @RateLimited
     def get_repo(self, repo_path, verbose=True):
-        repo = RepoWrapper(self.gh, repo_path, verbose=verbose)
+        repo = RepoWrapper(self.gh, repo_path, verbose=verbose, cachedir=self.cachedir)
         return repo
 
     def get_current_time(self):
@@ -33,14 +35,15 @@ class GithubWrapper(object):
 
 
 class RepoWrapper(object):
-    def __init__(self, gh, repo_path, verbose=True):
+    def __init__(self, gh, repo_path, verbose=True, cachedir='~/.ansibullbot/cache'):
 
         self.gh = gh
         self.repo_path = repo_path
-        self.cachefile = os.path.join('~/.ansibullbot', 'cache', repo_path)
+
+        self.cachedir = os.path.expanduser(cachedir)
+        self.cachefile = os.path.join(self.cachedir, repo_path)
         self.cachefile = '%s/repo.pickle' % self.cachefile
-        self.cachefile = os.path.expanduser(self.cachefile)
-        self.cachedir = os.path.dirname(self.cachefile)
+
         self.updated_at_previous = None
         self.updated = False
         self.verbose = verbose
@@ -316,5 +319,34 @@ class RepoWrapper(object):
 
         return events
 
+    @RateLimited
+    def get_file_contents(self, filepath):
+
+        # FIXME - cachethis
+
+        filedata = None
+        try:
+            filedata = self.repo.get_file_contents(filepath)
+        except:
+            pass
+
+        return filedata
+
     def get_current_time(self):
         return datetime.utcnow()
+
+    def get_label_map(self):
+
+        label_map = {}
+
+        lm = self.repo.get_file_contents('.github/LABEL_MAP.md')
+        lm_content = lm.decoded_content
+
+        lines = lm_content.split('\n')
+        for line in lines:
+            line = line.strip()
+            if line:
+                parts = [x.strip() for x in line.split(':') if x.strip()]
+                label_map[parts[0].lower()] = parts[1]
+
+        return label_map
