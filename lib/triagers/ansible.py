@@ -529,7 +529,7 @@ class AnsibleTriage(DefaultTriager):
                     pprint(self.actions)
 
                     # do the actions
-                    action_meta = self.apply_actions(self.actions, self.issue)
+                    action_meta = self.apply_actions(self.issue, self.actions)
                     if action_meta['REDO']:
                         redo = True
 
@@ -1319,7 +1319,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('title: %s' % self.issue.title)
         logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(self.actions)
-        action_meta = self.apply_actions(self.actions, self.issue)
+        action_meta = self.apply_actions(self.issue, self.actions)
         return action_meta
 
     def close_module_issue_with_message(self, issue, bp='repomerge_new'):
@@ -1345,7 +1345,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('title: %s' % self.issue.title)
         logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(self.actions)
-        action_meta = self.apply_actions(self.actions, self.issue)
+        action_meta = self.apply_actions(self.issue, self.actions)
         return action_meta
 
     def trigger_rate_limit(self):
