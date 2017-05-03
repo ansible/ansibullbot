@@ -285,7 +285,7 @@ network/cumulus/: isharacomix jrrivers privateip
 network/dellos10/: skg-net
 network/dellos6/: abirami-n skg-net
 network/dellos9/: dhivyap skg-net
-network/eos/: privateip
+network/eos/: privateip trishnaguha
 network/f5/: caphrim007
 network/fortios: bjolivot
 network/illumos/: xen0l
