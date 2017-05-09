@@ -37,6 +37,11 @@ class ShippableRuns(object):
         if cache:
             requests_cache.install_cache(self.cachedir)
 
+        self.provider_id = '562dbd9710c5980d003b0451'
+        self.subscription_org_name = 'ansible'
+        self.project_name = 'ansible'
+        self.run_meta = []
+
     def update(self):
         '''Fetch the latest data then send for processing'''
         success = False
@@ -165,10 +170,54 @@ class ShippableRuns(object):
         return jdata
 
     def get_run_data(self, run_id, usecache=False):
-        # https://api.shippable.com/runs/58caf30337380a0800e31219
-        run_url = 'https://api.shippable.com/runs/' + run_id
-        run_data = self._get_url(run_url, usecache=usecache)
+
+        if len(run_id) == 24:
+            # https://api.shippable.com/runs/58caf30337380a0800e31219
+            run_url = 'https://api.shippable.com/runs/' + run_id
+            logging.info('shippable: %s' % run_url)
+            run_data = self._get_url(run_url, usecache=usecache)
+        else:
+            # https://github.com/ansible/ansibullbot/issues/513
+            run_url = 'https://api.shippable.com/runs'
+            run_url += '?'
+            run_url += 'providerIds=%s' % self.provider_id
+            run_url += '&'
+            run_url += 'subscriptionOrgNames=%s' % self.subscription_org_name
+            run_url += '&'
+            run_url += 'projectNames=%s' % self.project_name
+            run_url += '&'
+            run_url += 'runNumbers=%s' % run_id
+
+            logging.info('shippable: %s' % run_url)
+            run_data = self._get_url(run_url, usecache=usecache)
+            if run_data:
+                run_data = run_data[0]
+
         return run_data
+
+    def get_all_run_metadata(self, usecache=True):
+        url = 'https://api.shippable.com/runs'
+        run_data = self._get_url(url, usecache=usecache)
+        return run_data
+
+    def map_runid(self, runid):
+        if not self.run_meta:
+            self.run_meta = self.get_all_run_metadata(usecache=False)
+        for x in self.run_meta:
+            if x['id'] == runid:
+                return runid
+            elif x['runNumber'] == runid:
+                return x['id']
+
+        # try again with fresh meta
+        self.run_meta = self.get_all_run_metadata(usecache=False)
+        for x in self.run_meta:
+            if x['id'] == runid:
+                return runid
+            elif x['runNumber'] == runid:
+                return x['id']
+
+        return None
 
     def get_test_results(self, run_id, usecache=False, filter_paths=[]):
 
@@ -186,12 +235,13 @@ class ShippableRuns(object):
         # ci verified data map
         CVMAP = {}
 
-        '''
-        # https://api.shippable.com/runs/58caf30337380a0800e31219
-        run_url = 'https://api.shippable.com/runs/' + run_id
-        run_data = self._get_url(run_url, usecache=usecache)
-        '''
+        # get the run metdata
+        logging.info('shippable: get %s run data' % run_id)
         run_data = self.get_run_data(run_id, usecache=usecache)
+
+        # flip to the real runid
+        if run_data and run_data['id'] != run_id:
+            run_id = run_data['id']
 
         # https://github.com/ansible/ansibullbot/issues/472
         if not run_data:
