@@ -471,8 +471,14 @@ def get_shippable_run_facts(iw, meta, shippable=None):
     needs_testresult_notification = False
 
     # find the last chronological run id
+    #   https://app.shippable.com/github/ansible/ansible/runs/21001/summary
+    #   https://app.shippable.com/github/ansible/ansible/runs/21001
     last_run = [x['target_url'] for x in ci_status][0]
-    last_run = last_run.split('/')[-1]
+    last_run = last_run.split('/')
+    if last_run[-1] == 'summary':
+        last_run = last_run[-2]
+    else:
+        last_run = last_run[-1]
 
     # filter by the last run id
     (run_data, commitSha, shippable_test_results, ci_verified) = \
