@@ -81,7 +81,7 @@ class DefaultTriager(object):
     BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
     VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
     IGNORE_LABELS = [
-        "aws","azure","cloud",
+        "aws","azure","cloud", "ovirt",
         "feature_pull_request",
         "feature_idea",
         "bugfix_pull_request",

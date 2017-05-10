@@ -129,6 +129,7 @@ class AnsibleTriage(DefaultTriager):
         'cloud/amazon': "aws",
         'cloud/azure': "azure",
         'cloud/openstack': "openstack",
+        'cloud/ovirt': "ovirt",
         'cloud/digital_ocean': "digital_ocean",
         'windows': "windows",
         'network': "networking"
@@ -2445,6 +2446,7 @@ class AnsibleTriage(DefaultTriager):
             'cloud',
             'aws',
             'azure',
+            'ovirt',
             'digital_ocean',
             'docker',
             'gce',
