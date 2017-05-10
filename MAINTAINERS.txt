@@ -295,7 +295,7 @@ network/junos/: Qalthos ganeshrn
 network/lenovo: dkasberg
 network/netconf/netconf_config.py: lpenz userlerueda
 network/netvisor/: amitsi privateip gundalow Qalthos
-network/nxos/: jedelman8 GGabriele rahushen privateip rcarrillocruz mikewiebe
+network/nxos/: jedelman8 GGabriele rahushen privateip rcarrillocruz mikewiebe trishnaguha
 network/openswitch/: privateip gundalow Qalthos
 network/ordnance/: djh00t alexanderturner
 network/ovs/: privateip rcarrillocruz
