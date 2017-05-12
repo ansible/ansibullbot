@@ -522,8 +522,9 @@ class GithubWebScraper(object):
             elif 'removed ' in atxt:
                 action = 'removed'
                 tparts = atxt.split()
-                findex = tparts.index('from')
-                reviewer = tparts[findex+1]
+                if 'from' in tparts:
+                    findex = tparts.index('from')
+                    reviewer = tparts[findex+1]
             else:
                 action = None
                 logging.error('breakpoint!')
