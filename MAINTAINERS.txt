@@ -376,6 +376,7 @@ source_control/bzr.py: andreparames
 source_control/git.py: robinro
 source_control/git_config.py: djmattyg007
 source_control/github_hooks.py: pcgentry
+source_control/github_issue.py: akasurde
 source_control/github_key.py:
 source_control/github_release.py: adrianmoisey
 source_control/gitlab_: dj-wasabi
