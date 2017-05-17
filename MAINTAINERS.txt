@@ -304,6 +304,7 @@ network/sros/: privateip gundalow Qalthos
 network/vyos/: Qalthos
 network/wakeonlan: dagwieers
 notification/campfire.py: fabulops
+notification/catapult.py: Jmainguy
 notification/flowdock.py: mcodd
 notification/grove.py: zimbatm
 notification/hall.py: bkimble
