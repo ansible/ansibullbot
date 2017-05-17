@@ -334,7 +334,7 @@ packaging/language/maven_artifact.py: chrisisbeef
 packaging/language/npm.py: shane-walker
 packaging/language/pear.py: gentledevil
 packaging/language/pip.py: mattupstate
-packaging/os/apk.py: kbrebanov
+packaging/os/apk.py: kbrebanov tdtrask
 packaging/os/apt.py: ansible
 packaging/os/apt_key.py: jvantuyl
 packaging/os/apt_repository.py: ansible
