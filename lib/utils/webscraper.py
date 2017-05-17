@@ -501,8 +501,15 @@ class GithubWebScraper(object):
                     {'class': 'discussion-item'}
                 )
 
-                #if not adiv:
-                #    import epdb; epdb.st()
+                if not adiv:
+
+                    adiv = rdiv.find(
+                        'h3',
+                        {'class': lambda L: L and L.startswith('discussion-item-header')}
+                    )
+
+                    #if not adiv:
+                    #    import epdb; epdb.st()
 
             atxt = adiv.text
             atxt = atxt.lower()
