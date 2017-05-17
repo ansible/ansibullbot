@@ -489,7 +489,22 @@ class GithubWebScraper(object):
                 outdated = False
 
             reviewer = None
-            atxt = rdiv.find('div', {'class': ['discussion-item-header']}).text
+
+            # https://github.com/ansible/ansibullbot/issues/523
+            adiv = rdiv.find(
+                'div',
+                {'class': lambda L: L and L.startswith('discussion-item-header')}
+            )
+            if not adiv:
+                adiv = rdiv.find(
+                    'div',
+                    {'class': 'discussion-item'}
+                )
+
+                #if not adiv:
+                #    import epdb; epdb.st()
+
+            atxt = adiv.text
             atxt = atxt.lower()
             if 'suggested changes' in atxt:
                 action = 'suggested changes'
