@@ -828,8 +828,16 @@ class GithubWebScraper(object):
         to = soup.find('div', {'class': 'TableObject-item TableObject-item--primary'})
 
         # <div class="timeline-comment-header-text">
+        # <div class="TableObject-item TableObject-item--primary">
         timeline_header = soup.find('div', {'class': 'timeline-comment-header-text'})
+        if not timeline_header:
+            # https://github.com/ansible/ansibullbot/issues/520
+            timeline_header = soup.find('div', {'class': 'TableObject-item TableObject-item--primary'})
         timeline_relative_time = timeline_header.find('relative-time')
+        if not timeline_relative_time:
+            timeline_header = soup.find('h3', {'class': 'timeline-comment-header-text f5 text-normal'})
+            timeline_relative_time = timeline_header.find('relative-time')
+
         data['created_at'] = timeline_relative_time.attrs['datetime']
 
         if data['merged']:
