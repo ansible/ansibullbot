@@ -7,7 +7,7 @@ cloud/amazon/cloudtrail.py: ansible
 cloud/amazon/cloudwatchevent_rule.py: jsdalton
 cloud/amazon/dynamodb_table.py: loia
 cloud/amazon/ec2.py: ansible
-cloud/amazon/ec2_ami.py: 
+cloud/amazon/ec2_ami.py:
 cloud/amazon/ec2_ami_copy.py: amir343
 cloud/amazon/ec2_ami_find.py: tombamford
 cloud/amazon/ec2_asg.py: ansible
@@ -49,11 +49,11 @@ cloud/amazon/ec2_vpc_subnet.py:
 cloud/amazon/ec2_vpc_subnet_facts.py: wimnat
 cloud/amazon/ec2_vpc_vgw.py: naslanidis
 cloud/amazon/ec2_win_password.py: rickmendes
-cloud/amazon/ecs_cluster.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_service.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_service_facts.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_task.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_taskdefinition.py: simplesteph Java1Guy rmorlok
+cloud/amazon/ecs_cluster.py: simplesteph rmorlok
+cloud/amazon/ecs_service.py: simplesteph rmorlok
+cloud/amazon/ecs_service_facts.py: simplesteph rmorlok
+cloud/amazon/ecs_task.py: simplesteph rmorlok
+cloud/amazon/ecs_taskdefinition.py: simplesteph rmorlok
 cloud/amazon/efs.py: ryansydnor akazakov
 cloud/amazon/efs_facts.py: ryansydnor
 cloud/amazon/elasticache.py: jsdalton alachaum
@@ -407,7 +407,7 @@ system/locale_gen.py: AugustusKling
 system/lvg.py: abulimov
 system/lvol.py: jhoekx abulimov
 system/make.py: LinusU
-system/modprobe.py: 
+system/modprobe.py:
 system/mount.py: ansible
 system/ohai.py: ansible
 system/open_iscsi.py: srvg
