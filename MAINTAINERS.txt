@@ -49,11 +49,11 @@ cloud/amazon/ec2_vpc_subnet.py:
 cloud/amazon/ec2_vpc_subnet_facts.py: wimnat
 cloud/amazon/ec2_vpc_vgw.py: naslanidis
 cloud/amazon/ec2_win_password.py: rickmendes
-cloud/amazon/ecs_cluster.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_service.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_service_facts.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_task.py: simplesteph Java1Guy rmorlok
-cloud/amazon/ecs_taskdefinition.py: simplesteph Java1Guy rmorlok
+cloud/amazon/ecs_cluster.py: simplesteph Java1Guy
+cloud/amazon/ecs_service.py: simplesteph Java1Guy
+cloud/amazon/ecs_service_facts.py: simplesteph Java1Guy
+cloud/amazon/ecs_task.py: simplesteph Java1Guy
+cloud/amazon/ecs_taskdefinition.py: simplesteph Java1Guy
 cloud/amazon/efs.py: ryansydnor akazakov
 cloud/amazon/efs_facts.py: ryansydnor
 cloud/amazon/elasticache.py: jsdalton alachaum
