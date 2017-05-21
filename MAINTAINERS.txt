@@ -65,6 +65,7 @@ cloud/amazon/iam.py: ansible
 cloud/amazon/iam_cert.py: ansible
 cloud/amazon/iam_mfa_device_facts.py: pwnall
 cloud/amazon/iam_policy.py: ansible
+cloud/amazon/iam_role.py: wimnat
 cloud/amazon/iam_server_certificate_facts.py: linuxdynasty
 cloud/amazon/kinesis_stream.py: linuxdynasty
 cloud/amazon/lambda.py: steynovich
