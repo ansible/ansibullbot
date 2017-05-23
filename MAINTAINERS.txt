@@ -218,7 +218,7 @@ files/fetch.py: ansible
 files/file.py: ansible
 files/find.py: ansible
 files/ini_file.py: jpmens noseka1
-files/iso_extract: dagwieers
+files/iso_extract: jhoekx ribbons dagwieers
 files/lineinfile.py: ansible
 files/patch.py: jirutka luisperlaz
 files/replace.py: EvanK
