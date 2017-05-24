@@ -168,7 +168,7 @@ cloud/univention/: 2-B
 cloud/vmware/: ansible
 cloud/vmware/vca_: privateip
 cloud/vmware/vmware_: ansible
-cloud/vmware/vmware_guest: jctanner nerzhul dav1x
+cloud/vmware/vmware_guest: jctanner nerzhul dav1x dagwieers
 cloud/vmware/vmware_guest_facts: nerzhul
 cloud/vmware/vmware_guest_snapshot: nerzhul
 cloud/vmware/vmware_resource_pool:  dav1x
@@ -218,6 +218,7 @@ files/fetch.py: ansible
 files/file.py: ansible
 files/find.py: ansible
 files/ini_file.py: jpmens noseka1
+files/iso_extract: jhoekx ribbons dagwieers
 files/lineinfile.py: ansible
 files/patch.py: jirutka luisperlaz
 files/replace.py: EvanK
@@ -549,4 +550,3 @@ windows/win_user.ps1: nitzmahone
 windows/win_user.py: nitzmahone
 windows/win_webpicmd.ps1: petemounce
 windows/win_webpicmd.py: petemounce
-windows_win_tempfile: dagwieers
