@@ -90,7 +90,7 @@ cloud/amazon/sqs_queue.py: loia
 cloud/amazon/sts_assume_role.py: bekelchik
 cloud/amazon/sts_session_token.py: pwnall
 cloud/atomic/: krsacme
-cloud/azure/: ansible
+cloud/azure/: haroldwongms tstringer nitzmahone
 cloud/azure/azure_rm_deployment.py: devigned lmazuel
 cloud/centurylink/: clc-runner
 cloud/cloudscale/: gaudenz
