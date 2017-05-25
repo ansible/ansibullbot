@@ -108,7 +108,7 @@ cloud/docker/docker_image_facts.py: ansible
 cloud/docker/docker_login.py: olsaki
 cloud/docker/docker_network.py: olsaki
 cloud/docker/docker_service.py: ansible
-cloud/google/: supertom
+cloud/google/: erjohnso
 cloud/google/gc_storage.py: supertom
 cloud/google/gcdns_: walbert947
 cloud/google/gce_img.py: supertom
