@@ -429,7 +429,7 @@ system/service.py: ansible
 system/setup.py: ansible
 system/solaris_zone.py: pmarkham
 system/svc.py: bcoca
-system/sysctl.py: davixx
+system/sysctl.py: davixx akasurde
 system/systemd.py: ansible
 system/timezone.py: tmshn jasperla
 system/ufw.py: ovcharenko pyykkis
