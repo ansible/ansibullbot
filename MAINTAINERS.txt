@@ -197,11 +197,11 @@ database/mssql/mssql_db.py: vedit Jmainguy
 database/mysql/mysql_replication.py: banyek
 database/mysql/mysql_user.py: Jmainguy
 database/mysql/mysql_variables.py: banyek
-database/postgresql/postgresql_db.py: ansible
-database/postgresql/postgresql_ext.py: dschep
-database/postgresql/postgresql_lang.py: jensdepuydt
-database/postgresql/postgresql_privs.py: b6d
-database/postgresql/postgresql_user.py: nerzhul
+database/postgresql/postgresql_db.py: ansible matburt
+database/postgresql/postgresql_ext.py: dschep matburt
+database/postgresql/postgresql_lang.py: jensdepuydt matburt
+database/postgresql/postgresql_privs.py: b6d matburt
+database/postgresql/postgresql_user.py: nerzhul matburt
 database/proxysql/proxysql_backend_servers.py: bmildren
 database/proxysql/proxysql_global_variables.py: bmildren
 database/proxysql/proxysql_manage_config.py: bmildren
