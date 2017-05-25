@@ -76,11 +76,12 @@ def RateLimited(fn):
             count += 1
             rl = get_rate_limit()
 
-            logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
-                          (count,
-                           str(type(args[0])),
-                           fn.func_name,
-                           rl['resources']['core']['remaining']))
+            if rl:
+                logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
+                              (count,
+                               type(args[0]),
+                               fn.func_name,
+                               rl['resources']['core']['remaining']))
 
             if count > 10:
                 logging.error('HIT 10 loop iteration on call, giving up')
