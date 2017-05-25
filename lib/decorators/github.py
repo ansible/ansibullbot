@@ -33,8 +33,14 @@ def get_rate_limit():
                 success = True
             except Exception:
                 time.sleep(60)
-    return rr.json()
 
+    response = rr.json()
+
+    if 'resources' not in response or 'core' not in response['resources']:
+        logging.warning('Unable to fetch rate limit %r', response['message'])
+        return False
+
+    return response
 
 def get_reset_time(fn, args):
     '''Return the number of seconds until the rate limit resets'''
