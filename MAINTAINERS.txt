@@ -487,6 +487,8 @@ windows/win_file_version.ps1: SamLiu79
 windows/win_file_version.py: SamLiu79
 windows/win_find.ps1: jborean93
 windows/win_find.py: jborean93
+windows/win_firewall.ps1: if-meaton
+windows/win_firewall.py: if-meaton
 windows/win_firewall_rule.ps1: TimothyVandenbrande ar7z1
 windows/win_firewall_rule.py: TimothyVandenbrande ar7z1
 windows/win_get_url.ps1: jhawkesworth
