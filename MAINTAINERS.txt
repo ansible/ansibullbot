@@ -256,6 +256,7 @@ monitoring/pagerduty_alert.py: aps-sids
 monitoring/pingdom.py: thaumos
 monitoring/rollbar_deployment.py: kavu
 monitoring/sensu_check.py: andsens
+monitoring/sensu_silence.py: smbambling
 monitoring/sensu_subscription.py: andsens
 monitoring/stackdriver.py: bwhaley
 monitoring/statusio_maintenance.py: bhcopeland
