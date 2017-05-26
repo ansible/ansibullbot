@@ -257,13 +257,10 @@ class DefaultTriager(object):
             logfile = '/tmp/ansibullbot.log'
 
         logdir = os.path.dirname(logfile)
-        if not os.path.isdir(logdir):
+        if logdir and not os.path.isdir(logdir):
             os.makedirs(logdir)
 
-        fileHandler = logging.FileHandler("{0}/{1}".format(
-                os.path.dirname(logfile),
-                os.path.basename(logfile))
-        )
+        fileHandler = logging.FileHandler(logfile)
         fileHandler.setFormatter(logFormatter)
         rootLogger.addHandler(fileHandler)
         consoleHandler = logging.StreamHandler()
