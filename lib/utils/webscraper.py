@@ -11,6 +11,7 @@ import time
 import urllib2
 
 from bs4 import BeautifulSoup
+from lib.utils.receiver_client import post_to_receiver
 
 
 class GithubWebScraper(object):
@@ -133,10 +134,16 @@ class GithubWebScraper(object):
         else:
             url = baseurl
 
+        namespace = repo_url.split('/')[-2]
+        reponame = repo_url.split('/')[-1]
+
         rr = self._request_url(url)
         soup = BeautifulSoup(rr.text, 'html.parser')
         data = self._parse_issue_summary_page(soup)
         if data['issues']:
+            # send to receiver
+            post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, data['issues'])
+            # update master list
             issues.update(data['issues'])
 
         if not baseurl:
@@ -146,6 +153,10 @@ class GithubWebScraper(object):
             rr = self._request_url(self.baseurl + data['next_page'])
             soup = BeautifulSoup(rr.text, 'html.parser')
             data = self._parse_issue_summary_page(soup)
+
+            # send to receiver
+            post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, data['issues'])
+
             if not data['next_page'] or not data['issues']:
                 break
 
@@ -180,6 +191,7 @@ class GithubWebScraper(object):
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
+                    post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, {x: summary})
                     if not isinstance(x, unicode):
                         x = u'%s' % x
                     issues[x] = summary
@@ -191,6 +203,7 @@ class GithubWebScraper(object):
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
+                    post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, {x: summary})
                     if not isinstance(x, unicode):
                         x = u'%s' % x
                     issues[x] = summary
@@ -846,8 +859,10 @@ class GithubWebScraper(object):
         number = soup.find('span', {'class': 'gh-header-number'})
         data['number'] = int(number.text.replace('#', ''))
 
+        '''
         # <div class="TableObject-item TableObject-item--primary">
         to = soup.find('div', {'class': 'TableObject-item TableObject-item--primary'})
+        '''
 
         # <div class="timeline-comment-header-text">
         # <div class="TableObject-item TableObject-item--primary">

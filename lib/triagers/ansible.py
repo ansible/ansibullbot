@@ -32,7 +32,6 @@ import logging
 import os
 import pytz
 import re
-import time
 
 import lib.constants as C
 
@@ -48,6 +47,7 @@ from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.file_tools import FileIndexer
 from lib.utils.shippable_api import ShippableRuns
 from lib.utils.systemtools import run_command
+from lib.utils.receiver_client import post_to_receiver
 from lib.utils.webscraper import GithubWebScraper
 
 from lib.decorators.github import RateLimited
@@ -60,6 +60,7 @@ from lib.triagers.plugins.needs_revision import get_needs_revision_facts
 from lib.triagers.plugins.needs_revision import get_shippable_run_facts
 from lib.triagers.plugins.shipit import automergeable
 from lib.triagers.plugins.shipit import needs_community_review
+
 
 #BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 REPOS = [
@@ -593,6 +594,15 @@ class AnsibleTriage(DefaultTriager):
             dmeta['pullrequest_reviews'] = []
 
         self.dump_meta(issuewrapper, dmeta)
+        rfn = issuewrapper.repo_full_name
+        rfn_parts = rfn.split('/', 1)
+        namespace = rfn_parts[0]
+        reponame = rfn_parts[1]
+        post_to_receiver(
+            'metadata',
+            {'user': namespace, 'repo': reponame, 'number': issuewrapper.number},
+            dmeta
+        )
 
     def run_module_repo_issue(self, iw, hcache=None):
         ''' Module Repos are dead!!! '''

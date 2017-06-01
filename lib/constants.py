@@ -264,3 +264,25 @@ DEFAULT_STALE_WINDOW = get_config(
     7,
     value_type='int'
 )
+
+###########################################
+#   METADATA RECEIVER
+###########################################
+
+DEFAULT_RECEIVER_HOST = get_config(
+    p,
+    'receiver',
+    'host',
+    '%s_RECEIVER_HOST' % PROG_NAME.upper(),
+    None,
+    value_type='str'
+)
+
+DEFAULT_RECEIVER_PORT = get_config(
+    p,
+    'receiver',
+    'port',
+    '%s_RECEIVER_PORT' % PROG_NAME.upper(),
+    None,
+    value_type='int'
+)
