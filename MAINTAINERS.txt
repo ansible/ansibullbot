@@ -477,6 +477,7 @@ windows/win_copy.ps1: jhawkesworth
 windows/win_copy.py: jhawkesworth
 windows/win_dotnet_ngen.ps1: petemounce
 windows/win_dotnet_ngen.py: petemounce
+windows/win_dsc: trondhindenes
 windows/win_environment.ps1: jhawkesworth
 windows/win_environment.py: jhawkesworth
 windows/win_feature.ps1: trondhindenes
@@ -542,7 +543,8 @@ windows/win_stat.py: nitzmahone
 windows/win_tempfile: dagwieers
 windows/win_template.ps1: jhawkesworth
 windows/win_template.py: jhawkesworth
-windows/win_timezone: schwartzmx jborean93 dagwieers
+windows/win_timezone.ps1: schwartzmx
+windows/win_timezone.py: schwartzmx
 windows/win_unzip.ps1: schwartzmx
 windows/win_unzip.py: schwartzmx
 windows/win_updates.ps1: nitzmahone
