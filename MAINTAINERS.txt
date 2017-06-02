@@ -511,8 +511,7 @@ windows/win_msi.ps1: sivel
 windows/win_msi.py: sivel
 windows/win_nssm.ps1: smadam813
 windows/win_nssm.py: smadam813
-windows/win_owner.ps1:
-windows/win_owner.py:
+windows/win_owner: jborean93
 windows/win_package.ps1: trondhindenes
 windows/win_package.py: trondhindenes
 windows/win_ping.ps1: nitzmahone
@@ -535,8 +534,7 @@ windows/win_scheduled_task.ps1: petemounce
 windows/win_scheduled_task.py: petemounce
 windows/win_service.ps1: chrishoffman
 windows/win_service.py: chrishoffman
-windows/win_share.ps1:
-windows/win_share.py:
+windows/win_share: jborean93
 windows/win_shortcut.ps1: dagwieers
 windows/win_shortcut.py: dagwieers
 windows/win_stat.ps1: nitzmahone
@@ -544,8 +542,7 @@ windows/win_stat.py: nitzmahone
 windows/win_tempfile: dagwieers
 windows/win_template.ps1: jhawkesworth
 windows/win_template.py: jhawkesworth
-windows/win_timezone.ps1: schwartzmx
-windows/win_timezone.py: schwartzmx
+windows/win_timezone: schwartzmx jborean93 dagwieers
 windows/win_unzip.ps1: schwartzmx
 windows/win_unzip.py: schwartzmx
 windows/win_updates.ps1: nitzmahone
