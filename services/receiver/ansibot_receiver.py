@@ -14,8 +14,6 @@ from werkzeug.exceptions import BadRequest
 app = Flask(__name__)
 app.config['MONGO_DBNAME'] = 'ansibot_reciever'
 mongo = PyMongo(app)
-#DB = mongo['github_summaries']
-#SUMMARIES = DB['issues']
 
 
 def get_summary_numbers_for_repo(org, repo):
@@ -28,6 +26,36 @@ def get_summary_numbers_for_repo(org, repo):
     res = list(cursor)
     res = [x['number'] for x in res]
     return res
+
+
+@app.route('/dedupe', methods=['GET'])
+def dedupe_summaries():
+
+    # summaries
+    cursor = mongo.db.summaries.find()
+    results = list(cursor)
+    summaries = {}
+    for res in results:
+        gn = res.get('github_number') or res.get('number')
+        key = '%s-%s-%s' % (res['github_org'], res['github_repo'], gn)
+        if key not in summaries:
+            summaries[key] = res
+        else:
+            mongo.db.summaries.remove(res)
+
+    # metadata
+    cursor = mongo.db.metadata.find()
+    results = list(cursor)
+    metadata = {}
+    for res in results:
+        gn = res.get('github_number') or res.get('number')
+        key = '%s-%s-%s' % (res['github_org'], res['github_repo'], gn)
+        if key not in metadata:
+            metadata[key] = res
+        else:
+            mongo.db.metadata.remove(res)
+
+    return jsonify({'result': 'ok'})
 
 
 @app.route('/metadata', methods=['GET', 'POST'])
@@ -75,7 +103,16 @@ def metadata():
         return jsonify(res)
 
     elif request.method == 'GET':
-        pass
+        # get the existing document
+        cursor = mongo.db.metadata.find(
+            {'github_org': username, 'github_repo': reponame, 'github_number': number}
+        )
+        docs = list(cursor)
+        docs = [dict(x) for x in docs]
+        for idx,x in enumerate(docs):
+            x.pop('_id', None)
+            docs[idx] = x
+        return jsonify(docs)
 
     return ""
 
@@ -158,9 +195,17 @@ def summaries():
 
         return jsonify(res)
 
-
     elif request.method == 'GET':
-        print('GET!')
+        # get the existing document
+        cursor = mongo.db.summaries.find(
+            {'github_org': username, 'github_repo': reponame, 'number': number}
+        )
+        docs = list(cursor)
+        docs = [dict(x) for x in docs]
+        for idx,x in enumerate(docs):
+            x.pop('_id', None)
+            docs[idx] = x
+        return jsonify(docs)
 
     return 'summaries\n'
 
