@@ -465,6 +465,7 @@ web_infrastructure/jira.py: tarka Slezhuk
 web_infrastructure/letsencrypt.py: mgruener
 web_infrastructure/supervisorctl.py: mattupstate inetfuture
 web_infrastructure/taiga_issue.py: lekum
+windows/: dagwieers jborean93 jhawkesworth
 windows/setup.ps1: ansible
 windows/slurp.ps1: ansible
 windows/win_acl.ps1: schwartzmx trondhindenes
@@ -477,6 +478,7 @@ windows/win_copy.ps1: jhawkesworth
 windows/win_copy.py: jhawkesworth
 windows/win_dotnet_ngen.ps1: petemounce
 windows/win_dotnet_ngen.py: petemounce
+windows/win_dsc: trondhindenes
 windows/win_environment.ps1: jhawkesworth
 windows/win_environment.py: jhawkesworth
 windows/win_feature.ps1: trondhindenes
@@ -511,8 +513,7 @@ windows/win_msi.ps1: sivel
 windows/win_msi.py: sivel
 windows/win_nssm.ps1: smadam813
 windows/win_nssm.py: smadam813
-windows/win_owner.ps1:
-windows/win_owner.py:
+windows/win_owner: jborean93
 windows/win_package.ps1: trondhindenes
 windows/win_package.py: trondhindenes
 windows/win_ping.ps1: nitzmahone
@@ -535,8 +536,7 @@ windows/win_scheduled_task.ps1: petemounce
 windows/win_scheduled_task.py: petemounce
 windows/win_service.ps1: chrishoffman
 windows/win_service.py: chrishoffman
-windows/win_share.ps1:
-windows/win_share.py:
+windows/win_share: jborean93
 windows/win_shortcut.ps1: dagwieers
 windows/win_shortcut.py: dagwieers
 windows/win_stat.ps1: nitzmahone
