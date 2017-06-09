@@ -521,6 +521,7 @@ windows/win_ping.ps1: nitzmahone
 windows/win_ping.py: nitzmahone
 windows/win_psexec.ps1: dagwieers
 windows/win_psexec.py: dagwieers
+windows/win_reboot.py: nitzmahone
 windows/win_reg_stat.ps1: jborean93
 windows/win_reg_stat.py: jborean93
 windows/win_regedit.ps1: joshludwig smadam813
