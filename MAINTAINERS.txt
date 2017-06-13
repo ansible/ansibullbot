@@ -60,6 +60,8 @@ cloud/amazon/elasticache.py: jsdalton alachaum
 cloud/amazon/elasticache_parameter_group.py: s-hertel
 cloud/amazon/elasticache_snapshot.py: s-hertel
 cloud/amazon/elasticache_subnet_group.py: timmahoney
+cloud/amazon/elb_application_lb.py: wimnat
+cloud/amazon/elb_target_group.py: wimnat
 cloud/amazon/execute_lambda.py: ryansb
 cloud/amazon/iam.py: ansible
 cloud/amazon/iam_cert.py: ansible
