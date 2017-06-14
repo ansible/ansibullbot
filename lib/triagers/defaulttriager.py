@@ -34,10 +34,9 @@ from jinja2 import Environment, FileSystemLoader
 from lib.decorators.github import RateLimited
 from lib.wrappers.ghapiwrapper import GithubWrapper
 from lib.wrappers.issuewrapper import IssueWrapper
-from lib.utils.moduletools import ModuleIndexer
-from lib.utils.file_tools import FileIndexer
-from lib.utils.version_tools import AnsibleVersionIndexer
 from lib.utils.descriptionfixer import DescriptionFixer
+
+import lib.constants as C
 
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath.index('lib')
@@ -178,7 +177,6 @@ class DefaultTriager(object):
         # get valid labels
         logging.info('getting labels')
         self.valid_labels = self.get_valid_labels(self.repopath)
-
 
     '''
     def __init__(self, verbose=None, github_user=None, github_pass=None,
@@ -656,8 +654,11 @@ class DefaultTriager(object):
         if not version:
             # old workflow
             if not hasattr(self, 'ansible_version'):
-                logging.debug('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.debug('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('no ansible_version')
             return self.version_indexer.get_major_minor(self.ansible_version)
         else:
             # v3 workflow
@@ -1256,7 +1257,7 @@ class DefaultTriager(object):
                     changed = self.template_wizard()
                     if changed:
                         action_meta['REDO'] = True
-                self.FIXED_ISSUES.append(ssue.html_url)
+                self.FIXED_ISSUES.append(issue.html_url)
         else:
             print("Skipping.")
 

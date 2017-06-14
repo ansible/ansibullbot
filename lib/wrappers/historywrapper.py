@@ -9,6 +9,8 @@ from operator import itemgetter
 from github import GithubObject
 from lib.decorators.github import RateLimited
 
+import lib.constants as C
+
 # historywrapper.py
 #
 #   HistoryWrapper - a tool to ask questions about an issue's history
@@ -64,8 +66,11 @@ class HistoryWrapper(object):
         self.cachedir = os.path.dirname(self.cachefile)
         if 'issues' not in self.cachedir:
             logging.error(self.cachedir)
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('')
 
         if not usecache:
             self.history = self.process()
@@ -127,8 +132,11 @@ class HistoryWrapper(object):
                 pickle.dump(cachedata, f)
         except Exception as e:
             logging.error(e)
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('')
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
@@ -631,8 +639,11 @@ class HistoryWrapper(object):
             elif review['state'] == 'DISMISSED':
                 event['event'] = 'review_dismissed'
             else:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('unknown review state')
             self.history.append(event)
 
         self.fix_history_tz()

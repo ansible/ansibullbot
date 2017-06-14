@@ -37,6 +37,8 @@ from lib.wrappers.historywrapper import HistoryWrapper
 
 from lib.decorators.github import RateLimited
 
+import lib.constants as C
+
 
 class DefaultWrapper(object):
 
@@ -300,11 +302,15 @@ class DefaultWrapper(object):
                         baseobj = self.pullrequest
 
         if not baseobj:
-            print('%s was not a property for the issue or the pullrequest'
-                  % property_name)
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
-            sys.exit(1)
+            logging.error(
+                '%s was not a property for the issue or the pullrequest'
+                % property_name
+            )
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('property error')
 
         # pull all events if timestamp is behind or no events cached
         if update or not events:
@@ -318,8 +324,11 @@ class DefaultWrapper(object):
                     methodToCall = getattr(baseobj, property_name)
                 except Exception as e:
                     logging.error(e)
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception(str(e))
                 events = methodToCall
             else:
                 # callable properties
@@ -327,8 +336,11 @@ class DefaultWrapper(object):
                     methodToCall = getattr(baseobj, 'get_' + property_name)
                 except Exception as e:
                     logging.error(e)
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception(str(e))
                 events = [x for x in methodToCall()]
 
         if write_cache or not os.path.isfile(pfile):
@@ -349,8 +361,11 @@ class DefaultWrapper(object):
             assignee = []
             for x in self.instance.assignee:
                 assignee.append(x.login)
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('exception')
         return assignee
 
     @property
@@ -823,8 +838,11 @@ class DefaultWrapper(object):
             self.pullrequest.update()
 
             if self.instance.updated_at > self.pullrequest.updated_at:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('issue date != pr date')
 
     @property
     def commits(self):
@@ -941,8 +959,11 @@ class DefaultWrapper(object):
 
             if resp[0] != 200 or 'successfully merged' not in resp[2]:
                 logging.error('merge failed on %s' % self.number)
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('merge failed')
                 sys.exit(1)
             else:
                 logging.error('merge successful for %s' % self.number)
@@ -965,8 +986,11 @@ class DefaultWrapper(object):
 
             if resp[0] != 200 or 'successfully merged' not in resp[2]:
                 logging.error('merge failed on %s' % self.number)
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('merge failed')
                 sys.exit(1)
             else:
                 logging.info('merge successful for %s' % self.number)
@@ -992,8 +1016,11 @@ class DefaultWrapper(object):
                     migrated_issue = msg.split()[4]
                 except Exception as e:
                     logging.error(e)
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception('split failed')
                 if migrated_issue.endswith('_'):
                     migrated_issue = migrated_issue.rstrip('_')
                 self._migrated_from = migrated_issue

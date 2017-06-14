@@ -201,6 +201,16 @@ DEFAULT_DEBUG = get_config(
     value_type='string'
 )
 
+# We don't want breakpoints in production
+DEFAULT_BREAKPOINTS = get_config(
+    p,
+    DEFAULTS,
+    'breakpoints',
+    '%s_BREAKPOINTS' % PROG_NAME.upper(),
+    False,
+    value_type='string'
+)
+
 DEFAULT_GITHUB_USERNAME = get_config(
     p,
     DEFAULTS,

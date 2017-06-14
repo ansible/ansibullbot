@@ -7,12 +7,14 @@ import re
 #from jinja2 import Template
 from string import Template
 
+import lib.constants as C
+
+
 SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
             'ANSIBLE VERSION', 'ANSIBLE CONFIGURATION', 'CONFIGURATION',
             'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT',
             'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
             'ACTUAL RESULTS', 'ADDITIONAL INFORMATION']
-
 
 
 def extract_template_sections(body, header='#####'):
@@ -84,8 +86,11 @@ def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS
             try:
                 tofind = t.substitute(section=section)
             except Exception as e:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('substitution failed: %s' % str(e))
             match = upper_body.find(tofind)
             if match != -1:
                 match_map[section] = match + 1
@@ -230,7 +235,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS
                 if v:
                     vlines = v.split('\n')
                     # https://github.com/ansible/ansible-modules-core/issues/3085
-                    vlines = [x for x in vlines if not 'pick one' in x]
+                    vlines = [x for x in vlines if 'pick one' not in x]
                     v = vlines[0]
 
             # https://github.com/ansible/ansible-modules-core/issues/4060
@@ -290,6 +295,7 @@ def remove_markdown_comments(rawtext):
         else:
             break
     return cleaned
+
 
 def _remove_markdown_comments(rawtext):
     # Get rid of the comment blocks from the markdown template
@@ -354,11 +360,14 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
                 break
         try:
             number = int(number)
-        except Exception as e:
+        except Exception:
             number = None
     else:
         logging.error('NOT SURE HOW TO PARSE %s' % rawtext)
-        logging.error('breakpoint!')
-        import epdb; epdb.st()
+        if C.DEFAULT_BREAKPOINTS:
+            logging.error('breakpoint!')
+            import epdb; epdb.st()
+        else:
+            raise Exception('parsing error')
 
     return number

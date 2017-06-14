@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
+import logging
 import os
 from lib.utils.webscraper import GithubWebScraper
+
+import lib.constants as C
 
 ISSUE_TYPES = {'bug_report': 'Bug Report',
                'feature_idea': 'Feature Idea',
@@ -46,7 +49,11 @@ class DescriptionFixer(object):
             self.sections[section] = ''
 
         if self.section_order[0] not in ['issue type', 'summary']:
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('out of order section')
 
         self.process()
         self.create_body()
@@ -185,7 +192,11 @@ class DescriptionFixer(object):
                 post_section = self.section_order[midx + 1]
 
                 if post_section not in self.section_map:
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception('section not in map')
 
                 post_line = self.section_map[post_section]
 
