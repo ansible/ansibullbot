@@ -9,6 +9,8 @@ from lib.utils.systemtools import *
 from distutils.version import StrictVersion
 from distutils.version import LooseVersion
 
+import lib.constants as C
+
 
 def list_to_version(inlist, cast_string=True, reverse=True, binary=False):
     # [1,2,3] => "3.2.1"
@@ -61,7 +63,6 @@ class AnsibleVersionIndexer(object):
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
 
-
     def _get_versions(self):
         self.VALIDVERSIONS = {}
         # get devel's version
@@ -79,13 +80,13 @@ class AnsibleVersionIndexer(object):
                              stderr=subprocess.PIPE)
         (so, se) = p.communicate()
         lines = [x.strip() for x in so.split('\n') if x.strip()]
-        rlines = [x for x in lines if x.startswith('remotes/origin/release') \
-                                  or x.startswith('remotes/origin/stable') ]
+        rlines = [x for x in lines if x.startswith('remotes/origin/release') or
+                  x.startswith('remotes/origin/stable')]
         rlines = [x.split('/')[-1] for x in rlines]
         rlines = [x.replace('release', '') for x in rlines]
         rlines = [x.replace('stable-', '') for x in rlines]
         for rline in rlines:
-            if not rline in self.VALIDVERSIONS:
+            if rline not in self.VALIDVERSIONS:
                 self.VALIDVERSIONS[rline] = 'branch'
 
         # tags
@@ -101,7 +102,7 @@ class AnsibleVersionIndexer(object):
         lines = [x.strip() for x in so.split('\n') if x.strip()]
         rlines = [x.replace('v', '', 1) for x in lines]
         for rline in rlines:
-            if not rline in self.VALIDVERSIONS:
+            if rline not in self.VALIDVERSIONS:
                 self.VALIDVERSIONS[rline] = 'tag'
 
     def is_valid_version(self, version):
@@ -122,7 +123,6 @@ class AnsibleVersionIndexer(object):
                     return True
 
         return False
-
 
     def strip_ansible_version(self, rawtext, logprefix=''):
 
@@ -204,14 +204,15 @@ class AnsibleVersionIndexer(object):
             if len(rawlines) < (idx+2):
                 continue
             if x.startswith('ansible') and \
-                (rawlines[idx+1].startswith('config file') \
-                or rawlines[idx+1].startswith('configured module search path')):
+                (rawlines[idx+1].startswith('config file') or
+                 rawlines[idx+1].startswith('configured module search path')):
                 parts = x.replace(')', '').split()
                 aversion = parts[1]
 
                 # is this a checkout with a hash? ...
                 if len(parts) > 3:
-                    ahash = parts[3]
+                    #ahash = parts[3]
+                    pass
                 elif len(parts) > 2:
                     # ['ansible', '2.2.0.0', 'rc1']
                     pass
@@ -224,7 +225,7 @@ class AnsibleVersionIndexer(object):
             # get chars to the end of the vstring ...
             for char in rawtext[pidx:]:
                 if char == ' ' or char == '\n' or char == '\r' \
-                    or (not char.isalnum() and char != '.'):
+                        or (not char.isalnum() and char != '.'):
                     break
                 else:
                     fver += char
@@ -233,24 +234,24 @@ class AnsibleVersionIndexer(object):
             # get chars to the beginning of the vstring ...
             for char in head:
                 if char == ' ' or char == '\n' or char == '\r' \
-                    or (not char.isalnum() and char != '.'):
+                        or (not char.isalnum() and char != '.'):
                     break
                 else:
                     fver = char + fver
             if fver[0] == 'v':
-                fver=fver[1:]
+                fver = fver[1:]
             if fver:
                 sver = None
                 lver = None
 
                 try:
                     sver = StrictVersion(fver)
-                except Exception as se:
+                except Exception:
                     pass
 
                 try:
                     lver = LooseVersion(fver)
-                except Exception as le:
+                except Exception:
                     pass
 
                 if sver:
@@ -259,7 +260,7 @@ class AnsibleVersionIndexer(object):
                     return fver
 
         lines = rawtext.split('\n')
-        orig_lines = lines
+        #orig_lines = lines
         lines = [x.strip() for x in lines if x.strip()]
         lines = [x for x in lines if not x.startswith('config')]
         lines = [x for x in lines if not x.startswith('<')]
@@ -288,7 +289,7 @@ class AnsibleVersionIndexer(object):
 
         # https://github.com/ansible/ansible-modules-extras/issues/809
         #   false positives from this issue ...
-        lines = [x for x in lines if not 'versions: []' in x]
+        lines = [x for x in lines if 'versions: []' not in x]
 
         # try to narrow down to a single line
         if len(lines) > 1:
@@ -337,8 +338,11 @@ class AnsibleVersionIndexer(object):
                             aversion = words[0]
                         except Exception as e:
                             logging.error(e)
-                            logging.error('breakpoint!')
-                            import epdb; epdb.st()
+                            if C.DEFAULT_BREAKPOINTS:
+                                logging.error('breakpoint!')
+                                import epdb; epdb.st()
+                            else:
+                                raise Exception('indexerror: %s' % e)
                     elif characters[0].isdigit():
                         aversion = words[0]
                     else:
@@ -351,7 +355,6 @@ class AnsibleVersionIndexer(object):
             pass
 
         return aversion
-
 
     def ansible_version_by_commit(self, commithash, config=None):
 
@@ -395,16 +398,19 @@ class AnsibleVersionIndexer(object):
             (rc, so, se) = run_command(cmd)
             lines = [x.strip() for x in so.split('\n') if x.strip()]
 
-            rlines = [x for x in lines if x.startswith('origin/release') \
-                                      or x.startswith('origin/stable') ]
+            rlines = [x for x in lines if x.startswith('origin/release') or
+                      x.startswith('origin/stable')]
             rlines = [x.split('/')[-1] for x in rlines]
             rlines = [x.replace('release', '') for x in rlines]
             rlines = [x.replace('stable-', '') for x in rlines]
 
             if rc != 0:
                 logging.error("rc != 0")
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('bad returncode')
 
             if len(rlines) > 0:
                 aversion = rlines[0]
@@ -426,13 +432,15 @@ class AnsibleVersionIndexer(object):
                     aversion = devel_version
                 else:
                     logging.error("WTF!? ...")
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception('HEAD not found')
 
             self.COMMITVERSIONS[commithash] = aversion
 
         return aversion
-
 
     def ansible_version_by_date(self, dateobj, devel=False):
 
@@ -460,7 +468,7 @@ class AnsibleVersionIndexer(object):
             datestr = str(dateobj).split()[0]
             for dv in reversed(self.DATEVERSIONS):
                 if dv[0] == datestr:
-                    accommit = dv[1]
+                    #accommit = dv[1]
                     break
             if not acommit:
                 datestr = '-'.join(datestr.split('-')[0:2])
@@ -475,7 +483,6 @@ class AnsibleVersionIndexer(object):
             aversion = self.ansible_version_by_commit(acommit)
 
         return aversion
-
 
     def get_major_minor(self, vstring):
         '''Return an X.Y version'''

@@ -42,6 +42,7 @@ def get_rate_limit():
 
     return response
 
+
 def get_reset_time(fn, args):
     '''Return the number of seconds until the rate limit resets'''
 
@@ -118,11 +119,17 @@ def RateLimited(fn):
                         #success = True
                         return None
                     else:
+                        if C.DEFAULT_BREAKPOINTS:
+                            logging.error('breakpoint!')
+                            import epdb; epdb.st()
+                        else:
+                            raise Exception('unhandled message type')
+                else:
+                    if C.DEFAULT_BREAKPOINTS:
                         logging.error('breakpoint!')
                         import epdb; epdb.st()
-                else:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+                    else:
+                        raise Exception('no data in exception')
 
                 logging.warning('sleeping %s minutes' % (stime/60))
                 time.sleep(stime)

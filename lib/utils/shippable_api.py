@@ -162,10 +162,18 @@ class ShippableRuns(object):
                 return None
 
         if resp and resp.status_code == 404:
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('shippable 404')
 
         if not jdata:
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('no json data')
 
         return jdata
 

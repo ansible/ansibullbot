@@ -13,6 +13,8 @@ import urllib2
 from bs4 import BeautifulSoup
 from lib.utils.receiver_client import post_to_receiver
 
+import lib.constants as C
+
 
 class GithubWebScraper(object):
     cachedir = None
@@ -44,8 +46,11 @@ class GithubWebScraper(object):
             except Exception as e:
                 logging.error(e)
                 issues = {}
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception(str(e))
         return issues
 
     def dump_summaries(self, repo_url, issues, filename="summaries"):
@@ -89,8 +94,11 @@ class GithubWebScraper(object):
             '%s.json' % filename
         )
         if not issues:
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('no issues')
 
         tfh, tfn = tempfile.mkstemp()
         os.close(tfh)
@@ -387,7 +395,11 @@ class GithubWebScraper(object):
         rr = requests.get(url)
 
         if rr.status_code != 200:
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('bad statuscode on %s' % url)
 
         if usecache:
             if not os.path.isdir(tdir):
@@ -423,8 +435,11 @@ class GithubWebScraper(object):
             if data['prs']:
                 prs.update(data['prs'])
             else:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('no "prs" key in data')
 
         return prs
 
@@ -562,8 +577,11 @@ class GithubWebScraper(object):
                     reviewer = tparts[findex+1]
             else:
                 action = None
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('parsing error on %s' % atxt)
 
             reviews['reviews'][rid] = {
                 'actor': author,
@@ -720,8 +738,11 @@ class GithubWebScraper(object):
                     state = 'open'
                     merged = False
                 else:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception('state parsing error')
 
                 created_at = None
                 updated_at = None
@@ -839,7 +860,11 @@ class GithubWebScraper(object):
         )
 
         if not state_div:
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('no state div')
 
         if 'state-merged' in state_div.attrs['class']:
             data['state'] = 'closed'

@@ -12,6 +12,8 @@ import requests
 #import urllib2
 from datetime import datetime
 
+import lib.constants as C
+
 from bs4 import BeautifulSoup
 from lib.decorators.github import RateLimited
 
@@ -90,8 +92,12 @@ class RepoWrapper(object):
         urls = [x for x in urls if m.match(x)]
 
         if not urls:
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            logging.error('no urls found in %s' % url)
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('no urls')
 
         numbers = [x.split('/')[-1] for x in urls]
         numbers = [int(x) for x in numbers]
@@ -307,8 +313,11 @@ class RepoWrapper(object):
                 methodToCall = getattr(self.repo, 'get_' + property_name)
             except Exception as e:
                 logging.error(e)
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('unable to get %s' % property_name)
             events = [x for x in methodToCall()]
 
         if write_cache or not os.path.isfile(pfile):

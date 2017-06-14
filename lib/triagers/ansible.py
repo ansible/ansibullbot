@@ -332,8 +332,9 @@ class AnsibleTriage(DefaultTriager):
             for issue in item[1]['issues']:
 
                 if issue is None:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
                     continue
 
                 iw = None
@@ -892,9 +893,12 @@ class AnsibleTriage(DefaultTriager):
                         boilerplate='shippable_test_result'
                     )
                 except Exception as e:
-                    logging.debug('breakpoint!')
                     logging.debug(e)
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.debug('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception(str(e))
 
                 # https://github.com/ansible/ansibullbot/issues/423
                 if len(comment) < 65536:
@@ -1963,8 +1967,11 @@ class AnsibleTriage(DefaultTriager):
             mirepopath = '/'.join(miparts[0:2])
         else:
             print(migrated_issue)
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('unknown url type for migrated issue')
 
         mw = self.get_issue_by_repopath_and_number(
             mirepopath,
@@ -2220,8 +2227,11 @@ class AnsibleTriage(DefaultTriager):
         elif supported_by == 'curated':
             rfacts['committer_review'] = True
         else:
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('unknown supported_by type')
 
         return rfacts
 
