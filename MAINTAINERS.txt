@@ -426,6 +426,7 @@ system/open_iscsi.py: srvg
 system/openwrt_init.py: agaffney
 system/osx_defaults.py: ansible
 system/pam_limits.py: ansible
+system/pamd.py: kevensen
 system/parted.py: ColOfAbRiX
 system/ping.py: ansible
 system/puppet.py: emonty nibalizer
