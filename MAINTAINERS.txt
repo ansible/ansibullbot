@@ -6,6 +6,7 @@ cloud/amazon/cloudformation_facts.py: jmenga
 cloud/amazon/cloudtrail.py: tedder shepdelacreme
 cloud/amazon/cloudwatchevent_rule.py: jsdalton
 cloud/amazon/dynamodb_table.py: loia
+cloud/amazon/dynamodb_ttl.py: tedder
 cloud/amazon/ec2.py: ansible
 cloud/amazon/ec2_ami.py:
 cloud/amazon/ec2_ami_copy.py: amir343
