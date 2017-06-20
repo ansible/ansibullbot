@@ -36,6 +36,7 @@ cloud/amazon/ec2_vpc.py: carsongee
 cloud/amazon/ec2_vpc_dhcp_options.py: joelthompson
 cloud/amazon/ec2_vpc_dhcp_options_facts.py: naslanidis
 cloud/amazon/ec2_vpc_endpoint.py: willthames
+cloud/amazon/ec2_vpc_endpoint_facts.py: willthames
 cloud/amazon/ec2_vpc_igw.py:
 cloud/amazon/ec2_vpc_nacl.py: mmochan
 cloud/amazon/ec2_vpc_nacl_facts.py: brandond
