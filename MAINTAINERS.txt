@@ -121,6 +121,7 @@ cloud/google/gcspanner.py: supertom
 cloud/linode/linode.py: zbal intheclouddan rwaweber
 cloud/lxc/lxc_container.py: cloudnull
 cloud/lxd/: hnakamur
+cloud/misc/helm.py: flaper87
 cloud/misc/ovirt.py: joshainglis karmab
 cloud/misc/proxmox.py: UnderGreen
 cloud/misc/proxmox_kvm.py: helldorado
