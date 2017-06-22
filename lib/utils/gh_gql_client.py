@@ -1,0 +1,190 @@
+#!/usr/bin/env python
+
+# https://developer.github.com/v4/explorer/
+# https://developer.github.com/v4/guides/forming-calls/
+
+import jinja2
+import json
+import logging
+import requests
+from operator import itemgetter
+
+QEXM = """{  repository(owner: "ansible", name: "ansible") {    issues(first: 100, states: OPEN, after: "Y3Vyc29yOnYyOpLOAziJOs4DOIk6") {      pageInfo {        startCursor        endCursor        hasNextPage        hasPreviousPage      }      edges {        node {          id          number          title          state        }      }    }  }}"""
+
+QUERY_TEMPLATE = """
+{
+    repository(owner:"{{ OWNER }}", name:"{{ REPO }}") {
+        {{ OBJECT_TYPE }}({{ OBJECT_PARAMS }}) {
+            pageInfo {
+                startCursor
+                endCursor
+                hasNextPage
+                hasPreviousPage
+            }
+            edges {
+                node {
+                    id
+                    url
+                    number
+                    state
+                    createdAt
+                    updatedAt
+                }
+            }
+        }
+    }
+}
+"""
+
+
+class GithubGraphQLClient(object):
+    baseurl = 'https://api.github.com/graphql'
+
+    def __init__(self, token):
+        self.token = token
+        self.headers = {
+            'Accept': 'application/json',
+            'Authorization': 'Bearer %s' % self.token,
+        }
+        self.environment = jinja2.Environment()
+
+    def get_last_number(self, repo_path):
+        """Return the very last issue/pr number opened for a repo
+
+        Args:
+            owner (str): the github namespace
+            repo  (str): the github repository
+        """
+        owner = repo_path.split('/', 1)[0]
+        repo = repo_path.split('/', 1)[1]
+
+        isummaries = self.get_summaries(owner, repo, otype='issues',
+                                        last='last: 1', first=None, states=None,
+                                        paginate=False)
+        psummaries = self.get_summaries(owner, repo, otype='pullRequests',
+                                        last='last: 1', first=None, states=None,
+                                        paginate=False)
+
+        if isummaries[-1]['number'] > psummaries[-1]['number']:
+            return isummaries[-1]['number']
+        else:
+            return psummaries[-1]['number']
+
+    def get_all_summaries(self, owner, repo):
+        """Collect all the summary data for issues and pullreuests
+
+        Args:
+            owner (str): the github namespace
+            repo  (str): the github repository
+        """
+        isummaries = self.get_summaries(owner, repo, otype='issues')
+        psummaries = self.get_summaries(owner, repo, otype='pullRequests')
+        summaries = []
+        for iis in isummaries:
+            summaries.append(iis)
+        for prs in psummaries:
+            summaries.append(prs)
+
+        numbers = [x['number'] for x in summaries]
+        missing = [x for x in xrange(1, numbers[-1]) if x not in numbers]
+        for x in missing:
+            data = {
+                'createdAt': None,
+                'updatedAt': None,
+                'id': None,
+                'number': x,
+                'state': 'closed',
+                'repository': {
+                    'nameWithOwner': '%s/%s' % (owner, repo)
+                }
+            }
+            summaries.append(data)
+
+        summaries = sorted(summaries, key=itemgetter('number'))
+        return summaries
+
+    def get_summaries(self, owner, repo, otype='issues', last=None, first='first: 100', states='states: OPEN', paginate=True):
+        """Collect all the summary data for issues or pullreuests
+
+        Args:
+            owner     (str): the github namespace
+            repo      (str): the github repository
+            otype     (str): issues or pullRequests
+            first     (str): number of nodes per page, oldest to newest
+            last      (str): number of nodes per page, newest to oldest
+            states    (str): open or closed issues
+            paginate (bool): recurse through page results
+
+        """
+
+        templ = self.environment.from_string(QUERY_TEMPLATE)
+
+        # after: "$endCursor"
+        after = None
+
+        '''
+        # first: 100
+        first = 'first: 100'
+        # states: OPEN
+        states = 'states: OPEN'
+        '''
+
+        nodes = []
+        pagecount = 0
+        while True:
+            logging.debug('%s/%s %s pagecount:%s nodecount: %s' %
+                          (owner,repo, otype, pagecount, len(nodes)))
+
+            issueparams = ', '.join([x for x in [states, first, last, after] if x])
+            query = templ.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS=issueparams)
+
+            payload = {
+                'query': query.encode('ascii', 'ignore').strip(),
+                'variables': '{}',
+                'operationName': None
+            }
+            rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+            if not rr.ok:
+                break
+            data = rr.json()
+            if not data:
+                break
+
+            # keep each edge/node/issue
+            for edge in data['data']['repository'][otype]['edges']:
+                node = edge['node']
+                node['state'] = node['state'].lower()
+                if 'updatedAt' not in node:
+                    node['updatedAt'] = None
+                if 'repository' not in node:
+                    node['repository'] = {}
+                if 'nameWithOwner' not in node['repository']:
+                    node['repository']['nameWithOwner'] = '%s/%s' % (owner, repo)
+                if otype == 'issues':
+                    node['type'] = 'issue'
+                else:
+                    node['type'] = 'pullrequest'
+                nodes.append(node)
+
+            if not paginate:
+                break
+
+            pageinfo = data.get('data', {}).get('repository', {}).get(otype, {}).get('pageInfo')
+            if not pageinfo:
+                break
+            if not pageinfo.get('hasNextPage'):
+                break
+
+            after = 'after: "%s"' % pageinfo['endCursor']
+            pagecount += 1
+
+        return nodes
+
+
+if __name__ == "__main__":
+    import lib.constants as C
+    logging.basicConfig(level=logging.DEBUG)
+    client = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
+    summaries = client.get_all_summaries('ansible', 'ansible')
+    ln = client.get_last_number('ansible/ansible')
+    #import epdb; epdb.st()
