@@ -20,8 +20,18 @@ def get_rate_limit():
     token = C.DEFAULT_GITHUB_TOKEN
 
     if token != 'False':
-        logging.error('token auth not yet implemented here!')
-        sys.exit(1)
+
+        success = False
+        while not success:
+            try:
+                rr = requests.get(
+                    'https://api.github.com/rate_limit',
+                    headers={'Authorization': 'token %s' % token}
+                )
+                success = True
+            except Exception:
+                time.sleep(60)
+
     else:
         success = False
         while not success:
