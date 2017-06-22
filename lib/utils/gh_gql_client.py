@@ -9,7 +9,6 @@ import logging
 import requests
 from operator import itemgetter
 
-QEXM = """{  repository(owner: "ansible", name: "ansible") {    issues(first: 100, states: OPEN, after: "Y3Vyc29yOnYyOpLOAziJOs4DOIk6") {      pageInfo {        startCursor        endCursor        hasNextPage        hasPreviousPage      }      edges {        node {          id          number          title          state        }      }    }  }}"""
 
 QUERY_TEMPLATE = """
 {
@@ -47,6 +46,25 @@ class GithubGraphQLClient(object):
             'Authorization': 'Bearer %s' % self.token,
         }
         self.environment = jinja2.Environment()
+
+    def get_issue_summaries(self, repo_url, baseurl=None, cachefile=None):
+        """Return a dict of all issue summaries with numbers as keys
+
+        Adds a compatibility method for the webscraper
+
+        Args:
+            repo_url  (str): username/repository
+            baseurl   (str): not used
+            cachefile (str): not used
+        """
+        owner = repo_url.split('/', 1)[0]
+        repo = repo_url.split('/', 1)[1]
+        summaries = self.get_all_summaries(owner, repo)
+
+        issues = {}
+        for x in summaries:
+            issues[str(x['number'])] = x
+        return issues
 
     def get_last_number(self, repo_path):
         """Return the very last issue/pr number opened for a repo
@@ -180,7 +198,9 @@ class GithubGraphQLClient(object):
 
         return nodes
 
-
+###################################
+# TESTING ...
+###################################
 if __name__ == "__main__":
     import lib.constants as C
     logging.basicConfig(level=logging.DEBUG)
