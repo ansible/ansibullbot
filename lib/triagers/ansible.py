@@ -331,8 +331,11 @@ class AnsibleTriage(DefaultTriager):
             self.cachedir = os.path.join(self.cachedir_base, repopath)
             # this is where the issue history cache goes
             hcache = os.path.join(self.cachedir, repopath)
+
+            '''
             # scrape all summaries from www for later opchecking
             self.update_issue_summaries(repopath=repopath)
+            '''
 
             for issue in item[1]['issues']:
 
@@ -1494,6 +1497,7 @@ class AnsibleTriage(DefaultTriager):
 
             logging.info('getting issue objs for %s' % repo)
             self.update_issue_summaries(repopath=repo)
+
             issuecache = {}
             numbers = self.issue_summaries[repo].keys()
             numbers = [int(x) for x in numbers]
