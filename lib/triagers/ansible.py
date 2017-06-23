@@ -1212,6 +1212,19 @@ class AnsibleTriage(DefaultTriager):
                 if 'stale_ci' in self.issue.labels:
                     self.actions['unlabel'].append('stale_ci')
 
+        # https://github.com/ansible/ansibullbot/issues/589
+        if self.meta['module_match'] and not self.meta['is_new_module']:
+            if not self.meta['module_match']['maintainers']:
+                # 'ansible' is cleared from the primary key, so we need
+                # to check the original copy before deciding this isn't
+                # being maintained.
+                if not self.meta['module_match'].get('_maintainers'):
+                    if 'needs_maintainer' not in self.issue.labels:
+                        self.actions['newlabel'].append('needs_maintainer')
+            else:
+                if 'needs_maintainer' in self.issue.labels:
+                    self.actions['unlabel'].append('needs_maintainer')
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
