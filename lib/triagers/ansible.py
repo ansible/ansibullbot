@@ -49,6 +49,7 @@ from lib.utils.shippable_api import ShippableRuns
 from lib.utils.systemtools import run_command
 from lib.utils.receiver_client import post_to_receiver
 from lib.utils.webscraper import GithubWebScraper
+from lib.utils.gh_gql_client import GithubGraphQLClient
 
 from lib.decorators.github import RateLimited
 
@@ -244,6 +245,10 @@ class AnsibleTriage(DefaultTriager):
         # create the scraper for www data
         logging.info('creating webscraper')
         self.gws = GithubWebScraper(cachedir=self.cachedir)
+        if C.DEFAULT_GITHUB_TOKEN:
+            self.gqlc = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
+        else:
+            self.gqlc = None
 
         # get valid labels
         logging.info('getting labels')
@@ -546,22 +551,28 @@ class AnsibleTriage(DefaultTriager):
 
         for rp in repopaths:
 
-            # scrape all summaries rom www for later opchecking
-            cachefile = os.path.join(
-                self.cachedir,
-                '%s__scraped_issues.json' % rp
-            )
-            self.issue_summaries[repopath] = self.gws.get_issue_summaries(
-                'https://github.com/%s' % rp,
-                cachefile=cachefile
-            )
+            if self.gqlc:
+                self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
+            else:
+                # scrape all summaries rom www for later opchecking
+                cachefile = os.path.join(
+                    self.cachedir,
+                    '%s__scraped_issues.json' % rp
+                )
+                self.issue_summaries[repopath] = self.gws.get_issue_summaries(
+                    'https://github.com/%s' % rp,
+                    cachefile=cachefile
+                )
 
     def update_single_issue_summary(self, issuewrapper):
         '''Force scrape the summary for an issue'''
         number = issuewrapper.number
         rp = issuewrapper.repo_full_name
-        self.issue_summaries[rp][number] = \
-            self.gws.get_single_issue_summary(rp, number, force=True)
+        if self.gqlc:
+            import epdb; epdb.st()
+        else:
+            self.issue_summaries[rp][number] = \
+                self.gws.get_single_issue_summary(rp, number, force=True)
 
     @RateLimited
     def update_issue_object(self, issue):
@@ -1508,14 +1519,17 @@ class AnsibleTriage(DefaultTriager):
                 logging.info('%s numbers from --id/--pr' % len(numbers))
 
             if self.args.daemonize:
+
                 if not self.repos[repo]['since']:
                     ts = [
                         x[1]['updated_at'] for x in
                         self.issue_summaries[repo].items()
+                        if x[1]['updated_at']
                     ]
                     ts += [
                         x[1]['created_at'] for x in
                         self.issue_summaries[repo].items()
+                        if x[1]['created_at']
                     ]
                     ts = sorted(set(ts))
                     self.repos[repo]['since'] = ts[-1]
