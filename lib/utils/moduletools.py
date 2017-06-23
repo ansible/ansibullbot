@@ -25,6 +25,7 @@ class ModuleIndexer(object):
         'filepath': None,
         'fulltopic': None,
         'maintainers': [],
+        '_maintainers': [],
         'maintainers_key': None,
         'metadata': {},
         'repo_filename': None,
@@ -484,6 +485,9 @@ class ModuleIndexer(object):
                     else:
                         # curated? ... what now?
                         pass
+            # save a pristine copy so that higher level code can still use it
+            self.modules[k]['_maintainers'] = \
+                [x for x in self.modules[k]['maintainers']]
 
     def split_topics_from_path(self, module_file):
         subpath = module_file.replace('lib/ansible/modules/', '')
