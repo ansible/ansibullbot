@@ -108,7 +108,9 @@ class GithubGraphQLClient(object):
         for x in missing:
             data = {
                 'createdAt': None,
+                'created_at': None,
                 'updatedAt': None,
+                'updated_at': None,
                 'id': None,
                 'number': x,
                 'state': 'closed',
@@ -172,8 +174,12 @@ class GithubGraphQLClient(object):
             for edge in data['data']['repository'][otype]['edges']:
                 node = edge['node']
                 node['state'] = node['state'].lower()
+                if 'createdAt' not in node:
+                    node['createdAt'] = None
+                node['created_at'] = node['createdAt']
                 if 'updatedAt' not in node:
                     node['updatedAt'] = None
+                node['updated_at'] = node['updatedAt']
                 if 'repository' not in node:
                     node['repository'] = {}
                 if 'nameWithOwner' not in node['repository']:
