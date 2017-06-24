@@ -107,27 +107,32 @@ def RateLimited(fn):
                 logging.warning('socket error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except Exception as e:
-                print(e)
+                logging.error(e)
                 if hasattr(e, 'data') and e.data.get('message'):
-                    if 'blocked from content creation' in e.data['message']:
+                    msg = e.data.get('message')
+                    if 'blocked from content creation' in msg:
                         logging.warning('content creation rate limit exceeded')
                         stime = 2*60
-                    elif 'Label does not exist' in e.data['message']:
+                    elif 'Label does not exist' in msg:
                         return None
-                    elif 'rate limit exceeded' in e.data['message']:
+                    elif 'rate limit exceeded' in msg:
                         logging.warning('general rate limit exceeded')
                         stime = get_reset_time(fn, args)
                     elif isinstance(e, socket.error):
                         logging.warning('socket error')
                         stime = 5*60
-                    elif 'Server Error' in e.data.get('message'):
+                    elif 'Server Error' in msg:
                         logging.warning('server error')
                         stime = 2*60
-                    elif 'Not Found' in e.data.get('message'):
+                    elif 'Not Found' in msg:
                         logging.info('object not found')
                         #stime = 0
                         #success = True
                         return None
+                    elif "object has no attribute 'decoded_content'" in msg:
+                        # occurs most often when fetching file contents from
+                        # the api such as the issue template
+                        stime = 5
                     else:
                         if C.DEFAULT_BREAKPOINTS:
                             logging.error('breakpoint!')
