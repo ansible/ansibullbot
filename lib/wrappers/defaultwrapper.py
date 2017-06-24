@@ -410,6 +410,7 @@ class DefaultWrapper(object):
             labels.append(label.name)
         return labels
 
+    @RateLimited
     def get_template_data(self):
         """Extract templated data from an issue body"""
 
