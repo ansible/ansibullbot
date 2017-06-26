@@ -1613,7 +1613,7 @@ class AnsibleTriage(DefaultTriager):
         ################################################################
 
         # filter just the open numbers
-        if not self.args.only_closed:
+        if not self.args.only_closed and not self.args.ignore_state:
             numbers = [
                 x for x in numbers
                 if str(x) in self.issue_summaries[repo] and
