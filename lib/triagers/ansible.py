@@ -554,6 +554,15 @@ class AnsibleTriage(DefaultTriager):
 
         for rp in repopaths:
 
+            # skip repos based on args
+            if self.skiprepo:
+                if repopath in self.skiprepo:
+                    continue
+            if self.args.skip_module_repos and 'module' in repopath:
+                continue
+            if self.args.module_repos_only and 'module' not in repopath:
+                continue
+
             if self.gqlc:
                 self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
             else:
@@ -1475,7 +1484,6 @@ class AnsibleTriage(DefaultTriager):
         self.ghw = GithubWrapper(self.gh)
 
         for repo in REPOS:
-
             # skip repos based on args
             if self.skiprepo:
                 if repo in self.skiprepo:
@@ -1484,156 +1492,160 @@ class AnsibleTriage(DefaultTriager):
                 continue
             if self.args.module_repos_only and 'module' not in repo:
                 continue
-
-            logging.info('getting repo obj for %s' % repo)
-
-            if repo not in self.repos:
-                self.repos[repo] = {
-                    'repo': self.ghw.get_repo(repo, verbose=False),
-                    'issues': [],
-                    'processed': [],
-                    'since': None,
-                    'stale': [],
-                    'loopcount': 0
-                }
-            else:
-                # force a clean repo object to limit caching problems
-                self.repos[repo]['repo'] = \
-                    self.ghw.get_repo(repo, verbose=False)
-                # clear the issues
-                self.repos[repo]['issues'] = {}
-                # increment the loopcount
-                self.repos[repo]['loopcount'] += 1
-
-            # def __init__(self, repo, numbers, issuecache={})
-            issuecache = {}
-
-            logging.info('getting issue objs for %s' % repo)
-            self.update_issue_summaries(repopath=repo)
-
-            issuecache = {}
-            numbers = self.issue_summaries[repo].keys()
-            numbers = [int(x) for x in numbers]
-            logging.info('%s known numbers' % len(numbers))
-
-            if self.args.pr:
-                if os.path.isfile(self.args.pr) and \
-                        os.access(self.args.pr, os.X_OK):
-                    # allow for scripts when trying to target spec issues
-                    logging.info('executing %s' % self.args.pr)
-                    (rc, so, se) = run_command(self.args.pr)
-                    numbers = json.loads(so)
-                    numbers = [int(x) for x in numbers]
-                    logging.info(
-                        '%s numbers after running script' % len(numbers)
-                    )
-                else:
-                    # the issue id can be a list separated by commas
-                    if ',' in self.pr:
-                        numbers = [int(x) for x in self.pr.split(',')]
-                    else:
-                        numbers = [int(self.pr)]
-                logging.info('%s numbers from --id/--pr' % len(numbers))
-
-            if self.args.daemonize:
-
-                if not self.repos[repo]['since']:
-                    ts = [
-                        x[1]['updated_at'] for x in
-                        self.issue_summaries[repo].items()
-                        if x[1]['updated_at']
-                    ]
-                    ts += [
-                        x[1]['created_at'] for x in
-                        self.issue_summaries[repo].items()
-                        if x[1]['created_at']
-                    ]
-                    ts = sorted(set(ts))
-                    self.repos[repo]['since'] = ts[-1]
-                else:
-                    since = datetime.datetime.strptime(
-                        self.repos[repo]['since'],
-                        '%Y-%m-%dT%H:%M:%SZ'
-                    )
-                    api_since = self.repos[repo]['repo'].get_issues(
-                        since=since
-                    )
-
-                    numbers = []
-                    for x in api_since:
-                        number = x.number
-                        numbers.append(number)
-                        issuecache[number] = x
-
-                    numbers = sorted(set(numbers))
-                    logging.info(
-                        '%s numbers after [api] since == %s' %
-                        (len(numbers), since)
-                    )
-
-                    for k,v in self.issue_summaries[repo].items():
-                        if v['created_at'] > self.repos[repo]['since']:
-                            numbers.append(k)
-
-                    numbers = sorted(set(numbers))
-                    logging.info(
-                        '%s numbers after [www] since == %s' %
-                        (len(numbers), since)
-                    )
-
-            if self.args.start_at and self.repos[repo]['loopcount'] == 0:
-                numbers = [x for x in numbers if x <= self.args.start_at]
-                logging.info('%s numbers after start-at' % len(numbers))
-
-            # Get stale numbers if not targeting
-            if repo not in MREPOS:
-                if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
-                    stale = self.get_stale_numbers(repo)
-                    self.repos[repo]['stale'] = [int(x) for x in stale]
-                    numbers += [int(x) for x in stale]
-                    numbers = sorted(set(numbers))
-                    logging.info('%s numbers after stale check' % len(numbers))
-
-            ################################################################
-            # PRE-FILTERING TO PREVENT EXCESSIVE API CALLS
-            ################################################################
-
-            # filter just the open numbers
-            if not self.args.only_closed:
-                numbers = [
-                    x for x in numbers
-                    if str(x) in self.issue_summaries[repo] and
-                    self.issue_summaries[repo][str(x)]['state'] == 'open'
-                ]
-                logging.info('%s numbers after checking state' % len(numbers))
-
-            # filter by type
-            if self.args.only_issues:
-                numbers = [
-                    x for x in numbers
-                    if self.issue_summaries[repo][str(x)]['type'] == 'issue'
-                ]
-                logging.info('%s numbers after checking type' % len(numbers))
-            elif self.args.only_prs:
-                numbers = [
-                    x for x in numbers
-                    if self.issue_summaries[repo][str(x)]['type'] ==
-                    'pullrequest'
-                ]
-                logging.info('%s numbers after checking type' % len(numbers))
-
-            # Use iterator to avoid requesting all issues upfront
-            numbers = sorted([int(x) for x in numbers])
-            numbers = [x for x in reversed(numbers)]
-            self.repos[repo]['issues'] = RepoIssuesIterator(
-                self.repos[repo]['repo'],
-                numbers,
-                issuecache=issuecache
-            )
-
-            logging.info('getting repo objs for %s complete' % repo)
+            self._collect_repo(repo)
 
         logging.info('finished collecting issues')
+
+    @RateLimited
+    def _collect_repo(self, repo):
+        '''Collect issues for an individual repo'''
+
+        logging.info('getting repo obj for %s' % repo)
+        if repo not in self.repos:
+            self.repos[repo] = {
+                'repo': self.ghw.get_repo(repo, verbose=False),
+                'issues': [],
+                'processed': [],
+                'since': None,
+                'stale': [],
+                'loopcount': 0
+            }
+        else:
+            # force a clean repo object to limit caching problems
+            self.repos[repo]['repo'] = \
+                self.ghw.get_repo(repo, verbose=False)
+            # clear the issues
+            self.repos[repo]['issues'] = {}
+            # increment the loopcount
+            self.repos[repo]['loopcount'] += 1
+
+        # def __init__(self, repo, numbers, issuecache={})
+        issuecache = {}
+
+        logging.info('getting issue objs for %s' % repo)
+        self.update_issue_summaries(repopath=repo)
+
+        issuecache = {}
+        numbers = self.issue_summaries[repo].keys()
+        numbers = [int(x) for x in numbers]
+        logging.info('%s known numbers' % len(numbers))
+
+        if self.args.pr:
+            if os.path.isfile(self.args.pr) and \
+                    os.access(self.args.pr, os.X_OK):
+                # allow for scripts when trying to target spec issues
+                logging.info('executing %s' % self.args.pr)
+                (rc, so, se) = run_command(self.args.pr)
+                numbers = json.loads(so)
+                numbers = [int(x) for x in numbers]
+                logging.info(
+                    '%s numbers after running script' % len(numbers)
+                )
+            else:
+                # the issue id can be a list separated by commas
+                if ',' in self.pr:
+                    numbers = [int(x) for x in self.pr.split(',')]
+                else:
+                    numbers = [int(self.pr)]
+            logging.info('%s numbers from --id/--pr' % len(numbers))
+
+        if self.args.daemonize:
+
+            if not self.repos[repo]['since']:
+                ts = [
+                    x[1]['updated_at'] for x in
+                    self.issue_summaries[repo].items()
+                    if x[1]['updated_at']
+                ]
+                ts += [
+                    x[1]['created_at'] for x in
+                    self.issue_summaries[repo].items()
+                    if x[1]['created_at']
+                ]
+                ts = sorted(set(ts))
+                self.repos[repo]['since'] = ts[-1]
+            else:
+                since = datetime.datetime.strptime(
+                    self.repos[repo]['since'],
+                    '%Y-%m-%dT%H:%M:%SZ'
+                )
+                api_since = self.repos[repo]['repo'].get_issues(
+                    since=since
+                )
+
+                numbers = []
+                for x in api_since:
+                    number = x.number
+                    numbers.append(number)
+                    issuecache[number] = x
+
+                numbers = sorted(set(numbers))
+                logging.info(
+                    '%s numbers after [api] since == %s' %
+                    (len(numbers), since)
+                )
+
+                for k,v in self.issue_summaries[repo].items():
+                    if v['created_at'] > self.repos[repo]['since']:
+                        numbers.append(k)
+
+                numbers = sorted(set(numbers))
+                logging.info(
+                    '%s numbers after [www] since == %s' %
+                    (len(numbers), since)
+                )
+
+        if self.args.start_at and self.repos[repo]['loopcount'] == 0:
+            numbers = [x for x in numbers if x <= self.args.start_at]
+            logging.info('%s numbers after start-at' % len(numbers))
+
+        # Get stale numbers if not targeting
+        if repo not in MREPOS:
+            if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
+                stale = self.get_stale_numbers(repo)
+                self.repos[repo]['stale'] = [int(x) for x in stale]
+                numbers += [int(x) for x in stale]
+                numbers = sorted(set(numbers))
+                logging.info('%s numbers after stale check' % len(numbers))
+
+        ################################################################
+        # PRE-FILTERING TO PREVENT EXCESSIVE API CALLS
+        ################################################################
+
+        # filter just the open numbers
+        if not self.args.only_closed:
+            numbers = [
+                x for x in numbers
+                if str(x) in self.issue_summaries[repo] and
+                self.issue_summaries[repo][str(x)]['state'] == 'open'
+            ]
+            logging.info('%s numbers after checking state' % len(numbers))
+
+        # filter by type
+        if self.args.only_issues:
+            numbers = [
+                x for x in numbers
+                if self.issue_summaries[repo][str(x)]['type'] == 'issue'
+            ]
+            logging.info('%s numbers after checking type' % len(numbers))
+        elif self.args.only_prs:
+            numbers = [
+                x for x in numbers
+                if self.issue_summaries[repo][str(x)]['type'] ==
+                'pullrequest'
+            ]
+            logging.info('%s numbers after checking type' % len(numbers))
+
+        # Use iterator to avoid requesting all issues upfront
+        numbers = sorted([int(x) for x in numbers])
+        numbers = [x for x in reversed(numbers)]
+        self.repos[repo]['issues'] = RepoIssuesIterator(
+            self.repos[repo]['repo'],
+            numbers,
+            issuecache=issuecache
+        )
+
+        logging.info('getting repo objs for %s complete' % repo)
 
     def get_updated_issues(self, since=None):
         '''Get issues to work on'''
