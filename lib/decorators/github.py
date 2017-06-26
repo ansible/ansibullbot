@@ -5,11 +5,12 @@
 # FIXME
 #   - [Errno -5] No address associated with hostname
 
-import time
+import httplib
 import logging
 import requests
 import socket
 import sys
+import time
 
 import lib.constants as C
 
@@ -139,6 +140,9 @@ def RateLimited(fn):
                             import epdb; epdb.st()
                         else:
                             raise Exception('unhandled message type')
+                elif isinstance(e, httplib.IncompleteRead):
+                    # https://github.com/ansible/ansibullbot/issues/593
+                    stime = 5
                 else:
                     if C.DEFAULT_BREAKPOINTS:
                         logging.error('breakpoint!')
