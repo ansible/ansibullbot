@@ -29,6 +29,7 @@ def get_rate_limit():
                     'https://api.github.com/rate_limit',
                     headers={'Authorization': 'token %s' % token}
                 )
+                response = rr.json()
                 success = True
             except Exception:
                 time.sleep(60)
@@ -41,6 +42,7 @@ def get_rate_limit():
                     'https://api.github.com/rate_limit',
                     auth=(username, password)
                 )
+                response = rr.json()
                 success = True
             except Exception:
                 time.sleep(60)
