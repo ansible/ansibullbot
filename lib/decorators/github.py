@@ -109,6 +109,16 @@ def RateLimited(fn):
             except socket.error as e:
                 logging.warning('socket error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
+            except AttributeError as e:
+                if "object has no attribute 'decoded_content'" in e.message:
+                    logging.warning('socket error: sleeping 2 minutes %s' % e)
+                    time.sleep(2*60)
+                else:
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception('unhandled message type')
             except Exception as e:
                 logging.error(e)
                 if hasattr(e, 'data') and e.data.get('message'):
