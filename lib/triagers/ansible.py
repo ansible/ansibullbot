@@ -1786,8 +1786,18 @@ class AnsibleTriage(DefaultTriager):
                     match.update(
                         self.module_indexer.split_topics_from_path(f)
                     )
+
+                    # keep track of namespace maintainers for new mods too
+                    ns = match['namespace']
+                    match['namespace_maintainers'] = \
+                        self.module_indexer.get_maintainers_for_namespace(ns)
+
+                    # these are "community" supported from the beginning?
+                    match['metadata']['supported_by'] = 'community'
+
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
+
                 elif f.endswith('.md'):
                     # network/avi/README.md
                     continue
