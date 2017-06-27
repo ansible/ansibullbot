@@ -18,6 +18,7 @@ class ModuleIndexer(object):
         'authors': [],
         'name': None,
         'namespaced_module': None,
+        'namespace_maintainers': [],
         'deprecated': False,
         'deprecated_filename': None,
         'dirpath': None,
@@ -488,6 +489,15 @@ class ModuleIndexer(object):
             # save a pristine copy so that higher level code can still use it
             self.modules[k]['_maintainers'] = \
                 [x for x in self.modules[k]['maintainers']]
+
+        # set the namespace maintainers ...
+        for k,v in self.modules.iteritems():
+            if 'namespace_maintainers' not in self.modules[k]:
+                self.modules[k]['namespace_maintainers'] = []
+            if v.get('namespace'):
+                ns = v.get('namespace')
+                nms = self.get_maintainers_for_namespace(ns)
+                self.modules[k]['namespace_maintainers'] = nms
 
     def split_topics_from_path(self, module_file):
         subpath = module_file.replace('lib/ansible/modules/', '')
