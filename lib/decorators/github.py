@@ -155,6 +155,9 @@ def RateLimited(fn):
                 elif isinstance(e, httplib.IncompleteRead):
                     # https://github.com/ansible/ansibullbot/issues/593
                     stime = 5
+                elif isinstance(e, httplib.BadStatusLine):
+                    # https://github.com/ansible/ansibullbot/issues/602
+                    stime = 5
                 else:
                     if C.DEFAULT_BREAKPOINTS:
                         logging.error('breakpoint!')
