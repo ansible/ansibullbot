@@ -116,7 +116,8 @@ class GithubGraphQLClient(object):
                 'state': 'closed',
                 'repository': {
                     'nameWithOwner': '%s/%s' % (owner, repo)
-                }
+                },
+                'type': None
             }
             summaries.append(data)
 
