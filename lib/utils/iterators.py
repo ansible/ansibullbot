@@ -24,4 +24,5 @@ class RepoIssuesIterator(object):
             issue = self.issuecache[thisnum]
         else:
             issue = self.repo.get_issue(thisnum)
+
         return issue
