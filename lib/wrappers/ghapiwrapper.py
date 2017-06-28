@@ -8,6 +8,7 @@ import logging
 import os
 import re
 import requests
+import shutil
 #import time
 #import urllib2
 from datetime import datetime
@@ -109,13 +110,22 @@ class RepoWrapper(object):
 
     @RateLimited
     def get_issue(self, number):
-        issue = self.load_issue(number)
-        if issue:
-            if issue.update():
-                self.save_issue(issue)
-        else:
-            issue = self.repo.get_issue(number)
-            self.save_issue(issue)
+        issue = None
+        while True:
+            try:
+                issue = self.load_issue(number)
+                if issue:
+                    if issue.update():
+                        self.save_issue(issue)
+                else:
+                    issue = self.repo.get_issue(number)
+                    self.save_issue(issue)
+                break
+            except UnicodeDecodeError:
+                # https://github.com/ansible/ansibullbot/issues/610
+                logging.warning('cleaning cache for %s' % number)
+                self.clean_issue_cache(number)
+
         return issue
 
     @RateLimited
@@ -359,3 +369,12 @@ class RepoWrapper(object):
                 label_map[parts[0].lower()] = parts[1]
 
         return label_map
+
+    def clean_issue_cache(self, number):
+        # https://github.com/ansible/ansibullbot/issues/610
+        cdir = os.path.join(
+            self.cachedir,
+            'issues',
+            str(number)
+        )
+        shutil.rmtree(cdir)
