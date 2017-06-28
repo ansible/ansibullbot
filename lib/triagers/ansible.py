@@ -1234,6 +1234,14 @@ class AnsibleTriage(DefaultTriager):
                 if 'needs_maintainer' in self.issue.labels:
                     self.actions['unlabel'].append('needs_maintainer')
 
+        # https://github.com/ansible/ansibullbot/issues/608
+        cs_label = 'support:core'
+        if self.meta['module_match']:
+            sb = self.meta['module_match']['metadata']['supported_by']
+            cs_label = 'support:%s' % sb
+        if cs_label not in self.issue.labels:
+            self.actions['newlabel'].append(cs_label)
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
