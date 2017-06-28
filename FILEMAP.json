@@ -65,7 +65,7 @@
     ".*azure.*": {
         "labels": ["cloud", "azure"]
     },
-    ".*vmware.*": {
+    ".*(vmware|vcenter).*": {
         "labels": ["cloud", "vmware"],
         "notify": ["jctanner"]
     },
