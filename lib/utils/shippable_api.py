@@ -22,6 +22,21 @@ ANSIBLE_RUNS_URL = '%s/runs?projectIds=%s&isPullRequest=True' % (
 )
 
 
+def has_commentable_data(test_results):
+    # https://github.com/ansible/ansibullbot/issues/421
+    commentable = False
+    if not test_results:
+        return commentable
+    for tr in test_results:
+        if tr.get('contents', {}).get('failureDetails', []):
+            commentable = True
+            break
+        if tr.get('contents', {}).get('results', []):
+            commentable = True
+            break
+    return commentable
+
+
 class ShippableRuns(object):
     '''An abstraction for the shippable API'''
 

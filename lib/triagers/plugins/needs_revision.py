@@ -6,6 +6,7 @@ import logging
 import os
 from pprint import pprint
 
+from lib.utils.shippable_api import has_commentable_data
 from lib.utils.shippable_api import ShippableRuns
 from lib.wrappers.historywrapper import ShippableHistory
 
@@ -525,6 +526,11 @@ def get_shippable_run_facts(iw, meta, shippable=None):
                 needs_testresult_notification = True
         else:
             needs_testresult_notification = True
+
+    # https://github.com/ansible/ansibullbot/issues/421
+    if rmeta['needs_testresult_notification']:
+        hcd = has_commentable_data(shippable_test_results)
+        rmeta['needs_testresult_notification'] = hcd
 
     rmeta = {
         'shippable_test_results': shippable_test_results,
