@@ -313,7 +313,6 @@ network/ovs/: privateip rcarrillocruz
 network/panos/: ivanbojer jtschichold
 network/sros/: privateip gundalow Qalthos
 network/vyos/: Qalthos
-network/wakeonlan: dagwieers
 notification/campfire.py: fabulops
 notification/catapult.py: Jmainguy
 notification/flowdock.py: mcodd
@@ -386,6 +385,7 @@ remote_management/imc/: dagwieers
 remote_management/hpilo/: dagwieers haad
 remote_management/ipmi/: cloudnull
 remote_management/stacki/: bsanders bbyhuy
+remote_management/wakeonlan.py: dagwieers
 source_control/bzr.py: andreparames
 source_control/git.py: robinro
 source_control/git_config.py: djmattyg007
