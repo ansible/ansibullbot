@@ -198,6 +198,7 @@ class DefaultWrapper(object):
     @RateLimited
     def _fetch_api_url(self, url):
         # fetch the url and parse to json
+        '''
         jdata = None
         try:
             resp = self.instance._requester.requestJson(
@@ -207,8 +208,26 @@ class DefaultWrapper(object):
             data = resp[2]
             jdata = json.loads(data)
         except Exception as e:
-            print(e)
-            pass
+            logging.error(e)
+        '''
+
+        jdata = None
+        while True:
+            resp = self.instance._requester.requestJson(
+                'GET',
+                url
+            )
+            data = resp[2]
+            jdata = json.loads(data)
+
+            if isinstance(jdata, dict):
+                if 'documentation_url' in jdata and 'message' in jdata:
+                    import epdb; epdb.st()
+                else:
+                    break
+            else:
+                break
+
         return jdata
 
     def relocate_pickle_files(self):
