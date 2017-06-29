@@ -1237,7 +1237,8 @@ class AnsibleTriage(DefaultTriager):
         # https://github.com/ansible/ansibullbot/issues/608
         cs_label = 'support:core'
         if self.meta['module_match']:
-            sb = self.meta['module_match']['metadata']['supported_by']
+            mm = self.meta['module_match']
+            sb = mm.get('metadata', {}).get('supported_by')
             if sb:
                 cs_label = 'support:%s' % sb
         if cs_label not in self.issue.labels:
