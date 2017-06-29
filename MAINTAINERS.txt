@@ -299,9 +299,12 @@ network/eos/: privateip trishnaguha
 network/f5/: caphrim007
 network/fortios: bjolivot
 network/illumos/: xen0l
+network/interface/: ganeshrn gundalow privateip Qalthos rcarrillocruz trishnaguha
 network/ios/: privateip rcarrillocruz
 network/iosxr/: privateip rcarrillocruz
 network/junos/: Qalthos ganeshrn
+network/layer2/: ganeshrn gundalow privateip Qalthos rcarrillocruz trishnaguha
+network/layer3/: ganeshrn gundalow privateip Qalthos rcarrillocruz trishnaguha
 network/lenovo: dkasberg
 network/netconf/netconf_config.py: lpenz userlerueda ganeshrn
 network/netscaler/: giorgos-nikolopoulos chiradeep
@@ -311,7 +314,10 @@ network/openswitch/: privateip gundalow Qalthos
 network/ordnance/: djh00t alexanderturner
 network/ovs/: privateip rcarrillocruz
 network/panos/: ivanbojer jtschichold
+network/protocol/: ganeshrn gundalow privateip Qalthos rcarrillocruz trishnaguha
+network/routing/: ganeshrn gundalow privateip Qalthos rcarrillocruz trishnaguha
 network/sros/: privateip gundalow Qalthos
+network/system/: ganeshrn gundalow privateip Qalthos rcarrillocruz trishnaguha
 network/vyos/: Qalthos
 notification/campfire.py: fabulops
 notification/catapult.py: Jmainguy
