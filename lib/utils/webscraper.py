@@ -629,6 +629,12 @@ class GithubWebScraper(object):
                 time.sleep(sleep)
                 sleep = sleep * 2
 
+            if not rr:
+                failed = True
+                logging.warning('no response')
+                time.sleep(sleep)
+                sleep = sleep * 2
+
             # https://github.com/ansible/ansibullbot/issues/573
             if 'page is taking way too long to load' in rr.text.lower():
                 failed = True
