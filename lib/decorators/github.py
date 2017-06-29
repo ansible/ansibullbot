@@ -111,8 +111,11 @@ def RateLimited(fn):
                 time.sleep(2*60)
             except AttributeError as e:
                 if "object has no attribute 'decoded_content'" in e.message:
-                    logging.warning('socket error: sleeping 2 minutes %s' % e)
-                    time.sleep(2*60)
+                    stime = get_reset_time(fn, args)
+                    msg = 'decoded_content error: sleeping %s minutes %s' \
+                        % (stime / 60, e)
+                    logging.warning(msg)
+                    time.sleep(stime)
                 else:
                     if C.DEFAULT_BREAKPOINTS:
                         logging.error('breakpoint!')
@@ -145,7 +148,7 @@ def RateLimited(fn):
                     elif "object has no attribute 'decoded_content'" in msg:
                         # occurs most often when fetching file contents from
                         # the api such as the issue template
-                        stime = 5
+                        stime = get_reset_time(fn, args)
                     else:
                         if C.DEFAULT_BREAKPOINTS:
                             logging.error('breakpoint!')
