@@ -396,7 +396,8 @@ class AnsibleTriage(DefaultTriager):
                         github=self.ghw,
                         repo=repo,
                         issue=issue,
-                        cachedir=self.cachedir
+                        cachedir=self.cachedir,
+                        file_indexer=self.file_indexer
                     )
 
                     if self.args.skip_no_update:
