@@ -45,6 +45,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     has_shippable_yaml_notification = None
 
     has_remote_repo = None
+    stale_reviews = {}
 
     rmeta = {
         'committer_count': committer_count,
@@ -71,7 +72,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'ready_for_review': ready_for_review,
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
-        'has_remote_repo': has_remote_repo
+        'has_remote_repo': has_remote_repo,
+        'stale_reviews': stale_reviews
     }
 
     if not iw.is_pullrequest():
@@ -317,6 +319,31 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         else:
             has_shippable_yaml_notification = False
 
+    # stale reviews
+    if user_reviews:
+        commits = [x for x in iw.history.history if x['event'] == 'committed']
+        lc_date = commits[-1]['created_at']
+
+        stale_reviews = {}
+        for k,v in user_reviews.items():
+            if v != 'CHANGES_REQUESTED':
+                continue
+            lrd = None
+            for x in iw.history.history:
+                if x['actor'] != k:
+                    continue
+                if x['event'] == 'review_changes_requested':
+                    if not lrd or lrd < x['created_at']:
+                        lrd = x['created_at']
+            if lrd:
+                delta = (lc_date - lrd).days
+                if delta > 7:
+                    stale_reviews[k] = {
+                        'delta': delta,
+                        'review_date': lrd.isoformat(),
+                        'commit_date': lc_date.isoformat()
+                    }
+
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
     logging.info('needs_revision is %s' % needs_revision)
@@ -347,7 +374,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'ready_for_review': ready_for_review,
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
-        'has_remote_repo': has_remote_repo
+        'has_remote_repo': has_remote_repo,
+        'stale_reviews': stale_reviews
     }
 
     return rmeta

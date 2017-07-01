@@ -1244,6 +1244,13 @@ class AnsibleTriage(DefaultTriager):
         if cs_label not in self.issue.labels:
             self.actions['newlabel'].append(cs_label)
 
+        if not self.meta['stale_reviews']:
+            if 'stale_review' in self.issue.labels:
+                self.actions['unlabel'].append('stale_review')
+        else:
+            if 'stale_review' not in self.issue.labels:
+                self.actions['newlabel'].append('stale_review')
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
