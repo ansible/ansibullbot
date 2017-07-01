@@ -45,6 +45,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     has_shippable_yaml_notification = None
 
     has_remote_repo = None
+
+    user_reviews = None
     stale_reviews = {}
 
     rmeta = {
