@@ -78,7 +78,7 @@ class DefaultWrapper(object):
 
     REQUIRED_SECTIONS = []
 
-    def __init__(self, github=None, repo=None, issue=None, cachedir=None):
+    def __init__(self, github=None, repo=None, issue=None, cachedir=None, file_indexer=None):
         self.meta = {}
         self.cachedir = cachedir
         self.github = github
@@ -114,6 +114,7 @@ class DefaultWrapper(object):
         self.pr_status_raw = None
         self.pull_raw = None
         self.pr_files = []
+        self.file_indexer = file_indexer
 
         self.full_cachedir = os.path.join(
             self.cachedir,
@@ -438,8 +439,13 @@ class DefaultWrapper(object):
         else:
             tfile = '.github/PULL_REQUEST_TEMPLATE.md'
 
-        tf = self.repo.get_file_contents(tfile)
-        tf_content = tf.decoded_content
+        # use the fileindexer whenever possible to conserve ratelimits
+        if self.file_indexer:
+            tf_content = self.file_indexer.get_file_content(tfile)
+        else:
+            tf = self.repo.get_file_contents(tfile)
+            tf_content = tf.decoded_content
+
         tf_sections = extract_template_sections(tf_content)
 
         self._required_template_sections = \
