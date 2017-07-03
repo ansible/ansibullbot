@@ -63,8 +63,8 @@ def shell_expand(path, expand_relative_paths=False):
     return path
 
 
-def get_config(p, section, key, env_var, default,
-               value_type=None, expand_relative_paths=False):
+def get_config(p, section, key, env_var, default=None,
+               value_type=None, expand_relative_paths=False, required=False):
     ''' return a configuration variable with casting
 
     :arg p: A ConfigParser object to look for the configuration in
@@ -72,7 +72,7 @@ def get_config(p, section, key, env_var, default,
     :arg key: The config key to get this config from
     :arg env_var: An Environment variable to check for the config var.  If
         this is set to None then no environment variable will be used.
-    :arg default: A default value to assign to the config var.
+    :kwarg default: A default value to assign to the config var.
     :kwarg value_type: The type of the value.  This can be any of:
         :boolean: sets the value to a True or False value
         :integer: Sets the value to an integer or raises a ValueType error
@@ -89,8 +89,9 @@ def get_config(p, section, key, env_var, default,
     :kwarg expand_relative_paths: for pathlist and path types, if this is set
         to True then also change any relative paths into absolute paths.  The
         default is False.
+    :kwarg required: an exception is raised when the variable isn't defined
     '''
-    value = _get_config(p, section, key, env_var, default)
+    value = _get_config(p, section, key, env_var, default, required)
     if value_type == 'boolean':
         value = mk_boolean(value)
 
@@ -136,20 +137,27 @@ def get_config(p, section, key, env_var, default,
     return to_text(value, errors='surrogate_or_strict', nonstring='passthru')
 
 
-def _get_config(p, section, key, env_var, default):
+def _get_config(p, section, key, env_var, default, required=False):
     ''' helper function for get_config '''
     value = default
+
+    found = False
 
     if p is not None:
         try:
             value = p.get(section, key, raw=True)
+            found = True
         except:
             pass
 
     if env_var is not None:
         env_value = os.environ.get(env_var, None)
         if env_value is not None:
+            found = True
             value = env_value
+
+    if required and not found:
+        raise Exception("Either configuration variable %r or environment variable %r must be defined." % (key, env_var))
 
     return to_text(value, errors='surrogate_or_strict', nonstring='passthru')
 
@@ -197,7 +205,7 @@ DEFAULT_DEBUG = get_config(
     DEFAULTS,
     'debug',
     '%s_DEBUG' % PROG_NAME.upper(),
-    False,
+    default=False,
     value_type='string'
 )
 
@@ -216,8 +224,9 @@ DEFAULT_GITHUB_USERNAME = get_config(
     DEFAULTS,
     'github_username',
     '%s_GITHUB_USERNAME' % PROG_NAME.upper(),
-    False,
-    value_type='string'
+    default=False,
+    value_type='string',
+    required=True
 )
 
 DEFAULT_GITHUB_PASSWORD = get_config(
@@ -225,8 +234,9 @@ DEFAULT_GITHUB_PASSWORD = get_config(
     DEFAULTS,
     'github_password',
     '%s_GITHUB_PASSWORD' % PROG_NAME.upper(),
-    False,
-    value_type='string'
+    default=False,
+    value_type='string',
+    required=True
 )
 
 DEFAULT_GITHUB_TOKEN = get_config(
@@ -234,7 +244,7 @@ DEFAULT_GITHUB_TOKEN = get_config(
     DEFAULTS,
     'github_token',
     '%s_GITHUB_TOKEN' % PROG_NAME.upper(),
-    False,
+    default=False,
     value_type='string'
 )
 
@@ -243,7 +253,7 @@ DEFAULT_SHIPPABLE_TOKEN = get_config(
     DEFAULTS,
     'shippable_token',
     '%s_SHIPPABLE_TOKEN' % PROG_NAME.upper(),
-    False,
+    default=False,
     value_type='string'
 )
 
@@ -252,7 +262,7 @@ DEFAULT_NEEDS_INFO_WARN = get_config(
     'needs_info',
     'warn',
     '%s_NEEDS_INFO_WARN' % PROG_NAME.upper(),
-    30,
+    default=30,
     value_type='int'
 )
 
@@ -261,7 +271,7 @@ DEFAULT_NEEDS_INFO_EXPIRE = get_config(
     'needs_info',
     'expire',
     '%s_NEEDS_INFO_EXPIRE' % PROG_NAME.upper(),
-    60,
+    default=60,
     value_type='int'
 )
 
@@ -271,7 +281,7 @@ DEFAULT_STALE_WINDOW = get_config(
     DEFAULTS,
     'stale_window',
     '%s_STALE_WINDOW' % PROG_NAME.upper(),
-    7,
+    default=7,
     value_type='int'
 )
 
