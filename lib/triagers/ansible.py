@@ -2541,7 +2541,8 @@ class AnsibleTriage(DefaultTriager):
             'gce',
             'openstack',
             'vmware',
-            'networking'
+            'networking',
+            'easyfix'
         ]
         wl += [x for x in self.valid_labels if x.startswith('affects_')]
         wl += [x for x in self.valid_labels if x.startswith('c:')]
