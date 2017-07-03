@@ -815,6 +815,28 @@ class DefaultWrapper(object):
         return files
 
     @property
+    def new_files(self):
+        new_files = [x for x in self.files if x not in self.file_indexer.files]
+        return new_files
+
+    @property
+    def new_modules(self):
+        new_modules = self.new_files
+        new_modules = [
+            x for x in new_modules if x.startswith('lib/ansible/modules')
+        ]
+        new_modules = [
+            x for x in new_modules if not os.path.basename(x) == '__init__.py'
+        ]
+        new_modules = [
+            x for x in new_modules if not os.path.basename(x).startswith('_')
+        ]
+        new_modules = [
+            x for x in new_modules if not os.path.basename(x).endswith('.ps1')
+        ]
+        return new_modules
+
+    @property
     def body(self):
         return self.instance.body
 

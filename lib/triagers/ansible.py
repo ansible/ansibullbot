@@ -1252,6 +1252,18 @@ class AnsibleTriage(DefaultTriager):
             if 'stale_review' not in self.issue.labels:
                 self.actions['newlabel'].append('stale_review')
 
+        # https://github.com/ansible/ansibullbot/issues/302
+        if self.issue.is_pullrequest():
+            if self.meta['needs_multiple_new_modules_notification']:
+                tvars = {
+                    'submitter': self.issue.submitter
+                }
+                comment = self.render_boilerplate(
+                    tvars, boilerplate='multiple_module_notify'
+                )
+                if comment not in self.actions['comments']:
+                    self.actions['comments'].append(comment)
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 

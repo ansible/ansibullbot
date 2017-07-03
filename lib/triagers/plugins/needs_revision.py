@@ -50,6 +50,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     user_reviews = None
     stale_reviews = {}
 
+    # https://github.com/ansible/ansibullbot/issues/302
+    has_multiple_modules = False
+    needs_multiple_new_modules_notification = False
+
     rmeta = {
         'committer_count': committer_count,
         'is_needs_revision': needs_revision,
@@ -76,7 +80,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
         'has_remote_repo': has_remote_repo,
-        'stale_reviews': stale_reviews
+        'stale_reviews': stale_reviews,
+        'has_multiple_modules': has_multiple_modules,
+        'needs_multiple_new_modules_notification': needs_multiple_new_modules_notification
     }
 
     if not iw.is_pullrequest():
@@ -352,6 +358,14 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         'commit_date': lc_date.isoformat()
                     }
 
+    # https://github.com/ansible/ansibullbot/issues/302
+    if len(iw.new_modules) > 1:
+        has_multiple_modules = True
+        if 'multiple_module_notify' not in iw.history.get_boilerplate_comments():
+            needs_multiple_new_modules_notification = True
+        needs_revision = True
+        needs_revision_msgs.append('multiple new modules')
+
     logging.info('mergeable_state is %s' % mstate)
     logging.info('needs_rebase is %s' % needs_rebase)
     logging.info('needs_revision is %s' % needs_revision)
@@ -383,7 +397,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
         'has_remote_repo': has_remote_repo,
-        'stale_reviews': stale_reviews
+        'stale_reviews': stale_reviews,
+        'has_multiple_modules': has_multiple_modules,
+        'needs_multiple_new_modules_notification': needs_multiple_new_modules_notification
     }
 
     return rmeta
