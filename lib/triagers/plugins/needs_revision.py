@@ -4,6 +4,7 @@ import datetime
 import json
 import logging
 import os
+import pytz
 from pprint import pprint
 
 from lib.utils.shippable_api import has_commentable_data
@@ -323,6 +324,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
     # stale reviews
     if user_reviews:
+
+        now = pytz.utc.localize(datetime.datetime.now())
         commits = [x for x in iw.history.history if x['event'] == 'committed']
         lc_date = commits[-1]['created_at']
 
@@ -338,9 +341,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                     if not lrd or lrd < x['created_at']:
                         lrd = x['created_at']
             if lrd:
+
+                age = (now - lc_date).days
                 delta = (lc_date - lrd).days
-                if delta > 7:
+                if (lc_date > lrd) and (age > 7):
                     stale_reviews[k] = {
+                        'age': age,
                         'delta': delta,
                         'review_date': lrd.isoformat(),
                         'commit_date': lc_date.isoformat()
