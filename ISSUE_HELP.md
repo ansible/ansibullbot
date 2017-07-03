@@ -107,6 +107,7 @@ The `+label` and `-label` commands are restricted to a subset of available label
 * needs_triage - a human being still needs to validate the issue is properly labeled and has all the information required.
 * module - classifies the issue as a module related issue.
 * affects_X.X - indicates that the issue is relevant to a particular ansible major.minor version.
+* easyfix - a maintainer has decided that this is a trivial fix that new contributors would be able to tackle.
 * c:... - these labels categorize issues/pullrequests by their relevant sourcecode files.
 
 To use the commands, please type the the command and label on one line each in a comment. 
