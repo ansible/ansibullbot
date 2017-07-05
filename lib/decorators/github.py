@@ -11,6 +11,7 @@ import requests
 import socket
 import sys
 import time
+from lib.errors import RateLimitError
 
 import lib.constants as C
 
@@ -106,6 +107,8 @@ def RateLimited(fn):
             try:
                 x = fn(*args, **kwargs)
                 success = True
+            except RateLimitError:
+                stime = get_reset_time(fn, args)
             except socket.error as e:
                 logging.warning('socket error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
