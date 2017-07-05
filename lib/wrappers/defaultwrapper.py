@@ -36,6 +36,7 @@ from lib.utils.extractors import extract_template_data
 from lib.wrappers.historywrapper import HistoryWrapper
 
 from lib.decorators.github import RateLimited
+from lib.errors import RateLimitError
 
 import lib.constants as C
 
@@ -225,7 +226,7 @@ class DefaultWrapper(object):
                 if 'documentation_url' in jdata and 'message' in jdata:
                     import epdb; epdb.st()
                 else:
-                    break
+                    raise RateLimitError("rate limited")
             else:
                 break
 
@@ -862,12 +863,18 @@ class DefaultWrapper(object):
         reviews_url = self.pullrequest.url + '/reviews'
         headers = {}
         headers['Accept'] = 'application/vnd.github.black-cat-preview+json'
+
         resp = self.instance._requester.requestJson(
             'GET',
             reviews_url,
             headers=headers
         )
         jdata = json.loads(resp[2])
+
+        # need to catch rate limit message here
+        if isinstance(jdata, dict) and 'rate' in jdata:
+            raise RateLimitError("rate limited")
+
         return jdata
 
     @property
