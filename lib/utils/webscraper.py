@@ -9,10 +9,9 @@ import shutil
 import tempfile
 import time
 import urllib2
-
 from bs4 import BeautifulSoup
-from lib.utils.receiver_client import post_to_receiver
 
+from lib.utils.receiver_client import post_to_receiver
 import lib.constants as C
 
 
@@ -626,6 +625,10 @@ class GithubWebScraper(object):
                 # Failed to establish a new connection: [Errno 111] Connection
                 # refused',))
                 logging.debug('connection refused')
+                time.sleep(sleep)
+                sleep = sleep * 2
+            except requests.exceptions.ChunkedEncodingError as e:
+                logging.debug(e)
                 time.sleep(sleep)
                 sleep = sleep * 2
 
