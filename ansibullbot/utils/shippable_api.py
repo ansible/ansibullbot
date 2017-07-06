@@ -12,7 +12,7 @@ import requests
 import requests_cache
 import time
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 ANSIBLE_PROJECT_ID = '573f79d02a8192902e20e34b'
 SHIPPABLE_URL = 'https://api.shippable.com'

@@ -2,7 +2,7 @@
 
 import datetime
 import pytz
-import lib.constants as C
+import ansibullbot.constants as C
 
 
 def is_needsinfo(triager):

@@ -209,7 +209,7 @@ class GithubGraphQLClient(object):
 # TESTING ...
 ###################################
 if __name__ == "__main__":
-    import lib.constants as C
+    import ansibullbot.constants as C
     logging.basicConfig(level=logging.DEBUG)
     client = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
     summaries = client.get_all_summaries('ansible', 'ansible')
