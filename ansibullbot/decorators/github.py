@@ -11,9 +11,9 @@ import requests
 import socket
 import sys
 import time
-from lib.errors import RateLimitError
+from ansibullbot.errors import RateLimitError
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 
 def get_rate_limit():

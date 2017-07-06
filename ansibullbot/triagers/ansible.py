@@ -13,7 +13,7 @@
 #   * open issues in ansible-modules-[core|extras] will be closed with a note
 #     about pr|issue mover
 #   * maintainers can be assigned to more than just the files in
-#     lib/ansible/modules
+#     ansibullbot.ansible/modules
 #   * closed issues with active comments will be locked with msg about opening
 #     new
 #   * closed issues where submitter issues "reopen" command will be reopened
@@ -33,34 +33,34 @@ import os
 import pytz
 import re
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 from pprint import pprint
-from lib.triagers.defaulttriager import DefaultTriager
-from lib.wrappers.ghapiwrapper import GithubWrapper
-from lib.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.triagers.defaulttriager import DefaultTriager
+from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
+from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
-from lib.utils.extractors import extract_pr_number_from_comment
-from lib.utils.iterators import RepoIssuesIterator
-from lib.utils.moduletools import ModuleIndexer
-from lib.utils.version_tools import AnsibleVersionIndexer
-from lib.utils.file_tools import FileIndexer
-from lib.utils.shippable_api import ShippableRuns
-from lib.utils.systemtools import run_command
-from lib.utils.receiver_client import post_to_receiver
-from lib.utils.webscraper import GithubWebScraper
-from lib.utils.gh_gql_client import GithubGraphQLClient
+from ansibullbot.utils.extractors import extract_pr_number_from_comment
+from ansibullbot.utils.iterators import RepoIssuesIterator
+from ansibullbot.utils.moduletools import ModuleIndexer
+from ansibullbot.utils.version_tools import AnsibleVersionIndexer
+from ansibullbot.utils.file_tools import FileIndexer
+from ansibullbot.utils.shippable_api import ShippableRuns
+from ansibullbot.utils.systemtools import run_command
+from ansibullbot.utils.receiver_client import post_to_receiver
+from ansibullbot.utils.webscraper import GithubWebScraper
+from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 
-from lib.decorators.github import RateLimited
+from ansibullbot.decorators.github import RateLimited
 
-from lib.triagers.plugins.backports import get_backport_facts
-from lib.triagers.plugins.needs_info import is_needsinfo
-from lib.triagers.plugins.needs_info import needs_info_template_facts
-from lib.triagers.plugins.needs_info import needs_info_timeout_facts
-from lib.triagers.plugins.needs_revision import get_needs_revision_facts
-from lib.triagers.plugins.needs_revision import get_shippable_run_facts
-from lib.triagers.plugins.shipit import automergeable
-from lib.triagers.plugins.shipit import needs_community_review
+from ansibullbot.triagers.plugins.backports import get_backport_facts
+from ansibullbot.triagers.plugins.needs_info import is_needsinfo
+from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
+from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
+from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
+from ansibullbot.triagers.plugins.needs_revision import get_shippable_run_facts
+from ansibullbot.triagers.plugins.shipit import automergeable
+from ansibullbot.triagers.plugins.shipit import needs_community_review
 
 
 #BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
@@ -713,7 +713,7 @@ class AnsibleTriage(DefaultTriager):
         global FILEMAP_FILENAME
 
         if not os.path.isfile(FILEMAP_FILENAME):
-            import lib.triagers.ansible as at
+            import ansibullbot.triagers.ansible as at
             basedir = os.path.dirname(at.__file__)
             basedir = os.path.dirname(basedir)
             basedir = os.path.dirname(basedir)
@@ -1765,24 +1765,24 @@ class AnsibleTriage(DefaultTriager):
             # assume pullrequest
             for f in iw.files:
 
-                if f.startswith('lib/ansible/modules/core') or \
-                        f.startswith('lib/ansible/modules/extras'):
+                if f.startswith('ansibullbot.ansible/modules/core') or \
+                        f.startswith('ansibullbot.ansible/modules/extras'):
                     self.meta['is_bad_pr'] = True
                     continue
 
-                if f.startswith('lib/ansible/module_utils'):
+                if f.startswith('ansibullbot.ansible/module_utils'):
                     self.meta['is_module_util'] = True
                     continue
 
-                if f.startswith('lib/ansible/plugins/action'):
+                if f.startswith('ansibullbot.ansible/plugins/action'):
                     self.meta['is_action_plugin'] = True
 
-                if f.startswith('lib/ansible') \
-                        and not f.startswith('lib/ansible/modules'):
+                if f.startswith('ansibullbot.ansible') \
+                        and not f.startswith('ansibullbot.ansible/modules'):
                     self.meta['is_core'] = True
 
-                if not f.startswith('lib/ansible/modules') and \
-                        not f.startswith('lib/ansible/plugins/actions'):
+                if not f.startswith('ansibullbot.ansible/modules') and \
+                        not f.startswith('ansibullbot.ansible/plugins/actions'):
                     continue
 
                 # duplicates?
@@ -1805,7 +1805,7 @@ class AnsibleTriage(DefaultTriager):
                     self.meta['is_plugin'] = True
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
-                elif f.startswith('lib/ansible/modules') \
+                elif f.startswith('ansibullbot.ansible/modules') \
                         and (f.endswith('.py') or f.endswith('.ps1')):
                     self.meta['is_new_module'] = True
                     self.meta['is_module'] = True
@@ -2006,7 +2006,7 @@ class AnsibleTriage(DefaultTriager):
         maintainers = {}
         for fname in MAINTAINERS_FILES:
             if not os.path.isfile(fname):
-                import lib.triagers.ansible as at
+                import ansibullbot.triagers.ansible as at
                 basedir = os.path.dirname(at.__file__)
                 basedir = os.path.dirname(basedir)
                 basedir = os.path.dirname(basedir)
@@ -2483,7 +2483,7 @@ class AnsibleTriage(DefaultTriager):
         clabels = []
         for cl in labels:
             l = cl.replace('c:', '', 1)
-            al = os.path.join('lib/ansible', l)
+            al = os.path.join('ansibullbot.ansible', l)
             for f in files:
                 if f.startswith(l) or f.startswith(al):
                     clabels.append(cl)

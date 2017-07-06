@@ -11,8 +11,8 @@ import time
 import urllib2
 from bs4 import BeautifulSoup
 
-from lib.utils.receiver_client import post_to_receiver
-import lib.constants as C
+from ansibullbot.utils.receiver_client import post_to_receiver
+import ansibullbot.constants as C
 
 
 class GithubWebScraper(object):

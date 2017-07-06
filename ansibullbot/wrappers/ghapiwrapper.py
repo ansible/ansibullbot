@@ -13,10 +13,10 @@ import shutil
 #import urllib2
 from datetime import datetime
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 from bs4 import BeautifulSoup
-from lib.decorators.github import RateLimited
+from ansibullbot.decorators.github import RateLimited
 
 
 class GithubWrapper(object):

@@ -7,7 +7,7 @@ import re
 #from jinja2 import Template
 from string import Template
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 
 SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',

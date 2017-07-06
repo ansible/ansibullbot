@@ -31,14 +31,14 @@ from datetime import datetime
 # remember to pip install PyGithub, kids!
 import github
 
-from lib.utils.extractors import extract_template_sections
-from lib.utils.extractors import extract_template_data
-from lib.wrappers.historywrapper import HistoryWrapper
+from ansibullbot.utils.extractors import extract_template_sections
+from ansibullbot.utils.extractors import extract_template_data
+from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
-from lib.decorators.github import RateLimited
-from lib.errors import RateLimitError
+from ansibullbot.decorators.github import RateLimited
+from ansibullbot.errors import RateLimitError
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 
 class DefaultWrapper(object):

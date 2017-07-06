@@ -8,8 +8,8 @@ import os
 import pickle
 import shutil
 import yaml
-from lib.utils.systemtools import run_command
-from lib.utils.webscraper import GithubWebScraper
+from ansibullbot.utils.systemtools import run_command
+from ansibullbot.utils.webscraper import GithubWebScraper
 
 
 class ModuleIndexer(object):
