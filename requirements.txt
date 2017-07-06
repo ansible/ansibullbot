@@ -1,0 +1,12 @@
+argparse
+beautifulsoup4
+fuzzywuzzy
+jinja2
+PyYAML
+pygithub
+python-Levenshtein
+pytz
+requests
+requests_cache
+six
+textblob
