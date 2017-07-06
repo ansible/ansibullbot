@@ -3,7 +3,7 @@
 import unittest
 from datetime import datetime
 
-from tests.utils.loaders import  get_triagermock_for_datafile
+from test.utils.loaders import  get_triagermock_for_datafile
 
 class TestIssueTriageWorkflow1(unittest.TestCase):
 

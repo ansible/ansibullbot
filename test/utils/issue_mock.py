@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import yaml
-from lib.utils.timetools import timeobj_from_timestamp
+from ansibullbot.utils.timetools import timeobj_from_timestamp
 
 class LabelMock(object):
     name = None

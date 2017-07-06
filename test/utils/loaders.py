@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 from datetime import datetime
-from lib.wrappers.issuewrapper import IssueWrapper
-from tests.utils.issue_mock import IssueMock
-from tests.utils.issuetriager_mock import TriageIssuesMock
+from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from test.utils.issue_mock import IssueMock
+from test.utils.issuetriager_mock import TriageIssuesMock
 
 SAMPLE_MODULE = {'name': 'xyz'}
 

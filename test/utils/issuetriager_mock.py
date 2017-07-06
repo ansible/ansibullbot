@@ -22,8 +22,8 @@ import sys
 import time
 from datetime import datetime
 
-from lib.triagers.issuetriager import TriageIssues
-from tests.utils.repo_mock import RepoMock
+from ansibullbot.triagers.issuetriager import TriageIssues
+from test.utils.repo_mock import RepoMock
 
 class ModuleIndexerMock(object):
     modules = {}
