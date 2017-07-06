@@ -4,8 +4,8 @@ import json
 import glob
 import unittest
 
-from lib.triagers.plugins.needs_revision import get_review_state
-from lib.triagers.plugins.needs_revision import changes_requested_by
+from ansibullbot.triagers.plugins.needs_revision import get_review_state
+from ansibullbot.triagers.plugins.needs_revision import changes_requested_by
 
 
 class TestReviewsMunging(unittest.TestCase):

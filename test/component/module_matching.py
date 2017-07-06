@@ -3,8 +3,8 @@
 import json
 import unittest
 
-from lib.triagers.ansible import AnsibleTriage
-from lib.utils.extractors import extract_template_data
+from ansibullbot.triagers.ansible import AnsibleTriage
+from ansibullbot.utils.extractors import extract_template_data
 
 class TestModuleMatching(unittest.TestCase):
 
