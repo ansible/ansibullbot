@@ -7,8 +7,8 @@ import os
 from fuzzywuzzy import fuzz as fw_fuzz
 from textblob import TextBlob
 
-from lib.utils.systemtools import run_command
-from lib.utils.moduletools import ModuleIndexer
+from ansibullbot.utils.systemtools import run_command
+from ansibullbot.utils.moduletools import ModuleIndexer
 
 
 class FileIndexer(ModuleIndexer):

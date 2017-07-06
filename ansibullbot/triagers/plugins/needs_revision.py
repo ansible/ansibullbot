@@ -7,9 +7,9 @@ import os
 import pytz
 from pprint import pprint
 
-from lib.utils.shippable_api import has_commentable_data
-from lib.utils.shippable_api import ShippableRuns
-from lib.wrappers.historywrapper import ShippableHistory
+from ansibullbot.utils.shippable_api import has_commentable_data
+from ansibullbot.utils.shippable_api import ShippableRuns
+from ansibullbot.wrappers.historywrapper import ShippableHistory
 
 
 def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
