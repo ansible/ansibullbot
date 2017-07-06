@@ -31,15 +31,16 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
-from lib.decorators.github import RateLimited
-from lib.wrappers.ghapiwrapper import GithubWrapper
-from lib.wrappers.issuewrapper import IssueWrapper
-from lib.utils.descriptionfixer import DescriptionFixer
+from ansibullbot.decorators.github import RateLimited
+from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
+from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.utils.descriptionfixer import DescriptionFixer
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 basepath = os.path.dirname(__file__).split('/')
-libindex = basepath.index('lib')
+libindex = basepath[::-1].index('ansibullbot')
+libindex = (len(basepath) - 1) - libindex
 basepath = '/'.join(basepath[0:libindex])
 loader = FileSystemLoader(os.path.join(basepath, 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)

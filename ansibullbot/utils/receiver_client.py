@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import logging
-import lib.constants as C
+import ansibullbot.constants as C
 import requests
 
 
@@ -23,5 +23,3 @@ def post_to_receiver(path, params, data):
     if rr is not None:
         for k,v in rr.json().items():
             logging.info('RECEIVER: %s %s' % (v, k))
-
-

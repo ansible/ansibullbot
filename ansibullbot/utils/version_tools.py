@@ -4,12 +4,12 @@ import datetime
 import logging
 import os
 import re
-from lib.utils.systemtools import *
+from ansibullbot.utils.systemtools import *
 
 from distutils.version import StrictVersion
 from distutils.version import LooseVersion
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 
 def list_to_version(inlist, cast_string=True, reverse=True, binary=False):

@@ -7,9 +7,9 @@ import pickle
 import pytz
 from operator import itemgetter
 from github import GithubObject
-from lib.decorators.github import RateLimited
+from ansibullbot.decorators.github import RateLimited
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 # historywrapper.py
 #

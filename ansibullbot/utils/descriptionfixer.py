@@ -2,9 +2,9 @@
 
 import logging
 import os
-from lib.utils.webscraper import GithubWebScraper
+from ansibullbot.utils.webscraper import GithubWebScraper
 
-import lib.constants as C
+import ansibullbot.constants as C
 
 ISSUE_TYPES = {'bug_report': 'Bug Report',
                'feature_idea': 'Feature Idea',

@@ -19,7 +19,7 @@ from __future__ import print_function
 
 import argparse
 
-from lib.triagers.ansible import AnsibleTriage
+from ansibullbot.triagers.ansible import AnsibleTriage
 
 
 def main():
