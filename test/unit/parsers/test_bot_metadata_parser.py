@@ -78,6 +78,6 @@ class TestBotMetadataParserEx1(TestBotMetaIndexerBase):
         )
 
         self.assertEqual(
-            data['files']['files']['lib/ansible/cli/vault.py']['maintainers'],
+            data['files']['lib/ansible/cli/vault.py']['maintainers'],
             ['larry', 'curly', 'moe', 'jeff']
         )
