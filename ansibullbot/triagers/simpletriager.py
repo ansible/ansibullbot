@@ -29,8 +29,8 @@ import copy
 import logging
 
 from pprint import pprint
-from lib.triagers.defaulttriager import DefaultTriager
-from lib.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.triagers.defaulttriager import DefaultTriager
+from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 
 class SimpleTriager(DefaultTriager):
