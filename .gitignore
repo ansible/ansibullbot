@@ -7,4 +7,4 @@ data*
 headers*
 *.swp
 run*
-
+ansibullbot.egg-info
