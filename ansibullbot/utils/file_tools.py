@@ -18,7 +18,7 @@ class FileIndexer(ModuleIndexer):
     def __init__(self, checkoutdir=None, cmap=None):
 
         if not os.path.isfile(cmap):
-            import lib.triagers.ansible as at
+            import ansibullbot.triagers.ansible as at
             basedir = os.path.dirname(at.__file__)
             basedir = os.path.dirname(basedir)
             basedir = os.path.dirname(basedir)
