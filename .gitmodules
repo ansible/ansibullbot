@@ -1,0 +1,3 @@
+[submodule "playbooks/roles/ansibullbot"]
+	path = playbooks/roles/ansibullbot
+	url = https://github.com/samdoran/ansible-role-ansibullbot.git
