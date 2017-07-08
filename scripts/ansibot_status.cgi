@@ -13,27 +13,32 @@ def run_command(args):
 def get_process_data():
     # USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
     #[root@centos-1gb-nyc3-01 cgi-bin]# ps aux | fgrep -i triage.py | egrep ^ansibot
-    #ansibot   1092 18.2 37.4 600984 380548 pts/2   S+   13:53   3:46 
+    #ansibot   1092 18.2 37.4 600984 380548 pts/2   S+   13:53   3:46
     #   python ./triage.py --debug --verbose --force --skip_no_update --daemonize --daemonize_interval=360
     pdata = {
         'pid': None,
         'cpu': None,
         'mem': None,
     }
-    cmd = 'ps aux | fgrep -i triage.py | egrep ^ansibot'
+    cmd = 'ps aux | fgrep -i triage_ansible.py | egrep ^ansibot'
     (rc, so, se) = run_command(cmd)
     if rc != 0:
-        return None
+        return pdata
 
     parts = so.split()
     pdata['pid'] = parts[1]
     pdata['cpu'] = parts[2]
     pdata['mem'] = parts[3]
 
+    # disk used
+    cmd = "df -h / | tail -n1 | awk '{print $5}'"
+    (rc, so, se) = run_command(cmd)
+    pdata['disk'] = so.strip()
+
     return pdata
 
 def get_log_data():
-    cmd = 'tail -n 10 /var/log/ansibullbot.log'
+    cmd = 'tail -n 100 /var/log/ansibullbot.log | fgrep " INFO "'
     (rc, so, se) = run_command(cmd)
     lines = []
     for line in so.split('\n'):
@@ -45,7 +50,7 @@ def get_log_data():
         'msg': None
     }
 
-    cmd = "tail -n 100 /var/log/ansibullbot.log | fgrep 'x-ratelimit-limit' | tail -n1"
+    cmd = "tail -n 1000 /var/log/ansibullbot.log | fgrep 'x-ratelimit-limit' | tail -n1"
     (rc, so, se) = run_command(cmd)
     if so:
         parts = so.split()
@@ -71,6 +76,7 @@ rdata += "\n"
 rdata += "pid: %s<br>\n" % (pdata['pid'] or 'not running')
 rdata += "cpu: %s<br>\n" % (pdata['cpu'] or 'not running')
 rdata += "mem: %s<br>\n" % (pdata['mem'] or 'not running')
+rdata += "disk: %s<br>\n" % (pdata['disk'] or 'N/A')
 rdata += "<br>\n"
 rdata += "ratelimit total: %s<br>\n" % ratelimit['total']
 rdata += "ratelimit remaining: %s<br>\n" % ratelimit['remaining']
@@ -78,4 +84,9 @@ rdata += "<br>\n"
 rdata += '<br>\n'.join(loglines)
 rdata += "\n"
 
-print rdata
+# force error on full disk
+if int(pdata['disk'].replace('%', '')) > 98:
+    print 'Status: 500 No disk space left'
+    print
+else:
+    print rdata
