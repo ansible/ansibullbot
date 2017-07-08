@@ -1,8 +1,8 @@
-- name: Create ansibullbot
+- name: Create ansibullbot instance
   hosts: localhost
+  connection: local
   gather_facts: no
   become: no
-  connection: local
 
   roles:
     - ansibullbot-instance
