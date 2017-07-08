@@ -1,6 +1,8 @@
 [![Stories in Ready](https://badge.waffle.io/ansibull/ansibullbot.png?label=ready&title=Ready)](https://waffle.io/ansibull/ansibullbot)
 # Ansibull Github Issue/Pullrequest Bot
 
+https://galaxy.ansible.com/samdoran/ansibullbot/
+
 ```
 $ ./triage.py --help
 usage: triage.py [-h] [--skip_no_update] [--skip_no_update_timeout]
