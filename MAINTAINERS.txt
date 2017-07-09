@@ -539,8 +539,7 @@ windows/win_package.ps1: trondhindenes
 windows/win_package.py: trondhindenes
 windows/win_ping.ps1: nitzmahone
 windows/win_ping.py: nitzmahone
-windows/win_psexec.ps1: dagwieers
-windows/win_psexec.py: dagwieers
+windows/win_psexec: dagwieers
 windows/win_reboot.py: nitzmahone
 windows/win_reg_stat.ps1: jborean93
 windows/win_reg_stat.py: jborean93
@@ -559,8 +558,7 @@ windows/win_scheduled_task.py: petemounce
 windows/win_service.ps1: chrishoffman
 windows/win_service.py: chrishoffman
 windows/win_share: jborean93
-windows/win_shortcut.ps1: dagwieers
-windows/win_shortcut.py: dagwieers
+windows/win_shortcut: dagwieers
 windows/win_stat.ps1: nitzmahone
 windows/win_stat.py: nitzmahone
 windows/win_tempfile: dagwieers
@@ -576,5 +574,6 @@ windows/win_uri.ps1: blakfeld
 windows/win_uri.py: blakfeld
 windows/win_user.ps1: nitzmahone
 windows/win_user.py: nitzmahone
+windows/win_wakeonlan: dagwieers
 windows/win_webpicmd.ps1: petemounce
 windows/win_webpicmd.py: petemounce
