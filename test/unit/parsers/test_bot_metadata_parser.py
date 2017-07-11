@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import inspect
 import os
 import shutil
 import unittest
@@ -20,6 +21,8 @@ macros:
         - jeff
     team_galaxy:
         - steven
+    team_oneline: one line at a time
+    modules: lib/ansible/modules
 files:
     lib/ansible/cli/galaxy/:
         maintainers: $team_ansible $team_galaxy
@@ -44,7 +47,8 @@ files:
         labels:
             - foo
             - bar
-
+    # using macro for the key and maintainers
+    $modules/x/y: $team_galaxy
 """
 
 
@@ -81,3 +85,27 @@ class TestBotMetadataParserEx1(TestBotMetaIndexerBase):
             data['files']['lib/ansible/cli/vault.py']['maintainers'],
             ['larry', 'curly', 'moe', 'jeff']
         )
+
+        # double-macro
+        assert 'lib/ansible/modules/x/y' in data['files']
+        assert 'maintainers' in data['files']['lib/ansible/modules/x/y']
+        self.assertEqual(
+            data['files']['lib/ansible/modules/x/y']['maintainers'],
+            ['steven']
+        )
+
+        assert 'team_oneline' in data['macros']
+        assert isinstance(data['macros']['team_oneline'], list)
+        self.assertEqual(
+            data['macros']['team_oneline'],
+            ['one', 'line', 'at', 'a', 'time']
+        )
+
+class TestBotMetadataParserFileExample1(TestBotMetaIndexerBase):
+    def runTest(self):
+        fn = 'metadata_1.yml'
+        fn = os.path.join(os.path.dirname(__file__), fn)
+        with open(fn, 'rb') as f:
+            data = f.read()
+
+        pdata = BotMetadataParser.parse_yaml(data)

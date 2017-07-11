@@ -102,7 +102,21 @@ class FileIndexer(ModuleIndexer):
             return matches
         return matches
 
-    def find_component_match(self, title, body, template_data):
+
+    def get_keywords_for_file(self, filename):
+        keywords = []
+        for k,v in self.CMAP.items():
+            toadd = False
+            for x in v:
+                if x == filename:
+                    toadd = True
+            if toadd:
+                keywords.append(k)
+        #import epdb; epdb.st()
+        return keywords
+
+
+    def _find_component_match(self, title, body, template_data):
         '''Make a list of matching files for arbitrary text in an issue'''
 
         # DistributionNotFound: The 'jinja2<2.9' distribution was not found and
