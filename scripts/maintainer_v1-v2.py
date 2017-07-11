@@ -21,6 +21,34 @@ from ruamel.yaml import YAML as rYAML
 
 requests_cache.install_cache('r_cache')
 
+HEADER = """# BOTMETA V2.0
+#
+# Data used by ansibot to indentify who works on each file in the repo.
+# If you have questions about this data format, please join #ansible-devel
+# on irc.freenode and ping anyone who is op'ed.
+#
+# There are 2 primary sections of the data
+#
+#   macros
+#       Macros are used to shorten and group some strings and lists.
+#       Any macro with a prefix of "team_" is a maintainer group for
+#       various files.
+#
+#   files
+#       Each key represents a specific file in the repository.
+#       If a module is not listed, it's maintainers default to the authors
+#       If the file has no maintainers key, the value of the key is
+#       presumed to be the maintainers.
+#
+#       Keys:
+#           maintainers - these people can shipit and automerge
+#           notified - these people are always subscribed to relevant issues
+#           ignored - these people should never be notified
+#           deprecated - this file is deprecated but probably not yet renamed
+#           keywords - used to identify this file based on the issue description
+#           support - used for files without internal metadata
+#
+"""
 
 def get_maintainers_mapping():
     MAINTAINERS_FILES = ['MAINTAINERS.txt']
@@ -391,6 +419,18 @@ def main():
     for x in remove:
         data['files'].pop(x, None)
 
+
+    # remove any keys where maintainers == authors
+    remove = []
+    for k,v in data['files'].items():
+        if v.keys() != ['maintainers']:
+            continue
+        if v['maintainers'] != modules[k]['authors']:
+            continue
+        remove.append(k)
+    for x in remove:
+        data['files'].pop(x, None)
+
     #####################################
     # add special notifies
     #####################################
@@ -502,6 +542,7 @@ def main():
             ylines[idx] = ''
 
     ylines = [x for x in ylines if x.strip()]
+    ylines = [HEADER] + ylines
 
     with open(dest, 'wb') as f:
         f.write('\n'.join(ylines))
