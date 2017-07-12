@@ -78,11 +78,13 @@ class ModuleIndexer(object):
 
     def parse_metadata(self):
 
+        '''
         # manage the checkout
         if not os.path.isdir(self.checkoutdir):
             self.create_checkout()
         else:
             self.update_checkout()
+        '''
 
         fp = '.github/BOTMETA.yml'
         rdata = self.get_file_content(fp)
@@ -119,7 +121,6 @@ class ModuleIndexer(object):
     def update_checkout(self):
         """rebase + pull + update the checkout"""
 
-        #print('# updating checkout for module indexer')
         changed = False
 
         cmd = "cd %s ; git pull --rebase" % self.checkoutdir
@@ -133,17 +134,6 @@ class ModuleIndexer(object):
         else:
             if 'current branch devel is up to date.' not in so.lower():
                 changed = True
-                import epdb; epdb.st()
-
-        '''
-        cmd = "cd %s ; git submodule update --recursive" % self.checkoutdir
-        (rc, so, se) = run_command(cmd)
-        print str(so) + str(se)
-
-        # if update fails, recreate the checkout
-        if rc != 0:
-            self.create_checkout()
-        '''
 
         return changed
 

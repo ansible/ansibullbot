@@ -72,9 +72,9 @@ REPOS = [
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
-MAINTAINERS_FILES = ['MAINTAINERS.txt']
+#MAINTAINERS_FILES = ['MAINTAINERS.txt']
 FILEMAP_FILENAME = 'FILEMAP.json'
-COMPONENTMAP_FILENAME = 'COMPONENTMAP.json'
+#COMPONENTMAP_FILENAME = 'COMPONENTMAP.json'
 
 ERROR_CODES = {
     'shippable_failure': 1,
@@ -263,20 +263,25 @@ class AnsibleTriage(DefaultTriager):
         self.module_maintainers = self.get_maintainers_mapping()
         '''
 
+        '''
         # get the filemap
         logging.info('getting filemap')
         self.FILEMAP = self.get_filemap()
+        '''
 
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer()
         logging.info('creating file indexer')
+        self.file_indexer = FileIndexer()
+        '''
         self.file_indexer = FileIndexer(
             checkoutdir=os.path.expanduser(
                 '~/.ansibullbot/cache/ansible.files.checkout'
             ),
-            cmap=COMPONENTMAP_FILENAME,
+            #cmap=COMPONENTMAP_FILENAME,
         )
+        '''
 
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer()
@@ -717,6 +722,9 @@ class AnsibleTriage(DefaultTriager):
 
         global FILEMAP_FILENAME
 
+        # FIXME - remove this!!!
+        #import epdb; epdb.st()
+
         if not os.path.isfile(FILEMAP_FILENAME):
             import ansibullbot.triagers.ansible as at
             basedir = os.path.dirname(at.__file__)
@@ -1031,7 +1039,7 @@ class AnsibleTriage(DefaultTriager):
 
         # use the filemap to add labels
         if self.issue.is_pullrequest():
-            fmap_labels = self.get_filemap_labels_for_files(self.issue.files)
+            fmap_labels = self.file_indexer.get_filemap_labels_for_files(self.issue.files)
             for label in fmap_labels:
                 if label in self.valid_labels and \
                         label not in self.issue.labels:
@@ -1313,6 +1321,7 @@ class AnsibleTriage(DefaultTriager):
             self.force = False
         return safe
 
+    """
     def get_filemap_labels_for_files(self, files):
         '''Get expected labels from the filemap'''
         labels = []
@@ -1370,6 +1379,7 @@ class AnsibleTriage(DefaultTriager):
                             to_assign.append(user)
 
         return (to_notify, to_assign)
+    """
 
     def empty_actions(self):
         empty = True
@@ -2007,30 +2017,6 @@ class AnsibleTriage(DefaultTriager):
 
         return None
 
-    def get_maintainers_mapping(self):
-        maintainers = {}
-        for fname in MAINTAINERS_FILES:
-            if not os.path.isfile(fname):
-                import ansibullbot.triagers.ansible as at
-                basedir = os.path.dirname(at.__file__)
-                basedir = os.path.dirname(basedir)
-                basedir = os.path.dirname(basedir)
-                fname = os.path.join(basedir, fname)
-                if not os.path.isfile(fname):
-                    continue
-                #import epdb; epdb.st()
-
-            with open(fname, 'rb') as f:
-                for line in f.readlines():
-                    #print(line)
-                    owner_space = (line.split(': ')[0]).strip()
-                    maintainers_string = (line.split(': ')[-1]).strip()
-                    maintainers[owner_space] = maintainers_string.split(' ')
-
-        # meta is special
-        maintainers['meta'] = ['ansible']
-        return maintainers
-
     def keep_unmanaged_labels(self, issue):
         '''Persists labels that were added manually and not bot managed'''
         for label in issue.labels:
@@ -2349,7 +2335,7 @@ class AnsibleTriage(DefaultTriager):
 
         # add people from filemap matches
         if iw.is_pullrequest():
-            (fnotify, fassign) = self.get_filemap_users_for_files(iw.files)
+            (fnotify, fassign) = self.file_indexer.get_filemap_users_for_files(iw.files)
             for user in fnotify:
                 if user == iw.submitter:
                     continue
