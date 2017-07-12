@@ -6,8 +6,15 @@ import requests
 
 
 def post_to_receiver(path, params, data):
+
+    if not data:
+        return
+
+    if not C.DEFAULT_RECEIVER_HOST or 'none' in C.DEFAULT_RECEIVER_HOST.lower():
+        return
+
     rr = None
-    if C.DEFAULT_RECEIVER_HOST and C.DEFAULT_RECEIVER_HOST is not 'None' and data:
+    if C.DEFAULT_RECEIVER_HOST and data:
         receiverurl = 'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
         receiverurl += ':'
