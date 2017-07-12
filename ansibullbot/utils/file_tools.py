@@ -48,6 +48,7 @@ class FileIndexer(ModuleIndexer):
         files = [x for x in files if not x.startswith('.git')]
         self.files = files
 
+    '''
     def get_file_content(self, filepath):
         fpath = os.path.join(self.checkoutdir, filepath)
         if not os.path.isfile(fpath):
@@ -55,6 +56,7 @@ class FileIndexer(ModuleIndexer):
         with open(fpath, 'rb') as f:
             data = f.read()
         return data
+    '''
 
     def get_component_labels(self, valid_labels, files):
         '''Matches a filepath to the relevant c: labels'''

@@ -257,9 +257,11 @@ class AnsibleTriage(DefaultTriager):
         # extend managed labels
         self.MANAGED_LABELS += self.ISSUE_TYPES.values()
 
+        '''
         # get the maintainers
         logging.info('getting maintainers mapping')
         self.module_maintainers = self.get_maintainers_mapping()
+        '''
 
         # get the filemap
         logging.info('getting filemap')
@@ -276,7 +278,9 @@ class AnsibleTriage(DefaultTriager):
             cmap=COMPONENTMAP_FILENAME,
         )
         logging.info('creating module indexer')
-        self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
+        #import epdb; epdb.st()
+        #self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
+        self.module_indexer = ModuleIndexer()
         logging.info('building module data')
         self.module_indexer.get_ansible_modules()
 

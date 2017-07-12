@@ -34,6 +34,9 @@ class BotMetadataParser(object):
                         newv2 = tmpl.substitute(**data['macros'])
                         newv2 = clean_list_items(newv2)
                         data['files'][k][k2] = newv2
+                        v2 = newv2
+                    if isinstance(v2, (str, unicode)):
+                        data['files'][k][k2] = v2.split()
 
             return data
 
