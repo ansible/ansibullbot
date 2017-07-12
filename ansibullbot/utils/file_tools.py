@@ -3,10 +3,12 @@
 import json
 import logging
 import os
+import re
 
 from fuzzywuzzy import fuzz as fw_fuzz
 from textblob import TextBlob
 
+from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.moduletools import ModuleIndexer
 
@@ -15,30 +17,44 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, checkoutdir=None, cmap=None):
+    def __init__(self, checkoutdir=None):
 
-        if not os.path.isfile(cmap):
-            import ansibullbot.triagers.ansible as at
-            basedir = os.path.dirname(at.__file__)
-            basedir = os.path.dirname(basedir)
-            basedir = os.path.dirname(basedir)
-            cmap = os.path.join(basedir, cmap)
+        if checkoutdir is None:
+            self.checkoutdir = '~/.ansibullbot/cache/ansible.files.checkout'
+        else:
+            self.checkoutdir = checkoutdir
+        self.checkoutdir = os.path.expanduser(self.checkoutdir)
 
-        self.checkoutdir = checkoutdir
+        self.botmeta = {}
         self.CMAP = {}
-        if cmap:
-            with open(cmap, 'rb') as f:
-                self.CMAP = json.load(f)
-
-        self.get_files()
+        self.FILEMAP = {}
         self.match_cache = {}
+        self.update(force=True)
+
+    def parse_metadata(self):
+
+        fp = '.github/BOTMETA.yml'
+        rdata = self.get_file_content(fp)
+        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+
+        # reshape meta into old format
+        self.CMAP = {}
+        for k,v in self.botmeta['files'].items():
+            if not v:
+                continue
+            if not 'keywords' in v:
+                continue
+            for keyword in v['keywords']:
+                if keyword not in self.CMAP:
+                    self.CMAP[keyword] = []
+                if k not in self.CMAP[keyword]:
+                    self.CMAP[keyword].append(k)
+
+        # update the data
+        self.get_files()
+        self.get_filemap()
 
     def get_files(self):
-        # manage the checkout
-        if not os.path.isdir(self.checkoutdir):
-            self.create_checkout()
-        else:
-            self.update_checkout()
 
         cmd = 'find %s' % self.checkoutdir
         (rc, so, se) = run_command(cmd)
@@ -47,14 +63,6 @@ class FileIndexer(ModuleIndexer):
         files = [x.replace(self.checkoutdir + '/', '') for x in files]
         files = [x for x in files if not x.startswith('.git')]
         self.files = files
-
-    def get_file_content(self, filepath):
-        fpath = os.path.join(self.checkoutdir, filepath)
-        if not os.path.isfile(fpath):
-            return None
-        with open(fpath, 'rb') as f:
-            data = f.read()
-        return data
 
     def get_component_labels(self, valid_labels, files):
         '''Matches a filepath to the relevant c: labels'''
@@ -102,7 +110,20 @@ class FileIndexer(ModuleIndexer):
             return matches
         return matches
 
-    def find_component_match(self, title, body, template_data):
+
+    def get_keywords_for_file(self, filename):
+        keywords = []
+        for k,v in self.CMAP.items():
+            toadd = False
+            for x in v:
+                if x == filename:
+                    toadd = True
+            if toadd:
+                keywords.append(k)
+        #import epdb; epdb.st()
+        return keywords
+
+    def _find_component_match(self, title, body, template_data):
         '''Make a list of matching files for arbitrary text in an issue'''
 
         # DistributionNotFound: The 'jinja2<2.9' distribution was not found and
@@ -265,3 +286,125 @@ class FileIndexer(ModuleIndexer):
         logging.info('%s --> %s' % (craws, sorted(set(matches))))
         self.match_cache[craws.lower()] = matches
         return matches
+
+    def get_filemap(self):
+        '''Read filemap and make re matchers'''
+
+        '''
+        global FILEMAP_FILENAME
+        # FIXME - remove this!!!
+        #import epdb; epdb.st()
+
+        if not os.path.isfile(FILEMAP_FILENAME):
+            import ansibullbot.triagers.ansible as at
+            basedir = os.path.dirname(at.__file__)
+            basedir = os.path.dirname(basedir)
+            basedir = os.path.dirname(basedir)
+            FILEMAP_FILENAME = os.path.join(basedir, FILEMAP_FILENAME)
+
+        with open(FILEMAP_FILENAME, 'rb') as f:
+            jdata = json.loads(f.read())
+        for k,v in jdata.iteritems():
+            reg = k
+            if reg.endswith('/'):
+                reg += '*'
+            jdata[k]['regex'] = re.compile(reg)
+
+            if 'inclusive' not in v:
+                jdata[k]['inclusive'] = True
+            if 'assign' not in v:
+                jdata[k]['assign'] = []
+            if 'notify' not in v:
+                jdata[k]['notify'] = []
+            if 'labels' not in v:
+                jdata[k]['labels'] = []
+        return jdata
+        '''
+
+        self.FILEMAP = {}
+        for k,v in self.botmeta['files'].iteritems():
+            self.FILEMAP[k] = {}
+            reg = k
+            if reg.endswith('/'):
+                reg += '*'
+            self.FILEMAP[k] = {
+                #'inclusive': False,
+                'inclusive': True,
+                'exclusive': False,
+                'assign': [],
+                'notify': [],
+                'labels': []
+            }
+            self.FILEMAP[k]['regex'] = re.compile(reg)
+            if not v:
+                continue
+
+            if 'assign' in v:
+                self.FILEMAP[k]['assign'] = v['assign']
+            if 'notify' in v:
+                self.FILEMAP[k]['notify'] = v['notify']
+            if 'labels' in v:
+                labels = v['labels']
+                labels = [x for x in labels if x not in ['lib', 'ansible']]
+                self.FILEMAP[k]['labels'] = labels
+
+        #import epdb; epdb.st()
+
+    def get_filemap_labels_for_files(self, files):
+        '''Get expected labels from the filemap'''
+        labels = []
+
+        exclusive = False
+        for f in files:
+
+            # only one match
+            if exclusive:
+                continue
+
+            for k,v in self.FILEMAP.iteritems():
+                if not v['inclusive'] and v['regex'].match(f):
+                    labels = v['labels']
+                    exclusive = True
+                    break
+
+                if 'labels' not in v:
+                    continue
+                if v['regex'].match(f):
+                    for label in v['labels']:
+                        if label not in labels:
+                            labels.append(label)
+
+        return labels
+
+    def get_filemap_users_for_files(self, files):
+        '''Get expected notifiees from the filemap'''
+        to_notify = []
+        to_assign = []
+
+        exclusive = False
+        for f in files:
+
+            # only one match
+            if exclusive:
+                continue
+
+            for k,v in self.FILEMAP.iteritems():
+                if not v['inclusive'] and v['regex'].match(f):
+                    to_notify = v['notify']
+                    to_assign = v['assign']
+                    exclusive = True
+                    break
+
+                if 'notify' not in v and 'assign' not in v:
+                    continue
+
+                if v['regex'].match(f):
+                    for user in v['notify']:
+                        if user not in to_notify:
+                            to_notify.append(user)
+                    for user in v['assign']:
+                        if user not in to_assign:
+                            to_assign.append(user)
+
+        return (to_notify, to_assign)
+

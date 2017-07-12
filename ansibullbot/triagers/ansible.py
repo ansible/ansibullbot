@@ -72,9 +72,6 @@ REPOS = [
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
-MAINTAINERS_FILES = ['MAINTAINERS.txt']
-FILEMAP_FILENAME = 'FILEMAP.json'
-COMPONENTMAP_FILENAME = 'COMPONENTMAP.json'
 
 ERROR_CODES = {
     'shippable_failure': 1,
@@ -257,28 +254,34 @@ class AnsibleTriage(DefaultTriager):
         # extend managed labels
         self.MANAGED_LABELS += self.ISSUE_TYPES.values()
 
+        '''
         # get the maintainers
         logging.info('getting maintainers mapping')
         self.module_maintainers = self.get_maintainers_mapping()
+        '''
 
+        '''
         # get the filemap
         logging.info('getting filemap')
         self.FILEMAP = self.get_filemap()
+        '''
 
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer()
         logging.info('creating file indexer')
+        self.file_indexer = FileIndexer()
+        '''
         self.file_indexer = FileIndexer(
             checkoutdir=os.path.expanduser(
                 '~/.ansibullbot/cache/ansible.files.checkout'
             ),
-            cmap=COMPONENTMAP_FILENAME,
+            #cmap=COMPONENTMAP_FILENAME,
         )
+        '''
+
         logging.info('creating module indexer')
-        self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
-        logging.info('building module data')
-        self.module_indexer.get_ansible_modules()
+        self.module_indexer = ModuleIndexer()
 
         # instantiate shippable api
         logging.info('creating shippable wrapper')
@@ -302,6 +305,10 @@ class AnsibleTriage(DefaultTriager):
 
     def run(self):
         '''Primary execution method'''
+
+        # update on each run to pull in new data
+        logging.info('updating module indexer')
+        self.module_indexer.update()
 
         # update shippable run data
         self.SR.update()
@@ -707,10 +714,14 @@ class AnsibleTriage(DefaultTriager):
         with open(mfile, 'wb') as f:
             json.dump(meta, f, sort_keys=True, indent=2)
 
+    """
     def get_filemap(self):
         '''Read filemap and make re matchers'''
 
         global FILEMAP_FILENAME
+
+        # FIXME - remove this!!!
+        #import epdb; epdb.st()
 
         if not os.path.isfile(FILEMAP_FILENAME):
             import ansibullbot.triagers.ansible as at
@@ -736,6 +747,7 @@ class AnsibleTriage(DefaultTriager):
             if 'labels' not in v:
                 jdata[k]['labels'] = []
         return jdata
+    """
 
     def create_actions(self):
         '''Parse facts and make actions from them'''
@@ -1026,7 +1038,7 @@ class AnsibleTriage(DefaultTriager):
 
         # use the filemap to add labels
         if self.issue.is_pullrequest():
-            fmap_labels = self.get_filemap_labels_for_files(self.issue.files)
+            fmap_labels = self.file_indexer.get_filemap_labels_for_files(self.issue.files)
             for label in fmap_labels:
                 if label in self.valid_labels and \
                         label not in self.issue.labels:
@@ -1308,6 +1320,7 @@ class AnsibleTriage(DefaultTriager):
             self.force = False
         return safe
 
+    """
     def get_filemap_labels_for_files(self, files):
         '''Get expected labels from the filemap'''
         labels = []
@@ -1365,6 +1378,7 @@ class AnsibleTriage(DefaultTriager):
                             to_assign.append(user)
 
         return (to_notify, to_assign)
+    """
 
     def empty_actions(self):
         empty = True
@@ -1765,24 +1779,24 @@ class AnsibleTriage(DefaultTriager):
             # assume pullrequest
             for f in iw.files:
 
-                if f.startswith('ansibullbot.ansible/modules/core') or \
-                        f.startswith('ansibullbot.ansible/modules/extras'):
+                if f.startswith('lib/ansible/modules/core') or \
+                        f.startswith('lib/ansible/modules/extras'):
                     self.meta['is_bad_pr'] = True
                     continue
 
-                if f.startswith('ansibullbot.ansible/module_utils'):
+                if f.startswith('lib/ansible/module_utils'):
                     self.meta['is_module_util'] = True
                     continue
 
-                if f.startswith('ansibullbot.ansible/plugins/action'):
+                if f.startswith('lib/ansible/plugins/action'):
                     self.meta['is_action_plugin'] = True
 
-                if f.startswith('ansibullbot.ansible') \
-                        and not f.startswith('ansibullbot.ansible/modules'):
+                if f.startswith('lib/ansible') \
+                        and not f.startswith('lib/ansible/modules'):
                     self.meta['is_core'] = True
 
-                if not f.startswith('ansibullbot.ansible/modules') and \
-                        not f.startswith('ansibullbot.ansible/plugins/actions'):
+                if not f.startswith('lib/ansible/modules') and \
+                        not f.startswith('lib/ansible/plugins/actions'):
                     continue
 
                 # duplicates?
@@ -1833,7 +1847,7 @@ class AnsibleTriage(DefaultTriager):
                     continue
                 else:
                     # FIXME - what do with these files?
-                    print(f)
+                    logging.warning('unhandled filepath for matching: %s' % f)
 
         # get labels for files ...
         if not iw.is_pullrequest():
@@ -2001,30 +2015,6 @@ class AnsibleTriage(DefaultTriager):
             pass
 
         return None
-
-    def get_maintainers_mapping(self):
-        maintainers = {}
-        for fname in MAINTAINERS_FILES:
-            if not os.path.isfile(fname):
-                import ansibullbot.triagers.ansible as at
-                basedir = os.path.dirname(at.__file__)
-                basedir = os.path.dirname(basedir)
-                basedir = os.path.dirname(basedir)
-                fname = os.path.join(basedir, fname)
-                if not os.path.isfile(fname):
-                    continue
-                #import epdb; epdb.st()
-
-            with open(fname, 'rb') as f:
-                for line in f.readlines():
-                    #print(line)
-                    owner_space = (line.split(': ')[0]).strip()
-                    maintainers_string = (line.split(': ')[-1]).strip()
-                    maintainers[owner_space] = maintainers_string.split(' ')
-
-        # meta is special
-        maintainers['meta'] = ['ansible']
-        return maintainers
 
     def keep_unmanaged_labels(self, issue):
         '''Persists labels that were added manually and not bot managed'''
@@ -2344,7 +2334,7 @@ class AnsibleTriage(DefaultTriager):
 
         # add people from filemap matches
         if iw.is_pullrequest():
-            (fnotify, fassign) = self.get_filemap_users_for_files(iw.files)
+            (fnotify, fassign) = self.file_indexer.get_filemap_users_for_files(iw.files)
             for user in fnotify:
                 if user == iw.submitter:
                     continue

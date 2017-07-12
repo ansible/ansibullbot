@@ -8,6 +8,8 @@ import os
 import pickle
 import shutil
 import yaml
+
+from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.webscraper import GithubWebScraper
 
@@ -37,6 +39,8 @@ class ModuleIndexer(object):
     }
 
     def __init__(self, maintainers=None):
+
+        self.botmeta = {}
         self.modules = {}
         self.maintainers = maintainers or {}
         self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
@@ -53,6 +57,44 @@ class ModuleIndexer(object):
         # map of email to github login
         self.emailmap = {}
 
+        # load the bot meta
+        self.update(force=True)
+
+    def update(self, force=False):
+        '''Reload everything if there are new commits'''
+        changed = self.manage_checkout()
+        if changed or force:
+            self.parse_metadata()
+
+    def manage_checkout(self):
+        '''Check if there are any changes to the repo'''
+        changed = False
+        if not os.path.isdir(self.checkoutdir):
+            self.create_checkout()
+            changed = True
+        else:
+            changed = self.update_checkout()
+        return changed
+
+    def parse_metadata(self):
+
+        fp = '.github/BOTMETA.yml'
+        rdata = self.get_file_content(fp)
+        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+
+        # reshape data to the old format
+        self.maintainers = {}
+        for k,v in self.botmeta['files'].items():
+            fp = k.replace('lib/ansible/modules/', '')
+            if isinstance(v, dict):
+                self.maintainers[fp] = v.get('maintainers', [])
+            else:
+                self.maintainers[fp] = []
+
+        # load the modules
+        logging.info('loading modules')
+        self.get_ansible_modules()
+
     def create_checkout(self):
         """checkout ansible"""
 
@@ -62,7 +104,8 @@ class ModuleIndexer(object):
         if os.path.isdir(self.checkoutdir):
             shutil.rmtree(self.checkoutdir)
 
-        cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
+        #cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
+        cmd = "git clone http://github.com/ansible/ansible %s" \
             % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
@@ -70,8 +113,7 @@ class ModuleIndexer(object):
     def update_checkout(self):
         """rebase + pull + update the checkout"""
 
-        print('# updating checkout for module indexer')
-        #success = True
+        changed = False
 
         cmd = "cd %s ; git pull --rebase" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
@@ -80,15 +122,12 @@ class ModuleIndexer(object):
         # If rebase failed, recreate the checkout
         if rc != 0:
             self.create_checkout()
-            return
+            return True
+        else:
+            if 'current branch devel is up to date.' not in so.lower():
+                changed = True
 
-        cmd = "cd %s ; git submodule update --recursive" % self.checkoutdir
-        (rc, so, se) = run_command(cmd)
-        print str(so) + str(se)
-
-        # if update fails, recreate the checkout
-        if rc != 0:
-            self.create_checkout()
+        return changed
 
     def _find_match(self, pattern, exact=False):
 
@@ -177,17 +216,6 @@ class ModuleIndexer(object):
     def get_ansible_modules(self):
         """Make a list of known modules"""
 
-        # manage the checkout
-        if not os.path.isdir(self.checkoutdir):
-            self.create_checkout()
-        else:
-            self.update_checkout()
-
-        #(Epdb) pp module
-        #u'wait_for'
-        #(Epdb) pp self.module_indexer.is_valid(module)
-        #False
-
         matches = []
         module_dir = os.path.join(self.checkoutdir, 'lib/ansible/modules')
         module_dir = os.path.expanduser(module_dir)
@@ -248,9 +276,16 @@ class ModuleIndexer(object):
 
         # grep the authors:
         for k,v in self.modules.iteritems():
+            if v['filepath'] is None:
+                continue
             mfile = os.path.join(self.checkoutdir, v['filepath'])
             authors = self.get_module_authors(mfile)
             self.modules[k]['authors'] = authors
+
+            # authors are maintainers by -default-
+            self.modules[k]['maintainers'] += authors
+            self.modules[k]['maintainers'] = \
+                sorted(set(self.modules[k]['maintainers']))
 
         # meta is a special module
         self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
@@ -289,18 +324,23 @@ class ModuleIndexer(object):
             self.modules[ni[0]] = ni[1]
 
         # parse metadata
+        logging.debug('set module metadata')
         self.set_module_metadata()
 
         # parse imports
+        logging.debug('set module imports')
         self.set_module_imports()
 
         # last modified
+        logging.debug('set module commits')
         self.get_module_commits()
 
         # parse blame
+        logging.debug('set module blames')
         self.get_module_blames()
 
         # depends on metadata now ...
+        logging.debug('set module maintainers')
         self.set_maintainers()
 
         return self.modules
@@ -467,26 +507,51 @@ class ModuleIndexer(object):
         for k,v in self.modules.iteritems():
             if not v['filepath']:
                 continue
-            best_match = None
-            for mkey in mkeys:
-                if mkey in v['filepath']:
-                    if not best_match:
-                        best_match = mkey
-                        continue
-                    if len(mkey) > len(best_match):
-                        best_match = mkey
-            if best_match:
-                self.modules[k]['maintainers_key'] = best_match
-                self.modules[k]['maintainers'] = self.maintainers[best_match]
+
+            if k in self.botmeta['files']:
+
+                # should this also inherit from higher up?
+                self.modules[k]['maintainers_key'] = k
+
+                if self.botmeta['files'][k]:
+                    if self.botmeta['files'][k].get('maintainers'):
+                        self.modules[k]['maintainers'] = \
+                            self.botmeta['files'][k]['maintainers']
+
+                # remove the people who want to be ignored
+                if self.botmeta['files'][k]:
+                    if 'ignored' in self.botmeta['files'][k]:
+                        ignored = self.botmeta['files'][k]['ignored']
+                        for x in ignored:
+                            if x in self.modules[k]['maintainers']:
+                                self.modules[k]['maintainers'].remove(x)
+
             else:
-                if v['metadata'].get('supported_by') not in ['community']:
+
+                best_match = None
+                for mkey in mkeys:
+                    if mkey in v['filepath']:
+                        if not best_match:
+                            best_match = mkey
+                            continue
+                        if len(mkey) > len(best_match):
+                            best_match = mkey
+                if best_match:
+
                     self.modules[k]['maintainers_key'] = best_match
-                    if v['metadata'].get('supported_by') == 'core':
-                        self.modules[k]['maintainers'] = ['ansible']
-                    else:
-                        # curated? ... what now?
-                        pass
+                    self.modules[k]['maintainers'] += \
+                        sorted(set(self.maintainers[best_match]))
+
+                    # remove the people who want to be ignored
+                    if best_match in self.botmeta['files']:
+                        if 'ignored' in self.botmeta['files'][best_match]:
+                            ignored = self.botmeta['files'][best_match]['ignored']
+                            for xig in ignored:
+                                if xig in self.modules[k]['maintainers']:
+                                    self.modules[k]['maintainers'].remove(xig)
+
             # save a pristine copy so that higher level code can still use it
+            self.modules[k]['maintainers'] = sorted(set(self.modules[k]['maintainers']))
             self.modules[k]['_maintainers'] = \
                 [x for x in self.modules[k]['maintainers']]
 
@@ -832,3 +897,11 @@ class ModuleIndexer(object):
         newlist = sorted(set(newlist))
         newlist = [x for x in newlist if x not in bots]
         return newlist
+
+    def get_file_content(self, filepath):
+        fpath = os.path.join(self.checkoutdir, filepath)
+        if not os.path.isfile(fpath):
+            return None
+        with open(fpath, 'rb') as f:
+            data = f.read()
+        return data

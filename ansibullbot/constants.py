@@ -96,7 +96,10 @@ def get_config(p, section, key, env_var, default,
 
     elif value:
         if value_type == 'integer' or value_type == 'int':
-            value = int(value)
+            if value != 'None':
+                value = int(value)
+            else:
+                value = None
 
         elif value_type == 'float':
             value = float(value)

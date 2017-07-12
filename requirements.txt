@@ -8,5 +8,6 @@ python-Levenshtein
 pytz
 requests
 requests_cache
+ruamel.yaml
 six
 textblob
