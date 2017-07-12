@@ -304,6 +304,7 @@ class AnsibleTriage(DefaultTriager):
     def run(self):
         '''Primary execution method'''
 
+        # update on each run to pull in new data
         logging.info('updating module indexer')
         self.module_indexer.update()
 

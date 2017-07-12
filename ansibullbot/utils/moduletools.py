@@ -59,37 +59,6 @@ class ModuleIndexer(object):
 
         # load the bot meta
         self.update(force=True)
-        #self.manage_checkout()
-        #self.parse_metadata()
-
-        # load the modules
-        #self.get_ansible_modules()
-
-    '''
-    def get_maintainers_mapping(self):
-        maintainers = {}
-        for fname in MAINTAINERS_FILES:
-            if not os.path.isfile(fname):
-                import ansibullbot.triagers.ansible as at
-                basedir = os.path.dirname(at.__file__)
-                basedir = os.path.dirname(basedir)
-                basedir = os.path.dirname(basedir)
-                fname = os.path.join(basedir, fname)
-                if not os.path.isfile(fname):
-                    continue
-                #import epdb; epdb.st()
-
-            with open(fname, 'rb') as f:
-                for line in f.readlines():
-                    #print(line)
-                    owner_space = (line.split(': ')[0]).strip()
-                    maintainers_string = (line.split(': ')[-1]).strip()
-                    maintainers[owner_space] = maintainers_string.split(' ')
-
-        # meta is special
-        maintainers['meta'] = ['ansible']
-        return maintainers
-    '''
 
     def update(self, force=False):
         '''Reload everything if there are new commits'''
