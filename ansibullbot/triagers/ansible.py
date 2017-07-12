@@ -277,12 +277,9 @@ class AnsibleTriage(DefaultTriager):
             ),
             cmap=COMPONENTMAP_FILENAME,
         )
+
         logging.info('creating module indexer')
-        #import epdb; epdb.st()
-        #self.module_indexer = ModuleIndexer(maintainers=self.module_maintainers)
         self.module_indexer = ModuleIndexer()
-        logging.info('building module data')
-        self.module_indexer.get_ansible_modules()
 
         # instantiate shippable api
         logging.info('creating shippable wrapper')
@@ -306,6 +303,9 @@ class AnsibleTriage(DefaultTriager):
 
     def run(self):
         '''Primary execution method'''
+
+        logging.info('updating module indexer')
+        self.module_indexer.update()
 
         # update shippable run data
         self.SR.update()

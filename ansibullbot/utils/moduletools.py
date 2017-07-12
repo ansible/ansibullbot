@@ -58,10 +58,12 @@ class ModuleIndexer(object):
         self.emailmap = {}
 
         # load the bot meta
-        self.parse_metadata()
+        self.update(force=True)
+        #self.manage_checkout()
+        #self.parse_metadata()
 
         # load the modules
-        self.get_ansible_modules()
+        #self.get_ansible_modules()
 
     '''
     def get_maintainers_mapping(self):
@@ -89,6 +91,22 @@ class ModuleIndexer(object):
         return maintainers
     '''
 
+    def update(self, force=False):
+        '''Reload everything if there are new commits'''
+        changed = self.manage_checkout()
+        if changed or force:
+            self.parse_metadata()
+
+    def manage_checkout(self):
+        '''Check if there are any changes to the repo'''
+        changed = False
+        if not os.path.isdir(self.checkoutdir):
+            self.create_checkout()
+            changed = True
+        else:
+            changed = self.update_checkout()
+        return changed
+
     def parse_metadata(self):
 
         # manage the checkout
@@ -114,27 +132,6 @@ class ModuleIndexer(object):
         logging.info('loading modules')
         self.get_ansible_modules()
 
-        '''
-        # validate the module metadata
-        for k,v in self.modules.items():
-            if not v.get('maintainers'):
-                if v.get('authors'):
-                    authors = v['authors']
-                    if authors:
-                        if self.botmeta['files'].get(k):
-                            ignored = self.botmeta['files'][k].get('ignored')
-                            if ignored:
-                                authors = [x for x in authors if x not in ignored]
-                                #import epdb; epdb.st()
-                        for x in authors:
-                            if x not in v['maintainers']:
-                                import epdb; epdb.st()
-                                self.modules[k]['maintainers'].append(x)
-
-                    #import epdb; epdb.st()
-        import epdb; epdb.st()
-        '''
-
     def create_checkout(self):
         """checkout ansible"""
 
@@ -144,7 +141,8 @@ class ModuleIndexer(object):
         if os.path.isdir(self.checkoutdir):
             shutil.rmtree(self.checkoutdir)
 
-        cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
+        #cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
+        cmd = "git clone http://github.com/ansible/ansible %s" \
             % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
@@ -152,8 +150,8 @@ class ModuleIndexer(object):
     def update_checkout(self):
         """rebase + pull + update the checkout"""
 
-        print('# updating checkout for module indexer')
-        #success = True
+        #print('# updating checkout for module indexer')
+        changed = False
 
         cmd = "cd %s ; git pull --rebase" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
@@ -162,8 +160,13 @@ class ModuleIndexer(object):
         # If rebase failed, recreate the checkout
         if rc != 0:
             self.create_checkout()
-            return
+            return True
+        else:
+            if 'current branch devel is up to date.' not in so.lower():
+                changed = True
+                import epdb; epdb.st()
 
+        '''
         cmd = "cd %s ; git submodule update --recursive" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
@@ -171,6 +174,9 @@ class ModuleIndexer(object):
         # if update fails, recreate the checkout
         if rc != 0:
             self.create_checkout()
+        '''
+
+        return changed
 
     def _find_match(self, pattern, exact=False):
 
@@ -576,17 +582,19 @@ class ModuleIndexer(object):
                             best_match = mkey
                 if best_match:
                     self.modules[k]['maintainers_key'] = best_match
-                    self.modules[k]['maintainers'] = self.maintainers[best_match]
+                    self.modules[k]['maintainers'] = \
+                        sorted(set(self.maintainers[best_match]))
 
                     # remove the people who want to be ignored
                     if best_match in self.botmeta['files']:
                         if 'ignored' in self.botmeta['files'][best_match]:
                             ignored = self.botmeta['files'][best_match]['ignored']
-                            for x in ignored:
-                                if x in self.modules[k]['maintainers']:
-                                    self.modules[k]['maintainers'].remove(x)
+                            for xig in ignored:
+                                if xig in self.modules[k]['maintainers']:
+                                    self.modules[k]['maintainers'].remove(xig)
 
             # save a pristine copy so that higher level code can still use it
+            self.modules[k]['_maintainers'] = sorted(set(self.modules[k]['_maintainers']))
             self.modules[k]['_maintainers'] = \
                 [x for x in self.modules[k]['maintainers']]
 
@@ -940,4 +948,3 @@ class ModuleIndexer(object):
         with open(fpath, 'rb') as f:
             data = f.read()
         return data
-
