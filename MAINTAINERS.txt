@@ -410,6 +410,8 @@ storage/infinidat/: GR360RY vmalloc
 storage/netapp/: hulquest timuster lmprice
 storage/purestorage/: sdodsley
 storage/zfs/zfs.py: johanwiren
+storage/zfs/zfs_facts.py xen0l
+storage/zfs/zpool_facts.py xen0l
 system/alternatives.py: DavidWittman mulby
 system/at.py: ansible
 system/authorized_key.py: ansible
