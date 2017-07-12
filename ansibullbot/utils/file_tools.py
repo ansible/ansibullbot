@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import json
 import logging
 import os
 import re
@@ -42,7 +41,7 @@ class FileIndexer(ModuleIndexer):
         for k,v in self.botmeta['files'].items():
             if not v:
                 continue
-            if not 'keywords' in v:
+            if 'keywords' not in v:
                 continue
             for keyword in v['keywords']:
                 if keyword not in self.CMAP:
@@ -110,7 +109,6 @@ class FileIndexer(ModuleIndexer):
             return matches
         return matches
 
-
     def get_keywords_for_file(self, filename):
         keywords = []
         for k,v in self.CMAP.items():
@@ -123,7 +121,7 @@ class FileIndexer(ModuleIndexer):
         #import epdb; epdb.st()
         return keywords
 
-    def _find_component_match(self, title, body, template_data):
+    def find_component_match(self, title, body, template_data):
         '''Make a list of matching files for arbitrary text in an issue'''
 
         # DistributionNotFound: The 'jinja2<2.9' distribution was not found and
@@ -290,37 +288,6 @@ class FileIndexer(ModuleIndexer):
     def get_filemap(self):
         '''Read filemap and make re matchers'''
 
-        '''
-        global FILEMAP_FILENAME
-        # FIXME - remove this!!!
-        #import epdb; epdb.st()
-
-        if not os.path.isfile(FILEMAP_FILENAME):
-            import ansibullbot.triagers.ansible as at
-            basedir = os.path.dirname(at.__file__)
-            basedir = os.path.dirname(basedir)
-            basedir = os.path.dirname(basedir)
-            FILEMAP_FILENAME = os.path.join(basedir, FILEMAP_FILENAME)
-
-        with open(FILEMAP_FILENAME, 'rb') as f:
-            jdata = json.loads(f.read())
-        for k,v in jdata.iteritems():
-            reg = k
-            if reg.endswith('/'):
-                reg += '*'
-            jdata[k]['regex'] = re.compile(reg)
-
-            if 'inclusive' not in v:
-                jdata[k]['inclusive'] = True
-            if 'assign' not in v:
-                jdata[k]['assign'] = []
-            if 'notify' not in v:
-                jdata[k]['notify'] = []
-            if 'labels' not in v:
-                jdata[k]['labels'] = []
-        return jdata
-        '''
-
         self.FILEMAP = {}
         for k,v in self.botmeta['files'].iteritems():
             self.FILEMAP[k] = {}
@@ -407,4 +374,3 @@ class FileIndexer(ModuleIndexer):
                             to_assign.append(user)
 
         return (to_notify, to_assign)
-
