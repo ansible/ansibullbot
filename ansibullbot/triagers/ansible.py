@@ -72,9 +72,6 @@ REPOS = [
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
-#MAINTAINERS_FILES = ['MAINTAINERS.txt']
-FILEMAP_FILENAME = 'FILEMAP.json'
-#COMPONENTMAP_FILENAME = 'COMPONENTMAP.json'
 
 ERROR_CODES = {
     'shippable_failure': 1,
@@ -717,6 +714,7 @@ class AnsibleTriage(DefaultTriager):
         with open(mfile, 'wb') as f:
             json.dump(meta, f, sort_keys=True, indent=2)
 
+    """
     def get_filemap(self):
         '''Read filemap and make re matchers'''
 
@@ -749,6 +747,7 @@ class AnsibleTriage(DefaultTriager):
             if 'labels' not in v:
                 jdata[k]['labels'] = []
         return jdata
+    """
 
     def create_actions(self):
         '''Parse facts and make actions from them'''
@@ -1780,24 +1779,24 @@ class AnsibleTriage(DefaultTriager):
             # assume pullrequest
             for f in iw.files:
 
-                if f.startswith('ansibullbot.ansible/modules/core') or \
-                        f.startswith('ansibullbot.ansible/modules/extras'):
+                if f.startswith('lib/ansible/modules/core') or \
+                        f.startswith('lib/ansible/modules/extras'):
                     self.meta['is_bad_pr'] = True
                     continue
 
-                if f.startswith('ansibullbot.ansible/module_utils'):
+                if f.startswith('lib/ansible/module_utils'):
                     self.meta['is_module_util'] = True
                     continue
 
-                if f.startswith('ansibullbot.ansible/plugins/action'):
+                if f.startswith('lib/ansible/plugins/action'):
                     self.meta['is_action_plugin'] = True
 
-                if f.startswith('ansibullbot.ansible') \
-                        and not f.startswith('ansibullbot.ansible/modules'):
+                if f.startswith('lib/ansible') \
+                        and not f.startswith('lib/ansible/modules'):
                     self.meta['is_core'] = True
 
-                if not f.startswith('ansibullbot.ansible/modules') and \
-                        not f.startswith('ansibullbot.ansible/plugins/actions'):
+                if not f.startswith('lib/ansible/modules') and \
+                        not f.startswith('lib/ansible/plugins/actions'):
                     continue
 
                 # duplicates?
@@ -1848,7 +1847,7 @@ class AnsibleTriage(DefaultTriager):
                     continue
                 else:
                     # FIXME - what do with these files?
-                    print(f)
+                    logging.warning('unhandled filepath for matching: %s' % f)
 
         # get labels for files ...
         if not iw.is_pullrequest():

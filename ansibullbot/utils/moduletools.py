@@ -78,14 +78,6 @@ class ModuleIndexer(object):
 
     def parse_metadata(self):
 
-        '''
-        # manage the checkout
-        if not os.path.isdir(self.checkoutdir):
-            self.create_checkout()
-        else:
-            self.update_checkout()
-        '''
-
         fp = '.github/BOTMETA.yml'
         rdata = self.get_file_content(fp)
         self.botmeta = BotMetadataParser.parse_yaml(rdata)
@@ -289,6 +281,11 @@ class ModuleIndexer(object):
             mfile = os.path.join(self.checkoutdir, v['filepath'])
             authors = self.get_module_authors(mfile)
             self.modules[k]['authors'] = authors
+
+            # authors are maintainers by -default-
+            self.modules[k]['maintainers'] += authors
+            self.modules[k]['maintainers'] = \
+                sorted(set(self.modules[k]['maintainers']))
 
         # meta is a special module
         self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
@@ -512,13 +509,13 @@ class ModuleIndexer(object):
                 continue
 
             if k in self.botmeta['files']:
+
                 # should this also inherit from higher up?
                 self.modules[k]['maintainers_key'] = k
-                self.modules[k]['maintainers'] = []
-                self.modules[k]['maintainers'] += v.get('authors', [])
+
                 if self.botmeta['files'][k]:
                     if self.botmeta['files'][k].get('maintainers'):
-                        self.modules[k]['maintainers'] += \
+                        self.modules[k]['maintainers'] = \
                             self.botmeta['files'][k]['maintainers']
 
                 # remove the people who want to be ignored
@@ -540,8 +537,9 @@ class ModuleIndexer(object):
                         if len(mkey) > len(best_match):
                             best_match = mkey
                 if best_match:
+
                     self.modules[k]['maintainers_key'] = best_match
-                    self.modules[k]['maintainers'] = \
+                    self.modules[k]['maintainers'] += \
                         sorted(set(self.maintainers[best_match]))
 
                     # remove the people who want to be ignored
@@ -553,7 +551,7 @@ class ModuleIndexer(object):
                                     self.modules[k]['maintainers'].remove(xig)
 
             # save a pristine copy so that higher level code can still use it
-            self.modules[k]['_maintainers'] = sorted(set(self.modules[k]['_maintainers']))
+            self.modules[k]['maintainers'] = sorted(set(self.modules[k]['maintainers']))
             self.modules[k]['_maintainers'] = \
                 [x for x in self.modules[k]['maintainers']]
 
