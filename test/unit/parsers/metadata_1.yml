@@ -497,8 +497,8 @@ files:
   $modules/network/f5/bigip_iapp_service.py: caphrim007
   $modules/network/f5/bigip_iapp_template.py: caphrim007
   $modules/network/f5/bigip_irule.py: caphrim007
-  $modules/network/f5/bigip_monitor_http.py: caphrim007 srvg
-  $modules/network/f5/bigip_monitor_tcp.py: caphrim007 srvg
+  $modules/network/f5/bigip_monitor_http.py: caphrim007
+  $modules/network/f5/bigip_monitor_tcp.py: caphrim007
   $modules/network/f5/bigip_node.py: caphrim007
   $modules/network/f5/bigip_pool.py: caphrim007 wojtek0806
   $modules/network/f5/bigip_pool_member.py: caphrim007
