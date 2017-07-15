@@ -78,7 +78,7 @@ Expect the bot to do a few things:
 
   * `needs_rebase` - Your pull request is out of sync with ansible/ansible's devel branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
   * `needs_revision` - Either your pull request fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting `ready_for_review`
-  * `community_review` - The bot is waiting for 2+ people to use the `shipit` command on this pull request.
+  * `community_review` - The bot is waiting for two or more module maintainers, maintainers of module in the same namespace, or core team members, to use the `shipit` command on this pull request.
   * `contributor_review` - The bot is waiting for anyone on the Ansible organization to use the shipit command on this pull request.
   * `core_review` - The bot is waiting for anyone on the Ansible core-team to use the `shipit` command on this pull request.
   * `shipit` - The shipit count has hit the minimum threshold and the pull request is ready for manual merge or automerge.
@@ -100,10 +100,10 @@ New modules require two **shipits** from anyone in the community before the bot 
 Module's have metadata with a `supported_by` field per the [metadata proposal](https://github.com/ansible/proposals/issues/30). The possible values of `supported_by` are:
 * **unmaintained**: no community members are responsible for this module, so changes will have to be reviewed by the core team until someone volunteers to maintain it. See "core".
 * **core**: Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
-* **curated**: These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once two or more community members give `shipit`, the core team will be alerted to review.
-* **community**: These modules are also developed, maintained and supported by the community. If you are a maintainer for the module, use the `shipit` command to approve the pull request. The bot will wait for shipits from 2 maintainers and then automerge.
+* **curated**: These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once two or more module maintainers, maintainers of a module in the same namespace, or core team members give `shipit`, the core team will be alerted to review.
+* **community**: These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the `shipit` command to approve the pull request. The bot will wait for two shipits from module maintainers, maintainers of a module in the same namespace, or core team members, then automerge.
 
-NOTE: If you have changes to other files in the pull request, the `supported_by` property is ignored because the Ansible core team **must** approve those changes.
+NOTE: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes.
 
 #### Non-module changes
 
