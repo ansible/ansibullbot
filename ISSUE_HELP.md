@@ -38,7 +38,7 @@ Command | Scope | Allowed | Description
 **duplicate_of** | issues | maintainers | If this bug or feature request is a duplicate of another issue, comment with `duplicate_of` followed by the issue number that it duplicates, and the issue will be closed.
 **close_me** | issues | maintainers | If the issue can be closed for a reason you will specify in the comment, use this command.
 **ready_for_review** | pull requests | submitters | If you are finished making commits to your pull request or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
-**shipit** | pull requests | maintainers | If you approve of the code in this pull request, use this command to have it  merged.
+**shipit** | pull requests | maintainers | If you approve of the code in this pull request, use this command to have it merged. Note that `Approve` pull request status is ignored, this command must be used in order to approve the pull request.
 **+label** | issues pull requests | staff maintainers | Add a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
 **-label** | issues pull requests | staff maintainers | Remove a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
 
@@ -90,6 +90,8 @@ If you are finished committing to your pull request or have made changes due to
 If you are not sure who the pull request is waiting on, please use the **bot_status** command.
 
 ### When will your pull request be merged?
+
+`Approve` pull request status is ignored, `shipit` command must be used in order to approve a pull request.
 
 #### New Modules
 
