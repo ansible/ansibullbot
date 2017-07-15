@@ -2,6 +2,21 @@
 
 Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed. If at anytime you think this bot is misbehaving, please leave a comment containing the keyword **bot_broken** and an Ansible staff member will intervene.
 
+#### Table of contents
+
+* [Commands](#commands)
+* [For issue submitters](#for-issue-submitters)
+* [For pull request submitters](#for-pull-request-submitters)
+* [When will your pull request be merged?](#when-will-your-pull-request-be-merged)
+  * [New Modules](#new-modules)
+  * [Existing Modules](#existing-modules)
+  * [Non-module changes](#non-module-changes)
+* [For community maintainers](#for-community-maintainers)
+* [For anyone else](#for-anyone-else)
+* [When to use label commands](#when-to-use-label-commands)
+
+## Commands
+
 To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
 Command | Scope | Allowed | Description
