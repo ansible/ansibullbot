@@ -21,8 +21,7 @@ def get_rate_limit():
     password = C.DEFAULT_GITHUB_PASSWORD
     token = C.DEFAULT_GITHUB_TOKEN
 
-    if token != 'False':
-
+    if token:
         success = False
         while not success:
             try:

@@ -211,7 +211,7 @@ DEFAULT_BREAKPOINTS = get_config(
     'breakpoints',
     '%s_BREAKPOINTS' % PROG_NAME.upper(),
     False,
-    value_type='string'
+    value_type='boolean'
 )
 
 DEFAULT_GITHUB_USERNAME = get_config(
@@ -219,7 +219,7 @@ DEFAULT_GITHUB_USERNAME = get_config(
     DEFAULTS,
     'github_username',
     '%s_GITHUB_USERNAME' % PROG_NAME.upper(),
-    False,
+    '',
     value_type='string'
 )
 
@@ -228,7 +228,7 @@ DEFAULT_GITHUB_PASSWORD = get_config(
     DEFAULTS,
     'github_password',
     '%s_GITHUB_PASSWORD' % PROG_NAME.upper(),
-    False,
+    '',
     value_type='string'
 )
 
@@ -237,7 +237,7 @@ DEFAULT_GITHUB_TOKEN = get_config(
     DEFAULTS,
     'github_token',
     '%s_GITHUB_TOKEN' % PROG_NAME.upper(),
-    False,
+    '',
     value_type='string'
 )
 
@@ -246,7 +246,7 @@ DEFAULT_SHIPPABLE_TOKEN = get_config(
     DEFAULTS,
     'shippable_token',
     '%s_SHIPPABLE_TOKEN' % PROG_NAME.upper(),
-    False,
+    '',
     value_type='string'
 )
 

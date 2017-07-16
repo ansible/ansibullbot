@@ -433,7 +433,7 @@ class DefaultTriager(object):
     @RateLimited
     def _connect(self):
         """Connects to GitHub's API"""
-        if self.github_token != 'False' and self.github_token is not None:
+        if self.github_token:
             return Github(login_or_token=self.github_token)
         else:
             return Github(
