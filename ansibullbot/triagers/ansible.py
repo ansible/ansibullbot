@@ -31,7 +31,6 @@ import json
 import logging
 import os
 import pytz
-import re
 
 import ansibullbot.constants as C
 
@@ -995,7 +994,7 @@ class AnsibleTriage(DefaultTriager):
                     self.actions['unlabel'].append('module')
 
         # component labels
-        if self.meta['component_labels']:
+        if self.meta['component_labels'] and not self.meta['merge_commits']:
 
             # only add these labels to pullrequest or un-triaged issues
             if self.issue.is_pullrequest() or \
