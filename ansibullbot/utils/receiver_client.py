@@ -18,7 +18,7 @@ def post_to_receiver(path, params, data):
         receiverurl = 'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
         receiverurl += ':'
-        receiverurl += C.DEFAULT_RECEIVER_PORT
+        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
         receiverurl += '/'
         receiverurl += path
         logging.info('RECEIVER: POST to %s' % receiverurl)
