@@ -136,7 +136,10 @@ def get_config(p, section, key, env_var, default,
         elif isinstance(value, string_types):
             value = unquote(value)
 
-    return to_text(value, errors='surrogate_or_strict', nonstring='passthru')
+    if value_type in ['integer', 'int', 'float', 'bool']:
+        return value
+    else:
+        return to_text(value, errors='surrogate_or_strict', nonstring='passthru')
 
 
 def _get_config(p, section, key, env_var, default):
