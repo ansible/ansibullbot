@@ -649,6 +649,13 @@ class DefaultWrapper(object):
             return False
 
     @property
+    def age(self):
+        created = self.created_at
+        now = datetime.now()
+        age = now - created
+        return age
+
+    @property
     def title(self):
         return self.instance.title
 
