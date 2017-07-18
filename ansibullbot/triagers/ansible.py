@@ -53,6 +53,7 @@ from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.decorators.github import RateLimited
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
+from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
 from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
 from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
@@ -1275,6 +1276,24 @@ class AnsibleTriage(DefaultTriager):
                 if comment not in self.actions['comments']:
                     self.actions['comments'].append(comment)
 
+        # https://github.com/ansible/ansible/pull/26921
+        if self.meta['is_filament']:
+
+            # no notifications on these
+            if self.actions['comments']:
+                remove = []
+                for comment in self.actions['comments']:
+                    if '@' in comment:
+                        remove.append(comment)
+                if remove:
+                    for comment in remove:
+                        self.actions['comments'].remove(comment)
+
+            if'filament' not in self.issue.labels:
+                self.actions['newlabel'].append('filament')
+            if self.issue.age.days >= 5:
+                self.actions['close'] = True
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
@@ -1942,6 +1961,9 @@ class AnsibleTriage(DefaultTriager):
 
         # triage from everyone else? ...
         self.meta.update(self.get_triage_facts(iw, self.meta))
+
+        # filament
+        self.meta.update(get_filament_facts(iw, self.meta))
 
         '''
         # ci_verified
