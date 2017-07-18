@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from fnmatch import fnmatch
 
 def automergeable(meta, issuewrapper):
     '''Can this be automerged?'''
@@ -36,9 +37,6 @@ def automergeable(meta, issuewrapper):
     if not meta['mergeable']:
         return False
 
-    if len(issue.files) > 1:
-        return False
-
     if meta['is_new_module']:
         return False
 
@@ -47,6 +45,21 @@ def automergeable(meta, issuewrapper):
 
     if not meta['module_match']:
         return False
+
+    for pr_file in issue.pr_files:
+        matched_filename = meta['module_match'].get('repo_filename')
+        if matched_filename and pr_file.filename == matched_filename:
+            continue
+        elif fnmatch(pr_file.filename, 'test/sanity/*/*.txt'):
+            if pr_file.additions or pr_file.status == 'added':
+                # new exception added, addition must be checked by an human
+                return False
+            if pr_file.deletions:
+                # new exception delete
+                continue
+        else:
+            # other file modified, pull-request must be checked by an human
+            return False
 
     metadata = meta['module_match']['metadata']
     supported_by = metadata.get('supported_by')
