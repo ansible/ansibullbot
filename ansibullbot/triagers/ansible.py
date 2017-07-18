@@ -572,9 +572,20 @@ class AnsibleTriage(DefaultTriager):
                 continue
 
             if self.gqlc:
-                self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
+                if self.pr:
+                    self.issue_summaries[repopath] = {}
+                    for pr in self.pr.split(','):
+                        node = self.gqlc.get_summary(rp, 'pullRequest', pr)
+                        if node is not None:
+                            self.issue_summaries[repopath][pr] = node
+                else:
+                    self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
             else:
                 # scrape all summaries rom www for later opchecking
+
+                if self.pr:
+                    logging.warning("'pr' switch is used by but Github authentication token isn't set: all pull-requests will be scrapped")
+
                 cachefile = os.path.join(
                     self.cachedir,
                     '%s__scraped_issues.json' % rp

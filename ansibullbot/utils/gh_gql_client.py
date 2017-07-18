@@ -10,6 +10,18 @@ import requests
 from operator import itemgetter
 
 
+QUERY_FIELDS = """
+id
+url
+number
+state
+createdAt
+updatedAt
+repository {
+    nameWithOwner
+}
+"""
+
 QUERY_TEMPLATE = """
 {
     repository(owner:"{{ OWNER }}", name:"{{ REPO }}") {
@@ -22,12 +34,7 @@ QUERY_TEMPLATE = """
             }
             edges {
                 node {
-                    id
-                    url
-                    number
-                    state
-                    createdAt
-                    updatedAt
+                {{ FIELDS }}
                 }
             }
         }
@@ -35,6 +42,15 @@ QUERY_TEMPLATE = """
 }
 """
 
+QUERY_TEMPLATE_SINGLE_NODE = """
+{
+    repository(owner:"{{ OWNER }}", name:"{{ REPO }}") {
+          {{ OBJECT_TYPE }}({{ OBJECT_PARAMS }}){
+            {{ FIELDS }}
+        }
+    }
+}
+"""
 
 class GithubGraphQLClient(object):
     baseurl = 'https://api.github.com/graphql'
@@ -107,9 +123,7 @@ class GithubGraphQLClient(object):
         missing = [x for x in xrange(1, numbers[-1]) if x not in numbers]
         for x in missing:
             data = {
-                'createdAt': None,
                 'created_at': None,
-                'updatedAt': None,
                 'updated_at': None,
                 'id': None,
                 'number': x,
@@ -157,7 +171,7 @@ class GithubGraphQLClient(object):
                           (owner,repo, otype, pagecount, len(nodes)))
 
             issueparams = ', '.join([x for x in [states, first, last, after] if x])
-            query = templ.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS=issueparams)
+            query = templ.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS=issueparams, FIELDS=QUERY_FIELDS)
 
             payload = {
                 'query': query.encode('ascii', 'ignore').strip(),
@@ -174,21 +188,7 @@ class GithubGraphQLClient(object):
             # keep each edge/node/issue
             for edge in data['data']['repository'][otype]['edges']:
                 node = edge['node']
-                node['state'] = node['state'].lower()
-                if 'createdAt' not in node:
-                    node['createdAt'] = None
-                node['created_at'] = node['createdAt']
-                if 'updatedAt' not in node:
-                    node['updatedAt'] = None
-                node['updated_at'] = node['updatedAt']
-                if 'repository' not in node:
-                    node['repository'] = {}
-                if 'nameWithOwner' not in node['repository']:
-                    node['repository']['nameWithOwner'] = '%s/%s' % (owner, repo)
-                if otype == 'issues':
-                    node['type'] = 'issue'
-                else:
-                    node['type'] = 'pullrequest'
+                self.update_node(node, otype.lower()[:-1], owner, repo)
                 nodes.append(node)
 
             if not paginate:
@@ -204,6 +204,52 @@ class GithubGraphQLClient(object):
             pagecount += 1
 
         return nodes
+
+
+    def get_summary(self, repo_url, otype, number):
+        """Collect all the summary data for issues or pull requests ids
+
+        Args:
+            repo_url  (str): repository URL
+            otype     (str): issue or pullRequest
+            number    (str): Identifies the pull-request or issue, for example: 12345
+        """
+        owner = repo_url.split('/', 1)[0]
+        repo = repo_url.split('/', 1)[1]
+
+        template = self.environment.from_string(QUERY_TEMPLATE_SINGLE_NODE)
+
+        query = template.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS='number: %s' % number, FIELDS=QUERY_FIELDS)
+
+        payload = {
+            'query': query.encode('ascii', 'ignore').strip(),
+            'variables': '{}',
+            'operationName': None
+        }
+        rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+        data = rr.json()
+
+        node = data['data']['repository'][otype]
+        if node is None:
+            return
+
+        self.update_node(node, otype, owner, repo)
+
+        return node
+
+    def update_node(self, node, node_type, owner, repo):
+        node['state'] = node['state'].lower()
+        node['created_at'] = node.get('createdAt')
+        node['updated_at'] = node.get('updatedAt')
+
+        if 'repository' not in node:
+            node['repository'] = {}
+
+        if 'nameWithOwner' not in node['repository']:
+            node['repository']['nameWithOwner'] = '%s/%s' % (owner, repo)
+
+        node['type'] = node_type
+
 
 ###################################
 # TESTING ...
