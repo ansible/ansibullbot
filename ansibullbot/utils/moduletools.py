@@ -846,21 +846,25 @@ class ModuleIndexer(object):
 
         mimports = []
 
-        with open(module_file, 'rb') as f:
-            for line in f:
-                line = line.strip()
-                line = line.replace(',', '')
-                if line.startswith('import') or \
-                        ('import' in line and 'from' in line):
-                    lparts = line.split()
-                    if line.startswith('import '):
-                        mimports.append(lparts[1])
-                    elif line.startswith('from '):
-                        mpath = lparts[1] + '.'
-                        for spath in lparts[3:]:
-                            mimports.append(mpath + spath)
+        if not os.path.isfile(module_file):
+            return mimports
 
-        return mimports
+        else:
+            with open(module_file, 'rb') as f:
+                for line in f:
+                    line = line.strip()
+                    line = line.replace(',', '')
+                    if line.startswith('import') or \
+                            ('import' in line and 'from' in line):
+                        lparts = line.split()
+                        if line.startswith('import '):
+                            mimports.append(lparts[1])
+                        elif line.startswith('from '):
+                            mpath = lparts[1] + '.'
+                            for spath in lparts[3:]:
+                                mimports.append(mpath + spath)
+
+            return mimports
 
     @property
     def all_maintainers(self):
