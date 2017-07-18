@@ -1818,7 +1818,7 @@ class AnsibleTriage(DefaultTriager):
                     self.meta['is_plugin'] = True
                     self.meta['module_match'] = copy.deepcopy(match)
                     self.meta['component'] = match['name']
-                elif f.startswith('ansibullbot.ansible/modules') \
+                elif f.startswith('lib/ansible/modules') \
                         and (f.endswith('.py') or f.endswith('.ps1')):
                     self.meta['is_new_module'] = True
                     self.meta['is_module'] = True
