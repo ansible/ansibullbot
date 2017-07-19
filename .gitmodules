@@ -1,3 +1,9 @@
 [submodule "playbooks/roles/ansibullbot"]
 	path = playbooks/roles/ansibullbot
 	url = https://github.com/samdoran/ansible-role-ansibullbot.git
+[submodule "playbooks/roles/firewall"]
+	path = playbooks/roles/firewall
+	url = https://github.com/samdoran/ansible-role-firewall.git
+[submodule "playbooks/roles/repo-epel"]
+	path = playbooks/roles/repo-epel
+	url = https://github.com/samdoran/ansible-role-repo-epel.git
