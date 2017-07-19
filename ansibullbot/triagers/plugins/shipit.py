@@ -49,6 +49,9 @@ def automergeable(meta, issuewrapper):
     if not meta['module_match']:
         return False
 
+    if meta['ci_stale']:
+        return False
+
     for pr_file in issue.pr_files:
         matched_filename = meta['module_match'].get('repo_filename')
         if matched_filename and pr_file.filename == matched_filename:
