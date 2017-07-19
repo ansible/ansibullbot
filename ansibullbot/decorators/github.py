@@ -9,6 +9,7 @@ import httplib
 import logging
 import requests
 import socket
+import ssl
 import sys
 import time
 from ansibullbot.errors import RateLimitError
@@ -110,6 +111,9 @@ def RateLimited(fn):
                 stime = get_reset_time(fn, args)
             except socket.error as e:
                 logging.warning('socket error: sleeping 2 minutes %s' % e)
+                time.sleep(2*60)
+            except ssl.SSLError as e:
+                logging.warning('ssl error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except AttributeError as e:
                 if "object has no attribute 'decoded_content'" in e.message:

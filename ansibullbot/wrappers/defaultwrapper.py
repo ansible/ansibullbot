@@ -260,6 +260,7 @@ class DefaultWrapper(object):
         # get rid of the bad dir
         shutil.rmtree(srcdir)
 
+    @RateLimited
     def load_update_fetch(self, property_name, obj=None):
         '''Fetch a property for an issue object'''
 
