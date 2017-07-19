@@ -611,6 +611,7 @@ class GithubWebScraper(object):
         failed = True
         while failed:
             logging.debug(url)
+            rr = None
             try:
                 rr = requests.get(url, headers=headers)
                 if rr.reason == 'Too Many Requests' or rr.status_code == 500:
