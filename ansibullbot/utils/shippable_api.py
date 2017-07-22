@@ -325,6 +325,22 @@ class ShippableRuns(object):
         return (run_data, commitSha, results, ci_verified)
 
 
+    def rebuild(self, run_number):
+        """trigger a new run"""
+        run_url = "%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
+        response = self.fetch(run_url)
+        if not response:
+            raise Exception("Unable to fetch %r" % run_url)
+        self.check_response(response)
+
+        run_id = response.json()[0]['id']
+
+        newbuild_url = "%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
+        response = self.fetch(newbuild_url, verb='post', data=json.dumps({'runId':run_id}))
+        if not response:
+            raise Exception("Unable to fetch %r" % run_url)
+        self.check_response(response)
+
     def fetch(self, url, verb='get', **kwargs):
         resp = None
 
