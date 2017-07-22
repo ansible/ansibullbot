@@ -141,30 +141,8 @@ class ShippableRuns(object):
         resp = None
         if not os.path.isfile(cfile) or not jdata or not usecache:
 
-            headers = dict(
-                Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
-            )
-
-            resp = None
-            success = False
-            retries = 0
-            while not success and retries < 2:
-                logging.debug('%s' % url)
-
-                try:
-                    resp = requests.get(url, headers=headers)
-                except requests.exceptions.ConnectionError:
-                    time.sleep(2)
-                    continue
-
-                if resp.status_code not in [200, 302, 400]:
-                    logging.error('RC: %s' % (resp.status_code))
-                    retries += 1
-                    time.sleep(2)
-                    continue
-                success = True
-
-            if not success:
+            resp = self.fetch(url)
+            if not resp:
                 return None
 
             if resp.status_code != 400:
@@ -176,12 +154,7 @@ class ShippableRuns(object):
                     json.dump([resp.status_code, {}], f)
                 return None
 
-        if resp and resp.status_code == 404:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('shippable 404')
+        self.check_response(resp)
 
         if not jdata:
             if C.DEFAULT_BREAKPOINTS:
@@ -350,3 +323,44 @@ class ShippableRuns(object):
                         break
 
         return (run_data, commitSha, results, ci_verified)
+
+
+    def fetch(self, url, verb='get', **kwargs):
+        resp = None
+
+        headers = dict(
+            Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
+        )
+
+        resp = None
+        success = False
+        retries = 0
+        while not success and retries < 2:
+            logging.debug('%s' % url)
+
+            http_method = getattr(requests, verb)
+            try:
+                resp = http_method(url, headers=headers, **kwargs)
+            except requests.exceptions.ConnectionError:
+                time.sleep(2)
+                continue
+
+            if resp.status_code not in [200, 302, 400]:
+                logging.error('RC: %s' % (resp.status_code))
+                retries += 1
+                time.sleep(2)
+                continue
+            success = True
+
+        if not success:
+            return None
+        else:
+            return resp
+
+    def check_response(self, response):
+        if response and response.status_code == 404:
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('shippable 404')
