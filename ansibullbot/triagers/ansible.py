@@ -29,8 +29,10 @@ import copy
 import datetime
 import json
 import logging
+from operator import itemgetter
 import os
 import pytz
+import re
 
 import ansibullbot.constants as C
 
@@ -500,7 +502,7 @@ class AnsibleTriage(DefaultTriager):
                         continue
 
                     # build up actions from the meta
-                    self.create_actions()
+                    self.create_actions(iw)
                     self.save_meta(iw, self.meta)
 
                     # DEBUG!
@@ -761,7 +763,7 @@ class AnsibleTriage(DefaultTriager):
         return jdata
     """
 
-    def create_actions(self):
+    def create_actions(self, iw):
         '''Parse facts and make actions from them'''
 
         if 'bot_broken' in self.meta['maintainer_commands'] or \
@@ -871,6 +873,16 @@ class AnsibleTriage(DefaultTriager):
                         self.actions['newlabel'].append('automerge')
                     self.actions['merge'] = True
                 else:
+                    if self.meta['shipit_actors'] and self.meta['ci_stale']:
+                        ci_states = [x for x in iw.pullrequest_status if x['target_url'].startswith('https://app.shippable.com/')]
+                        ci_states = sorted(ci_states, key=itemgetter('created_at'))
+
+                        if ci_states and ci_states[-1]['state'] == 'success':
+                            target_url =  ci_states[-1]['target_url']
+                            match = re.match('https://app.shippable.com/github/ansible/ansible/runs/([\d]+)/summary', target_url)
+                            if match:
+                                # Trigger a new Shippable run if the PR is stalled, last run was a success and someone approved the PR
+                                self.SR.rebuild(match.group(1))
 
                     if 'automerge' in self.issue.labels:
                         self.actions['unlabel'].append('automerge')
