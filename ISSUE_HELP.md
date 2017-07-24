@@ -13,7 +13,9 @@ Making progress in resolving issues for modules depends upon your interaction! P
   * [Non-module changes](#non-module-changes)
 * [For community maintainers](#for-community-maintainers)
 * [For anyone else](#for-anyone-else)
-* [When to use label commands](#when-to-use-label-commands)
+* [Labels](#labels)
+  * [When to use label commands](#when-to-use-label-commands)
+  * [How to use label commands](#how-to-use-label-commands)
 
 ## Commands
 
@@ -57,11 +59,9 @@ If any of those items are missing or empty, ansibot will keep the issue in a `ne
 
 Expect the bot to do a few things:
 
-1. Add common labels such as `needs_triage`, `bug_report`, `feature_idea`, etc.
+1. Add common [labels](#labels) such as `needs_triage`, `bug_report`, `feature_idea`, etc.
 
    These labels are determined by templated data in the description. Please fill out the templates as accurately as possible so that the appropriate labels are used.
-
-   `needs_triage` will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
 
 2. Notify and assign the maintainer(s) of the relevant file(s) or module(s).
 
@@ -74,14 +74,7 @@ Expect the bot to do a few things:
 
 1. All of the items described in the for [issue submitters](#for-issue-submitters) section.
 
-2. Add labels indicating the status of the pull request.
-
-  * `needs_rebase` - Your pull request is out of sync with ansible/ansible's devel branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
-  * `needs_revision` - Either your pull request fails continuous integration tests or a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting `ready_for_review`
-  * `community_review` - The bot is waiting for two or more module maintainers, maintainers of module in the same namespace, or core team members, to use the `shipit` command on this pull request.
-  * `contributor_review` - The bot is waiting for anyone on the Ansible organization to use the shipit command on this pull request.
-  * `core_review` - The bot is waiting for anyone on the Ansible core-team to use the `shipit` command on this pull request.
-  * `shipit` - The shipit count has hit the minimum threshold and the pull request is ready for manual merge or automerge.
+2. Add [labels](#labels) indicating the status of the pull request.
 
 Please prefix your pull request's title with **WIP** if you are not yet finished making changes. This will tell the bot to ignore the `needs_rebase` and `shipit` workflows until you remove it from the title.
 
@@ -138,15 +131,63 @@ Thanks in advance for taking a look at issues and pull requests and for your on
 ## For anyone else
 Reactions help us determine how many people are interested in a pull request or have run across a similar bug. Please leave a +1 [reaction](https://github.com/blog/2119-add-reactions-to-pull-requests-issues-and-comments) (:+1:) if that applies to you. Any additional details you can provide, such as your usecase, environment, steps to reproduce, or workarounds you have found, can help out with resolving issues or getting pull requests merged.
 
-## When to use label commands
+## Labels
 
-The `+label` and `-label` commands are restricted to a subset of available labels and are not meant to replace the other bot commands.
+The bot adds many labels on issues and pull requests.
 
-* needs_triage - a human being still needs to validate the issue is properly labeled and has all the information required.
-* module - classifies the issue as a module related issue.
-* affects_X.X - indicates that the issue is relevant to a particular ansible major.minor version.
-* easyfix - a maintainer has decided that this is a trivial fix that new contributors would be able to tackle.
-* c:... - these labels categorize issues or pull requests by their relevant source code files.
+Label | Scope | Prevent automerge | Description
+--- | --- | --- | ---
+**stale_ci** | pull requests | yes | Added when the last CI result is older than one week.
+**stale_review** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update his review.
+**core_review** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
+**community_review** | pull requests no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
+**backport** | pull requests | no | Added to pull requests which don't target `devel` branch.
+**c:_name_** | issues pull requests | no | Categorize issues or pull requests by their relevant source code files.
+**feature_pull_request** | pull requests | no | Added to pull requests adding new features.
+**bugfix_pull_request** | pull requests | no | Added to pull requests fixing bugs.
+**docs_pull_request** | pull requests | no | Identify pull requests related to documentation.
+**test_pull_request** | pull requests | no | Identify pull requests related to tests.
+**easyfix** | issue or pull requests | no | Identify easy entrance point for people who are looking to start contributing.
+**WIP** | pull requests | yes | Identify pull requests which are not ready (from the submitter point of view) to be merged.
+**ci_verified** | pull requests | yes | Identify pull requests for which CI failed. A pull request must successfully pass CI in order to be merged.
+**needs_info** | issues | N/A | Identify issues for which reviewer requested further information.
+**needs_revision** | pull requests | yes | Used for pull request which fail continuous integration tests or if a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting `ready_for_review`.
+**needs_rebase** | pull requests | yes | Pull requests which are out of sync with ansible/ansible's `devel` branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
+**needs_triage** | issues pull requests | no | This label will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
+**filament** | pull requests | no | Identify pull requests related to [Ansible Lightbulb](https://github.com/ansible/lightbulb) project.
+**owner_pr** | pull requests | no | Identify pull requests made by module maintainers.
+**shipit** | pull requests | no | Identify pull requests for which the required number of `shipit` has been reached. For [community](#community) reviewed pull requests, if `automerge` workflow applies, then pull request should be automatically merged. For all other cases, merge should be performed by a core team members. If your pull request gets no comment and becomes tagged with `stale_review`, you can add it to the [IRC core team meeting agenda](https://github.com/ansible/community/blob/master/meetings/core-team.yaml) to receive more comments.
+**automerge** | pull requests | no | Identify pull requests automatically merged by the bot.
+**bot_broken** | pull requests | no | Allow to identify pull requests for which `bot_broken` had been used.
+
+Some labels are used to categorize issues and pull requests:
+
+* [Working group](https://github.com/ansible/community/wiki) labels:
+  * `aws`
+  * `vmware`
+  * `networking`
+  * `test`
+* Category labels:
+  * `azure`
+  * `cloud`
+  * `digital_ocean`
+  * `docker`
+  * ̀`gce`
+  * `openstack`
+
+### When to use label commands
+
+The `+label` and `-label` commands are restricted to a subset of available labels and are not meant to replace the other bot commands:
+
+* `needs_triage` - a human being still needs to validate the issue is properly labeled and has all the information required.
+* `module` - classifies the issue as a module related issue.
+* `affects_X.Y` - indicates that the issue is relevant to a particular ansible *major.minor* version.
+* `easyfix` - a maintainer has decided that this is a trivial fix that new contributors would be able to tackle.
+* `c:...` - these labels categorize issues or pull requests by their relevant source code files.
+* `easyfix` - indicates that the issue an easy entrance point for people who are looking to start contributing.
+* Working group and category labels
+
+### How to use label commands
 
 To use the commands, please type the the command and label on one line each in a comment.
 Example:
