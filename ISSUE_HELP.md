@@ -91,7 +91,7 @@ If you are not sure who the pull request is waiting on, please use the **bot_st
 
 ### When will your pull request be merged?
 
-`Approve` pull request status is ignored, `shipit` command must be used in order to approve a pull request.
+:information_source: `Approve` pull request status is ignored, `shipit` command must be used in order to approve a pull request.
 
 #### New Modules
 
@@ -112,6 +112,9 @@ NOTE: If you have **changes to other files in the pull request**, the `supported
 The ansible core team approves these pull requests and it may take some time for them to get to your request.
 
 ## For community maintainers
+
+:information_source: `Approve` pull request status is ignored, `shipit` command must be used in order to approve a pull request.
+
 Thanks in advance for taking a look at issues and pull requests and for your ongoing maintainince. If you are unable to troubleshoot or review this issue/pull request with the information provided, please ping the submitter of the issue in a comment to let them know.
 
 ## For anyone else
