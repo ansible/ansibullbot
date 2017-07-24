@@ -95,7 +95,9 @@ If you are not sure who the pull request is waiting on, please use the **bot_st
 
 #### New Modules
 
-New modules require two **shipits** from anyone in the community before the bot will label it `shipit`. At that point, the module will be merged once a member of the Ansible organization has reviewed it and decided to include it.
+New modules require two **shipits** from module maintainers, maintainers of a module in the same namespace, or core team members before the bot will label it `shipit`. At that point, the module will be merged once a member of the Ansible organization has reviewed it and decided to include it.
+
+:information_source: If you are a maintainer of a module in the same namespace, only one `shipit` is required.
 
 #### Existing Modules
 
