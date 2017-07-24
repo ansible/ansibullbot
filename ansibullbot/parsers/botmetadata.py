@@ -3,8 +3,6 @@
 import yaml
 from string import Template
 
-import ruamel
-from ruamel.yaml import YAML as rYAML
 
 class BotMetadataParser(object):
 
