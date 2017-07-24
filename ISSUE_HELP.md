@@ -101,13 +101,29 @@ New modules require two **shipits** from module maintainers, maintainers of a mo
 
 #### Existing Modules
 
-Module's have metadata with a `supported_by` field per the [metadata proposal](https://github.com/ansible/proposals/issues/30). The possible values of `supported_by` are:
-* **unmaintained**: no community members are responsible for this module, so changes will have to be reviewed by the core team until someone volunteers to maintain it. See "core".
-* **core**: Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
-* **curated**: These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once two or more module maintainers, maintainers of a module in the same namespace, or core team members give `shipit`, the core team will be alerted to review.
-* **community**: These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the `shipit` command to approve the pull request. The bot will wait for two shipits from module maintainers, maintainers of a module in the same namespace, or core team members, then automerge.
+Module's have metadata with a `supported_by` field per the [metadata proposal](https://github.com/ansible/proposals/issues/30).
 
-NOTE: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes.
+:information_source: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes. When other changes are line deletions in `ansible/test/*/*.txt` files, the `supported_by` property isn't ignored.
+
+The possible values of `supported_by` are:
+
+##### unmaintained
+
+no community members are responsible for this module, so changes will have to be reviewed by the core team until someone volunteers to maintain it. See [core](#core).
+
+##### core
+
+Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
+
+##### curated
+
+These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once two or more module maintainers, maintainers of a module in the same namespace, or core team members give `shipit`, the core team will be alerted to review.
+
+##### community
+
+These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the `shipit` command to approve the pull request. The bot will wait for two shipits from module maintainers, maintainers of a module in the same namespace, or core team members, then automerge.
+
+:information_source: If you are maintainer of the module or maintainer of a module in the same namespace, only one `shipit` is required.
 
 #### Non-module changes
 
