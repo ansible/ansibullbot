@@ -22,7 +22,7 @@ Making progress in resolving issues for modules depends upon your interaction! P
   * [How to use label commands](#how-to-use-label-commands)
 
 ## For issue submitters
-Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the [ansible-project](https://groups.google.com/forum/#!forum/ansible-project) mailing list, rather than submitting a bug report. For more details, please see http://docs.ansible.com/ansible/community.html#i-ve-got-a-question.
+Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the [ansible-project](https://groups.google.com/forum/#!forum/ansible-project) mailing list, rather than submitting a bug report. For more details, please see [I’ve Got A Question](http://docs.ansible.com/ansible/community.html#i-ve-got-a-question).
 
 If the feature/module maintainer or ansibot needs further information, please respond to the request, so that you can help the devs to help you!
 
@@ -71,7 +71,7 @@ New modules require two [`shipit`](#cmd-shipit) from module maintainers, maintai
 
 #### Existing Modules
 
-Module's have metadata with a `supported_by` field per the [metadata proposal](https://github.com/ansible/proposals/issues/30).
+Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/latest/dev_guide/developing_modules_documenting.html#ansible-metadata-block) field per the [metadata proposal](https://github.com/ansible/proposals/issues/30).
 
 :information_source: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes. When other changes are line deletions in `ansible/test/*/*.txt` files, the `supported_by` property isn't ignored.
 
