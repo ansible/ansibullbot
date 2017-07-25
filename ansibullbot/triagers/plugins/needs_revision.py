@@ -199,7 +199,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         )
                         continue
 
-                if event['event'] == 'commented':
                     if 'needs_revision' in event['body'] and \
                             '!needs_revision' not in event['body']:
                         needs_revision = True
