@@ -20,6 +20,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
         'openstack',
         'vmware',
         'networking',
+        'windows',
         'easyfix'
     ]
     wl += [x for x in valid_labels if x.startswith('affects_')]
@@ -39,6 +40,8 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
                     words = line.split()
 
                     label = words[1]
+                    if label not in wl:
+                        continue
                     action = words[0]
                     if action == '+label':
                         add_labels.append(label)
