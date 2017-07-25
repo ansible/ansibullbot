@@ -55,6 +55,7 @@ from ansibullbot.decorators.github import RateLimited
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
+from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
 from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
 from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
@@ -1359,66 +1360,6 @@ class AnsibleTriage(DefaultTriager):
             self.force = False
         return safe
 
-    """
-    def get_filemap_labels_for_files(self, files):
-        '''Get expected labels from the filemap'''
-        labels = []
-
-        exclusive = False
-        for f in files:
-
-            # only one match
-            if exclusive:
-                continue
-
-            for k,v in self.FILEMAP.iteritems():
-                if not v['inclusive'] and v['regex'].match(f):
-                    labels = v['labels']
-                    exclusive = True
-                    break
-
-                if 'labels' not in v:
-                    continue
-                if v['regex'].match(f):
-                    for label in v['labels']:
-                        if label not in labels:
-                            labels.append(label)
-
-        return labels
-
-    def get_filemap_users_for_files(self, files):
-        '''Get expected notifiees from the filemap'''
-        to_notify = []
-        to_assign = []
-
-        exclusive = False
-        for f in files:
-
-            # only one match
-            if exclusive:
-                continue
-
-            for k,v in self.FILEMAP.iteritems():
-                if not v['inclusive'] and v['regex'].match(f):
-                    to_notify = v['notify']
-                    to_assign = v['assign']
-                    exclusive = True
-                    break
-
-                if 'notify' not in v and 'assign' not in v:
-                    continue
-
-                if v['regex'].match(f):
-                    for user in v['notify']:
-                        if user not in to_notify:
-                            to_notify.append(user)
-                    for user in v['assign']:
-                        if user not in to_assign:
-                            to_assign.append(user)
-
-        return (to_notify, to_assign)
-    """
-
     def empty_actions(self):
         empty = True
         for k,v in self.actions.iteritems():
@@ -1988,7 +1929,16 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(self.waiting_on(iw, self.meta))
 
         # community label manipulation
-        self.meta.update(self.get_label_commands(iw, self.meta))
+        #self.meta.update(self.get_label_commands(iw, self.meta))
+        self.meta.update(
+            get_label_command_facts(
+                iw,
+                self.meta,
+                self.module_indexer,
+                core_team=self.ansible_core_team,
+                valid_labels=self.valid_labels
+            )
+        )
 
         # triage from everyone else? ...
         self.meta.update(self.get_triage_facts(iw, self.meta))
@@ -2452,60 +2402,6 @@ class AnsibleTriage(DefaultTriager):
                     wo = 'maintainer'
 
         return {'waiting_on': wo}
-
-    def get_label_commands(self, issuewrapper, meta):
-        add_labels = []
-        del_labels = []
-
-        wl = [
-            'needs_triage',
-            'test',
-            'module',
-            'cloud',
-            'aws',
-            'azure',
-            'digital_ocean',
-            'docker',
-            'gce',
-            'openstack',
-            'vmware',
-            'networking',
-            'easyfix'
-        ]
-        wl += [x for x in self.valid_labels if x.startswith('affects_')]
-        wl += [x for x in self.valid_labels if x.startswith('c:')]
-
-        iw = issuewrapper
-        maintainers = [x for x in self.ansible_core_team]
-        maintainers += self.module_indexer.all_maintainers
-        maintainers = sorted(set(maintainers))
-        for ev in iw.history.history:
-            if ev['actor'] in maintainers and ev['event'] == 'commented':
-                if '+label' in ev['body'] or '-label' in ev['body']:
-                    for line in ev['body'].split('\n'):
-                        if 'label' not in line:
-                            continue
-                        words = line.split()
-
-                        label = words[1]
-                        action = words[0]
-                        if action == '+label':
-                            add_labels.append(label)
-                            if label in del_labels:
-                                del_labels.remove(label)
-                        elif action == '-label':
-                            del_labels.append(label)
-                            if label in add_labels:
-                                add_labels.remove(label)
-
-        fact = {
-            'label_cmds': {
-                'add': add_labels,
-                'del': del_labels
-            }
-        }
-
-        return fact
 
     def get_triage_facts(self, issuewrapper, meta):
         tfacts = {
