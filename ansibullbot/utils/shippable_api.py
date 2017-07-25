@@ -324,22 +324,30 @@ class ShippableRuns(object):
 
         return (run_data, commitSha, results, ci_verified)
 
-
-    def rebuild(self, run_number):
+    def get_run_id(self, run_number):
         """trigger a new run"""
         run_url = "%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
         response = self.fetch(run_url)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)
         self.check_response(response)
-
         run_id = response.json()[0]['id']
+        logging.debug(run_id)
+        return run_id
+
+    def rebuild(self, run_number):
+        """trigger a new run"""
+
+        # always pass the runId in a dict() to requests
+        run_id = self.get_run_id(run_number)
+        data = {'runId':run_id}
 
         newbuild_url = "%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
-        response = self.fetch(newbuild_url, verb='post', data=json.dumps({'runId':run_id}))
+        response = self.fetch(newbuild_url, verb='post', data=data)
         if not response:
-            raise Exception("Unable to fetch %r" % run_url)
+            raise Exception("Unable to POST to %r" % newbuild_url)
         self.check_response(response)
+        return response
 
     def fetch(self, url, verb='get', **kwargs):
         resp = None

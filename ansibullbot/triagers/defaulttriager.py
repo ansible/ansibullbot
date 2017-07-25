@@ -1201,10 +1201,10 @@ class DefaultTriager(object):
         """ Return the number of actions that are to be performed """
         count = 0
         for k,v in actions.iteritems():
-            if k in ['close', 'open', 'merge', 'close_migrated'] and v:
+            if k in ['close', 'open', 'merge', 'close_migrated', 'rebuild'] and v:
                 count += 1
             elif k != 'close' and k != 'open' and \
-                    k != 'merge' and k != 'close_migrated':
+                    k != 'merge' and k != 'close_migrated' and k != 'rebuild':
                 count += len(v)
         return count
 
@@ -1352,6 +1352,12 @@ class DefaultTriager(object):
         if 'merge' in actions:
             if actions['merge']:
                 issue.merge()
+
+        if 'rebuild' in actions:
+            if actions['rebuild']:
+                runid = self.meta.get('rebuild_run_number')
+                if runid:
+                    self.SR.rebuild(runid)
 
     def smart_match_module(self):
         '''Fuzzy matching for modules'''

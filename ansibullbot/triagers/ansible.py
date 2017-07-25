@@ -29,10 +29,8 @@ import copy
 import datetime
 import json
 import logging
-from operator import itemgetter
 import os
 import pytz
-import re
 
 import ansibullbot.constants as C
 
@@ -55,6 +53,7 @@ from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.decorators.github import RateLimited
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
+from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
 from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
@@ -100,6 +99,7 @@ class AnsibleTriage(DefaultTriager):
         'close_migrated': False,
         'open': False,
         'merge': False,
+        'rebuild': False
     }
 
     EMPTY_META = {
@@ -502,7 +502,7 @@ class AnsibleTriage(DefaultTriager):
                         continue
 
                     # build up actions from the meta
-                    self.create_actions(iw)
+                    self.create_actions()
                     self.save_meta(iw, self.meta)
 
                     # DEBUG!
@@ -763,7 +763,7 @@ class AnsibleTriage(DefaultTriager):
         return jdata
     """
 
-    def create_actions(self, iw):
+    def create_actions(self):
         '''Parse facts and make actions from them'''
 
         if 'bot_broken' in self.meta['maintainer_commands'] or \
@@ -873,17 +873,6 @@ class AnsibleTriage(DefaultTriager):
                         self.actions['newlabel'].append('automerge')
                     self.actions['merge'] = True
                 else:
-                    if self.meta['shipit_actors'] and self.meta['ci_stale']:
-                        ci_states = [x for x in iw.pullrequest_status if x['target_url'].startswith('https://app.shippable.com/')]
-                        ci_states = sorted(ci_states, key=itemgetter('created_at'))
-
-                        if ci_states and ci_states[-1]['state'] == 'success':
-                            target_url =  ci_states[-1]['target_url']
-                            match = re.match('https://app.shippable.com/github/ansible/ansible/runs/([\d]+)/summary', target_url)
-                            if match:
-                                # Trigger a new Shippable run if the PR is stalled, last run was a success and someone approved the PR
-                                self.SR.rebuild(match.group(1))
-
                     if 'automerge' in self.issue.labels:
                         self.actions['unlabel'].append('automerge')
 
@@ -1317,6 +1306,14 @@ class AnsibleTriage(DefaultTriager):
                 self.actions['newlabel'].append('filament')
             if self.issue.age.days >= 5:
                 self.actions['close'] = True
+
+        # https://github.com/ansible/ansibullbot/pull/664
+        if self.meta['needs_rebuild']:
+            self.actions['rebuild'] = True
+            if 'stale_ci' in self.actions['newlabel']:
+                self.actions['newlabel'].remove('stale_ci')
+            if 'stale_ci' in self.issue.labels:
+                self.actions['unlabel'].append('stale_ci')
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
@@ -1994,10 +1991,8 @@ class AnsibleTriage(DefaultTriager):
         # filament
         self.meta.update(get_filament_facts(iw, self.meta))
 
-        '''
-        # ci_verified
-        self.meta.update(self.get_ci_verified_facts(iw, self.meta))
-        '''
+        # ci rebuilds
+        self.meta.update(get_rebuild_facts(iw, self.meta, self.SR))
 
         if iw.migrated:
             miw = iw._migrated_issue
