@@ -7,6 +7,10 @@ from ansibullbot.utils.moduletools import ModuleIndexer
 import ansibullbot.constants as C
 
 
+def is_approval(body):
+    return 'shipit' in body or '+1' in body or 'LGTM' in body
+
+
 def automergeable(meta, issuewrapper):
     '''Can this be automerged?'''
 
@@ -266,7 +270,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         actor = event['actor']
         body = event.get('body', '')
         body = body.strip()
-        if ('shipit' not in body and '+1' not in body and 'LGTM' not in body):
+        if not is_approval(body):
             continue
         logging.info('%s shipit' % actor)
 
