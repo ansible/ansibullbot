@@ -7,10 +7,14 @@ Making progress in resolving issues for modules depends upon your interaction! P
 * [Commands](#commands)
 * [For issue submitters](#for-issue-submitters)
 * [For pull request submitters](#for-pull-request-submitters)
-* [When will your pull request be merged?](#when-will-your-pull-request-be-merged)
-  * [New Modules](#new-modules)
-  * [Existing Modules](#existing-modules)
-  * [Non-module changes](#non-module-changes)
+  * [When will your pull request be merged?](#when-will-your-pull-request-be-merged)
+    * [New Modules](#new-modules)
+    * [Existing Modules](#existing-modules)
+      * [unmaintained](#unmaintained)
+      * [core](#core)
+      * [curated](#curated)
+      * [community](#community)
+    * [Non-module changes](#non-module-changes)
 * [For community maintainers](#for-community-maintainers)
 * [For anyone else](#for-anyone-else)
 * [Labels](#labels)
@@ -69,7 +73,7 @@ Expect the bot to do a few things:
 
 If you are not sure who the issue is waiting on, please use the **bot_status** command.
 
-## For pull request submitters
+## For pull request submitters
 Expect the bot to do a few things:
 
 1. All of the items described in the for [issue submitters](#for-issue-submitters) section.
