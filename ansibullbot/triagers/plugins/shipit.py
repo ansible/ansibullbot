@@ -7,6 +7,15 @@ from ansibullbot.utils.moduletools import ModuleIndexer
 
 def automergeable(meta, issuewrapper):
     '''Can this be automerged?'''
+
+    # AUTOMERGE
+    # * New module, existing namespace: require a "shipit" from some
+    #   other maintainer in the namespace. (Ideally, identify a maintainer
+    #   for the entire namespace.)
+    # * New module, new namespace: require discussion with the creator
+    #   of the namespace, which will likely be a vendor.
+    # * And all new modules, of course, go in as "preview" mode.
+
     issue = issuewrapper
 
     # https://github.com/ansible/ansibullbot/issues/430
@@ -14,6 +23,15 @@ def automergeable(meta, issuewrapper):
         return False
 
     if issue.wip:
+        return False
+
+    if not issue.is_pullrequest():
+        return False
+
+    if len(issue.files) > 1:
+        return False
+
+    if meta['is_new_directory']:
         return False
 
     if meta['merge_commits']:
@@ -123,15 +141,11 @@ def needs_community_review(meta, issue):
 
 
 def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=[]):
-    # shipit/+1/LGTM in comment.body from maintainer
+    """ Count shipits by maintainers/community/other """
 
-    # AUTOMERGE
-    # * New module, existing namespace: require a "shipit" from some
-    #   other maintainer in the namespace. (Ideally, identify a maintainer
-    #   for the entire namespace.)
-    # * New module, new namespace: require discussion with the creator
-    #   of the namespace, which will likely be a vendor.
-    # * And all new modules, of course, go in as "preview" mode.
+    # maintainers - people who maintain this file/module
+    # community - people who maintain file(s) in the same directory
+    # other - anyone else who comments with shipit/+1/LGTM
 
     iw = issuewrapper
     nmeta = {
@@ -139,6 +153,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         'owner_pr': False,
         'shipit_ansible': False,
         'shipit_community': False,
+        'shipit_count_other': False,
         'shipit_count_community': False,
         'shipit_count_maintainer': False,
         'shipit_count_ansible': False,
@@ -175,7 +190,9 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     ansible_shipits = 0
     maintainer_shipits = 0
     community_shipits = 0
+    other_shipits = 0
     shipit_actors = []
+    shipit_actors_other = []
 
     for event in iw.history.history:
 
@@ -189,38 +206,44 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             ansible_shipits = 0
             maintainer_shipits = 0
             community_shipits = 0
+            other_shipits = 0
             shipit_actors = []
+            shipit_actors_other = []
             continue
 
         actor = event['actor']
         body = event['body']
+        body = body.strip()
+        if 'shipit' not in body and '+1' not in body and 'LGTM' not in body:
+            continue
+        logging.info('%s shipit' % actor)
 
         # ansible shipits
         if actor in core_team:
-            if 'shipit' in body or '+1' in body or 'LGTM' in body:
-                logging.info('%s shipit' % actor)
-                if actor not in shipit_actors:
-                    ansible_shipits += 1
-                    shipit_actors.append(actor)
-                continue
+            if actor not in shipit_actors:
+                ansible_shipits += 1
+                shipit_actors.append(actor)
+            continue
 
         # maintainer shipits
         if actor in maintainers:
-            if 'shipit' in body or '+1' in body or 'LGTM' in body:
-                logging.info('%s shipit' % actor)
-                if actor not in shipit_actors:
-                    maintainer_shipits += 1
-                    shipit_actors.append(actor)
-                continue
+            if actor not in shipit_actors:
+                maintainer_shipits += 1
+                shipit_actors.append(actor)
+            continue
 
         # community shipits
         if actor in community:
-            if 'shipit' in body or '+1' in body or 'LGTM' in body:
-                logging.info('%s shipit' % actor)
-                if actor not in shipit_actors:
-                    community_shipits += 1
-                    shipit_actors.append(actor)
-                continue
+            if actor not in shipit_actors:
+                community_shipits += 1
+                shipit_actors.append(actor)
+            continue
+
+        # other shipits
+        if actor not in shipit_actors_other:
+            other_shipits += 1
+            shipit_actors_other.append(actor)
+        continue
 
     # submitters should count if they are maintainers/community
     if iw.submitter in maintainers:
@@ -232,13 +255,21 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             community_shipits += 1
             shipit_actors.append(iw.submitter)
 
+    nmeta['shipit_count_other'] = other_shipits
     nmeta['shipit_count_community'] = community_shipits
     nmeta['shipit_count_maintainer'] = maintainer_shipits
     nmeta['shipit_count_ansible'] = ansible_shipits
     nmeta['shipit_actors'] = shipit_actors
+    nmeta['shipit_actors_other'] = shipit_actors_other
     nmeta['community_usernames'] = sorted(community)
 
-    if (community_shipits + maintainer_shipits + ansible_shipits) > 1:
+    total = community_shipits + maintainer_shipits + ansible_shipits
+
+    # include shipits from other people to push over the edge
+    if total == 1 and other_shipits > 2:
+        total += other_shipits
+
+    if total > 1:
         nmeta['shipit'] = True
     elif meta['is_new_module'] or \
             (len(maintainers) == 1 and maintainer_shipits == 1):
@@ -247,9 +278,6 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             if 'community_shipit_notify' not in bpc:
                 nmeta['notify_community_shipit'] = True
 
-    logging.info(
-        'total shipits: %s' %
-        (community_shipits + maintainer_shipits + ansible_shipits)
-    )
+    logging.info('total shipits: %s' % total)
 
     return nmeta

@@ -1791,6 +1791,7 @@ class AnsibleTriage(DefaultTriager):
         self.meta['is_module'] = False
         self.meta['is_action_plugin'] = False
         self.meta['is_new_module'] = False
+        self.meta['is_new_directory'] = False
         self.meta['is_module_util'] = False
         self.meta['is_plugin'] = False
         self.meta['is_new_plugin'] = False
@@ -1817,6 +1818,10 @@ class AnsibleTriage(DefaultTriager):
         else:
             # assume pullrequest
             for f in iw.files:
+
+                # creating a new dir?
+                if self.file_indexer.isnewdir(os.path.dirname(f)):
+                    self.meta['is_new_directory'] = True
 
                 if f.startswith('lib/ansible/modules/core') or \
                         f.startswith('lib/ansible/modules/extras'):

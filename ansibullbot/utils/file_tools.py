@@ -374,3 +374,9 @@ class FileIndexer(ModuleIndexer):
                             to_assign.append(user)
 
         return (to_notify, to_assign)
+
+    def isnewdir(self, path):
+        if path in self.files:
+            return False
+        else:
+            return True
