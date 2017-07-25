@@ -32,6 +32,7 @@ class HistoryWrapper(object):
     def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
         self.issue = issue
         self.maincache = cachedir
+        self._waffled_labels = None
 
         if issue.repo.repo_path not in cachedir and 'issues' not in cachedir:
             self.cachefile = os.path.join(
@@ -676,6 +677,24 @@ class HistoryWrapper(object):
                 else:
                     labeled.append(event['label'])
         return sorted(set(labeled))
+
+    def label_is_waffling(self, label):
+        """ detect waffling on labels """
+
+        #https://github.com/ansible/ansibullbot/issues/672
+
+        if self._waffled_labels is None:
+            self._waffled_labels = {}
+            history = [x['label'] for x in self.history if 'label' in x]
+            labels = sorted(set(history))
+            for hl in labels:
+                if len([x for x in history if x == hl]) > 20:
+                    self._waffled_labels[hl] = True
+
+        if label in self._waffled_labels:
+            return True
+        else:
+            return False
 
 
 class ShippableHistory(object):
