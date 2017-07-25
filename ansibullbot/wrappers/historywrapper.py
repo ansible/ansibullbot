@@ -688,10 +688,9 @@ class HistoryWrapper(object):
             history = [x['label'] for x in self.history if 'label' in x]
             labels = sorted(set(history))
             for hl in labels:
-                if len([x for x in history if x == hl]) > limit:
-                    self._waffled_labels[hl] = True
+                self._waffled_labels[hl] = len([x for x in history if x == hl])
 
-        if label in self._waffled_labels:
+        if self._waffled_labels.get(label, 0) > limit:
             return True
         else:
             return False
