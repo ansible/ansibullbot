@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
 import datetime
-import json
 import logging
 import os
 import pytz
-from pprint import pprint
 
 from ansibullbot.utils.shippable_api import has_commentable_data
 from ansibullbot.utils.shippable_api import ShippableRuns
