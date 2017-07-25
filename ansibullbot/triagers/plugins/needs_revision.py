@@ -5,6 +5,7 @@ import logging
 import os
 import pytz
 
+from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.shippable_api import has_commentable_data
 from ansibullbot.utils.shippable_api import ShippableRuns
 from ansibullbot.wrappers.historywrapper import ShippableHistory
@@ -166,6 +167,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         #pending_reviews = []
         #hash_reviews = {}
         user_reviews = {}
+        shipits = {} # key: actor, value: created_at
 
         for event in iw.history.history:
 
@@ -192,6 +194,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         continue
 
                 if event['event'] == 'commented':
+
+                    if is_approval(event['body']):
+                        shipits[event['actor']] = event['created_at']
+
                     if '!needs_revision' in event['body']:
                         needs_revision = False
                         needs_revision_msgs.append(
@@ -233,7 +239,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         )
 
         if user_reviews:
-            change_requested = changes_requested_by(user_reviews)
+            change_requested = changes_requested_by(user_reviews, shipits)
             if change_requested:
                 needs_revision = True
                 needs_revision_msgs.append(
@@ -332,12 +338,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         lc_date = commits[-1]['created_at']
 
         stale_reviews = {}
-        for k,v in user_reviews.items():
-            if v != 'CHANGES_REQUESTED':
+        for actor, review in user_reviews.items():
+            if review['state'] != 'CHANGES_REQUESTED':
                 continue
             lrd = None
             for x in iw.history.history:
-                if x['actor'] != k:
+                if x['actor'] != actor:
                     continue
                 if x['event'] == 'review_changes_requested':
                     if not lrd or lrd < x['created_at']:
@@ -347,7 +353,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                 age = (now - lc_date).days
                 delta = (lc_date - lrd).days
                 if (lc_date > lrd) and (age > 7):
-                    stale_reviews[k] = {
+                    stale_reviews[actor] = {
                         'age': age,
                         'delta': delta,
                         'review_date': lrd.isoformat(),
@@ -401,17 +407,24 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     return rmeta
 
 
-def changes_requested_by(user_reviews):
-    outstanding = []
-    for k,v in user_reviews.items():
-        if v == 'CHANGES_REQUESTED':
-            if k not in outstanding:
-                outstanding.append(k)
-        elif v not in ['APPROVED', 'COMMENTED']:
+def changes_requested_by(user_reviews, shipits):
+    outstanding = set()
+    for actor, review in user_reviews.items():
+        if review['state'] == 'CHANGES_REQUESTED':
+            if actor in shipits:
+                review_time = datetime.datetime.strptime(review['submitted_at'], '%Y-%m-%dT%H:%M:%SZ')
+                review_time = pytz.utc.localize(review_time)
+                shipit_time = shipits[actor]
+                if review_time < shipit_time:
+                    # ignore review older than shipit
+                    # https://github.com/ansible/ansibullbot/issues/671
+                    continue
+            outstanding.add(actor)
+        elif review['state'] not in ['APPROVED', 'COMMENTED']:
             logging.error('breakpoint!')
-            print('%s unhandled' % v)
+            print('%s unhandled' % review['state'])
             import epdb; epdb.st()
-    return outstanding
+    return list(outstanding)
 
 
 def get_review_state(reviews, submitter, number=None, store=False):
@@ -422,24 +435,29 @@ def get_review_state(reviews, submitter, number=None, store=False):
 
     for review in reviews:
         actor = review['user']['login']
-        state = review['state']
 
         if actor != submitter:
 
+            if actor not in user_reviews:
+                user_reviews[actor] = {}
+
+            state = review['state']
+            submitted_at = review['submitted_at']
+
             if state in ['CHANGES_REQUESTED', 'APPROVED']:
-                user_reviews[actor] = state
+                user_reviews[actor]['state'] = state
+                user_reviews[actor]['submitted_at'] = submitted_at
 
             elif state == 'COMMENTED':
                 # comments do not override change requests
-                if actor in user_reviews:
-                    if user_reviews[actor] == 'CHANGES_REQUESTED':
-                        pass
-                else:
-                    user_reviews[actor] = state
+                if user_reviews[actor].get('state') != 'CHANGES_REQUESTED':
+                    user_reviews[actor]['state'] = state
+                    user_reviews[actor]['submitted_at'] = submitted_at
 
             elif state == 'DISMISSED':
                 # a dismissed review 'magically' turns into a comment
-                user_reviews[actor] = 'COMMENTED'
+                user_reviews[actor]['state'] = 'COMMENTED'
+                user_reviews[actor]['submitted_at'] = submitted_at
 
             elif state == 'PENDING':
                 pass
