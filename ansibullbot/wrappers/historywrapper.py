@@ -678,7 +678,7 @@ class HistoryWrapper(object):
                     labeled.append(event['label'])
         return sorted(set(labeled))
 
-    def label_is_waffling(self, label):
+    def label_is_waffling(self, label, limit=20):
         """ detect waffling on labels """
 
         #https://github.com/ansible/ansibullbot/issues/672
@@ -688,7 +688,7 @@ class HistoryWrapper(object):
             history = [x['label'] for x in self.history if 'label' in x]
             labels = sorted(set(history))
             for hl in labels:
-                if len([x for x in history if x == hl]) > 20:
+                if len([x for x in history if x == hl]) > limit:
                     self._waffled_labels[hl] = True
 
         if label in self._waffled_labels:

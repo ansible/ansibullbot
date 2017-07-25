@@ -56,7 +56,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
     #   https://github.com/ansible/ansibullbot/issues/672
     managed = sorted(set(add_labels + del_labels))
     for ml in managed:
-        if iw.history.label_is_waffling(ml):
+        if iw.history.label_is_waffling(ml, limit=5):
             if ml in add_labels:
                 add_labels.remove(ml)
             if ml in del_labels:
