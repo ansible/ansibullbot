@@ -232,7 +232,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
             iw.reviews,
             iw.submitter,
             number=iw.number,
-            www_validate=None,
             store=True
         )
 
@@ -418,8 +417,7 @@ def changes_requested_by(user_reviews):
     return outstanding
 
 
-def get_review_state(reviews, submitter, number=None, www_validate=None,
-                     store=False):
+def get_review_state(reviews, submitter, number=None, store=False):
     '''Calculate the final review state for each reviewer'''
 
     # final review state for each reviewer
@@ -455,49 +453,9 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
                 import epdb; epdb.st()
                 pass
 
-    if www_validate:
-
-        # translation table for www scraped reviews
-        TMAP = {
-            'approved these changes': 'APPROVED',
-            'left review comments': 'COMMENTED',
-            'requested changes': 'CHANGES_REQUESTED',
-        }
-
-        translated = {}
-
-        for k,v in www_validate['users'].iteritems():
-            if v in TMAP:
-                translated[k] = TMAP[v]
-            else:
-                logging.error('breakpoint!')
-                print('no mapping for %s' % v)
-                import epdb; epdb.st()
-
-        if user_reviews != translated:
-            pprint(translated)
-            pprint(user_reviews)
-            logging.error('breakpoint!')
-            print('calculated != scraped')
-            import epdb; epdb.st()
-
-        if store and number:
-            dfile = os.path.join('/tmp/reviews', '%s.json' % number)
-            ddata = {
-                'submitter': submitter,
-                'api_reviews': reviews[:],
-                'user_reviews': user_reviews.copy(),
-                'www_reviews': www_validate.copy(),
-                'www_translated': translated.copy(),
-                'matches': user_reviews == translated
-            }
-            with open(dfile, 'wb') as f:
-                f.write(json.dumps(ddata, indent=2, sort_keys=True))
-
     return user_reviews
 
 
-#def get_shippable_run_facts(shippable, ci_status, iw):
 def get_shippable_run_facts(iw, meta, shippable=None):
     '''Does an issue need the test result comment?'''
 
