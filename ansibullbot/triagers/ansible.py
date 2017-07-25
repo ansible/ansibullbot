@@ -729,41 +729,6 @@ class AnsibleTriage(DefaultTriager):
         with open(mfile, 'wb') as f:
             json.dump(meta, f, sort_keys=True, indent=2)
 
-    """
-    def get_filemap(self):
-        '''Read filemap and make re matchers'''
-
-        global FILEMAP_FILENAME
-
-        # FIXME - remove this!!!
-        #import epdb; epdb.st()
-
-        if not os.path.isfile(FILEMAP_FILENAME):
-            import ansibullbot.triagers.ansible as at
-            basedir = os.path.dirname(at.__file__)
-            basedir = os.path.dirname(basedir)
-            basedir = os.path.dirname(basedir)
-            FILEMAP_FILENAME = os.path.join(basedir, FILEMAP_FILENAME)
-
-        with open(FILEMAP_FILENAME, 'rb') as f:
-            jdata = json.loads(f.read())
-        for k,v in jdata.iteritems():
-            reg = k
-            if reg.endswith('/'):
-                reg += '*'
-            jdata[k]['regex'] = re.compile(reg)
-
-            if 'inclusive' not in v:
-                jdata[k]['inclusive'] = True
-            if 'assign' not in v:
-                jdata[k]['assign'] = []
-            if 'notify' not in v:
-                jdata[k]['notify'] = []
-            if 'labels' not in v:
-                jdata[k]['labels'] = []
-        return jdata
-    """
-
     def create_actions(self):
         '''Parse facts and make actions from them'''
 
