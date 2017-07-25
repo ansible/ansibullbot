@@ -74,8 +74,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'ci_state': ci_state,
         'ci_stale': ci_stale,
         'reviews': None,
-        'www_reviews': None,
-        'www_summary': None,
+        #'www_reviews': None,
+        #'www_summary': None,
         'ready_for_review': ready_for_review,
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
@@ -89,9 +89,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         return rmeta
 
     # Scrape web data for debug purposes
-    rfn = iw.repo_full_name
-    www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
-    www_reviews = triager.gws.scrape_pullrequest_review(rfn, iw.number)
+    #rfn = iw.repo_full_name
+    #www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
+    #www_reviews = triager.gws.scrape_pullrequest_review(rfn, iw.number)
 
     maintainers = [x for x in triager.ansible_core_team
                    if x not in triager.BOTNAMES]
@@ -391,8 +391,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'ci_state': ci_state,
         'ci_stale': ci_stale,
         'reviews': iw.reviews,
-        'www_summary': www_summary,
-        'www_reviews': www_reviews,
+        #'www_summary': www_summary,
+        #'www_reviews': www_reviews,
         'ready_for_review': ready_for_review,
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
