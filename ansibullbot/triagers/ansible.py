@@ -51,6 +51,7 @@ from ansibullbot.utils.webscraper import GithubWebScraper
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 
 from ansibullbot.decorators.github import RateLimited
+from ansibullbot.errors import LabelWafflingError
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
@@ -1283,6 +1284,15 @@ class AnsibleTriage(DefaultTriager):
 
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
+
+        # check for waffling
+        labels = sorted(set(self.actions['newlabel'] + self.actions['unlabel']))
+        for label in labels:
+            if self.issue.history.label_is_waffling(label):
+                if label in self.actions['newlabel'] or label in self.actions['unlabel']:
+                    msg = '"{}" label is waffling on {}'.format(label, self.issue.html_url)
+                    logging.error(msg)
+                    raise LabelWafflingError(msg)
 
     def check_safe_match(self):
 
