@@ -222,8 +222,8 @@ class DefaultWrapper(object):
             data = resp[2]
             jdata = json.loads(data)
 
-            if isinstance(jdata, dict):
-                if 'documentation_url' in jdata and 'message' in jdata:
+            if isinstance(jdata, dict) and jdata.get('documentation_url'):
+                if C.DEFAULT_BREAKPOINTS:
                     import epdb; epdb.st()
                 else:
                     raise RateLimitError("rate limited")
