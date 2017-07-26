@@ -2,6 +2,8 @@
 
 import logging
 from fnmatch import fnmatch
+import random
+
 from ansibullbot.utils.moduletools import ModuleIndexer
 
 
@@ -159,6 +161,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         'shipit_count_ansible': False,
         'shipit_actors': None,
         'community_usernames': [],
+        'community_usernames_selection': [],
         'notify_community_shipit': False,
     }
 
@@ -262,6 +265,10 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     nmeta['shipit_actors'] = shipit_actors
     nmeta['shipit_actors_other'] = shipit_actors_other
     nmeta['community_usernames'] = sorted(community)
+    if len(community) >= 3:
+        nmeta['community_usernames_selection'] = random.sample(community, 3)
+    else:
+        nmeta['community_usernames_selection'] = community
 
     total = community_shipits + maintainer_shipits + ansible_shipits
 

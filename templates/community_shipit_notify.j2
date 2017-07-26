@@ -1,11 +1,12 @@
-{{ '@' + community_usernames|join(' @') }}
+{{ '@' + community_usernames_selection|join(' @') }}
 
 
 {% if is_new_module %}
 As a maintainer of a module in the same namespace this new module has been submitted to, your vote counts for shipits. Please review this module and add `shipit` if you would like to see it merged.
 {% else %}
-The `{{ module_match['name'] }}` module has only one maintainer and this request needs 2 shipits. As a maintainer of a module in the same namespace, you can add a `shipit` to help move this request along.
+The `{{ module_match['name'] }}` module has only one maintainer and this request needs 2 shipits. As a maintainer of a module in the same namespace, in order to help this pull request to move along, you can review it and depending on the result, add a [`needs_revision`](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#cmd-needs_revision) comment or a [`shipit`](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#cmd-shipit) comment.
 {% endif %}
 
-[click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
+[click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#when-will-your-pull-request-be-merged)
+<!--- community_usernames_selection: {{ community_usernames_selection|join(',') }} --->
 <!--- boilerplate: community_shipit_notify --->
