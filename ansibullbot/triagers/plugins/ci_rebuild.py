@@ -39,9 +39,6 @@ def get_rebuild_facts(iw, meta, shippable):
     if not meta['has_shippable']:
         return rbmeta
 
-    if meta['has_travis']:
-        return rbmeta
-
     if not meta['shipit']:
         return rbmeta
 
