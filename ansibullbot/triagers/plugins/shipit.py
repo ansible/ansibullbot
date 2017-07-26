@@ -28,9 +28,6 @@ def automergeable(meta, issuewrapper):
     if not issue.is_pullrequest():
         return False
 
-    if len(issue.files) > 1:
-        return False
-
     if meta['is_new_directory']:
         return False
 
