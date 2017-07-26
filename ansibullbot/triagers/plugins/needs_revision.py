@@ -348,6 +348,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                 if x['event'] == 'review_changes_requested':
                     if not lrd or lrd < x['created_at']:
                         lrd = x['created_at']
+                elif x['event'] == 'commented' and is_approval(x['body']):
+                    if lrd and lrd < x['created_at']:
+                        lrd = None
+
             if lrd:
 
                 age = (now - lc_date).days
