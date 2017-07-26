@@ -939,14 +939,16 @@ class AnsibleTriage(DefaultTriager):
                     label = self.MODULE_NAMESPACE_LABELS[label]
 
                 if label and label in self.valid_labels and \
-                        label not in self.issue.labels:
+                        label not in self.issue.labels and \
+                        not self.issue.history.was_unlabeled(label):
                     self.actions['newlabel'].append(label)
 
             # add namespace labels
             namespace = self.meta['module_match'].get('namespace')
             if namespace in self.MODULE_NAMESPACE_LABELS:
                 label = self.MODULE_NAMESPACE_LABELS[namespace]
-                if label not in self.issue.labels:
+                if label not in self.issue.labels and \
+                        not self.issue.history.was_unlabeled(label):
                     self.actions['newlabel'].append(label)
 
         # NEW MODULE
@@ -1107,7 +1109,7 @@ class AnsibleTriage(DefaultTriager):
             if 'waiting_on_contributor' not in self.issue.labels:
                 self.actions['newlabel'].append('waiting_on_contributor')
         elif 'waiting_on_contributor' in self.issue.labels:
-                self.actions['unlabel'].append('waiting_on_contributor')
+            self.actions['unlabel'].append('waiting_on_contributor')
 
         # wontfix / notabug / bug_resolved / resolved_by_pr / duplicate_of
         if 'wontfix' in self.meta['maintainer_commands']:
@@ -1292,6 +1294,8 @@ class AnsibleTriage(DefaultTriager):
                 if label in self.actions['newlabel'] or label in self.actions['unlabel']:
                     msg = '"{}" label is waffling on {}'.format(label, self.issue.html_url)
                     logging.error(msg)
+                    if C.DEFAULT_BREAKPOINTS:
+                        import epdb; epdb.st()
                     raise LabelWafflingError(msg)
 
     def check_safe_match(self):
