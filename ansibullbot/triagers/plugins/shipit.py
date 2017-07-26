@@ -271,8 +271,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
     if total > 1:
         nmeta['shipit'] = True
-    elif meta['is_new_module'] or \
-            (len(maintainers) == 1 and maintainer_shipits == 1):
+    elif meta['is_new_module'] or len(maintainers) == 1:
         if community:
             bpc = iw.history.get_boilerplate_comments()
             if 'community_shipit_notify' not in bpc:
