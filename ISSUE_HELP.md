@@ -149,7 +149,7 @@ The bot adds many labels on issues and pull requests.
 
 Label | Scope | Prevent automerge | Description
 --- | --- | --- | ---
-**<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week.
+**<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week. When a pull request is closed and reopened, the CI is triggered again. In some case, the bot will automatically trigger the CI when a pull request is labeled with both [`shipit`](#label-shipit) and `stale_ci`.
 **<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update his review.
 **<a name="label-core_review">core_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
 **<a name="label-community_review">community_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
