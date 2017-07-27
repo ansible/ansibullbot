@@ -10,6 +10,16 @@ def status_to_date_and_runid(status):
         target = target.split('/')[-2]
     else:
         target = target.split('/')[-1]
+
+    try:
+        int(target)
+    except ValueError:
+        # strip new id out of the description
+        runid = status['description']
+        runid = runid.split()[1]
+        if runid.isdigit():
+            target = runid
+
     return (created_at, target)
 
 
@@ -46,6 +56,7 @@ def get_rebuild_facts(iw, meta, shippable):
     ci_run_ids = [status_to_date_and_runid(x) for x in pr_status]
     ci_run_ids.sort(key=lambda x: x[0])
     last_run = ci_run_ids[-1][1]
+
     rbmeta['rebuild_run_number'] = last_run
     rbmeta['needs_rebuild'] = True
 
