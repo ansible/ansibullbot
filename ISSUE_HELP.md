@@ -61,11 +61,19 @@ If you are not sure who the pull request is waiting on, please use the [`bot_st
 
 ### When will your pull request be merged?
 
-:information_source: `Approve` pull request status is ignored, [`shipit`](#cmd-shipit) command is used by maintainer to approve a pull request.
+:information_source: `Approve` pull request status is ignored, [`shipit`](#cmd-shipit) command is used by maintainer to approve a pull request. The bot automatically adds a [`shipit](#label-shipit) label to the pull request when the required number of [`shipit`](#cmd-shipit) commands has been reached.
+
+The bot will label a pull request with [`shipit`](#label-shipit) when at least **two** [`shipit`] commands are issued, the following rules describe how [`shipit`](#cmd-shipit) commands are count:
+
+* [`shipit`](#cmd-shipit) issued by a module maintainer or a maintainer of a module in the same namespace or a core team member are always taken in account
+* when the submitter is a module maintainer or a maintainer of a module in the same namespace, his [`shipit`](#cmd-shipit) is automatically counted
+* [`shipit`](#cmd-shipit) issued by anyone else is taken in account when both conditions are met:
+  * at least one module maintainer or a maintainer of a module in the same namespace or a core team member has approved the pull request with a [`shipit`](#cmd-shipit) command
+  * at least three people which aren't maintainer nor core team member have approved the pull request using the [`shipit`](#cmd-shipit)
 
 #### New Modules
 
-New modules require two [`shipit`](#cmd-shipit) from module maintainers, maintainers of a module in the same namespace, or core team members before the bot will label it `shipit`. At that point, the module will be merged once a member of the Ansible organization has reviewed it and decided to include it.
+Once the pull request labeled with [`shipit`](#label-shipit), the module will be merged once a member of the Ansible organization has reviewed it and decided to include it.
 
 :information_source: If you are a maintainer of a module in the same namespace, only one `shipit` is required.
 
@@ -87,11 +95,11 @@ Members of the Ansible organization typically do all the maintainence on this mo
 
 ##### curated
 
-These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once two or more module maintainers, maintainers of a module in the same namespace, or core team members give [`shipit`](#cmd-shipit), the core team will be alerted to review.
+These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once the pull request is labeled with [`shipit`](#label-shipit), the core team will be alerted to review.
 
 ##### community
 
-These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the [`shipit`](#cmd-shipit) command to approve the pull request. The bot will wait for two shipits from module maintainers, maintainers of a module in the same namespace, or core team members, then automerge.
+These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the [`shipit`](#cmd-shipit) command to approve the pull request. The bot will wait for the pull request being labeled with [`shipit`](#label-shipit), then automerge.
 
 :information_source: If you are maintainer of the module or maintainer of a module in the same namespace, only one [`shipit`](#cmd-shipit) is required.
 
@@ -141,7 +149,7 @@ The bot adds many labels on issues and pull requests.
 
 Label | Scope | Prevent automerge | Description
 --- | --- | --- | ---
-**<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week.
+**<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week. When a pull request is closed and reopened, the CI is triggered again. In some case, the bot will automatically trigger the CI when a pull request is labeled with both [`shipit`](#label-shipit) and `stale_ci`.
 **<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update his review.
 **<a name="label-core_review">core_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
 **<a name="label-community_review">community_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
