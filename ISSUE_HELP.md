@@ -182,18 +182,19 @@ Label | Scope | Prevent automerge | Description
 
 Some labels are used to categorize issues and pull requests:
 
-* [Working group](https://github.com/ansible/community/wiki) labels:
-  * `aws`
-  * `vmware`
-  * `networking`
+* Pull requests related to [test](https://github.com/ansible/community/wiki):
   * `test`
-* Category labels:
+
+* Namespace labels:
   * `azure`
+  * `aws`
   * `cloud`
   * `digital_ocean`
   * `docker`
   * ̀`gce`
+  * `networking`
   * `openstack`
+  * `vmware`
 
 ### When to use label commands
 
@@ -205,7 +206,7 @@ The `+label` and `-label` commands are restricted to a subset of available label
 * `easyfix` - a maintainer has decided that this is a trivial fix that new contributors would be able to tackle.
 * `c:...` - these labels categorize issues or pull requests by their relevant source code files.
 * `easyfix` - indicates that the issue an easy entrance point for people who are looking to start contributing.
-* Working group and category labels
+* `test` and namespace labels
 
 ### How to use label commands
 
