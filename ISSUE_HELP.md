@@ -152,6 +152,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week. When a pull request is closed and reopened, the CI is triggered again. In some case, the bot will automatically trigger the CI when a pull request is labeled with both [`shipit`](#label-shipit) and `stale_ci`.
 **<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update his review.
 **<a name="label-core_review">core_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
+**<a name="label-committer_review">committer_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [curated](#curated) review workflow.
 **<a name="label-community_review">community_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
 **<a name="label-backport">backport</a>** | pull requests | yes | Added to pull requests which don't target `devel` branch.
 **<a name="label-c:_name_">c:_name_</a>** | issues pull requests | no | Categorize issues or pull requests by their relevant source code files.
@@ -160,12 +161,18 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-docs_pull_request">docs_pull_request</a>** | pull requests | no | Identify pull requests related to documentation.
 **<a name="label-test_pull_request">test_pull_request</a>** | pull requests | no | Identify pull requests related to tests.
 **<a name="label-easyfix">easyfix</a>** | issue or pull requests | no | Identify easy entrance point for people who are looking to start contributing.
+**<a name="label-new_module">new_module</a>** | pull requests | yes | Identify pull requests adding new module.
+**<a name="label-module">module</a>** | pull requests | yes | Identify pull requests updating existing modules.
 **<a name="label-WIP">WIP</a>** | pull requests | yes | Identify pull requests which are not ready (from the submitter point of view) to be merged.
 **<a name="label-ci_verified">ci_verified</a>** | pull requests | yes | Identify pull requests for which CI failed. A pull request must successfully pass CI in order to be merged.
+**<a name="label-needs_ci">needs_ci</a>** | pull requests | no | Identify pull requests for which CI status is missing. When a pull request is closed and reopened or when new commits are updated, the CI is triggered again.
 **<a name="label-needs_info">needs_info</a>** | issues | yes | Identify issues for which reviewer requested further information.
 **<a name="label-waiting_on_contributor">waiting_on_contributor</a>** | issues pull requests | no | Identify issues for which help is needed
+**<a name="label-needs_maintainer">needs_maintainer</a>** | pull requests | no | Identify pull requests modifying [unmaintained/orphaned](#unmaintained) module.
+**<a name="label-merge_commit">merge_commit</a>** | pull requests | no | Added to pull requests containing at least one merge commit. Pull requests must not contain merge commit.
 **<a name="label-needs_revision">needs_revision</a>** | pull requests | yes | Used for pull request which fail continuous integration tests or if a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting [`ready_for_review`](#cmd-ready_for_review).
 **<a name="label-needs_rebase">needs_rebase</a>** | pull requests | yes | Pull requests which are out of sync with ansible/ansible's `devel` branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
+**<a name="label-needs_template">needs_template</a>** | issues pull requests | no | Label added when description is incomplete. See [issue template](https://raw.githubusercontent.com/ansible/ansible/devel/.github/ISSUE_TEMPLATE.md), pull request [template](https://raw.githubusercontent.com/ansible/ansible/devel/.github/PULL_REQUEST_TEMPLATE.md).
 **<a name="label-needs_triage">needs_triage</a>** | issues pull requests | no | This label will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
 **<a name="label-filament">filament</a>** | pull requests | no | Identify pull requests related to [Ansible Lightbulb](https://github.com/ansible/lightbulb) project.
 **<a name="label-owner_pr">owner_pr</a>** | pull requests | no | Identify pull requests made by module maintainers.
@@ -175,18 +182,19 @@ Label | Scope | Prevent automerge | Description
 
 Some labels are used to categorize issues and pull requests:
 
-* [Working group](https://github.com/ansible/community/wiki) labels:
-  * `aws`
-  * `vmware`
-  * `networking`
+* Pull requests related to [test](https://github.com/ansible/community/wiki):
   * `test`
-* Category labels:
+
+* Namespace labels:
   * `azure`
+  * `aws`
   * `cloud`
   * `digital_ocean`
   * `docker`
   * ̀`gce`
+  * `networking`
   * `openstack`
+  * `vmware`
 
 ### When to use label commands
 
@@ -198,7 +206,7 @@ The `+label` and `-label` commands are restricted to a subset of available label
 * `easyfix` - a maintainer has decided that this is a trivial fix that new contributors would be able to tackle.
 * `c:...` - these labels categorize issues or pull requests by their relevant source code files.
 * `easyfix` - indicates that the issue an easy entrance point for people who are looking to start contributing.
-* Working group and category labels
+* `test` and namespace labels
 
 ### How to use label commands
 
