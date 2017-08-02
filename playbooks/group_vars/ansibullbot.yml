@@ -49,6 +49,6 @@ ansibullbot_receiver_port: !vault |
           3734623636663235310a363262333237356637316334393430396230316537613733316232663662
           3366
 
-firewall_tcp_ports:
+firewall_allowed_tcp_ports:
   - 22
   - 80
