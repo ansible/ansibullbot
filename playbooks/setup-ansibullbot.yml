@@ -13,6 +13,7 @@
 
   roles:
     - repo-epel
+    - firewall
     - fail2ban
     - ansibullbot
-    - monit
+    # - monit
