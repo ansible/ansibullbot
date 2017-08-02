@@ -7,3 +7,6 @@
 [submodule "playbooks/roles/repo-epel"]
 	path = playbooks/roles/repo-epel
 	url = https://github.com/samdoran/ansible-role-repo-epel.git
+[submodule "playbooks/roles/ansibullbot-instance"]
+	path = playbooks/roles/ansibullbot-instance
+	url = https://github.com/samdoran/ansible-role-ansibullbot-instance.git
