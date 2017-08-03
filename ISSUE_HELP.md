@@ -4,6 +4,7 @@ Making progress in resolving issues for modules depends upon your interaction! P
 
 #### Table of contents
 
+* [Overview](#overview)
 * [For issue submitters](#for-issue-submitters)
 * [For pull request submitters](#for-pull-request-submitters)
   * [When will your pull request be merged?](#when-will-your-pull-request-be-merged)
@@ -20,6 +21,18 @@ Making progress in resolving issues for modules depends upon your interaction! P
 * [Labels](#labels)
   * [When to use label commands](#when-to-use-label-commands)
   * [How to use label commands](#how-to-use-label-commands)
+
+## Overview
+
+The Ansibull Triage Bot serves many functions:
+
+* Responds quickly to issue and pull request submitters to thank them;
+* Identifies the maintainers responsible for reviewing pull requests for any files affected;
+* Tracks the current status of pull requests;
+* Pings responsible parties to remind them of any actions that they may be responsible for;
+* Provides maintainers with the ability to move pull requests through our [workflow](#when-will-your-pull-request-be-merged);
+* Identifies issues and pull requests abandoned by their authors so that we can close them;
+* Identifies modules abandoned by their maintainers so that we can find new maintainers.
 
 ## For issue submitters
 Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the [ansible-project](https://groups.google.com/forum/#!forum/ansible-project) mailing list, rather than submitting a bug report. For more details, please see [I’ve Got A Question](http://docs.ansible.com/ansible/community.html#i-ve-got-a-question).
