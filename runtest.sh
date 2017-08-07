@@ -1,3 +1,3 @@
 #!/bin/bash
 
-PYTHONPATH=($pwd) nosetests -v --nocapture $@
+PYTHONPATH=($pwd) python setup.py nosetests

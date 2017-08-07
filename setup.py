@@ -18,5 +18,6 @@ setup(
     author_email='tanner.jc@gmail.com',
     url='https://github.com/ansible/ansibullbot',
     license=license,
-    packages=find_packages(exclude=('test'))
+    packages=find_packages(exclude=('test')),
+    setup_requires=['nose>=1.3'],
 )
