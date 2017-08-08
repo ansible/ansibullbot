@@ -205,7 +205,7 @@ class HistoryWrapper(object):
 
         return groups
 
-    def get_commands(self, username, command_keys, uselabels=True, botnames=[]):
+    def get_commands(self, username, command_keys, timestamps=False, uselabels=True, botnames=[]):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
 
@@ -234,13 +234,22 @@ class HistoryWrapper(object):
                     if event['body'].startswith('_From @'):
                         continue
                     if y in event['body'] and not '!' + y in event['body']:
-                        commands.append(y)
+                        if timestamps:
+                            commands.append((event['created_at'], y))
+                        else:
+                            commands.append(y)
             elif event['event'] == 'labeled' and uselabels:
                 if event['label'] in command_keys:
-                    commands.append(event['label'])
+                    if timestamps:
+                        commands.append((event['created_at'], y))
+                    else:
+                        commands.append(event['label'])
             elif event['event'] == 'unlabeled' and uselabels:
                 if event['label'] in command_keys:
-                    commands.append('!' + event['label'])
+                    if timestamps:
+                        commands.append((event['created_at'], y))
+                    else:
+                        commands.append('!' + event['label'])
 
         return commands
 
@@ -623,6 +632,14 @@ class HistoryWrapper(object):
 
         self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter('created_at'))
+
+    @property
+    def last_commit_date(self):
+        events = [x for x in self.history if x['event'] == 'committed']
+        if events:
+            return events[-1]['created_at']
+        else:
+            return None
 
     def merge_reviews(self, reviews):
         for review in reviews:
