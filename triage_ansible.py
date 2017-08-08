@@ -18,9 +18,19 @@
 from __future__ import print_function
 
 import argparse
+import logging
+import sys
 
 from ansibullbot.triagers.ansible import AnsibleTriage
 import ansibullbot.constants as C
+
+
+def handle_exception(exc_type, exc_value, exc_traceback):
+    if issubclass(exc_type, KeyboardInterrupt):
+        sys.__excepthook__(exc_type, exc_value, exc_traceback)
+        return
+    logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+sys.excepthook = handle_exception
 
 
 def main():
