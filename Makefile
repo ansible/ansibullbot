@@ -1,3 +1,4 @@
+.PHONY: init tests
 init:
 	pip install -r requirements.txt
 
