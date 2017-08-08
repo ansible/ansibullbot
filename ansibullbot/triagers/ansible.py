@@ -55,6 +55,7 @@ from ansibullbot.errors import LabelWafflingError
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
+from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
@@ -1284,6 +1285,10 @@ class AnsibleTriage(DefaultTriager):
             if 'stale_ci' in self.issue.labels:
                 self.actions['unlabel'].append('stale_ci')
 
+        # https://github.com/ansible/ansibullbot/issues/640
+        if not self.meta['needs_rebuild'] and self.meta['admin_merge']:
+            self.actions['merge'] = True
+
         self.actions['newlabel'] = sorted(set(self.actions['newlabel']))
         self.actions['unlabel'] = sorted(set(self.actions['unlabel']))
 
@@ -1927,6 +1932,15 @@ class AnsibleTriage(DefaultTriager):
 
         # ci rebuilds
         self.meta.update(get_rebuild_facts(iw, self.meta, self.SR))
+
+        # ci rebuild + merge
+        self.meta.update(
+            get_rebuild_merge_facts(
+                iw,
+                self.meta,
+                self.ansible_core_team
+            )
+        )
 
         if iw.migrated:
             miw = iw._migrated_issue

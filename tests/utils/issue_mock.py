@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 
 import yaml
-from ansibullbot.utils.timetools import timeobj_from_timestamp
+#from ansibullbot.utils.timetools import timeobj_from_timestamp
+
 
 class LabelMock(object):
     name = None
     color = None
+
 
 class CommentMock(object):
     id = None
@@ -14,24 +16,48 @@ class CommentMock(object):
     body = None
     created_at = None
 
+
 class EventMock(object):
     raw_data = {}
     id = None
-    event = None # labeled, renamed, closed, etc ...
+    # labeled, renamed, closed, etc ...
+    event = None
     actor = None
     created_at = None
     # unique to each event type ...
     label = None
     rename = None
 
+
 class ActorMock(object):
     id = None
     login = None
 
+
+class ComitterMock(object):
+    date = None
+
+
+class CommitBottomMock(object):
+    committer = ComitterMock()
+
+
+class CommitTopMock(object):
+    commit = CommitBottomMock()
+    committer = commit.committer
+    sha = None
+
+
 class RequesterMock(object):
     rdata = "{}"
-    def requstJson(self, method, url, headers=None):
+
+    def requestJson(self, method, url, headers=None):
         return (200, "foo", self.rdata)
+
+
+class PullRequestMock(object):
+    commits = []
+
 
 class IssueMock(object):
     """Mocks a pygithub object with data from a yaml file"""
@@ -40,6 +66,9 @@ class IssueMock(object):
         self.calls = []
         self.ydata = None
         self.load_data(datafile)
+
+    def get_raw_data(self):
+        return {}
 
     def load_data(self, datafile):
         ydata = None
@@ -56,12 +85,16 @@ class IssueMock(object):
         self.closed_at = None
         self.closed_by = None
         self.comments = []
+        self.commits = []
         self.comments_url = None
         self.created_at = self.ydata.get('created_at')
         self._events = self.ydata.get('events', [])
         self.events = []
         self.events_url = None
-        self.html_url = self.ydata.get('html_url', 'https://github.com/ansible/ansible-modules-core/issues/1')
+        self.html_url = self.ydata.get(
+            'html_url',
+            'https://github.com/ansible/ansible-modules-core/issues/1'
+        )
         self.id = int(self.ydata.get('number', 1))
         self.labels = []
         self.labels_url = None
@@ -69,6 +102,7 @@ class IssueMock(object):
         self.number = int(self.ydata.get('number', 1))
         self.pull_request = None
         self.repository = None
+        self.reactions = []
         self.state = self.ydata.get('state', 'open')
         self.title = self.ydata.get('title', '')
         self.updated_at = None
@@ -83,8 +117,8 @@ class IssueMock(object):
         # build the mocked event data
         self._load_events()
 
-
     def _load_events(self):
+
         # parse the yaml events into mocked objects
         for ev in self._events:
 
@@ -100,6 +134,14 @@ class IssueMock(object):
                 comment.body = ev['body']
                 comment.created_at = ev['created_at']
                 self.comments.append(comment)
+
+            elif ev['event'] == 'committed':
+                commit = CommitTopMock()
+                #import epdb; epdb.st()
+                dts = ev['created_at']
+                commit.commit.committer.date = dts
+                self.commits.append(commit)
+
             else:
                 event = EventMock()
                 event.raw_data = ev.copy()
@@ -128,7 +170,6 @@ class IssueMock(object):
                     import epdb; epdb.st()
 
                 self.events.append(event)
-        #import epdb; epdb.st()
 
     def add_to_labels(self, *labels):
         self.calls.append(('add_to_labels', labels))
@@ -155,6 +196,9 @@ class IssueMock(object):
 
     def get_labels(self):
         self.calls.append(('get_labels'))
+
+    def get_pullrequest_status(self):
+        return []
 
     def remove_from_labels(self, label):
         self.calls.append(('remove_from_labels', label))

@@ -124,7 +124,8 @@ class DefaultWrapper(object):
         )
 
         self.valid_assignees = []
-        self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
+        #self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
+        self._raw_data_issue = None
 
     def get_rate_limit(self):
         return self.repo.gh.get_rate_limit()
@@ -173,6 +174,13 @@ class DefaultWrapper(object):
                 self.current_bot_comments.append(boilerplate)
 
         return self.current_comments
+
+    @property
+    def raw_data_issue(self):
+        if self._raw_data_issue is None:
+            self._raw_data_issue = \
+                self.load_update_fetch('raw_data', obj='issue')
+        return self._raw_data_issue
 
     @property
     def events(self):
@@ -778,6 +786,9 @@ class DefaultWrapper(object):
             str(self.number),
             'pr_status.pickle'
         )
+        pdir = os.path.dirname(pfile)
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
 
         if os.path.isfile(pfile):
             logging.info('pullrequest_status load pfile')
