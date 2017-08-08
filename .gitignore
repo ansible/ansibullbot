@@ -1,6 +1,8 @@
 *.pyc
 *.pyo
 .ropeproject/*
+.coverage
+.cache/*
 venv/*
 fix*
 data*
