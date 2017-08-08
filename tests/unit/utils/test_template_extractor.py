@@ -3,12 +3,6 @@
 import unittest
 from ansibullbot.utils.extractors import extract_template_data
 
-# def extract_template_data(
-#   body,
-#   issue_number=None,
-#   issue_class='issue',
-#   SECTIONS=SECTIONS
-# ):
 
 class TestTemplateExtraction(unittest.TestCase):
     def test_0(self):
@@ -84,3 +78,29 @@ class TestTemplateExtraction(unittest.TestCase):
         assert tdata.get('component_raw') == 'widget module'
         assert tdata.get('summary') == 'the widget module does not work for me!!!'
     '''
+
+    # https://github.com/ansible/ansibullbot/issues/359
+    def test_3(self):
+        body = [
+            '#### ISSUE TYPE',
+            '- Bug Report',
+            '#### COMPONENT NAME',
+            'widget, thingamajig',
+            '#### ANSIBLE VERSION',
+            '1.9.x'
+            '#### SUMMARY',
+            'the widget AND thingamig modules are broken!!!'
+        ]
+        body = '\r\n'.join(body)
+        issue_number = 0
+        issue_class = 'issue'
+        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        tdata = extract_template_data(
+            body, issue_number=issue_number,
+            issue_class=issue_class, SECTIONS=sections
+        )
+        assert tdata.get('ansible version') == '1.9.x'
+        assert tdata.get('issue type') == 'bug report'
+        assert tdata.get('component name') == 'widget'
+        assert tdata.get('component_raw') == 'widget, thingamajig'
+        assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'

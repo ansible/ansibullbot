@@ -159,6 +159,10 @@ def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS
     # make a raw component section for later processing
     component_raw = tdict.get('component name', '')
 
+    # https://github.com/ansible/ansibullbot/issues/359
+    if 'component name' in tdict and ',' in tdict.get('component name'):
+        tdict['component name'] = tdict['component name'].replace(',', '\n')
+
     # cleanup the sections
     for k,v in tdict.iteritems():
         # remove markdown comments from the sections
