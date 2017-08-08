@@ -160,8 +160,12 @@ def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS
     component_raw = tdict.get('component name', '')
 
     # https://github.com/ansible/ansibullbot/issues/359
-    if 'component name' in tdict and ',' in tdict.get('component name'):
+    if ',' in tdict.get('component name', ''):
         tdict['component name'] = tdict['component name'].replace(',', '\n')
+
+    # https://github.com/ansible/ansibullbot/issues/385
+    if ' and ' in tdict.get('component name', ''):
+        tdict['component name'] = tdict['component name'].replace(' and ', '\n')
 
     # cleanup the sections
     for k,v in tdict.iteritems():
@@ -213,8 +217,11 @@ def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS
                     if match:
                         v = v[match.pos:match.end()]
                     else:
-                        #import epdb; epdb.st()
-                        v = v.replace('module', ' ')
+                        # https://github.com/ansible/ansibullbot/issues/385
+                        if 'modules' in v:
+                            v = v.replace('modules', ' ')
+                        else:
+                            v = v.replace('module', ' ')
 
             # remove useless chars
             badchars = ['#', ',', ':', ';', '*', "'", '"', '`', '---', '__']

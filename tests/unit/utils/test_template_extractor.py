@@ -104,3 +104,35 @@ class TestTemplateExtraction(unittest.TestCase):
         assert tdata.get('component name') == 'widget'
         assert tdata.get('component_raw') == 'widget, thingamajig'
         assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'
+
+    # https://github.com/ansible/ansibullbot/issues/385
+    def test_4(self):
+        body = [
+            '#### ISSUE TYPE',
+            '- Feature Idea',
+            '#### COMPONENT NAME',
+            'Modules openssl_privatekey and openssl_publickey',
+            '#### ANSIBLE VERSION',
+            '```',
+            'ansible 2.2.1.0',
+            '  config file = /home/kellerfuchs/hashbang/admin-tools/ansible.cfg',
+            '  configured module search path = Default w/o overrides',
+            '```',
+            '#### SUMMARY',
+            'the widget AND thingamig modules are broken!!!'
+        ]
+        body = '\r\n'.join(body)
+        issue_number = 0
+        issue_class = 'issue'
+        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        tdata = extract_template_data(
+            body, issue_number=issue_number,
+            issue_class=issue_class, SECTIONS=sections
+        )
+
+        #import epdb; epdb.st()
+        assert tdata.get('ansible version').split('\n')[0] == 'ansible 2.2.1.0'
+        assert tdata.get('issue type') == 'feature idea'
+        assert tdata.get('component name') == 'openssl_privatekey'
+        assert tdata.get('component_raw') == 'Modules openssl_privatekey and openssl_publickey'
+        assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'
