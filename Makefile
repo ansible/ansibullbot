@@ -3,4 +3,4 @@ init:
 	pip install -r requirements.txt
 
 tests:
-	PYTHONPATH=($pwd) python setup.py nosetests
+	PYTHONPATH=$(shell pwd) python setup.py nosetests
