@@ -581,7 +581,10 @@ class AnsibleTriage(DefaultTriager):
                 if self.pr:
                     self.issue_summaries[repopath] = {}
                     for pr in self.pr.split(','):
+                        # --pr is an alias to --id and can also be for issues
                         node = self.gqlc.get_summary(rp, 'pullRequest', pr)
+                        if node is None:
+                            node = self.gqlc.get_summary(rp, 'issue', pr)
                         if node is not None:
                             self.issue_summaries[repopath][pr] = node
                 else:
