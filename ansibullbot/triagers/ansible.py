@@ -1938,7 +1938,6 @@ class AnsibleTriage(DefaultTriager):
             get_rebuild_merge_facts(
                 iw,
                 self.meta,
-                self.SR,
                 self.ansible_core_team
             )
         )

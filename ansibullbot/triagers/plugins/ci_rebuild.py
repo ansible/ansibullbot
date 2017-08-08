@@ -83,13 +83,16 @@ def get_rebuild_merge_facts(iw, meta, core_team):
         'admin_merge': False
     }
 
+    if not iw.is_pullrequest():
+        return rbmerge_meta
+
     if meta['needs_rebuild']:
         return rbmerge_meta
 
-    if meta['needs_revision']:
+    if meta['is_needs_revision']:
         return rbmerge_meta
 
-    if meta['needs_rebase']:
+    if meta['is_needs_rebase']:
         return rbmerge_meta
 
     rbmerge_commands = iw.history.get_commands(core_team, [rbcommand], timestamps=True)

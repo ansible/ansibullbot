@@ -786,6 +786,9 @@ class DefaultWrapper(object):
             str(self.number),
             'pr_status.pickle'
         )
+        pdir = os.path.dirname(pfile)
+        if not os.path.isdir(pdir):
+            os.makedirs(pdir)
 
         if os.path.isfile(pfile):
             logging.info('pullrequest_status load pfile')
