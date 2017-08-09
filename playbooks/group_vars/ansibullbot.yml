@@ -7,6 +7,18 @@ botinstance_ssh_keys:
 
 ansible_user: centos
 
+ansibullbot_options:
+  - daemonize
+  - daemonize_interval={{ ansibullbot_daemonize_interval }}
+  - debug
+  - force
+  - issue_component_matching
+  - logfile {{ ansibullbot_log_path }}
+  - resume
+  - skip_no_update
+  - skip_no_update_timeout
+  - verbose
+
 ansibullbot_github_password: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           64336339633164353330346262343334326164346165313463653535333938626361366564326265
