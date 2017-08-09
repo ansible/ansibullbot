@@ -228,11 +228,14 @@ class AnsibleTriage(DefaultTriager):
         attribs = dir(self.args)
         attribs = [x for x in attribs if not x.startswith('_')]
         for x in attribs:
-            val = getattr(self.args, x)
-            if x.startswith('gh_'):
-                setattr(self, x.replace('gh_', 'github_'), val)
-            else:
-                setattr(self, x, val)
+            try:
+                val = getattr(self.args, x)
+                if x.startswith('gh_'):
+                    setattr(self, x.replace('gh_', 'github_'), val)
+                else:
+                    setattr(self, x, val)
+            except AttributeError:
+                pass
 
         if hasattr(self.args, 'pause') and self.args.pause:
             self.always_pause = True
@@ -293,6 +296,14 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating shippable wrapper')
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
+
+        # resume is just an overload for the start-at argument
+        resume = self.resume
+        if resume:
+            if self.args.sort == 'desc':
+                self.args.start_at = resume['number'] - 1
+            else:
+                self.args.start_at = resume['number'] + 1
 
     @property
     def ansible_members(self):
@@ -364,6 +375,7 @@ class AnsibleTriage(DefaultTriager):
                 self.actions = {}
                 number = issue.number
                 self.number = number
+                self.set_resume(item[0], number)
 
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(number)

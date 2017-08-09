@@ -112,6 +112,8 @@ def main():
 
     parser.add_argument("--start-at", "--resume_id", type=int,
                         help="Start triage at the specified pr|issue")
+    parser.add_argument("--resume", action="store_true",
+                        help="pickup right after where the bot last stopped")
     parser.add_argument("--no_since", action="store_true",
                         help="Do not use the since keyword to fetch issues")
 
