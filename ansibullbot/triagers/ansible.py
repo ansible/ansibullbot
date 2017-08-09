@@ -1133,8 +1133,9 @@ class AnsibleTriage(DefaultTriager):
 
         # migrated and source closed?
         if self.meta['is_migrated']:
-            if self.meta['migrated_issue_state'] != 'closed':
-                self.actions['close_migrated'] = True
+            if 'github.com/ansible/ansible-' in self.meta['migrated_from']:
+                if self.meta['migrated_issue_state'] != 'closed':
+                    self.actions['close_migrated'] = True
 
         # bot_status
         if self.meta['needs_bot_status']:
