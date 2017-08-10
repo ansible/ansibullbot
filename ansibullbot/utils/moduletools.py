@@ -588,9 +588,8 @@ class ModuleIndexer(object):
     def get_module_authors(self, module_file):
         """Grep the authors out of the module docstrings"""
 
-        authors = []
         if not os.path.exists(module_file):
-            return authors
+            return []
 
         documentation = ''
         inphase = False
@@ -607,7 +606,7 @@ class ModuleIndexer(object):
                     documentation += line
 
         if not documentation:
-            return authors
+            return []
 
         # clean out any other yaml besides author to save time
         inphase = False
@@ -627,18 +626,18 @@ class ModuleIndexer(object):
                 author_lines += x + '\n'
 
         if not author_lines:
-            return authors
+            return []
 
         ydata = {}
         try:
             ydata = yaml.load(author_lines)
         except Exception as e:
             print e
-            return authors
+            return []
 
         # quit early if the yaml was not valid
         if not ydata:
-            return authors
+            return []
 
         # sometimes the field is 'author', sometimes it is 'authors'
         if 'authors' in ydata:
@@ -646,11 +645,12 @@ class ModuleIndexer(object):
 
         # quit if the key was not found
         if 'author' not in ydata:
-            return authors
+            return []
 
         if type(ydata['author']) != list:
             ydata['author'] = [ydata['author']]
 
+        authors = []
         for author in ydata['author']:
             if 'ansible core team' in author.lower():
                 authors.append('ansible')
