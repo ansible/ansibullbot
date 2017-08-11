@@ -234,7 +234,7 @@ def main():
         'chiradeep,giorgos-nikolopoulos': 'netscaler',
         'ericsysmin,grastogi23,khaltore': 'avi',
         'ghjm,jlaska,matburt,wwitzel3': 'tower',
-        'hulquest,lmprice,timuster': 'netapp',
+        'hulquest,lmprice: 'netapp',
     }
 
     usermap = {
