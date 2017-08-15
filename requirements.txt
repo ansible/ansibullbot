@@ -10,4 +10,5 @@ requests
 requests_cache
 ruamel.yaml
 six
+tenacity
 textblob
