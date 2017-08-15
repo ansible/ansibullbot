@@ -682,6 +682,12 @@ class ModuleIndexer(object):
             author = author[idx+1:]
             authors.add(author.replace(')', ''))
 
+        # search for emails
+        for email in re.findall(r'[<(]([^@]+@[^>]+)[)>]', author):
+            github_id = self.emailmap.get(email)
+            if github_id:
+                authors.add(github_id)
+
         return list(authors)
 
     def fuzzy_match(self, repo=None, title=None, component=None):
