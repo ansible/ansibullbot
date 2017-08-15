@@ -39,7 +39,7 @@ class ModuleIndexer(object):
         'imports': []
     }
 
-    def __init__(self, maintainers=None):
+    def __init__(self, maintainers=None, gh_client=None):
 
         self.botmeta = {}
         self.modules = {}
@@ -50,6 +50,7 @@ class ModuleIndexer(object):
         self.scraper_cache = '~/.ansibullbot/cache/ansible.modules.scraper'
         self.scraper_cache = os.path.expanduser(self.scraper_cache)
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
+        self.gqlc = gh_client
 
         # committers by module
         self.committers = {}
@@ -448,7 +449,10 @@ class ModuleIndexer(object):
                     refresh = True
 
             if refresh:
-                uns = self.gws.get_usernames_from_filename_blame(*sargs)
+                if self.gqlc:
+                    uns = self.gqlc.get_usernames_from_filename_blame(*sargs)
+                else:
+                    uns = self.gws.get_usernames_from_filename_blame(*sargs)
                 self.committers[k] = uns
                 with open(pfile, 'wb') as f:
                     pickle.dump((ghash, uns), f)
