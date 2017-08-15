@@ -275,19 +275,6 @@ class ModuleIndexer(object):
             mkey = mdict['filepath']
             self.modules[mkey] = mdict
 
-        # grep the authors:
-        for k,v in self.modules.iteritems():
-            if v['filepath'] is None:
-                continue
-            mfile = os.path.join(self.checkoutdir, v['filepath'])
-            authors = self.get_module_authors(mfile)
-            self.modules[k]['authors'] = authors
-
-            # authors are maintainers by -default-
-            self.modules[k]['maintainers'] += authors
-            self.modules[k]['maintainers'] = \
-                sorted(set(self.modules[k]['maintainers']))
-
         # meta is a special module
         self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
         self.modules['meta']['name'] = 'meta'
@@ -504,6 +491,20 @@ class ModuleIndexer(object):
 
     def set_maintainers(self):
         '''Define the maintainers for each module'''
+
+        # grep the authors:
+        for k,v in self.modules.iteritems():
+            if v['filepath'] is None:
+                continue
+            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            authors = self.get_module_authors(mfile)
+            self.modules[k]['authors'] = authors
+
+            # authors are maintainers by -default-
+            self.modules[k]['maintainers'] += authors
+            self.modules[k]['maintainers'] = \
+                sorted(set(self.modules[k]['maintainers']))
+
         mkeys = self.maintainers.keys()
         for k,v in self.modules.iteritems():
             if not v['filepath']:
