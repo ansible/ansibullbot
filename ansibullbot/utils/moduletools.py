@@ -445,17 +445,27 @@ class ModuleIndexer(object):
                     pdata = pickle.load(f)
                 if pdata[0] == ghash:
                     self.committers[k] = pdata[1]
+                    if len(pdata) == 3:
+                        # use emailmap if available
+                        emailmap = pdata[2]
+                    else:
+                        emailmap = {}
                 else:
                     refresh = True
 
             if refresh:
                 if self.gqlc:
-                    uns = self.gqlc.get_usernames_from_filename_blame(*sargs)
+                    uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*sargs)
                 else:
+                    emailmap = {}  # scrapping: emails not available
                     uns = self.gws.get_usernames_from_filename_blame(*sargs)
                 self.committers[k] = uns
                 with open(pfile, 'wb') as f:
-                    pickle.dump((ghash, uns), f)
+                    pickle.dump((ghash, uns, emailmap), f)
+
+            for email, github_id in emailmap.items():
+                if email not in self.emailmap:
+                    self.emailmap[email] = github_id
 
         # add scraped logins to the map
         #for k,v in self.modules.iteritems():

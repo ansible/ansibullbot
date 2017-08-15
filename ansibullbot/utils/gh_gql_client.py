@@ -286,6 +286,7 @@ class GithubGraphQLClient(object):
 
         template = self.environment.from_string(QUERY_TEMPLATE_BLAME)
         committers = defaultdict(set)
+        emailmap = {}
 
         query = template.render(OWNER=owner, REPO=repo, BRANCH=branch, PATH=filepath)
 
@@ -321,10 +322,12 @@ class GithubGraphQLClient(object):
             # - GraphQL/git 'blame' don't list all commits
             # - GraphQL 'history' neither because 'history' is like 'git log' but without '--follow'
             email = node['author'].get('email')
+            if email and email not in emailmap:
+                emailmap[email] = github_id
 
         for github_id, commits in committers.items():
             committers[github_id] = list(commits)
-        return committers
+        return committers, emailmap
 
     @retry(wait=wait_random(min=1, max=2), stop=stop_after_attempt(5))
     def requests(self, payload):
