@@ -67,6 +67,8 @@ from ansibullbot.triagers.plugins.shipit import automergeable
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
 
+from ansibullbot.parsers.botmetadata import BotMetadataParser
+
 
 #BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 REPOS = [
@@ -180,6 +182,9 @@ class AnsibleTriage(DefaultTriager):
 
         self._ansible_members = []
         self._ansible_core_team = []
+        self._botmeta_content = None
+        self.botmeta = {}
+        self.automerge_on = False
 
         self.args = args
         self.last_run = None
@@ -263,31 +268,11 @@ class AnsibleTriage(DefaultTriager):
         # extend managed labels
         self.MANAGED_LABELS += self.ISSUE_TYPES.values()
 
-        '''
-        # get the maintainers
-        logging.info('getting maintainers mapping')
-        self.module_maintainers = self.get_maintainers_mapping()
-        '''
-
-        '''
-        # get the filemap
-        logging.info('getting filemap')
-        self.FILEMAP = self.get_filemap()
-        '''
-
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer()
         logging.info('creating file indexer')
         self.file_indexer = FileIndexer()
-        '''
-        self.file_indexer = FileIndexer(
-            checkoutdir=os.path.expanduser(
-                '~/.ansibullbot/cache/ansible.files.checkout'
-            ),
-            #cmap=COMPONENTMAP_FILENAME,
-        )
-        '''
 
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer()
@@ -296,6 +281,13 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating shippable wrapper')
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
+
+        # is automerge allowed?
+        self._botmeta_content = self.file_indexer.get_file_content('.github/BOTMETA.yml')
+        self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
+        if self.botmeta.get('automerge'):
+            if self.botmeta['automerge'] in ['Yes', 'yes', 'y', True, 1]:
+                self.automerge_on = True
 
         # resume is just an overload for the start-at argument
         resume = self.resume
@@ -322,6 +314,17 @@ class AnsibleTriage(DefaultTriager):
 
     def run(self):
         '''Primary execution method'''
+
+        # update on each run to pull in new data
+        logging.info('updating file indexer')
+        self.file_indexer.update()
+
+        # is automerge allowed?
+        self._botmeta_content = self.file_indexer.get_file_content('.github/BOTMETA.yml')
+        self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
+        if self.botmeta.get('automerge'):
+            if self.botmeta['automerge'] in ['Yes', 'yes', 'y', True, 1]:
+                self.automerge_on = True
 
         # update on each run to pull in new data
         logging.info('updating module indexer')
@@ -854,7 +857,8 @@ class AnsibleTriage(DefaultTriager):
                     logging.info('auto-merge tests passed')
                     if 'automerge' not in self.issue.labels:
                         self.actions['newlabel'].append('automerge')
-                    self.actions['merge'] = True
+                    if self.automerge_on:
+                        self.actions['merge'] = True
                 else:
                     if 'automerge' in self.issue.labels:
                         self.actions['unlabel'].append('automerge')
