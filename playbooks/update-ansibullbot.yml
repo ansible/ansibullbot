@@ -2,6 +2,16 @@
   hosts: ansibullbot
   become: yes
 
+  pre_tasks:
+    - name: Send update message to Slack channel
+      slack:
+        channel: #monitoring
+        msg: "{{ ansibullbot_update_slack_message | default('Updating Ansibullbot') }}"
+        token: "{{ ansibullbot_slack_token }}"
+      tags:
+        - slack
+        - ansibullbot
+
   roles:
     - role: ansibullbot
       ansibullbot_action: update
