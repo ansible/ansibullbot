@@ -137,6 +137,54 @@ def needs_community_review(meta, issue):
     return True
 
 
+def get_review_facts(issuewrapper, meta):
+    # Thanks @jpeck-resilient for this new module. When this module
+    # receives 'shipit' comments from two community members and any
+    # 'needs_revision' comments have been resolved, we will mark for
+    # inclusion
+
+    # pr is a module
+    # pr owned by community or is new
+    # pr owned by ansible
+
+    rfacts = {
+        'core_review': False,
+        'community_review': False,
+        'committer_review': False,
+    }
+
+    iw = issuewrapper
+    if not iw.is_pullrequest():
+        return rfacts
+    if meta['shipit']:
+        return rfacts
+    if meta['is_needs_info']:
+        return rfacts
+    if meta['is_needs_revision']:
+        return rfacts
+    if meta['is_needs_rebase']:
+        return rfacts
+    if not meta['is_module']:
+        return rfacts
+
+    supported_by = get_supported_by(iw, meta)
+
+    if supported_by == 'community':
+        rfacts['community_review'] = True
+    elif supported_by == 'core':
+        rfacts['core_review'] = True
+    elif supported_by in ['curated', 'certified']:
+        rfacts['committer_review'] = True
+    else:
+        if C.DEFAULT_BREAKPOINTS:
+            logging.error('breakpoint!')
+            import epdb; epdb.st()
+        else:
+            raise Exception('unknown supported_by type: {}'.format(supported_by))
+
+    return rfacts
+
+
 def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=[]):
     """ Count shipits by maintainers/community/other """
 
@@ -278,3 +326,23 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     logging.info('total shipits: %s' % total)
 
     return nmeta
+
+
+def get_supported_by(issuewrapper, meta):
+
+    # https://github.com/ansible/proposals/issues/30
+    # core: maintained by the ansible core team.
+    # community: This module is maintained by the community at large...
+    # unmaintained: This module currently needs a new community contributor
+    # committer: Committers to the ansible repository are the gatekeepers...
+
+    supported_by = 'core'
+    mmatch = meta.get('module_match')
+    if mmatch:
+        mmeta = mmatch.get('metadata', {})
+        if mmeta:
+            supported_by = mmeta.get('supported_by', 'core')
+    if meta['is_new_module']:
+        supported_by = 'community'
+    return supported_by
+

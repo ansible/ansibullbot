@@ -78,6 +78,8 @@ BOTLIST = None
 
 class DefaultTriager(object):
 
+    ITERATION = 0
+
     '''
     BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
     VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
@@ -807,6 +809,7 @@ class DefaultTriager(object):
         '''Call the run method in a defined interval'''
         while True:
             self.run()
+            self.ITERATION += 1
             interval = self.args.daemonize_interval
             logging.info('sleep %ss (%sm)' % (interval, interval / 60))
             time.sleep(interval)
