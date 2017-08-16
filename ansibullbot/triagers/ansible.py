@@ -282,13 +282,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating shippable wrapper')
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
-
-        # is automerge allowed?
-        self._botmeta_content = self.file_indexer.get_file_content('.github/BOTMETA.yml')
-        self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
-        if self.botmeta.get('automerge'):
-            if self.botmeta['automerge'] in ['Yes', 'yes', 'y', True, 1]:
-                self.automerge_on = True
+        self.SR.update()
 
         # resume is just an overload for the start-at argument
         resume = self.resume
