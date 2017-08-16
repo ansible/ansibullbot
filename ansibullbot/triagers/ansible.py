@@ -64,6 +64,7 @@ from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
 from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
 from ansibullbot.triagers.plugins.needs_revision import get_shippable_run_facts
 from ansibullbot.triagers.plugins.shipit import automergeable
+from ansibullbot.triagers.plugins.shipit import get_review_facts
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
 
@@ -315,23 +316,25 @@ class AnsibleTriage(DefaultTriager):
     def run(self):
         '''Primary execution method'''
 
-        # update on each run to pull in new data
-        logging.info('updating file indexer')
-        self.file_indexer.update()
+        if self.ITERATION > 0:
+            # update on each run to pull in new data
+            logging.info('updating module indexer')
+            self.module_indexer.update()
+
+            # update on each run to pull in new data
+            logging.info('updating file indexer')
+            self.file_indexer.update()
+
+            # update shippable run data
+            self.SR.update()
 
         # is automerge allowed?
         self._botmeta_content = self.file_indexer.get_file_content('.github/BOTMETA.yml')
         self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
+        self.automerge_on = False
         if self.botmeta.get('automerge'):
             if self.botmeta['automerge'] in ['Yes', 'yes', 'y', True, 1]:
                 self.automerge_on = True
-
-        # update on each run to pull in new data
-        logging.info('updating module indexer')
-        self.module_indexer.update()
-
-        # update shippable run data
-        self.SR.update()
 
         # get all of the open issues [or just one]
         self.collect_repos()
@@ -1257,8 +1260,15 @@ class AnsibleTriage(DefaultTriager):
             sb = mm.get('metadata', {}).get('supported_by')
             if sb:
                 cs_label = 'support:%s' % sb
+
         if cs_label not in self.issue.labels:
             self.actions['newlabel'].append(cs_label)
+
+        # https://github.com/ansible/ansibullbot/issues/707
+        cs_labels = [x for x in self.issue.labels if x.startswith('support:')]
+        for x in cs_labels:
+            if x != cs_label:
+                self.actions['unlabel'].append(x)
 
         if not self.meta['stale_reviews']:
             if 'stale_review' in self.issue.labels:
@@ -1924,7 +1934,7 @@ class AnsibleTriage(DefaultTriager):
                 core_team=self.ansible_core_team, botnames=self.BOTNAMES
             )
         )
-        self.meta.update(self.get_review_facts(iw, self.meta))
+        self.meta.update(get_review_facts(iw, self.meta))
 
         # bot_status needed?
         self.meta.update(self.needs_bot_status(iw))
@@ -2115,88 +2125,6 @@ class AnsibleTriage(DefaultTriager):
 
         return ispy3
 
-    """
-    def missing_fields(self):
-        # start with missing template data
-        if self.issue.is_issue():
-            mf = self.ISSUE_REQUIRED_FIELDS
-        else:
-            mf = self.PULLREQUEST_REQUIRED_FIELDS
-
-        if not self.issue.history:
-            self.issue.history = self.get_history(
-                self.issue,
-                cachedir=self.cachedir_base,
-                usecache=True
-            )
-
-        return mf
-    """
-
-    def get_supported_by(self, issuewrapper, meta):
-
-        # https://github.com/ansible/proposals/issues/30
-        # core: maintained by the ansible core team.
-        # community: This module is maintained by the community at large...
-        # unmaintained: This module currently needs a new community contributor
-        # committer: Committers to the ansible repository are the gatekeepers...
-
-        supported_by = 'core'
-        mmatch = meta.get('module_match')
-        if mmatch:
-            mmeta = mmatch.get('metadata', {})
-            if mmeta:
-                supported_by = mmeta.get('supported_by', 'core')
-        if meta['is_new_module']:
-            supported_by = 'community'
-        return supported_by
-
-    def get_review_facts(self, issuewrapper, meta):
-        # Thanks @jpeck-resilient for this new module. When this module
-        # receives 'shipit' comments from two community members and any
-        # 'needs_revision' comments have been resolved, we will mark for
-        # inclusion
-
-        # pr is a module
-        # pr owned by community or is new
-        # pr owned by ansible
-
-        rfacts = {
-            'core_review': False,
-            'community_review': False,
-            'committer_review': False,
-        }
-
-        iw = issuewrapper
-        if not iw.is_pullrequest():
-            return rfacts
-        if meta['shipit']:
-            return rfacts
-        if meta['is_needs_info']:
-            return rfacts
-        if meta['is_needs_revision']:
-            return rfacts
-        if meta['is_needs_rebase']:
-            return rfacts
-        if not meta['is_module']:
-            return rfacts
-
-        supported_by = self.get_supported_by(iw, meta)
-        if supported_by == 'community':
-            rfacts['community_review'] = True
-        elif supported_by == 'core':
-            rfacts['core_review'] = True
-        elif supported_by == 'curated':
-            rfacts['committer_review'] = True
-        else:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('unknown supported_by type')
-
-        return rfacts
-
     def get_notification_facts(self, issuewrapper, meta):
         '''Build facts about mentions/pings'''
         iw = issuewrapper
@@ -2354,21 +2282,6 @@ class AnsibleTriage(DefaultTriager):
                         commands.remove(negative)
 
         return commands
-
-    '''
-    def get_component_labels(self, valid_labels, files):
-        labels = [x for x in valid_labels if x.startswith('c:')]
-
-        clabels = []
-        for cl in labels:
-            l = cl.replace('c:', '', 1)
-            al = os.path.join('ansibullbot.ansible', l)
-            for f in files:
-                if f.startswith(l) or f.startswith(al):
-                    clabels.append(cl)
-
-        return clabels
-    '''
 
     def needs_bot_status(self, issuewrapper):
         iw = issuewrapper
