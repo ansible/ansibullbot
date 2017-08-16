@@ -309,6 +309,10 @@ class AnsibleTriage(DefaultTriager):
             logging.info('updating module indexer')
             self.module_indexer.update()
 
+            # update on each run to pull in new data
+            logging.info('updating file indexer')
+            self.file_indexer.update()
+
             # update shippable run data
             self.SR.update()
 
