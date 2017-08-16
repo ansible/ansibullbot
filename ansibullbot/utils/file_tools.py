@@ -306,16 +306,24 @@ class FileIndexer(ModuleIndexer):
             if not v:
                 continue
 
-            if 'assign' in v:
-                self.FILEMAP[k]['assign'] = v['assign']
-            if 'notify' in v:
-                self.FILEMAP[k]['notify'] = v['notify']
+            if 'maintainers' in v:
+                self.FILEMAP[k]['maintainers'] = v['maintainers']
+            if 'assign' in v or 'maintainers' in v:
+                if 'assign' in v:
+                    self.FILEMAP[k]['assign'] = v['assign']
+                if 'maintainers' in v:
+                    self.FILEMAP[k]['assign'] += v['maintainers']
+                    self.FILEMAP[k]['assign'] = sorted(set(self.FILEMAP[k]['assign']))
+            if 'notify' in v or 'maintainers' in v:
+                if 'notify' in v:
+                    self.FILEMAP[k]['notify'] = v['notify']
+                if 'maintainers' in v:
+                    self.FILEMAP[k]['notify'] += v['maintainers']
+                    self.FILEMAP[k]['notify'] = sorted(set(self.FILEMAP[k]['notify']))
             if 'labels' in v:
                 labels = v['labels']
                 labels = [x for x in labels if x not in ['lib', 'ansible']]
                 self.FILEMAP[k]['labels'] = labels
-
-        #import epdb; epdb.st()
 
     def get_filemap_labels_for_files(self, files):
         '''Get expected labels from the filemap'''

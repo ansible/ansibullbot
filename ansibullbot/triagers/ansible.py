@@ -63,6 +63,8 @@ from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
 from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
 from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
 from ansibullbot.triagers.plugins.needs_revision import get_shippable_run_facts
+from ansibullbot.triagers.plugins.notifications import get_notification_facts
+from ansibullbot.triagers.plugins.py3 import get_python3_facts
 from ansibullbot.triagers.plugins.shipit import automergeable
 from ansibullbot.triagers.plugins.shipit import get_review_facts
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
@@ -1848,8 +1850,7 @@ class AnsibleTriage(DefaultTriager):
             self.meta['is_pullrequest'] = False
             self.meta['component_labels'] = []
 
-            if not self.meta['is_module'] and \
-                    self.args.issue_component_matching:
+            if not self.meta['is_module']:
                 components = self.file_indexer.find_component_match(
                     iw.title,
                     iw.body,
@@ -1886,13 +1887,17 @@ class AnsibleTriage(DefaultTriager):
             else:
                 logging.error('NO MAINTAINER LISTED FOR %s'
                               % self.meta['module_match']['name'])
+        elif self.meta['is_pullrequest']:
+            (to_notify, to_assign) = \
+                self.file_indexer.get_filemap_users_for_files(self.issue.files)
+            self.meta['owner'] = sorted(set(to_notify + to_assign))
 
         # everything else is "core"
         if not self.meta['is_module']:
             self.meta['is_core'] = True
 
         # python3 ?
-        self.meta['is_py3'] = self.is_python3()
+        self.meta.update(get_python3_facts(self.issue))
 
         # backports
         self.meta.update(get_backport_facts(iw, self.meta))
@@ -1906,7 +1911,8 @@ class AnsibleTriage(DefaultTriager):
                 #shippable=self.SR
             )
         )
-        self.meta.update(self.get_notification_facts(iw, self.meta))
+        #self.meta.update(self.get_notification_facts(iw, self.meta))
+        self.meta.update(get_notification_facts(iw, self.meta, self.file_indexer))
 
         # ci_verified and test results
         self.meta.update(
@@ -2118,84 +2124,6 @@ class AnsibleTriage(DefaultTriager):
                     break
 
         return ispy3
-
-    def get_notification_facts(self, issuewrapper, meta):
-        '''Build facts about mentions/pings'''
-        iw = issuewrapper
-        """
-        if not iw.history:
-            import epdb; epdb.st()
-            iw.history = self.get_history(
-                iw,
-                cachedir=self.cachedir_base,
-                usecache=True
-            )
-        """
-
-        nfacts = {
-            'to_notify': [],
-            'to_assign': []
-        }
-
-        # who is assigned?
-        current_assignees = iw.assignees
-
-        # who can be assigned?
-        valid_assignees = [x.login for x in iw.repo.assignees]
-
-        # add people from filemap matches
-        if iw.is_pullrequest():
-            (fnotify, fassign) = self.file_indexer.get_filemap_users_for_files(iw.files)
-            for user in fnotify:
-                if user == iw.submitter:
-                    continue
-                if user not in nfacts['to_notify']:
-                    if not iw.history.last_notified(user) and \
-                            not iw.history.was_assigned(user) and \
-                            not iw.history.was_subscribed(user) and \
-                            not iw.history.last_comment(user):
-
-                        nfacts['to_notify'].append(user)
-
-            for user in fassign:
-                if user == iw.submitter:
-                    continue
-                if user in nfacts['to_assign']:
-                    continue
-                if user not in current_assignees and user in valid_assignees:
-                    nfacts['to_assign'].append(user)
-
-        # add module maintainers
-        if meta.get('module_match'):
-            maintainers = meta.get('module_match', {}).get('maintainers', [])
-
-            # do nothing if not maintained
-            if maintainers:
-
-                # don't ping us...
-                if 'ansible' in maintainers:
-                    maintainers.remove('ansible')
-
-                for maintainer in maintainers:
-
-                    # don't notify maintainers of their own issues ... duh
-                    if maintainer == iw.submitter:
-                        continue
-
-                    if maintainer in valid_assignees and \
-                            maintainer not in current_assignees:
-                        nfacts['to_assign'].append(maintainer)
-
-                    if maintainer in nfacts['to_notify']:
-                        continue
-
-                    if not iw.history.last_notified(maintainer) and \
-                            not iw.history.was_assigned(maintainer) and \
-                            not iw.history.was_subscribed(maintainer) and \
-                            not iw.history.last_comment(maintainer):
-                        nfacts['to_notify'].append(maintainer)
-
-        return nfacts
 
     def process_comment_commands(self, issuewrapper, meta):
 
