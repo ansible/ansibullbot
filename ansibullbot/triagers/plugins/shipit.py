@@ -4,6 +4,8 @@ import logging
 from fnmatch import fnmatch
 from ansibullbot.utils.moduletools import ModuleIndexer
 
+import ansibullbot.constants as C
+
 
 def automergeable(meta, issuewrapper):
     '''Can this be automerged?'''
@@ -171,7 +173,7 @@ def get_review_facts(issuewrapper, meta):
 
     if supported_by == 'community':
         rfacts['community_review'] = True
-    elif supported_by == 'core':
+    elif supported_by in ['core', 'network']:
         rfacts['core_review'] = True
     elif supported_by in ['curated', 'certified']:
         rfacts['committer_review'] = True
@@ -345,4 +347,3 @@ def get_supported_by(issuewrapper, meta):
     if meta['is_new_module']:
         supported_by = 'community'
     return supported_by
-
