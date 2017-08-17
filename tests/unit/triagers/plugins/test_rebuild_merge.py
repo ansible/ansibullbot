@@ -68,11 +68,13 @@ class TestRebuildMergeFacts(unittest.TestCase):
         iw = self.get_issue(datafile, statusfile)
 
         meta = {
+            'is_pullrequest': True,
             'is_needs_revision': False,
             'is_needs_rebase': False,
-            'needs_rebuild': False
+            'needs_rebuild': False,
+            'rebuild_run_number': 0,
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
+        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
         assert rbfacts['needs_rebuild'] == False
         assert rbfacts['admin_merge'] == True
 
@@ -83,11 +85,13 @@ class TestRebuildMergeFacts(unittest.TestCase):
         iw = self.get_issue(datafile, statusfile)
 
         meta = {
+            'is_pullrequest': True,
             'is_needs_revision': False,
             'is_needs_rebase': False,
-            'needs_rebuild': False
+            'needs_rebuild': False,
+            'rebuild_run_number': 0
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
+        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
         assert rbfacts['needs_rebuild'] == False
         assert rbfacts['admin_merge'] == False
 
@@ -98,11 +102,13 @@ class TestRebuildMergeFacts(unittest.TestCase):
         iw = self.get_issue(datafile, statusfile)
 
         meta = {
+            'is_pullrequest': True,
             'is_needs_revision': False,
             'is_needs_rebase': False,
-            'needs_rebuild': False
+            'needs_rebuild': False,
+            'rebuild_run_number': 0
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
+        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
         assert rbfacts['needs_rebuild'] == True
         assert rbfacts['admin_merge'] == False
 
@@ -113,10 +119,12 @@ class TestRebuildMergeFacts(unittest.TestCase):
         iw = self.get_issue(datafile, statusfile)
 
         meta = {
+            'is_pullrequest': True,
             'is_needs_revision': False,
             'is_needs_rebase': False,
-            'needs_rebuild': False
+            'needs_rebuild': False,
+            'rebuild_run_number': 0
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
+        rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
         assert rbfacts['needs_rebuild'] == False
         assert rbfacts['admin_merge'] == False
