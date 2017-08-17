@@ -824,7 +824,7 @@ class DefaultWrapper(object):
     @property
     def pullrequest_status(self):
         if self._pr_status is False:
-            self._pr_status = self.get_pullrequest_status()
+            self._pr_status = self.get_pullrequest_status(force_fetch=False)
         return self._pr_status
 
     @property

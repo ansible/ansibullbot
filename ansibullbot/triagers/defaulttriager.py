@@ -1406,6 +1406,10 @@ class DefaultTriager(object):
                 runid = self.meta.get('rebuild_run_number')
                 if runid:
                     self.SR.rebuild(runid)
+                else:
+                    logging.error(
+                        'no shippable runid for {}'.format(self.issue.number)
+                    )
 
     def smart_match_module(self):
         '''Fuzzy matching for modules'''
