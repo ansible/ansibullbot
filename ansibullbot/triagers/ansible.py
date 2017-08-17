@@ -482,6 +482,10 @@ class AnsibleTriage(DefaultTriager):
                                 if iw.number in self.repos[repopath]['stale']:
                                     skip = False
 
+                            # always poll rebuilds till they are merged
+                            if lmeta.get('needs_rebuild') or lmeta.get('admin_merge'):
+                                skip = False
+
                             # do a final check on the timestamp in meta
                             if skip and not mod_repo:
                                 # 2017-04-12T11:05:08.980077
