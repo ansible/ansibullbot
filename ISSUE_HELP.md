@@ -79,7 +79,7 @@ If you are not sure who the pull request is waiting on, please use the [`bot_st
 The bot will label a pull request with [`shipit`](#label-shipit) when at least **two** [`shipit`] commands are issued, the following rules describe how [`shipit`](#cmd-shipit) commands are count:
 
 * [`shipit`](#cmd-shipit) issued by a module maintainer or a maintainer of a module in the same namespace or a core team member are always taken in account
-* when the submitter is a module maintainer or a maintainer of a module in the same namespace, his [`shipit`](#cmd-shipit) is automatically counted
+* when the submitter is a module maintainer or a maintainer of a module in the same namespace or a core team member, his [`shipit`](#cmd-shipit) is automatically counted
 * [`shipit`](#cmd-shipit) issued by anyone else is taken in account when both conditions are met:
   * at least one module maintainer or a maintainer of a module in the same namespace or a core team member has approved the pull request with a [`shipit`](#cmd-shipit) command
   * at least three people which aren't maintainer nor core team member have approved the pull request using the [`shipit`](#cmd-shipit)
