@@ -204,7 +204,7 @@ Some labels are used to categorize issues and pull requests:
   * `cloud`
   * `digital_ocean`
   * `docker`
-  * ̀`gce`
+  * ̀gce`
   * `networking`
   * `openstack`
   * `vmware`
