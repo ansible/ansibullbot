@@ -9,3 +9,4 @@ headers*
 *.swp
 run*
 ansibullbot.egg-info
+ansibullbot.cfg
