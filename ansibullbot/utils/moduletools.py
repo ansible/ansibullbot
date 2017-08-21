@@ -6,6 +6,7 @@ import datetime
 import logging
 import os
 import pickle
+import re
 import shutil
 import yaml
 
@@ -659,20 +660,13 @@ class ModuleIndexer(object):
 
     def extract_github_id(self, author):
         authors = set()
+
         if 'ansible core team' in author.lower():
             authors.add('ansible')
         elif '@' in author:
+            # match github ids but not emails
+            authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
             words = author.split()
-            for word in words:
-                if '@' in word and '(' in word and ')' in word:
-                    if '(' in word:
-                        word = word.split('(')[-1]
-                    if ')' in word:
-                        word = word.split(')')[0]
-                    word = word.strip()
-                    if word.startswith('@'):
-                        word = word.replace('@', '', 1)
-                        authors.add(word)
         elif 'github.com/' in author:
             # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
             idx = author.find('github.com/')
