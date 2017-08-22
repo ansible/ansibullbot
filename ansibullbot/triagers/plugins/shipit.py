@@ -248,7 +248,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
     for event in iw.history.history:
 
-        if event['event'] not in ['commented', 'committed']:
+        if event['event'] not in ['commented', 'committed', 'review_approved', 'review_comment']:
             continue
         if event['actor'] in botnames:
             continue
@@ -264,9 +264,9 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             continue
 
         actor = event['actor']
-        body = event['body']
+        body = event.get('body', '')
         body = body.strip()
-        if 'shipit' not in body and '+1' not in body and 'LGTM' not in body:
+        if ('shipit' not in body and '+1' not in body and 'LGTM' not in body):
             continue
         logging.info('%s shipit' % actor)
 

@@ -648,6 +648,10 @@ class HistoryWrapper(object):
             event['actor'] = review['user']['login']
             event['created_at'] = self.parse_timestamp(review['submitted_at'])
             event['commit_id'] = review['commit_id']
+
+            # keep these for shipit analysis
+            event['body'] = review.get('body')
+
             if review['state'] == 'COMMENTED':
                 event['event'] = 'review_comment'
             elif review['state'] == 'CHANGES_REQUESTED':
