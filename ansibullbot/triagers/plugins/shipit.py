@@ -214,6 +214,11 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     if not meta['module_match']:
         return nmeta
 
+    # https://github.com/ansible/ansibullbot/issues/722
+    if iw.wip:
+        logging.debug('WIP PRs do not get shipits')
+        return nmeta
+
     maintainers = meta['module_match']['maintainers']
     maintainers = \
         ModuleIndexer.replace_ansible(
