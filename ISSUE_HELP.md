@@ -74,7 +74,7 @@ If you are not sure who the pull request is waiting on, please use the [`bot_st
 
 ### When will your pull request be merged?
 
-:information_source: `Approve` pull request status is ignored, [`shipit`](#cmd-shipit) command is used by maintainer to approve a pull request. The bot automatically adds a [`shipit](#label-shipit) label to the pull request when the required number of [`shipit`](#cmd-shipit) commands has been reached.
+:information_source: `Approve` pull request status is ignored, [`shipit`](#cmd-shipit) command is used by maintainer to approve a pull request. The bot automatically adds a [`shipit`](#label-shipit) label to the pull request when the required number of [`shipit`](#cmd-shipit) commands has been reached.
 
 The bot will label a pull request with [`shipit`](#label-shipit) when at least **two** [`shipit`] commands are issued, the following rules describe how [`shipit`](#cmd-shipit) commands are count:
 
@@ -205,7 +205,7 @@ Some labels are used to categorize issues and pull requests:
   * `cloud`
   * `digital_ocean`
   * `docker`
-  * ̀`gce`
+  * `gce`
   * `networking`
   * `openstack`
   * `vmware`
