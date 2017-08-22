@@ -1,4 +1,4 @@
-# Ansibot Help
+# Ansibullbot Help
 
 Making progress in resolving issues for modules depends upon your interaction! Please be sure to respond to requests or additional information as needed. If at anytime you think this bot is misbehaving, please leave a comment containing the keyword [`bot_broken`](#cmd-bot_broken) and an Ansible staff member will intervene.
 
@@ -37,7 +37,7 @@ The Ansibull Triage Bot serves many functions:
 ## For issue submitters
 Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the [ansible-project](https://groups.google.com/forum/#!forum/ansible-project) mailing list, rather than submitting a bug report. For more details, please see [I’ve Got A Question](http://docs.ansible.com/ansible/community.html#i-ve-got-a-question).
 
-If the feature/module maintainer or ansibot needs further information, please respond to the request, so that you can help the devs to help you!
+If the feature/module maintainer or ansibullbot needs further information, please respond to the request, so that you can help the devs to help you!
 
 The bot requires a minimal subset of information from the issue template:
 * issue type
@@ -45,7 +45,7 @@ The bot requires a minimal subset of information from the issue template:
 * ansible version
 * summary
 
-If any of those items are missing or empty, ansibot will keep the issue in a `needs_info` state until the data is provided in the issue's description. The bot is expecting an issue description styled after the default issue template, so please use that whenever possible.
+If any of those items are missing or empty, ansibullbot will keep the issue in a `needs_info` state until the data is provided in the issue's description. The bot is expecting an issue description styled after the default issue template, so please use that whenever possible.
 
 Expect the bot to do a few things:
 
@@ -131,7 +131,7 @@ Reactions help us determine how many people are interested in a pull request or
 
 ## Commands
 
-To streamline the maintenance process, we've added some commands to the ansibot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
+To streamline the maintenance process, we've added some commands to Ansibullbot that you can use to help direct the work flow. Using the automation is simply a matter of adding one of the following commands in your comments:
 
 Command | Scope | Allowed | Description
 --- | --- | --- | ---
