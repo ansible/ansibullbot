@@ -100,7 +100,7 @@ The possible values of `supported_by` are:
 
 ##### core
 
-Members of the Ansible Core Team typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
+Members of the Ansible Core Team typically do all the maintenance on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
 
 ##### certified
 
@@ -114,7 +114,7 @@ These modules are also developed, maintained and supported by the community. If 
 
 ##### network
 
-Members of the Ansible Network Team typically do all the maintainence on this module, so only they can approve changes.
+Members of the Ansible Network Team typically do all the maintenance on this module, so only they can approve changes.
 
 #### Non-module changes
 
@@ -124,7 +124,7 @@ The ansible core team approves these pull requests and it may take some time for
 
 :information_source: `Approve` pull request status is ignored, [`shipit`](#cmd-shipit) command must be used in order to approve a pull request.
 
-Thanks in advance for taking a look at issues and pull requests and for your ongoing maintainince. If you are unable to troubleshoot or review this issue/pull request with the information provided, please ping the submitter of the issue in a comment to let them know.
+Thanks in advance for taking a look at issues and pull requests and for your ongoing maintenance. If you are unable to troubleshoot or review this issue/pull request with the information provided, please ping the submitter of the issue in a comment to let them know.
 
 ## For anyone else
 Reactions help us determine how many people are interested in a pull request or have run across a similar bug. Please leave a +1 [reaction](https://github.com/blog/2119-add-reactions-to-pull-requests-issues-and-comments) (:+1:) if that applies to you. Any additional details you can provide, such as your usecase, environment, steps to reproduce, or workarounds you have found, can help out with resolving issues or getting pull requests merged.
