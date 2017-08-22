@@ -666,7 +666,6 @@ class ModuleIndexer(object):
         elif '@' in author:
             # match github ids but not emails
             authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
-            words = author.split()
         elif 'github.com/' in author:
             # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
             idx = author.find('github.com/')
