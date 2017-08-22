@@ -343,9 +343,8 @@ def get_supported_by(issuewrapper, meta):
 
     # http://docs.ansible.com/ansible/modules_support.html
     # certified: maintained by the community and reviewed by Ansible core team.
+    # community: maintained by the community at large.
     # core: maintained by the ansible core team.
-    # community: This module is maintained by the community at large...
-    # unmaintained: This module currently needs a new community contributor
     # network: maintained by the ansible network team.
 
     supported_by = 'core'

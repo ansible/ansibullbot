@@ -10,7 +10,6 @@ Making progress in resolving issues for modules depends upon your interaction! P
   * [When will your pull request be merged?](#when-will-your-pull-request-be-merged)
     * [New Modules](#new-modules)
     * [Existing Modules](#existing-modules)
-      * [unmaintained](#unmaintained)
       * [core](#core)
       * [certified](#certified)
       * [community](#community)
@@ -98,10 +97,6 @@ Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/l
 :information_source: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes. When other changes are line deletions in `ansible/test/*/*.txt` files, the `supported_by` property isn't ignored.
 
 The possible values of `supported_by` are:
-
-##### unmaintained
-
-no community members are responsible for this module, so changes will have to be reviewed by the core team until someone volunteers to maintain it. See [core](#core).
 
 ##### core
 
