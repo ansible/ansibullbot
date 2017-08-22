@@ -3,10 +3,16 @@
 import unittest
 from ansibullbot.utils.moduletools import ModuleIndexer
 
+
+class ModuleIndexerMock(object):
+    def __init__(self, *args, **kwargs):
+        self.emailmap = {}
+
+
 class TestGitHubIdExtractor(unittest.TestCase):
 
     def setUp(self):
-        obj = object()
+        obj = ModuleIndexerMock()
         self.extract = ModuleIndexer.extract_github_id.__get__(obj, ModuleIndexer)
 
     def test_extract(self):
