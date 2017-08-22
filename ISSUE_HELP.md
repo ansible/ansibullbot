@@ -12,7 +12,7 @@ Making progress in resolving issues for modules depends upon your interaction! P
     * [Existing Modules](#existing-modules)
       * [unmaintained](#unmaintained)
       * [core](#core)
-      * [curated](#curated)
+      * [certified](#certified)
       * [community](#community)
     * [Non-module changes](#non-module-changes)
 * [For community maintainers](#for-community-maintainers)
@@ -106,7 +106,7 @@ no community members are responsible for this module, so changes will have to be
 
 Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
 
-##### curated
+##### certified
 
 These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once the pull request is labeled with [`shipit`](#label-shipit), the core team will be alerted to review.
 
@@ -166,7 +166,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week. When a pull request is closed and reopened, the CI is triggered again. In some case, the bot will automatically trigger the CI when a pull request is labeled with both [`shipit`](#label-shipit) and `stale_ci`.
 **<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update his review.
 **<a name="label-core_review">core_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
-**<a name="label-committer_review">committer_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [curated](#curated) review workflow.
+**<a name="label-committer_review">committer_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [certified](#certified) review workflow.
 **<a name="label-community_review">community_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
 **<a name="label-backport">backport</a>** | pull requests | yes | Added to pull requests which don't target `devel` branch.
 **<a name="label-c:_name_">c:_name_</a>** | issues pull requests | no | Categorize issues or pull requests by their relevant source code files.
