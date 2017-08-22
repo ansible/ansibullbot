@@ -12,8 +12,8 @@ class ModuleIndexerMock(object):
 class TestGitHubIdExtractor(unittest.TestCase):
 
     def setUp(self):
-        obj = ModuleIndexerMock()
-        self.extract = ModuleIndexer.extract_github_id.__get__(obj, ModuleIndexer)
+        self.indexer = ModuleIndexerMock()
+        self.extract = ModuleIndexer.extract_github_id.__get__(self.indexer, ModuleIndexer)
 
     def test_extract(self):
         authors = [
@@ -38,3 +38,18 @@ class TestGitHubIdExtractor(unittest.TestCase):
 
         for line in authors:
             self.assertFalse(self.extract(line))
+
+    def test_extract_email(self):
+        self.indexer.emailmap = {
+            'first@last.example': 'github',
+            'last@domain.example': 'github2',
+        }
+
+        authors = [
+            ('First-Name Last (first@last.example)', ['github']),  # known email
+            ('First-Name Last <first@last.example>', ['github']),  # known email
+            ('First-Name Last (first@last.example), Surname Name (last@domain.example)', ['github', 'github2']),  # known emails
+        ]
+
+        for line, githubids in authors:
+            self.assertEqual(set(githubids), set(self.extract(line)))
