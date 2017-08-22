@@ -693,7 +693,7 @@ class ModuleIndexer(object):
             authors.add(author.replace(')', ''))
 
         # search for emails
-        for email in re.findall(r'[<(]([^@]+@[^>]+)[)>]', author):
+        for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
             github_id = self.emailmap.get(email)
             if github_id:
                 authors.add(github_id)
