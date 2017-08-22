@@ -346,6 +346,7 @@ def get_supported_by(issuewrapper, meta):
     # core: maintained by the ansible core team.
     # community: This module is maintained by the community at large...
     # unmaintained: This module currently needs a new community contributor
+    # network: maintained by the ansible network team.
 
     supported_by = 'core'
     mmatch = meta.get('module_match')

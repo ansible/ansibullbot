@@ -14,6 +14,7 @@ Making progress in resolving issues for modules depends upon your interaction! P
       * [core](#core)
       * [certified](#certified)
       * [community](#community)
+      * [network](#network)
     * [Non-module changes](#non-module-changes)
 * [For community maintainers](#for-community-maintainers)
 * [For anyone else](#for-anyone-else)
@@ -104,7 +105,7 @@ no community members are responsible for this module, so changes will have to be
 
 ##### core
 
-Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
+Members of the Ansible Core Team typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
 
 ##### certified
 
@@ -115,6 +116,10 @@ These modules are developed and maintained by the community, but the Ansible cor
 These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the [`shipit`](#cmd-shipit) command to approve the pull request. The bot will wait for the pull request being labeled with [`shipit`](#label-shipit), then automerge.
 
 :information_source: If you are maintainer of the module or maintainer of a module in the same namespace, only one [`shipit`](#cmd-shipit) is required.
+
+##### network
+
+Members of the Ansible Network Team typically do all the maintainence on this module, so only they can approve changes.
 
 #### Non-module changes
 
