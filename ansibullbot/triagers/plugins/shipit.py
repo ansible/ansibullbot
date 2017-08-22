@@ -292,8 +292,12 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             shipit_actors_other.append(actor)
         continue
 
-    # submitters should count if they are maintainers/community
-    if iw.submitter in maintainers:
+    # submitters should count if they are core team/maintainers/community
+    if iw.submitter in core_team:
+        if iw.submitter not in shipit_actors:
+            ansible_shipits += 1
+            shipit_actors.append(iw.submitter)
+    elif iw.submitter in maintainers:
         if iw.submitter not in shipit_actors:
             maintainer_shipits += 1
             shipit_actors.append(iw.submitter)

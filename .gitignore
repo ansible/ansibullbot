@@ -4,9 +4,9 @@
 .coverage
 .cache/*
 venv/*
-fix*
 data*
 headers*
 *.swp
 run*
 ansibullbot.egg-info
+ansibullbot.cfg

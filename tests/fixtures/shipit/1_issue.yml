@@ -1,0 +1,24 @@
+# https://api.github.com/repos/ansible/ansible/issues/21620/events
+html_url: https://github.com/ansible/ansible/pull/21620
+number: 21620
+github_repo: ansible
+submitter: mscherer
+created_at: 2016-02-18T17:37:01Z
+_now: 2017-08-19T00:24:02Z
+title: Add support for LVM to filesystem module
+body: |
+    issue type
+    feature pullrequest
+    component name
+    filesystem
+    ansible version
+    2.4
+    summary
+    While using LVM2_member is not very userfriendly, I do have another patch for that. But I am not sure where to mention the list of supported FS, should it go in the description of fstype ?
+events:
+    - event: commented
+      body: shipit
+      created_at: 2017-08-12T12:27:01Z
+      id: 1
+      actor:
+        login: LinusU
