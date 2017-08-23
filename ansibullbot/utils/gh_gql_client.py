@@ -7,7 +7,10 @@ import jinja2
 import json
 import logging
 import requests
+from collections import defaultdict
 from operator import itemgetter
+
+from tenacity import retry, wait_random, stop_after_attempt
 
 
 QUERY_FIELDS = """
@@ -51,6 +54,35 @@ QUERY_TEMPLATE_SINGLE_NODE = """
     }
 }
 """
+
+QUERY_TEMPLATE_BLAME = """
+query {
+  repository(owner: "{{ OWNER }}", name: "{{ REPO }}") {
+    ... on Repository {
+      ref(qualifiedName: "{{ BRANCH }}") {
+        target {
+          ... on Commit {
+            blame(path: "{{ PATH }}") {
+              ranges {
+                commit {
+                  oid
+                  author {
+                    email
+                    user {
+                      login
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 
 class GithubGraphQLClient(object):
     baseurl = 'https://api.github.com/graphql'
@@ -250,6 +282,58 @@ class GithubGraphQLClient(object):
 
         node['type'] = node_type
 
+    def get_usernames_from_filename_blame(self, owner, repo, branch, filepath):
+
+        template = self.environment.from_string(QUERY_TEMPLATE_BLAME)
+        committers = defaultdict(set)
+        emailmap = {}
+
+        query = template.render(OWNER=owner, REPO=repo, BRANCH=branch, PATH=filepath)
+
+        payload = {
+            'query': query.encode('ascii', 'ignore').strip(),
+            'variables': '{}',
+            'operationName': None
+        }
+        response = self.requests(payload)
+        data = response.json()
+
+        nodes = data['data']['repository']['ref']['target']['blame']['ranges']
+        """
+        [
+            'commit':
+            {
+                'oid': 'a3132e5dd6acc526ce575f6db134169c7090f72d',
+                'author':
+                {
+                    'email': 'user@mail.example',
+                    'user': {'login': 'user'}
+                }
+            }
+        ]
+        """
+        for node in nodes:
+            node = node['commit']
+            if not node['author']['user']:
+                continue
+            github_id = node['author']['user']['login']
+            committers[github_id].add(node['oid'])
+            # emails come from 'git log --follow' but all github id aren't fetch:
+            # - GraphQL/git 'blame' don't list all commits
+            # - GraphQL 'history' neither because 'history' is like 'git log' but without '--follow'
+            email = node['author'].get('email')
+            if email and email not in emailmap:
+                emailmap[email] = github_id
+
+        for github_id, commits in committers.items():
+            committers[github_id] = list(commits)
+        return committers, emailmap
+
+    @retry(wait=wait_random(min=1, max=2), stop=stop_after_attempt(5))
+    def requests(self, payload):
+        response = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+        response.raise_for_status()
+        return response
 
 ###################################
 # TESTING ...

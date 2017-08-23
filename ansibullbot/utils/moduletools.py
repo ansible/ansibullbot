@@ -39,7 +39,7 @@ class ModuleIndexer(object):
         'imports': []
     }
 
-    def __init__(self, maintainers=None):
+    def __init__(self, maintainers=None, gh_client=None):
 
         self.botmeta = {}
         self.modules = {}
@@ -50,6 +50,7 @@ class ModuleIndexer(object):
         self.scraper_cache = '~/.ansibullbot/cache/ansible.modules.scraper'
         self.scraper_cache = os.path.expanduser(self.scraper_cache)
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
+        self.gqlc = gh_client
 
         # committers by module
         self.committers = {}
@@ -275,19 +276,6 @@ class ModuleIndexer(object):
             mkey = mdict['filepath']
             self.modules[mkey] = mdict
 
-        # grep the authors:
-        for k,v in self.modules.iteritems():
-            if v['filepath'] is None:
-                continue
-            mfile = os.path.join(self.checkoutdir, v['filepath'])
-            authors = self.get_module_authors(mfile)
-            self.modules[k]['authors'] = authors
-
-            # authors are maintainers by -default-
-            self.modules[k]['maintainers'] += authors
-            self.modules[k]['maintainers'] = \
-                sorted(set(self.modules[k]['maintainers']))
-
         # meta is a special module
         self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
         self.modules['meta']['name'] = 'meta'
@@ -457,14 +445,27 @@ class ModuleIndexer(object):
                     pdata = pickle.load(f)
                 if pdata[0] == ghash:
                     self.committers[k] = pdata[1]
+                    if len(pdata) == 3:
+                        # use emailmap if available
+                        emailmap = pdata[2]
+                    else:
+                        emailmap = {}
                 else:
                     refresh = True
 
             if refresh:
-                uns = self.gws.get_usernames_from_filename_blame(*sargs)
+                if self.gqlc:
+                    uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*sargs)
+                else:
+                    emailmap = {}  # scrapping: emails not available
+                    uns = self.gws.get_usernames_from_filename_blame(*sargs)
                 self.committers[k] = uns
                 with open(pfile, 'wb') as f:
-                    pickle.dump((ghash, uns), f)
+                    pickle.dump((ghash, uns, emailmap), f)
+
+            for email, github_id in emailmap.items():
+                if email not in self.emailmap:
+                    self.emailmap[email] = github_id
 
         # add scraped logins to the map
         #for k,v in self.modules.iteritems():
@@ -504,6 +505,20 @@ class ModuleIndexer(object):
 
     def set_maintainers(self):
         '''Define the maintainers for each module'''
+
+        # grep the authors:
+        for k,v in self.modules.iteritems():
+            if v['filepath'] is None:
+                continue
+            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            authors = self.get_module_authors(mfile)
+            self.modules[k]['authors'] = authors
+
+            # authors are maintainers by -default-
+            self.modules[k]['maintainers'] += authors
+            self.modules[k]['maintainers'] = \
+                sorted(set(self.modules[k]['maintainers']))
+
         mkeys = self.maintainers.keys()
         for k,v in self.modules.iteritems():
             if not v['filepath']:
@@ -666,7 +681,6 @@ class ModuleIndexer(object):
         elif '@' in author:
             # match github ids but not emails
             authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
-            words = author.split()
         elif 'github.com/' in author:
             # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
             idx = author.find('github.com/')
@@ -677,6 +691,12 @@ class ModuleIndexer(object):
             idx = author.find('(')
             author = author[idx+1:]
             authors.add(author.replace(')', ''))
+
+        # search for emails
+        for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
+            github_id = self.emailmap.get(email)
+            if github_id:
+                authors.add(github_id)
 
         return list(authors)
 
