@@ -10,10 +10,10 @@ Making progress in resolving issues for modules depends upon your interaction! P
   * [When will your pull request be merged?](#when-will-your-pull-request-be-merged)
     * [New Modules](#new-modules)
     * [Existing Modules](#existing-modules)
-      * [unmaintained](#unmaintained)
       * [core](#core)
-      * [curated](#curated)
+      * [certified](#certified)
       * [community](#community)
+      * [network](#network)
     * [Non-module changes](#non-module-changes)
 * [For community maintainers](#for-community-maintainers)
 * [For anyone else](#for-anyone-else)
@@ -98,15 +98,11 @@ Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/l
 
 The possible values of `supported_by` are:
 
-##### unmaintained
-
-no community members are responsible for this module, so changes will have to be reviewed by the core team until someone volunteers to maintain it. See [core](#core).
-
 ##### core
 
-Members of the Ansible organization typically do all the maintainence on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
+Members of the Ansible Core Team typically do all the maintenance on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
 
-##### curated
+##### certified
 
 These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once the pull request is labeled with [`shipit`](#label-shipit), the core team will be alerted to review.
 
@@ -116,6 +112,10 @@ These modules are also developed, maintained and supported by the community. If 
 
 :information_source: If you are maintainer of the module or maintainer of a module in the same namespace, only one [`shipit`](#cmd-shipit) is required.
 
+##### network
+
+Members of the Ansible Network Team typically do all the maintenance on this module, so only they can approve changes.
+
 #### Non-module changes
 
 The ansible core team approves these pull requests and it may take some time for them to get to your request.
@@ -124,7 +124,7 @@ The ansible core team approves these pull requests and it may take some time for
 
 :information_source: `Approve` pull request status is ignored, [`shipit`](#cmd-shipit) command must be used in order to approve a pull request.
 
-Thanks in advance for taking a look at issues and pull requests and for your ongoing maintainince. If you are unable to troubleshoot or review this issue/pull request with the information provided, please ping the submitter of the issue in a comment to let them know.
+Thanks in advance for taking a look at issues and pull requests and for your ongoing maintenance. If you are unable to troubleshoot or review this issue/pull request with the information provided, please ping the submitter of the issue in a comment to let them know.
 
 ## For anyone else
 Reactions help us determine how many people are interested in a pull request or have run across a similar bug. Please leave a +1 [reaction](https://github.com/blog/2119-add-reactions-to-pull-requests-issues-and-comments) (:+1:) if that applies to you. Any additional details you can provide, such as your usecase, environment, steps to reproduce, or workarounds you have found, can help out with resolving issues or getting pull requests merged.
@@ -166,7 +166,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week. When a pull request is closed and reopened, the CI is triggered again. In some case, the bot will automatically trigger the CI when a pull request is labeled with both [`shipit`](#label-shipit) and `stale_ci`.
 **<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update his review.
 **<a name="label-core_review">core_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
-**<a name="label-committer_review">committer_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [curated](#curated) review workflow.
+**<a name="label-committer_review">committer_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [certified](#certified) review workflow.
 **<a name="label-community_review">community_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
 **<a name="label-backport">backport</a>** | pull requests | yes | Added to pull requests which don't target `devel` branch.
 **<a name="label-c:_name_">c:_name_</a>** | issues pull requests | no | Categorize issues or pull requests by their relevant source code files.
@@ -182,7 +182,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-needs_ci">needs_ci</a>** | pull requests | no | Identify pull requests for which CI status is missing. When a pull request is closed and reopened or when new commits are updated, the CI is triggered again.
 **<a name="label-needs_info">needs_info</a>** | issues | yes | Identify issues for which reviewer requested further information.
 **<a name="label-waiting_on_contributor">waiting_on_contributor</a>** | issues pull requests | no | Identify issues for which help is needed
-**<a name="label-needs_maintainer">needs_maintainer</a>** | pull requests | no | Identify pull requests modifying [unmaintained/orphaned](#unmaintained) module.
+**<a name="label-needs_maintainer">needs_maintainer</a>** | pull requests | no | Ansibullbot is unable to identify authors or maintainers of the related module. Check `author` field format in [`DOCUMENTATION block`](http://docs.ansible.com/ansible/dev_guide/developing_modules_documenting.html#documentation-block).
 **<a name="label-merge_commit">merge_commit</a>** | pull requests | no | Added to pull requests containing at least one merge commit. Pull requests must not contain merge commit.
 **<a name="label-needs_revision">needs_revision</a>** | pull requests | yes | Used for pull request which fail continuous integration tests or if a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting [`ready_for_review`](#cmd-ready_for_review).
 **<a name="label-needs_rebase">needs_rebase</a>** | pull requests | yes | Pull requests which are out of sync with ansible/ansible's `devel` branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.

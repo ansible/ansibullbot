@@ -341,11 +341,11 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
 def get_supported_by(issuewrapper, meta):
 
-    # https://github.com/ansible/proposals/issues/30
+    # http://docs.ansible.com/ansible/modules_support.html
+    # certified: maintained by the community and reviewed by Ansible core team.
+    # community: maintained by the community at large.
     # core: maintained by the ansible core team.
-    # community: This module is maintained by the community at large...
-    # unmaintained: This module currently needs a new community contributor
-    # committer: Committers to the ansible repository are the gatekeepers...
+    # network: maintained by the ansible network team.
 
     supported_by = 'core'
     mmatch = meta.get('module_match')
