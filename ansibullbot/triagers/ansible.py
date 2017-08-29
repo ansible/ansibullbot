@@ -596,7 +596,7 @@ class AnsibleTriage(DefaultTriager):
                 continue
 
             if self.gqlc:
-                if self.pr:
+                if self.pr and not os.path.isfile(self.pr):
                     self.issue_summaries[repopath] = {}
                     for pr in self.pr.split(','):
                         # --pr is an alias to --id and can also be for issues
@@ -1676,7 +1676,8 @@ class AnsibleTriage(DefaultTriager):
 
         # Use iterator to avoid requesting all issues upfront
         numbers = sorted([int(x) for x in numbers])
-        numbers = [x for x in reversed(numbers)]
+        if self.args.sort != 'desc':
+            numbers = [x for x in reversed(numbers)]
         self.repos[repo]['issues'] = RepoIssuesIterator(
             self.repos[repo]['repo'],
             numbers,
