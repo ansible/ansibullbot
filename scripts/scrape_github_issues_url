@@ -5,7 +5,8 @@ import json
 import logging
 import os
 from pprint import pprint
-from lib.utils.webscraper import GithubWebScraper
+#from lib.utils.webscraper import GithubWebScraper
+from ansibullbot.utils.webscraper import GithubWebScraper
 
 
 def main():
@@ -29,7 +30,8 @@ def main():
     args = parser.parse_args()
 
     gws = GithubWebScraper()
-    summaries = gws.get_issue_summaries(None, baseurl=args.url)
+    #summaries = gws.get_issue_summaries(None, baseurl=args.url)
+    summaries = gws.get_issue_summaries(args.url, baseurl=args.url)
     print(json.dumps(sorted([int(x) for x in summaries.keys()])))
 
 
