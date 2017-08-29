@@ -56,6 +56,7 @@ from ansibullbot.errors import LabelWafflingError
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
+from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
@@ -1743,163 +1744,12 @@ class AnsibleTriage(DefaultTriager):
         logging.info('ansible version: %s' % self.meta['ansible_version'])
 
         # what is this?
-        self.meta['is_bad_pr'] = False
-        self.meta['is_module'] = False
-        self.meta['is_action_plugin'] = False
-        self.meta['is_new_module'] = False
-        self.meta['is_new_directory'] = False
-        self.meta['is_module_util'] = False
-        self.meta['is_plugin'] = False
-        self.meta['is_new_plugin'] = False
-        self.meta['is_core'] = False
-        self.meta['is_multi_module'] = False
-        self.meta['module_match'] = None
-        self.meta['component'] = None
         self.meta['is_migrated'] = False
 
-        if iw.is_issue():
-            if self.template_data.get('component name'):
-
-                match = self.find_module_match(iw.title, self.template_data)
-                if match:
-                    self.meta['is_module'] = True
-                    self.meta['is_plugin'] = True
-                    self.meta['module_match'] = copy.deepcopy(match)
-                    self.meta['component'] = match['name']
-
-        elif len(iw.files) > 100:
-            # das merge?
-            self.meta['bad_pr'] = True
-
-        else:
-            # assume pullrequest
-            for f in iw.files:
-
-                # creating a new dir?
-                if self.file_indexer.isnewdir(os.path.dirname(f)):
-                    self.meta['is_new_directory'] = True
-
-                if f.startswith('lib/ansible/modules/core') or \
-                        f.startswith('lib/ansible/modules/extras'):
-                    self.meta['is_bad_pr'] = True
-                    continue
-
-                if f.startswith('lib/ansible/module_utils'):
-                    self.meta['is_module_util'] = True
-                    continue
-
-                if f.startswith('lib/ansible/plugins/action'):
-                    self.meta['is_action_plugin'] = True
-
-                if f.startswith('lib/ansible') \
-                        and not f.startswith('lib/ansible/modules'):
-                    self.meta['is_core'] = True
-
-                if not f.startswith('lib/ansible/modules') and \
-                        not f.startswith('lib/ansible/plugins/actions'):
-                    continue
-
-                # duplicates?
-                if self.meta['module_match']:
-                    # same maintainer?
-                    nm = self.module_indexer.find_match(f)
-                    if nm:
-                        self.meta['is_multi_module'] = True
-                        if nm['maintainers'] == \
-                                self.meta['module_match']['maintainers']:
-                            continue
-                        else:
-                            # >1 set of maintainers
-                            logging.info('multiple modules referenced')
-                            pass
-
-                if self.module_indexer.find_match(f):
-                    match = self.module_indexer.find_match(f)
-                    self.meta['is_module'] = True
-                    self.meta['is_plugin'] = True
-                    self.meta['module_match'] = copy.deepcopy(match)
-                    self.meta['component'] = match['name']
-                elif f.startswith('lib/ansible/modules') \
-                        and (f.endswith('.py') or f.endswith('.ps1')):
-                    self.meta['is_new_module'] = True
-                    self.meta['is_module'] = True
-                    self.meta['is_plugin'] = True
-                    match = copy.deepcopy(self.module_indexer.EMPTY_MODULE)
-                    match['name'] = os.path.basename(f).replace('.py', '')
-                    match['filepath'] = f
-                    match.update(
-                        self.module_indexer.split_topics_from_path(f)
-                    )
-
-                    # keep track of namespace maintainers for new mods too
-                    ns = match['namespace']
-                    match['namespace_maintainers'] = \
-                        self.module_indexer.get_maintainers_for_namespace(ns)
-
-                    # these are "community" supported from the beginning?
-                    match['metadata']['supported_by'] = 'community'
-
-                    self.meta['module_match'] = copy.deepcopy(match)
-                    self.meta['component'] = match['name']
-
-                elif f.endswith('.md'):
-                    # network/avi/README.md
-                    continue
-                else:
-                    # FIXME - what do with these files?
-                    logging.warning('unhandled filepath for matching: %s' % f)
-
-        # get labels for files ...
-        if not iw.is_pullrequest():
-            self.meta['is_issue'] = True
-            self.meta['is_pullrequest'] = False
-            self.meta['component_labels'] = []
-
-            if not self.meta['is_module']:
-                components = self.file_indexer.find_component_match(
-                    iw.title,
-                    iw.body,
-                    iw.template_data
-                )
-                self.meta['guessed_components'] = components
-                if components:
-                    comp_labels = self.file_indexer.get_component_labels(
-                        self.valid_labels,
-                        components
-                    )
-                    self.meta['component_labels'] = comp_labels
-                else:
-                    self.meta['component_labels'] = []
-
-        else:
-            self.meta['is_issue'] = False
-            self.meta['is_pullrequest'] = True
-            self.meta['component_labels'] = \
-                self.file_indexer.get_component_labels(
-                    self.valid_labels,
-                    iw.files
-                )
-
-        # who owns this?
-        self.meta['owner'] = 'ansible'
-        if self.meta['module_match']:
-            print(self.meta['module_match'])
-            maintainers = self.meta['module_match']['maintainers']
-            if maintainers:
-                self.meta['owner'] = maintainers
-            elif self.meta['is_new_module']:
-                self.meta['owner'] = ['ansible']
-            else:
-                logging.error('NO MAINTAINER LISTED FOR %s'
-                              % self.meta['module_match']['name'])
-        elif self.meta['is_pullrequest']:
-            (to_notify, to_assign) = \
-                self.file_indexer.get_filemap_users_for_files(self.issue.files)
-            self.meta['owner'] = sorted(set(to_notify + to_assign))
-
-        # everything else is "core"
-        if not self.meta['is_module']:
-            self.meta['is_core'] = True
+        # what component(s) is this about?
+        self.meta.update(
+            get_component_match_facts(self.issue, self.meta, self.file_indexer, self.module_indexer, self.valid_labels)
+        )
 
         # python3 ?
         self.meta.update(get_python3_facts(self.issue))
@@ -1916,6 +1766,7 @@ class AnsibleTriage(DefaultTriager):
                 #shippable=self.SR
             )
         )
+
         #self.meta.update(self.get_notification_facts(iw, self.meta))
         self.meta.update(get_notification_facts(iw, self.meta, self.file_indexer))
 
@@ -1986,6 +1837,7 @@ class AnsibleTriage(DefaultTriager):
             self.meta['migrated_issue_number'] = miw.number
             self.meta['migrated_issue_state'] = miw.state
 
+    '''
     def find_module_match(self, title, template_data):
 
         match = None
@@ -2011,6 +1863,7 @@ class AnsibleTriage(DefaultTriager):
             pass
 
         return match
+    '''
 
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
