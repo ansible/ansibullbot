@@ -63,20 +63,20 @@ class FileIndexer(ModuleIndexer):
         files = [x for x in files if not x.startswith('.git')]
         self.files = files
 
-    def get_component_labels(self, valid_labels, files):
+    def get_component_labels(self, files, valid_labels=[]):
         '''Matches a filepath to the relevant c: labels'''
         labels = [x for x in valid_labels if x.startswith('c:')]
 
         clabels = []
         for cl in labels:
-            l = cl.replace('c:', '', 1)
-            al = os.path.join('lib/ansible', l)
+            cl = cl.replace('c:', '', 1)
+            al = os.path.join('lib/ansible', cl)
             if al.endswith('/'):
                 al = al.rstrip('/')
             for f in files:
                 if not f:
                     continue
-                if f.startswith(l) or f.startswith(al):
+                if f.startswith(cl) or f.startswith(al):
                     clabels.append(cl)
 
         # use the more specific labels
@@ -91,7 +91,46 @@ class FileIndexer(ModuleIndexer):
             clabels = [x for x in tmp_clabels]
             clabels = sorted(set(clabels))
 
+        '''
+        # Use botmeta
+        for filen in files:
+            if filen in self.botmeta['files']:
+                component = self.botmeta['files'][filen]
+            else:
+                ckeys = []
+                for key in self.botmeta['files'].keys():
+                    if filen.startswith(key):
+                        ckeys.append(key)
+                for ckey in ckeys:
+                    ckey_labels = self.botmeta['files'][ckey].get('labels', [])
+                    for cklabel in ckey_labels:
+                        if cklabel in valid_labels and cklabel not in clabels:
+                            clabels.append(cklabel)
+        '''
+
+        # Use botmeta
+        ckeys = self._filenames_to_keys(files)
+        for ckey in ckeys:
+            ckey_labels = self.botmeta['files'][ckey].get('labels', [])
+            for cklabel in ckey_labels:
+                if cklabel in valid_labels and cklabel not in clabels:
+                    clabels.append(cklabel)
+
         return clabels
+
+    def _filenames_to_keys(self, filenames):
+        '''Match filenames to the keys in botmeta'''
+        ckeys = []
+        for filen in filenames:
+            # Use botmeta
+            if filen in self.botmeta['files']:
+                if filen not in ckeys:
+                    ckeys.append(self.botmeta['files'][filen])
+            else:
+                for key in self.botmeta['files'].keys():
+                    if filen.startswith(key):
+                        ckeys.append(key)
+        return ckeys
 
     def _string_to_cmap_key(self, text):
         text = text.lower()
