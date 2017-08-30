@@ -182,64 +182,6 @@ class DefaultTriager(object):
         logging.info('getting labels')
         self.valid_labels = self.get_valid_labels(self.repopath)
 
-    '''
-    def __init__(self, verbose=None, github_user=None, github_pass=None,
-                 github_token=None, github_repo=None, number=None,
-                 start_at=None, always_pause=False, force=False,
-                 safe_force=False, dry_run=False, no_since=False):
-
-        self.verbose = verbose
-        self.github_user = github_user
-        self.github_pass = github_pass
-        self.github_token = github_token
-        self.github_repo = github_repo
-        self.number = number
-        self.start_at = start_at
-        self.always_pause = always_pause
-        self.force = force
-        self.safe_force = safe_force
-        self.dry_run = dry_run
-        self.no_since = no_since
-
-        self.issue = None
-        self.maintainers = {}
-        self.module_maintainers = []
-        self.actions = {
-            'newlabel': [],
-            'unlabel':  [],
-            'comments': [],
-            'close': False,
-        }
-
-        # set the cache dir
-        self.cachedir = '~/.ansibullbot/cache'
-        if self.github_repo == 'ansible':
-            self.cachedir += '/ansible/ansible/'
-        else:
-            self.cachedir += '/ansible/ansible-modules-%s/' % self.github_repo
-        self.cachedir += 'issues'
-        self.cachedir = os.path.expanduser(self.cachedir)
-        if not os.path.isdir(self.cachedir):
-            os.makedirs(self.cachedir)
-
-        print("Initializing AnsibleVersionIndexer")
-        self.version_indexer = AnsibleVersionIndexer()
-        #import epdb; epdb.st()
-        print("Initializing ModuleIndexer")
-        self.module_indexer = ModuleIndexer()
-        self.module_indexer.get_ansible_modules()
-        print("Initializing FileIndexer")
-        self.file_indexer = FileIndexer()
-        self.file_indexer.get_files()
-        print("Getting ansible members")
-        self.ansible_members = self.get_ansible_members()
-        print("Getting valid labels")
-        self.valid_labels = self.get_valid_labels()
-
-        # processed metadata
-        self.meta = {}
-    '''
-
     @property
     def resume(self):
         '''Returns a dict with the last issue repo+number processed'''
@@ -1264,6 +1206,12 @@ class DefaultTriager(object):
             self.check_safe_match()
 
         if self.action_count(actions) > 0:
+
+            if hasattr(self, 'args'):
+                if hasattr(self.args, 'dump_actions'):
+                    if self.args.dump_actions:
+                        self.dump_action_dict(issue, actions)
+
             if self.dry_run:
                 print("Dry-run specified, skipping execution of actions")
             else:
@@ -1532,3 +1480,15 @@ class DefaultTriager(object):
             cachedir=self.cachedir
         )
         return iw
+
+    def dump_action_dict(self, issue, actions):
+        '''Serialize the action dict to disk for quick(er) debugging'''
+        fn = os.path.join('/tmp', 'actions', issue.repo_full_name, str(issue.number) + '.json')
+        dn = os.path.dirname(fn)
+        if not os.path.isdir(dn):
+            os.makedirs(dn)
+
+        logging.info('dumping {}'.format(fn))
+        with open(fn, 'wb') as f:
+            f.write(json.dumps(actions, indent=2, sort_keys=True))
+        #import epdb; epdb.st()
