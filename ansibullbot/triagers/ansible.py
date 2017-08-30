@@ -1690,8 +1690,9 @@ class AnsibleTriage(DefaultTriager):
 
         # Use iterator to avoid requesting all issues upfront
         numbers = sorted([int(x) for x in numbers])
-        if self.args.sort != 'desc':
+        if self.args.sort == 'desc':
             numbers = [x for x in reversed(numbers)]
+
         self.repos[repo]['issues'] = RepoIssuesIterator(
             self.repos[repo]['repo'],
             numbers,
