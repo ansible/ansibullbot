@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import copy
 import logging
 import os
 import re
@@ -13,6 +14,14 @@ from ansibullbot.utils.moduletools import ModuleIndexer
 
 
 class FileIndexer(ModuleIndexer):
+
+    DEFAULT_COMPONENT_MATCH = {
+        'supported_by': 'core',
+        'filename': None,
+        'labels': [],
+        'owners': [],
+        'notify': []
+    }
 
     files = []
 
@@ -91,23 +100,6 @@ class FileIndexer(ModuleIndexer):
             clabels = [x for x in tmp_clabels]
             clabels = sorted(set(clabels))
 
-        '''
-        # Use botmeta
-        for filen in files:
-            if filen in self.botmeta['files']:
-                component = self.botmeta['files'][filen]
-            else:
-                ckeys = []
-                for key in self.botmeta['files'].keys():
-                    if filen.startswith(key):
-                        ckeys.append(key)
-                for ckey in ckeys:
-                    ckey_labels = self.botmeta['files'][ckey].get('labels', [])
-                    for cklabel in ckey_labels:
-                        if cklabel in valid_labels and cklabel not in clabels:
-                            clabels.append(cklabel)
-        '''
-
         # Use botmeta
         ckeys = self._filenames_to_keys(files)
         for ckey in ckeys:
@@ -125,7 +117,7 @@ class FileIndexer(ModuleIndexer):
             # Use botmeta
             if filen in self.botmeta['files']:
                 if filen not in ckeys:
-                    ckeys.append(self.botmeta['files'][filen])
+                    ckeys.append(filen)
             else:
                 for key in self.botmeta['files'].keys():
                     if filen.startswith(key):
@@ -157,8 +149,43 @@ class FileIndexer(ModuleIndexer):
                     toadd = True
             if toadd:
                 keywords.append(k)
-        #import epdb; epdb.st()
         return keywords
+
+    def find_component_matches_by_file(self, filenames):
+        '''Make a list of component matches based on filenames'''
+
+        matches = []
+        for filen in filenames:
+            match = copy.deepcopy(self.DEFAULT_COMPONENT_MATCH)
+            match['filename'] = filen
+
+            ckeys = self._filenames_to_keys([filen])
+            ckeys = sorted(set(ckeys))
+
+            for ckey in ckeys:
+                cdata = self.botmeta['files'][ckey]
+
+                if 'labels' in cdata:
+                    for label in cdata['labels']:
+                        if label not in match['labels']:
+                            match['labels'].append(label)
+
+                if 'support' in cdata:
+                    match['supported_by'] = cdata['support'][0]
+
+                if 'maintainers' in cdata:
+                    for user in cdata['maintainers']:
+                        if user not in match['owners']:
+                            match['owners'].append(user)
+
+                if 'notify' in cdata:
+                    for user in cdata['notify']:
+                        if user not in match['notify']:
+                            match['notify'].append(user)
+
+            matches.append(match)
+
+        return matches
 
     def find_component_match(self, title, body, template_data):
         '''Make a list of matching files for arbitrary text in an issue'''

@@ -1261,6 +1261,19 @@ class AnsibleTriage(DefaultTriager):
             sb = mm.get('metadata', {}).get('supported_by')
             if sb:
                 cs_label = 'support:%s' % sb
+        elif self.meta['component_matches']:
+            levels = [x.get('supported_by') for x in self.meta['component_matches']]
+            levels = sorted(set([x for x in levels if x]))
+            if len(levels) == 1:
+                cs_label = 'support:{}'.format(levels[0])
+            elif len(levels) > 1:
+                # use the highest level of support
+                if 'network' in levels:
+                    cs_label = 'support:network'
+                elif 'core' in levels:
+                    pass
+                else:
+                    cs_label = 'support:community'
 
         if cs_label not in self.issue.labels:
             self.actions['newlabel'].append(cs_label)
