@@ -30,6 +30,8 @@ def handle_exception(exc_type, exc_value, exc_traceback):
         sys.__excepthook__(exc_type, exc_value, exc_traceback)
         return
     logging.error("Uncaught exception", exc_info=(exc_type, exc_value, exc_traceback))
+
+
 sys.excepthook = handle_exception
 
 
@@ -120,6 +122,10 @@ def main():
 
     parser.add_argument("--force_description_fixer", action="store_true",
                         help="Always invoke the description fixer")
+
+    # useful for debugging
+    parser.add_argument("--dump_actions", action="store_true",
+                        help="serialize the actions to disk [/tmp/actions]")
 
     args = parser.parse_args()
 
