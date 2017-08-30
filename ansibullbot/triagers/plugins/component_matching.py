@@ -52,6 +52,14 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     cmeta['module_match'] = None
     cmeta['component'] = None
     cmeta['is_migrated'] = False
+    cmeta['component_matches'] = []
+
+    if iw.is_pullrequest():
+        cmeta['component_matches'] = file_indexer.find_component_matches_by_file(iw.files)
+    else:
+        ckeys = file_indexer.find_component_match(iw.title, iw.body, iw.template_data)
+        if ckeys:
+            cmeta['component_matches'] = file_indexer.find_component_matches_by_file(ckeys)
 
     if iw.is_issue():
         if iw.template_data.get('component name'):
@@ -66,6 +74,7 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     elif len(iw.files) > 100:
         # das merge?
         cmeta['bad_pr'] = True
+        cmeta['component_matches'] = []
 
     else:
         # assume pullrequest
@@ -177,7 +186,7 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
                 valid_labels=valid_labels
             )
 
-    # who owns this?
+    # who owns this? FIXME - is this even used?
     cmeta['owner'] = 'ansible'
     if cmeta['module_match']:
         print(cmeta['module_match'])
@@ -189,14 +198,32 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
         else:
             logging.error('NO MAINTAINER LISTED FOR %s'
                           % cmeta['module_match']['name'])
-    elif cmeta['is_pullrequest']:
+
+    elif cmeta['is_pullrequest'] and cmeta['component_matches']:
+        '''
         (to_notify, to_assign) = \
             file_indexer.get_filemap_users_for_files(iw.files)
         cmeta['owner'] = sorted(set(to_notify + to_assign))
+        '''
+        cmeta['owner'] = []
+        for cmatch in cmeta['component_matches']:
+            for user in cmatch['owners']:
+                if user not in cmeta['owner']:
+                    cmeta['owner'].append(user)
+            for user in cmatch['notify']:
+                if user not in cmeta['owner']:
+                    cmeta['owner'].append(user)
 
-    # everything else is "core"
-    if not cmeta['is_module']:
-        #import epdb; epdb.st()
+    # if any component is core, then the whole thing is core
+    if cmeta['component_matches']:
+        core = False
+        for cmatch in cmeta['component_matches']:
+            if cmatch.get('supported_by') in ['networking', 'core']:
+                core = True
+        cmeta['is_core'] = core
+
+    elif not cmeta['is_module']:
+        # everything else is "core"
         cmeta['is_core'] = True
 
     return cmeta
