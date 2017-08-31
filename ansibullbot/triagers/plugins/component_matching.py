@@ -200,11 +200,6 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
                           % cmeta['module_match']['name'])
 
     elif cmeta['is_pullrequest'] and cmeta['component_matches']:
-        '''
-        (to_notify, to_assign) = \
-            file_indexer.get_filemap_users_for_files(iw.files)
-        cmeta['owner'] = sorted(set(to_notify + to_assign))
-        '''
         cmeta['owner'] = []
         for cmatch in cmeta['component_matches']:
             for user in cmatch['owners']:
