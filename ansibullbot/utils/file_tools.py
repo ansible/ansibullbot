@@ -103,6 +103,8 @@ class FileIndexer(ModuleIndexer):
         # Use botmeta
         ckeys = self._filenames_to_keys(files)
         for ckey in ckeys:
+            if not self.botmeta['files'].get(ckey):
+                continue
             ckey_labels = self.botmeta['files'][ckey].get('labels', [])
             for cklabel in ckey_labels:
                 if cklabel in valid_labels and cklabel not in clabels:
@@ -163,7 +165,9 @@ class FileIndexer(ModuleIndexer):
             ckeys = sorted(set(ckeys))
 
             for ckey in ckeys:
-                cdata = self.botmeta['files'][ckey]
+                cdata = self.botmeta['files'].get(ckey)
+                if not cdata:
+                    continue
 
                 if 'labels' in cdata:
                     for label in cdata['labels']:
