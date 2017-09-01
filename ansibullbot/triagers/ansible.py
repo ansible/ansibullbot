@@ -1762,7 +1762,13 @@ class AnsibleTriage(DefaultTriager):
 
         # what component(s) is this about?
         self.meta.update(
-            get_component_match_facts(self.issue, self.meta, self.file_indexer, self.module_indexer, self.valid_labels)
+            get_component_match_facts(
+                self.issue,
+                self.meta,
+                self.file_indexer,
+                self.module_indexer,
+                self.valid_labels
+            )
         )
 
         # python3 ?
