@@ -446,6 +446,9 @@ def get_review_state(reviews, submitter, number=None, www_validate=None,
                 # a dismissed review 'magically' turns into a comment
                 user_reviews[actor] = 'COMMENTED'
 
+            elif state == 'PENDING':
+                pass
+
             else:
                 logging.error('breakpoint!')
                 print('%s not handled yet' % state)

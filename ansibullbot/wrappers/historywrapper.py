@@ -644,13 +644,6 @@ class HistoryWrapper(object):
     def merge_reviews(self, reviews):
         for review in reviews:
             event = {}
-            event['id'] = review['id']
-            event['actor'] = review['user']['login']
-            event['created_at'] = self.parse_timestamp(review['submitted_at'])
-            event['commit_id'] = review['commit_id']
-
-            # keep these for shipit analysis
-            event['body'] = review.get('body')
 
             if review['state'] == 'COMMENTED':
                 event['event'] = 'review_comment'
@@ -660,12 +653,24 @@ class HistoryWrapper(object):
                 event['event'] = 'review_approved'
             elif review['state'] == 'DISMISSED':
                 event['event'] = 'review_dismissed'
+            elif review['state'] == 'PENDING':
+                # ignore pending review
+                continue
             else:
                 if C.DEFAULT_BREAKPOINTS:
                     logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
                     raise Exception('unknown review state')
+
+            event['id'] = review['id']
+            event['actor'] = review['user']['login']
+            event['created_at'] = self.parse_timestamp(review['submitted_at'])
+            event['commit_id'] = review['commit_id']
+
+            # keep these for shipit analysis
+            event['body'] = review.get('body')
+
             self.history.append(event)
 
         self.fix_history_tz()
