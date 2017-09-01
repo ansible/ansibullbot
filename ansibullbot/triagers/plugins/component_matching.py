@@ -216,7 +216,7 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
             )
 
     # who owns this? FIXME - is this even used?
-    cmeta['owner'] = 'ansible'
+    cmeta['owner'] = ['ansible']
     if cmeta['module_match']:
         print(cmeta['module_match'])
         maintainers = cmeta['module_match']['maintainers']
