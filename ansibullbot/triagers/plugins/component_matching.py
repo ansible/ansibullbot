@@ -54,8 +54,37 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     cmeta['is_migrated'] = False
     cmeta['component_matches'] = []
 
+    # https://github.com/ansible/ansibullbot/issues/562
+    filenames = []
     if iw.is_pullrequest():
-        cmeta['component_matches'] = file_indexer.find_component_matches_by_file(iw.files)
+        filenames = iw.files
+        checked = []
+        to_add = []
+        for fn in filenames:
+            if fn.startswith('test/integration/targets/'):
+                bn = fn.split('/')[3]
+                if bn in checked:
+                    continue
+                else:
+                    checked.append(bn)
+                mmatch = module_indexer.find_match(bn)
+                if mmatch:
+                    to_add.append(mmatch['repo_filename'])
+
+                '''
+                # FIXME - enumerate aliases file for additional modules
+                td = '/'.join(fn.split('/')[0:4])
+                aliases_file = os.path.join(td, 'aliases')
+                aliases = file_indexer.get_file_content(aliases_file)
+                if aliases:
+                    import epdb; epdb.st()
+                '''
+
+        if to_add:
+            filenames = sorted(set(filenames + to_add))
+
+    if iw.is_pullrequest():
+        cmeta['component_matches'] = file_indexer.find_component_matches_by_file(filenames)
     else:
         ckeys = file_indexer.find_component_match(iw.title, iw.body, iw.template_data)
         if ckeys:
@@ -182,7 +211,7 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
         cmeta['is_pullrequest'] = True
         cmeta['component_labels'] = \
             file_indexer.get_component_labels(
-                iw.files,
+                filenames,
                 valid_labels=valid_labels
             )
 
