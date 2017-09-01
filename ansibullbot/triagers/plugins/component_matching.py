@@ -244,6 +244,7 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
         for cmatch in cmeta['component_matches']:
             if cmatch.get('supported_by') in ['networking', 'core']:
                 core = True
+                break
         cmeta['is_core'] = core
 
     elif not cmeta['is_module']:
