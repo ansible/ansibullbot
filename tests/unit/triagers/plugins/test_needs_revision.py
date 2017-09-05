@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 
+import datetime
 import json
 import six
 from unittest import TestCase
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 from six.moves import mock
+
 import github
+import pytz
 
 from tests.utils.issue_mock import IssueMock
 from tests.utils.repo_mock import RepoMock
 from tests.utils.helpers import get_issue
-from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
+from ansibullbot.triagers.plugins.needs_revision import changes_requested_by, get_needs_revision_facts, get_review_state
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
@@ -70,3 +73,51 @@ class TestNeedsRevisionFacts(TestCase):
 
                 self.assertFalse(facts['is_needs_revision'])
                 self.assertFalse(facts['stale_reviews'])
+
+
+class TestReviewMethods(TestCase):
+    def test_reviews(self):
+        """Check that:
+        - COMMENTED review aren't ignored (reviewer0)
+        - a COMMENTED review doesn't override an older CHANGES_REQUESTED review (reviewer1)
+        - a COMMENTED review overrides an older APPROVED review (reviewer2)
+        - a CHANGES_REQUESTED review overrides an older APPROVED review (reviewer3)
+        """
+        reviews = [
+            # oldest first
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-01-01T00:00:00Z', 'state': 'COMMENTED'},
+
+            {'user': {'login': 'reviewer1'}, 'submitted_at': '2017-02-01T00:00:00Z', 'state': 'COMMENTED'},
+            {'user': {'login': 'reviewer1'}, 'submitted_at': '2017-02-02T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
+            {'user': {'login': 'reviewer1'}, 'submitted_at': '2017-02-03T00:00:00Z', 'state': 'COMMENTED'},
+
+            {'user': {'login': 'reviewer2'}, 'submitted_at': '2017-03-01T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
+            {'user': {'login': 'reviewer2'}, 'submitted_at': '2017-03-02T00:00:00Z', 'state': 'APPROVED'},
+            {'user': {'login': 'reviewer2'}, 'submitted_at': '2017-03-03T00:00:00Z', 'state': 'COMMENTED'},
+
+            {'user': {'login': 'reviewer3'}, 'submitted_at': '2017-04-02T00:00:00Z', 'state': 'APPROVED'},
+            {'user': {'login': 'reviewer3'}, 'submitted_at': '2017-04-03T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
+
+            {'user': {'login': 'reviewer4'}, 'submitted_at': '2017-05-01T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
+        ]
+        submitter = 'submitter'
+
+        filtered = get_review_state(reviews, submitter)
+
+        self.assertEqual(filtered['reviewer0']['state'], 'COMMENTED')
+        self.assertEqual(filtered['reviewer1']['state'], 'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer2']['state'], 'COMMENTED')
+        self.assertEqual(filtered['reviewer3']['state'], 'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer4']['state'], 'CHANGES_REQUESTED')
+
+        shipits = {
+            'reviewer1': self.make_time('2017-02-04T00:00:00Z'),  # newer, overrides CHANGES_REQUESTED review
+            'reviewer3': self.make_time('2017-04-01T00:00:00Z'),  # older, doesn't override CHANGES_REQUESTED review
+        }
+        requested_by = changes_requested_by(filtered, shipits)
+        self.assertEqual(sorted(requested_by), ['reviewer3', 'reviewer4'])
+
+    @staticmethod
+    def make_time(data):
+        time = datetime.datetime.strptime(data, '%Y-%m-%dT%H:%M:%SZ')
+        return pytz.utc.localize(time)
