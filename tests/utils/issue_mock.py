@@ -34,12 +34,13 @@ class ActorMock(object):
     login = None
 
 
-class ComitterMock(object):
+class CommitterMock(object):
     date = None
 
 
 class CommitBottomMock(object):
-    committer = ComitterMock()
+    committer = CommitterMock()
+    message = ""
 
 
 class CommitTopMock(object):

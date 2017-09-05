@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 import json
-import tempfile
 import shutil
+import tempfile
 
 from tests.utils.issue_mock import IssueMock
 from tests.utils.repo_mock import RepoMock
@@ -26,6 +26,7 @@ def get_issue(datafile, statusfile):
         iw._comments = issue.comments
         iw._events = issue.events
         iw._reactions = issue.reactions
+        iw._commits = issue.commits
 
         # pre-load status to avoid github api calls
         with open(statusfile, 'rb') as status:
