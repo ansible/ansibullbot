@@ -772,7 +772,7 @@ class AnsibleTriage(DefaultTriager):
 
         # UNKNOWN!!! ... sigh.
         if self.issue.is_pullrequest():
-            if self.meta['mergeable_state'] == 'unknown':
+            if self.meta['mergeable_state'] == 'unknown' and self.issue.state != 'closed':
                 msg = 'skipping %s because it has a' % self.issue.number
                 msg += ' mergeable_state of unknown'
                 logging.warning(msg)
