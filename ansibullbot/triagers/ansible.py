@@ -1518,6 +1518,8 @@ class AnsibleTriage(DefaultTriager):
 
         for repo in REPOS:
             # skip repos based on args
+            if self.args.repo and self.args.repo != repo:
+                continue
             if self.skiprepo:
                 if repo in self.skiprepo:
                     continue
