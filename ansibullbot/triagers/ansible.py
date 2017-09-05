@@ -345,15 +345,6 @@ class AnsibleTriage(DefaultTriager):
             repopath = item[0]
             repo = item[1]['repo']
 
-            # skip repos based on args
-            if self.skiprepo:
-                if repopath in self.skiprepo:
-                    continue
-            if self.args.skip_module_repos and 'module' in repopath:
-                continue
-            if self.args.module_repos_only and 'module' not in repopath:
-                continue
-
             # set the relative cachedir
             self.cachedir = os.path.join(self.cachedir_base, repopath)
             # this is where the issue history cache goes
@@ -586,16 +577,6 @@ class AnsibleTriage(DefaultTriager):
             repopaths = [x for x in REPOS]
 
         for rp in repopaths:
-
-            # skip repos based on args
-            if self.skiprepo:
-                if repopath in self.skiprepo:
-                    continue
-            if self.args.skip_module_repos and 'module' in repopath:
-                continue
-            if self.args.module_repos_only and 'module' not in repopath:
-                continue
-
             if self.gqlc:
                 if self.pr and not os.path.isfile(self.pr):
                     self.issue_summaries[repopath] = {}
