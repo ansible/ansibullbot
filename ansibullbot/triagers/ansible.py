@@ -1579,7 +1579,7 @@ class AnsibleTriage(DefaultTriager):
 
         issuecache = {}
         numbers = self.issue_summaries[repo].keys()
-        numbers = [int(x) for x in numbers]
+        numbers = set(int(x) for x in numbers)
         logging.info('%s known numbers' % len(numbers))
 
         if self.args.pr:
@@ -1588,18 +1588,20 @@ class AnsibleTriage(DefaultTriager):
                 # allow for scripts when trying to target spec issues
                 logging.info('executing %s' % self.args.pr)
                 (rc, so, se) = run_command(self.args.pr)
-                numbers = json.loads(so)
-                numbers = [int(x) for x in numbers]
+                param_numbers = json.loads(so)
+                param_numbers = [int(x) for x in param_numbers]
                 logging.info(
-                    '%s numbers after running script' % len(numbers)
+                    '%s numbers after running script' % len(param_numbers)
                 )
             else:
                 # the issue id can be a list separated by commas
                 if ',' in self.pr:
-                    numbers = [int(x) for x in self.pr.split(',')]
+                    param_numbers = [int(x) for x in self.pr.split(',')]
                 else:
-                    numbers = [int(self.pr)]
-            logging.info('%s numbers from --id/--pr' % len(numbers))
+                    param_numbers = [int(self.pr)]
+            logging.info('%s numbers from --id/--pr' % len(param_numbers))
+            numbers.intersection_update(param_numbers)
+            numbers = list(numbers)
 
         if self.args.daemonize:
 
