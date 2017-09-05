@@ -933,7 +933,7 @@ class DefaultWrapper(object):
 
     @property
     def mergeable_state(self):
-        if not self.is_pullrequest():
+        if not self.is_pullrequest() or self.pullrequest.state == 'closed':
             return None
 
         # http://stackoverflow.com/a/30620973
