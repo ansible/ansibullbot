@@ -57,7 +57,14 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     cmeta['component'] = None
     cmeta['is_migrated'] = False
     cmeta['component_matches'] = []
+    cmeta['filenames'] = []
 
+    if iw.is_pullrequest() and len(iw.files) > 100:
+        # das merge?
+        cmeta['bad_pr'] = True
+        return cmeta
+
+    # all detected files
     filenames = []
 
     # Figure out what this is ...
@@ -101,108 +108,104 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
 
     else:
 
-        if len(iw.files) > 100:
-            # das merge?
-            cmeta['bad_pr'] = True
-        else:
-            filenames = iw.files
-            checked = []
-            to_add = []
-            for fn in filenames:
-                # https://github.com/ansible/ansibullbot/issues/562
-                if fn.startswith('test/integration/targets/'):
-                    bn = fn.split('/')[3]
-                    if bn in checked:
-                        continue
-                    else:
-                        checked.append(bn)
-                    mmatch = module_indexer.find_match(bn)
-                    if mmatch:
-                        to_add.append(mmatch['repo_filename'])
-            if to_add:
-                filenames = sorted(set(filenames + to_add))
-
-            # get all the components via the filenames
-            cmeta['component_matches'] = file_indexer.find_component_matches_by_file(filenames)
-
-            # extra metadata about pullrequests ...
-            for f in iw.files:
-
-                # creating a new dir?
-                if file_indexer.isnewdir(os.path.dirname(f)):
-                    cmeta['is_new_directory'] = True
-
-                if f.startswith('lib/ansible/modules/core') or \
-                        f.startswith('lib/ansible/modules/extras'):
-                    cmeta['is_bad_pr'] = True
-                    continue
-
-                if f.startswith('lib/ansible/module_utils'):
-                    cmeta['is_module_util'] = True
-                    continue
-
-                if f.startswith('lib/ansible/plugins/action'):
-                    cmeta['is_action_plugin'] = True
-
-                #if f.startswith('lib/ansible') \
-                #        and not f.startswith('lib/ansible/modules'):
-                #    cmeta['is_core'] = True
-
-                if not f.startswith('lib/ansible/modules') and \
-                        not f.startswith('lib/ansible/plugins/actions'):
-                    continue
-
-                # duplicates?
-                if cmeta['module_match']:
-                    # same maintainer?
-                    nm = module_indexer.find_match(f)
-                    if nm:
-                        cmeta['is_multi_module'] = True
-                        if nm['maintainers'] == \
-                                cmeta['module_match']['maintainers']:
-                            continue
-                        else:
-                            # >1 set of maintainers
-                            logging.info('multiple modules referenced')
-                            pass
-
-                if module_indexer.find_match(f):
-                    match = module_indexer.find_match(f)
-                    cmeta['is_module'] = True
-                    cmeta['is_plugin'] = True
-                    cmeta['module_match'] = copy.deepcopy(match)
-                    cmeta['module_matches'].append(copy.deepcopy(match))
-                    cmeta['component'] = match['name']
-
-                elif f.startswith('lib/ansible/modules') \
-                        and (f.endswith('.py') or f.endswith('.ps1')):
-                    cmeta['is_new_module'] = True
-                    cmeta['is_module'] = True
-                    cmeta['is_plugin'] = True
-                    match = copy.deepcopy(module_indexer.EMPTY_MODULE)
-                    match['name'] = os.path.basename(f).replace('.py', '')
-                    match['filepath'] = f
-                    match.update(
-                        module_indexer.split_topics_from_path(f)
-                    )
-
-                    # keep track of namespace maintainers for new mods too
-                    ns = match['namespace']
-                    match['namespace_maintainers'] = \
-                        module_indexer.get_maintainers_for_namespace(ns)
-
-                    # these are "community" supported from the beginning?
-                    match['metadata']['supported_by'] = 'community'
-
-                    cmeta['module_match'] = copy.deepcopy(match)
-                    cmeta['component'] = match['name']
-
-                elif f.endswith('.md'):
-                    # network/avi/README.md
+        filenames = iw.files
+        checked = []
+        to_add = []
+        for fn in filenames:
+            # https://github.com/ansible/ansibullbot/issues/562
+            if fn.startswith('test/integration/targets/'):
+                bn = fn.split('/')[3]
+                if bn in checked:
                     continue
                 else:
-                    # FIXME - what do with these files?
-                    logging.warning('unhandled filepath for matching: %s' % f)
+                    checked.append(bn)
+                mmatch = module_indexer.find_match(bn)
+                if mmatch:
+                    to_add.append(mmatch['repo_filename'])
+        if to_add:
+            filenames = sorted(set(filenames + to_add))
+
+        # get all the components via the filenames
+        cmeta['component_matches'] = file_indexer.find_component_matches_by_file(filenames)
+
+        # extra metadata about pullrequests ...
+        for f in iw.files:
+
+            # creating a new dir?
+            if file_indexer.isnewdir(os.path.dirname(f)):
+                cmeta['is_new_directory'] = True
+
+            if f.startswith('lib/ansible/modules/core') or \
+                    f.startswith('lib/ansible/modules/extras'):
+                cmeta['is_bad_pr'] = True
+                continue
+
+            if f.startswith('lib/ansible/module_utils'):
+                cmeta['is_module_util'] = True
+                continue
+
+            if f.startswith('lib/ansible/plugins/action'):
+                cmeta['is_action_plugin'] = True
+
+            #if f.startswith('lib/ansible') \
+            #        and not f.startswith('lib/ansible/modules'):
+            #    cmeta['is_core'] = True
+
+            if not f.startswith('lib/ansible/modules') and \
+                    not f.startswith('lib/ansible/plugins/actions'):
+                continue
+
+            # duplicates?
+            if cmeta['module_match']:
+                # same maintainer?
+                nm = module_indexer.find_match(f)
+                if nm:
+                    cmeta['is_multi_module'] = True
+                    if nm['maintainers'] == \
+                            cmeta['module_match']['maintainers']:
+                        continue
+                    else:
+                        # >1 set of maintainers
+                        logging.info('multiple modules referenced')
+                        pass
+
+            if module_indexer.find_match(f):
+                match = module_indexer.find_match(f)
+                cmeta['is_module'] = True
+                cmeta['is_plugin'] = True
+                cmeta['module_match'] = copy.deepcopy(match)
+                cmeta['module_matches'].append(copy.deepcopy(match))
+                cmeta['component'] = match['name']
+
+            elif f.startswith('lib/ansible/modules') \
+                    and (f.endswith('.py') or f.endswith('.ps1')):
+                cmeta['is_new_module'] = True
+                cmeta['is_module'] = True
+                cmeta['is_plugin'] = True
+                match = copy.deepcopy(module_indexer.EMPTY_MODULE)
+                match['name'] = os.path.basename(f).replace('.py', '')
+                match['filepath'] = f
+                match.update(
+                    module_indexer.split_topics_from_path(f)
+                )
+
+                # keep track of namespace maintainers for new mods too
+                ns = match['namespace']
+                match['namespace_maintainers'] = \
+                    module_indexer.get_maintainers_for_namespace(ns)
+
+                # these are "community" supported from the beginning?
+                match['metadata']['supported_by'] = 'community'
+
+                cmeta['module_match'] = copy.deepcopy(match)
+                cmeta['component'] = match['name']
+
+            elif f.endswith('.md'):
+                # network/avi/README.md
+                continue
+            else:
+                # FIXME - what do with these files?
+                logging.warning('unhandled filepath for matching: %s' % f)
 
     # get labels for files ...
     if not iw.is_pullrequest():
@@ -271,5 +274,4 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
         # everything else is "core"
         cmeta['is_core'] = True
 
-    import epdb; epdb.st()
     return cmeta
