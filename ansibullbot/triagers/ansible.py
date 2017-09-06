@@ -1674,7 +1674,7 @@ class AnsibleTriage(DefaultTriager):
             logging.info('%s numbers after checking type' % len(numbers))
 
         # Use iterator to avoid requesting all issues upfront
-        numbers = sorted([int(x) for x in numbers])
+        numbers = sorted(set([int(x) for x in numbers]))
         if self.args.sort == 'desc':
             numbers = [x for x in reversed(numbers)]
 
