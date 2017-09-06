@@ -15,7 +15,6 @@ ansibullbot_options:
   - daemonize_interval={{ ansibullbot_daemonize_interval }}
   - debug
   - force
-  - issue_component_matching
   - logfile {{ ansibullbot_log_path }}
   - resume
   - skip_no_update
