@@ -1,7 +1,7 @@
 **waiting_on**: {{ waiting_on }}
 {% if is_module and not is_new_module %}
 **module**: {{ module_match['name'] }}
-**supported_by**: {{ module_match['metadata']['supported_by'] }}
+**[supported_by](http://docs.ansible.com/ansible/devel/dev_guide/developing_modules_documenting.html#ansible-metadata-block)**: {{ module_match['metadata']['supported_by'] }}
 {% if module_match['metadata']['supported_by'] == 'core' %}
 **maintainers**: ansible core team
 {% else %}
@@ -16,17 +16,17 @@ component: {{ component }}
 {% endif %}
 {% endif %}
 {% if is_issue %}
-needs_info: {{ is_needs_info }}
+[needs_info](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
 {% else %}
 {% if change_requested %}
 changes_requested_by: {{ change_requested|join(' ') }}
 {% else %}
 changes_requested_by: null
 {% endif %}
-needs_info: {{ is_needs_info }}
-needs_revision: {{ is_needs_revision }}
-needs_rebase: {{ is_needs_rebase }}
-merge_commits: {{ merge_commits }}
+[needs_info](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
+[needs_revision](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_revision): {{ is_needs_revision }}
+[needs_rebase](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_rebase): {{ is_needs_rebase }}
+[merge_commits](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-merge_commit): {{ merge_commits }}
 mergeable_state: {{ mergeable_state }}
 shippable_status: {{ ci_state }}
 maintainer_shipits (module maintainers): {{ shipit_count_maintainer }}
