@@ -29,13 +29,18 @@ needs_rebase: {{ is_needs_rebase }}
 merge_commits: {{ merge_commits }}
 mergeable_state: {{ mergeable_state }}
 shippable_status: {{ ci_state }}
-maintainer_shipits: {{ shipit_count_maintainer }}
-community_shipits: {{ shipit_count_community }}
-ansible_shipits: {{ shipit_count_ansible }}
+maintainer_shipits (module maintainers): {{ shipit_count_maintainer }}
+community_shipits (namespace maintainers): {{ shipit_count_community }}
+ansible_shipits (core team members): {{ shipit_count_ansible }}
 {% if shipit_actors %}
-shipit_actors: {{ shipit_actors|join(' ') }}
+shipit_actors (maintainers or core team members): {{ shipit_actors|join(' ') }}
 {% else %}
-shipit_actors: {{ shipit_actors }}
+shipit_actors (maintainer or core team member): {{ shipit_actors }}
+{% endif %}
+{% if shipit_actors_other %}
+shipit_actors_other: {{ shipit_actors_other|join(' ') }}
+{% else %}
+shipit_actors_other: {{ shipit_actors_other }}
 {% endif %}
 {% endif %}
 
