@@ -54,6 +54,7 @@ from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import LabelWafflingError
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
+from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
@@ -1798,7 +1799,8 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(get_review_facts(iw, self.meta))
 
         # bot_status needed?
-        self.meta.update(self.needs_bot_status(iw))
+        #self.meta.update(self.needs_bot_status(iw))
+        self.meta.update(get_bot_status_facts(iw, self.module_indexer, core_team=self.ansible_core_team, bot_names=self.BOTNAMES))
 
         # who is this waiting on?
         self.meta.update(self.waiting_on(iw, self.meta))
@@ -2068,27 +2070,6 @@ class AnsibleTriage(DefaultTriager):
                         commands.remove(negative)
 
         return commands
-
-    def needs_bot_status(self, issuewrapper):
-        iw = issuewrapper
-        bs = False
-        for ev in iw.history.history:
-            if ev['event'] != 'commented':
-                continue
-            if 'bot_status' in ev['body']:
-                if ev['actor'] not in self.BOTNAMES:
-                    if ev['actor'] in self.ansible_core_team or \
-                            ev['actor'] == iw.submitter or \
-                            ev['actor'] in self.module_indexer.all_maintainers:
-                        bs = True
-                        continue
-            # <!--- boilerplate: bot_status --->
-            if bs:
-                if ev['actor'] in self.BOTNAMES:
-                    if 'boilerplate: bot_status' in ev['body']:
-                        bs = False
-                        continue
-        return {'needs_bot_status': bs}
 
     def waiting_on(self, issuewrapper, meta):
         iw = issuewrapper
