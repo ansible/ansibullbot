@@ -15,6 +15,8 @@ from ansibullbot.utils.moduletools import ModuleIndexer
 
 class FileIndexer(ModuleIndexer):
 
+    REPO = 'https://github.com/ansible/ansible'
+
     DEFAULT_COMPONENT_MATCH = {
         'supported_by': 'core',
         'filename': None,
@@ -25,13 +27,16 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, checkoutdir=None):
+    def __init__(self, checkoutdir=None, repo=None):
 
         if checkoutdir is None:
             self.checkoutdir = '~/.ansibullbot/cache/ansible.files.checkout'
         else:
             self.checkoutdir = checkoutdir
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
+
+        if repo:
+            self.REPO = 'https://github.com/{}'.format(repo)
 
         self.botmeta = {}
         self.CMAP = {}
@@ -43,11 +48,14 @@ class FileIndexer(ModuleIndexer):
 
         fp = '.github/BOTMETA.yml'
         rdata = self.get_file_content(fp)
-        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+        if rdata:
+            self.botmeta = BotMetadataParser.parse_yaml(rdata)
+        else:
+            self.botmeta = {}
 
         # reshape meta into old format
         self.CMAP = {}
-        for k,v in self.botmeta['files'].items():
+        for k,v in self.botmeta.get('files', {}).items():
             if not v:
                 continue
             if 'keywords' not in v:
@@ -359,7 +367,8 @@ class FileIndexer(ModuleIndexer):
         '''Read filemap and make re matchers'''
 
         self.FILEMAP = {}
-        for k,v in self.botmeta['files'].iteritems():
+        bfiles = self.botmeta.get('files', {})
+        for k,v in bfiles.items():
             self.FILEMAP[k] = {}
             reg = k
             if reg.endswith('/'):

@@ -39,6 +39,8 @@ class ModuleIndexer(object):
         'imports': []
     }
 
+    REPO = "http://github.com/ansible/ansible"
+
     def __init__(self, maintainers=None, gh_client=None):
 
         self.botmeta = {}
@@ -107,8 +109,8 @@ class ModuleIndexer(object):
             shutil.rmtree(self.checkoutdir)
 
         #cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
-        cmd = "git clone http://github.com/ansible/ansible %s" \
-            % self.checkoutdir
+        cmd = "git clone %s %s" \
+            % (self.REPO, self.checkoutdir)
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
 
