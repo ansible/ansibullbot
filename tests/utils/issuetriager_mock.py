@@ -82,7 +82,7 @@ class TriageIssuesMock(TriageIssues):
         self._ansible_members = []    #set by test
         self.ansible_members = []     #do not test
 
-    def get_ansible_members(self):
+    def get_members(self):
         return self._ansible_members
 
     def get_module_maintainers(self, expand=True):

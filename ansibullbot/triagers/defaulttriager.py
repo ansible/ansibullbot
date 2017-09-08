@@ -438,7 +438,7 @@ class DefaultTriager(object):
         return not self.is_pr(issue)
 
     @RateLimited
-    def get_ansible_members(self):
+    def get_members(self):
 
         ansible_members = []
         update = False
