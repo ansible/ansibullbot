@@ -291,7 +291,7 @@ class AnsibleTriage(DefaultTriager):
     @property
     def ansible_members(self):
         if not self._ansible_members:
-            self._ansible_members = self.get_ansible_members()
+            self._ansible_members = self.get_members()
         return [x for x in self._ansible_members]
 
     @property
