@@ -37,7 +37,7 @@ def extract_template_sections(body, header='#####'):
     return sections
 
 
-def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS=SECTIONS):
+def extract_template_data(body, issue_number=None, issue_class='issue', sections=SECTIONS):
 
     # this is the final result to return
     tdict = {}
@@ -49,7 +49,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', SECTIONS
 
     # make a map of locations where each section starts
     match_map = {}
-    for section in SECTIONS:
+    for section in sections:
         # http://www.tutorialspoint.com/python/string_find.htm
         # str.find(str, beg=0 end=len(string))
         match = upper_body.find(section)
