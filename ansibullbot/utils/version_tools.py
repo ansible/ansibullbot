@@ -351,9 +351,6 @@ class AnsibleVersionIndexer(object):
                         for line in lines:
                             print logprefix + line
 
-        if not aversion:
-            pass
-
         return aversion
 
     def ansible_version_by_commit(self, commithash, config=None):
