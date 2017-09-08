@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import ConfigParser
 import abc
-import glob
 import json
 import logging
 import os
@@ -398,33 +397,6 @@ class DefaultTriager(object):
         if self.verbose:
             print("Debug: " + msg)
 
-    def get_maintainers_by_match(self, match):
-        module_maintainers = []
-
-        maintainers = self._get_maintainers()
-        if match['name'] in maintainers:
-            module_maintainers = maintainers[match['name']]
-        elif match['repo_filename'] in maintainers:
-            module_maintainers = maintainers[match['repo_filename']]
-        elif (match['deprecated_filename']) in maintainers:
-            module_maintainers = maintainers[match['deprecated_filename']]
-        elif match['namespaced_module'] in maintainers:
-            module_maintainers = maintainers[match['namespaced_module']]
-        elif match['fulltopic'] in maintainers:
-            module_maintainers = maintainers[match['fulltopic']]
-        elif (match['topic'] + '/') in maintainers:
-            module_maintainers = maintainers[match['topic'] + '/']
-        else:
-            pass
-
-        # Fallback to using the module author(s)
-        if not module_maintainers and self.match:
-            if self.match['authors']:
-                module_maintainers = [x for x in self.match['authors']]
-
-        #import epdb; epdb.st()
-        return module_maintainers
-
     def get_module_maintainers(self, expand=True, usecache=True):
         """Returns the list of maintainers for the current module"""
         # expand=False ... ?
@@ -483,14 +455,6 @@ class DefaultTriager(object):
         #import epdb; epdb.st()
         return module_maintainers
 
-    def get_current_labels(self):
-        """Pull the list of labels on this Issue"""
-        if not self.current_labels:
-            labels = self.issue.instance.labels
-            for label in labels:
-                self.current_labels.append(label.name)
-        return self.current_labels
-
     def loop(self):
         '''Call the run method in a defined interval'''
         while True:
@@ -500,249 +464,12 @@ class DefaultTriager(object):
             logging.info('sleep %ss (%sm)' % (interval, interval / 60))
             time.sleep(interval)
 
+    @abc.abstractmethod
     def run(self):
         pass
 
-    def create_actions(self):
-        pass
-
-    def component_from_comments(self):
-        """Extracts a component name from special comments"""
-        # https://github.com/ansible/ansible-modules/core/issues/2618
-        # comments like: [module: packaging/os/zypper.py] ... ?
-        component = None
-        for idx, x in enumerate(self.issue.current_comments):
-            if '[' in x.body and \
-                    ']' in x.body and \
-                    ('module' in x.body or
-                     'component' in x.body or
-                     'plugin' in x.body):
-                if x.user.login in BOTLIST:
-                    component = x.body.split()[-1]
-                    component = component.replace('[', '')
-        return component
-
-    def has_maintainer_commented(self):
-        """Has the maintainer -ever- commented on the issue?"""
-        commented = False
-        if self.module_maintainers:
-
-            for comment in self.issue.current_comments:
-                # ignore comments from submitter
-                if comment.user.login == self.issue.get_submitter():
-                    continue
-
-                # "ansible" is special ...
-                if 'ansible' in self.module_maintainers \
-                        and comment.user.login in self.ansible_members:
-                    commented = True
-                elif comment.user.login in self.module_maintainers:
-                    commented = True
-
-        return commented
-
-    def is_maintainer_mentioned(self):
-        mentioned = False
-        if self.module_maintainers:
-            for comment in self.issue.current_comments:
-                # "ansible" is special ...
-                if 'ansible' in self.module_maintainers:
-                    for x in self.ansible_members:
-                        if ('@%s' % x) in comment.body:
-                            mentioned = True
-                            break
-                else:
-                    for x in self.module_maintainers:
-                        if ('@%s' % x) in comment.body:
-                            mentioned = True
-                            break
-        return mentioned
-
     def get_current_time(self):
-        #now = datetime.now()
-        now = datetime.utcnow()
-        #now = datetime.now(pytz.timezone('US/Pacific'))
-        #import epdb; epdb.st()
-        return now
-
-    def age_of_last_maintainer_comment(self):
-        """How long ago did the maintainer comment?"""
-        last_comment = None
-        if self.module_maintainers:
-            for idx,comment in enumerate(self.issue.current_comments):
-                # "ansible" is special ...
-                is_maintainer = False
-                if 'ansible' in self.module_maintainers \
-                        and comment.user.login in self.ansible_members:
-                    is_maintainer = True
-                elif comment.user.login in self.module_maintainers:
-                    is_maintainer = True
-
-                if is_maintainer:
-                    last_comment = comment
-                    break
-
-        if not last_comment:
-            return -1
-        else:
-            now = self.get_current_time()
-            diff = now - last_comment.created_at
-            age = diff.days
-            return age
-
-    def is_waiting_on_maintainer(self):
-        """Is the issue waiting on the maintainer to comment?"""
-        waiting = False
-        if self.module_maintainers:
-            if not self.issue.current_comments:
-                return True
-
-            creator_last_index = -1
-            maintainer_last_index = -1
-            for idx,comment in enumerate(self.issue.current_comments):
-                if comment.user.login == self.issue.get_submitter():
-                    if creator_last_index == -1 or idx < creator_last_index:
-                        creator_last_index = idx
-
-                # "ansible" is special ...
-                is_maintainer = False
-                if 'ansible' in self.module_maintainers \
-                        and comment.user.login in self.ansible_members:
-                    is_maintainer = True
-                elif comment.user.login in self.module_maintainers:
-                    is_maintainer = True
-
-                if is_maintainer and \
-                    (maintainer_last_index == -1 or
-                     idx < maintainer_last_index):
-                    maintainer_last_index = idx
-
-            if creator_last_index == -1 and maintainer_last_index == -1:
-                waiting = True
-            elif creator_last_index == -1 and maintainer_last_index > -1:
-                waiting = False
-            elif creator_last_index < maintainer_last_index:
-                waiting = True
-
-        return waiting
-
-    def keep_current_main_labels(self):
-        current_labels = self.issue.get_current_labels()
-        for current_label in current_labels:
-            if current_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
-                self.issue.add_desired_label(name=current_label)
-
-    def add_desired_labels_by_issue_type(self, comments=True):
-        """Adds labels by defined issue type"""
-        issue_type = self.template_data.get('issue type', False)
-
-        if issue_type is False:
-            self.issue.add_desired_label('needs_info')
-            return
-
-        if not issue_type.lower() in self.VALID_ISSUE_TYPES:
-
-            # special handling for PRs
-            if self.issue.instance.pull_request:
-
-                mel = [x for x in self.issue.current_labels
-                       if x in self.MUTUALLY_EXCLUSIVE_LABELS]
-
-                if not mel:
-                    # if only adding new files, assume it is a feature
-                    if self.patch_contains_only_new_files():
-                        issue_type = 'feature pull request'
-                    else:
-                        if not isinstance(self.debug, bool):
-                            msg = '"%s"' % issue_type
-                            msg += ' was not a valid issue type'
-                            msg += ', adding "needs_info"'
-                            self.debug(msg)
-                        self.issue.add_desired_label('needs_info')
-                        return
-            else:
-                if not isinstance(self.debug, bool):
-                    msg = '"%s"' % issue_type
-                    msg += ' was not a valid issue type'
-                    msg += ', adding "needs_info"'
-                    self.debug(msg)
-                self.issue.add_desired_label('needs_info')
-                return
-
-        desired_label = issue_type.replace(' ', '_')
-        desired_label = desired_label.lower()
-        desired_label = desired_label.replace('documentation', 'docs')
-
-        # FIXME - shouldn't have to do this
-        if desired_label == 'test_pull_request':
-            desired_label = 'test_pull_requests'
-        #import epdb; epdb.st()
-
-        # is there a mutually exclusive label already?
-        if desired_label in self.issue.MUTUALLY_EXCLUSIVE_LABELS:
-            mel = [x for x in self.issue.MUTUALLY_EXCLUSIVE_LABELS
-                   if x in self.issue.current_labels]
-            if len(mel) > 0:
-                return
-
-        if desired_label not in self.issue.get_current_labels():
-            self.issue.add_desired_label(name=desired_label)
-        if len(self.issue.current_comments) == 0 and comments:
-            # only set this if no other comments
-            self.issue.add_desired_comment(boilerplate='issue_new')
-
-    def patch_contains_only_new_files(self):
-        '''Does the PR edit any existing files?'''
-        oldfiles = False
-        for x in self.issue.files:
-            if x.filename.encode('ascii', 'ignore') in self.file_indexer.files:
-                if not isinstance(self.debug, bool):
-                    msg = 'old file match on'
-                    msg += ' %s' % x.filename.encode('ascii', 'ignore')
-                    self.debug(msg)
-                oldfiles = True
-                break
-        return not oldfiles
-
-    def add_desired_labels_by_ansible_version(self):
-        if 'ansible version' not in self.template_data:
-            if not isinstance(self.debug, bool):
-                self.debug(msg="no ansible version section")
-            self.issue.add_desired_label(name="needs_info")
-            #self.issue.add_desired_comment(
-            #    boilerplate="issue_missing_data"
-            #)
-            return
-        if not self.template_data['ansible version']:
-            if not isinstance(self.debug, bool):
-                self.debug(msg="no ansible version defined")
-            self.issue.add_desired_label(name="needs_info")
-            #self.issue.add_desired_comment(
-            #    boilerplate="issue_missing_data"
-            #)
-            return
-
-    def add_desired_labels_by_namespace(self):
-        """Adds labels regarding module namespaces"""
-
-        SKIPTOPICS = ['network/basics/']
-
-        if not self.match:
-            return False
-
-        '''
-        if 'component name' in self.template_data and self.match:
-            if self.match['repository'] != self.github_repo:
-                self.issue.add_desired_comment(boilerplate='issue_wrong_repo')
-        '''
-
-        for key in ['topic', 'subtopic']:
-            # ignore networking/basics
-            if self.match[key] and not self.match['fulltopic'] in SKIPTOPICS:
-                thislabel = self.issue.TOPIC_MAP.\
-                                get(self.match[key], self.match[key])
-                if thislabel in self.valid_labels:
-                    self.issue.add_desired_label(thislabel)
+        return datetime.utcnow()
 
     def render_boilerplate(self, tvars, boilerplate=None):
         template = environment.get_template('%s.j2' % boilerplate)
@@ -786,119 +513,8 @@ class DefaultTriager(object):
                                   missing_sections=missing_sections)
         return comment
 
-    def process_comments(self):
-        """ Processes ISSUE comments for matching criteria to add labels"""
-        if self.github_user not in self.BOTLIST:
-            self.BOTLIST.append(self.github_user)
-        module_maintainers = self.get_module_maintainers()
-        comments = self.issue.get_comments()
-        today = datetime.today()
-
-        if not isinstance(self.debug, bool):
-            self.debug(msg="--- START Processing Comments:")
-
-        for idc,comment in enumerate(comments):
-
-            if comment.user.login in self.BOTLIST:
-                if not isinstance(self.debug, bool):
-                    self.debug(msg="%s is in botlist: " % comment.user.login)
-                time_delta = today - comment.created_at
-                comment_days_old = time_delta.days
-
-                if not isinstance(self.debug, bool):
-                    msg = "Days since last bot comment: %s" % comment_days_old
-                    self.debug(msg=msg)
-                if comment_days_old > 14:
-                    labels = self.issue.desired_labels
-
-                    if 'pending' not in comment.body:
-
-                        if self.issue.is_labeled_for_interaction():
-                            if not isinstance(self.debug, bool):
-                                self.debug(msg="submitter_first_warning")
-                            self.issue.add_desired_comment(
-                                boilerplate="submitter_first_warning"
-                            )
-                            break
-
-                        if "maintainer_review" not in labels:
-                            if not isinstance(self.debug, bool):
-                                self.debug(msg="maintainer_first_warning")
-                            self.issue.add_desired_comment(
-                                boilerplate="maintainer_first_warning"
-                            )
-                            break
-
-                    # pending in comment.body
-                    else:
-                        if self.issue.is_labeled_for_interaction():
-                            if not isinstance(self.debug, bool):
-                                self.debug(msg="submitter_second_warning")
-                            self.issue.add_desired_comment(
-                                boilerplate="submitter_second_warning"
-                            )
-                            break
-
-                        if "maintainer_review" in labels:
-                            if not isinstance(self.debug, bool):
-                                self.debug(msg="maintainer_second_warning")
-                            self.issue.add_desired_comment(
-                                boilerplate="maintainer_second_warning"
-                            )
-                            break
-
-                if not isinstance(self.debug, bool):
-                    msg = "STATUS: no useful state change since last pass"
-                    msg += "( %s )" % comment.user.login
-                    self.debug(msg=msg)
-                break
-
-            if comment.user.login in module_maintainers \
-                or comment.user.login.lower() in module_maintainers\
-                or ('ansible' in module_maintainers and
-                    comment.user.login in self.ansible_members):
-
-                if not isinstance(self.debug, bool):
-                    msg = "%s" % comment.user.login
-                    msg = " is module maintainer commented on"
-                    msg += "%s." % comment.created_at
-                    self.debug(msg=msg)
-                if 'needs_info' in comment.body:
-                    if not isinstance(self.debug, bool):
-                        self.debug(msg="...said needs_info!")
-                    self.issue.add_desired_label(name="needs_info")
-                elif "close_me" in comment.body:
-                    if not isinstance(self.debug, bool):
-                        self.debug(msg="...said close_me!")
-                    self.issue.add_desired_label(name="pending_action_close_me")
-                    break
-
-            if comment.user.login == self.issue.get_submitter():
-                if not isinstance(self.debug, bool):
-                    msg = "submitter %s" % comment.user.login
-                    msg += ", commented on %s." % comment.created_at
-                    self.debug(msg=msg)
-
-            if comment.user.login not in self.BOTLIST and \
-                    comment.user.login in self.ansible_members:
-                if not isinstance(self.debug, bool):
-                    self.debug(
-                        msg="%s is a ansible member" % comment.user.login
-                    )
-
-        if not isinstance(self.debug, bool):
-            self.debug(msg="--- END Processing Comments")
-
-    def issue_type_to_label(self, issue_type):
-        if issue_type:
-            issue_type = issue_type.lower()
-            issue_type = issue_type.replace(' ', '_')
-            issue_type = issue_type.replace('documentation', 'docs')
-        return issue_type
-
     def check_safe_match(self):
         """ Turn force on or off depending on match characteristics """
-
         safe_match = False
 
         if self.action_count() == 0:
@@ -1103,82 +719,6 @@ class DefaultTriager(object):
                         'no shippable runid for {}'.format(self.issue.number)
                     )
 
-    def smart_match_module(self):
-        '''Fuzzy matching for modules'''
-
-        if hasattr(self, 'meta'):
-            self.meta['smart_match_module_called'] = True
-
-        match = None
-        known_modules = []
-
-        for k,v in self.module_indexer.modules.iteritems():
-            known_modules.append(v['name'])
-
-        title = self.issue.instance.title.lower()
-        title = title.replace(':', '')
-        title_matches = [x for x in known_modules if x + ' module' in title]
-        if not title_matches:
-            title_matches = [x for x in known_modules
-                             if title.startswith(x + ' ')]
-            if not title_matches:
-                title_matches = [x for x in known_modules
-                                 if ' ' + x + ' ' in title]
-
-        cmatches = None
-        if self.template_data.get('component name'):
-            component = self.template_data.get('component name')
-            cmatches = [x for x in known_modules if x in component]
-            cmatches = [x for x in cmatches if not '_' + x in component]
-
-            # use title ... ?
-            if title_matches:
-                cmatches = [x for x in cmatches if x in title_matches]
-
-            if cmatches:
-                if len(cmatches) >= 1:
-                    match = cmatches[0]
-                if not match:
-                    if 'docs.ansible.com' in component:
-                        pass
-                    else:
-                        pass
-
-        if not match:
-            if len(title_matches) == 1:
-                match = title_matches[0]
-            else:
-                print("module - title matches: %s" % title_matches)
-                print("module - component matches: %s" % cmatches)
-
-        return match
-
-    def cache_issue(self, issue):
-        iid = issue.instance.number
-        fpath = os.path.join(self.cachedir, str(iid))
-        if not os.path.isdir(fpath):
-            os.makedirs(fpath)
-        fpath = os.path.join(fpath, 'iwrapper.pickle')
-        with open(fpath, 'wb') as f:
-            pickle.dump(issue, f)
-        #import epdb; epdb.st()
-
-    def load_cached_issues(self, state='open'):
-        issues = []
-        idirs = glob.glob('%s/*' % self.cachedir)
-        idirs = [x for x in idirs if not x.endswith('.pickle')]
-        for idir in idirs:
-            wfile = os.path.join(idir, 'iwrapper.pickle')
-            if os.path.isfile(wfile):
-                with open(wfile, 'rb') as f:
-                    wrapper = pickle.load(f)
-                    issues.append(wrapper.instance)
-        return issues
-
-    def wait_for_rate_limit(self):
-        gh = self._connect()
-        GithubWrapper.wait_for_rate_limit(githubobj=gh)
-
     @RateLimited
     def is_pr_merged(self, number, repo=None):
         '''Check if a PR# has been merged or not'''
@@ -1194,27 +734,6 @@ class DefaultTriager(object):
         if pr:
             merged = pr.merged
         return merged
-
-    def print_comment_list(self):
-        """Print comment creators and the commands they used"""
-        for x in self.issue.current_comments:
-            command = None
-            if x.user.login != 'ansibot':
-                command = [y for y in self.VALID_COMMANDS
-                           if y in x.body and not '!' + y in x.body]
-                command = ', '.join(command)
-            else:
-                # What template did ansibot use?
-                try:
-                    command = x.body.split('\n')[-1].split()[-2]
-                except:
-                    pass
-
-            if command:
-                print("\t%s %s (%s)" % (x.created_at.isoformat(),
-                      x.user.login, command))
-            else:
-                print("\t%s %s" % (x.created_at.isoformat(), x.user.login))
 
     def wrap_issue(self, github, repo, issue, header=None):
         iw = IssueWrapper(
