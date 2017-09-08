@@ -2182,19 +2182,9 @@ class AnsibleTriage(DefaultTriager):
 
         return aversion
 
-    def get_version_major_minor(self, version=None):
-        if not version:
-            # old workflow
-            if not hasattr(self, 'ansible_version'):
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.debug('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('no ansible_version')
-            return get_major_minor(self.ansible_version)
-        else:
-            # v3 workflow
-            return get_major_minor(version)
+    def get_version_major_minor(self, version):
+        assert version is not None
+        return get_major_minor(version)
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
