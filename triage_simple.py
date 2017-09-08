@@ -18,8 +18,7 @@
 from __future__ import print_function
 
 import argparse
-
-from lib.triagers.simpletriager import SimpleTriager
+from ansibullbot.triagers.simpletriager import SimpleTriager
 
 
 def main():
@@ -44,7 +43,6 @@ def main():
     parser.add_argument("--repo", "-r", type=str, required=True,
                         help="Github repo to triage")
 
-
     parser.add_argument("--debug", "-d", action="store_true",
                         help="Debug output")
     parser.add_argument("--verbose", "-v", action="store_true",
@@ -56,7 +54,6 @@ def main():
                         help="Do not ask questions")
     parser.add_argument("--always_pause", "-p", action="store_true",
                         help="Always pause between prs|issues")
-
 
     parser.add_argument(
         "--number", "--pr", "--id", type=str,
