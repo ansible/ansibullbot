@@ -545,19 +545,6 @@ class DefaultTriager(object):
             merged = pr.merged
         return merged
 
-    def wrap_issue(self, github, repo, issue, header=None):
-        iw = IssueWrapper(
-            github=github,
-            repo=repo,
-            issue=issue,
-            cachedir=self.cachedir
-        )
-        if header:
-            iw.TEMPLATE_HEADER=header
-        if self.file_indexer:
-            iw.file_indexer = self.file_indexer
-        return iw
-
     def dump_action_dict(self, issue, actions):
         '''Serialize the action dict to disk for quick(er) debugging'''
         fn = os.path.join('/tmp', 'actions', issue.repo_full_name, str(issue.number) + '.json')
