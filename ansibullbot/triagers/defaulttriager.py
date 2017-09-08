@@ -311,7 +311,7 @@ class DefaultTriager(object):
         self.ansible_version = self.get_ansible_version()
         if not isinstance(self.debug, bool):
             self.debug('version: %s' % self.ansible_version)
-        self.ansible_label_version = self.get_ansible_version_major_minor()
+        self.ansible_label_version = self.get_version_major_minor()
         if not isinstance(self.debug, bool):
             self.debug('lversion: %s' % self.ansible_label_version)
 
@@ -632,7 +632,7 @@ class DefaultTriager(object):
 
         return aversion
 
-    def get_ansible_version_major_minor(self, version=None):
+    def get_version_major_minor(self, version=None):
         if not version:
             # old workflow
             if not hasattr(self, 'ansible_version'):

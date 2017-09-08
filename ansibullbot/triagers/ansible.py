@@ -1731,7 +1731,7 @@ class AnsibleTriage(DefaultTriager):
                 self.version_indexer.version_by_date(iw.created_at)
 
         self.meta['ansible_label_version'] = \
-            self.get_ansible_version_major_minor(
+            self.get_version_major_minor(
                 version=self.meta['ansible_version']
             )
         logging.info('ansible version: %s' % self.meta['ansible_version'])
