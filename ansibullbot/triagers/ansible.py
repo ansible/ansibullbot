@@ -1382,14 +1382,6 @@ class AnsibleTriage(DefaultTriager):
             self.force = False
         return safe
 
-    def empty_actions(self):
-        empty = True
-        for k,v in self.actions.iteritems():
-            if v:
-                empty = False
-                break
-        return empty
-
     def move_issue(self, issue):
         '''Move an issue to ansible/ansible'''
         # this should only happen >30 days -after- the repomerge
