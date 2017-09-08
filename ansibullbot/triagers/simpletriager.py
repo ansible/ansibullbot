@@ -27,21 +27,33 @@
 
 import copy
 import logging
+import os
 
 from pprint import pprint
 from ansibullbot.triagers.defaulttriager import DefaultTriager
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.utils.file_tools import FileIndexer
+#from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from github.GithubException import UnknownObjectException
 
 
 class SimpleTriager(DefaultTriager):
 
     def run(self):
 
+        # create the fileindexer
+        fi_cache = '/tmp/ansibullbot/cache/{}.files.checkout'.format(self.repopath)
+        fi_cache = os.path.expanduser(fi_cache)
+        self.file_indexer = FileIndexer(checkoutdir=fi_cache, repo=self.repopath)
+        self.file_indexer.update()
+
         # make a repo object for the github api
         repo = self.ghw.get_repo(self.repopath)
 
         # map for issue type to label
-        label_map = repo.get_label_map()
+        try:
+            label_map = repo.get_label_map()
+        except UnknownObjectException:
+            label_map = {}
 
         # collect issues
         if not self.args.number:

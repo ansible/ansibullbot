@@ -440,7 +440,6 @@ class DefaultWrapper(object):
             labels.append(label.name)
         return labels
 
-    @RateLimited
     def get_template_data(self):
         """Extract templated data from an issue body"""
 
@@ -449,12 +448,17 @@ class DefaultWrapper(object):
         else:
             tfile = '.github/PULL_REQUEST_TEMPLATE.md'
 
+
         # use the fileindexer whenever possible to conserve ratelimits
         if self.file_indexer:
             tf_content = self.file_indexer.get_file_content(tfile)
         else:
-            tf = self.repo.get_file_contents(tfile)
-            tf_content = tf.decoded_content
+            try:
+                tf = self.repo.get_file_contents(tfile)
+                tf_content = tf.decoded_content
+            except Exception as e:
+                logging.warning('repo does not have {}'.format(tfile))
+                tf_content = ''
 
         tf_sections = extract_template_sections(tf_content)
 
