@@ -289,13 +289,20 @@ class DefaultTriager(object):
         return not self.is_pr(issue)
 
     @RateLimited
-    def get_members(self):
+    def get_members(self, organization):
+        """Get members of an organization
 
-        ansible_members = []
+        Args:
+            organization: name of the organization
+
+        Returns:
+            A list of GitHub login belonging to the organization
+        """
+        members = []
         update = False
         write_cache = False
         now = self.get_current_time()
-        org = self._connect().get_organization("ansible")
+        gh_org = self._connect().get_organization(organization)
 
         cachedir = self.cachedir
         if cachedir.endswith('/issues'):
@@ -308,48 +315,49 @@ class DefaultTriager(object):
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
                 mdata = pickle.load(f)
-            ansible_members = mdata[1]
-            if mdata[0] < org.updated_at:
+            members = mdata[1]
+            if mdata[0] < gh_org.updated_at:
                 update = True
         else:
             update = True
             write_cache = True
 
         if update:
-            members = org.get_members()
-            ansible_members = [x.login for x in members]
+            members = gh_org.get_members()
+            members = [x.login for x in members]
 
         # save the data
         if write_cache:
-            mdata = [now, ansible_members]
+            mdata = [now, members]
             with open(cachefile, 'wb') as f:
                 pickle.dump(mdata, f)
 
-        #import epdb; epdb.st()
-        return ansible_members
+        return members
 
     @RateLimited
-    def get_core_team(self):
+    def get_core_team(self, organization, teamlist):
+        """Get members of the core team
 
-        teamlist = [
-            'ansible-commit',
-            'ansible-community',
-            'ansible-commit-external'
-        ]
+        Args:
+            organization: name of the teams' organization
+            teamlist: list of teams that compose the project core team
+
+        Returns:
+            A list of GitHub login belonging to teamlist
+        """
         teams = []
-        ansible_members = []
+        members = []
 
         conn = self._connect()
-        org = conn.get_organization('ansible')
-        for x in org.get_teams():
+        gh_org = conn.get_organization(organization)
+        for x in gh_org.get_teams():
             if x.name in teamlist:
                 teams.append(x)
         for x in teams:
             for y in x.get_members():
-                ansible_members.append(y.login)
+                members.append(y.login)
 
-        ansible_members = sorted(set(ansible_members))
-        return ansible_members
+        return sorted(set(members))
 
     #@RateLimited
     def get_valid_labels(self, repo=None):
