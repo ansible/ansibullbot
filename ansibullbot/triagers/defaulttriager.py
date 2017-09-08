@@ -18,6 +18,7 @@
 from __future__ import print_function
 
 import ConfigParser
+import abc
 import glob
 import json
 import logging
@@ -274,11 +275,9 @@ class DefaultTriager(object):
                 password=self.github_pass
             )
 
+    @abc.abstractmethod
     def _get_repo_path(self):
-        if self.github_repo in ['core', 'extras']:
-            return "ansible/ansible-modules-%s" % self.github_repo
-        else:
-            return "ansible/%s" % self.github_repo
+        pass
 
     def is_pr(self, issue):
         if '/pull/' in issue.html_url:
