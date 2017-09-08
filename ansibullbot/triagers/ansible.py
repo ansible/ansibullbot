@@ -36,7 +36,7 @@ import pytz
 import ansibullbot.constants as C
 
 from pprint import pprint
-from ansibullbot.triagers.defaulttriager import DefaultTriager
+from ansibullbot.triagers.defaulttriager import DefaultTriager, environment
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
@@ -82,6 +82,7 @@ REPOS = [
     'ansible/ansible-modules-core',
     'ansible/ansible-modules-extras'
 ]
+
 MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
@@ -2194,3 +2195,8 @@ class AnsibleTriage(DefaultTriager):
         else:
             # v3 workflow
             return get_major_minor(version)
+
+    def render_comment(self, boilerplate=None):
+        """Renders templates into comments using the boilerplate as filename"""
+        template = environment.get_template('%s.j2' % boilerplate)
+        return template.render()
