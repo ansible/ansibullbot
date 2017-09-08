@@ -400,50 +400,6 @@ class DefaultTriager(object):
         if self.verbose:
             print("Debug: " + msg)
 
-    def get_ansible_version(self):
-        aversion = None
-
-        rawdata = self.template_data.get('ansible version', '')
-        if rawdata:
-            aversion = self.version_indexer.strip_ansible_version(rawdata)
-
-        if not aversion or aversion == 'devel':
-            aversion = \
-                self.version_indexer.version_by_date(
-                    self.issue.instance.created_at
-                )
-
-        if aversion:
-            if aversion.endswith('.'):
-                aversion += '0'
-
-        # re-run for versions ending with .x
-        if aversion:
-            if aversion.endswith('.x'):
-                aversion = self.version_indexer.strip_ansible_version(aversion)
-                #import epdb; epdb.st()
-
-        if self.version_indexer.is_valid_version(aversion) and \
-                aversion is not None:
-            return aversion
-        else:
-
-            # try to go through the submitter's comments and look for the
-            # first one that specifies a valid version
-            cversion = None
-            for comment in self.issue.current_comments:
-                if comment.user.login != self.issue.instance.user.login:
-                    continue
-                xver = self.version_indexer.strip_ansible_version(comment.body)
-                if self.version_indexer.is_valid_version(xver):
-                    cversion = xver
-                    break
-
-            # use the comment version
-            aversion = cversion
-
-        return aversion
-
     def get_version_major_minor(self, version=None):
         if not version:
             # old workflow
