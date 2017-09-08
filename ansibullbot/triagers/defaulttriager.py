@@ -47,12 +47,6 @@ environment = Environment(loader=loader, trim_blocks=True)
 # A dict of alias labels. It is used for coupling a template (comment) with a
 # label.
 
-MAINTAINERS_FILES = {
-    'core': "MAINTAINERS-CORE.txt",
-    'extras': "MAINTAINERS-EXTRAS.txt",
-}
-
-
 # Static labels, manually added
 IGNORE_LABELS = [
     "feature_pull_request",
@@ -376,84 +370,10 @@ class DefaultTriager(object):
 
         return vlabels
 
-    def _get_maintainers(self, usecache=True):
-        """Reads all known maintainers from files and their owner namespace"""
-        if not self.maintainers or not usecache:
-            for repo in ['core', 'extras']:
-                f = open(MAINTAINERS_FILES[repo])
-                for line in f:
-                    owner_space = (line.split(': ')[0]).strip()
-                    maintainers_string = (line.split(': ')[-1]).strip()
-                    self.maintainers[owner_space] = \
-                        maintainers_string.split(' ')
-                f.close()
-        # meta is special
-        self.maintainers['meta'] = ['ansible']
-
-        return self.maintainers
-
     def debug(self, msg=""):
         """Prints debug message if verbosity is given"""
         if self.verbose:
             print("Debug: " + msg)
-
-    def get_module_maintainers(self, expand=True, usecache=True):
-        """Returns the list of maintainers for the current module"""
-        # expand=False ... ?
-
-        if self.module_maintainers and usecache:
-            return self.module_maintainers
-
-        module_maintainers = []
-
-        module = self.module
-        if not module:
-            return module_maintainers
-        if not self.module_indexer.is_valid(module):
-            return module_maintainers
-
-        if self.match:
-            mdata = self.match
-        else:
-            mdata = self.module_indexer.find_match(module)
-
-        if mdata['repository'] != self.github_repo:
-            # this was detected and handled in the process loop
-            pass
-
-        # get cached or non-cached maintainers list
-        if not expand:
-            maintainers = self._get_maintainers(usecache=False)
-        else:
-            maintainers = self._get_maintainers()
-
-        if mdata['name'] in maintainers:
-            module_maintainers = maintainers[mdata['name']]
-        elif mdata['repo_filename'] in maintainers:
-            module_maintainers = maintainers[mdata['repo_filename']]
-        elif (mdata['deprecated_filename']) in maintainers:
-            module_maintainers = maintainers[mdata['deprecated_filename']]
-        elif mdata['namespaced_module'] in maintainers:
-            module_maintainers = maintainers[mdata['namespaced_module']]
-        elif mdata['fulltopic'] in maintainers:
-            module_maintainers = maintainers[mdata['fulltopic']]
-        elif (mdata['topic'] + '/') in maintainers:
-            module_maintainers = maintainers[mdata['topic'] + '/']
-        else:
-            pass
-
-        # Fallback to using the module author(s)
-        if not module_maintainers and self.match:
-            if self.match['authors']:
-                module_maintainers = [x for x in self.match['authors']]
-
-        # need to set the no maintainer template or assume ansible?
-        if not module_maintainers and self.module and self.match:
-            #import epdb; epdb.st()
-            pass
-
-        #import epdb; epdb.st()
-        return module_maintainers
 
     def loop(self):
         '''Call the run method in a defined interval'''
@@ -474,43 +394,6 @@ class DefaultTriager(object):
     def render_boilerplate(self, tvars, boilerplate=None):
         template = environment.get_template('%s.j2' % boilerplate)
         comment = template.render(**tvars)
-        return comment
-
-    def render_comment(self, boilerplate=None):
-        """Renders templates into comments using the boilerplate as filename"""
-        maintainers = self.get_module_maintainers(expand=False)
-
-        if not maintainers:
-            # FIXME - why?
-            maintainers = ['NO_MAINTAINER_FOUND']
-
-        submitter = self.issue.get_submitter()
-        missing_sections = [x for x in self.issue.REQUIRED_SECTIONS
-                            if x not in self.template_data or
-                            not self.template_data.get(x)]
-
-        if not self.match and missing_sections:
-            # be lenient on component name for ansible/ansible
-            if self.github_repo == 'ansible' and \
-                    'component name' in missing_sections:
-                missing_sections.remove('component name')
-            #if missing_sections:
-            #    import epdb; epdb.st()
-
-        issue_type = self.template_data.get('issue type', None)
-        if issue_type:
-            issue_type = issue_type.lower()
-
-        correct_repo = self.match.get('repository', None)
-
-        template = environment.get_template('%s.j2' % boilerplate)
-        component_name = self.template_data.get('component name', 'NULL'),
-        comment = template.render(maintainers=maintainers,
-                                  submitter=submitter,
-                                  issue_type=issue_type,
-                                  correct_repo=correct_repo,
-                                  component_name=component_name,
-                                  missing_sections=missing_sections)
         return comment
 
     def check_safe_match(self):
