@@ -32,7 +32,7 @@ import os
 from pprint import pprint
 from ansibullbot.triagers.defaulttriager import DefaultTriager, DefaultActions
 from ansibullbot.utils.file_tools import FileIndexer
-#from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from github.GithubException import UnknownObjectException
 
 
@@ -69,7 +69,7 @@ class SimpleTriager(DefaultTriager):
             actions = DefaultActions()
 
             # wrap the issue for extra magic
-            iw = self.wrap_issue(self.ghw, repo, issue)
+            iw = IssueWrapper(github=self.ghw, repo=repo, issue=issue, cachedir=self.cachedir, file_indexer=self.file_indexer)
 
             # what did the submitter provide in the body?
             td = iw.template_data
