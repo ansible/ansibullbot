@@ -288,6 +288,12 @@ class AnsibleTriage(DefaultTriager):
             else:
                 self.args.start_at = resume['number'] + 1
 
+    def _get_repo_path(self):
+        if self.github_repo in ['core', 'extras']:
+            return "ansible/ansible-modules-%s" % self.github_repo
+        else:
+            return "ansible/%s" % self.github_repo
+
     @property
     def ansible_members(self):
         if not self._ansible_members:
