@@ -198,11 +198,8 @@ class AnsibleTriage(DefaultTriager):
         self.dry_run = False
         self.force = False
 
-        self.gh_pass = C.DEFAULT_GITHUB_PASSWORD
         self.github_pass = C.DEFAULT_GITHUB_PASSWORD
-        self.gh_token = C.DEFAULT_GITHUB_TOKEN
         self.github_token = C.DEFAULT_GITHUB_TOKEN
-        self.gh_user = C.DEFAULT_GITHUB_USERNAME
         self.github_user = C.DEFAULT_GITHUB_USERNAME
 
         self.logfile = None
@@ -240,10 +237,7 @@ class AnsibleTriage(DefaultTriager):
         for x in attribs:
             try:
                 val = getattr(self.args, x)
-                if x.startswith('gh_'):
-                    setattr(self, x.replace('gh_', 'github_'), val)
-                else:
-                    setattr(self, x, val)
+                setattr(self, x, val)
             except AttributeError:
                 pass
 
