@@ -297,13 +297,18 @@ class AnsibleTriage(DefaultTriager):
     @property
     def ansible_members(self):
         if not self._ansible_members:
-            self._ansible_members = self.get_members()
+            self._ansible_members = self.get_members('ansible')
         return [x for x in self._ansible_members]
 
     @property
     def ansible_core_team(self):
         if not self._ansible_core_team:
-            self._ansible_core_team = self.get_core_team()
+            teams = [
+                'ansible-commit',
+                'ansible-community',
+                'ansible-commit-external'
+            ]
+            self._ansible_core_team = self.get_core_team('ansible', teams)
         return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
 
     def get_rate_limit(self):
