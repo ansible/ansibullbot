@@ -631,7 +631,7 @@ class AnsibleTriage(DefaultTriager):
         dmeta['template_data'] = issuewrapper.template_data
         dmeta['actions'] = self.actions.copy()
         dmeta['labels'] = issuewrapper.labels
-        dmeta['assigees'] = issuewrapper.assignees
+        dmeta['assignees'] = issuewrapper.assignees
         if issuewrapper.history:
             dmeta['history'] = issuewrapper.history.history
             for idx,x in enumerate(dmeta['history']):
