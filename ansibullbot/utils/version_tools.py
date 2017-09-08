@@ -442,7 +442,7 @@ class AnsibleVersionIndexer(object):
 
         return aversion
 
-    def ansible_version_by_date(self, dateobj, devel=False):
+    def version_by_date(self, dateobj, devel=False):
 
         if not self.DATEVERSIONS:
             self.DATEVERSIONS = []

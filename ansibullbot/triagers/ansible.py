@@ -1722,13 +1722,13 @@ class AnsibleTriage(DefaultTriager):
         else:
             # use the submit date's current version
             self.meta['ansible_version'] = \
-                self.version_indexer.ansible_version_by_date(iw.created_at)
+                self.version_indexer.version_by_date(iw.created_at)
 
         # https://github.com/ansible/ansible/issues/21207
         if not self.meta['ansible_version']:
             # fallback to version by date
             self.meta['ansible_version'] = \
-                self.version_indexer.ansible_version_by_date(iw.created_at)
+                self.version_indexer.version_by_date(iw.created_at)
 
         self.meta['ansible_label_version'] = \
             self.get_ansible_version_major_minor(

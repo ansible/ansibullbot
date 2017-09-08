@@ -553,7 +553,7 @@ class DefaultTriager(object):
 
         if not aversion or aversion == 'devel':
             aversion = \
-                self.version_indexer.ansible_version_by_date(
+                self.version_indexer.version_by_date(
                     self.issue.instance.created_at
                 )
 
@@ -597,7 +597,7 @@ class DefaultTriager(object):
             aversion = self.version_indexer.strip_ansible_version(rawdata)
 
         if not aversion or aversion == 'devel':
-            aversion = self.version_indexer.ansible_version_by_date(
+            aversion = self.version_indexer.version_by_date(
                 self.issue.instance.created_at
             )
 
