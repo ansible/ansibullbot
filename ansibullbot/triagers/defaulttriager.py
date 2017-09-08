@@ -335,29 +335,26 @@ class DefaultTriager(object):
         return members
 
     @RateLimited
-    def get_core_team(self, organization, teamlist):
+    def get_core_team(self, organization, teams):
         """Get members of the core team
 
         Args:
             organization: name of the teams' organization
-            teamlist: list of teams that compose the project core team
+            teams: list of teams that compose the project core team
 
         Returns:
-            A list of GitHub login belonging to teamlist
+            A list of GitHub login belonging to teams
         """
-        teams = []
-        members = []
+        members = set()
 
         conn = self._connect()
         gh_org = conn.get_organization(organization)
-        for x in gh_org.get_teams():
-            if x.name in teamlist:
-                teams.append(x)
-        for x in teams:
-            for y in x.get_members():
-                members.append(y.login)
+        for team in gh_org.get_teams():
+            if team.name in teams:
+                for member in team.get_members():
+                    members.add(member.login)
 
-        return sorted(set(members))
+        return sorted(members)
 
     #@RateLimited
     def get_valid_labels(self, repo=None):
