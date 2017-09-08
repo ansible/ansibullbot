@@ -478,7 +478,7 @@ class DefaultTriager(object):
         return ansible_members
 
     @RateLimited
-    def get_ansible_core_team(self):
+    def get_core_team(self):
 
         teamlist = [
             'ansible-commit',
