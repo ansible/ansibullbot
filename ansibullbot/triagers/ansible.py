@@ -27,6 +27,7 @@
 
 import copy
 import datetime
+from distutils.version import LooseVersion
 import json
 import logging
 import os
@@ -93,6 +94,12 @@ ERROR_CODES = {
     'labeled': 5,
     'review': 6
 }
+
+def get_major_minor(vstring):
+    '''Return an X.Y version'''
+    lver = LooseVersion(vstring)
+    rval = '.'.join([str(x) for x in lver.version[0:2]])
+    return rval
 
 
 class AnsibleTriage(DefaultTriager):
@@ -2173,3 +2180,17 @@ class AnsibleTriage(DefaultTriager):
             aversion = cversion
 
         return aversion
+
+    def get_version_major_minor(self, version=None):
+        if not version:
+            # old workflow
+            if not hasattr(self, 'ansible_version'):
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.debug('breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception('no ansible_version')
+            return get_major_minor(self.ansible_version)
+        else:
+            # v3 workflow
+            return get_major_minor(version)

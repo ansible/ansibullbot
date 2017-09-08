@@ -38,8 +38,6 @@ from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.utils.descriptionfixer import DescriptionFixer
 
-import ansibullbot.constants as C
-
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath[::-1].index('ansibullbot')
 libindex = (len(basepath) - 1) - libindex
@@ -399,20 +397,6 @@ class DefaultTriager(object):
         """Prints debug message if verbosity is given"""
         if self.verbose:
             print("Debug: " + msg)
-
-    def get_version_major_minor(self, version=None):
-        if not version:
-            # old workflow
-            if not hasattr(self, 'ansible_version'):
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.debug('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('no ansible_version')
-            return self.version_indexer.get_major_minor(self.ansible_version)
-        else:
-            # v3 workflow
-            return self.version_indexer.get_major_minor(version)
 
     def get_maintainers_by_match(self, match):
         module_maintainers = []
