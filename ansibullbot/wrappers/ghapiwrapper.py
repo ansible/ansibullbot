@@ -365,8 +365,8 @@ class RepoWrapper(object):
         for line in lines:
             line = line.strip()
             if line:
-                parts = [x.strip() for x in line.split(':') if x.strip()]
-                label_map[parts[0].lower()] = parts[1]
+                parts = [x.strip() for x in line.split(':', 1) if x.strip()]
+                label_map[parts[0].lower()] = parts[1].replace('"', '').replace("'", '')
 
         return label_map
 

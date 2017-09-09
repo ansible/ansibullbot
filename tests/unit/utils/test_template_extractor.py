@@ -20,7 +20,7 @@ class TestTemplateExtraction(unittest.TestCase):
         sections = ['ONE', 'TWO', 'THREE']
         tdata = extract_template_data(
             body, issue_number=issue_number,
-            issue_class=issue_class, SECTIONS=sections
+            issue_class=issue_class, sections=sections
         )
         assert tdata.get('one') == 'section one'
         assert tdata.get('two') == 'section two'
@@ -43,7 +43,7 @@ class TestTemplateExtraction(unittest.TestCase):
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
-            issue_class=issue_class, SECTIONS=sections
+            issue_class=issue_class, sections=sections
         )
         assert tdata.get('ansible version') == '1.9.x'
         assert tdata.get('issue type') == 'bug report'
@@ -70,7 +70,7 @@ class TestTemplateExtraction(unittest.TestCase):
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
-            issue_class=issue_class, SECTIONS=sections
+            issue_class=issue_class, sections=sections
         )
         assert tdata.get('ansible version') == '1.9.x'
         assert tdata.get('issue type') == 'bug report'
@@ -97,7 +97,7 @@ class TestTemplateExtraction(unittest.TestCase):
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
-            issue_class=issue_class, SECTIONS=sections
+            issue_class=issue_class, sections=sections
         )
         assert tdata.get('ansible version') == '1.9.x'
         assert tdata.get('issue type') == 'bug report'
@@ -127,7 +127,7 @@ class TestTemplateExtraction(unittest.TestCase):
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
-            issue_class=issue_class, SECTIONS=sections
+            issue_class=issue_class, sections=sections
         )
 
         #import epdb; epdb.st()

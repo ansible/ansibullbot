@@ -79,6 +79,8 @@ class DefaultWrapper(object):
 
     REQUIRED_SECTIONS = []
 
+    TEMPLATE_HEADER = '#####'
+
     def __init__(self, github=None, repo=None, issue=None, cachedir=None, file_indexer=None):
         self.meta = {}
         self.cachedir = cachedir
@@ -460,19 +462,25 @@ class DefaultWrapper(object):
                 logging.warning('repo does not have {}'.format(tfile))
                 tf_content = ''
 
-        tf_sections = extract_template_sections(tf_content)
+        # pull out the section names from the tempalte
+        tf_sections = extract_template_sections(tf_content, header=self.TEMPLATE_HEADER)
 
+        # what is required?
         self._required_template_sections = \
             [x.lower() for x in tf_sections.keys()
              if tf_sections[x]['required']]
 
+        # extract ...
         template_data = \
             extract_template_data(
                 self.instance.body,
                 issue_number=self.number,
                 issue_class=self.github_type,
-                SECTIONS=tf_sections.keys()
+                sections=tf_sections.keys()
             )
+
+        if not template_data:
+            import epdb; epdb.st()
 
         return template_data
 

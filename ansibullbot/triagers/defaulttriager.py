@@ -1472,13 +1472,17 @@ class DefaultTriager(object):
             else:
                 print("\t%s %s" % (x.created_at.isoformat(), x.user.login))
 
-    def wrap_issue(self, github, repo, issue):
+    def wrap_issue(self, github, repo, issue, header=None):
         iw = IssueWrapper(
             github=github,
             repo=repo,
             issue=issue,
             cachedir=self.cachedir
         )
+        if header:
+            iw.TEMPLATE_HEADER=header
+        if self.file_indexer:
+            iw.file_indexer = self.file_indexer
         return iw
 
     def dump_action_dict(self, issue, actions):
