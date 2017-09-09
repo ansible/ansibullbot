@@ -155,19 +155,6 @@ class AnsibleTriage(DefaultTriager):
         'close_me'
     ]
 
-    ISSUE_REQUIRED_FIELDS = [
-        'issue type',
-        'component name',
-        'ansible version',
-        'summary'
-    ]
-
-    PULLREQUEST_REQUIRED_FIELDS = [
-        'issue type',
-    ]
-
-    FILEMAP = {}
-
     def __init__(self, args):
 
         self._ansible_members = []
