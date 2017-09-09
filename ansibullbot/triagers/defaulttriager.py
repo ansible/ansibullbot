@@ -44,9 +44,6 @@ basepath = '/'.join(basepath[0:libindex])
 loader = FileSystemLoader(os.path.join(basepath, 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
 
-# A dict of alias labels. It is used for coupling a template (comment) with a
-# label.
-
 BOTLIST = None
 
 
@@ -77,29 +74,6 @@ class DefaultActions(object):
 class DefaultTriager(object):
 
     ITERATION = 0
-
-    '''
-    BOTLIST = ['gregdek', 'robynbergeron', 'ansibot']
-    VALID_ISSUE_TYPES = ['bug report', 'feature idea', 'documentation report']
-    IGNORE_LABELS = [
-        "aws","azure","cloud",
-        "feature_pull_request",
-        "feature_idea",
-        "bugfix_pull_request",
-        "bug_report",
-        "docs_pull_request",
-        "docs_report",
-        "in progress",
-        "docs_pull_request",
-        "easyfix",
-        "pending_action",
-        "gce",
-        "python3",
-        "P1","P2","P3","P4",
-    ]
-
-    FIXED_ISSUES = []
-    '''
 
     def __init__(self, args):
 
@@ -417,7 +391,6 @@ class DefaultTriager(object):
                 if len(actions.comments) == 1:
                     if 'still waiting' in actions.comments[0]:
                         safe_match = True
-                #import epdb; epdb.st()
 
         if safe_match:
             self.force = True
@@ -476,7 +449,6 @@ class DefaultTriager(object):
         elif hasattr(self, 'force_description_fixer') and self.args.force_description_fixer:
             if iw.html_url not in self.FIXED_ISSUES:
                 if self.meta['template_missing_sections']:
-                    #import epdb; epdb.st()
                     changed = self.template_wizard(iw)
                     if changed:
                         action_meta['REDO'] = True
@@ -490,12 +462,6 @@ class DefaultTriager(object):
     def template_wizard(self, iw):
 
         DF = DescriptionFixer(iw, self.meta)
-
-        '''
-        print('################################################')
-        print(DF.new_description)
-        print('################################################')
-        '''
 
         old = iw.body
         old_lines = old.split('\n')
@@ -624,4 +590,3 @@ class DefaultTriager(object):
         logging.info('dumping {}'.format(fn))
         with open(fn, 'wb') as f:
             f.write(json.dumps(actions, indent=2, sort_keys=True))
-        #import epdb; epdb.st()
