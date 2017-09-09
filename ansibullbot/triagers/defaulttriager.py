@@ -47,24 +47,6 @@ environment = Environment(loader=loader, trim_blocks=True)
 # A dict of alias labels. It is used for coupling a template (comment) with a
 # label.
 
-# Static labels, manually added
-IGNORE_LABELS = [
-    "feature_pull_request",
-    "bugfix_pull_request",
-    "in progress",
-    "docs_pull_request",
-    "easyfix",
-    "pending_action",
-    "gce",
-    "python3",
-]
-
-# We warn for human interaction
-MANUAL_INTERACTION_LABELS = [
-    "needs_revision",
-    "needs_info",
-]
-
 BOTLIST = None
 
 
