@@ -128,15 +128,6 @@ class AnsibleTriage(DefaultTriager):
         'new module pull request': 'new_plugin'
     }
 
-    MANAGED_LABELS = [
-        'bot_broken',
-        'needs_info',
-        'needs_rebase',
-        'needs_revision',
-        'shipit',
-        'owner_pr'
-    ]
-
     # modules having files starting like the key, will get the value label
     MODULE_NAMESPACE_LABELS = {
         'cloud': "cloud",
@@ -264,9 +255,6 @@ class AnsibleTriage(DefaultTriager):
         # get valid labels
         logging.info('getting labels')
         self.valid_labels = self.get_valid_labels('ansible/ansible')
-
-        # extend managed labels
-        self.MANAGED_LABELS += self.ISSUE_TYPES.values()
 
         # set the indexers
         logging.info('creating version indexer')
@@ -1882,13 +1870,6 @@ class AnsibleTriage(DefaultTriager):
 
         return None
 
-    def keep_unmanaged_labels(self, issue):
-        '''Persists labels that were added manually and not bot managed'''
-        for label in issue.labels:
-            if label not in self.MANAGED_LABELS:
-                self.debug('keeping %s label' % label)
-                self.issue.add_desired_label(name=label)
-
     def get_migrated_issue(self, migrated_issue):
         if migrated_issue.startswith('https://'):
             miparts = migrated_issue.split('/')
@@ -1937,36 +1918,6 @@ class AnsibleTriage(DefaultTriager):
             cachedir=os.path.join(self.cachedir_base, repo_path)
         )
         return mw
-
-    def is_python3(self):
-        '''Is the issue related to python3?'''
-        ispy3 = False
-        py3strings = ['python 3', 'python3', 'py3', 'py 3']
-
-        for py3str in py3strings:
-
-            if py3str in self.issue.title.lower():
-                ispy3 = True
-                break
-
-            for k,v in self.template_data.iteritems():
-                if not v:
-                    continue
-                if py3str in v.lower():
-                    ispy3 = True
-                    break
-
-            if ispy3:
-                break
-
-        if ispy3:
-            for comment in self.issue.comments:
-                if '!python3' in comment.body:
-                    logging.info('!python3 override in comments')
-                    ispy3 = False
-                    break
-
-        return ispy3
 
     def process_comment_commands(self, issuewrapper, meta):
 
