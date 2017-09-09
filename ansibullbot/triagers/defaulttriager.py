@@ -68,6 +68,18 @@ MANUAL_INTERACTION_LABELS = [
 BOTLIST = None
 
 
+class DefaultActions(object):
+    def __init__(self):
+        self.newlabel = []
+        self.unlabel = []
+        self.comments = []
+        self.assign = []
+        self.unassign = []
+        self.close = False
+        self.open = False
+        self.merge = False
+
+
 class DefaultTriager(object):
 
     ITERATION = 0
@@ -94,18 +106,6 @@ class DefaultTriager(object):
 
     FIXED_ISSUES = []
     '''
-
-    EMPTY_ACTIONS = {
-        'newlabel': [],
-        'unlabel': [],
-        'comments': [],
-        'assign': [],
-        'unassign': [],
-        'close': False,
-        'close_migrated': False,
-        'open': False,
-        'merge': False,
-    }
 
     def __init__(self, args):
 
