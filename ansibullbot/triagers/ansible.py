@@ -232,9 +232,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('starting bot')
 
         logging.debug('setting bot attributes')
-        attribs = dir(self.args)
-        attribs = [x for x in attribs if not x.startswith('_')]
-        for x in attribs:
+        for x in vars(self.args):
             try:
                 val = getattr(self.args, x)
                 setattr(self, x, val)
