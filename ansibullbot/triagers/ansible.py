@@ -1340,37 +1340,31 @@ class AnsibleTriage(DefaultTriager):
 
                 with open(self.safe_force_script, 'rb') as f:
                     fdata = f.read()
-                res = eval(fdata)
-                if res:
-                    self.force = True
-                else:
-                    self.force = False
+                self.force = bool(eval(fdata))
                 return self.force
 
         safe = True
-        for k,v in self.actions.iteritems():
-            if k == 'merge' and v:
-                safe = False
-                continue
-            if k == 'newlabel' or k == 'unlabel':
-                if 'needs_revision' in v or 'needs_rebase' in v:
-                    safe = False
-                else:
-                    continue
-            if k == 'comments' and len(v) == 0:
-                continue
-            if k == 'comments' and len(v) == 1:
-                # notifying maintainer
-                if v[0].startswith('cc '):
-                    continue
-            if k == 'assign':
-                continue
-            if v:
-                safe = False
-        if safe:
-            self.force = True
-        else:
-            self.force = False
+
+        count = actions.count()
+        if count:
+            # all but needs_revision and needs_rebase labels are safe
+            labels = set(actions.newlabel + actions.unlabel)
+            if not labels.intersection(['needs_revision', 'needs_rebase']):
+                count -= len(actions.newlabel) + len(actions.unlabel)
+
+            # cc comment is safe
+            if actions.comments:
+                if len(actions.comments) == 1 and actions.comments[0].startswith('cc '):
+                    count -= len(actions.comments)
+
+            # assign is safe
+            if actions.assign:
+                count -= 1
+
+            safe = bool(count)
+
+        self.force = safe
+
         return safe
 
     def move_issue(self, issue):
