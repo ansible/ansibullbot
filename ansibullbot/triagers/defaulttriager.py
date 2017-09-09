@@ -129,22 +129,19 @@ class DefaultTriager(object):
         self.config.read([self.configfile])
 
         try:
-            self.gh_user = self.config.get('defaults', 'github_username')
+            self.github_user = self.config.get('defaults', 'github_username')
         except:
-            self.gh_user = None
-        self.github_user = self.gh_user
+            self.github_user = None
 
         try:
-            self.gh_pass = self.config.get('defaults', 'github_password')
+            self.github_pass = self.config.get('defaults', 'github_password')
         except:
-            self.gh_pass = None
-        self.github_pass = self.gh_pass
+            self.github_pass = None
 
         try:
-            self.gh_token = self.config.get('defaults', 'github_token')
+            self.github_token = self.config.get('defaults', 'github_token')
         except:
-            self.gh_token = None
-        self.github_token = self.gh_token
+            self.github_token = None
 
         self.repopath = self.args.repo
         self.logfile = self.args.logfile
@@ -162,10 +159,7 @@ class DefaultTriager(object):
         attribs = [x for x in attribs if not x.startswith('_')]
         for x in attribs:
             val = getattr(self.args, x)
-            if x.startswith('gh_'):
-                setattr(self, x.replace('gh_', 'github_'), val)
-            else:
-                setattr(self, x, val)
+            setattr(self, x, val)
 
         if hasattr(self.args, 'pause') and self.args.pause:
             self.always_pause = True
