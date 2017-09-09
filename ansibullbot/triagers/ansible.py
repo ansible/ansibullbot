@@ -36,7 +36,7 @@ import pytz
 import ansibullbot.constants as C
 
 from pprint import pprint
-from ansibullbot.triagers.defaulttriager import DefaultTriager, environment
+from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, environment
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
@@ -103,22 +103,17 @@ def get_major_minor(vstring):
     return rval
 
 
+class AnsibleActions(DefaultActions):
+    def __init__(self):
+        super(AnsibleActions, self).__init__()
+        self.close_migrated = False
+        self.rebuild = False
+
+
 class AnsibleTriage(DefaultTriager):
 
     BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 
-    EMPTY_ACTIONS = {
-        'newlabel': [],
-        'unlabel': [],
-        'comments': [],
-        'assign': [],
-        'unassign': [],
-        'close': False,
-        'close_migrated': False,
-        'open': False,
-        'merge': False,
-        'rebuild': False
-    }
 
     EMPTY_META = {
     }
