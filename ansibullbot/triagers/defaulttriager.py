@@ -44,8 +44,6 @@ basepath = '/'.join(basepath[0:libindex])
 loader = FileSystemLoader(os.path.join(basepath, 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
 
-BOTLIST = None
-
 
 class DefaultActions(object):
     def __init__(self):
