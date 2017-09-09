@@ -2038,6 +2038,28 @@ class AnsibleTriage(DefaultTriager):
         assert version is not None
         return get_major_minor(version)
 
+    def execute_actions(self, iw, actions):
+        """Turns the actions into API calls"""
+
+        super(AnsibleTriage, self).execute_actions(iw, actions)
+
+        if actions.close_migrated:
+            mi = self.get_issue_by_repopath_and_number(
+                self.meta['migrated_issue_repo_path'],
+                self.meta['migrated_issue_number']
+            )
+            logging.info('close migrated: %s' % mi.html_url)
+            mi.instance.edit(state='closed')
+
+        if actions.rebuild:
+            runid = self.meta.get('rebuild_run_number')
+            if runid:
+                self.SR.rebuild(runid)
+            else:
+                logging.error(
+                    'no shippable runid for {}'.format(iw.number)
+                )
+
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
         template = environment.get_template('%s.j2' % boilerplate)
