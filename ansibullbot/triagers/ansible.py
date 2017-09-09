@@ -370,8 +370,6 @@ class AnsibleTriage(DefaultTriager):
                         import epdb; epdb.st()
                     continue
 
-                iw = None
-                self.issue = None
                 self.meta = {}
                 number = issue.number
                 self.number = number
@@ -507,9 +505,6 @@ class AnsibleTriage(DefaultTriager):
                         # build the history
                         self.build_history(iw)
 
-                    # set the global issue
-                    self.issue = iw
-
                     actions = AnsibleActions()
                     if iw.repo_full_name not in MREPOS:
                         # basic processing for ansible/ansible
@@ -522,12 +517,12 @@ class AnsibleTriage(DefaultTriager):
                         continue
 
                     # build up actions from the meta
-                    self.create_actions(actions)
+                    self.create_actions(iw, actions)
                     self.save_meta(iw, self.meta, actions)
 
                     # DEBUG!
-                    logging.info('url: %s' % self.issue.html_url)
-                    logging.info('title: %s' % self.issue.title)
+                    logging.info('url: %s' % iw.html_url)
+                    logging.info('title: %s' % iw.title)
                     logging.info(
                         'component: %s' %
                         self.template_data.get('component_raw')
@@ -552,13 +547,13 @@ class AnsibleTriage(DefaultTriager):
                             'needs_rebase' in actions.unlabel or \
                             'needs_revision' in actions.newlabel or \
                             'needs_revision' in actions.unlabel:
-                        rn = self.issue.repo_full_name
+                        rn = iw.repo_full_name
                         summary = self.issue_summaries.get(rn, {}).\
-                            get(self.issue.number, None)
+                            get(iw.number, None)
                         if not summary:
                             summary = self.gws.get_single_issue_summary(
                                 rn,
-                                self.issue.number,
+                                iw.number,
                                 force=True
                             )
                         pprint(summary)
@@ -569,7 +564,7 @@ class AnsibleTriage(DefaultTriager):
                     pprint(vars(actions))
 
                     # do the actions
-                    action_meta = self.apply_actions(self.issue, actions)
+                    action_meta = self.apply_actions(iw, actions)
                     if action_meta['REDO']:
                         redo = True
 
@@ -741,13 +736,13 @@ class AnsibleTriage(DefaultTriager):
         with open(mfile, 'wb') as f:
             json.dump(meta, f, sort_keys=True, indent=2)
 
-    def create_actions(self, actions):
+    def create_actions(self, iw, actions):
         '''Parse facts and make actions from them'''
         if 'bot_broken' in self.meta['maintainer_commands'] or \
                 'bot_broken' in self.meta['submitter_commands'] or \
-                'bot_broken' in self.issue.labels:
+                'bot_broken' in iw.labels:
             logging.warning('bot broken!')
-            if 'bot_broken' not in self.issue.labels:
+            if 'bot_broken' not in iw.labels:
                 actions.newlabel.append('bot_broken')
             return
 
@@ -756,18 +751,18 @@ class AnsibleTriage(DefaultTriager):
             return
 
         # UNKNOWN!!! ... sigh.
-        if self.issue.is_pullrequest():
-            if self.meta['mergeable_state'] == 'unknown' and self.issue.state != 'closed':
-                msg = 'skipping %s because it has a' % self.issue.number
+        if iw.is_pullrequest():
+            if self.meta['mergeable_state'] == 'unknown' and iw.state != 'closed':
+                msg = 'skipping %s because it has a' % iw.number
                 msg += ' mergeable_state of unknown'
                 logging.warning(msg)
                 return
 
         # TRIAGE!!!
-        if not self.issue.labels:
+        if not iw.labels:
             actions.newlabel.append('needs_triage')
-        if 'triage' in self.issue.labels:
-            if 'needs_triage' not in self.issue.labels:
+        if 'triage' in iw.labels:
+            if 'needs_triage' not in iw.labels:
                 actions.newlabel.append('needs_triage')
             actions.unlabel.append('triage')
 
@@ -775,42 +770,42 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['maintainer_triaged']:
             if 'needs_triage' in actions.newlabel:
                 actions.newlabel.remove('needs_triage')
-            if 'needs_triage' in self.issue.labels:
+            if 'needs_triage' in iw.labels:
                 if 'needs_triage' not in actions.unlabel:
                     actions.unlabel.append('needs_triage')
 
         # owner PRs
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['owner_pr']:
-                if 'owner_pr' not in self.issue.labels:
+                if 'owner_pr' not in iw.labels:
                     actions.newlabel.append('owner_pr')
             else:
-                if 'owner_pr' in self.issue.labels:
+                if 'owner_pr' in iw.labels:
                     actions.unlabel.append('owner_pr')
 
         # REVIEWS
-        if not self.issue.wip:
+        if not iw.wip:
             for rtype in ['core_review', 'committer_review', 'community_review']:
                 if self.meta[rtype]:
-                    if rtype not in self.issue.labels:
+                    if rtype not in iw.labels:
                         actions.newlabel.append(rtype)
                 else:
-                    if rtype in self.issue.labels:
+                    if rtype in iw.labels:
                         actions.unlabel.append(rtype)
 
         # WIPs
-        if self.issue.is_pullrequest():
-            if self.issue.wip:
-                if 'WIP' not in self.issue.labels:
+        if iw.is_pullrequest():
+            if iw.wip:
+                if 'WIP' not in iw.labels:
                     actions.newlabel.append('WIP')
-                if 'shipit' in self.issue.labels:
+                if 'shipit' in iw.labels:
                     actions.unlabel.append('shipit')
             else:
-                if 'WIP' in self.issue.labels:
+                if 'WIP' in iw.labels:
                     actions.unlabel.append('WIP')
 
         # MERGE COMMITS
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['merge_commits']:
                 if not self.meta['has_merge_commit_notification']:
                     comment = self.render_boilerplate(
@@ -818,14 +813,14 @@ class AnsibleTriage(DefaultTriager):
                         boilerplate='merge_commit_notify'
                     )
                     actions.comments.append(comment)
-                    if 'merge_commit' not in self.issue.labels:
+                    if 'merge_commit' not in iw.labels:
                         actions.newlabel.append('merge_commit')
             else:
-                if 'merge_commit' in self.issue.labels:
+                if 'merge_commit' in iw.labels:
                     actions.unlabel.append('merge_commit')
 
         # @YOU IN COMMIT MSGS
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['has_commit_mention']:
                 if not self.meta['has_commit_mention_notification']:
 
@@ -836,33 +831,33 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
 
         # SHIPIT+AUTOMERGE
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['shipit']:
 
-                if 'shipit' not in self.issue.labels:
+                if 'shipit' not in iw.labels:
                     actions.newlabel.append('shipit')
 
-                if automergeable(self.meta, self.issue):
+                if automergeable(self.meta, iw):
                     logging.info('auto-merge tests passed')
-                    if 'automerge' not in self.issue.labels:
+                    if 'automerge' not in iw.labels:
                         actions.newlabel.append('automerge')
                     if self.automerge_on:
                         actions.merge = True
                 else:
-                    if 'automerge' in self.issue.labels:
+                    if 'automerge' in iw.labels:
                         actions.unlabel.append('automerge')
 
             else:
 
                 # not shipit and not automerge ...
-                if 'shipit' in self.issue.labels:
+                if 'shipit' in iw.labels:
                     actions.unlabel.append('shipit')
-                if 'automerge' in self.issue.labels:
+                if 'automerge' in iw.labels:
                     actions.unlabel.append('automerge')
 
         # NAMESPACE MAINTAINER NOTIFY
-        if self.issue.is_pullrequest():
-            if needs_community_review(self.meta, self.issue):
+        if iw.is_pullrequest():
+            if needs_community_review(self.meta, iw):
 
                 comment = self.render_boilerplate(
                     self.meta,
@@ -873,29 +868,29 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
 
         # NEEDS REVISION
-        if self.issue.is_pullrequest():
-            if not self.issue.wip:
+        if iw.is_pullrequest():
+            if not iw.wip:
                 if self.meta['is_needs_revision'] or self.meta['is_bad_pr']:
-                    if 'needs_revision' not in self.issue.labels:
+                    if 'needs_revision' not in iw.labels:
                         actions.newlabel.append('needs_revision')
                 else:
-                    if 'needs_revision' in self.issue.labels:
+                    if 'needs_revision' in iw.labels:
                         actions.unlabel.append('needs_revision')
 
         # NEEDS REBASE
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['is_needs_rebase'] or self.meta['is_bad_pr']:
-                if 'needs_rebase' not in self.issue.labels:
+                if 'needs_rebase' not in iw.labels:
                     actions.newlabel.append('needs_rebase')
             else:
-                if 'needs_rebase' in self.issue.labels:
+                if 'needs_rebase' in iw.labels:
                     actions.unlabel.append('needs_rebase')
 
         # travis-ci.org ...
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['has_travis'] and \
                     not self.meta['has_travis_notification']:
-                tvars = {'submitter': self.issue.submitter}
+                tvars = {'submitter': iw.submitter}
                 comment = self.render_boilerplate(
                     tvars,
                     boilerplate='travis_notify'
@@ -904,11 +899,11 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
 
         # shippable failures shippable_test_result
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['ci_state'] == 'failure' and \
                     self.meta['needs_testresult_notification']:
                 tvars = {
-                    'submitter': self.issue.submitter,
+                    'submitter': iw.submitter,
                     'data': self.meta['shippable_test_results']
                 }
 
@@ -931,12 +926,12 @@ class AnsibleTriage(DefaultTriager):
                         actions.comments.append(comment)
 
         # https://github.com/ansible/ansibullbot/issues/293
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if not self.meta['has_shippable'] and not self.meta['has_travis']:
-                if 'needs_ci' not in self.issue.labels:
+                if 'needs_ci' not in iw.labels:
                     actions.newlabel.append('needs_ci')
             else:
-                if 'needs_ci' in self.issue.labels:
+                if 'needs_ci' in iw.labels:
                     actions.unlabel.append('needs_ci')
 
         # MODULE CATEGORY LABELS
@@ -948,38 +943,38 @@ class AnsibleTriage(DefaultTriager):
                     label = self.MODULE_NAMESPACE_LABELS[label]
 
                 if label and label in self.valid_labels and \
-                        label not in self.issue.labels and \
-                        not self.issue.history.was_unlabeled(label):
+                        label not in iw.labels and \
+                        not iw.history.was_unlabeled(label):
                     actions.newlabel.append(label)
 
             # add namespace labels
             namespace = self.meta['module_match'].get('namespace')
             if namespace in self.MODULE_NAMESPACE_LABELS:
                 label = self.MODULE_NAMESPACE_LABELS[namespace]
-                if label not in self.issue.labels and \
-                        not self.issue.history.was_unlabeled(label):
+                if label not in iw.labels and \
+                        not iw.history.was_unlabeled(label):
                     actions.newlabel.append(label)
 
         # NEW MODULE
         if self.meta['is_new_module']:
-            if 'new_module' not in self.issue.labels:
+            if 'new_module' not in iw.labels:
                 actions.newlabel.append('new_module')
         else:
-            if 'new_module' in self.issue.labels:
+            if 'new_module' in iw.labels:
                 actions.unlabel.append('new_module')
 
         if self.meta['is_module']:
-            if 'module' not in self.issue.labels:
+            if 'module' not in iw.labels:
                 # don't add manually removed label
-                if not self.issue.history.was_unlabeled(
+                if not iw.history.was_unlabeled(
                     'module',
                     bots=self.BOTNAMES
                 ):
                     actions.newlabel.append('module')
         else:
-            if 'module' in self.issue.labels:
+            if 'module' in iw.labels:
                 # don't remove manually added label
-                if not self.issue.history.was_labeled(
+                if not iw.history.was_labeled(
                     'module',
                     bots=self.BOTNAMES
                 ):
@@ -989,71 +984,71 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['component_labels'] and not self.meta['merge_commits']:
 
             # only add these labels to pullrequest or un-triaged issues
-            if self.issue.is_pullrequest() or \
-                    (self.issue.is_issue() and
-                     (not self.issue.labels or
-                      'needs_triage' in self.issue.labels)):
+            if iw.is_pullrequest() or \
+                    (iw.is_issue() and
+                     (not iw.labels or
+                      'needs_triage' in iw.labels)):
 
                 # only add these if no c: labels have ever been changed by human
-                clabels = self.issue.history.get_changed_labels(
+                clabels = iw.history.get_changed_labels(
                     prefix='c:',
                     bots=self.BOTNAMES
                 )
 
                 if not clabels:
                     for cl in self.meta['component_labels']:
-                        ul = self.issue.history.was_unlabeled(
+                        ul = iw.history.was_unlabeled(
                             cl,
                             bots=self.BOTNAMES
                         )
                         if not ul and \
-                                cl not in self.issue.labels and \
+                                cl not in iw.labels and \
                                 cl not in actions.newlabel:
                             actions.newlabel.append(cl)
 
         if self.meta['ansible_label_version']:
-            vlabels = [x for x in self.issue.labels if x.startswith('affects_')]
+            vlabels = [x for x in iw.labels if x.startswith('affects_')]
             if not vlabels:
                 label = 'affects_%s' % self.meta['ansible_label_version']
-                if label not in self.issue.labels:
+                if label not in iw.labels:
                     # do not re-add version labels
-                    if not self.issue.history.was_unlabeled(label):
+                    if not iw.history.was_unlabeled(label):
                         actions.newlabel.append(label)
 
         if self.meta['issue_type']:
             label = self.ISSUE_TYPES.get(self.meta['issue_type'])
-            if label and label not in self.issue.labels:
+            if label and label not in iw.labels:
                 # do not re-add issue type labels
-                if not self.issue.history.was_unlabeled(label):
+                if not iw.history.was_unlabeled(label):
                     actions.newlabel.append(label)
 
         # use the filemap to add labels
-        if self.issue.is_pullrequest():
-            fmap_labels = self.file_indexer.get_filemap_labels_for_files(self.issue.files)
+        if iw.is_pullrequest():
+            fmap_labels = self.file_indexer.get_filemap_labels_for_files(iw.files)
             for label in fmap_labels:
                 if label in self.valid_labels and \
-                        label not in self.issue.labels:
+                        label not in iw.labels:
                     # do not re-add these labels
-                    if not self.issue.history.was_unlabeled(label):
+                    if not iw.history.was_unlabeled(label):
                         actions.newlabel.append(label)
 
         # python3 ... obviously!
         if self.meta['is_py3']:
-            if 'python3' not in self.issue.labels:
+            if 'python3' not in iw.labels:
                 # do not re-add py3
-                if not self.issue.history.was_unlabeled('python3'):
+                if not iw.history.was_unlabeled('python3'):
                     actions.newlabel.append('python3')
 
         # needs info?
         if self.meta['is_needs_info']:
-            if 'needs_info' not in self.issue.labels:
+            if 'needs_info' not in iw.labels:
                 actions.newlabel.append('needs_info')
 
             # template data warning
             if self.meta['template_warning_required']:
                 tvars = {
-                    'submitter': self.issue.submitter,
-                    'itype': self.issue.github_type,
+                    'submitter': iw.submitter,
+                    'itype': iw.github_type,
                     'missing_sections': self.meta['template_missing_sections']
                 }
 
@@ -1065,16 +1060,16 @@ class AnsibleTriage(DefaultTriager):
                 actions.comments.append(comment)
 
             if self.meta['template_missing_sections']:
-                if 'needs_template' not in self.issue.labels:
+                if 'needs_template' not in iw.labels:
                     actions.newlabel.append('needs_template')
 
-        elif 'needs_info' in self.issue.labels:
+        elif 'needs_info' in iw.labels:
             actions.unlabel.append('needs_info')
 
         # clear the needs_template label
         if not self.meta['is_needs_info'] or \
                 not self.meta['template_missing_sections']:
-            if 'needs_template' in self.issue.labels:
+            if 'needs_template' in iw.labels:
                 actions.unlabel.append('needs_template')
 
         # needs_info warn/close?
@@ -1084,9 +1079,9 @@ class AnsibleTriage(DefaultTriager):
                 actions.close = True
 
             tvars = {
-                'submitter': self.issue.submitter,
+                'submitter': iw.submitter,
                 'action': self.meta['needs_info_action'],
-                'itype': self.issue.github_type
+                'itype': iw.github_type
             }
 
             comment = self.render_boilerplate(
@@ -1115,9 +1110,9 @@ class AnsibleTriage(DefaultTriager):
 
         # needs_contributor
         if 'needs_contributor' in self.meta['maintainer_commands']:
-            if 'waiting_on_contributor' not in self.issue.labels:
+            if 'waiting_on_contributor' not in iw.labels:
                 actions.newlabel.append('waiting_on_contributor')
-        elif 'waiting_on_contributor' in self.issue.labels:
+        elif 'waiting_on_contributor' in iw.labels:
             actions.unlabel.append('waiting_on_contributor')
 
         # wontfix / notabug / bug_resolved / resolved_by_pr / duplicate_of
@@ -1155,75 +1150,75 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['label_cmds']:
             if self.meta['label_cmds']['add']:
                 for label in self.meta['label_cmds']['add']:
-                    if label not in self.issue.labels:
+                    if label not in iw.labels:
                         actions.newlabel.append(label)
                     if label in actions.unlabel:
                         actions.unlabel.remove(label)
             if self.meta['label_cmds']['del']:
                 for label in self.meta['label_cmds']['del']:
-                    if label in self.issue.labels:
+                    if label in iw.labels:
                         actions.unlabel.append(label)
                     if label in actions.newlabel:
                         actions.newlabel.remove(label)
 
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
 
             # https://github.com/ansible/ansibullbot/issues/312
             # https://github.com/ansible/ansibullbot/issues/418
             if self.meta['ci_verified']:
-                if 'ci_verified' not in self.issue.labels:
+                if 'ci_verified' not in iw.labels:
                     actions.newlabel.append('ci_verified')
             else:
-                if 'ci_verified' in self.issue.labels:
+                if 'ci_verified' in iw.labels:
                     actions.unlabel.append('ci_verified')
 
         # https://github.com/ansible/ansibullbot/issues/367
         if self.meta['is_backport']:
-            if 'backport' not in self.issue.labels:
+            if 'backport' not in iw.labels:
                 actions.newlabel.append('backport')
 
         # https://github.com/ansible/ansibullbot/issues/29
         if self.meta['is_module']:
             if self.meta['module_match']['deprecated']:
-                if 'deprecated' not in self.issue.labels:
+                if 'deprecated' not in iw.labels:
                     actions.newlabel.append('deprecated')
 
         # https://github.com/ansible/ansibullbot/issues/406
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if not self.meta['has_shippable_yaml']:
 
                 # no_shippable_yaml
                 if not self.meta['has_shippable_yaml_notification']:
-                    tvars = {'submitter': self.issue.submitter}
+                    tvars = {'submitter': iw.submitter}
                     comment = self.render_boilerplate(
                         tvars,
                         boilerplate='no_shippable_yaml'
                     )
                     actions.comments.append(comment)
 
-                if 'needs_shippable' not in self.issue.labels:
+                if 'needs_shippable' not in iw.labels:
                     actions.newlabel.append('needs_shippable')
 
             else:
-                if 'needs_shippable' in self.issue.labels:
+                if 'needs_shippable' in iw.labels:
                     actions.unlabel.append('needs_shippable')
 
         # label PRs with missing repos
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if not self.meta['has_remote_repo']:
-                if 'needs_repo' not in self.issue.labels:
+                if 'needs_repo' not in iw.labels:
                     actions.newlabel.append('needs_repo')
             else:
-                if 'needs_repo' in self.issue.labels:
+                if 'needs_repo' in iw.labels:
                     actions.unlabel.append('needs_repo')
 
         # https://github.com/ansible/ansibullbot/issues/458
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['ci_stale']:
-                if 'stale_ci' not in self.issue.labels:
+                if 'stale_ci' not in iw.labels:
                     actions.newlabel.append('stale_ci')
             else:
-                if 'stale_ci' in self.issue.labels:
+                if 'stale_ci' in iw.labels:
                     actions.unlabel.append('stale_ci')
 
         # https://github.com/ansible/ansibullbot/issues/589
@@ -1233,10 +1228,10 @@ class AnsibleTriage(DefaultTriager):
                 # to check the original copy before deciding this isn't
                 # being maintained.
                 if not self.meta['module_match'].get('_maintainers'):
-                    if 'needs_maintainer' not in self.issue.labels:
+                    if 'needs_maintainer' not in iw.labels:
                         actions.newlabel.append('needs_maintainer')
             else:
-                if 'needs_maintainer' in self.issue.labels:
+                if 'needs_maintainer' in iw.labels:
                     actions.unlabel.append('needs_maintainer')
 
         # https://github.com/ansible/ansibullbot/issues/608
@@ -1260,27 +1255,27 @@ class AnsibleTriage(DefaultTriager):
                 else:
                     cs_label = 'support:community'
 
-        if cs_label not in self.issue.labels:
+        if cs_label not in iw.labels:
             actions.newlabel.append(cs_label)
 
         # https://github.com/ansible/ansibullbot/issues/707
-        cs_labels = [x for x in self.issue.labels if x.startswith('support:')]
+        cs_labels = [x for x in iw.labels if x.startswith('support:')]
         for x in cs_labels:
             if x != cs_label:
                 actions.unlabel.append(x)
 
         if not self.meta['stale_reviews']:
-            if 'stale_review' in self.issue.labels:
+            if 'stale_review' in iw.labels:
                 actions.unlabel.append('stale_review')
         else:
-            if 'stale_review' not in self.issue.labels:
+            if 'stale_review' not in iw.labels:
                 actions.newlabel.append('stale_review')
 
         # https://github.com/ansible/ansibullbot/issues/302
-        if self.issue.is_pullrequest():
+        if iw.is_pullrequest():
             if self.meta['needs_multiple_new_modules_notification']:
                 tvars = {
-                    'submitter': self.issue.submitter
+                    'submitter': iw.submitter
                 }
                 comment = self.render_boilerplate(
                     tvars, boilerplate='multiple_module_notify'
@@ -1301,9 +1296,9 @@ class AnsibleTriage(DefaultTriager):
                     for comment in remove:
                         actions.comments.remove(comment)
 
-            if 'filament' not in self.issue.labels:
+            if 'filament' not in iw.labels:
                 actions.newlabel.append('filament')
-            if self.issue.age.days >= 5:
+            if iw.age.days >= 5:
                 actions.close = True
 
         # https://github.com/ansible/ansibullbot/pull/664
@@ -1311,7 +1306,7 @@ class AnsibleTriage(DefaultTriager):
             actions.rebuild = True
             if 'stale_ci' in actions.newlabel:
                 actions.newlabel.remove('stale_ci')
-            if 'stale_ci' in self.issue.labels:
+            if 'stale_ci' in iw.labels:
                 actions.unlabel.append('stale_ci')
 
         # https://github.com/ansible/ansibullbot/issues/640
@@ -1324,15 +1319,15 @@ class AnsibleTriage(DefaultTriager):
         # check for waffling
         labels = sorted(set(actions.newlabel + actions.unlabel))
         for label in labels:
-            if self.issue.history.label_is_waffling(label):
+            if iw.history.label_is_waffling(label):
                 if label in actions.newlabel or label in actions.unlabel:
-                    msg = '"{}" label is waffling on {}'.format(label, self.issue.html_url)
+                    msg = '"{}" label is waffling on {}'.format(label, iw.html_url)
                     logging.error(msg)
                     if C.DEFAULT_BREAKPOINTS:
                         import epdb; epdb.st()
                     raise LabelWafflingError(msg)
 
-    def check_safe_match(self, actions):
+    def check_safe_match(self, iw, actions):
 
         if hasattr(self, 'safe_force_script'):
 
@@ -1378,7 +1373,6 @@ class AnsibleTriage(DefaultTriager):
         # stubs for the comment templater
         self.module_maintainers = []
         self.module = None
-        self.issue = issue
         self.template_data = {}
         self.github_repo = issue.repo_full_name
         self.match = {}
@@ -1386,11 +1380,11 @@ class AnsibleTriage(DefaultTriager):
         comment = self.render_comment(boilerplate=bp)
         actions.comments = [comment]
 
-        logging.info('url: %s' % self.issue.html_url)
-        logging.info('title: %s' % self.issue.title)
+        logging.info('url: %s' % issue.html_url)
+        logging.info('title: %s' % issue.title)
         logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(vars(actions))
-        action_meta = self.apply_actions(self.issue, actions)
+        action_meta = self.apply_actions(issue, actions)
         return action_meta
 
     def close_module_issue_with_message(self, issue, actions, bp='repomerge_new'):
@@ -1403,7 +1397,6 @@ class AnsibleTriage(DefaultTriager):
         # stubs for the comment templater
         self.module_maintainers = []
         self.module = None
-        self.issue = issue
         self.template_data = {}
         self.github_repo = issue.repo_full_name
         self.match = {}
@@ -1411,11 +1404,11 @@ class AnsibleTriage(DefaultTriager):
         comment = self.render_comment(boilerplate=bp)
         actions.comments = [comment]
 
-        logging.info('url: %s' % self.issue.html_url)
-        logging.info('title: %s' % self.issue.title)
+        logging.info('url: %s' % issue.html_url)
+        logging.info('title: %s' % issue.title)
         logging.info('component: %s' % self.template_data.get('component_raw'))
         pprint(vars(actions))
-        action_meta = self.apply_actions(self.issue, actions)
+        action_meta = self.apply_actions(issue, actions)
         return action_meta
 
     def trigger_rate_limit(self):
@@ -1684,9 +1677,8 @@ class AnsibleTriage(DefaultTriager):
         logging.info('finished querying updated issues')
         return issueids
 
-    def process(self, issuewrapper):
+    def process(self, iw):
         '''Do initial processing of the issue'''
-        iw = issuewrapper
 
         # clear the actions+meta
         self.meta = copy.deepcopy(self.EMPTY_META)
@@ -1734,7 +1726,7 @@ class AnsibleTriage(DefaultTriager):
         # what component(s) is this about?
         self.meta.update(
             get_component_match_facts(
-                self.issue,
+                iw,
                 self.meta,
                 self.file_indexer,
                 self.module_indexer,
@@ -1743,7 +1735,7 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # python3 ?
-        self.meta.update(get_python3_facts(self.issue))
+        self.meta.update(get_python3_facts(iw))
 
         # backports
         self.meta.update(get_backport_facts(iw, self.meta))
@@ -1768,7 +1760,7 @@ class AnsibleTriage(DefaultTriager):
 
         # needsinfo?
         #self.meta['is_needs_info'] = self.is_needsinfo()
-        self.meta['is_needs_info'] = is_needsinfo(self)
+        self.meta['is_needs_info'] = is_needsinfo(self, iw)
         self.meta.update(self.process_comment_commands(iw, self.meta))
         self.meta.update(needs_info_template_facts(iw, self.meta))
         #self.meta.update(self.needs_info_timeout_facts(iw, self.meta))
@@ -2111,8 +2103,7 @@ class AnsibleTriage(DefaultTriager):
 
         return tfacts
 
-    def get_ansible_version_by_issue(self, issuewrapper):
-        iw = issuewrapper
+    def get_ansible_version_by_issue(self, iw):
         aversion = None
 
         rawdata = iw.get_template_data().get('ansible version', '')
@@ -2121,7 +2112,7 @@ class AnsibleTriage(DefaultTriager):
 
         if not aversion or aversion == 'devel':
             aversion = self.version_indexer.version_by_date(
-                self.issue.instance.created_at
+                iw.instance.created_at
             )
 
         if aversion:
@@ -2142,8 +2133,8 @@ class AnsibleTriage(DefaultTriager):
             # try to go through the submitter's comments and look for the
             # first one that specifies a valid version
             cversion = None
-            for comment in self.issue.current_comments:
-                if comment.user.login != self.issue.instance.user.login:
+            for comment in iw.current_comments:
+                if comment.user.login != iw.instance.user.login:
                     continue
                 xver = self.version_indexer.strip_ansible_version(comment.body)
                 if self.version_indexer.is_valid_version(xver):
