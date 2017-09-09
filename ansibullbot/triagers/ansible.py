@@ -87,14 +87,6 @@ MREPOS = [x for x in REPOS if 'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
 
-ERROR_CODES = {
-    'shippable_failure': 1,
-    'travis-ci': 2,
-    'throttled': 3,
-    'dirty': 4,
-    'labeled': 5,
-    'review': 6
-}
 
 def get_major_minor(vstring):
     '''Return an X.Y version'''
