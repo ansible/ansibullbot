@@ -30,7 +30,7 @@ import logging
 import os
 
 from pprint import pprint
-from ansibullbot.triagers.defaulttriager import DefaultTriager
+from ansibullbot.triagers.defaulttriager import DefaultTriager, DefaultActions
 from ansibullbot.utils.file_tools import FileIndexer
 #from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from github.GithubException import UnknownObjectException
@@ -66,7 +66,7 @@ class SimpleTriager(DefaultTriager):
         for issue in issues:
 
             logging.info('triaging %s' % issue.html_url)
-            actions = copy.deepcopy(self.EMPTY_ACTIONS)
+            actions = DefaultActions()
 
             # wrap the issue for extra magic
             iw = self.wrap_issue(self.ghw, repo, issue)
@@ -75,14 +75,14 @@ class SimpleTriager(DefaultTriager):
             td = iw.template_data
             missing = iw.missing_template_sections
             if missing and 'needs_template' not in iw.labels:
-                actions['newlabel'].append('needs_template')
+                actions.newlabel.append('needs_template')
 
             # what type of issue is this?
             if 'issue type' in td:
                 mapped_label = label_map.get(td['issue type'])
                 if mapped_label:
                     if mapped_label not in iw.labels:
-                        actions['newlabel'].append(mapped_label)
+                        actions.newlabel.append(mapped_label)
 
-            pprint(actions)
+            pprint(vars(actions))
             self.apply_actions(iw, actions)

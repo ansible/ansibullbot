@@ -79,6 +79,18 @@ class DefaultActions(object):
         self.open = False
         self.merge = False
 
+    def count(self):
+        """ Return the number of actions that are to be performed """
+        count = 0
+        for value in vars(self).values():
+            if value:
+                if isinstance(value, bool):
+                    count += 1
+                else:
+                    count += len(value)
+
+        return count
+
 
 class DefaultTriager(object):
 
@@ -396,16 +408,16 @@ class DefaultTriager(object):
         comment = template.render(**tvars)
         return comment
 
-    def check_safe_match(self):
+    def check_safe_match(self, actions):
         """ Turn force on or off depending on match characteristics """
         safe_match = False
 
-        if self.action_count() == 0:
+        if actions.count() == 0:
             safe_match = True
 
-        elif not self.actions['close'] and not self.actions['unlabel']:
-            if len(self.actions['newlabel']) == 1:
-                if self.actions['newlabel'][0].startswith('affects_'):
+        elif not actions.close and not actions.unlabel:
+            if len(actions.newlabel) == 1:
+                if actions.newlabel[0].startswith('affects_'):
                     safe_match = True
 
         else:
@@ -416,12 +428,12 @@ class DefaultTriager(object):
 
         # be more lenient on re-notifications
         if not safe_match:
-            if not self.actions['close'] and \
-                    not self.actions['unlabel'] and \
-                    not self.actions['newlabel']:
+            if not actions.close and \
+                    not actions.unlabel and \
+                    not actions.newlabel:
 
-                if len(self.actions['comments']) == 1:
-                    if 'still waiting' in self.actions['comments'][0]:
+                if len(actions.comments) == 1:
+                    if 'still waiting' in actions.comments[0]:
                         safe_match = True
                 #import epdb; epdb.st()
 
@@ -430,25 +442,14 @@ class DefaultTriager(object):
         else:
             self.force = False
 
-    def action_count(self, actions):
-        """ Return the number of actions that are to be performed """
-        count = 0
-        for k,v in actions.iteritems():
-            if k in ['close', 'open', 'merge', 'close_migrated', 'rebuild'] and v:
-                count += 1
-            elif k != 'close' and k != 'open' and \
-                    k != 'merge' and k != 'close_migrated' and k != 'rebuild':
-                count += len(v)
-        return count
-
     def apply_actions(self, issue, actions):
 
         action_meta = {'REDO': False}
 
         if hasattr(self, 'safe_force') and self.safe_force:
-            self.check_safe_match()
+            self.check_safe_match(actions)
 
-        if self.action_count(actions) > 0:
+        if actions.count() > 0:
 
             if hasattr(self, 'args'):
                 if hasattr(self.args, 'dump_actions'):
@@ -555,16 +556,16 @@ class DefaultTriager(object):
     def execute_actions(self, issue, actions):
         """Turns the actions into API calls"""
 
-        for comment in actions['comments']:
+        for comment in actions.comments:
             logging.info("acton: comment - " + comment)
             issue.add_comment(comment=comment)
-        if actions['close']:
+        if actions.close:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             logging.info('action: close')
             issue.instance.edit(state='closed')
             return
 
-        if actions['close_migrated']:
+        if actions.close_migrated:
             mi = self.get_issue_by_repopath_and_number(
                 self.meta['migrated_issue_repo_path'],
                 self.meta['migrated_issue_number']
@@ -572,28 +573,28 @@ class DefaultTriager(object):
             logging.info('close migrated: %s' % mi.html_url)
             mi.instance.edit(state='closed')
 
-        for unlabel in actions['unlabel']:
+        for unlabel in actions.unlabel:
             logging.info('action: unlabel - ' + unlabel)
             issue.remove_label(label=unlabel)
-        for newlabel in actions['newlabel']:
+        for newlabel in actions.newlabel:
             logging.info('action: label - ' + newlabel)
             issue.add_label(label=newlabel)
 
         if 'assign' in actions:
-            for user in actions['assign']:
+            for user in actions.assign:
                 logging.info('action: assign - ' + user)
                 issue.assign_user(user)
         if 'unassign' in actions:
-            for user in actions['unassign']:
+            for user in actions.unassign:
                 logging.info('action: unassign - ' + user)
                 issue.unassign_user(user)
 
         if 'merge' in actions:
-            if actions['merge']:
+            if actions.merge:
                 issue.merge()
 
         if 'rebuild' in actions:
-            if actions['rebuild']:
+            if actions.rebuild:
                 runid = self.meta.get('rebuild_run_number')
                 if runid:
                     self.SR.rebuild(runid)
