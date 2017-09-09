@@ -513,14 +513,6 @@ class DefaultTriager(object):
             iw.instance.edit(state='closed')
             return
 
-        if actions.close_migrated:
-            mi = self.get_issue_by_repopath_and_number(
-                self.meta['migrated_issue_repo_path'],
-                self.meta['migrated_issue_number']
-            )
-            logging.info('close migrated: %s' % mi.html_url)
-            mi.instance.edit(state='closed')
-
         for unlabel in actions.unlabel:
             logging.info('action: unlabel - ' + unlabel)
             iw.remove_label(label=unlabel)
@@ -540,16 +532,6 @@ class DefaultTriager(object):
         if 'merge' in actions:
             if actions.merge:
                 iw.merge()
-
-        if 'rebuild' in actions:
-            if actions.rebuild:
-                runid = self.meta.get('rebuild_run_number')
-                if runid:
-                    self.SR.rebuild(runid)
-                else:
-                    logging.error(
-                        'no shippable runid for {}'.format(iw.number)
-                    )
 
     @RateLimited
     def is_pr_merged(self, number, repo=None):
