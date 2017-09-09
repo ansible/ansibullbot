@@ -76,7 +76,6 @@ from ansibullbot.triagers.plugins.shipit import needs_community_review
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 
 
-#BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 REPOS = [
     'ansible/ansible',
     'ansible/ansible-modules-core',
@@ -336,11 +335,6 @@ class AnsibleTriage(DefaultTriager):
             self.cachedir = os.path.join(self.cachedir_base, repopath)
             # this is where the issue history cache goes
             hcache = os.path.join(self.cachedir, repopath)
-
-            '''
-            # scrape all summaries from www for later opchecking
-            self.update_issue_summaries(repopath=repopath)
-            '''
 
             for issue in item[1]['issues']:
 
@@ -1071,16 +1065,6 @@ class AnsibleTriage(DefaultTriager):
 
             actions.comments.append(comment)
 
-        # assignees?
-        '''
-        # https://github.com/ansible/ansibullbot/issues/500
-        if self.meta['to_assign']:
-            for user in self.meta['to_assign']:
-                # don't re-assign people
-                if not self.issue.history.was_unassigned(user):
-                    self.actions['assign'].append(user)
-        '''
-
         # notify?
         if self.meta['to_notify']:
             tvars = {'notify': self.meta['to_notify']}
@@ -1418,9 +1402,6 @@ class AnsibleTriage(DefaultTriager):
 
     def get_stale_numbers(self, reponame):
         # https://github.com/ansible/ansibullbot/issues/458
-        # def load_meta(self, issuewrapper):
-        # cachedir = /home/jtanner/.ansibullbot/cache
-        # idir = /home/jtanner/.ansibullbot/cache/ansible/ansible/issues/{NUM}
 
         stale = []
         reasons = {}
@@ -1514,7 +1495,6 @@ class AnsibleTriage(DefaultTriager):
             # increment the loopcount
             self.repos[repo]['loopcount'] += 1
 
-        # def __init__(self, repo, numbers, issuecache={})
         issuecache = {}
 
         logging.info('getting issue objs for %s' % repo)
@@ -1726,11 +1706,9 @@ class AnsibleTriage(DefaultTriager):
                 self,
                 iw,
                 self.meta,
-                #shippable=self.SR
             )
         )
 
-        #self.meta.update(self.get_notification_facts(iw, self.meta))
         self.meta.update(get_notification_facts(iw, self.meta, self.file_indexer))
 
         # ci_verified and test results
@@ -1739,11 +1717,9 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # needsinfo?
-        #self.meta['is_needs_info'] = self.is_needsinfo()
         self.meta['is_needs_info'] = is_needsinfo(self, iw)
         self.meta.update(self.process_comment_commands(iw, self.meta))
         self.meta.update(needs_info_template_facts(iw, self.meta))
-        #self.meta.update(self.needs_info_timeout_facts(iw, self.meta))
         self.meta.update(needs_info_timeout_facts(iw, self.meta))
 
         # shipit?
@@ -1756,14 +1732,12 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(get_review_facts(iw, self.meta))
 
         # bot_status needed?
-        #self.meta.update(self.needs_bot_status(iw))
         self.meta.update(get_bot_status_facts(iw, self.module_indexer, core_team=self.ansible_core_team, bot_names=self.BOTNAMES))
 
         # who is this waiting on?
         self.meta.update(self.waiting_on(iw, self.meta))
 
         # community label manipulation
-        #self.meta.update(self.get_label_commands(iw, self.meta))
         self.meta.update(
             get_label_command_facts(
                 iw,
@@ -1800,34 +1774,6 @@ class AnsibleTriage(DefaultTriager):
             self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
             self.meta['migrated_issue_number'] = miw.number
             self.meta['migrated_issue_state'] = miw.state
-
-    '''
-    def find_module_match(self, title, template_data):
-
-        match = None
-
-        cname = template_data.get('component name')
-        craw = template_data.get('component_raw')
-
-        if self.module_indexer.find_match(cname, exact=True):
-            match = self.module_indexer.find_match(cname, exact=True)
-        elif template_data.get('component_raw') \
-                and ('module' in title or
-                     'module' in craw or
-                     'action' in craw):
-            # FUZZY MATCH?
-            logging.info('fuzzy match module component')
-            fm = self.module_indexer.fuzzy_match(
-                title=title,
-                component=craw
-            )
-            if fm:
-                match = self.module_indexer.find_match(fm)
-        else:
-            pass
-
-        return match
-    '''
 
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
@@ -2066,7 +2012,6 @@ class AnsibleTriage(DefaultTriager):
         if aversion:
             if aversion.endswith('.x'):
                 aversion = self.version_indexer.strip_ansible_version(aversion)
-                #import epdb; epdb.st()
 
         if self.version_indexer.is_valid_version(aversion) and \
                 aversion is not None:
