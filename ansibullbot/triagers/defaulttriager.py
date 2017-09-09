@@ -408,7 +408,7 @@ class DefaultTriager(object):
         comment = template.render(**tvars)
         return comment
 
-    def check_safe_match(self, actions):
+    def check_safe_match(self, iw, actions):
         """ Turn force on or off depending on match characteristics """
         safe_match = False
 
@@ -423,7 +423,7 @@ class DefaultTriager(object):
         else:
             safe_match = False
             if self.module:
-                if self.module in self.issue.instance.title.lower():
+                if self.module in iw.instance.title.lower():
                     safe_match = True
 
         # be more lenient on re-notifications
@@ -442,34 +442,34 @@ class DefaultTriager(object):
         else:
             self.force = False
 
-    def apply_actions(self, issue, actions):
+    def apply_actions(self, iw, actions):
 
         action_meta = {'REDO': False}
 
         if hasattr(self, 'safe_force') and self.safe_force:
-            self.check_safe_match(actions)
+            self.check_safe_match(iw, actions)
 
         if actions.count() > 0:
 
             if hasattr(self, 'args'):
                 if hasattr(self.args, 'dump_actions'):
                     if self.args.dump_actions:
-                        self.dump_action_dict(issue, actions)
+                        self.dump_action_dict(iw, actions)
 
             if self.dry_run:
                 print("Dry-run specified, skipping execution of actions")
             else:
                 if self.force:
                     print("Running actions non-interactive as you forced.")
-                    self.execute_actions(issue, actions)
+                    self.execute_actions(iw, actions)
                     return action_meta
                 cont = raw_input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
                 if cont in ('Y', 'y'):
-                    self.execute_actions(issue, actions)
+                    self.execute_actions(iw, actions)
                 if cont == 'T':
-                    self.template_wizard()
+                    self.template_wizard(iw)
                     action_meta['REDO'] = True
                 if cont == 'r' or cont == 'R':
                     action_meta['REDO'] = True
@@ -483,7 +483,7 @@ class DefaultTriager(object):
             if cont in ('a', 'A', 'n', 'N'):
                 sys.exit(0)
             if cont == 'T':
-                self.template_wizard()
+                self.template_wizard(iw)
                 action_meta['REDO'] = True
             elif cont == 'REDO':
                 action_meta['REDO'] = True
@@ -492,22 +492,22 @@ class DefaultTriager(object):
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
         elif hasattr(self, 'force_description_fixer') and self.args.force_description_fixer:
-            if self.issue.html_url not in self.FIXED_ISSUES:
+            if iw.html_url not in self.FIXED_ISSUES:
                 if self.meta['template_missing_sections']:
                     #import epdb; epdb.st()
-                    changed = self.template_wizard()
+                    changed = self.template_wizard(iw)
                     if changed:
                         action_meta['REDO'] = True
-                self.FIXED_ISSUES.append(issue.html_url)
+                self.FIXED_ISSUES.append(iw.html_url)
         else:
             print("Skipping.")
 
         # let the upper level code redo this issue
         return action_meta
 
-    def template_wizard(self):
+    def template_wizard(self, iw):
 
-        DF = DescriptionFixer(self.issue, self.meta)
+        DF = DescriptionFixer(iw, self.meta)
 
         '''
         print('################################################')
@@ -515,7 +515,7 @@ class DefaultTriager(object):
         print('################################################')
         '''
 
-        old = self.issue.body
+        old = iw.body
         old_lines = old.split('\n')
         new = DF.new_description
         new_lines = new.split('\n')
@@ -545,24 +545,24 @@ class DefaultTriager(object):
             print("%s|%s" % (c1.rstrip().ljust(padding), c2.rstrip()))
         print("%s|%s" % (line.rstrip().ljust(padding), line))
 
-        print('# ' + self.issue.html_url)
+        print('# ' + iw.html_url)
         cont = raw_input("Apply this new description? (Y/N) ")
         if cont == 'Y':
-            self.issue.set_description(DF.new_description)
+            iw.set_description(DF.new_description)
             return True
         else:
             return False
 
-    def execute_actions(self, issue, actions):
+    def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
 
         for comment in actions.comments:
             logging.info("acton: comment - " + comment)
-            issue.add_comment(comment=comment)
+            iw.add_comment(comment=comment)
         if actions.close:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             logging.info('action: close')
-            issue.instance.edit(state='closed')
+            iw.instance.edit(state='closed')
             return
 
         if actions.close_migrated:
@@ -575,23 +575,23 @@ class DefaultTriager(object):
 
         for unlabel in actions.unlabel:
             logging.info('action: unlabel - ' + unlabel)
-            issue.remove_label(label=unlabel)
+            iw.remove_label(label=unlabel)
         for newlabel in actions.newlabel:
             logging.info('action: label - ' + newlabel)
-            issue.add_label(label=newlabel)
+            iw.add_label(label=newlabel)
 
         if 'assign' in actions:
             for user in actions.assign:
                 logging.info('action: assign - ' + user)
-                issue.assign_user(user)
+                iw.assign_user(user)
         if 'unassign' in actions:
             for user in actions.unassign:
                 logging.info('action: unassign - ' + user)
-                issue.unassign_user(user)
+                iw.unassign_user(user)
 
         if 'merge' in actions:
             if actions.merge:
-                issue.merge()
+                iw.merge()
 
         if 'rebuild' in actions:
             if actions.rebuild:
@@ -600,7 +600,7 @@ class DefaultTriager(object):
                     self.SR.rebuild(runid)
                 else:
                     logging.error(
-                        'no shippable runid for {}'.format(self.issue.number)
+                        'no shippable runid for {}'.format(iw.number)
                     )
 
     @RateLimited

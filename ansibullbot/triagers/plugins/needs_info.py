@@ -5,7 +5,7 @@ import pytz
 import ansibullbot.constants as C
 
 
-def is_needsinfo(triager):
+def is_needsinfo(triager, issue):
 
     needs_info = False
 
@@ -28,15 +28,15 @@ def is_needsinfo(triager):
         set(
             [x for x in maintainers
                 if x != 'DEPRECATED' and
-                x != triager.issue.submitter and
+                x != issue.submitter and
                 x not in triager.BOTNAMES]
         )
     )
 
-    for event in triager.issue.history.history:
+    for event in issue.history.history:
 
         if needs_info and \
-                event['actor'] == triager.issue.submitter and \
+                event['actor'] == issue.submitter and \
                 event['event'] == 'commented':
 
             #print('%s set false' % event['actor'])
