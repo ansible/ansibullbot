@@ -518,18 +518,16 @@ class DefaultTriager(object):
             logging.info('action: label - ' + newlabel)
             iw.add_label(label=newlabel)
 
-        if 'assign' in actions:
-            for user in actions.assign:
-                logging.info('action: assign - ' + user)
-                iw.assign_user(user)
-        if 'unassign' in actions:
-            for user in actions.unassign:
-                logging.info('action: unassign - ' + user)
-                iw.unassign_user(user)
+        for user in actions.assign:
+            logging.info('action: assign - ' + user)
+            iw.assign_user(user)
 
-        if 'merge' in actions:
-            if actions.merge:
-                iw.merge()
+        for user in actions.unassign:
+            logging.info('action: unassign - ' + user)
+            iw.unassign_user(user)
+
+        if actions.merge:
+            iw.merge()
 
     @RateLimited
     def is_pr_merged(self, number, repo=None):
