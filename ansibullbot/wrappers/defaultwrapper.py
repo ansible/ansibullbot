@@ -479,9 +479,6 @@ class DefaultWrapper(object):
                 sections=tf_sections.keys()
             )
 
-        if not template_data:
-            import epdb; epdb.st()
-
         return template_data
 
     @property
