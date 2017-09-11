@@ -2080,11 +2080,7 @@ class AnsibleTriage(DefaultTriager):
     @property
     def resume(self):
         '''Returns a dict with the last issue repo+number processed'''
-        if not hasattr(self, 'args'):
-            return None
         if hasattr(self.args, 'pr') and self.args.pr:
-            return None
-        if not hasattr(self.args, 'resume'):
             return None
         if not self.args.resume:
             return None
@@ -2101,11 +2097,7 @@ class AnsibleTriage(DefaultTriager):
         return data
 
     def set_resume(self, repo, number):
-        if not hasattr(self, 'args'):
-            return None
         if hasattr(self.args, 'pr') and self.args.pr:
-            return None
-        if not hasattr(self.args, 'resume'):
             return None
         if not self.args.resume:
             return None
