@@ -214,7 +214,7 @@ class AnsibleTriage(DefaultTriager):
         self.IM = IssueMigrator(C.DEFAULT_GITHUB_TOKEN)
 
         # resume is just an overload for the start-at argument
-        resume = self.resume
+        resume = self.get_resume()
         if resume:
             if self.args.sort == 'desc':
                 self.args.start_at = resume['number'] - 1
@@ -2103,17 +2103,16 @@ class AnsibleTriage(DefaultTriager):
 
         parser.add_argument("--start-at", "--resume_id", type=int,
                             help="Start triage at the specified pr|issue")
-        parser.add_argument("--resume", action="store_true",
+        parser.add_argument("--resume", action="store_true", dest="resume_enabled",
                             help="pickup right after where the bot last stopped")
         parser.add_argument("--no_since", action="store_true",
                             help="Do not use the since keyword to fetch issues")
 
         return parser
 
-    @property
-    def resume(self):
+    def get_resume(self):
         '''Returns a dict with the last issue repo+number processed'''
-        if self.args.pr or not self.args.resume:
+        if self.args.pr or not self.args.resume_enabled:
             return
 
         resume_file = os.path.join(self.cachedir_base, 'resume.json')
@@ -2127,7 +2126,7 @@ class AnsibleTriage(DefaultTriager):
         return data
 
     def set_resume(self, repo, number):
-        if self.args.pr or not self.args.resume:
+        if self.args.pr or not self.args.resume_enabled:
             return
 
         data = {
