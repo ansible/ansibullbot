@@ -88,8 +88,7 @@ class DefaultTriager(object):
         self.github_token = C.DEFAULT_GITHUB_TOKEN
 
         # where to store junk
-        self.cachedir = os.path.expanduser(self.cachedir)
-        self.cachedir_base = self.cachedir
+        self.cachedir_base = os.path.expanduser('~/.ansibullbot/cache')
 
         self.set_logger()
         logging.info('starting bot')
@@ -103,7 +102,7 @@ class DefaultTriager(object):
 
         # wrap the connection
         logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir)
+        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
 
         # get valid labels
         logging.info('getting labels')
