@@ -159,15 +159,11 @@ class AnsibleTriage(DefaultTriager):
 
     def __init__(self):
 
-        parser = self.create_parser()
-        self.args = args = parser.parse_args()
+        super(AnsibleTriage, self).__init__()
 
-        for x in vars(self.args):
-            try:
-                val = getattr(self.args, x)
-                setattr(self, x, val)
-            except AttributeError:
-                pass
+        # get valid labels
+        logging.info('getting labels')
+        self.valid_labels = self.get_valid_labels("ansible/ansible")
 
         self._ansible_members = []
         self._ansible_core_team = []
@@ -175,16 +171,6 @@ class AnsibleTriage(DefaultTriager):
         self.botmeta = {}
         self.automerge_on = False
 
-        self.last_run = None
-
-        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
-        self.github_token = C.DEFAULT_GITHUB_TOKEN
-        self.github_user = C.DEFAULT_GITHUB_USERNAME
-
-        self.always_pause = False
-
-        # where to store junk
-        self.cachedir_base = '~/.ansibullbot/cache'
         self.cachedir_base = os.path.expanduser(self.cachedir_base)
 
         # repo objects
@@ -193,17 +179,6 @@ class AnsibleTriage(DefaultTriager):
         # scraped summaries for all issues
         self.issue_summaries = {}
 
-        self.set_logger()
-        logging.info('starting bot')
-
-        # connect to github
-        logging.info('creating api connection')
-        self.gh = self._connect()
-
-        # wrap the connection
-        logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh)
-
         # create the scraper for www data
         logging.info('creating webscraper')
         self.gws = GithubWebScraper(cachedir=self.cachedir_base)
@@ -211,10 +186,6 @@ class AnsibleTriage(DefaultTriager):
             self.gqlc = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
         else:
             self.gqlc = None
-
-        # get valid labels
-        logging.info('getting labels')
-        self.valid_labels = self.get_valid_labels('ansible/ansible')
 
         # set the indexers
         logging.info('creating version indexer')

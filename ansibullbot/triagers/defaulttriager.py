@@ -103,10 +103,6 @@ class DefaultTriager(object):
         logging.info('creating api wrapper')
         self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
 
-        # get valid labels
-        logging.info('getting labels')
-        self.valid_labels = self.get_valid_labels(self.repo)
-
     @classmethod
     def create_parser(cls):
         """Creates an argument parser

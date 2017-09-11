@@ -37,6 +37,12 @@ from github.GithubException import UnknownObjectException
 
 class SimpleTriager(DefaultTriager):
 
+    def __init__(self):
+        super(SimpleTriager, self).__init__()
+        # get valid labels
+        logging.info('getting labels')
+        self.valid_labels = self.get_valid_labels(self.repo)
+
     @classmethod
     def create_parser(cls):
         parser = DefaultTriager.create_parser()
