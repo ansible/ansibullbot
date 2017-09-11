@@ -151,6 +151,9 @@ class GithubGraphQLClient(object):
         for prs in psummaries:
             summaries.append(prs)
 
+        if not summaries:
+            return []
+
         numbers = [x['number'] for x in summaries]
         if numbers:
             missing = [x for x in xrange(1, numbers[-1]) if x not in numbers]
