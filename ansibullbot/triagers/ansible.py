@@ -1242,6 +1242,11 @@ class AnsibleTriage(DefaultTriager):
                         import epdb; epdb.st()
                     raise LabelWafflingError(msg)
 
+    def apply_actions(self, iw, actions):
+        if self.safe_force:
+            self.check_safe_match(iw, actions)
+        return super(AnsibleTriage, self).apply_actions(iw, actions)
+
     def check_safe_match(self, iw, actions):
 
         if self.safe_force_script:

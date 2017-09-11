@@ -304,45 +304,9 @@ class DefaultTriager(object):
         comment = template.render(**tvars)
         return comment
 
-    def check_safe_match(self, iw, actions):
-        """ Turn force on or off depending on match characteristics """
-        safe_match = False
-
-        if actions.count() == 0:
-            safe_match = True
-
-        elif not actions.close and not actions.unlabel:
-            if len(actions.newlabel) == 1:
-                if actions.newlabel[0].startswith('affects_'):
-                    safe_match = True
-
-        else:
-            safe_match = False
-            if self.module:
-                if self.module in iw.instance.title.lower():
-                    safe_match = True
-
-        # be more lenient on re-notifications
-        if not safe_match:
-            if not actions.close and \
-                    not actions.unlabel and \
-                    not actions.newlabel:
-
-                if len(actions.comments) == 1:
-                    if 'still waiting' in actions.comments[0]:
-                        safe_match = True
-
-        if safe_match:
-            self.force = True
-        else:
-            self.force = False
-
     def apply_actions(self, iw, actions):
 
         action_meta = {'REDO': False}
-
-        if hasattr(self, 'safe_force') and self.safe_force:
-            self.check_safe_match(iw, actions)
 
         if actions.count() > 0:
 
