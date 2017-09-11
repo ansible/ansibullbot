@@ -174,29 +174,12 @@ class AnsibleTriage(DefaultTriager):
         self.automerge_on = False
 
         self.last_run = None
-        self.daemonize = None
-        self.daemonize_interval = None
-        self.dry_run = False
-        self.force = False
 
         self.github_pass = C.DEFAULT_GITHUB_PASSWORD
         self.github_token = C.DEFAULT_GITHUB_TOKEN
         self.github_user = C.DEFAULT_GITHUB_USERNAME
 
-        self.logfile = None
-        self.no_since = False
-        self.only_closed = False
-        self.only_issues = False
-        self.only_open = False
-        self.only_prs = False
-        self.pause = False
         self.always_pause = False
-        self.pr = False
-        self.repo = None
-        self.safe_force = False
-        self.skiprepo = []
-        self.start_at = False
-        self.verbose = False
 
         # where to store junk
         self.cachedir = '~/.ansibullbot/cache'

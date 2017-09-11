@@ -82,12 +82,7 @@ class DefaultTriager(object):
             setattr(self, x, val)
 
         self.last_run = None
-        self.daemonize = None
-        self.daemonize_interval = None
-        self.dry_run = False
-        self.force = False
 
-        self.configfile = self.args.configfile
         self.config = ConfigParser.ConfigParser()
         self.config.read([self.configfile])
 
@@ -106,11 +101,7 @@ class DefaultTriager(object):
         except:
             self.github_token = None
 
-        self.repo = self.args.repo
-        self.logfile = self.args.logfile
-
         # where to store junk
-        self.cachedir = self.args.cachedir
         self.cachedir = os.path.expanduser(self.cachedir)
         self.cachedir_base = self.cachedir
 
