@@ -56,6 +56,14 @@ class IssueMigrator(object):
         src_rr = self.s.get(src_api_url, headers=self.get_headers())
         src_data = src_rr.json()
 
+        # get the labels
+        labels = sorted([x['name'] for x in src_data['labels']])
+        vlabel = [x for x in labels if x.startswith('affects_')]
+        if len(vlabel) >= 1:
+            vlabel = vlabel[0]
+        else:
+            vlabel = None
+
         # get the comments
         src_comment_url = src_api_url + '/comments'
         src_comment_rr = self.s.get(src_comment_url, headers=self.get_headers())
@@ -96,6 +104,28 @@ class IssueMigrator(object):
             self.migration_map[issueurl] = {}
             self.migration_map[issueurl]['new'] = new_html_issue
             self.migration_map[issueurl]['comments'] = []
+
+        else:
+
+            # need to fetch the api data for the new issue
+            newurl = self.migration_map.get(issueurl, {}).get('new')
+            parts = urlparse(newurl).path.split('/')
+            new_repo = '/'.join(parts[1:3])
+            new_number = int(parts[-1])
+            new_api_url = 'https://api.github.com/repos/{}/issues/{}'.format(new_repo, new_number)
+            new_rr = self.s.get(new_api_url, headers=self.get_headers())
+            new_data = new_rr.json()
+            new_html_issue = new_rr.json()['html_url']
+
+        # add the version label if known
+        if vlabel:
+            clabels = [x['name'] for x in new_data['labels']]
+            if vlabel not in clabels:
+                label_url = new_data['labels_url']
+                label_url = label_url.split('{')[0]
+                payload = [vlabel]
+                logging.info('adding {} label to {}'.format(vlabel, new_html_issue))
+                new_rr = self.__post(label_url, self.get_headers(), payload)
 
         # add the comments
         totalc = len(src_comment_data)
