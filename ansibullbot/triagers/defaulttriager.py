@@ -17,7 +17,6 @@
 
 from __future__ import print_function
 
-import ConfigParser
 import abc
 import json
 import logging
@@ -32,6 +31,7 @@ from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+import ansibullbot.constants as C
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
@@ -83,23 +83,9 @@ class DefaultTriager(object):
 
         self.last_run = None
 
-        self.config = ConfigParser.ConfigParser()
-        self.config.read([self.configfile])
-
-        try:
-            self.github_user = self.config.get('defaults', 'github_username')
-        except:
-            self.github_user = None
-
-        try:
-            self.github_pass = self.config.get('defaults', 'github_password')
-        except:
-            self.github_pass = None
-
-        try:
-            self.github_token = self.config.get('defaults', 'github_token')
-        except:
-            self.github_token = None
+        self.github_user = C.DEFAULT_GITHUB_USERNAME
+        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
+        self.github_token = C.DEFAULT_GITHUB_TOKEN
 
         # where to store junk
         self.cachedir = os.path.expanduser(self.cachedir)
