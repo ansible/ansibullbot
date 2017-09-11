@@ -198,10 +198,6 @@ class DefaultTriager(object):
                 password=self.github_pass
             )
 
-    @abc.abstractmethod
-    def _get_repo_path(self):
-        pass
-
     def is_pr(self, issue):
         if '/pull/' in issue.html_url:
             return True
@@ -278,25 +274,17 @@ class DefaultTriager(object):
         return sorted(members)
 
     #@RateLimited
-    def get_valid_labels(self, repo=None):
+    def get_valid_labels(self, repo):
 
         # use the repo wrapper to enable caching+updating
         if not self.ghw:
             self.gh = self._connect()
             self.ghw = GithubWrapper(self.gh)
 
-        if not repo:
-            # OLD workflow
-            self.repo = self.ghw.get_repo(self._get_repo_path())
-            vlabels = []
-            for vl in self.repo.get_labels():
-                vlabels.append(vl.name)
-        else:
-            # v3 workflow
-            rw = self.ghw.get_repo(repo)
-            vlabels = []
-            for vl in rw.get_labels():
-                vlabels.append(vl.name)
+        rw = self.ghw.get_repo(repo)
+        vlabels = []
+        for vl in rw.get_labels():
+            vlabels.append(vl.name)
 
         return vlabels
 
@@ -494,15 +482,12 @@ class DefaultTriager(object):
             iw.merge()
 
     @RateLimited
-    def is_pr_merged(self, number, repo=None):
+    def is_pr_merged(self, number, repo):
         '''Check if a PR# has been merged or not'''
         merged = False
         pr = None
         try:
-            if not repo:
-                pr = self.repo.get_pullrequest(number)
-            else:
-                pr = repo.get_pullrequest(number)
+            pr = repo.get_pullrequest(number)
         except Exception as e:
             print(e)
         if pr:
