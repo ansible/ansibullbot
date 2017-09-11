@@ -3,14 +3,11 @@
 import json
 import logging
 import requests
-import sys
 import time
 from tenacity import retry
 from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 from urlparse import urlparse
-
-from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 
 
 class IssueMigrator(object):
@@ -30,8 +27,8 @@ class IssueMigrator(object):
         logging.info('POSTCOUNT: {}'.format(self.postcount))
 
         if self.postcount > 18:
-            logging.info('sleep 3m')
-            time.sleep(3*60)
+            logging.info('sleep 2m')
+            time.sleep(2*60)
             self.postcount = 0
 
         logging.info(headers)
@@ -93,7 +90,7 @@ class IssueMigrator(object):
             new_rr = self.__post(new_post_url, self.get_headers(), payload)
 
             new_data = new_rr.json()
-            new_api_issue = new_rr.json()['url']
+            #new_api_issue = new_rr.json()['url']
             new_html_issue = new_rr.json()['html_url']
 
             self.migration_map[issueurl] = {}
