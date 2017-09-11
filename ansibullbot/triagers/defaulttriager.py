@@ -194,13 +194,11 @@ class DefaultTriager(object):
         now = self.get_current_time()
         gh_org = self._connect().get_organization(organization)
 
-        cachedir = self.cachedir
-        if cachedir.endswith('/issues'):
-            cachedir = os.path.dirname(cachedir)
-        cachefile = os.path.join(cachedir, 'members.pickle')
-
+        cachedir = os.path.join(self.cachedir_base, organization)
         if not os.path.isdir(cachedir):
             os.makedirs(cachedir)
+
+        cachefile = os.path.join(cachedir, 'members.pickle')
 
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
