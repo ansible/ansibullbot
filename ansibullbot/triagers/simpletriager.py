@@ -41,13 +41,13 @@ class SimpleTriager(DefaultTriager):
     def run(self):
 
         # create the fileindexer
-        fi_cache = '/tmp/ansibullbot/cache/{}.files.checkout'.format(self.repopath)
+        fi_cache = '/tmp/ansibullbot/cache/{}.files.checkout'.format(self.repo)
         fi_cache = os.path.expanduser(fi_cache)
-        self.file_indexer = FileIndexer(checkoutdir=fi_cache, repo=self.repopath)
+        self.file_indexer = FileIndexer(checkoutdir=fi_cache, repo=self.repo)
         self.file_indexer.update()
 
         # make a repo object for the github api
-        repo = self.ghw.get_repo(self.repopath)
+        repo = self.ghw.get_repo(self.repo)
 
         # map for issue type to label
         try:

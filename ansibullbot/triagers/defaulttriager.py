@@ -101,7 +101,7 @@ class DefaultTriager(object):
         except:
             self.github_token = None
 
-        self.repopath = self.args.repo
+        self.repo = self.args.repo
         self.logfile = self.args.logfile
 
         # where to store junk
@@ -130,7 +130,7 @@ class DefaultTriager(object):
 
         # get valid labels
         logging.info('getting labels')
-        self.valid_labels = self.get_valid_labels(self.repopath)
+        self.valid_labels = self.get_valid_labels(self.repo)
 
     @property
     def resume(self):
