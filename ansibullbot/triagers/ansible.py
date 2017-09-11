@@ -1346,31 +1346,6 @@ class AnsibleTriage(DefaultTriager):
         action_meta = self.apply_actions(issue, actions)
         return action_meta
 
-    def trigger_rate_limit(self):
-        '''Repeatedly make calls to exhaust rate limit'''
-
-        self.gh = self._connect()
-        self.ghw = GithubWrapper(self.gh)
-
-        while True:
-            for repo in REPOS:
-                cachedir = os.path.join(self.cachedir_base, repo)
-                thisrepo = self.ghw.get_repo(repo, verbose=False)
-                issues = thisrepo.repo.get_issues()
-                rl = thisrepo.get_rate_limit()
-                pprint(rl)
-
-                for issue in issues:
-                    iw = IssueWrapper(
-                            github=self.ghw,
-                            repo=thisrepo,
-                            issue=issue,
-                            cachedir=cachedir
-                    )
-                    iw.history
-                    rl = thisrepo.get_rate_limit()
-                    pprint(rl)
-
     def get_stale_numbers(self, reponame):
         # https://github.com/ansible/ansibullbot/issues/458
 
