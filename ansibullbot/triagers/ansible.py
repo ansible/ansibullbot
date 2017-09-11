@@ -1559,7 +1559,8 @@ class AnsibleTriage(DefaultTriager):
                     if x[1]['created_at']
                 ]
                 ts = sorted(set(ts))
-                self.repos[repo]['since'] = ts[-1]
+                if ts:
+                    self.repos[repo]['since'] = ts[-1]
             else:
                 since = datetime.datetime.strptime(
                     self.repos[repo]['since'],
