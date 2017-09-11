@@ -2076,3 +2076,47 @@ class AnsibleTriage(DefaultTriager):
         """Renders templates into comments using the boilerplate as filename"""
         template = environment.get_template('%s.j2' % boilerplate)
         return template.render()
+
+    @property
+    def resume(self):
+        '''Returns a dict with the last issue repo+number processed'''
+        if not hasattr(self, 'args'):
+            return None
+        if hasattr(self.args, 'pr') and self.args.pr:
+            return None
+        if not hasattr(self.args, 'resume'):
+            return None
+        if not self.args.resume:
+            return None
+
+        if hasattr(self, 'cachedir_base'):
+            resume_file = os.path.join(self.cachedir_base, 'resume.json')
+        else:
+            resume_file = os.path.join(self.cachedir, 'resume.json')
+        if not os.path.isfile(resume_file):
+            return None
+
+        with open(resume_file, 'rb') as f:
+            data = json.loads(f.read())
+        return data
+
+    def set_resume(self, repo, number):
+        if not hasattr(self, 'args'):
+            return None
+        if hasattr(self.args, 'pr') and self.args.pr:
+            return None
+        if not hasattr(self.args, 'resume'):
+            return None
+        if not self.args.resume:
+            return None
+
+        data = {
+            'repo': repo,
+            'number': number
+        }
+        if hasattr(self, 'cachedir_base'):
+            resume_file = os.path.join(self.cachedir_base, 'resume.json')
+        else:
+            resume_file = os.path.join(self.cachedir, 'resume.json')
+        with open(resume_file, 'wb') as f:
+            f.write(json.dumps(data, indent=2))
