@@ -157,9 +157,11 @@ class AnsibleTriage(DefaultTriager):
         'close_me'
     ]
 
-    def __init__(self, args):
+    def __init__(self):
 
-        self.args = args
+        parser = self.create_parser()
+        self.args = args = parser.parse_args()
+
         for x in vars(self.args):
             try:
                 val = getattr(self.args, x)
@@ -193,9 +195,6 @@ class AnsibleTriage(DefaultTriager):
 
         self.set_logger()
         logging.info('starting bot')
-
-        if hasattr(self.args, 'pause') and self.args.pause:
-            self.always_pause = True
 
         # connect to github
         logging.info('creating api connection')
@@ -2073,6 +2072,73 @@ class AnsibleTriage(DefaultTriager):
         """Renders templates into comments using the boilerplate as filename"""
         template = environment.get_template('%s.j2' % boilerplate)
         return template.render()
+
+    @classmethod
+    def create_parser(cls):
+
+        parser = DefaultTriager.create_parser()
+
+        parser.description = "Triage issue and pullrequest queues for Ansible.\n" \
+                             " (NOTE: only useful if you have commit access to" \
+                             " the repo in question.)"
+
+        parser.add_argument("--repo", "-r", type=str, choices=MREPOS,
+                    help="Github repo to triage (defaults to all)")
+
+        parser.add_argument("--skip_no_update", action="store_true",
+                            help="skip processing if updated_at hasn't changed")
+
+        parser.add_argument("--skip_no_update_timeout", action="store_true",
+                            help="ignore skip logic if last processed >={} days ago".format(C.DEFAULT_STALE_WINDOW))
+
+        parser.add_argument("--collect_only", action="store_true",
+                            help="stop after caching issues")
+
+        parser.add_argument("--skip_module_repos", action="store_true",
+                            help="ignore the module repos")
+        parser.add_argument("--module_repos_only", action="store_true",
+                            help="only process the module repos")
+
+        parser.add_argument("--sort", default='desc', choices=['asc', 'desc'],
+                            help="Direction to sort issues [desc=9-0 asc=0-9]")
+
+        parser.add_argument("--skiprepo", action='append',
+                            help="Github repo to skip triaging")
+
+        parser.add_argument("--only_prs", action="store_true",
+                            help="Triage pullrequests only")
+        parser.add_argument("--only_issues", action="store_true",
+                            help="Triage issues only")
+
+        parser.add_argument("--only_open", action="store_true",
+                            help="Triage open issues|prs only")
+        parser.add_argument("--only_closed", action="store_true",
+                            help="Triage closed issues|prs only")
+
+        parser.add_argument("--safe_force", action="store_true",
+                            help="Prompt only on specific actions")
+        parser.add_argument("--safe_force_script", type=str,
+                            help="Script to check safe force")
+        parser.add_argument("--ignore_state", action="store_true",
+                            help="Do not skip processing closed issues")
+
+        # ALWAYS ON NOW
+        #parser.add_argument("--issue_component_matching", action="store_true",
+        #                    help="Try to enumerate the component labels for issues")
+
+        parser.add_argument(
+            "--pr", "--id", type=str,
+            help="Triage only the specified pr|issue (separated by commas)"
+        )
+
+        parser.add_argument("--start-at", "--resume_id", type=int,
+                            help="Start triage at the specified pr|issue")
+        parser.add_argument("--resume", action="store_true",
+                            help="pickup right after where the bot last stopped")
+        parser.add_argument("--no_since", action="store_true",
+                            help="Do not use the since keyword to fetch issues")
+
+        return parser
 
     @property
     def resume(self):

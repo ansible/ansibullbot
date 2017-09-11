@@ -18,6 +18,7 @@
 from __future__ import print_function
 
 import abc
+import argparse
 import json
 import logging
 import os
@@ -73,9 +74,10 @@ class DefaultTriager(object):
 
     ITERATION = 0
 
-    def __init__(self, args):
+    def __init__(self):
 
-        self.args = args
+        parser = self.create_parser()
+        self.args = args = parser.parse_args()
 
         for x in vars(args):
             val = getattr(args, x)
@@ -88,13 +90,10 @@ class DefaultTriager(object):
         self.github_token = C.DEFAULT_GITHUB_TOKEN
 
         # where to store junk
-        self.cachedir_base = os.path.expanduser('~/.ansibullbot/cache')
+        self.cachedir_base = os.path.expanduser(self.cachedir_base)
 
         self.set_logger()
         logging.info('starting bot')
-
-        if hasattr(self.args, 'pause') and self.args.pause:
-            self.always_pause = True
 
         # connect to github
         logging.info('creating api connection')
@@ -108,6 +107,44 @@ class DefaultTriager(object):
         logging.info('getting labels')
         self.valid_labels = self.get_valid_labels(self.repo)
 
+    @classmethod
+    def create_parser(cls):
+        """Creates an argument parser
+
+        Returns:
+            A argparse.ArgumentParser object
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--cachedir", type=str, dest='cachedir_base',
+                            default='~/.ansibullbot/cache')
+        parser.add_argument("--logfile", type=str,
+                            default='/var/log/ansibullbot.log',
+                            help="Send logging to this file")
+        parser.add_argument("--daemonize", action="store_true",
+                            help="run in a continuos loop")
+        parser.add_argument("--daemonize_interval", type=int, default=(30 * 60),
+                            help="seconds to sleep between loop iterations")
+        parser.add_argument("--debug", "-d", action="store_true",
+                            help="Debug output")
+        parser.add_argument("--verbose", "-v", action="store_true",
+                            help="Verbose output")
+        parser.add_argument("--dry-run", "-n", action="store_true",
+                            help="Don't make any changes")
+        parser.add_argument("--force", "-f", action="store_true",
+                            help="Do not ask questions")
+        parser.add_argument("--pause", "-p", action="store_true", dest="always_pause",
+                            help="Always pause between prs|issues")
+        parser.add_argument("--force_rate_limit", action="store_true",
+                            help="debug: force the rate limit")
+        parser.add_argument("--force_description_fixer", action="store_true",
+                            help="Always invoke the description fixer")
+        # useful for debugging
+        parser.add_argument("--dump_actions", action="store_true",
+                            help="serialize the actions to disk [/tmp/actions]")
+        parser.add_argument("--botmetafile", type=str,
+                            default=None,
+                            help="Use this filepath for botmeta instead of from the repo")
+        return parser
 
     def set_logger(self):
         if hasattr(self.args, 'debug') and self.args.debug:

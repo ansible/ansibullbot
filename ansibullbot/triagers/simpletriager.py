@@ -25,7 +25,6 @@
 #     where the bot can't
 #   * different workflows should be a matter of enabling different plugins
 
-import copy
 import logging
 import os
 
@@ -38,12 +37,26 @@ from github.GithubException import UnknownObjectException
 
 class SimpleTriager(DefaultTriager):
 
+    @classmethod
+    def create_parser(cls):
+        parser = DefaultTriager.create_parser()
+
+        parser.description = "Triage issue and pullrequest queues for any github repo.\n" \
+                             " (NOTE: only useful if you have commit access to" \
+                             " the repo in question.)"
+
+        parser.add_argument("--pr", "--id", type=str, dest="number",
+                            help="Triage only the specified pr|issue (separated by commas)")
+        parser.add_argument("--repo", "-r", type=str, required=True,
+                    help="Github repo to triage (defaults to all)")
+        return parser
+
     def run(self):
 
         # create the fileindexer
         fi_cache = '/tmp/ansibullbot/cache/{}.files.checkout'.format(self.repo)
         fi_cache = os.path.expanduser(fi_cache)
-        self.file_indexer = FileIndexer(checkoutdir=fi_cache, repo=self.repo)
+        self.file_indexer = FileIndexer(botmetafile=self.botmetafile, checkoutdir=fi_cache, repo=self.repo)
         self.file_indexer.update()
 
         # make a repo object for the github api
@@ -69,7 +82,8 @@ class SimpleTriager(DefaultTriager):
             actions = DefaultActions()
 
             # wrap the issue for extra magic
-            iw = IssueWrapper(github=self.ghw, repo=repo, issue=issue, cachedir=self.cachedir, file_indexer=self.file_indexer)
+            cachedir = os.path.join(self.cachedir_base, self.repo)
+            iw = IssueWrapper(github=self.ghw, repo=repo, issue=issue, cachedir=cachedir, file_indexer=self.file_indexer)
 
             # what did the submitter provide in the body?
             td = iw.template_data
