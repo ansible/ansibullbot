@@ -75,10 +75,10 @@ class SimpleTriager(DefaultTriager):
             label_map = {}
 
         # collect issues
-        if not self.args.number:
+        if not self.number:
             issues = repo.get_issues()
         else:
-            issue = repo.get_issue(int(self.args.number))
+            issue = repo.get_issue(int(self.number))
             issues = [issue]
 
         # iterate through issues and apply actions

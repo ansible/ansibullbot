@@ -77,7 +77,7 @@ class DefaultTriager(object):
     def __init__(self):
 
         parser = self.create_parser()
-        self.args = args = parser.parse_args()
+        args = parser.parse_args()
 
         for x in vars(args):
             val = getattr(args, x)
@@ -143,28 +143,23 @@ class DefaultTriager(object):
         return parser
 
     def set_logger(self):
-        if hasattr(self.args, 'debug') and self.args.debug:
+        if self.debug:
             logging.level = logging.DEBUG
         else:
             logging.level = logging.INFO
         logFormatter = \
             logging.Formatter("%(asctime)s %(levelname)s %(message)s")
         rootLogger = logging.getLogger()
-        if hasattr(self.args, 'debug') and self.args.debug:
+        if self.debug:
             rootLogger.setLevel(logging.DEBUG)
         else:
             rootLogger.setLevel(logging.INFO)
 
-        if hasattr(self.args, 'logfile'):
-            logfile = self.args.logfile
-        else:
-            logfile = '/tmp/ansibullbot.log'
-
-        logdir = os.path.dirname(logfile)
+        logdir = os.path.dirname(self.logfile)
         if logdir and not os.path.isdir(logdir):
             os.makedirs(logdir)
 
-        fileHandler = logging.FileHandler(logfile)
+        fileHandler = logging.FileHandler(self.logfile)
         fileHandler.setFormatter(logFormatter)
         rootLogger.addHandler(fileHandler)
         consoleHandler = logging.StreamHandler()
@@ -173,13 +168,12 @@ class DefaultTriager(object):
 
     def start(self):
 
-        if hasattr(self.args, 'force_rate_limit') and \
-                self.args.force_rate_limit:
+        if self.force_rate_limit:
             logging.warning('attempting to trigger rate limit')
             self.trigger_rate_limit()
             return
 
-        if hasattr(self.args, 'daemonize') and self.args.daemonize:
+        if self.daemonize:
             logging.info('starting daemonize loop')
             self.loop()
         else:
@@ -298,7 +292,7 @@ class DefaultTriager(object):
         while True:
             self.run()
             self.ITERATION += 1
-            interval = self.args.daemonize_interval
+            interval = self.daemonize_interval
             logging.info('sleep %ss (%sm)' % (interval, interval / 60))
             time.sleep(interval)
 
@@ -356,10 +350,8 @@ class DefaultTriager(object):
 
         if actions.count() > 0:
 
-            if hasattr(self, 'args'):
-                if hasattr(self.args, 'dump_actions'):
-                    if self.args.dump_actions:
-                        self.dump_action_dict(iw, actions)
+            if self.dump_actions:
+                self.dump_action_dict(iw, actions)
 
             if self.dry_run:
                 print("Dry-run specified, skipping execution of actions")
@@ -396,7 +388,7 @@ class DefaultTriager(object):
                 # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
-        elif hasattr(self, 'force_description_fixer') and self.args.force_description_fixer:
+        elif self.force_description_fixer:
             if iw.html_url not in self.FIXED_ISSUES:
                 if self.meta['template_missing_sections']:
                     changed = self.template_wizard(iw)
