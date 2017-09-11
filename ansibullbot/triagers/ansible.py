@@ -1323,12 +1323,32 @@ class AnsibleTriage(DefaultTriager):
     def move_issue(self, issue):
         '''Move an issue to ansible/ansible'''
         # this should only happen >30 days -after- the repomerge
+
+        # load the cached data
+        mdata = {}
+        mfile = os.path.join(issue.cachedir, 'issues', str(issue.number), 'migration.json')
+        mdir = os.path.dirname(mfile)
+        if not os.path.isdir(mdir):
+            os.makedirs(mdir)
+        if os.path.isfile(mfile):
+            with open(mfile, 'rb') as f:
+                mdata = json.loads(f.read())
+
+        # resume from last checkpoint
+        if mdata:
+            self.IM.migration_map[issue.html_url] = mdata
+
         try:
             self.IM.migrate(issue.html_url, 'ansible/ansible')
         except Exception as e:
             logging.error(e)
             if C.DEFAULT_BREAKPOINTS:
                 import epdb; epdb.st()
+
+        # cache the data in case of errors
+        mdata = self.IM.migration_map.get(issue.html_url)
+        with open(mfile, 'wb') as f:
+            f.write(json.dumps(mdata, indent=2))
 
     def add_repomerge_comment(self, issue, actions, bp='repomerge'):
         '''Add the comment without closing'''
