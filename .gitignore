@@ -10,3 +10,5 @@ headers*
 run*
 ansibullbot.egg-info
 ansibullbot.cfg
+*.sublime-*
+Vagrantfile
