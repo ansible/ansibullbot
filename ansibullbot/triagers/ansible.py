@@ -103,8 +103,7 @@ class AnsibleActions(DefaultActions):
 
 class AnsibleTriage(DefaultTriager):
 
-    BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
-
+    BOTNAMES = ['ansibot', 'ansibotdev', 'gregdek', 'robynbergeron']
 
     EMPTY_META = {
     }
@@ -590,7 +589,10 @@ class AnsibleTriage(DefaultTriager):
         dmeta['created_at'] = issuewrapper.created_at.isoformat()
         dmeta['updated_at'] = issuewrapper.updated_at.isoformat()
         dmeta['template_data'] = issuewrapper.template_data
-        dmeta['actions'] = vars(actions)
+        if actions:
+            dmeta['actions'] = vars(actions)
+        else:
+            dmeta['actions'] = {}
         dmeta['labels'] = issuewrapper.labels
         dmeta['assignees'] = issuewrapper.assignees
         if issuewrapper.history:
@@ -674,7 +676,7 @@ class AnsibleTriage(DefaultTriager):
                 else:
                     # do nothing
                     pass
-            self.save_meta(iw, {'updated_at': iw.updated_at.isoformat()})
+            self.save_meta(iw, {'updated_at': iw.updated_at.isoformat()}, None)
 
     def load_meta(self, issuewrapper):
         mfile = os.path.join(
@@ -1316,6 +1318,16 @@ class AnsibleTriage(DefaultTriager):
     def move_issue(self, issue):
         '''Move an issue to ansible/ansible'''
         # this should only happen >30 days -after- the repomerge
+
+        # issue to move
+        #   ansible/ansible-modules-extras#3543
+        # <input type="text" name="issue" id="issue" placeholder="owner/repo#num" tabindex="1">
+
+        # destination repo
+        #   ansible/ansible
+        # <input type="text" name="repo" id="repo" placeholder="owner/repo" tabindex="2">
+
+        # <button class="pure-button" id="move" disabled="disabled" tabindex="3">Move issue!</button>
         pass
 
     def add_repomerge_comment(self, issue, actions, bp='repomerge'):

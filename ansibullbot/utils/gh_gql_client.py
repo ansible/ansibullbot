@@ -152,7 +152,10 @@ class GithubGraphQLClient(object):
             summaries.append(prs)
 
         numbers = [x['number'] for x in summaries]
-        missing = [x for x in xrange(1, numbers[-1]) if x not in numbers]
+        if numbers:
+            missing = [x for x in xrange(1, numbers[-1]) if x not in numbers]
+        else:
+            missing = []
         for x in missing:
             data = {
                 'created_at': None,
