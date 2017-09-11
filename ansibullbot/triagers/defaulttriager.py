@@ -385,6 +385,10 @@ class DefaultTriager(object):
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
         elif self.force_description_fixer:
+            # FIXME: self.FIXED_ISSUES not defined since 1cf9674cd38edbd17aff906d72296c99043e5c13
+            #        either define self.FIXED_ISSUES, either remove this method
+            # FIXME force_description_fixer is not known by DefaultTriager (only
+            #       by AnsibleTriage): if not removed, move it to AnsibleTriage
             if iw.html_url not in self.FIXED_ISSUES:
                 if self.meta['template_missing_sections']:
                     changed = self.template_wizard(iw)
