@@ -159,13 +159,20 @@ class AnsibleTriage(DefaultTriager):
 
     def __init__(self, args):
 
+        self.args = args
+        for x in vars(self.args):
+            try:
+                val = getattr(self.args, x)
+                setattr(self, x, val)
+            except AttributeError:
+                pass
+
         self._ansible_members = []
         self._ansible_core_team = []
         self._botmeta_content = None
         self.botmeta = {}
         self.automerge_on = False
 
-        self.args = args
         self.last_run = None
         self.daemonize = None
         self.daemonize_interval = None
@@ -204,14 +211,6 @@ class AnsibleTriage(DefaultTriager):
 
         self.set_logger()
         logging.info('starting bot')
-
-        logging.debug('setting bot attributes')
-        for x in vars(self.args):
-            try:
-                val = getattr(self.args, x)
-                setattr(self, x, val)
-            except AttributeError:
-                pass
 
         if hasattr(self.args, 'pause') and self.args.pause:
             self.always_pause = True

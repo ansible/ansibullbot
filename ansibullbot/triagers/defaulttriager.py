@@ -76,6 +76,11 @@ class DefaultTriager(object):
     def __init__(self, args):
 
         self.args = args
+
+        for x in vars(args):
+            val = getattr(args, x)
+            setattr(self, x, val)
+
         self.last_run = None
         self.daemonize = None
         self.daemonize_interval = None
@@ -111,11 +116,6 @@ class DefaultTriager(object):
 
         self.set_logger()
         logging.info('starting bot')
-
-        logging.debug('setting bot attributes')
-        for x in vars(self.args):
-            val = getattr(self.args, x)
-            setattr(self, x, val)
 
         if hasattr(self.args, 'pause') and self.args.pause:
             self.always_pause = True
