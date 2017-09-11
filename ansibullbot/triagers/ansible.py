@@ -45,6 +45,7 @@ from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
 from ansibullbot.utils.file_tools import FileIndexer
+from ansibullbot.utils.migrator import IssueMigrator
 from ansibullbot.utils.shippable_api import ShippableRuns
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.receiver_client import post_to_receiver
@@ -247,6 +248,10 @@ class AnsibleTriage(DefaultTriager):
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
         self.SR.update()
+
+        # issue migrator
+        logging.info('creating the issue migrator')
+        self.IM = IssueMigrator(C.DEFAULT_GITHUB_TOKEN)
 
         # resume is just an overload for the start-at argument
         resume = self.resume
@@ -1318,17 +1323,12 @@ class AnsibleTriage(DefaultTriager):
     def move_issue(self, issue):
         '''Move an issue to ansible/ansible'''
         # this should only happen >30 days -after- the repomerge
-
-        # issue to move
-        #   ansible/ansible-modules-extras#3543
-        # <input type="text" name="issue" id="issue" placeholder="owner/repo#num" tabindex="1">
-
-        # destination repo
-        #   ansible/ansible
-        # <input type="text" name="repo" id="repo" placeholder="owner/repo" tabindex="2">
-
-        # <button class="pure-button" id="move" disabled="disabled" tabindex="3">Move issue!</button>
-        pass
+        try:
+            self.IM.migrate(issue.html_url, 'ansible/ansible')
+        except Exception as e:
+            logging.error(e)
+            if C.DEFAULT_BREAKPOINTS:
+                import epdb; epdb.st()
 
     def add_repomerge_comment(self, issue, actions, bp='repomerge'):
         '''Add the comment without closing'''
