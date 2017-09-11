@@ -320,7 +320,6 @@ class AnsibleTriage(DefaultTriager):
             # set the relative cachedir
             self.cachedir = os.path.join(self.cachedir_base, repopath)
             # this is where the issue history cache goes
-            hcache = os.path.join(self.cachedir, repopath)
 
             for issue in item[1]['issues']:
 
@@ -461,7 +460,7 @@ class AnsibleTriage(DefaultTriager):
                         self.process(iw)
                     else:
                         # module repo processing ...
-                        self.run_module_repo_issue(iw, actions, hcache=hcache)
+                        self.run_module_repo_issue(iw, actions)
                         # do nothing else on these repos
                         redo = False
                         continue
@@ -613,7 +612,7 @@ class AnsibleTriage(DefaultTriager):
             dmeta
         )
 
-    def run_module_repo_issue(self, iw, actions, hcache=None):
+    def run_module_repo_issue(self, iw, actions):
         ''' Module Repos are dead!!! '''
 
         if iw.created_at >= REPOMERGEDATE:
