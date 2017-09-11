@@ -328,7 +328,6 @@ class AnsibleTriage(DefaultTriager):
 
                 self.meta = {}
                 number = issue.number
-                self.number = number
                 self.set_resume(item[0], number)
 
                 # keep track of known issues
