@@ -282,11 +282,6 @@ class DefaultTriager(object):
 
         return vlabels
 
-    def debug(self, msg=""):
-        """Prints debug message if verbosity is given"""
-        if self.verbose:
-            print("Debug: " + msg)
-
     def loop(self):
         '''Call the run method in a defined interval'''
         while True:
