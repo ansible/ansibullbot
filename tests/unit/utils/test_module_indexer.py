@@ -64,7 +64,7 @@ class TestModuleIndexer(TestCase):
               maintainers: csim
         """
 
-        filepath = 'packaging/apt.py'
+        filepath = 'lib/ansible/modules/packaging/apt.py'
         indexer = run(textwrap.dedent(BOTMETA), ['Hubert'], filepath)
         self.assertEqual(len(indexer.modules), 1)  # ensure only fake data are loaded
         self.assertEqual(indexer.modules[filepath]['maintainers'], ['Hubert'])
@@ -88,11 +88,11 @@ class TestModuleIndexer(TestCase):
             $modules/foo/bar: jim
         """
 
-        filepath = 'foo/bar/baz.py'
+        filepath = 'lib/ansible/modules/foo/bar/baz.py'
         indexer = run(textwrap.dedent(BOTMETA), ['bob'], filepath)
         self.assertEqual(len(indexer.modules), 1)  # ensure only fake data are loaded
         self.assertEqual(set(indexer.modules[filepath]['maintainers']), set(['bob', 'jim']))  # both
-        self.assertEqual(indexer.modules[filepath]['maintainers_key'], 'foo/bar')
+        self.assertEqual(indexer.modules[filepath]['maintainers_key'], 'lib/ansible/modules/foo/bar')
 
     def test_maintainers_dont_inherit_from_directory_maintainers(self):
         """module maintainers don't inherit from parent directory maintainers (both defined in BOTMETA)
@@ -113,8 +113,8 @@ class TestModuleIndexer(TestCase):
             $modules/foo/bar/baz.py: bob
         """
 
-        filepath = 'foo/bar/baz.py'
+        filepath = 'lib/ansible/modules/foo/bar/baz.py'
         indexer = run(textwrap.dedent(BOTMETA), [], filepath)
         self.assertEqual(len(indexer.modules), 1)  # ensure only fake data are loaded
         self.assertEqual(set(indexer.modules[filepath]['maintainers']), set(['bob']))  # only bob, not jim
-        self.assertEqual(indexer.modules[filepath]['maintainers_key'], 'foo/bar/baz.py')
+        self.assertEqual(indexer.modules[filepath]['maintainers_key'], 'lib/ansible/modules/foo/bar/baz.py')

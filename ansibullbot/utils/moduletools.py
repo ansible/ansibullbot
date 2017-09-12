@@ -89,11 +89,10 @@ class ModuleIndexer(object):
         # reshape data to the old format
         self.maintainers = {}
         for k,v in self.botmeta['files'].items():
-            fp = k.replace('lib/ansible/modules/', '')
             if isinstance(v, dict):
-                self.maintainers[fp] = v.get('maintainers', [])
+                self.maintainers[k] = v.get('maintainers', [])
             else:
-                self.maintainers[fp] = []
+                self.maintainers[k] = []
 
         # load the modules
         logging.info('loading modules')
@@ -548,14 +547,13 @@ class ModuleIndexer(object):
 
                 best_match = None
                 for mkey in mkeys:
-                    if mkey in v['filepath']:
+                    if v['filepath'].startswith(mkey):
                         if not best_match:
                             best_match = mkey
                             continue
                         if len(mkey) > len(best_match):
                             best_match = mkey
                 if best_match:
-
                     self.modules[k]['maintainers_key'] = best_match
                     self.modules[k]['maintainers'] += \
                         sorted(set(self.maintainers[best_match]))
