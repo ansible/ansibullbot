@@ -92,9 +92,12 @@ class BotMetadataParser(object):
         # fix the macro'ized file keys
         ydata = fix_keys(ydata)
 
-        # convert string vals to a maintainers key in a dict
         for k,v in ydata['files'].items():
-            if isinstance(v, (str, unicode)):
+            if v is None:
+                # convert empty val in dict
+                ydata['files'][k] = {}
+            elif isinstance(v, (str, unicode)):
+                # convert string vals to a maintainers key in a dict
                 ydata['files'][k] = {
                     'maintainers': v
                 }

@@ -49,6 +49,8 @@ files:
             - bar
     # using macro for the key and maintainers
     $modules/x/y: $team_galaxy
+
+    packaging/:
 """
 
 
@@ -100,6 +102,8 @@ class TestBotMetadataParserEx1(TestBotMetaIndexerBase):
             data['macros']['team_oneline'],
             ['one', 'line', 'at', 'a', 'time']
         )
+
+        self.assertEqual(dict, type(data['files']['packaging/']))
 
 class TestBotMetadataParserFileExample1(TestBotMetaIndexerBase):
     def runTest(self):
