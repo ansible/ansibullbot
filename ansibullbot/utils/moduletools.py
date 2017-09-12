@@ -562,8 +562,7 @@ class ModuleIndexer(object):
 
                     # remove the people who want to be ignored
                     if best_match in self.botmeta['files']:
-                        if isinstance(self.botmeta['files'][best_match], dict) and \
-                                'ignored' in self.botmeta['files'][best_match]:
+                        if 'ignored' in self.botmeta['files'][best_match]:
                             ignored = self.botmeta['files'][best_match]['ignored']
                             for xig in ignored:
                                 if xig in self.modules[k]['maintainers']:
