@@ -594,10 +594,13 @@ class AnsibleTriage(DefaultTriager):
         dmeta['created_at'] = issuewrapper.created_at.isoformat()
         dmeta['updated_at'] = issuewrapper.updated_at.isoformat()
         dmeta['template_data'] = issuewrapper.template_data
-        if actions:
-            dmeta['actions'] = vars(actions)
+        if isinstance(actions, dict):
+            dmeta['actions'] = actions.cop()
         else:
-            dmeta['actions'] = {}
+            if actions:
+                dmeta['actions'] = vars(actions)
+            else:
+                dmeta['actions'] = {}
         dmeta['labels'] = issuewrapper.labels
         dmeta['assignees'] = issuewrapper.assignees
         if issuewrapper.history:
@@ -632,7 +635,7 @@ class AnsibleTriage(DefaultTriager):
             # close new module issues+prs immediately
             logging.info('module issue created -after- merge')
             self.close_module_issue_with_message(iw, actions)
-            self.save_meta(iw, {'updated_at': iw.updated_at.isoformat()})
+            self.save_meta(iw, {'updated_at': iw.updated_at.isoformat()}, {'close': True})
             return
         else:
             # process history
