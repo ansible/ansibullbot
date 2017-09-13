@@ -12,3 +12,4 @@ ansibullbot.egg-info
 ansibullbot.cfg
 *.sublime-*
 Vagrantfile
+ansibullbot/utils/ghostdriver.log
