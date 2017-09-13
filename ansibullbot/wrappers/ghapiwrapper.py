@@ -44,8 +44,8 @@ class RepoWrapper(object):
         self.repo_path = repo_path
 
         self.cachedir = os.path.expanduser(cachedir)
-        self.cachefile = os.path.join(self.cachedir, repo_path)
-        self.cachefile = '%s/repo.pickle' % self.cachefile
+        self.cachedir = os.path.join(self.cachedir, repo_path)
+        self.cachefile = os.path.join(self.cachedir, 'repo.pickle')
 
         self.updated_at_previous = None
         self.updated = False
