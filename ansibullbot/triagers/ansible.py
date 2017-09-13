@@ -595,7 +595,7 @@ class AnsibleTriage(DefaultTriager):
         dmeta['updated_at'] = issuewrapper.updated_at.isoformat()
         dmeta['template_data'] = issuewrapper.template_data
         if isinstance(actions, dict):
-            dmeta['actions'] = actions.cop()
+            dmeta['actions'] = actions.copy()
         else:
             if actions:
                 dmeta['actions'] = vars(actions)
