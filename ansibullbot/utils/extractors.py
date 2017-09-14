@@ -23,11 +23,13 @@ def extract_template_sections(body, header='#####'):
     sections = {}
     lines = body.split('\n')
     current_section = None
+    index = 0
     for line in lines:
         if line.startswith(header):
             section = line.replace(header, '', 1)
             section = section.strip()
-            sections[section] = {'required': False}
+            sections[section] = {'required': False, 'index': index}
+            index += 1
             current_section = section
 
         elif line.startswith('<!--') and current_section:
