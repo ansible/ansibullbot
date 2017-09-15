@@ -10,6 +10,7 @@ requests
 requests_cache
 ruamel.yaml
 six
+sqlalchemy
 tenacity
 textblob
 mock ; python_version < '3.3'
