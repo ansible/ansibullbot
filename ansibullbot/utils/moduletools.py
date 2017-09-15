@@ -10,9 +10,35 @@ import re
 import shutil
 import yaml
 
+from sqlalchemy import create_engine
+from sqlalchemy import Column
+from sqlalchemy import Integer
+from sqlalchemy import String
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.webscraper import GithubWebScraper
+
+
+Base = declarative_base()
+
+
+class Blame(Base):
+    __tablename__ = 'blames'
+    id = Column(Integer(), primary_key=True)
+    file_name = Column(String())
+    file_commit = Column(String())
+    author_commit = Column(String())
+    author_login = Column(String())
+
+
+class Email(Base):
+    __tablename__ = 'email'
+    id = Column(Integer())
+    login = Column(String())
+    email = Column(String(), primary_key=True)
 
 
 class ModuleIndexer(object):
@@ -55,6 +81,17 @@ class ModuleIndexer(object):
         self.scraper_cache = os.path.expanduser(self.scraper_cache)
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
         self.gqlc = gh_client
+        self.files = []
+
+        # sqlalchemy
+        unc = 'sqlite:///'
+        unc += os.path.expanduser('~/.ansibullbot/cache/module_indexer.db')
+        self.engine = create_engine(unc)
+        self.Session = sessionmaker(bind=self.engine)
+        self.session = self.Session()
+
+        Email.metadata.create_all(self.engine)
+        Blame.metadata.create_all(self.engine)
 
         # committers by module
         self.committers = {}
@@ -70,6 +107,7 @@ class ModuleIndexer(object):
         '''Reload everything if there are new commits'''
         changed = self.manage_checkout()
         if changed or force:
+            self.get_files()
             self.parse_metadata()
 
     def manage_checkout(self):
@@ -81,6 +119,16 @@ class ModuleIndexer(object):
         else:
             changed = self.update_checkout()
         return changed
+
+    def get_files(self):
+
+        cmd = 'find %s' % self.checkoutdir
+        (rc, so, se) = run_command(cmd)
+        files = so.split('\n')
+        files = [x.strip() for x in files if x.strip()]
+        files = [x.replace(self.checkoutdir + '/', '') for x in files]
+        files = [x for x in files if not x.startswith('.git')]
+        self.files = files
 
     def parse_metadata(self):
 
@@ -401,6 +449,9 @@ class ModuleIndexer(object):
                     pickle.dump((mtime, self.commits[k]), f)
 
     def last_commit_for_file(self, filepath):
+        if filepath in self.commits:
+            return self.commits[filepath][0]['hash']
+
         # git log --pretty=format:'%H' -1
         # lib/ansible/modules/cloud/amazon/ec2_metric_alarm.py
         cmd = 'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
@@ -410,6 +461,94 @@ class ModuleIndexer(object):
         return so.strip()
 
     def get_module_blames(self):
+
+        logging.debug('build email cache')
+        emails_cache = self.session.query(Email)
+        emails_cache = [(x.email,x.login) for x in emails_cache]
+        self.emails_cache = dict(emails_cache)
+
+        logging.debug('build blame cache')
+        blame_cache = self.session.query(Blame).all()
+        blame_cache = [x.file_commit for x in blame_cache]
+        blame_cache = sorted(set(blame_cache))
+
+        logging.debug('eval module hashes')
+        changed = False
+        keys = sorted(self.modules.keys())
+        for k in keys:
+            #logging.debug('eval {}'.format(k))
+
+            if k not in self.files:
+                self.committers[k] = {}
+                continue
+
+            #logging.debug('last commit {}'.format(k))
+            ghash = self.last_commit_for_file(k)
+
+            if ghash in blame_cache:
+                continue
+
+            logging.debug('checking hash for {}'.format(k))
+            res = self.session.query(Blame).filter_by(file_name=k, file_commit=ghash).all()
+            hashes = [x.file_commit for x in res]
+
+            if ghash not in hashes:
+
+                logging.debug('hash {} not found for {}, updating blames'.format(ghash, k))
+
+                scraper_args = ['ansible', 'ansible', 'devel', k]
+                uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*scraper_args)
+
+                # check the emails
+                for email, login in emailmap.items():
+                    if email in self.emails_cache:
+                        continue
+                    exists = self.session.query(Email).filter_by(email=email).first()
+                    if not exists:
+                        logging.debug('insert {}:{}'.format(login, email))
+                        _email = Email(email=email, login=login)
+                        self.session.add(_email)
+                        changed = True
+
+                # check the blames
+                for login, commits in uns.items():
+                    for commit in commits:
+                        kwargs = {
+                            'file_name': k,
+                            'file_commit': ghash,
+                            'author_commit': commit,
+                            'author_login': login
+                        }
+                        exists = self.session.query(Blame).filter_by(**kwargs).first()
+                        if not exists:
+                            logging.debug('insert {}:{}:{}'.format(k, commit, login))
+                            _blame = Blame(**kwargs)
+                            self.session.add(_blame)
+                            changed = True
+
+        if changed:
+            self.session.commit()
+            logging.debug('re-build email cache')
+            emails_cache = self.session.query(Email)
+            emails_cache = [(x.email,x.login) for x in emails_cache]
+            self.emails_cache = dict(emails_cache)
+
+        # fill in what we can ...
+        logging.debug('fill in commit logins')
+        for k in keys:
+            for idc,commit in enumerate(self.commits[k][:]):
+                if not commit.get('login'):
+                    continue
+                login = self.emails_cache.get(commit['email'])
+                if not login and '@users.noreply.github.com' in commit['email']:
+                    login = commit['email'].split('@')[0]
+                    self.emails_cache[commit['email']] = login
+                if not login:
+                    print('unknown: {}'.format(commit['email']))
+                    #import epdb; epdb.st()
+                self.commits[k][idc]['login'] = self.emails_cache.get(login)
+
+    def _get_module_blames(self):
         ''' Scrape the blame page for each module and store it '''
 
         keys = sorted(self.modules.keys())
@@ -417,6 +556,7 @@ class ModuleIndexer(object):
         # scrape the data
         #for k,v in self.modules.iteritems():
         for k in keys:
+
             #v = self.modules[k]
             cpath = os.path.join(self.checkoutdir, k)
             if not os.path.isfile(cpath):
@@ -435,8 +575,10 @@ class ModuleIndexer(object):
             if not os.path.isfile(pfile):
                 refresh = True
             else:
+                logging.debug('load {}'.format(pfile))
                 with open(pfile, 'rb') as f:
                     pdata = pickle.load(f)
+                import epdb; epdb.st()
                 if pdata[0] == ghash:
                     self.committers[k] = pdata[1]
                     if len(pdata) == 3:
@@ -449,9 +591,11 @@ class ModuleIndexer(object):
 
             if refresh:
                 if self.gqlc:
+                    logging.debug('graphql blame usernames {}'.format(pfile))
                     uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*sargs)
                 else:
                     emailmap = {}  # scrapping: emails not available
+                    logging.debug('www blame usernames {}'.format(pfile))
                     uns = self.gws.get_usernames_from_filename_blame(*sargs)
                 self.committers[k] = uns
                 with open(pfile, 'wb') as f:
