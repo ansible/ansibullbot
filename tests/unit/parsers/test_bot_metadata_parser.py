@@ -73,13 +73,13 @@ class TestBotMetadataParserEx1(TestBotMetaIndexerBase):
 
         assert 'macros' in data
         assert 'files' in data
-        assert 'lib/ansible/cli/galaxy/' in data['files']
+        assert 'lib/ansible/cli/galaxy' in data['files']
         assert 'lib/ansible/cli/vault.py' in data['files']
-        assert 'lib/ansible/parsing/vault/' in data['files']
-        assert 'lib/ansible/foobar/' in data['files']
+        assert 'lib/ansible/parsing/vault' in data['files']
+        assert 'lib/ansible/foobar' in data['files']
 
         self.assertEqual(
-            data['files']['lib/ansible/foobar/']['labels'],
+            data['files']['lib/ansible/foobar']['labels'],
             ['ansible', 'bar', 'foo', 'foobar', 'lib']
         )
 
@@ -103,7 +103,7 @@ class TestBotMetadataParserEx1(TestBotMetaIndexerBase):
             ['one', 'line', 'at', 'a', 'time']
         )
 
-        self.assertEqual(dict, type(data['files']['packaging/']))
+        self.assertEqual(dict, type(data['files']['packaging']))
 
 class TestBotMetadataParserFileExample1(TestBotMetaIndexerBase):
     def runTest(self):

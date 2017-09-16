@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 
-import yaml
+import os
+
 from string import Template
+
+import yaml
 
 
 class BotMetadataParser(object):
@@ -49,6 +52,12 @@ class BotMetadataParser(object):
                 data['files'][newkey] = data['files'][x]
                 data['files'].pop(x, None)
 
+            paths = data['files'].keys()
+            for p in paths:
+                normpath = os.path.normpath(p)
+                if p != normpath:
+                    metadata = data['files'].pop(p)
+                    data['files'][normpath] = metadata
             return data
 
         def extend_labels(data):
