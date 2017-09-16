@@ -552,11 +552,9 @@ class ModuleIndexer(object):
                             self.modules[k]['maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
-                    if 'ignored' in self.botmeta['files'][best_match]:
-                        ignored = self.botmeta['files'][best_match]['ignored']
-                        for xig in ignored:
-                            if xig in self.modules[k]['maintainers']:
-                                self.modules[k]['maintainers'].remove(xig)
+                    for ignored in self.botmeta['files'][best_match].get('ignored', []):
+                        if ignored in self.modules[k]['maintainers']:
+                            self.modules[k]['maintainers'].remove(ignored)
 
             # save a pristine copy so that higher level code can still use it
             self.modules[k]['maintainers'] = sorted(set(self.modules[k]['maintainers']))
