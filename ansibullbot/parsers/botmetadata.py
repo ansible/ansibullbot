@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import itertools
 import os
 
 from string import Template
@@ -89,6 +90,29 @@ class BotMetadataParser(object):
                 data['macros'][k] = names
             return data
 
+        def propagate_maintainers(data):
+            files = data['files']
+            '''Add directory maintainers to subpath'''
+            for file1, file2 in itertools.combinations(files.keys(), 2):
+                # Python 2.7 doesn't provide os.path.commonpath
+                common = os.path.commonprefix([file1, file2])
+                top = min(file1, file2)
+                child = max(file1, file2)
+
+                top_components = top.split('/')
+                child_components = child.split('/')
+
+                if common == top and top_components == child_components[:len(top_components)]:
+                    top_maintainers = files[top].get('maintainers', [])
+                    if top_maintainers:
+
+                        if 'maintainers' not in files[child]:
+                            files[child]['maintainers'] = []
+
+                        for maintainer in top_maintainers:
+                            if maintainer not in files[child]['maintainers']:
+                                files[child]['maintainers'].append(maintainer)
+
         #################################
         #   PARSE
         #################################
@@ -116,5 +140,7 @@ class BotMetadataParser(object):
 
         # extend labels by filepath
         ydata = extend_labels(ydata)
+
+        propagate_maintainers(ydata)
 
         return ydata
