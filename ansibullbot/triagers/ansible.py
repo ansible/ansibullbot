@@ -1668,9 +1668,6 @@ class AnsibleTriage(DefaultTriager):
 
         self.meta['submitter'] = iw.submitter
 
-        # clear maintainers
-        self.maintainers = []
-
         # extract template data
         self.template_data = iw.get_template_data()
 
