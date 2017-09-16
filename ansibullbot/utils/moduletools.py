@@ -41,11 +41,13 @@ class ModuleIndexer(object):
 
     REPO = "http://github.com/ansible/ansible"
 
-    def __init__(self, maintainers=None, gh_client=None):
-
-        self.botmeta = {}
-        self.modules = {}
-        self.maintainers = maintainers or {}
+    def __init__(self, gh_client=None):
+        '''
+        Maintainers: defaultdict(dict) where keys are filepath and values are dict
+        gh_client: GraphQL GitHub client
+        '''
+        self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
+        self.modules = {}  # keys: paths of files belonging to the repository
         self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
         self.importmap = {}
@@ -85,14 +87,6 @@ class ModuleIndexer(object):
         fp = '.github/BOTMETA.yml'
         rdata = self.get_file_content(fp)
         self.botmeta = BotMetadataParser.parse_yaml(rdata)
-
-        # reshape data to the old format
-        self.maintainers = {}
-        for k,v in self.botmeta['files'].items():
-            if isinstance(v, dict):
-                self.maintainers[k] = v.get('maintainers', [])
-            else:
-                self.maintainers[k] = []
 
         # load the modules
         logging.info('loading modules')
@@ -520,7 +514,7 @@ class ModuleIndexer(object):
             self.modules[k]['maintainers'] = \
                 sorted(set(self.modules[k]['maintainers']))
 
-        mkeys = self.maintainers.keys()
+        mkeys = self.botmeta['files'].keys()
         for k,v in self.modules.iteritems():
             if not v['filepath']:
                 continue
@@ -555,8 +549,9 @@ class ModuleIndexer(object):
                             best_match = mkey
                 if best_match:
                     self.modules[k]['maintainers_key'] = best_match
-                    self.modules[k]['maintainers'] += \
-                        sorted(set(self.maintainers[best_match]))
+                    for maintainer in self.botmeta['files'][best_match].get('maintainers', []):
+                        if maintainer not in self.modules[k]['maintainers']:
+                            self.modules[k]['maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
                     if best_match in self.botmeta['files']:
@@ -886,13 +881,9 @@ class ModuleIndexer(object):
 
     @property
     def all_maintainers(self):
-        maintainers = []
-        for m in self.maintainers.values():
-            if not isinstance(m, list):
-                m = [m]
-            for mi in m:
-                if mi not in maintainers:
-                    maintainers.append(mi)
+        maintainers = set()
+        for path, metadata in self.botmeta['files'].items():
+            maintainers.update(metadata.get('maintainers', []))
         return maintainers
 
     def get_maintainers_for_namespace(self, namespace):
