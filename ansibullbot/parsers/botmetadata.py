@@ -109,6 +109,8 @@ class BotMetadataParser(object):
                         if 'maintainers' not in files[child]:
                             files[child]['maintainers'] = []
 
+                        files[child]['maintainers_keys'].append(top)
+
                         for maintainer in top_maintainers:
                             if maintainer not in files[child]['maintainers']:
                                 files[child]['maintainers'].append(maintainer)
@@ -134,6 +136,8 @@ class BotMetadataParser(object):
                 ydata['files'][k] = {
                     'maintainers': v
                 }
+
+            ydata['files'][k]['maintainers_keys'] = [k]
 
         # replace macros in files section
         ydata = fix_lists(ydata)

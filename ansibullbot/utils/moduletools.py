@@ -30,7 +30,7 @@ class ModuleIndexer(object):
         'fulltopic': None,
         'maintainers': [],
         '_maintainers': [],
-        'maintainers_key': None,
+        'maintainers_keys': None,
         'metadata': {},
         'repo_filename': None,
         'repository': 'ansible',
@@ -520,9 +520,9 @@ class ModuleIndexer(object):
                 continue
 
             if k in self.botmeta['files']:
-
-                # should this also inherit from higher up?
-                self.modules[k]['maintainers_key'] = k
+                # There are metadata in .github/BOTMETA.yml for this file
+                # copy maintainers_keys
+                self.modules[k]['maintainers_keys'] = self.botmeta['files'][k]['maintainers_keys'][:]
 
                 if self.botmeta['files'][k]:
                     if self.botmeta['files'][k].get('maintainers'):
@@ -538,7 +538,7 @@ class ModuleIndexer(object):
                                 self.modules[k]['maintainers'].remove(x)
 
             else:
-
+                # There isn't metadata in .github/BOTMETA.yml for this file
                 best_match = None
                 for mkey in mkeys:
                     if v['filepath'].startswith(mkey):
@@ -548,7 +548,7 @@ class ModuleIndexer(object):
                         if len(mkey) > len(best_match):
                             best_match = mkey
                 if best_match:
-                    self.modules[k]['maintainers_key'] = best_match
+                    self.modules[k]['maintainers_keys'] = [best_match]
                     for maintainer in self.botmeta['files'][best_match].get('maintainers', []):
                         if maintainer not in self.modules[k]['maintainers']:
                             self.modules[k]['maintainers'].append(maintainer)
