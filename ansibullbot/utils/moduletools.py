@@ -268,8 +268,7 @@ class ModuleIndexer(object):
             else:
                 mdict['deprecated_filename'] = mdict['repo_filename']
 
-            mkey = mdict['filepath']
-            self.modules[mkey] = mdict
+            self.modules[filepath] = mdict
 
         # meta is a special module
         self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
