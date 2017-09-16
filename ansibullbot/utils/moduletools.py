@@ -515,7 +515,7 @@ class ModuleIndexer(object):
 
         mkeys = self.botmeta['files'].keys()
         for k,v in self.modules.iteritems():
-            if not v['filepath']:
+            if k == 'meta':
                 continue
 
             if k in self.botmeta['files']:
