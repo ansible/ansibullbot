@@ -513,7 +513,7 @@ class ModuleIndexer(object):
             self.modules[k]['maintainers'] = \
                 sorted(set(self.modules[k]['maintainers']))
 
-        mkeys = self.botmeta['files'].keys()
+        metadata = self.botmeta['files'].keys()
         for k,v in self.modules.iteritems():
             if k == 'meta':
                 continue
@@ -539,7 +539,7 @@ class ModuleIndexer(object):
             else:
                 # There isn't metadata in .github/BOTMETA.yml for this file
                 best_match = None
-                for mkey in mkeys:
+                for mkey in metadata:
                     if v['filepath'].startswith(mkey):
                         if not best_match:
                             best_match = mkey
