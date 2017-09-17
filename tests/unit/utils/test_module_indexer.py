@@ -239,3 +239,23 @@ class TestModuleIndexer(TestCase):
             self.assertEqual(sorted(indexer.modules[k]['maintainers_keys']),sorted(expected[k]['maintainers_keys']))
             self.assertEqual(sorted(indexer.modules[k]['maintainers']), sorted(expected[k]['maintainers']))
 
+    def test_authors_not_omitted_if_entry_in_BOTMETA(self):
+        """Check that authors aren't omitted when metadata are overidden in BOTMETA
+
+        Ensure that authors defined in 'author' field of 'DOCUMENTATION' module
+        metadata aren't omitted when there is a matching entry in BOTMETA.yml.
+
+        Same BOTMETA.yml, but now authors are defined in 'author' field of
+        'DOCUMENTATION' module metadata.
+        """
+
+        filepaths = {
+            'lib/ansible/modules/baz/test/code.py': ['Louise'],
+        }
+
+        expected_maintainers = sorted(['Loulou', 'bob', 'jim', 'ZaZa', 'Louise'])
+
+        indexer = run(textwrap.dedent(self.BOTMETA), filepaths)
+
+        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)

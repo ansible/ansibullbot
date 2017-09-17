@@ -524,9 +524,10 @@ class ModuleIndexer(object):
                 self.modules[k]['maintainers_keys'] = self.botmeta['files'][k]['maintainers_keys'][:]
 
                 if self.botmeta['files'][k]:
-                    if self.botmeta['files'][k].get('maintainers'):
-                        self.modules[k]['maintainers'] = \
-                            self.botmeta['files'][k]['maintainers']
+                    maintainers = self.botmeta['files'][k].get('maintainers', [])
+                    for maintainer in maintainers:
+                        if maintainer not in self.modules[k]['maintainers']:
+                            self.modules[k]['maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
                     if 'ignored' in self.botmeta['files'][k]:
