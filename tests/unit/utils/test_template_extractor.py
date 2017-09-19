@@ -133,3 +133,30 @@ class TestTemplateExtraction(unittest.TestCase):
         assert tdata.get('component name') == 'openssl_privatekey'
         assert tdata.get('component_raw') == 'Modules openssl_privatekey and openssl_publickey'
         assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'
+
+
+    # Test optional Markdown header syntax
+    def test_5(self):
+        body = [
+            '#### ISSUE TYPE ####',
+            '- Bug Report',
+            '#### COMPONENT NAME ####',
+            'widget, thingamajig',
+            '#### ANSIBLE VERSION ####',
+            '1.9.x'
+            '#### SUMMARY ####',
+            'the widget AND thingamig modules are broken!!!'
+        ]
+        body = '\r\n'.join(body)
+        issue_number = 0
+        issue_class = 'issue'
+        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        tdata = extract_template_data(
+            body, issue_number=issue_number,
+            issue_class=issue_class, sections=sections
+        )
+        assert tdata.get('ansible version') == '1.9.x'
+        assert tdata.get('issue type') == 'bug report'
+        assert tdata.get('component name') == 'widget'
+        assert tdata.get('component_raw') == 'widget, thingamajig'
+        assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'
