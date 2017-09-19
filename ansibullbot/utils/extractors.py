@@ -302,14 +302,9 @@ def clean_bad_characters(raw_text, exclude=[]):
 
     # Don't remove characters passed in as an exclusion
     badchars = [x for x in badchars if x not in exclude]
-    if "It's" in raw_text:
-        import q; q(badchars)
 
     for bc in badchars:
         raw_text = raw_text.replace(bc, '')
-
-    if "It's" in raw_text:
-        import q; q(raw_text)
 
     return raw_text
 
