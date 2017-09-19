@@ -51,13 +51,11 @@ class TestTemplateExtraction(unittest.TestCase):
         assert tdata.get('component_raw') == 'widget module'
         assert tdata.get('summary') == 'the widget module does not work for me!!!'
 
-    # FIXME
-    '''
     def test_2(self):
         body = [
             '*** issue type ***:',
             '- Bug Report',
-            '*** componet name ***:',
+            '*** component name ***:',
             'widget module',
             '*** ansible version ***:',
             '1.9.x'
@@ -77,7 +75,6 @@ class TestTemplateExtraction(unittest.TestCase):
         assert tdata.get('component name') == 'widget'
         assert tdata.get('component_raw') == 'widget module'
         assert tdata.get('summary') == 'the widget module does not work for me!!!'
-    '''
 
     # https://github.com/ansible/ansibullbot/issues/359
     def test_3(self):
