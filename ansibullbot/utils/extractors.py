@@ -193,8 +193,9 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
         # remove pre-ceding and trailing newlines (AGAIN)
         v = v.strip()
 
+        # import epdb; epdb.st()
         # clean more on critical sections
-        if k != 'summary' and 'step' not in k and 'result' not in k:
+        if 'step' not in k and 'result' not in k:
 
             # https://github.com/ansible/ansible-modules-extras/issues/2262
             if k == 'component name':
@@ -226,9 +227,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                             v = v.replace('module', ' ')
 
             # remove useless chars
-            badchars = ['#', ',', ':', ';', '*', "'", '"', '`', '---', '__']
-            for bc in badchars:
-                v = v.replace(bc, '')
+            v = clean_bad_characters(v)
 
             # clean up empty lines
             vlines = v.split('\n')
@@ -283,11 +282,36 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # quick clean and add raw component to the dict
     component_raw = remove_markdown_comments(component_raw)
+    component_raw = clean_bad_characters(component_raw)
     component_raw = '\n'.join([x.strip() for x in component_raw.split('\n') if x.strip()])
     component_raw = '\n'.join([x for x in component_raw.split('\n') if not x.startswith('#')])
     tdict['component_raw'] = component_raw
 
     return tdict
+
+def clean_bad_characters(raw_text, exclude=[]):
+    badchars = ['#', ':', ';', ',', '*', '"', "'", '`', '---', '__']
+
+    # Exclude patterns of word, word,word
+    if re.search(r'(\w+,\s?)+\w+', raw_text):
+        exclude.extend(',')
+
+    # Exclude contractions like It's
+    if re.search(r"\w+'\w", raw_text):
+        exclude.extend("'")
+
+    # Don't remove characters passed in as an exclusion
+    badchars = [x for x in badchars if x not in exclude]
+    if "It's" in raw_text:
+        import q; q(badchars)
+
+    for bc in badchars:
+        raw_text = raw_text.replace(bc, '')
+
+    if "It's" in raw_text:
+        import q; q(raw_text)
+
+    return raw_text
 
 
 def remove_markdown_comments(rawtext):
