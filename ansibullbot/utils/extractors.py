@@ -193,7 +193,6 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
         # remove pre-ceding and trailing newlines (AGAIN)
         v = v.strip()
 
-        # import epdb; epdb.st()
         # clean more on critical sections
         if 'step' not in k and 'result' not in k:
 
