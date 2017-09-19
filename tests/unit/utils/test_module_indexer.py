@@ -259,3 +259,88 @@ class TestModuleIndexer(TestCase):
 
         self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
+
+    def test_ignored_author(self):
+        """Check that author ignored in BOTMETA are removed"""
+        BOTMETA = """
+        ---
+        macros:
+            modules: lib/ansible/modules
+        files:
+            $modules/baz/test/code.py:
+                maintainers: bob
+                ignored: Oliver
+        """
+
+        filepaths = {
+            'lib/ansible/modules/baz/test/code.py': ['Louise', 'Oliver'],
+        }
+
+        expected_maintainers = sorted(['bob', 'Louise'])  # not Oliver
+
+        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+
+        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
+
+    def test_ignored_maintainer_in_parent_dir(self):
+        """Check that maintainer defined in BOTMETA but ignored in a child entry are ignored.
+
+        No author defined in 'author' field of 'DOCUMENTATION' module metadata.
+        """
+        BOTMETA = """
+        ---
+        macros:
+            modules: lib/ansible/modules
+        files:
+            # Check with two parent directories
+            $modules/baz/test:
+                maintainers: ElsA Oliver
+            $modules/baz/test/code1.py:
+                ignored: Oliver
+        """
+
+        filepaths = {
+            'lib/ansible/modules/baz/test/code1.py': None,
+            'lib/ansible/modules/baz/test/code2.py': None,
+            'lib/ansible/modules/baz/test/code3.py': None,
+            'lib/ansible/modules/baz/test/code4.py': None,
+        }
+
+        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+
+        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code1.py']['maintainers']), ['ElsA'])
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code2.py']['maintainers']), sorted(['ElsA', 'Oliver']))
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code3.py']['maintainers']), sorted(['ElsA', 'Oliver']))
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code4.py']['maintainers']), sorted(['ElsA', 'Oliver']))
+
+    def test_ignored_author_in_parent_dir(self):
+        """Check that author ignored in BOTMETA in a parent directory are not removed
+
+        Some authors defined in 'author' field of 'DOCUMENTATION' module
+        metadata but ignored in a parent directory entry in BOTMETA.
+        """
+        BOTMETA = """
+        ---
+        macros:
+            modules: lib/ansible/modules
+        files:
+            # Check with two parent directories
+            $modules/baz/test:
+                maintainers: ElsA
+                ignored: Oliver
+            $modules/baz/test/code.py:
+                maintainers: bob
+        """
+
+        filepaths = {
+            'lib/ansible/modules/baz/test/code.py': ['Louise', 'Oliver'],
+        }
+
+        expected_maintainers = sorted(['ElsA', 'bob', 'Louise', 'Oliver'])  # Oliver here
+
+        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+
+        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
