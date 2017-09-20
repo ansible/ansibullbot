@@ -90,9 +90,25 @@ class BotMetadataParser(object):
                 data['macros'][k] = names
             return data
 
-        def propagate_maintainers(data):
+        def _propagate(files, top, child, field):
+            '''Copy key named 'field' from top to child'''
+            top_entries = files[top].get(field, [])
+            if top_entries:
+                if field not in files[child]:
+                    files[child][field] = []
+
+                field_keys = '%s_keys' % field
+                if field_keys not in files[child]:
+                    files[child][field_keys] = []
+                files[child][field_keys].append(top)
+
+                for entry in top_entries:
+                    if entry not in files[child][field]:
+                        files[child][field].append(entry)
+
+        def propagate_keys(data):
             files = data['files']
-            '''Add directory maintainers to subpath'''
+            '''maintainers and ignored keys defined at a directory level are copied to subpath'''
             for file1, file2 in itertools.combinations(files.keys(), 2):
                 # Python 2.7 doesn't provide os.path.commonpath
                 common = os.path.commonprefix([file1, file2])
@@ -103,17 +119,9 @@ class BotMetadataParser(object):
                 child_components = child.split('/')
 
                 if common == top and top_components == child_components[:len(top_components)]:
-                    top_maintainers = files[top].get('maintainers', [])
-                    if top_maintainers:
+                    _propagate(files, top, child, 'maintainers')
+                    _propagate(files, top, child, 'ignored')
 
-                        if 'maintainers' not in files[child]:
-                            files[child]['maintainers'] = []
-
-                        files[child]['maintainers_keys'].append(top)
-
-                        for maintainer in top_maintainers:
-                            if maintainer not in files[child]['maintainers']:
-                                files[child]['maintainers'].append(maintainer)
 
         #################################
         #   PARSE
@@ -145,6 +153,6 @@ class BotMetadataParser(object):
         # extend labels by filepath
         ydata = extend_labels(ydata)
 
-        propagate_maintainers(ydata)
+        propagate_keys(ydata)
 
         return ydata
