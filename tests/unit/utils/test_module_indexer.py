@@ -316,10 +316,11 @@ class TestModuleIndexer(TestCase):
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code4.py']['maintainers']), sorted(['ElsA', 'Oliver']))
 
     def test_ignored_author_in_parent_dir(self):
-        """Check that author ignored in BOTMETA in a parent directory are not removed
+        """Check that author ignored in BOTMETA in a parent directory are removed
 
-        Some authors defined in 'author' field of 'DOCUMENTATION' module
-        metadata but ignored in a parent directory entry in BOTMETA.
+        Some authors are defined in 'author' field of 'DOCUMENTATION' module
+        metadata and ignored in a parent directory entry in BOTMETA: ignored
+        authors aren't maintainers.
         """
         BOTMETA = """
         ---
@@ -338,7 +339,7 @@ class TestModuleIndexer(TestCase):
             'lib/ansible/modules/baz/test/code.py': ['Louise', 'Oliver'],
         }
 
-        expected_maintainers = sorted(['ElsA', 'bob', 'Louise', 'Oliver'])  # Oliver here
+        expected_maintainers = sorted(['ElsA', 'bob', 'Louise'])  # Oliver not here
 
         indexer = run(textwrap.dedent(BOTMETA), filepaths)
 
