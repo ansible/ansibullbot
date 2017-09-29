@@ -32,7 +32,8 @@ The Ansibull Triage Bot serves many functions:
 * Pings responsible parties to remind them of any actions that they may be responsible for;
 * Provides maintainers with the ability to move pull requests through our [workflow](#when-will-your-pull-request-be-merged);
 * Identifies issues and pull requests abandoned by their authors so that we can close them;
-* Identifies modules abandoned by their maintainers so that we can find new maintainers.
+* Identifies modules abandoned by their maintainers so that we can find new maintainers;
+* Automatically labels issues and pull requests based on keywords or affected files.
 
 ## For issue submitters
 Please note that if you have a question about how to use this feature or module with Ansible, that's probably something you should ask on the [ansible-project](https://groups.google.com/forum/#!forum/ansible-project) mailing list, rather than submitting a bug report. For more details, please see [I’ve Got A Question](http://docs.ansible.com/ansible/community.html#i-ve-got-a-question).
