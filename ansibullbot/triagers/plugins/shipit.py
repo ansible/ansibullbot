@@ -223,6 +223,10 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         logging.debug('WIP PRs do not get shipits')
         return nmeta
 
+    if meta['is_needs_revision'] or meta['is_needs_rebase']:
+        logging.debug('PRs with needs_revision or needs_rebase label do not get shipits')
+        return nmeta
+
     maintainers = meta['module_match']['maintainers']
     maintainers = \
         ModuleIndexer.replace_ansible(
