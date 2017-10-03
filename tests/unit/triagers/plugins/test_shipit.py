@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from copy import deepcopy
 import json
 import logging
 import shutil
@@ -31,7 +32,9 @@ class TestShipitFacts(unittest.TestCase):
             'module_match': {
                 'namespace': 'system',
                 'maintainers': ['abulimov'],
-            }
+            },
+            'is_needs_revision': False,  # always set by needs_revision plugin (get_needs_revision_facts)
+            'is_needs_rebase': False,
         }
 
     def test_submitter_is_maintainer(self):
@@ -72,3 +75,35 @@ class TestShipitFacts(unittest.TestCase):
             self.assertEqual(facts['shipit_count_maintainer'], 0)  # abulimov
             self.assertEqual(facts['shipit_count_community'], 1)   # LinusU
             self.assertTrue(facts['shipit'])
+
+    def needs_rebase_or_revision_prevent_shipit(self, meta):
+        datafile = 'tests/fixtures/shipit/1_issue.yml'
+        statusfile = 'tests/fixtures/shipit/1_prstatus.json'
+        with get_issue(datafile, statusfile) as iw:
+            namespace_maintainers = ['LinusU']
+
+            facts = get_shipit_facts(iw, meta, ModuleIndexerMock(namespace_maintainers), core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+
+            self.assertEqual(iw.submitter, 'mscherer')
+            self.assertFalse(facts['community_usernames'])
+            self.assertFalse(facts['shipit_actors'])
+            self.assertEqual(facts['shipit_count_ansible'], 0)
+            self.assertEqual(facts['shipit_count_maintainer'], 0)
+            self.assertEqual(facts['shipit_count_community'], 0)
+            self.assertFalse(facts['shipit'])
+
+    def test_needs_rebase_prevent_shipit(self):
+        """
+        needs_rebase label prevents shipit label to be added
+        """
+        meta = deepcopy(self.meta)
+        meta['is_needs_rebase'] = True
+        self.needs_rebase_or_revision_prevent_shipit(meta)
+
+    def test_needs_revision_prevent_shipit(self):
+        """
+        needs_revision label prevents shipit label to be added
+        """
+        meta = deepcopy(self.meta)
+        meta['is_needs_revision'] = True
+        self.needs_rebase_or_revision_prevent_shipit(meta)
