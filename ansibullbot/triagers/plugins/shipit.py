@@ -247,8 +247,12 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             bots=botnames
         )
 
-    if not meta['is_new_module'] and iw.submitter in maintainers:
-        nmeta['owner_pr'] = True
+    modules_files_owned = 0
+    if not meta['is_new_module']:
+        for f in iw.files:
+            if f.startswith('lib/ansible/modules') and iw.submitter in module_indexer.modules[f]['maintainers']:
+                modules_files_owned += 1
+    nmeta['owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
 
     # community is the other maintainers in the same namespace
     mnamespace = meta['module_match']['namespace']
