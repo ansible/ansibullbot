@@ -67,7 +67,7 @@ class ModuleIndexer(object):
 
     REPO = "http://github.com/ansible/ansible"
 
-    def __init__(self, gh_client=None):
+    def __init__(self, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache'):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
@@ -75,6 +75,8 @@ class ModuleIndexer(object):
         self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
         self.modules = {}  # keys: paths of files belonging to the repository
         self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
+        self.maintainers = maintainers or {}
+        self.checkoutdir = os.path.join(cachedir, 'ansible.modules.checkout')
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
         self.importmap = {}
         self.scraper_cache = '~/.ansibullbot/cache/ansible.modules.scraper'
@@ -84,8 +86,10 @@ class ModuleIndexer(object):
         self.files = []
 
         # sqlalchemy
-        unc = 'sqlite:///'
-        unc += os.path.expanduser('~/.ansibullbot/cache/module_indexer.db')
+        unc = os.path.join(cachedir, 'ansible_module_indexer.db')
+        unc = os.path.expanduser(unc)
+        unc = 'sqlite:///' + unc
+
         self.engine = create_engine(unc)
         self.Session = sessionmaker(bind=self.engine)
         self.session = self.Session()
