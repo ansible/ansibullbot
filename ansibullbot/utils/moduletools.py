@@ -102,7 +102,7 @@ class ModuleIndexer(object):
         # commits by module
         self.commits = {}
         # map of email to github login
-        self.emailmap = {}
+        self.emails_cache = {}
 
         # load the bot meta
         self.update(force=True)
@@ -604,8 +604,8 @@ class ModuleIndexer(object):
                     pickle.dump((ghash, uns, emailmap), f)
 
             for email, github_id in emailmap.items():
-                if email not in self.emailmap:
-                    self.emailmap[email] = github_id
+                if email not in self.emails_cache:
+                    self.emails_cache[email] = github_id
 
         # add scraped logins to the map
         #for k,v in self.modules.iteritems():
@@ -614,16 +614,16 @@ class ModuleIndexer(object):
             for idx,x in enumerate(self.commits[k]):
                 if x['email'] in ['@']:
                     continue
-                if x['email'] not in self.emailmap:
-                    self.emailmap[x['email']] = None
+                if x['email'] not in self.emails_cache:
+                    self.emails_cache[x['email']] = None
                 if x['login']:
-                    self.emailmap[x['email']] = x['login']
+                    self.emails_cache[x['email']] = x['login']
                     continue
 
                 xhash = x['hash']
                 for ck,cv in self.committers[k].iteritems():
                     if xhash in cv:
-                        self.emailmap[x['email']] = ck
+                        self.emails_cache[x['email']] = ck
                         break
 
         # fill in what we can ...
@@ -634,8 +634,8 @@ class ModuleIndexer(object):
                 if not x['login']:
                     if x['email'] in ['@']:
                         continue
-                    if self.emailmap[x['email']]:
-                        login = self.emailmap[x['email']]
+                    if self.emails_cache[x['email']]:
+                        login = self.emails_cache[x['email']]
                         xhash = x['hash']
                         self.commits[k][idx]['login'] = login
                         if login not in self.committers[k]:
@@ -831,7 +831,7 @@ class ModuleIndexer(object):
 
         # search for emails
         for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
-            github_id = self.emailmap.get(email)
+            github_id = self.emails_cache.get(email)
             if github_id:
                 authors.add(github_id)
 
