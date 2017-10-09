@@ -215,6 +215,18 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
     if not iw.is_pullrequest():
         return nmeta
+
+    module_utils_files_owned = 0  # module_utils files for which submitter is maintainer
+    if meta['is_module_util']:
+        for f in iw.files:
+            if f.startswith('lib/ansible/module_utils') and f in module_indexer.botmeta['files']:
+                maintainers = module_indexer.botmeta['files'][f].get('maintainers', [])
+                if maintainers and (iw.submitter in maintainers):
+                    module_utils_files_owned += 1
+        if module_utils_files_owned == len(iw.files):
+            nmeta['owner_pr'] = True
+            return nmeta
+
     if not meta['module_match']:
         return nmeta
 
