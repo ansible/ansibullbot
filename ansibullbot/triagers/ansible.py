@@ -241,7 +241,7 @@ class AnsibleTriage(DefaultTriager):
         self.file_indexer = FileIndexer()
 
         logging.info('creating module indexer')
-        self.module_indexer = ModuleIndexer(gh_client=self.gqlc)
+        self.module_indexer = ModuleIndexer(gh_client=self.gqlc, cachedir=self.cachedir_base)
 
         # instantiate shippable api
         logging.info('creating shippable wrapper')
