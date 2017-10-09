@@ -125,13 +125,11 @@ class ModuleIndexer(object):
         return changed
 
     def get_files(self):
-
-        cmd = 'find %s' % self.checkoutdir
+        '''Cache a list of filenames in the checkout'''
+        cmd = 'cd {}; git ls-files'.format(self.checkoutdir)
         (rc, so, se) = run_command(cmd)
         files = so.split('\n')
         files = [x.strip() for x in files if x.strip()]
-        files = [x.replace(self.checkoutdir + '/', '') for x in files]
-        files = [x for x in files if not x.startswith('.git')]
         self.files = files
 
     def parse_metadata(self):
