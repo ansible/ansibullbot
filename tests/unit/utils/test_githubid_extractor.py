@@ -6,7 +6,7 @@ from ansibullbot.utils.moduletools import ModuleIndexer
 
 class ModuleIndexerMock(object):
     def __init__(self, *args, **kwargs):
-        self.emailmap = {}
+        self.emails_cache = {}
 
 
 class TestGitHubIdExtractor(unittest.TestCase):
@@ -40,7 +40,7 @@ class TestGitHubIdExtractor(unittest.TestCase):
             self.assertFalse(self.extract(line))
 
     def test_extract_email(self):
-        self.indexer.emailmap = {
+        self.indexer.emails_cache = {
             'first@last.example': 'github',
             'last@domain.example': 'github2',
         }
