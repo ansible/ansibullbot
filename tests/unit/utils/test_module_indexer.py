@@ -1,59 +1,9 @@
 #!/usr/bin/env python
 
-import copy
-import os
-import six
 import textwrap
 from unittest import TestCase
 
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
-
-from ansibullbot.utils.moduletools import ModuleIndexer
-
-
-def run(BOTMETA, filepaths):
-    """Create and test ModuleIndexer
-
-    1. parse BOTMETA metadata
-    2. list source code paths (filepaths keys)
-    3. fetch authors from source code content (filepaths values)
-
-    filepaths = {
-        'lib/ansible/modules/foo/bar/baz.py': None, # no author in source code
-        'lib/ansible/modules/foo2/bar2/baz.py': ['author1', 'author2'],
-    }
-    """
-
-    def set_modules(self):
-        '''list modules from filesystem'''
-        for filepath in filepaths.keys():
-            m = copy.deepcopy(ModuleIndexer.EMPTY_MODULE)
-            m['filename'] = os.path.basename(filepath)
-            m['filepath'] = filepath
-            self.modules[filepath] = m
-
-    def set_authors(self, mfile):
-        '''set authors from module source code: 'author' field in DOCUMENTATION metadata'''
-        for (filepath, authors) in filepaths.items():
-            if mfile.endswith(filepath):
-                if not authors:
-                    return []
-                else:
-                    return authors
-        assert False
-
-    @mock.patch.object(ModuleIndexer, 'update')
-    @mock.patch.object(ModuleIndexer, 'get_module_authors', side_effect=set_authors, autospec=True)
-    @mock.patch.object(ModuleIndexer, 'get_ansible_modules', side_effect=set_modules, autospec=True)
-    @mock.patch.object(ModuleIndexer, 'get_file_content', return_value=BOTMETA)
-    def indexer(m_update, m_authors, m_modules, m_content):
-        indexer = ModuleIndexer()
-        indexer.parse_metadata()
-        indexer.set_maintainers()
-        return indexer
-
-    return indexer()
+from tests.utils.module_indexer_mock import create_indexer
 
 
 class TestModuleIndexer(TestCase):
@@ -114,11 +64,11 @@ class TestModuleIndexer(TestCase):
 
         filepath = 'lib/ansible/modules/packaging/apt.py'
         filepaths = {filepath: ['Hubert']}
-        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+        indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
         self.assertEqual(indexer.botmeta['files'], expected)
 
-        self.assertEqual(len(indexer.modules), 1)  # ensure only fake data are loaded
+        self.assertEqual(len(indexer.modules), 2)  # ensure only fake data are loaded
         self.assertEqual(indexer.modules[filepath]['maintainers'], ['Hubert'])
         self.assertFalse(indexer.modules[filepath]['maintainers_keys'])
 
@@ -153,11 +103,11 @@ class TestModuleIndexer(TestCase):
 
         filepath = 'lib/ansible/modules/foo/bar/baz.py'
         filepaths = {filepath: ['bob']}
-        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+        indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
         self.assertEqual(indexer.botmeta['files'], expected)
 
-        self.assertEqual(len(indexer.modules), 1)  # ensure only fake data are loaded
+        self.assertEqual(len(indexer.modules), 2)  # ensure only fake data are loaded
         self.assertEqual(set(indexer.modules[filepath]['maintainers']), set(['bob', 'jim']))  # both
         self.assertEqual(indexer.modules[filepath]['maintainers_keys'], ['lib/ansible/modules/foo/bar'])
 
@@ -225,9 +175,9 @@ class TestModuleIndexer(TestCase):
             'maintainers_keys': ['lib/ansible/modules/baz', 'lib/ansible/modules/baz/test', key],
         }
 
-        indexer = run(textwrap.dedent(self.BOTMETA), filepaths)
+        indexer = create_indexer(textwrap.dedent(self.BOTMETA), filepaths)
 
-        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
 
         for k in expected:
             # BOTMETA and modules have identical maintainers since there is no authors
@@ -255,9 +205,9 @@ class TestModuleIndexer(TestCase):
 
         expected_maintainers = sorted(['Loulou', 'bob', 'jim', 'ZaZa', 'Louise'])
 
-        indexer = run(textwrap.dedent(self.BOTMETA), filepaths)
+        indexer = create_indexer(textwrap.dedent(self.BOTMETA), filepaths)
 
-        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
 
     def test_ignored_author(self):
@@ -278,9 +228,9 @@ class TestModuleIndexer(TestCase):
 
         expected_maintainers = sorted(['bob', 'Louise'])  # not Oliver
 
-        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+        indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
-        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
 
     def test_ignored_maintainer_in_parent_dir(self):
@@ -307,9 +257,9 @@ class TestModuleIndexer(TestCase):
             'lib/ansible/modules/baz/test/code4.py': None,
         }
 
-        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+        indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
-        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code1.py']['maintainers']), ['ElsA'])
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code2.py']['maintainers']), sorted(['ElsA', 'Oliver']))
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code3.py']['maintainers']), sorted(['ElsA', 'Oliver']))
@@ -341,7 +291,7 @@ class TestModuleIndexer(TestCase):
 
         expected_maintainers = sorted(['ElsA', 'bob', 'Louise'])  # Oliver not here
 
-        indexer = run(textwrap.dedent(BOTMETA), filepaths)
+        indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
-        self.assertEqual(len(indexer.modules), len(filepaths))  # ensure only fake data are loaded
+        self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
