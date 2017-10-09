@@ -225,55 +225,7 @@ class ModuleIndexer(object):
 
         matches = sorted(set(matches))
 
-        # figure out the names
-        for match in matches:
-            mdict = copy.deepcopy(self.EMPTY_MODULE)
-
-            mdict['filename'] = os.path.basename(match)
-
-            dirpath = os.path.dirname(match)
-            dirpath = dirpath.replace(self.checkoutdir + '/', '')
-            mdict['dirpath'] = dirpath
-
-            filepath = match.replace(self.checkoutdir + '/', '')
-            mdict['filepath'] = filepath
-
-            mdict.update(
-                self.split_topics_from_path(filepath)
-            )
-
-            mdict['repo_filename'] = mdict['filepath']\
-                .replace('lib/ansible/modules/%s/' % mdict['repository'], '')
-
-            # clustering/consul
-            mdict['namespaced_module'] = mdict['repo_filename']
-            mdict['namespaced_module'] = \
-                mdict['namespaced_module'].replace('.py', '')
-            mdict['namespaced_module'] = \
-                mdict['namespaced_module'].replace('.ps1', '')
-
-            mname = os.path.basename(match)
-            mname = mname.replace('.py', '')
-            mname = mname.replace('.ps1', '')
-            mdict['name'] = mname
-
-            # deprecated modules
-            if mname.startswith('_'):
-                mdict['deprecated'] = True
-                deprecated_filename = \
-                    os.path.dirname(mdict['namespaced_module'])
-                deprecated_filename = \
-                    os.path.join(deprecated_filename, mname[1:] + '.py')
-                mdict['deprecated_filename'] = deprecated_filename
-            else:
-                mdict['deprecated_filename'] = mdict['repo_filename']
-
-            self.modules[filepath] = mdict
-
-        # meta is a special module
-        self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
-        self.modules['meta']['name'] = 'meta'
-        self.modules['meta']['repo_filename'] = 'meta'
+        self.populate_modules(matches)
 
         # custom fixes
         newitems = []
@@ -327,6 +279,57 @@ class ModuleIndexer(object):
         self.set_maintainers()
 
         return self.modules
+
+    def populate_modules(self, matches):
+        # figure out the names
+        for match in matches:
+            mdict = copy.deepcopy(self.EMPTY_MODULE)
+
+            mdict['filename'] = os.path.basename(match)
+
+            dirpath = os.path.dirname(match)
+            dirpath = dirpath.replace(self.checkoutdir + '/', '')
+            mdict['dirpath'] = dirpath
+
+            filepath = match.replace(self.checkoutdir + '/', '')
+            mdict['filepath'] = filepath
+
+            mdict.update(
+                self.split_topics_from_path(filepath)
+            )
+
+            mdict['repo_filename'] = mdict['filepath']\
+                .replace('lib/ansible/modules/%s/' % mdict['repository'], '')
+
+            # clustering/consul
+            mdict['namespaced_module'] = mdict['repo_filename']
+            mdict['namespaced_module'] = \
+                mdict['namespaced_module'].replace('.py', '')
+            mdict['namespaced_module'] = \
+                mdict['namespaced_module'].replace('.ps1', '')
+
+            mname = os.path.basename(match)
+            mname = mname.replace('.py', '')
+            mname = mname.replace('.ps1', '')
+            mdict['name'] = mname
+
+            # deprecated modules
+            if mname.startswith('_'):
+                mdict['deprecated'] = True
+                deprecated_filename = \
+                    os.path.dirname(mdict['namespaced_module'])
+                deprecated_filename = \
+                    os.path.join(deprecated_filename, mname[1:] + '.py')
+                mdict['deprecated_filename'] = deprecated_filename
+            else:
+                mdict['deprecated_filename'] = mdict['repo_filename']
+
+            self.modules[filepath] = mdict
+
+        # meta is a special module
+        self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
+        self.modules['meta']['name'] = 'meta'
+        self.modules['meta']['repo_filename'] = 'meta'
 
     def get_module_commits(self):
         keys = self.modules.keys()
