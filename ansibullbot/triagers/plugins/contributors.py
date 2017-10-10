@@ -19,15 +19,15 @@ def get_contributor_facts(issuewrapper, meta, module_indexer, file_indexer, core
     if core_team and iw.submitter in core_team:
         return cfacts
 
-    # check sqlite
-    emails = module_indexer.get_emails_by_login(iw.submitter)
-    if emails:
-        return cfacts
-
     # check commit log for user's email address(es)
     emails = sorted(set(iw.committer_emails))
     commits = file_indexer.commits_by_email(emails)
     if commits:
+        return cfacts
+
+    # check sqlite
+    emails = module_indexer.get_emails_by_login(iw.submitter)
+    if emails:
         return cfacts
 
     # module docstrings
