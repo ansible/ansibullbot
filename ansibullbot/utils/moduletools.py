@@ -558,6 +558,11 @@ class ModuleIndexer(object):
                     #import epdb; epdb.st()
                 self.commits[k][idc]['login'] = self.emails_cache.get(login)
 
+    def get_emails_by_login(self, login):
+        res = self.session.query(Email).filter_by(login=login)
+        emails = [x.email for x in res.values()]
+        return emails
+
     def _get_module_blames(self):
         ''' Scrape the blame page for each module and store it '''
 
@@ -1035,6 +1040,13 @@ class ModuleIndexer(object):
         for path, metadata in self.botmeta['files'].items():
             maintainers.update(metadata.get('maintainers', []))
         return maintainers
+
+    @property
+    def all_authors(self):
+        authors = set()
+        for key,metadata in self.modules.items():
+            authors.update(metadata.get('authors', []))
+        return authors
 
     def get_maintainers_for_namespace(self, namespace):
         maintainers = []
