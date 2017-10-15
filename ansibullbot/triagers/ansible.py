@@ -43,6 +43,7 @@ from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
+from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.migrator import IssueMigrator
@@ -411,10 +412,7 @@ class AnsibleTriage(DefaultTriager):
                                 # re-check ansible/ansible after
                                 # a window of time since the last check.
                                 lt = lmeta['time']
-                                lt = datetime.datetime.strptime(
-                                    lt,
-                                    '%Y-%m-%dT%H:%M:%S.%f'
-                                )
+                                lt = strip_time_safely(lt)
                                 delta = (now - lt)
                                 delta = delta.days
                                 if delta > C.DEFAULT_STALE_WINDOW:
@@ -429,10 +427,7 @@ class AnsibleTriage(DefaultTriager):
                                 # probabaly changed.
                                 if skip and iw.is_pullrequest():
                                     ua = iw.pullrequest.updated_at.isoformat()
-                                    mua = datetime.datetime.strptime(
-                                        lmeta['updated_at'],
-                                        '%Y-%m-%dT%H:%M:%S'
-                                    )
+                                    mua = strip_time_safely(lmeta['updated_at'])
                                     lsr = self.SR.get_last_completion(iw.number)
                                     if (lsr and lsr > mua) or \
                                             ua > lmeta['updated_at']:
@@ -449,11 +444,7 @@ class AnsibleTriage(DefaultTriager):
 
                             # do a final check on the timestamp in meta
                             if skip and not mod_repo:
-                                # 2017-04-12T11:05:08.980077
-                                mts = datetime.datetime.strptime(
-                                    lmeta['time'],
-                                    '%Y-%m-%dT%H:%M:%S.%f'
-                                )
+                                mts = strip_time_safely(lmeta['time'])
                                 delta = (now - mts).days
                                 if delta > C.DEFAULT_STALE_WINDOW:
                                     skip = False
@@ -1454,7 +1445,7 @@ class AnsibleTriage(DefaultTriager):
                 meta = json.load(f)
 
             ts = meta['time']
-            ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+            ts = strip_time_safely(ts)
             now = datetime.datetime.now()
             delta = (now - ts).days
 
@@ -1565,22 +1556,8 @@ class AnsibleTriage(DefaultTriager):
                 if ts:
                     self.repos[repo]['since'] = ts[-1]
             else:
-
-                try:
-                    since = datetime.datetime.strptime(
-                        self.repos[repo]['since'],
-                        '%Y-%m-%dT%H:%M:%SZ'
-                    )
-                except Exception as e:
-                    logging.error('since: {}'.format(self.repos[repo]['since']))
-                    logging.error(e)
-                    if C.DEFAULT_BREAKPOINTS:
-                        import epdb; epdb.st()
-                    raise Exception(str(e))
-
-                api_since = self.repos[repo]['repo'].get_issues(
-                    since=since
-                )
+                since = strip_time_safely(self.repos[repo]['since'])
+                api_since = self.repos[repo]['repo'].get_issues(since=since)
 
                 numbers = []
                 for x in api_since:
