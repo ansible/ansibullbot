@@ -1565,10 +1565,19 @@ class AnsibleTriage(DefaultTriager):
                 if ts:
                     self.repos[repo]['since'] = ts[-1]
             else:
-                since = datetime.datetime.strptime(
-                    self.repos[repo]['since'],
-                    '%Y-%m-%dT%H:%M:%SZ'
-                )
+
+                try:
+                    since = datetime.datetime.strptime(
+                        self.repos[repo]['since'],
+                        '%Y-%m-%dT%H:%M:%SZ'
+                    )
+                except Exception as e:
+                    logging.error('since: {}'.format(self.repos[repo]['since']))
+                    logging.error(e)
+                    if C.DEFAULT_BREAKPOINTS:
+                        import epdb; epdb.st()
+                    raise Exception(str(e))
+
                 api_since = self.repos[repo]['repo'].get_issues(
                     since=since
                 )
