@@ -239,10 +239,17 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer()
         logging.info('creating file indexer')
-        self.file_indexer = FileIndexer()
+        self.file_indexer = FileIndexer(
+            botmetafile=self.args.botmetafile,
+            checkoutdir=self.cachedir_base
+        )
 
         logging.info('creating module indexer')
-        self.module_indexer = ModuleIndexer(gh_client=self.gqlc, cachedir=self.cachedir_base)
+        self.module_indexer = ModuleIndexer(
+            botmetafile=self.args.botmetafile,
+            gh_client=self.gqlc,
+            cachedir=self.cachedir_base
+        )
 
         # instantiate shippable api
         logging.info('creating shippable wrapper')
@@ -304,7 +311,11 @@ class AnsibleTriage(DefaultTriager):
             self.SR.update()
 
         # is automerge allowed?
-        self._botmeta_content = self.file_indexer.get_file_content('.github/BOTMETA.yml')
+        if self.args.botmetafile is not None:
+            with open(self.args.botmetafile, 'rb') as f:
+                self._botmeta_content = f.read()
+        else:
+            self._botmeta_content = self.file_indexer.get_file_content('.github/BOTMETA.yml')
         self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
         self.automerge_on = False
         if self.botmeta.get('automerge'):

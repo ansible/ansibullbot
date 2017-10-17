@@ -67,11 +67,12 @@ class ModuleIndexer(object):
 
     REPO = "http://github.com/ansible/ansible"
 
-    def __init__(self, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache'):
+    def __init__(self, botmetafile=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache'):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
         '''
+        self.botmetafile = botmetafile
         self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
         self.modules = {}  # keys: paths of files belonging to the repository
         self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
@@ -134,8 +135,12 @@ class ModuleIndexer(object):
 
     def parse_metadata(self):
 
-        fp = '.github/BOTMETA.yml'
-        rdata = self.get_file_content(fp)
+        if self.botmetafile is not None:
+            with open(self.botmetafile, 'rb') as f:
+                rdata = f.read()
+        else:
+            fp = '.github/BOTMETA.yml'
+            rdata = self.get_file_content(fp)
         self.botmeta = BotMetadataParser.parse_yaml(rdata)
 
         # load the modules
@@ -145,7 +150,7 @@ class ModuleIndexer(object):
     def create_checkout(self):
         """checkout ansible"""
 
-        print('# creating checkout for module indexer')
+        print('# creating {} for {}'.format(self.checkoutdir, type(self).__name__))
 
         # cleanup
         if os.path.isdir(self.checkoutdir):
