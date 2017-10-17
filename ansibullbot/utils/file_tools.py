@@ -27,17 +27,18 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, checkoutdir=None, repo=None):
+    def __init__(self, botmetafile=None, checkoutdir=None, repo=None):
 
         if checkoutdir is None:
             self.checkoutdir = '~/.ansibullbot/cache/ansible.files.checkout'
         else:
-            self.checkoutdir = checkoutdir
+            self.checkoutdir = os.path.join(checkoutdir, 'ansible.files.checkout')
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
 
         if repo:
             self.REPO = 'https://github.com/{}'.format(repo)
 
+        self.botmetafile = botmetafile
         self.botmeta = {}
         self.CMAP = {}
         self.FILEMAP = {}
@@ -46,8 +47,12 @@ class FileIndexer(ModuleIndexer):
 
     def parse_metadata(self):
 
-        fp = '.github/BOTMETA.yml'
-        rdata = self.get_file_content(fp)
+        if self.botmetafile is not None:
+            with open(self.botmetafile, 'rb') as f:
+                rdata = f.read()
+        else:
+            fp = '.github/BOTMETA.yml'
+            rdata = self.get_file_content(fp)
         if rdata:
             self.botmeta = BotMetadataParser.parse_yaml(rdata)
         else:

@@ -126,6 +126,9 @@ def main():
     # useful for debugging
     parser.add_argument("--dump_actions", action="store_true",
                         help="serialize the actions to disk [/tmp/actions]")
+    parser.add_argument("--botmetafile", type=str,
+                        default=None,
+                        help="Use this filepath for botmeta instead of from the repo")
 
     args = parser.parse_args()
 
