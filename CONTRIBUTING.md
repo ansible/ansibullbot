@@ -17,3 +17,11 @@ Run with `verbose`, `debug` and `dry-run` ...
 ```bash
 ./triage_ansible.py --debug --verbose --dry-run
 ```
+
+## Testing changes to BOTMETA.yml
+
+1. Download BOTMETA.yml from https://github.com/ansible/ansible to a local directory
+2. Edit the file with whatever changes you want to make
+3. Run triage_ansible.py with `--botmetafile=<PATHTOFILE>`
+
+If you have a specific issue to test against, use the `--id` parameter to speed up testing.
