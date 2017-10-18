@@ -68,6 +68,7 @@ from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
 from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
 from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
 from ansibullbot.triagers.plugins.needs_revision import get_shippable_run_facts
+from ansibullbot.triagers.plugins.contributors import get_contributor_facts
 from ansibullbot.triagers.plugins.notifications import get_notification_facts
 from ansibullbot.triagers.plugins.py3 import get_python3_facts
 from ansibullbot.triagers.plugins.shipit import automergeable
@@ -1276,6 +1277,15 @@ class AnsibleTriage(DefaultTriager):
         if not self.meta['needs_rebuild'] and self.meta['admin_merge']:
             actions.merge = True
 
+        # https://github.com/ansible/ansibullbot/issues/785
+        if iw.is_pullrequest():
+            if self.meta.get('new_contributor'):
+                if 'new_contributor' not in iw.labels:
+                    actions.newlabel.append('new_contributor')
+            else:
+                if 'new_contributor' in iw.labels:
+                    actions.unlabel.append('new_contributor')
+
         actions.newlabel = sorted(set(actions.newlabel))
         actions.unlabel = sorted(set(actions.unlabel))
 
@@ -1783,6 +1793,9 @@ class AnsibleTriage(DefaultTriager):
                 self.SR
             )
         )
+
+        # first time contributor?
+        self.meta.update(get_contributor_facts(iw))
 
         if iw.migrated:
             miw = iw._migrated_issue

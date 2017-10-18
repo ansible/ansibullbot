@@ -44,6 +44,7 @@ class FileIndexer(ModuleIndexer):
         self.FILEMAP = {}
         self.match_cache = {}
         self.update(force=True)
+        self.email_commits = {}
 
     def parse_metadata(self):
 
@@ -472,3 +473,22 @@ class FileIndexer(ModuleIndexer):
             return False
         else:
             return True
+
+    def commits_by_email(self, email):
+        if not isinstance(email, (list, tuple)):
+            email = [email]
+
+        if not self.email_commits:
+            cmd = 'cd {}; git log --format="%H %ae"'.format(self.checkoutdir)
+            (rc, so, se) = run_command(cmd)
+            commits = [x.split(None, 1)[::-1] for x in so.split('\n') if x]
+            for x in commits:
+                if x[0] not in self.email_commits:
+                    self.email_commits[x[0]] = []
+                self.email_commits[x[0]].append(x[1])
+
+        commits = []
+        for x in email:
+            commits += self.email_commits.get(x, [])
+
+        return commits
