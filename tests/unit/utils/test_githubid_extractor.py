@@ -49,6 +49,7 @@ class TestGitHubIdExtractor(unittest.TestCase):
             ('First-Name Last (first@last.example)', ['github']),  # known email
             ('First-Name Last <first@last.example>', ['github']),  # known email
             ('First-Name Last (first@last.example), Surname Name (last@domain.example)', ['github', 'github2']),  # known emails
+            ('First-Name Last <first@last.example>, Surname Name <last@domain.example>', ['github', 'github2'])
         ]
 
         for line, githubids in authors:
