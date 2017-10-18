@@ -3,7 +3,7 @@
 import logging
 
 
-def get_contributor_facts(issuewrapper, meta, module_indexer, file_indexer, core_team=None, bot_names=None):
+def get_contributor_facts(issuewrapper):
 
     # https://github.com/blog/2397-making-it-easier-to-grow-communities-on-github
     # NONE - new contributor

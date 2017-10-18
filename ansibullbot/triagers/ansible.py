@@ -1795,16 +1795,7 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # first time contributor?
-        self.meta.update(
-            get_contributor_facts(
-                iw,
-                self.meta,
-                self.module_indexer,
-                self.file_indexer,
-                core_team=self.ansible_core_team,
-                bot_names=self.BOTNAMES
-            )
-        )
+        self.meta.update(get_contributor_facts(iw))
 
         if iw.migrated:
             miw = iw._migrated_issue
