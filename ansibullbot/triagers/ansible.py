@@ -1282,6 +1282,9 @@ class AnsibleTriage(DefaultTriager):
             if self.meta.get('new_contributor'):
                 if 'new_contributor' not in iw.labels:
                     actions.newlabel.append('new_contributor')
+            else:
+                if 'new_contributor' in iw.labels:
+                    actions.unlabel.append('new_contributor')
 
         actions.newlabel = sorted(set(actions.newlabel))
         actions.unlabel = sorted(set(actions.unlabel))

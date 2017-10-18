@@ -23,7 +23,7 @@ def get_contributor_facts(issuewrapper, meta, module_indexer, file_indexer, core
     association = iw.pull_raw.get('author_association')
     logging.info('{} {} association: {}'.format(iw.html_url, iw.submitter, association))
 
-    if association is 'NONE':
+    if association == 'NONE':
         cfacts['new_contributor'] = True
 
     return cfacts
