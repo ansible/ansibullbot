@@ -10,3 +10,6 @@
 [submodule "playbooks/roles/ansibullbot-instance"]
 	path = playbooks/roles/ansibullbot-instance
 	url = https://github.com/samdoran/ansible-role-ansibullbot-instance.git
+[submodule "playbooks/roles/mongodb"]
+	path = playbooks/roles/mongodb
+	url = https://github.com/samdoran/ansible-role-mongodb.git
