@@ -12,6 +12,7 @@ import socket
 import ssl
 import sys
 import time
+import traceback
 from ansibullbot.errors import RateLimitError
 
 import ansibullbot.constants as C
@@ -172,6 +173,8 @@ def RateLimited(fn):
                         logging.error('breakpoint!')
                         import epdb; epdb.st()
                     else:
+                        ex_type, ex, tb = sys.exc_info()
+                        traceback.print_tb(tb)
                         raise Exception('no data in exception')
 
                 logging.warning('sleeping %s minutes' % (stime/60))
