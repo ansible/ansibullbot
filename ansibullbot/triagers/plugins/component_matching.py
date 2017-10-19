@@ -5,45 +5,8 @@ import logging
 import os
 
 
-def find_module_match(issuewrapper, module_indexer):
-
-    iw = issuewrapper
-
-    match = None
-
-    cname = iw.template_data.get('component name')
-    craw = iw.template_data.get('component_raw')
-
-    # try exact matching first
-    if module_indexer.find_match(cname, exact=True):
-        logging.debug('try exact module match')
-        match = module_indexer.find_match(cname, exact=True)
-
-    # try with levenshtein
-    if match is None:
-        logging.debug('try inexact module match')
-        match = module_indexer.find_match(cname, exact=False)
-
-    # fallback to fuzzy matching on raw component
-    if match is None:
-        if iw.template_data.get('component_raw') \
-                and ('module' in iw.title or
-                    'module' in craw or
-                    'action' in craw):
-            # FUZZY MATCH?
-            logging.info('try fuzzy module match')
-            fm = module_indexer.fuzzy_match(
-                title=iw.title,
-                component=craw
-            )
-            if fm:
-                match = module_indexer.find_match(fm)
-
-    return match
-
-
 def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, valid_labels):
-
+    '''High level abstraction for matching components to repo files'''
 
     # These should never return a match
     BLACKLIST_COMPONENTS = [
@@ -114,11 +77,34 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
                 return cmeta
 
             match = find_module_match(iw, module_indexer)
+
+            # sometimes there are multiple matches, so it needs to narrow down
+            # to just one.
+            if isinstance(match, list) and match:
+                if len(match) == 1:
+                    match = match[0]
+                else:
+                    to_remove = []
+                    for _match in match[:]:
+                        if _match['name'] not in iw.body.lower() and \
+                                _match['name'] not in iw.title.lower():
+                            to_remove.append(_match)
+                    if to_remove:
+                        for tr in to_remove:
+                            logging.debug('exclude {}'.format(tr['repo_filename']))
+                            match.remove(tr)
+
+                    if len(match) == 1:
+                        match = match[0]
+
             if match:
                 cmeta['is_module'] = True
                 cmeta['is_plugin'] = True
                 cmeta['module_match'] = copy.deepcopy(match)
-                cmeta['component'] = match['name']
+                if isinstance(match, list):
+                    cmeta['component'] = [x['name'] for x in match]
+                else:
+                    cmeta['component'] = match['name']
 
     elif len(iw.files) > 100:
         # das merge?
@@ -238,15 +224,16 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     # who owns this? FIXME - is this even used?
     cmeta['owner'] = ['ansible']
     if cmeta['module_match']:
-        #print(cmeta['module_match'])
-        maintainers = cmeta['module_match']['maintainers']
-        if maintainers:
-            cmeta['owner'] = maintainers
-        elif cmeta['is_new_module']:
-            cmeta['owner'] = ['ansible']
-        else:
-            logging.error('NO MAINTAINER LISTED FOR %s'
-                          % cmeta['module_match']['name'])
+        if not isinstance(cmeta['module_match'], list):
+            cmeta['module_match'] = [cmeta['module_match']]
+        for mm in cmeta['module_match']:
+            maintainers = mm['maintainers']
+            if maintainers:
+                cmeta['owner'] = maintainers
+            elif cmeta['is_new_module']:
+                cmeta['owner'] = ['ansible']
+            else:
+                logging.error('NO MAINTAINER LISTED FOR %s' % mm['name'])
 
     elif cmeta['is_pullrequest'] and cmeta['component_matches']:
         cmeta['owner'] = []
@@ -271,4 +258,54 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
         # everything else is "core"
         cmeta['is_core'] = True
 
+    # make module matches a non-list if only one
+    if isinstance(cmeta['module_match'], list) and len(cmeta['module_match']) == 1:
+        cmeta['module_match'] = cmeta['module_match'][0]
+
     return cmeta
+
+
+def find_module_match(issuewrapper, module_indexer):
+
+    iw = issuewrapper
+
+    match = None
+
+    cname = iw.template_data.get('component name')
+    craw = iw.template_data.get('component_raw')
+
+    # try exact matching first
+    if module_indexer.find_match(cname, exact=True):
+        logging.debug('try exact module match')
+        match = module_indexer.find_match(cname, exact=True)
+
+    # try with levenshtein
+    if not match:
+        logging.debug('try inexact module match')
+        match = module_indexer.find_match(cname, exact=False)
+
+    # fallback to fuzzy matching on raw component
+    if not match:
+        if iw.template_data.get('component_raw') \
+                and ('module' in iw.title or
+                    'module' in craw or
+                    'action' in craw):
+
+            # FUZZY MATCH?
+            logging.info('try fuzzy module match')
+            fm = module_indexer.fuzzy_match(
+                title=iw.title,
+                component=craw
+            )
+            if fm:
+                #if iw.html_url == 'https://github.com/ansible/ansible/issues/27658':
+                #    import epdb; epdb.st()
+
+                # sanity check ...
+                bname = os.path.basename(fm)
+                if ('/' + bname) in iw.body or (bname + ':') in iw.body or (' ' + bname + ' ') in iw.body:
+                    match = module_indexer.find_match(fm)
+
+    return match
+
+

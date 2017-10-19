@@ -188,34 +188,34 @@ class ModuleIndexer(object):
 
         logging.debug('exact:{} matching on {}'.format(exact, pattern))
 
+        matches = []
+
         if isinstance(pattern, unicode):
             pattern = pattern.encode('ascii', 'ignore')
 
-        match = None
         for k,v in self.modules.iteritems():
             if v['name'] == pattern:
                 logging.debug('match {} on name: {}'.format(k, v['name']))
-                match = v
+                matches = [v]
                 break
-        if not match:
+
+        if not matches:
             # search by key ... aka the filepath
             for k,v in self.modules.iteritems():
                 if k == pattern:
                     logging.debug('match {} on key: {}'.format(k, k))
-                    match = v
+                    matches = [v]
                     break
-        if not match and not exact:
+
+        if not matches and not exact:
             # search by properties
             for k,v in self.modules.iteritems():
                 for subkey in v.keys():
                     if v[subkey] == pattern:
                         logging.debug('match {} on subkey: {}'.format(k, subkey))
-                        match = v
-                        break
-                if match:
-                    break
+                        matches.append(v)
 
-        if not match and not exact:
+        if not matches and not exact:
             # Levenshtein distance should workaround most typos
             distance_map = {}
             for k,v in self.modules.iteritems():
@@ -233,15 +233,24 @@ class ModuleIndexer(object):
             res = sorted(distance_map.items(), key=lambda x: x[1], reverse=True)
             if len(pattern) > 3 and res[-1][1] < 3:
                 logging.debug('levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
-                match = self.modules[res[-1][-1]]
+                matches = [self.modules[res[-1][-1]]]
 
-            if match:
+            if matches:
                 import epdb; epdb.st()
 
-        return match
+        return matches
 
     def find_match(self, pattern, exact=False):
         '''Exact module name matching'''
+
+        logging.debug('find_match for "{}"'.format(pattern))
+
+        BLACKLIST = [
+            'module_utils',
+            'callback',
+            'network modules',
+            'networking modules'
+        ]
 
         if not pattern or pattern is None:
             return None
@@ -261,6 +270,10 @@ class ModuleIndexer(object):
         if 'module_utils' in pattern:
             # https://github.com/ansible/ansible/issues/20368
             return None
+        elif 'callback' in pattern:
+            return None
+        elif pattern.lower() in BLACKLIST:
+            return None
         elif '/' in pattern and not self._find_match(pattern, exact=True):
             # https://github.com/ansible/ansible/issues/20520
             if not pattern.startswith('lib/'):
@@ -273,6 +286,11 @@ class ModuleIndexer(object):
         elif pattern.endswith('.py') and self._find_match(pattern, exact=False):
             # https://github.com/ansible/ansible/issues/19889
             candidate = self._find_match(pattern, exact=False)
+
+            if isinstance(candidate, list):
+                if len(candidate) == 1:
+                    candidate = candidate[0]
+
             if candidate['filename'] == pattern:
                 return candidate
 
@@ -291,14 +309,14 @@ class ModuleIndexer(object):
         return match
 
     def is_valid(self, mname):
-        match = self.find_match(mname)
+        match = self.find_match(mname, exact=True)
         if match:
             return True
         else:
             return False
 
     def get_repository_for_module(self, mname):
-        match = self.find_match(mname)
+        match = self.find_match(mname, exact=True)
         if match:
             return match['repository']
         else:
@@ -892,6 +910,8 @@ class ModuleIndexer(object):
     def fuzzy_match(self, repo=None, title=None, component=None):
         '''Fuzzy matching for modules'''
 
+        logging.debug('fuzzy match {}'.format(component))
+
         if component.lower() == 'core':
             return None
 
@@ -913,6 +933,8 @@ class ModuleIndexer(object):
         known_modules = []
 
         for k,v in self.modules.iteritems():
+            if v['name'] in ['include']:
+                continue
             known_modules.append(v['name'])
 
         title = title.lower()
@@ -932,19 +954,21 @@ class ModuleIndexer(object):
             cmatches = [x for x in known_modules if x in component]
             cmatches = [x for x in cmatches if not '_' + x in component]
 
+        #if not component and title_matches:
+        if title_matches:
             # use title ... ?
-            if title_matches:
-                cmatches = [x for x in cmatches if x in title_matches]
+            cmatches = [x for x in cmatches if x in title_matches]
+            #import epdb; epdb.st()
 
-            if cmatches:
-                if len(cmatches) >= 1:
-                    match = cmatches[0]
-                if not match:
-                    if 'docs.ansible.com' in component:
-                        pass
-                    else:
-                        pass
-                print("module - component matches: %s" % cmatches)
+        if cmatches:
+            if len(cmatches) >= 1:
+                match = cmatches[0]
+            if not match:
+                if 'docs.ansible.com' in component:
+                    pass
+                else:
+                    pass
+            print("module - component matches: %s" % cmatches)
 
         if not match:
             if len(title_matches) == 1:
