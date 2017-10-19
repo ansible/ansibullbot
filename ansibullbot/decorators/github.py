@@ -51,8 +51,8 @@ def get_rate_limit():
 
     response = rr.json()
 
-    if 'resources' not in response or 'core' not in response['resources']:
-        logging.warning('Unable to fetch rate limit %r', response['message'])
+    if 'resources' not in response or 'core' not in response.get('resources', {}):
+        logging.warning('Unable to fetch rate limit %r', response.get('message'))
         return False
 
     return response
