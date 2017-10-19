@@ -15,5 +15,5 @@
     - repo-epel
     - firewall
     - fail2ban
+    - mongodb
     - ansibullbot
-    # - monit
