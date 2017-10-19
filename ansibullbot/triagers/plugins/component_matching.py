@@ -14,27 +14,41 @@ def find_module_match(issuewrapper, module_indexer):
     cname = iw.template_data.get('component name')
     craw = iw.template_data.get('component_raw')
 
+    # try exact matching first
     if module_indexer.find_match(cname, exact=True):
+        logging.debug('try exact module match')
         match = module_indexer.find_match(cname, exact=True)
-    elif iw.template_data.get('component_raw') \
-            and ('module' in iw.title or
-                 'module' in craw or
-                 'action' in craw):
-        # FUZZY MATCH?
-        logging.info('fuzzy match module component')
-        fm = module_indexer.fuzzy_match(
-            title=iw.title,
-            component=craw
-        )
-        if fm:
-            match = module_indexer.find_match(fm)
-    else:
-        pass
+
+    # try with levenshtein
+    if match is None:
+        logging.debug('try inexact module match')
+        match = module_indexer.find_match(cname, exact=False)
+
+    # fallback to fuzzy matching on raw component
+    if match is None:
+        if iw.template_data.get('component_raw') \
+                and ('module' in iw.title or
+                    'module' in craw or
+                    'action' in craw):
+            # FUZZY MATCH?
+            logging.info('try fuzzy module match')
+            fm = module_indexer.fuzzy_match(
+                title=iw.title,
+                component=craw
+            )
+            if fm:
+                match = module_indexer.find_match(fm)
 
     return match
 
 
 def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, valid_labels):
+
+
+    # These should never return a match
+    BLACKLIST_COMPONENTS = [
+        'core', 'ansible'
+    ]
 
     iw = issuewrapper
 
@@ -92,6 +106,12 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
 
     if iw.is_issue():
         if iw.template_data.get('component name'):
+
+            if iw.template_data.get('component name', '').lower() in BLACKLIST_COMPONENTS:
+                return cmeta
+
+            if iw.template_data.get('component_raw', '').lower() in BLACKLIST_COMPONENTS:
+                return cmeta
 
             match = find_module_match(iw, module_indexer)
             if match:
@@ -218,7 +238,7 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     # who owns this? FIXME - is this even used?
     cmeta['owner'] = ['ansible']
     if cmeta['module_match']:
-        print(cmeta['module_match'])
+        #print(cmeta['module_match'])
         maintainers = cmeta['module_match']['maintainers']
         if maintainers:
             cmeta['owner'] = maintainers

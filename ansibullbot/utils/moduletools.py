@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import Levenshtein
 import ast
 import copy
 import datetime
@@ -67,11 +68,13 @@ class ModuleIndexer(object):
 
     REPO = "http://github.com/ansible/ansible"
 
-    def __init__(self, botmetafile=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache'):
+    def __init__(self, commits=True, blames=True, botmetafile=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache'):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
         '''
+        self.get_commits = commits
+        self.get_blames = blames
         self.botmetafile = botmetafile
         self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
         self.modules = {}  # keys: paths of files belonging to the repository
@@ -183,15 +186,22 @@ class ModuleIndexer(object):
 
     def _find_match(self, pattern, exact=False):
 
+        logging.debug('exact:{} matching on {}'.format(exact, pattern))
+
+        if isinstance(pattern, unicode):
+            pattern = pattern.encode('ascii', 'ignore')
+
         match = None
         for k,v in self.modules.iteritems():
             if v['name'] == pattern:
+                logging.debug('match {} on name: {}'.format(k, v['name']))
                 match = v
                 break
         if not match:
             # search by key ... aka the filepath
             for k,v in self.modules.iteritems():
                 if k == pattern:
+                    logging.debug('match {} on key: {}'.format(k, k))
                     match = v
                     break
         if not match and not exact:
@@ -199,15 +209,44 @@ class ModuleIndexer(object):
             for k,v in self.modules.iteritems():
                 for subkey in v.keys():
                     if v[subkey] == pattern:
+                        logging.debug('match {} on subkey: {}'.format(k, subkey))
                         match = v
                         break
                 if match:
                     break
+
+        if not match and not exact:
+            # Levenshtein distance should workaround most typos
+            distance_map = {}
+            for k,v in self.modules.iteritems():
+                mname = v.get('name')
+                if not mname:
+                    continue
+                if isinstance(mname, unicode):
+                    mname = mname.encode('ascii', 'ignore')
+                try:
+                    res = Levenshtein.distance(pattern, mname)
+                except TypeError as e:
+                    logging.error(e)
+                    import epdb; epdb.st()
+                distance_map[mname] = [res, k]
+            res = sorted(distance_map.items(), key=lambda x: x[1], reverse=True)
+            if len(pattern) > 3 and res[-1][1] < 3:
+                logging.debug('levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
+                match = self.modules[res[-1][-1]]
+
+            if match:
+                import epdb; epdb.st()
+
         return match
 
     def find_match(self, pattern, exact=False):
         '''Exact module name matching'''
-        if not pattern:
+
+        if not pattern or pattern is None:
+            return None
+
+        if pattern.lower() == 'core':
             return None
 
         # https://github.com/ansible/ansible/issues/19755
@@ -320,12 +359,14 @@ class ModuleIndexer(object):
         self.set_module_imports()
 
         # last modified
-        logging.debug('set module commits')
-        self.get_module_commits()
+        if self.get_commits:
+            logging.debug('set module commits')
+            self.get_module_commits()
 
         # parse blame
-        logging.debug('set module blames')
-        self.get_module_blames()
+        if self.get_blames:
+            logging.debug('set module blames')
+            self.get_module_blames()
 
         # depends on metadata now ...
         logging.debug('set module maintainers')
@@ -850,6 +891,9 @@ class ModuleIndexer(object):
 
     def fuzzy_match(self, repo=None, title=None, component=None):
         '''Fuzzy matching for modules'''
+
+        if component.lower() == 'core':
+            return None
 
         # https://github.com/ansible/ansible/issues/18179
         if 'validate-modules' in component:
