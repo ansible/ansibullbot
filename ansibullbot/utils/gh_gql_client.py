@@ -336,6 +336,13 @@ class GithubGraphQLClient(object):
     def requests(self, payload):
         response = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
         response.raise_for_status()
+        # GitHub GraphQL will happily return a 200 result with errors. One
+        # must dig through the data to see if there were errors.
+	errors = response.json().get('errors')
+        if errors:
+            msgs = ', '.join([e['message'] for e in errors])
+            raise requests.exceptions.InvalidSchema(
+                'Error(s) from graphql: %s' % msgs)
         return response
 
 ###################################
