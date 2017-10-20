@@ -4,6 +4,7 @@ import Levenshtein
 import ast
 import copy
 import datetime
+import fnmatch
 import logging
 import os
 import pickle
@@ -235,8 +236,8 @@ class ModuleIndexer(object):
                 logging.debug('levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
                 matches = [self.modules[res[-1][-1]]]
 
-            if matches:
-                import epdb; epdb.st()
+            #if matches:
+            #    import epdb; epdb.st()
 
         return matches
 
@@ -250,6 +251,7 @@ class ModuleIndexer(object):
             'callback',
             'network modules',
             'networking modules'
+            'windows modules'
         ]
 
         if not pattern or pattern is None:
@@ -258,8 +260,29 @@ class ModuleIndexer(object):
         if pattern.lower() == 'core':
             return None
 
+        '''
+        if 'docs.ansible.com' in pattern and '_module.html' in pattern:
+            # http://docs.ansible.com/ansible/latest/copy_module.html
+            # http://docs.ansible.com/ansible/latest/dev_guide/developing_modules.html
+            # http://docs.ansible.com/ansible/latest/postgresql_db_module.html
+            # [helm module](https//docs.ansible.com/ansible/2.4/helm_module.html)
+            # Windows module: win_robocopy\nhttp://docs.ansible.com/ansible/latest/win_robocopy_module.html
+            # Examples:\n* archive (https://docs.ansible.com/ansible/archive_module.html)\n* s3_sync (https://docs.ansible.com/ansible/s3_sync_module.html)
+            urls = re.findall(
+                'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
+                pattern
+            )
+            #urls = [x for x in urls if '_module.html' in x]
+            #if urls:
+            #    import epdb; epdb.st()
+            import epdb; epdb.st()
+        '''
+
         # https://github.com/ansible/ansible/issues/19755
         if pattern == 'setup':
+            pattern = 'system/setup.py'
+
+        if '/facts.py' in pattern or ' facts.py' in pattern:
             pattern = 'system/setup.py'
 
         # https://github.com/ansible/ansible/issues/18527
@@ -271,6 +294,10 @@ class ModuleIndexer(object):
             # https://github.com/ansible/ansible/issues/20368
             return None
         elif 'callback' in pattern:
+            return None
+        elif 'lookup' in pattern:
+            return None
+        elif 'contrib' in pattern and 'inventory' in pattern:
             return None
         elif pattern.lower() in BLACKLIST:
             return None
@@ -305,6 +332,14 @@ class ModuleIndexer(object):
                 # check for deprecated name
                 #   _fireball -> fireball
                 match = self._find_match('_' + bname)
+
+        # unique the results
+        if isinstance(match, list) and len(match) > 1:
+            _match = []
+            for m in match:
+                if m not in _match:
+                    _match.append(m)
+            match = _match[:]
 
         return match
 
@@ -910,7 +945,7 @@ class ModuleIndexer(object):
     def fuzzy_match(self, repo=None, title=None, component=None):
         '''Fuzzy matching for modules'''
 
-        logging.debug('fuzzy match {}'.format(component))
+        logging.debug('fuzzy match {}'.format(component.encode('ascii', 'ignore')))
 
         if component.lower() == 'core':
             return None
@@ -923,11 +958,19 @@ class ModuleIndexer(object):
         if 'module_utils' in component:
             return None
 
+        if 'new module' in component:
+            return None
+
         # authorized_keys vs. authorized_key
         if component and component.endswith('s'):
             tm = self.find_match(component[:-1])
             if tm:
-                return tm['name']
+                if not isinstance(tm, list):
+                    return tm['name']
+                elif len(tm) == 1:
+                    return tm[0]['name']
+                else:
+                    import epdb; epdb.st()
 
         match = None
         known_modules = []
@@ -948,33 +991,43 @@ class ModuleIndexer(object):
                 title_matches = \
                     [x for x in known_modules if ' ' + x + ' ' in title]
 
+            if title_matches:
+                title_matches = [x for x in title_matches if x != 'at']
+
         # don't do singular word matching in title for ansible/ansible
         cmatches = None
         if component:
             cmatches = [x for x in known_modules if x in component]
             cmatches = [x for x in cmatches if not '_' + x in component]
 
+        # globs
+        if not cmatches and '*' in component:
+            fmatches = [x for x in known_modules if fnmatch.fnmatch(x, component)]
+            if fmatches:
+                cmatches = fmatches[:]
+
         #if not component and title_matches:
         if title_matches:
             # use title ... ?
-            cmatches = [x for x in cmatches if x in title_matches]
-            #import epdb; epdb.st()
+            cmatches = [x for x in cmatches if x in title_matches and x not in ['at']]
 
         if cmatches:
-            if len(cmatches) >= 1:
+            if len(cmatches) >= 1 and ('*' not in component and 'modules' not in component):
                 match = cmatches[0]
+            else:
+                match = cmatches[:]
             if not match:
                 if 'docs.ansible.com' in component:
                     pass
                 else:
                     pass
-            print("module - component matches: %s" % cmatches)
+            logging.debug("module - component matches: %s" % cmatches)
 
         if not match:
             if len(title_matches) == 1:
                 match = title_matches[0]
             else:
-                print("module - title matches: %s" % title_matches)
+                logging.debug("module - title matches: %s" % title_matches)
 
         return match
 

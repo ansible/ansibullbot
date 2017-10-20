@@ -83,9 +83,9 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
             if isinstance(match, list) and match:
                 if len(match) == 1:
                     match = match[0]
-                else:
+                elif '*' not in iw.template_data.get('component_raw', ''):
                     to_remove = []
-                    for _match in match[:]:
+                    for _match in match:
                         if _match['name'] not in iw.body.lower() and \
                                 _match['name'] not in iw.title.lower():
                             to_remove.append(_match)
@@ -297,14 +297,41 @@ def find_module_match(issuewrapper, module_indexer):
                 title=iw.title,
                 component=craw
             )
-            if fm:
-                #if iw.html_url == 'https://github.com/ansible/ansible/issues/27658':
-                #    import epdb; epdb.st()
 
-                # sanity check ...
-                bname = os.path.basename(fm)
-                if ('/' + bname) in iw.body or (bname + ':') in iw.body or (' ' + bname + ' ') in iw.body:
-                    match = module_indexer.find_match(fm)
+            '''
+            # try word by word ...
+            if not fm:
+                # ec2_snapshot   currently does not support cross region snapshot copy.
+                words = craw.split()
+                words = [x.strip() for x in words if x.strip()]
+                words = [x for x in words if x != 'module']
+                words = [x for x in words if x != 'modules']
+                for word in words:
+                    _fm = module_indexer.fuzzy_match(
+                        title=iw.title,
+                        component=craw
+                    )
+                    if _fm:
+                        print('{} --> {}'.format(craw, _fm))
+                        import epdb; epdb.st()
+            '''
+
+            if fm:
+
+                if isinstance(fm, list):
+                    match = [module_indexer.find_match(x, exact=True) for x in fm]
+                    _match = []
+                    for x in match:
+                        if isinstance(x, dict):
+                            _match.append(x)
+                        elif isinstance(x, list):
+                            _match.append(x[0])
+                    match = _match[:]
+                else:
+                    # sanity check ...
+                    bname = os.path.basename(fm)
+                    if ('/' + bname) in iw.body or (bname + ':') in iw.body or (' ' + bname + ' ') in iw.body or bname in iw.title:
+                        match = module_indexer.find_match(fm)
 
     return match
 
