@@ -8,7 +8,7 @@ from pprint import pprint
 
 STOPWORDS = ['ansible', 'core', 'plugin']
 STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',']
-BLACKLIST = STOPWORDS + ['new module', 'new modules']
+BLACKLIST = ['new module', 'new modules']
 
 
 class ComponentMatcher(object):
@@ -49,10 +49,13 @@ class ComponentMatcher(object):
         component = component.encode('ascii', 'ignore')
         logging.debug('match "{}"'.format(component))
 
+        #if 'lib/ansible/modules/cloud/amazon/ec2.py' in component:
+        #    import epdb; epdb.st()
+
         matched_filenames = []
 
-        if component:
-            matched_filenames += self.search_by_keywords(component)
+        #if component:
+        #    matched_filenames += self.search_by_keywords(component)
 
         if not matched_filenames:
             matched_filenames += self.search_by_regex_urls(component)
@@ -65,8 +68,14 @@ class ComponentMatcher(object):
             if not matched_filenames:
                 matched_filenames += self.search_by_filepath(component, partial=True)
 
+        if not matched_filenames:
+            matched_filenames += self.search_by_module_regexes(component)
+
         if matched_filenames:
             matched_filenames += self.include_modules_from_test_targets(matched_filenames)
+
+        if component:
+            matched_filenames += self.search_by_keywords(component)
 
         # bypass for blacklist
         if None in matched_filenames:
@@ -88,15 +97,20 @@ class ComponentMatcher(object):
         else:
             for k,v in self.KEYWORDS.items():
                 if ' ' + k + ' ' in component:
+                    logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
                 elif ' ' + k + ':' in component:
+                    logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
                 elif component.endswith(' ' + k):
+                    logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
                 elif k + ' module' in component:
+                    logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
 
                 elif k in component and k in BLACKLIST:
+                    logging.debug('blacklist  match: {}'.format(k))
                     matches.append(None)
 
         return matches
@@ -108,6 +122,7 @@ class ComponentMatcher(object):
         # [helm module](https//docs.ansible.com/ansible/2.4/helm_module.html)
         # Windows module: win_robocopy\nhttp://docs.ansible.com/ansible/latest/win_robocopy_module.html
         # Examples:\n* archive (https://docs.ansible.com/ansible/archive_module.html)\n* s3_sync (https://docs.ansible.com/ansible/s3_sync_module.html)
+        # https//github.com/ansible/ansible/blob/devel/lib/ansible/modules/windows/win_dsc.ps1L228
 
         matches = []
 
@@ -131,7 +146,7 @@ class ComponentMatcher(object):
 
                     if len(choices) > 1:
                         #choices = [x for x in choices if fn + '.py' in x or fn + '.ps1' in x]
-                        choices = [x for x in choices if fn + '.py' in x]
+                        choices = [x for x in choices if fn + '.py' in x or fn + '.ps1' in x]
 
                     if len(choices) == 1:
                         matches.append(choices[0])
@@ -190,8 +205,6 @@ class ComponentMatcher(object):
                         if fn1 not in self.files:
                             pass
 
-        if matches:
-            import epdb; epdb.st()
         return matches
 
     def search_by_filepath(self, body, partial=False):
@@ -208,16 +221,6 @@ class ComponentMatcher(object):
 
             if partial:
 
-                '''
-                for word in body.split():
-                    if word in fn:
-                        matches.append(fn)
-
-                    if word == 'cloud/docker_container' and 'docker_container' in fn:
-                        print(fn)
-                        import epdb; epdb.st()
-                '''
-
                 # if all subpaths are in this filepath, it is a match
                 bp_total = 0
                 fn_paths = fn.split('/')
@@ -226,9 +229,6 @@ class ComponentMatcher(object):
                         bp_total += 1
                 if bp_total == len(body_paths):
                     matches.append(fn)
-
-        #if body == 'cloud/docker_container':
-        #    import epdb; epdb.st()
 
         if matches:
             tr = []
@@ -245,6 +245,10 @@ class ComponentMatcher(object):
                     matches.remove(r)
 
         return matches
+
+    def search_by_module_regexes(self, body):
+        #import epdb; epdb.st()
+        return []
 
     def include_modules_from_test_targets(self, matches):
         """Map test targets to the module files"""
