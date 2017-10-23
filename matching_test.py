@@ -105,6 +105,7 @@ EXPECTED = {
 }
 '''
 
+'''
 SKIP = [
     'https://github.com/ansible/ansible/issues/13406',
     'https://github.com/ansible/ansible/issues/17950',
@@ -117,7 +118,12 @@ SKIP = [
     'https://github.com/ansible/ansible/issues/27136',  # network modules
     'https://github.com/ansible/ansible/issues/27349',  # selinux semodule
     'https://github.com/ansible/ansible/issues/28247',  # Ansible core modules (system/systemd, system/service)
+    'https://github.com/ansible/ansible/issues/13026',
+    'https://github.com/ansible/ansible/issues/13278',
+    'https://github.com/ansible/ansible/issues/15297'
+    'https://github.com/ansible/ansible/issues/15902'
 ]
+'''
 
 
 MATCH_MAP = {}
@@ -156,9 +162,27 @@ def load_expected():
         fdata = json.loads(f.read())
     return fdata
 
+
 def save_expected(data):
     with open('componet_expected_results.json', 'wb') as f:
         f.write(json.dumps(data, indent=2, sort_keys=True))
+
+
+def save_match_map(data):
+    with open('componet_match_map.json', 'wb') as f:
+        f.write(json.dumps(data, indent=2, sort_keys=True))
+
+
+def load_skip():
+    with open('componet_skip.json', 'rb') as f:
+        data = json.loads(f.read())
+    return data
+
+
+def save_skip(data):
+    with open('componet_skip.json', 'wb') as f:
+        f.write(json.dumps(data, indent=2, sort_keys=True))
+
 
 def set_logger():
     logging.level = logging.DEBUG
@@ -175,7 +199,8 @@ def set_logger():
 def main():
 
     set_logger()
-
+    #save_skip(SKIP)
+    SKIP = load_skip()
 
     EXPECTED = load_expected()
 
@@ -219,6 +244,8 @@ def main():
                 continue
 
             iw = IssueWrapperMock(meta)
+            if 'module' not in iw.body.lower() and 'module' not in iw.title.lower():
+                continue
 
             # OLD METHOD
             cmf = get_component_match_facts(iw, meta, FI, MI, LABELS)
@@ -247,13 +274,9 @@ def main():
             # USE THE CACHED MAP
             if component in MATCH_MAP:
                 expected_fns = MATCH_MAP[component]
-            else:
-                # STORE IN THE CACHE
-                if component not in MATCH_MAP:
-                    MATCH_MAP[component] = expected_fns
 
             # COMPARE AND RECORD
-            if expected_fns != cmr_fns:
+            if expected_fns != cmr_fns and hurl not in EXPECTED:
 
                 print('## COMPONENT ...')
                 print(component)
@@ -262,17 +285,39 @@ def main():
                 print('## RESULT ...')
                 pprint(cmr_fns)
 
-                print('--------------------------------')
-                res = raw_input('Is the result correct? (y/n): ')
+                if component in MATCH_MAP:
+                    if MATCH_MAP[component] == cmr_fns:
+                        EXPECTED[iw.html_url] = cmr_fns
+                        save_expected(EXPECTED)
+                        continue
 
+                print('--------------------------------')
+                res = raw_input('Is the result correct? (y/n/s/d): ')
                 if res.lower() in ['y', 'yes']:
                     MATCH_MAP[component] = cmr_fns
                     EXPECTED[iw.html_url] = cmr_fns
                     save_expected(EXPECTED)
                     continue
+                elif res.lower() in ['s', 'skip']:
+                    SKIP.append(hurl)
+                    save_skip(SKIP)
+                    continue
+                elif res.lower() in ['d', 'debug']:
+                    import epdb; epdb.st()
 
                 ERRORS2.append(iw.html_url)
                 ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), cmr_fns, expected_fns, CM.strategy])
+
+
+            else:
+
+                if component not in MATCH_MAP:
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+
+                if hurl not in EXPECTED:
+                    EXPECTED[hurl] = cmr_fns
+                    save_expected(EXPECTED)
 
             continue
 

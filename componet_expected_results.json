@@ -3,13 +3,26 @@
     "contrib/inventory", 
     "lib/ansible/inventory"
   ], 
+  "https://github.com/ansible/ansible/issues/10480": [
+    "contrib/inventory/openstack.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/10499": [], 
+  "https://github.com/ansible/ansible/issues/10834": [], 
+  "https://github.com/ansible/ansible/issues/10849": [], 
+  "https://github.com/ansible/ansible/issues/10941": [], 
   "https://github.com/ansible/ansible/issues/11024": [
     "lib/ansible/modules/system/user.py"
   ], 
+  "https://github.com/ansible/ansible/issues/11118": [], 
+  "https://github.com/ansible/ansible/issues/11159": [], 
   "https://github.com/ansible/ansible/issues/11175": [], 
   "https://github.com/ansible/ansible/issues/11263": [
     "lib/ansible/modules/files/file.py"
   ], 
+  "https://github.com/ansible/ansible/issues/11340": [
+    "lib/ansible/plugins/filter"
+  ], 
+  "https://github.com/ansible/ansible/issues/11444": [], 
   "https://github.com/ansible/ansible/issues/11498": [
     "lib/ansible/modules/packaging/os/yum.py"
   ], 
@@ -23,9 +36,822 @@
   "https://github.com/ansible/ansible/issues/11568": [
     "lib/ansible/modules/files/assemble.py"
   ], 
+  "https://github.com/ansible/ansible/issues/11639": [], 
+  "https://github.com/ansible/ansible/issues/11775": [], 
+  "https://github.com/ansible/ansible/issues/11817": [], 
+  "https://github.com/ansible/ansible/issues/11837": [
+    "lib/ansible/modules/files/lineinfile.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/11862": [], 
+  "https://github.com/ansible/ansible/issues/11906": [], 
+  "https://github.com/ansible/ansible/issues/11913": [], 
+  "https://github.com/ansible/ansible/issues/11942": [], 
+  "https://github.com/ansible/ansible/issues/11948": [], 
+  "https://github.com/ansible/ansible/issues/11957": [
+    "lib/ansible/modules/inventory/add_host.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12003": [], 
+  "https://github.com/ansible/ansible/issues/12013": [
+    "lib/ansible/modules/net_tools/basics/uri.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12034": [], 
+  "https://github.com/ansible/ansible/issues/12038": [], 
+  "https://github.com/ansible/ansible/issues/12091": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12121": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "https://github.com/ansible/ansible/issues/12239": [], 
+  "https://github.com/ansible/ansible/issues/12240": [], 
+  "https://github.com/ansible/ansible/issues/12246": [
+    "lib/ansible/modules/cloud/amazon/ec2_vol.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12247": [], 
+  "https://github.com/ansible/ansible/issues/12263": [], 
+  "https://github.com/ansible/ansible/issues/12264": [], 
+  "https://github.com/ansible/ansible/issues/12320": [], 
+  "https://github.com/ansible/ansible/issues/12421": [], 
+  "https://github.com/ansible/ansible/issues/12445": [], 
+  "https://github.com/ansible/ansible/issues/12619": [], 
+  "https://github.com/ansible/ansible/issues/12620": [], 
+  "https://github.com/ansible/ansible/issues/12630": [], 
+  "https://github.com/ansible/ansible/issues/12675": [], 
+  "https://github.com/ansible/ansible/issues/12728": [], 
+  "https://github.com/ansible/ansible/issues/12745": [
+    "lib/ansible/modules/cloud/docker/_docker.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12903": [
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12946": [], 
+  "https://github.com/ansible/ansible/issues/12959": [
+    "lib/ansible/modules/cloud/amazon/ec2.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12964": [
+    "lib/ansible/modules/commands/command.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/12986": [
+    "lib/ansible/modules/packaging/os/package.py", 
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13047": [
+    "Makefile"
+  ], 
+  "https://github.com/ansible/ansible/issues/13086": [
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13095": [
+    "lib/ansible/modules/windows/setup.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/13099": [], 
+  "https://github.com/ansible/ansible/issues/13160": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/13165": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/13175": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/13235": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13259": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13366": [
+    "lib/ansible/modules/files/lineinfile.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13478": [
+    "lib/ansible/modules/net_tools/basics/get_url.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13484": [], 
+  "https://github.com/ansible/ansible/issues/13496": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/13561": [], 
+  "https://github.com/ansible/ansible/issues/13596": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13665": [
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/13742": [], 
+  "https://github.com/ansible/ansible/issues/13870": [
+    "lib/ansible/playbook/block.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/14107": [], 
+  "https://github.com/ansible/ansible/issues/14127": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/14130": [], 
+  "https://github.com/ansible/ansible/issues/14150": [], 
+  "https://github.com/ansible/ansible/issues/14181": [], 
+  "https://github.com/ansible/ansible/issues/14413": [
+    "lib/ansible/modules/utilities/logic/wait_for.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/14468": [
+    "lib/ansible/modules/packaging/os/apt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/14539": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "https://github.com/ansible/ansible/issues/14549": [], 
+  "https://github.com/ansible/ansible/issues/14641": [], 
+  "https://github.com/ansible/ansible/issues/14643": [
+    "lib/ansible/modules/windows/setup.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/14681": [
+    "lib/ansible/plugins/callback"
+  ], 
+  "https://github.com/ansible/ansible/issues/14708": [], 
+  "https://github.com/ansible/ansible/issues/14736": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/14791": [], 
+  "https://github.com/ansible/ansible/issues/14860": [], 
+  "https://github.com/ansible/ansible/issues/14907": [
+    "lib/ansible/modules/utilities/logic/include_vars.py", 
+    "lib/ansible/plugins/action/include_vars.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15030": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/15135": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/15143": [], 
+  "https://github.com/ansible/ansible/issues/15148": [
+    "contrib/inventory/openstack.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15185": [
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15187": [], 
+  "https://github.com/ansible/ansible/issues/15190": [], 
+  "https://github.com/ansible/ansible/issues/15206": [
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15216": [], 
+  "https://github.com/ansible/ansible/issues/15259": [], 
+  "https://github.com/ansible/ansible/issues/15265": [], 
+  "https://github.com/ansible/ansible/issues/15288": [], 
+  "https://github.com/ansible/ansible/issues/15302": [], 
+  "https://github.com/ansible/ansible/issues/15323": [], 
+  "https://github.com/ansible/ansible/issues/15336": [], 
+  "https://github.com/ansible/ansible/issues/15352": [
+    "lib/ansible/modules/cloud/lxc/lxc_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15381": [], 
+  "https://github.com/ansible/ansible/issues/15388": [], 
+  "https://github.com/ansible/ansible/issues/15402": [], 
+  "https://github.com/ansible/ansible/issues/15403": [], 
+  "https://github.com/ansible/ansible/issues/15405": [
+    "lib/ansible/modules/files/synchronize.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15408": [], 
+  "https://github.com/ansible/ansible/issues/15412": [], 
+  "https://github.com/ansible/ansible/issues/15416": [], 
+  "https://github.com/ansible/ansible/issues/15429": [], 
+  "https://github.com/ansible/ansible/issues/15430": [], 
+  "https://github.com/ansible/ansible/issues/15458": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15459": [], 
+  "https://github.com/ansible/ansible/issues/15484": [], 
   "https://github.com/ansible/ansible/issues/15491": [
     "lib/ansible/modules/source_control/git.py", 
     "test/integration/targets/git"
+  ], 
+  "https://github.com/ansible/ansible/issues/15505": [
+    "lib/ansible/cli/playbook.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15512": [], 
+  "https://github.com/ansible/ansible/issues/15538": [
+    "lib/ansible/plugins/callback"
+  ], 
+  "https://github.com/ansible/ansible/issues/15549": [], 
+  "https://github.com/ansible/ansible/issues/15565": [], 
+  "https://github.com/ansible/ansible/issues/15590": [], 
+  "https://github.com/ansible/ansible/issues/15622": [], 
+  "https://github.com/ansible/ansible/issues/15642": [], 
+  "https://github.com/ansible/ansible/issues/15664": [], 
+  "https://github.com/ansible/ansible/issues/15680": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15695": [
+    "lib/ansible/module_utils/facts"
+  ], 
+  "https://github.com/ansible/ansible/issues/15709": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/15722": [], 
+  "https://github.com/ansible/ansible/issues/15725": [
+    "lib/ansible/modules/windows/win_updates.ps1", 
+    "lib/ansible/modules/windows/win_updates.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15729": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15732": [], 
+  "https://github.com/ansible/ansible/issues/15737": [], 
+  "https://github.com/ansible/ansible/issues/15741": [], 
+  "https://github.com/ansible/ansible/issues/15746": [], 
+  "https://github.com/ansible/ansible/issues/15753": [], 
+  "https://github.com/ansible/ansible/issues/15766": [
+    "lib/ansible/cli/pull.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15767": [
+    "lib/ansible/modules/files/lineinfile.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15786": [], 
+  "https://github.com/ansible/ansible/issues/15790": [], 
+  "https://github.com/ansible/ansible/issues/15794": [], 
+  "https://github.com/ansible/ansible/issues/15801": [], 
+  "https://github.com/ansible/ansible/issues/15802": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/15813": [], 
+  "https://github.com/ansible/ansible/issues/15815": [], 
+  "https://github.com/ansible/ansible/issues/15816": [
+    "lib/ansible/plugins/connection/docker.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15828": [], 
+  "https://github.com/ansible/ansible/issues/15853": [], 
+  "https://github.com/ansible/ansible/issues/15855": [], 
+  "https://github.com/ansible/ansible/issues/15856": [], 
+  "https://github.com/ansible/ansible/issues/15861": [], 
+  "https://github.com/ansible/ansible/issues/15862": [], 
+  "https://github.com/ansible/ansible/issues/15889": [], 
+  "https://github.com/ansible/ansible/issues/15907": [
+    "lib/ansible/modules/files/synchronize.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15916": [], 
+  "https://github.com/ansible/ansible/issues/15920": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15923": [], 
+  "https://github.com/ansible/ansible/issues/15948": [], 
+  "https://github.com/ansible/ansible/issues/15956": [
+    "lib/ansible/plugins/connection/docker.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15959": [], 
+  "https://github.com/ansible/ansible/issues/15968": [
+    "lib/ansible/cli/pull.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/15988": [], 
+  "https://github.com/ansible/ansible/issues/16025": [], 
+  "https://github.com/ansible/ansible/issues/16046": [], 
+  "https://github.com/ansible/ansible/issues/16052": [], 
+  "https://github.com/ansible/ansible/issues/16057": [], 
+  "https://github.com/ansible/ansible/issues/16111": [], 
+  "https://github.com/ansible/ansible/issues/16116": [
+    "lib/ansible/cli/inventory.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16130": [
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16136": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/16140": [], 
+  "https://github.com/ansible/ansible/issues/16178": [
+    "docs"
+  ], 
+  "https://github.com/ansible/ansible/issues/16186": [], 
+  "https://github.com/ansible/ansible/issues/16213": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "https://github.com/ansible/ansible/issues/16215": [
+    "lib/ansible/modules/files/synchronize.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16217": [], 
+  "https://github.com/ansible/ansible/issues/16235": [], 
+  "https://github.com/ansible/ansible/issues/16248": [
+    "lib/ansible/modules/system/seboolean.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16254": [], 
+  "https://github.com/ansible/ansible/issues/16256": [
+    "lib/ansible/module_utils"
+  ], 
+  "https://github.com/ansible/ansible/issues/16258": [], 
+  "https://github.com/ansible/ansible/issues/16259": [], 
+  "https://github.com/ansible/ansible/issues/16307": [
+    "lib/ansible/modules/cloud/amazon/ec2.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16318": [], 
+  "https://github.com/ansible/ansible/issues/16351": [
+    "lib/ansible/vars/hostvars.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16352": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/16357": [], 
+  "https://github.com/ansible/ansible/issues/16379": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16383": [], 
+  "https://github.com/ansible/ansible/issues/16396": [], 
+  "https://github.com/ansible/ansible/issues/16402": [], 
+  "https://github.com/ansible/ansible/issues/16403": [], 
+  "https://github.com/ansible/ansible/issues/16414": [
+    "lib/ansible/modules/commands/script.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16437": [], 
+  "https://github.com/ansible/ansible/issues/16443": [], 
+  "https://github.com/ansible/ansible/issues/16444": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16445": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16456": [], 
+  "https://github.com/ansible/ansible/issues/16508": [], 
+  "https://github.com/ansible/ansible/issues/16526": [
+    "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16536": [
+    "lib/ansible/modules/packaging/os/apt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16561": [], 
+  "https://github.com/ansible/ansible/issues/16571": [], 
+  "https://github.com/ansible/ansible/issues/16582": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16586": [], 
+  "https://github.com/ansible/ansible/issues/16590": [], 
+  "https://github.com/ansible/ansible/issues/16591": [
+    "lib/ansible/plugins/cache/redis.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16598": [], 
+  "https://github.com/ansible/ansible/issues/16602": [], 
+  "https://github.com/ansible/ansible/issues/16605": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16612": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16615": [], 
+  "https://github.com/ansible/ansible/issues/16616": [], 
+  "https://github.com/ansible/ansible/issues/16625": [], 
+  "https://github.com/ansible/ansible/issues/16627": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/16637": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16641": [
+    "lib/ansible/inventory"
+  ], 
+  "https://github.com/ansible/ansible/issues/16665": [
+    "lib/ansible/modules/system/timezone.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16666": [], 
+  "https://github.com/ansible/ansible/issues/16675": [], 
+  "https://github.com/ansible/ansible/issues/16708": [], 
+  "https://github.com/ansible/ansible/issues/16714": [], 
+  "https://github.com/ansible/ansible/issues/16750": [], 
+  "https://github.com/ansible/ansible/issues/16751": [], 
+  "https://github.com/ansible/ansible/issues/16767": [
+    "lib/ansible/modules/files/synchronize.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16775": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/16776": [], 
+  "https://github.com/ansible/ansible/issues/16788": [], 
+  "https://github.com/ansible/ansible/issues/16789": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16790": [], 
+  "https://github.com/ansible/ansible/issues/16792": [], 
+  "https://github.com/ansible/ansible/issues/16796": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16810": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16816": [], 
+  "https://github.com/ansible/ansible/issues/16823": [], 
+  "https://github.com/ansible/ansible/issues/16826": [
+    "lib/ansible/modules/windows/win_reboot.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16827": [
+    "contrib/inventory/digital_ocean.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16842": [], 
+  "https://github.com/ansible/ansible/issues/16850": [
+    "lib/ansible/modules/files/copy.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16861": [], 
+  "https://github.com/ansible/ansible/issues/16862": [], 
+  "https://github.com/ansible/ansible/issues/16863": [
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16869": [], 
+  "https://github.com/ansible/ansible/issues/16888": [], 
+  "https://github.com/ansible/ansible/issues/16894": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16902": [], 
+  "https://github.com/ansible/ansible/issues/16903": [], 
+  "https://github.com/ansible/ansible/issues/16909": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/16929": [], 
+  "https://github.com/ansible/ansible/issues/16945": [], 
+  "https://github.com/ansible/ansible/issues/16968": [], 
+  "https://github.com/ansible/ansible/issues/16972": [], 
+  "https://github.com/ansible/ansible/issues/16973": [], 
+  "https://github.com/ansible/ansible/issues/16977": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/16993": [], 
+  "https://github.com/ansible/ansible/issues/17002": [], 
+  "https://github.com/ansible/ansible/issues/17012": [
+    "lib/ansible/inventory"
+  ], 
+  "https://github.com/ansible/ansible/issues/17014": [
+    "lib/ansible/modules/windows/setup.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/17042": [
+    "lib/ansible/modules/commands/command.py", 
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17059": [], 
+  "https://github.com/ansible/ansible/issues/17075": [
+    "lib/ansible/modules/cloud/google/gce.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17078": [], 
+  "https://github.com/ansible/ansible/issues/17083": [
+    "lib/ansible/plugins/filter"
+  ], 
+  "https://github.com/ansible/ansible/issues/17086": [], 
+  "https://github.com/ansible/ansible/issues/17098": [], 
+  "https://github.com/ansible/ansible/issues/17100": [], 
+  "https://github.com/ansible/ansible/issues/17136": [], 
+  "https://github.com/ansible/ansible/issues/17151": [], 
+  "https://github.com/ansible/ansible/issues/17159": [], 
+  "https://github.com/ansible/ansible/issues/17179": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/17187": [
+    "lib/ansible/plugins/action/win_reboot.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17266": [], 
+  "https://github.com/ansible/ansible/issues/17273": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17300": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/17322": [
+    "lib/ansible/vars/hostvars.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17329": [], 
+  "https://github.com/ansible/ansible/issues/17346": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "https://github.com/ansible/ansible/issues/17349": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17358": [
+    "lib/ansible/plugins/lookup/dict.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17363": [], 
+  "https://github.com/ansible/ansible/issues/17393": [], 
+  "https://github.com/ansible/ansible/issues/17428": [
+    "lib/ansible/modules/utilities/logic/_include.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17434": [], 
+  "https://github.com/ansible/ansible/issues/17454": [
+    "lib/ansible/cli/pull.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17469": [
+    "lib/ansible/galaxy"
+  ], 
+  "https://github.com/ansible/ansible/issues/17492": [
+    "lib/ansible/plugins/action/synchronize.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17518": [
+    "lib/ansible/plugins/callback/profile_tasks.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17583": [
+    "lib/ansible/playbook/become.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17587": [
+    "lib/ansible/module_utils"
+  ], 
+  "https://github.com/ansible/ansible/issues/17594": [
+    "lib/ansible/parsing/quoting.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17665": [], 
+  "https://github.com/ansible/ansible/issues/17672": [], 
+  "https://github.com/ansible/ansible/issues/17678": [], 
+  "https://github.com/ansible/ansible/issues/17685": [
+    "lib/ansible/module_utils/urls.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17692": [], 
+  "https://github.com/ansible/ansible/issues/17695": [
+    "lib/ansible/playbook/task.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17700": [], 
+  "https://github.com/ansible/ansible/issues/17704": [
+    "lib/ansible/template"
+  ], 
+  "https://github.com/ansible/ansible/issues/17714": [], 
+  "https://github.com/ansible/ansible/issues/17727": [
+    "contrib/inventory/azure_rm.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17746": [], 
+  "https://github.com/ansible/ansible/issues/17755": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/17757": [
+    "docs"
+  ], 
+  "https://github.com/ansible/ansible/issues/17807": [], 
+  "https://github.com/ansible/ansible/issues/17843": [
+    "lib/ansible/modules/net_tools/nmcli.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17852": [], 
+  "https://github.com/ansible/ansible/issues/17871": [
+    "lib/ansible/plugins/filter/ipaddr.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17872": [
+    "lib/ansible/plugins/filter/ipaddr.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17876": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/17908": [
+    "lib/ansible/playbook/become.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17911": [], 
+  "https://github.com/ansible/ansible/issues/17920": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/17922": [
+    "lib/ansible/playbook/handler.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17925": [
+    "lib/ansible/module_utils/azure_rm_common.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17930": [
+    "lib/ansible/modules/cloud/openstack/os_subnet.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17934": [
+    "contrib/inventory/azure_rm.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/17935": [
+    "lib/ansible/playbook", 
+    "lib/ansible/plugins/connection"
+  ], 
+  "https://github.com/ansible/ansible/issues/17937": [
+    "lib/ansible/module_utils"
+  ], 
+  "https://github.com/ansible/ansible/issues/17939": [], 
+  "https://github.com/ansible/ansible/issues/17953": [], 
+  "https://github.com/ansible/ansible/issues/17960": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/17963": [], 
+  "https://github.com/ansible/ansible/issues/17998": [], 
+  "https://github.com/ansible/ansible/issues/18067": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/18079": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/18090": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/18124": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18131": [], 
+  "https://github.com/ansible/ansible/issues/18140": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18142": [], 
+  "https://github.com/ansible/ansible/issues/18161": [
+    "lib/ansible/plugins/callback"
+  ], 
+  "https://github.com/ansible/ansible/issues/18179": [
+    "test/sanity/validate-modules"
+  ], 
+  "https://github.com/ansible/ansible/issues/18180": [
+    "test/sanity/validate-modules"
+  ], 
+  "https://github.com/ansible/ansible/issues/18181": [
+    "test/sanity/validate-modules"
+  ], 
+  "https://github.com/ansible/ansible/issues/18183": [
+    "test/sanity/validate-modules"
+  ], 
+  "https://github.com/ansible/ansible/issues/18186": [
+    "test/sanity/validate-modules"
+  ], 
+  "https://github.com/ansible/ansible/issues/18188": [], 
+  "https://github.com/ansible/ansible/issues/18189": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "https://github.com/ansible/ansible/issues/18193": [], 
+  "https://github.com/ansible/ansible/issues/18197": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18201": [
+    "lib/ansible/cli/pull.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18217": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18232": [], 
+  "https://github.com/ansible/ansible/issues/18259": [], 
+  "https://github.com/ansible/ansible/issues/18305": [], 
+  "https://github.com/ansible/ansible/issues/18323": [], 
+  "https://github.com/ansible/ansible/issues/18338": [], 
+  "https://github.com/ansible/ansible/issues/18341": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18359": [], 
+  "https://github.com/ansible/ansible/issues/18360": [], 
+  "https://github.com/ansible/ansible/issues/18375": [
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/18391": [], 
+  "https://github.com/ansible/ansible/issues/18396": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18417": [], 
+  "https://github.com/ansible/ansible/issues/18430": [
+    "lib/ansible/plugins/lookup/first_found.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18438": [
+    "lib/ansible/plugins/connection"
+  ], 
+  "https://github.com/ansible/ansible/issues/18459": [], 
+  "https://github.com/ansible/ansible/issues/18475": [], 
+  "https://github.com/ansible/ansible/issues/18482": [
+    "lib/ansible/modules/commands/command.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18486": [], 
+  "https://github.com/ansible/ansible/issues/18499": [
+    "lib/ansible/modules/utilities/logic/_include.py", 
+    "lib/ansible/playbook/role"
+  ], 
+  "https://github.com/ansible/ansible/issues/18513": [
+    "lib/ansible/module_utils"
+  ], 
+  "https://github.com/ansible/ansible/issues/18527": [
+    "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18537": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "https://github.com/ansible/ansible/issues/18549": [], 
+  "https://github.com/ansible/ansible/issues/18555": [], 
+  "https://github.com/ansible/ansible/issues/18559": [
+    "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/18568": [], 
+  "https://github.com/ansible/ansible/issues/18579": [
+    "contrib/inventory"
+  ], 
+  "https://github.com/ansible/ansible/issues/18650": [
+    "lib/ansible/module_utils/ovirt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18665": [
+    "lib/ansible/executor/module_common.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18688": [
+    "lib/ansible/module_utils"
+  ], 
+  "https://github.com/ansible/ansible/issues/18692": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18719": [], 
+  "https://github.com/ansible/ansible/issues/18721": [], 
+  "https://github.com/ansible/ansible/issues/18722": [
+    "lib/ansible/template"
+  ], 
+  "https://github.com/ansible/ansible/issues/18772": [
+    "lib/ansible/module_utils/basic.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18775": [
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18782": [], 
+  "https://github.com/ansible/ansible/issues/18795": [
+    "lib/ansible/modules/packaging/language/npm.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18818": [
+    "lib/ansible/modules/system/sysctl.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18819": [
+    "lib/ansible/modules/windows/win_regmerge.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18835": [], 
+  "https://github.com/ansible/ansible/issues/18844": [
+    "lib/ansible/modules/monitoring/zabbix/zabbix_host.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18860": [
+    "lib/ansible/modules/packaging/os/homebrew.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18861": [
+    "lib/ansible/modules/windows/win_firewall_rule.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/18871": [
+    "lib/ansible/modules/monitoring/logentries.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18879": [], 
+  "https://github.com/ansible/ansible/issues/18880": [
+    "lib/ansible/modules/windows/win_regedit.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/18882": [
+    "lib/ansible/modules/cloud/lxd/lxd_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18883": [
+    "lib/ansible/modules/windows/win_regedit.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/18889": [
+    "lib/ansible/modules/packaging/os/apt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18893": [
+    "lib/ansible/modules/system/filesystem.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18894": [
+    "lib/ansible/modules/net_tools/basics/get_url.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18897": [
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18901": [
+    "lib/ansible/modules/packaging/os/apt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18904": [
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18907": [
+    "lib/ansible/modules/packaging/language/npm.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18910": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18911": [
+    "lib/ansible/modules/system/capabilities.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18917": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18918": [
+    "lib/ansible/modules/cloud/amazon/ec2_elb_facts.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18923": [], 
+  "https://github.com/ansible/ansible/issues/18927": [
+    "lib/ansible/modules/cloud/amazon/ec2_elb_lb.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18932": [
+    "lib/ansible/template"
+  ], 
+  "https://github.com/ansible/ansible/issues/18933": [], 
+  "https://github.com/ansible/ansible/issues/18934": [
+    "lib/ansible/modules/windows/win_updates.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/18935": [
+    "lib/ansible/modules/net_tools/basics/uri.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18937": [
+    "lib/ansible/modules/database/postgresql/postgresql_user.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18943": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18945": [
+    "lib/ansible/modules/system/sysctl.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18948": [
+    "lib/ansible/modules/system/mount.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18950": [
+    "lib/ansible/modules/commands/script.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18952": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18954": [], 
+  "https://github.com/ansible/ansible/issues/18955": [
+    "lib/ansible/modules/database/postgresql/postgresql_privs.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18960": [], 
+  "https://github.com/ansible/ansible/issues/18961": [], 
+  "https://github.com/ansible/ansible/issues/18966": [], 
+  "https://github.com/ansible/ansible/issues/18972": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18973": [
+    "lib/ansible/modules/files/find.py"
   ], 
   "https://github.com/ansible/ansible/issues/22789": "lib/ansible/modules/windows/win_package.ps1", 
   "https://github.com/ansible/ansible/issues/24302": "lib/ansible/modules/files/stat.py", 

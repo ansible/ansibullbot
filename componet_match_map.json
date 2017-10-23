@@ -1,0 +1,506 @@
+{
+  "**\nwin_unzip module\n**": [], 
+  "- Evaluation of jinja2 templates": [
+    "lib/ansible/template"
+  ], 
+  "- Handlers and variable interpolation": [
+    "lib/ansible/playbook/handler.py"
+  ], 
+  "- Modules": [], 
+  "- SophosUTM\nProbably this would be applicable for the XG firewall aswell.": [], 
+  "- WinRM connection (PSRemoting)": [
+    "lib/ansible/plugins/connection"
+  ], 
+  "- ansible-galaxy": [
+    "lib/ansible/galaxy"
+  ], 
+  "- core": [], 
+  "- yum": [
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  ":\ncore": [], 
+  ":\nsetup module": [], 
+  ":\nwindows setup modules": [
+    "lib/ansible/modules/windows/setup.ps1"
+  ], 
+  "?": [], 
+  "Abort/fail if host is unreachable": [], 
+  "All EC2 based modules, possibly more.": [
+    "lib/ansible/modules/cloud/amazon/ec2.py"
+  ], 
+  "All tasks": [], 
+  "Ansible Core": [], 
+  "Ansible role min_ansible_version checking": [
+    "lib/ansible/playbook/role"
+  ], 
+  "Ansible support for appending or stacking Variable Lists\nIn this case, with with_items\n--Should be able to append variable lists on the fly, conditionally": [], 
+  "Callbacks": [], 
+  "Core": [], 
+  "Core? The whole of ansible s": [], 
+  "Cowsay support.\nAnd... ponies!": [], 
+  "Documentation": [], 
+  "File": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "File transfer during an Ansible run with sftp": [], 
+  "Module nmcli - Manage Networking": [
+    "lib/ansible/modules/net_tools/nmcli.py"
+  ], 
+  "Module search path": [], 
+  "Module source_control/git": [], 
+  "Modules": [], 
+  "N/A": [], 
+  "NA": [], 
+  "Playbook Roles and Include Statements": [
+    "lib/ansible/modules/utilities/logic/_include.py", 
+    "lib/ansible/playbook/role"
+  ], 
+  "Playbook roles": [
+    "lib/ansible/playbook/role"
+  ], 
+  "Playbooks": [], 
+  "Proxmox (Dynamic Inventory script)": [
+    "contrib/inventory"
+  ], 
+  "SSH connectivity": [], 
+  "TASK [setup]": [], 
+  "Tests": [], 
+  "The register mechanic in Playbook tasks.": [], 
+  "Type conversion": [], 
+  "Use of custom modules in $role/library/": [], 
+  "Variable expansion/core.": [], 
+  "Variable handling": [], 
+  "WinRM": [], 
+  "[windows] setup module": [
+    "lib/ansible/modules/windows/setup.ps1"
+  ], 
+  "`postgresql_user` module": [
+    "lib/ansible/modules/database/postgresql/postgresql_user.py"
+  ], 
+  "`template` module": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "`unarchive`": [
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
+  "action_plugin": [], 
+  "add_host module": [
+    "lib/ansible/modules/inventory/add_host.py"
+  ], 
+  "ansiballz": [
+    "lib/ansible/executor/module_common.py"
+  ], 
+  "ansiballz compression / wrapper": [], 
+  "ansiballz/ziploader for modules": [], 
+  "ansible": [], 
+  "ansible / docker_container / memory": [
+    "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "ansible / gather_facts": [], 
+  "ansible core": [], 
+  "ansible playbooks": [
+    "lib/ansible/playbook"
+  ], 
+  "ansible-2.2.0.0": [], 
+  "ansible-galaxy": [
+    "lib/ansible/galaxy"
+  ], 
+  "ansible-galaxy init": [
+    "lib/ansible/galaxy"
+  ], 
+  "ansible-playbook": [
+    "lib/ansible/playbook"
+  ], 
+  "ansible-playbook  / SSH connection type": [
+    "lib/ansible/playbook", 
+    "lib/ansible/plugins/connection"
+  ], 
+  "ansible-playbook (--check option)": [
+    "lib/ansible/playbook"
+  ], 
+  "ansible-playbook (I think)": [
+    "lib/ansible/playbook"
+  ], 
+  "ansible-playbook --syntax-check": [
+    "lib/ansible/playbook"
+  ], 
+  "ansible-playbook using statically included files": [
+    "lib/ansible/playbook"
+  ], 
+  "ansible-pull": [
+    "lib/ansible/cli/pull.py"
+  ], 
+  "ansible-vault": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "ansible/lib/ansible/plugins/callback/init.py": [
+    "lib/ansible/plugins/callback"
+  ], 
+  "ansible/module_utils/ovirt.py": [
+    "lib/ansible/module_utils/ovirt.py"
+  ], 
+  "ansible_host var": [], 
+  "apt": [
+    "lib/ansible/modules/packaging/os/apt.py"
+  ], 
+  "assemble module": [
+    "lib/ansible/modules/files/assemble.py"
+  ], 
+  "asynchronous tasks": [], 
+  "authorized_keys": [], 
+  "azure_rm.py": [
+    "contrib/inventory/azure_rm.py"
+  ], 
+  "azure_rm_common.py": [
+    "lib/ansible/module_utils/azure_rm_common.py"
+  ], 
+  "become": [
+    "lib/ansible/playbook/become.py"
+  ], 
+  "block": [
+    "lib/ansible/playbook/block.py"
+  ], 
+  "block/rescue/always": [], 
+  "blocks": [], 
+  "callback plugin": [
+    "lib/ansible/plugins/callback"
+  ], 
+  "callback plugin profile_tasks": [
+    "lib/ansible/plugins/callback/profile_tasks.py"
+  ], 
+  "callback plugins": [
+    "lib/ansible/plugins/callback"
+  ], 
+  "capabilities": [
+    "lib/ansible/modules/system/capabilities.py"
+  ], 
+  "command module": [
+    "lib/ansible/modules/commands/command.py"
+  ], 
+  "contrib/inventory/azure_rm.py": [
+    "contrib/inventory/azure_rm.py"
+  ], 
+  "copy\nOr playbook": [], 
+  "copy module": [
+    "lib/ansible/modules/files/copy.py"
+  ], 
+  "core": [], 
+  "core\n1.9": [], 
+  "core documentation": [], 
+  "delegate_to": [], 
+  "delegate_to + windows": [], 
+  "dependency": [], 
+  "developer documentation": [], 
+  "digital_ocean.py inventory script": [
+    "contrib/inventory/digital_ocean.py"
+  ], 
+  "docker connection plugin": [
+    "lib/ansible/plugins/connection/docker.py"
+  ], 
+  "docker module": [
+    "lib/ansible/modules/cloud/docker/_docker.py"
+  ], 
+  "docker-container": [
+    "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "docs": [], 
+  "docs.ansible.com, man page": [
+    "docs"
+  ], 
+  "ec2 module": [
+    "lib/ansible/modules/cloud/amazon/ec2.py"
+  ], 
+  "ec2_elb, ec2_elb_lb, ec2_elb_facts": [
+    "lib/ansible/modules/cloud/amazon/ec2_elb_facts.py"
+  ], 
+  "ec2_elb_lb module": [
+    "lib/ansible/modules/cloud/amazon/ec2_elb_lb.py"
+  ], 
+  "ec2_vol module": [
+    "lib/ansible/modules/cloud/amazon/ec2_vol.py"
+  ], 
+  "environment specific modules": [], 
+  "environment variables": [], 
+  "fact related modules": [], 
+  "facts  'virtualization_type' and 'virtualization_role'": [], 
+  "facts plugin": [], 
+  "fetch_url helper in module utils": [
+    "lib/ansible/module_utils"
+  ], 
+  "file": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "file module": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "filter_plugins/core": [], 
+  "first_found lookup": [
+    "lib/ansible/plugins/lookup/first_found.py"
+  ], 
+  "gce module_util": [
+    "lib/ansible/modules/cloud/google/gce.py"
+  ], 
+  "get_url": [
+    "lib/ansible/modules/net_tools/basics/get_url.py"
+  ], 
+  "group_names variable": [], 
+  "homebrew": [
+    "lib/ansible/modules/packaging/os/homebrew.py"
+  ], 
+  "hostvars": [
+    "lib/ansible/vars/hostvars.py"
+  ], 
+  "https://github.com/ansible/ansible/blob/devel/lib/ansible/playbook/task.py#L86": [
+    "lib/ansible/playbook/task.py"
+  ], 
+  "include": [
+    "lib/ansible/modules/utilities/logic/_include.py"
+  ], 
+  "include_role": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "include_role module": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "include_vars": [
+    "lib/ansible/modules/utilities/logic/include_vars.py"
+  ], 
+  "internal module_utils.": [], 
+  "inventory": [
+    "lib/ansible/inventory"
+  ], 
+  "ios_command\nbut the issue might be caused by another module such as \"include_role\" for instance.": [], 
+  "ipaddr filter": [
+    "lib/ansible/plugins/filter/ipaddr.py"
+  ], 
+  "jinja2 template system": [
+    "lib/ansible/template"
+  ], 
+  "lib/ansible/module_utils/basic.py - get_bin_path(self, arg, required=False, opt_dirs=[]) function": [
+    "lib/ansible/module_utils/basic.py"
+  ], 
+  "lib/ansible/module_utils/facts.py": [
+    "lib/ansible/module_utils/facts"
+  ], 
+  "lib/ansible/modules/windows/setup.ps1": [
+    "lib/ansible/modules/windows/setup.ps1"
+  ], 
+  "lib/ansible/template/init.pyL477": [
+    "lib/ansible/template"
+  ], 
+  "lineinfile module": [
+    "lib/ansible/modules/files/lineinfile.py"
+  ], 
+  "logentries module": [
+    "lib/ansible/modules/monitoring/logentries.py"
+  ], 
+  "loop-until": [], 
+  "lxc_container module": [
+    "lib/ansible/modules/cloud/lxc/lxc_container.py"
+  ], 
+  "lxd_container": [
+    "lib/ansible/modules/cloud/lxd/lxd_container.py"
+  ], 
+  "module": [], 
+  "module shell && command": [
+    "lib/ansible/modules/commands/command.py", 
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "module_utils": [
+    "lib/ansible/module_utils"
+  ], 
+  "module_utils/urls.py": [
+    "lib/ansible/module_utils/urls.py"
+  ], 
+  "modules and roles": [
+    "lib/ansible/playbook/role"
+  ], 
+  "modules/core/system/setup.py": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "mount module": [
+    "lib/ansible/modules/system/mount.py"
+  ], 
+  "network namespace facts": [], 
+  "new module(s) request": [], 
+  "new yaml module": [], 
+  "no_log": [], 
+  "npm": [
+    "lib/ansible/modules/packaging/language/npm.py"
+  ], 
+  "omit filter": [
+    "lib/ansible/plugins/filter"
+  ], 
+  "openstack dynamic inventory script": [
+    "contrib/inventory/openstack.py"
+  ], 
+  "os_subnet": [
+    "lib/ansible/modules/cloud/openstack/os_subnet.py"
+  ], 
+  "package and service modules": [
+    "lib/ansible/modules/packaging/os/package.py", 
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "parsing/quoting.py": [
+    "lib/ansible/parsing/quoting.py"
+  ], 
+  "password_hash": [], 
+  "playbook": [], 
+  "playbooks and roles": [
+    "lib/ansible/playbook/role"
+  ], 
+  "plugins/action/synchronize.py": [
+    "lib/ansible/plugins/action/synchronize.py"
+  ], 
+  "plugins/lookup/dict.py": [
+    "lib/ansible/plugins/lookup/dict.py"
+  ], 
+  "postgres_user module": [], 
+  "postgresql_privs": [
+    "lib/ansible/modules/database/postgresql/postgresql_privs.py"
+  ], 
+  "reboot": [], 
+  "redis fact caching plugin": [
+    "lib/ansible/plugins/cache/redis.py"
+  ], 
+  "regex_replace filter in raw module": [
+    "lib/ansible/plugins/filter"
+  ], 
+  "roles": [
+    "lib/ansible/playbook/role"
+  ], 
+  "roles + tags": [], 
+  "roles_path": [
+    "lib/ansible/playbook/role"
+  ], 
+  "runner": [], 
+  "script": [
+    "lib/ansible/modules/commands/script.py"
+  ], 
+  "script module": [
+    "lib/ansible/modules/commands/script.py"
+  ], 
+  "seboolean module": [
+    "lib/ansible/modules/system/seboolean.py"
+  ], 
+  "service  module": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "service module": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "service_module\nIt was mentioned as became available in ansible 2.0 in doc http//docs.ansible.com/ansible/service_module.html . It also was work as described.\nIn recent versions (2.0.0-0.6.rc1) it produce error\nfatal [egais.db.slave1] FAILED! => {changed false, failed true, msg unsupported parameter for module must_exist}\nAnd doc does not contain it.\nIs that dropped? Why?": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "setup / facts": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "setup module": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "setup module (facts.py)": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "shell and command modules": [
+    "lib/ansible/modules/commands/command.py", 
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "shell module": [
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "shell module and check mode": [
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "ssh connection plugin": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "ssh connection plugin and sshpass": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
+  "sshpass": [], 
+  "synchronize module": [
+    "lib/ansible/modules/files/synchronize.py"
+  ], 
+  "sysctl": [
+    "lib/ansible/modules/system/sysctl.py"
+  ], 
+  "system/filesystem.py": [
+    "lib/ansible/modules/system/filesystem.py"
+  ], 
+  "template module\n(or really anywhere Jinja2 is used but imports are probably not used outside template)": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "timezone module": [
+    "lib/ansible/modules/system/timezone.py"
+  ], 
+  "unarchive": [
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
+  "unarchive module": [
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
+  "uri": [
+    "lib/ansible/modules/net_tools/basics/uri.py"
+  ], 
+  "uri module": [
+    "lib/ansible/modules/net_tools/basics/uri.py"
+  ], 
+  "user": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "user module": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "validate-modules": [
+    "test/sanity/validate-modules"
+  ], 
+  "variable folders": [], 
+  "variable parser": [], 
+  "variable precedence": [], 
+  "variables": [], 
+  "vars_plugins": [], 
+  "vault": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "vault documentation": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "vault edit": [
+    "lib/ansible/parsing/vault"
+  ], 
+  "wait_for": [
+    "lib/ansible/modules/utilities/logic/wait_for.py"
+  ], 
+  "win_firewall_rule": [
+    "lib/ansible/modules/windows/win_firewall_rule.ps1"
+  ], 
+  "win_reboot action plugin": [
+    "lib/ansible/plugins/action/win_reboot.py"
+  ], 
+  "win_reboot module": [
+    "lib/ansible/modules/windows/win_reboot.py"
+  ], 
+  "win_regedit": [
+    "lib/ansible/modules/windows/win_regedit.ps1"
+  ], 
+  "win_regmerge": [
+    "lib/ansible/modules/windows/win_regmerge.py"
+  ], 
+  "win_updates": [
+    "lib/ansible/modules/windows/win_updates.ps1"
+  ], 
+  "with_dict": [], 
+  "with_fileglob": [], 
+  "with_first_found": [], 
+  "with_nested": [], 
+  "with_sequence": [], 
+  "yum": [
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  "yum module": [
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  "zabbix_host": [
+    "lib/ansible/modules/monitoring/zabbix/zabbix_host.py"
+  ]
+}

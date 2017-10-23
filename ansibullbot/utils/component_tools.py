@@ -6,22 +6,54 @@ import re
 
 from pprint import pprint
 
-STOPWORDS = ['ansible', 'core', 'plugin']
-STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',']
-BLACKLIST = ['new module', 'new modules']
-
 
 class ComponentMatcher(object):
 
-    KEYWORDS = {}
+    STOPWORDS = ['ansible', 'core', 'plugin']
+    STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',']
+    BLACKLIST = ['new module', 'new modules']
+    MODULE_NAMES = []
+
+    # FIXME: THESE NEED TO GO INTO BOTMETA
+    # ALSO SEE search_by_regex_generic ...
+    KEYWORDS = {
+        'ansiballz': 'lib/ansible/executor/module_common.py',
+        'ansible-galaxy': 'lib/ansible/galaxy',
+        'ansible-playbook': 'lib/ansible/playbook',
+        'ansible playbook': 'lib/ansible/playbook',
+        'ansible playbooks': 'lib/ansible/playbook',
+        'ansible-pull': 'lib/ansible/cli/pull.py',
+        'ansible-vault': 'lib/ansible/parsing/vault',
+        'become': 'lib/ansible/playbook/become.py',
+        'block': 'lib/ansible/playbook/block.py',
+        'callback plugin': 'lib/ansible/plugins/callback',
+        'callback plugins': 'lib/ansible/plugins/callback',
+        'handlers': 'lib/ansible/playbook/handler.py',
+        'hostvars': 'lib/ansible/vars/hostvars.py',
+        'jinja2 template system': 'lib/ansible/template',
+        'module_utils': 'lib/ansible/module_utils',
+        'new module(s) request': None,
+        'new modules request': None,
+        'new module request': None,
+        'new module': None,
+        #'playbook role': 'lib/ansible/playbook/role',
+        #'playbook roles': 'lib/ansible/playbook/role',
+        'role': 'lib/ansible/playbook/role',
+        'roles': 'lib/ansible/playbook/role',
+        'setup / facts': 'lib/ansible/modules/system/setup.py',
+        'vault': 'lib/ansible/parsing/vault',
+        'vault edit': 'lib/ansible/parsing/vault',
+        'vault documentation': 'lib/ansible/parsing/vault',
+    }
 
     def __init__(self, cachedir=None, file_indexer=None, module_indexer=None):
         self.cachedir = cachedir
         self.file_indexer = file_indexer
         self.module_indexer = module_indexer
+        self.MODULE_NAMES = [x['name'] for x in self.module_indexer.modules.values()]
+        #import epdb; epdb.st()
 
         self.cache_keywords()
-
         self.strategy = None
 
     def cache_keywords(self):
@@ -42,7 +74,11 @@ class ComponentMatcher(object):
                 vname = v['name'].replace('_', '', 1)
                 self.KEYWORDS[vname] = v['repo_filename']
 
-        for kw in BLACKLIST:
+        for k,v in self.file_indexer.CMAP.items():
+            if k not in self.KEYWORDS:
+                self.KEYWORDS[k] = v
+
+        for kw in self.BLACKLIST:
             self.KEYWORDS[kw] = None
 
     def match_components(self, title, body, component):
@@ -52,45 +88,66 @@ class ComponentMatcher(object):
         component = component.encode('ascii', 'ignore')
         logging.debug('match "{}"'.format(component))
 
-
         matched_filenames = []
 
-        if not matched_filenames:
-            matched_filenames += self.search_by_regex_urls(component)
-            if matched_filenames:
-                self.strategy = 'search_by_regex_urls'
+        #if '\n' in component:
+        #    components = component.split('\n')
+        #    for _component in components:
+        #        matched_filenames += self.match_components(title, body, _component)
 
-        if not matched_filenames:
-            matched_filenames += self.search_by_tracebacks(component)
-            if matched_filenames:
-                self.strategy = 'search_by_tracebacks'
 
-        if not matched_filenames:
-            matched_filenames += self.search_by_filepath(component)
-            if matched_filenames:
-                self.strategy = 'search_by_filepath'
+        if component not in self.STOPWORDS:
+
             if not matched_filenames:
-                matched_filenames += self.search_by_filepath(component, partial=True)
+                matched_filenames += self.search_by_module_name(component)
                 if matched_filenames:
-                    self.strategy = 'search_by_filepath[partial]'
+                    self.strategy = 'search_by_module_name'
 
-        if not matched_filenames:
-            matched_filenames += self.search_by_module_regexes(component)
+            if not matched_filenames:
+                matched_filenames += self.search_by_regex_modules(component)
+                if matched_filenames:
+                    self.strategy = 'search_by_regex_modules'
+
+            if not matched_filenames:
+                matched_filenames += self.search_by_regex_generic(component)
+                if matched_filenames:
+                    self.strategy = 'search_by_regex_generic'
+
+            if not matched_filenames:
+                matched_filenames += self.search_by_regex_urls(component)
+                if matched_filenames:
+                    self.strategy = 'search_by_regex_urls'
+
+            if not matched_filenames:
+                matched_filenames += self.search_by_tracebacks(component)
+                if matched_filenames:
+                    self.strategy = 'search_by_tracebacks'
+
+            if not matched_filenames:
+                matched_filenames += self.search_by_filepath(component)
+                if matched_filenames:
+                    self.strategy = 'search_by_filepath'
+                if not matched_filenames:
+                    matched_filenames += self.search_by_filepath(component, partial=True)
+                    if matched_filenames:
+                        self.strategy = 'search_by_filepath[partial]'
+
             if matched_filenames:
-                self.strategy = 'search_by_module_regexes'
+                matched_filenames += self.include_modules_from_test_targets(matched_filenames)
 
+            if not matched_filenames:
+                matched_filenames += self.search_by_keywords(component)
+
+            if matched_filenames:
+                matched_filenames += self.include_modules_from_test_targets(matched_filenames)
+
+        # reduce subpaths
         if matched_filenames:
-            matched_filenames += self.include_modules_from_test_targets(matched_filenames)
-
-        if component:
-            matched_filenames += self.search_by_keywords(component)
+            matched_filenames = self.reduce_filepaths(matched_filenames)
 
         # bypass for blacklist
         if None in matched_filenames:
             return []
-
-        if component == 'core':
-            import epdb; epdb.st()
 
         component_matches = []
         matched_filenames = sorted(set(matched_filenames))
@@ -99,11 +156,44 @@ class ComponentMatcher(object):
 
         return component_matches
 
+    def search_by_fileindexer(self, title, body, component):
+        """Use the fileindexers component matching algo"""
+        matches = []
+        template_data = {'component name': component, 'component_raw': component}
+        ckeys = self.file_indexer.find_component_match(title, body, template_data)
+        if ckeys:
+            components = self.file_indexer.find_component_matches_by_file(ckeys)
+            import epdb; epdb.st()
+        return matches
+
+    def search_by_module_name(self, component):
+        matches = []
+
+        _component = component
+
+        for SC in self.STOPCHARS:
+            component = component.replace(SC, '')
+
+        # docker-container vs. docker_container
+        if component not in self.MODULE_NAMES:
+            component = component.replace('-', '_')
+
+        if component in self.MODULE_NAMES:
+            mmatch = self.module_indexer.find_match(component, exact=True)
+            if mmatch:
+                if isinstance(mmatch, list):
+                    for x in mmatch:
+                        matches.append(x['repo_filename'])
+                else:
+                    matches.append(mmatch['repo_filename'])
+        return matches
+
     def search_by_keywords(self, component):
         """Simple keyword search"""
+
         component = component.lower()
         matches = []
-        if component in STOPWORDS:
+        if component in self.STOPWORDS:
             matches = [None]
         elif component in self.KEYWORDS:
             matches = [self.KEYWORDS[component]]
@@ -118,11 +208,12 @@ class ComponentMatcher(object):
                 elif component.endswith(' ' + k):
                     logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
-                elif k + ' module' in component:
-                    logging.debug('keyword match: {}'.format(k))
-                    matches.append(v)
 
-                elif k in component and k in BLACKLIST:
+                #elif k + ' module' in component:
+                #    logging.debug('keyword match: {}'.format(k))
+                #    matches.append(v)
+
+                elif k in component and k in self.BLACKLIST:
                     logging.debug('blacklist  match: {}'.format(k))
                     matches.append(None)
 
@@ -173,6 +264,106 @@ class ComponentMatcher(object):
 
         return matches
 
+    def search_by_regex_modules(self, body):
+        # foo module
+        # foo and bar modules
+        # foo* modules
+        # foo* module
+
+        # https://www.tutorialspoint.com/python/python_reg_expressions.htm
+        patterns = [
+            r'new (.*) module',
+            r'(.*) module',
+            r'\`(.*)\` module',
+            r'(.*)\* modules',
+            r'(.*) and (.*) modules',
+            r'(.*)_module',
+            r'action: (.*)',
+        ]
+
+        matches = []
+
+        for pattern in patterns:
+            logging.debug('test pattern: {}'.format(pattern))
+            mobj = re.match(pattern, body, re.M | re.I)
+            if mobj:
+                for x in range(0,3):
+                    try:
+                        mname = mobj.group(x)
+                        mname = mname.strip().lower()
+                        module = self.module_indexer.find_match(mname, exact=True)
+                        if not module:
+                            pass
+                        elif isinstance(module, list):
+                            for m in module:
+                                #logging.debug('matched {}'.format(m['name']))
+                                matches.append(m['repo_filename'])
+                        elif isinstance(module, dict):
+                            #logging.debug('matched {}'.format(module['name']))
+                            matches.append(module['repo_filename'])
+                    except Exception as e:
+                        logging.error(e)
+
+                if matches:
+                    break
+
+        #if body == 'user module':
+        #if body == 'lineinfile module':
+        #if body == 'service  module':
+        #    import epdb; epdb.st()
+
+        #if ' and ' in body and 'module' in body:
+        #    import epdb; epdb.st()
+
+        return matches
+
+    def search_by_regex_generic(self, body):
+        # foo dynamic inventory script
+        # foo filter
+
+        # https://www.tutorialspoint.com/python/python_reg_expressions.htm
+        patterns = [
+            [r'(.*) action plugin', 'lib/ansible/plugins/action'],
+            [r'(.*) dynamic inventory script', 'contrib/inventory'],
+            [r'(.*) inventory script', 'contrib/inventory'],
+            [r'(.*) filter', 'lib/ansible/plugins/filter'],
+            [r'(.*) fact caching plugin', 'lib/ansible/plugins/cache'],
+            [r'(.*) lookup plugin', 'lib/ansible/plugins/lookup'],
+            [r'(.*) lookup', 'lib/ansible/plugins/lookup'],
+            [r'(.*) callback plugin', 'lib/ansible/plugins/callback'],
+            [r'callback plugin (.*)', 'lib/ansible/plugins/callback'],
+            [r'(.*) connection plugin', 'lib/ansible/plugins/connection'],
+            [r'(.*) connection type', 'lib/ansible/plugins/connection'],
+            [r'(.*) connection', 'lib/ansible/plugins/connection'],
+            [r'connection (.*)', 'lib/ansible/plugins/connection'],
+            [r'(.*) strategy plugin', 'lib/ansible/plugins/strategy'],
+            [r'(.*) module util', 'lib/ansible/module_utils'],
+            [r'ansible-galaxy (.*)', 'lib/ansible/galaxy'],
+            [r'ansible-playbook (.*)', 'lib/ansible/playbook'],
+        ]
+
+        matches = []
+
+        for pattern in patterns:
+            logging.debug('test pattern: {}'.format(pattern))
+            mobj = re.match(pattern[0], body, re.M | re.I)
+            if mobj:
+                fname = mobj.group(1)
+                if not fname.endswith('.py'):
+                    fpath = os.path.join(pattern[1], fname + '.py')
+                else:
+                    fpath = os.path.join(pattern[1], fname)
+                if fpath in self.file_indexer.files:
+                    matches.append(fpath)
+                else:
+                    # fallback to the directory
+                    matches.append(pattern[1])
+
+        #if 'module_utils/ec2.py' in body:
+        #    import epdb; epdb.st()
+
+        return matches
+
     def search_by_tracebacks(self, body):
 
         matches = []
@@ -186,7 +377,7 @@ class ComponentMatcher(object):
                     break
                 elif line.startswith('File'):
                     fn = line.split()[1]
-                    for SC in STOPCHARS:
+                    for SC in self.STOPCHARS:
                         fn = fn.replace(SC, '')
                     if 'ansible_module_' in fn:
                         fn = os.path.basename(fn)
@@ -227,6 +418,10 @@ class ComponentMatcher(object):
         """Find known filepaths in body"""
         matches = []
 
+        _body = body[:]
+        if '/' not in body and '.' not in body:
+            return matches
+
         if 'modules/core/' in body:
             body = body.replace('modules/core/', 'modules/')
         if 'modules/extras/' in body:
@@ -238,7 +433,11 @@ class ComponentMatcher(object):
 
         for fn in self.file_indexer.files:
 
-            if fn in body:
+            # narrow the context if possible
+            if 'module' in body and 'module' not in fn:
+                continue
+
+            if fn in body or fn.endswith(body):
                 matches.append(fn)
 
             if partial:
@@ -266,11 +465,27 @@ class ComponentMatcher(object):
                 if r in matches:
                     matches.remove(r)
 
+
+        #if _body == 'modules/core/system/setup.py':
+        #    import epdb; epdb.st()
+
         return matches
 
-    def search_by_module_regexes(self, body):
-        #import epdb; epdb.st()
-        return []
+    def reduce_filepaths(self, matches):
+        if matches:
+            tr = []
+            for match in matches[:]:
+                # reduce to longest path
+                for m in matches:
+                    if match == m:
+                        continue
+                    if len(m) < match and match.startswith(m):
+                        tr.append(m)
+
+            for r in tr:
+                if r in matches:
+                    matches.remove(r)
+        return matches
 
     def include_modules_from_test_targets(self, matches):
         """Map test targets to the module files"""
@@ -315,7 +530,3 @@ class ComponentMatcher(object):
 
         #import epdb; epdb.st()
         return meta
-
-
-
-
