@@ -271,11 +271,9 @@ class ModuleIndexer(object):
         matches = []
         module_dir = os.path.join(self.checkoutdir, 'lib/ansible/modules')
         module_dir = os.path.expanduser(module_dir)
-        for root, dirnames, filenames in os.walk(module_dir):
+        for root, _, filenames in os.walk(module_dir):
             for filename in filenames:
-                if 'lib/ansible/modules' in root and \
-                        not filename == '__init__.py' and \
-                        (filename.endswith('.py') or filename.endswith('.ps1')):
+                if 'lib/ansible/modules' in root and not filename == '__init__.py':
                     matches.append(os.path.join(root, filename))
 
         matches = sorted(set(matches))
