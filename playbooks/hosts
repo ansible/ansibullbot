@@ -1,2 +1,5 @@
 [ansibullbot]
 ansibullbot.eng.ansible.com
+
+[tower]
+tower2.testing.ansible.com ansible_user=centos
