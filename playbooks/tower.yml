@@ -1,0 +1,13 @@
+- hosts: tower
+  become: yes
+
+  tasks:
+    - name: Set hostname
+      hostname:
+        name: "{{ inventory_hostname }}"
+      tags: tower
+
+  roles:
+    - firewall
+    - fail2ban
+    - certbot
