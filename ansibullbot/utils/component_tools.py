@@ -22,6 +22,8 @@ class ComponentMatcher(object):
 
         self.cache_keywords()
 
+        self.strategy = None
+
     def cache_keywords(self):
         """Make a map of keywords and module names"""
         for k,v in self.file_indexer.botmeta['files'].items():
@@ -46,30 +48,36 @@ class ComponentMatcher(object):
     def match_components(self, title, body, component):
         """Make a list of matching files with metadata"""
 
+        self.strategy = None
         component = component.encode('ascii', 'ignore')
         logging.debug('match "{}"'.format(component))
 
-        #if 'lib/ansible/modules/cloud/amazon/ec2.py' in component:
-        #    import epdb; epdb.st()
 
         matched_filenames = []
 
-        #if component:
-        #    matched_filenames += self.search_by_keywords(component)
-
         if not matched_filenames:
             matched_filenames += self.search_by_regex_urls(component)
+            if matched_filenames:
+                self.strategy = 'search_by_regex_urls'
 
         if not matched_filenames:
             matched_filenames += self.search_by_tracebacks(component)
+            if matched_filenames:
+                self.strategy = 'search_by_tracebacks'
 
         if not matched_filenames:
             matched_filenames += self.search_by_filepath(component)
+            if matched_filenames:
+                self.strategy = 'search_by_filepath'
             if not matched_filenames:
                 matched_filenames += self.search_by_filepath(component, partial=True)
+                if matched_filenames:
+                    self.strategy = 'search_by_filepath[partial]'
 
         if not matched_filenames:
             matched_filenames += self.search_by_module_regexes(component)
+            if matched_filenames:
+                self.strategy = 'search_by_module_regexes'
 
         if matched_filenames:
             matched_filenames += self.include_modules_from_test_targets(matched_filenames)
@@ -80,6 +88,9 @@ class ComponentMatcher(object):
         # bypass for blacklist
         if None in matched_filenames:
             return []
+
+        if component == 'core':
+            import epdb; epdb.st()
 
         component_matches = []
         matched_filenames = sorted(set(matched_filenames))
@@ -92,7 +103,9 @@ class ComponentMatcher(object):
         """Simple keyword search"""
         component = component.lower()
         matches = []
-        if component in self.KEYWORDS:
+        if component in STOPWORDS:
+            matches = [None]
+        elif component in self.KEYWORDS:
             matches = [self.KEYWORDS[component]]
         else:
             for k,v in self.KEYWORDS.items():
@@ -148,10 +161,13 @@ class ComponentMatcher(object):
                         #choices = [x for x in choices if fn + '.py' in x or fn + '.ps1' in x]
                         choices = [x for x in choices if fn + '.py' in x or fn + '.ps1' in x]
 
-                    if len(choices) == 1:
+                    if not choices:
+                        pass
+                    elif len(choices) == 1:
                         matches.append(choices[0])
                     else:
-                        import epdb; epdb.st()
+                        #import epdb; epdb.st()
+                        pass
                 else:
                     pass
 
@@ -210,6 +226,12 @@ class ComponentMatcher(object):
     def search_by_filepath(self, body, partial=False):
         """Find known filepaths in body"""
         matches = []
+
+        if 'modules/core/' in body:
+            body = body.replace('modules/core/', 'modules/')
+        if 'modules/extras/' in body:
+            body = body.replace('modules/extras/', 'modules/')
+
         body_paths = body.split('/')
         if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
             body_paths[-1] = body_paths[-1] + '.py'

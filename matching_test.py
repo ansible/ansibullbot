@@ -25,6 +25,7 @@ METADIR = '/home/jtanner/workspace/scratch/metafiles'
 METAFILES = glob.glob('{}/*.json'.format(METADIR))
 METAFILES = sorted(set(METAFILES))
 
+'''
 # These do not match the cache but are the valid results
 EXPECTED = {
     'https://github.com/ansible/ansible/issues/25863': [
@@ -33,7 +34,6 @@ EXPECTED = {
         'lib/ansible/modules/identity/ipa/ipa_sudorule.py',
     ],
     'https://github.com/ansible/ansible/issues/26763': 'lib/ansible/modules/cloud/openstack/os_user_role.py',
-    'https://github.com/ansible/ansible/issues/26883': 'lib/ansible/modules/network/netconf/netconf_config.py',
     'https://github.com/ansible/ansible/issues/24574': 'lib/ansible/modules/windows/setup.ps1',
     'https://github.com/ansible/ansible/issues/25333': 'lib/ansible/modules/files/tempfile.py',
     'https://github.com/ansible/ansible/issues/25384': None,
@@ -62,7 +62,48 @@ EXPECTED = {
     'https://github.com/ansible/ansible/issues/26003': 'lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py',
     'https://github.com/ansible/ansible/issues/25946': 'lib/ansible/modules/network/nxos/nxos_hsrp.py',
     'https://github.com/ansible/ansible/issues/25897': 'lib/ansible/modules/system/setup.py',
+    'https://github.com/ansible/ansible/issues/30852': 'lib/ansible/modules/cloud/docker/docker_container.py',
+    'https://github.com/ansible/ansible/issues/30534': 'lib/ansible/inventory',
+    'https://github.com/ansible/ansible/issues/30431': 'lib/ansible/modules/windows/win_regedit.ps1',
+    'https://github.com/ansible/ansible/issues/30362': 'lib/ansible/modules/cloud/amazon/ec2.py',
+    'https://github.com/ansible/ansible/issues/29796': 'lib/ansible/modules/cloud/amazon/iam.py',
+    'https://github.com/ansible/ansible/issues/29423': [
+        'lib/ansible/module_utils/ipa.py',
+        'lib/ansible/utils/module_docs_fragments/ipa.py'
+    ],
+    'https://github.com/ansible/ansible/issues/29417': [
+        'lib/ansible/module_utils/ipa.py',
+        'lib/ansible/utils/module_docs_fragments/ipa.py'
+    ],
+    #'https://github.com/ansible/ansible/issues/25863': [
+    #    'lib/ansible/module_utils/ipa.py',
+    #    'lib/ansible/utils/module_docs_fragments/ipa.py'
+    #],
+    'https://github.com/ansible/ansible/issues/28223': 'lib/ansible/modules/utilities/logic/import_playbook.py',
+    'https://github.com/ansible/ansible/issues/24572': 'lib/ansible/modules/windows/setup.ps1',
+    'https://github.com/ansible/ansible/issues/24302': 'lib/ansible/modules/files/stat.py',
+    'https://github.com/ansible/ansible/issues/22789': 'lib/ansible/modules/windows/win_package.ps1',
+    'https://github.com/ansible/ansible/issues/15491': [
+        'lib/ansible/modules/source_control/git.py',
+        'test/integration/targets/git',
+    ],
+    'https://github.com/ansible/ansible/issues/26883': 'lib/ansible/modules/network/netconf',
+    'https://github.com/ansible/ansible/issues/31502': [
+        'lib/ansible/modules/windows/win_dsc.ps1'
+        'lib/ansible/modules/windows/win_dsc.py',
+    ],
+    'https://github.com/ansible/ansible/issues/31107': 'lib/ansible/plugins/connection/netconf.py',
+    'https://github.com/ansible/ansible/issues/31086': 'bin/ansible',
+    'https://github.com/ansible/ansible/issues/31918': 'lib/ansible/modules/files/xml.py',
+    'https://github.com/ansible/ansible/issues/31905': 'lib/ansible/modules/cloud/amazon/ec2_vpc_subnet.py',
+    'https://github.com/ansible/ansible/issues/31901': 'lib/ansible/modules/network/nxos/nxos_config.py',
+    'https://github.com/ansible/ansible/issues/31919': 'lib/ansible/modules/cloud/amazon/elb_target_group.py',
+    'https://github.com/ansible/ansible/issues/31891': 'lib/ansible/modules/files/replace.py',
+    'https://github.com/ansible/ansible/issues/31890': 'lib/ansible/modules/network/nxos/nxos_static_route.py',
+    'https://github.com/ansible/ansible/issues/31888': 'lib/ansible/modules/network/nxos/nxos_ip_interface.py',
+    'https://github.com/ansible/ansible/issues/31887': 'lib/ansible/modules/network/nxos/nxos_portchannel.py',
 }
+'''
 
 SKIP = [
     'https://github.com/ansible/ansible/issues/13406',
@@ -77,6 +118,9 @@ SKIP = [
     'https://github.com/ansible/ansible/issues/27349',  # selinux semodule
     'https://github.com/ansible/ansible/issues/28247',  # Ansible core modules (system/systemd, system/service)
 ]
+
+
+MATCH_MAP = {}
 
 
 class IssueWrapperMock(object):
@@ -107,6 +151,15 @@ class IssueWrapperMock(object):
         return self.meta.get('template_data', {})
 
 
+def load_expected():
+    with open('componet_expected_results.json', 'rb') as f:
+        fdata = json.loads(f.read())
+    return fdata
+
+def save_expected(data):
+    with open('componet_expected_results.json', 'wb') as f:
+        f.write(json.dumps(data, indent=2, sort_keys=True))
+
 def set_logger():
     logging.level = logging.DEBUG
 
@@ -122,6 +175,9 @@ def set_logger():
 def main():
 
     set_logger()
+
+
+    EXPECTED = load_expected()
 
     ERRORS = []
     ERROR_COMPONENTS = []
@@ -162,116 +218,63 @@ def main():
             if hurl in SKIP:
                 continue
 
-            #if hurl not in EXPECTED:
-            #    continue
-
             iw = IssueWrapperMock(meta)
+
+            # OLD METHOD
             cmf = get_component_match_facts(iw, meta, FI, MI, LABELS)
             expected_fns = cmf.get('module_match')
             if not isinstance(expected_fns, list):
                 expected_fns = [expected_fns]
             expected_fns = [x['repo_filename'] for x in expected_fns if x]
+            if 'component_matches' in cmf:
+                expected_fns = [x['filename'] for x in cmf['component_matches']]
             expected_fns = sorted(set(expected_fns))
 
+            # NEW METHOD
             cmr = CM.match_components(iw.title, iw.body, iw.template_data.get('component_raw'))
-            #pprint(cmr)
             cmr_fns = [x['repo_filename'] for x in cmr if x]
             cmr_fns = sorted(set(cmr_fns))
 
-            '''
-            if cmf_fns != cmr_fns:
-                ERRORS2.append(iw.html_url)
-                ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), cmf_fns])
-            #import epdb; epdb.st()
-            '''
+            # VALIDATE FROM EXPECTED IF KNOWN
+            if hurl in EXPECTED:
+                if EXPECTED[hurl] and not isinstance(EXPECTED[hurl], list):
+                    expected_fns = [EXPECTED[hurl]]
+                elif EXPECTED[hurl]:
+                    expected_fns = EXPECTED[hurl]
+                else:
+                    expected_fns = []
 
-            if component == 'core' and not cmf.get('module_match'):
-                continue
+            # USE THE CACHED MAP
+            if component in MATCH_MAP:
+                expected_fns = MATCH_MAP[component]
+            else:
+                # STORE IN THE CACHE
+                if component not in MATCH_MAP:
+                    MATCH_MAP[component] = expected_fns
 
-            try:
+            # COMPARE AND RECORD
+            if expected_fns != cmr_fns:
 
-                if hurl in EXPECTED:
-                    if EXPECTED[hurl] and not isinstance(EXPECTED[hurl], list):
-                        expected_fns = [EXPECTED[hurl]]
-                    elif EXPECTED[hurl]:
-                        expected_fns = EXPECTED[hurl]
-                    else:
-                        expected_fns = []
+                print('## COMPONENT ...')
+                print(component)
+                print('## EXPECTED ...')
+                pprint(expected_fns)
+                print('## RESULT ...')
+                pprint(cmr_fns)
 
-                    if expected_fns != cmr_fns:
+                print('--------------------------------')
+                res = raw_input('Is the result correct? (y/n): ')
 
-                        ERRORS2.append(iw.html_url)
-                        ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), cmr_fns, expected_fns])
-                        #import epdb; epdb.st()
-
-                #else:
-                #    continue
-
-                # These are validated results and can be ignored
-                if hurl in EXPECTED:
-                    if not EXPECTED[hurl] and not cmf.get('module_match'):
-                        continue
-                    if EXPECTED[hurl]:
-                        mm = cmf.get('module_match', {})
-                        if isinstance(mm, list) and isinstance(EXPECTED[hurl], list):
-                            mfiles = sorted([x['repo_filename'] for x in mm])
-                            if mfiles == sorted(EXPECTED[hurl]):
-                                continue
-                        else:
-                            if mm and mm.get('repo_filename') == EXPECTED[hurl]:
-                                continue
-
-                # Trust the ondisk meta otherwise ...
-                if not meta.get('module_match') and cmf.get('module_match'):
-                    print('ERROR: should not have module match')
-                    #ERRORS.append(iw.html_url)
-                    #ERROR_COMPONENTS.append(component)
-
-                    if meta.get('module_match') is None and cmr_fns == []:
-                        continue
-
-                    ERRORS2.append(iw.html_url)
-                    ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), cmr_fns, None])
-
-                    #import epdb; epdb.st()
-                    pass
-
-                if meta.get('module_match') and not cmf.get('module_match'):
-                    print('ERROR: no module match')
-
-                    #ERRORS.append(iw.html_url)
-                    #ERROR_COMPONENTS.append(component)
-                    #import epdb; epdb.st()
-
-                    ERRORS2.append(iw.html_url)
-                    ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), cmr_fns, cmf.get('module_match', {})['repo_filename']])
+                if res.lower() in ['y', 'yes']:
+                    MATCH_MAP[component] = cmr_fns
+                    EXPECTED[iw.html_url] = cmr_fns
+                    save_expected(EXPECTED)
                     continue
 
-                if meta.get('module_match'):
+                ERRORS2.append(iw.html_url)
+                ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), cmr_fns, expected_fns, CM.strategy])
 
-                    mfile = meta['module_match']['repo_filename']
-
-                    if not isinstance(cmf['module_match'], list):
-                        mfile2 = cmf['module_match']['repo_filename']
-                    else:
-                        #import epdb; epdb.st()
-                        pass
-
-                    if mfile != mfile2:
-
-                        if os.path.basename(mfile).replace('_', '') != os.path.basename(mfile2).replace('_', ''):
-
-                            print('ERROR: files do not match')
-                            #ERRORS.append(iw.html_url)
-                            #ERROR_COMPONENTS.append(component)
-
-                            ERRORS2.append(iw.html_url)
-                            ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), mfile2, mfile])
-                            #import epdb; epdb.st()
-
-            except Exception as e:
-                logging.debug(e)
-                continue
+            continue
 
     pprint(ERRORS2)
     import epdb; epdb.st()
