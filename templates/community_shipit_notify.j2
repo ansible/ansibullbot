@@ -1,4 +1,4 @@
-{{ '@' + community_usernames|join(' @') }}
+{{ '@' + (community_usernames | reject("equalto", submitter) | join(' @')) }}
 
 
 {% if is_new_module %}
