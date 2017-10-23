@@ -90,12 +90,35 @@ class ComponentMatcher(object):
 
         matched_filenames = []
 
-        #if '\n' in component:
-        #    components = component.split('\n')
-        #    for _component in components:
-        #        matched_filenames += self.match_components(title, body, _component)
+        if '\n' in component:
+            components = component.split('\n')
+            for _component in components:
+                matched_filenames += self._match_component(title, body, _component)
+        elif ',' in component:
+            components = component.split(',')
+            for _component in components:
+                matched_filenames += self._match_component(title, body, _component)
+        else:
+            matched_filenames += self._match_component(title, body, component)
 
+        # reduce subpaths
+        if matched_filenames:
+            matched_filenames = self.reduce_filepaths(matched_filenames)
 
+        # bypass for blacklist
+        if None in matched_filenames:
+            return []
+
+        component_matches = []
+        matched_filenames = sorted(set(matched_filenames))
+        for fn in matched_filenames:
+            component_matches.append(self.get_meta_for_file(fn))
+
+        return component_matches
+
+    def _match_component(self, title, body, component):
+        """Find matches for a single line"""
+        matched_filenames = []
         if component not in self.STOPWORDS:
 
             if not matched_filenames:
@@ -141,20 +164,7 @@ class ComponentMatcher(object):
             if matched_filenames:
                 matched_filenames += self.include_modules_from_test_targets(matched_filenames)
 
-        # reduce subpaths
-        if matched_filenames:
-            matched_filenames = self.reduce_filepaths(matched_filenames)
-
-        # bypass for blacklist
-        if None in matched_filenames:
-            return []
-
-        component_matches = []
-        matched_filenames = sorted(set(matched_filenames))
-        for fn in matched_filenames:
-            component_matches.append(self.get_meta_for_file(fn))
-
-        return component_matches
+        return matched_filenames
 
     def search_by_fileindexer(self, title, body, component):
         """Use the fileindexers component matching algo"""
@@ -472,6 +482,15 @@ class ComponentMatcher(object):
         return matches
 
     def reduce_filepaths(self, matches):
+
+        # unique
+        _matches = []
+        for _match in matches:
+            if _match not in _matches:
+                _matches.append(_match)
+        matches = _matches[:]
+
+        # squash to longest path
         if matches:
             tr = []
             for match in matches[:]:
@@ -479,7 +498,7 @@ class ComponentMatcher(object):
                 for m in matches:
                     if match == m:
                         continue
-                    if len(m) < match and match.startswith(m):
+                    if len(m) < match and match.startswith(m) or match.endswith(m):
                         tr.append(m)
 
             for r in tr:

@@ -20,5 +20,8 @@
   "https://github.com/ansible/ansible/issues/17108", 
   "https://github.com/ansible/ansible/issues/18009", 
   "https://github.com/ansible/ansible/issues/18392", 
-  "https://github.com/ansible/ansible/issues/18694"
+  "https://github.com/ansible/ansible/issues/18694", 
+  "https://github.com/ansible/ansible/issues/19120", 
+  "https://github.com/ansible/ansible/issues/19153", 
+  "https://github.com/ansible/ansible/issues/19232"
 ]

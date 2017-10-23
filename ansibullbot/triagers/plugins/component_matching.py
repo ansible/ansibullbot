@@ -158,7 +158,10 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
                 cmeta['is_module'] = True
                 cmeta['is_plugin'] = True
                 cmeta['module_match'] = copy.deepcopy(match)
-                cmeta['component'] = match['name']
+                if isinstance(match, list):
+                    cmeta['component'] = match[0]['name']
+                else:
+                    cmeta['component'] = match['name']
 
             elif f.startswith('lib/ansible/modules') \
                     and (f.endswith('.py') or f.endswith('.ps1')):

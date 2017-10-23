@@ -853,6 +853,195 @@
   "https://github.com/ansible/ansible/issues/18973": [
     "lib/ansible/modules/files/find.py"
   ], 
+  "https://github.com/ansible/ansible/issues/18974": [
+    "lib/ansible/modules/network/nxos/nxos_command.py", 
+    "lib/ansible/modules/network/nxos/nxos_nxapi.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18975": [
+    "lib/ansible/modules/packaging/os/apt_repository.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18976": [
+    "lib/ansible/modules/system/authorized_key.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18978": [
+    "lib/ansible/modules/net_tools/snmp_facts.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18979": [
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18980": [
+    "lib/ansible/modules/cloud/vmware/vmware_portgroup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18983": [
+    "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18987": [
+    "lib/ansible/modules/packaging/os/apt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18988": [
+    "lib/ansible/modules/system/iptables.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18989": [
+    "lib/ansible/modules/system/iptables.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18992": [
+    "lib/ansible/modules/cloud/openstack/os_object.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18993": [
+    "lib/ansible/modules/packaging/language/gem.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18996": [
+    "lib/ansible/modules/web_infrastructure/letsencrypt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/18997": [
+    "lib/ansible/modules/commands/script.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19004": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19028": [
+    "lib/ansible/modules/packaging/language/pip.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19030": [
+    "lib/ansible/modules/system/service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19050": [], 
+  "https://github.com/ansible/ansible/issues/19052": [], 
+  "https://github.com/ansible/ansible/issues/19067": [
+    "lib/ansible/module_utils/facts"
+  ], 
+  "https://github.com/ansible/ansible/issues/19081": [
+    "lib/ansible/modules/cloud/docker/docker_service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19084": [
+    "lib/ansible/modules/utilities/logic/include_role.py", 
+    "lib/ansible/playbook/block.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19086": [
+    "lib/ansible/modules/packaging/os/apt.py", 
+    "lib/ansible/modules/packaging/os/dnf.py", 
+    "lib/ansible/modules/packaging/os/yum.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19101": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19103": [
+    "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19106": [
+    "lib/ansible/modules/cloud/vmware/vsphere_guest.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19108": [
+    "lib/ansible/modules/network/junos/junos_netconf.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19112": [
+    "lib/ansible/modules/cloud/amazon/ec2.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19114": [
+    "lib/ansible/modules/cloud/amazon/route53_zone.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19115": [
+    "lib/ansible/modules/utilities/logic/_include.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19121": [
+    "lib/ansible/modules/cloud/amazon/elasticache.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19124": [
+    "lib/ansible/modules/cloud/openstack/os_security_group_rule.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19125": [
+    "lib/ansible/modules/source_control/git.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19176": [
+    "lib/ansible/modules/system/hostname.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19177": [], 
+  "https://github.com/ansible/ansible/issues/19179": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19183": [
+    "lib/ansible/modules/network/asa/asa_config.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19193": [
+    "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19203": [
+    "lib/ansible/modules/net_tools/basics/uri.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19213": [
+    "lib/ansible/modules/windows/win_regedit.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/19214": [
+    "lib/ansible/modules/commands/shell.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19218": [
+    "lib/ansible/modules/windows/win_owner.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19220": [
+    "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19243": [
+    "lib/ansible/modules/files/copy.py", 
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19249": [
+    "lib/ansible/modules/cloud/amazon/iam_policy.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19271": [
+    "lib/ansible/modules/cloud/docker/docker_network.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19274": [
+    "lib/ansible/vars/hostvars.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19278": [], 
+  "https://github.com/ansible/ansible/issues/19279": [], 
+  "https://github.com/ansible/ansible/issues/19284": [
+    "lib/ansible/modules/cloud/misc/virt.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19287": [
+    "lib/ansible/modules/files/fetch.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19290": [
+    "lib/ansible/modules/source_control/git.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19294": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19305": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19311": [
+    "lib/ansible/modules/cloud/vmware/vsphere_guest.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19314": [
+    "lib/ansible/modules/notification/sendgrid.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19321": [
+    "lib/ansible/modules/packaging/language/pip.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19326": [
+    "lib/ansible/modules/cloud/vmware/vsphere_guest.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19335": [
+    "lib/ansible/modules/clustering/consul.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19341": [
+    "lib/ansible/modules/clustering/consul_acl.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19352": [
+    "lib/ansible/modules/files/template.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19359": [], 
+  "https://github.com/ansible/ansible/issues/19371": [
+    "lib/ansible/modules/cloud/docker/docker_service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19376": [], 
+  "https://github.com/ansible/ansible/issues/19378": [
+    "lib/ansible/modules/files/file.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/19387": [
+    "lib/ansible/modules/cloud/docker/docker_login.py"
+  ], 
   "https://github.com/ansible/ansible/issues/22789": "lib/ansible/modules/windows/win_package.ps1", 
   "https://github.com/ansible/ansible/issues/24302": "lib/ansible/modules/files/stat.py", 
   "https://github.com/ansible/ansible/issues/24572": "lib/ansible/modules/windows/setup.ps1", 
