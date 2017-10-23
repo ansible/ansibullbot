@@ -13,3 +13,6 @@
 [submodule "playbooks/roles/mongodb"]
 	path = playbooks/roles/mongodb
 	url = https://github.com/samdoran/ansible-role-mongodb.git
+[submodule "playbooks/roles/fail2ban"]
+	path = playbooks/roles/fail2ban
+	url = https://github.com/samdoran/ansible-role-fail2ban.git
