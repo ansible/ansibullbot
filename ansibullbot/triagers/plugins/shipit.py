@@ -353,7 +353,8 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         nmeta['shipit'] = True
     elif meta['is_new_module'] or \
             (len(maintainers) == 1 and maintainer_shipits == 1):
-        if community:
+        # don't notify if there is no maintainer or if submitter is the only namespace maintainer
+        if set(community) - {iw.submitter}:
             bpc = iw.history.get_boilerplate_comments()
             if 'community_shipit_notify' not in bpc:
                 nmeta['notify_community_shipit'] = True
