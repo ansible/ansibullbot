@@ -168,10 +168,14 @@ def save_expected(data):
         f.write(json.dumps(data, indent=2, sort_keys=True))
 
 
+def load_match_map():
+    with open('componet_match_map.json', 'rb') as f:
+        data = json.loads(f.read())
+    return data
+
 def save_match_map(data):
     with open('componet_match_map.json', 'wb') as f:
         f.write(json.dumps(data, indent=2, sort_keys=True))
-
 
 def load_skip():
     with open('componet_skip.json', 'rb') as f:
@@ -199,16 +203,14 @@ def set_logger():
 def main():
 
     set_logger()
-    #save_skip(SKIP)
-    SKIP = load_skip()
 
+    SKIP = load_skip()
     EXPECTED = load_expected()
+    MATCH_MAP = load_match_map()
+
 
     ERRORS = []
-    ERROR_COMPONENTS = []
-
-    ERRORS2 = []
-    ERROR2_COMPONENTS = []
+    ERRORS_COMPONENTS = []
 
     start_at = None
     if len(sys.argv) == 2:
@@ -219,6 +221,53 @@ def main():
     #GWS = GithubWebScraper(cachedir=CACHEDIR)
     MI = ModuleIndexer(cachedir=CACHEDIR, gh_client=GQLC, blames=False, commits=False)
     CM = ComponentMatcher(cachedir=CACHEDIR, module_indexer=MI, file_indexer=FI)
+
+    for k,v in MI.modules.items():
+        if k in MATCH_MAP:
+            MATCH_MAP.pop(k, None)
+        kname = v.get('name')
+        if kname not in MATCH_MAP:
+            MATCH_MAP[kname] = v.get('repo_filename')
+        if kname + ' module' not in MATCH_MAP:
+            MATCH_MAP[kname + ' module'] = v.get('repo_filename')
+        if kname + 'module: ' + kname not in MATCH_MAP:
+            MATCH_MAP['module: ' + kname] = v.get('repo_filename')
+        if kname + 'module ' + kname not in MATCH_MAP:
+            MATCH_MAP['module ' + kname] = v.get('repo_filename')
+
+        # /modules/remote_management/foreman/katello.py
+        pname = k.replace('lib/ansible', '')
+        if pname not in MATCH_MAP:
+            MATCH_MAP[pname] = v.get('repo_filename')
+
+        # ansible/modules/packaging/os/rpm_key.py
+        pname = k.replace('lib/', '/')
+        if pname not in MATCH_MAP:
+            MATCH_MAP[pname] = v.get('repo_filename')
+
+        # /ansible/modules/packaging/os/rpm_key.py
+        pname = k.replace('lib/', '')
+        if pname not in MATCH_MAP:
+            MATCH_MAP[pname] = v.get('repo_filename')
+
+        # network/f5/bigip_gtm_wide_ip
+        pname = k.replace('lib/ansible/modules/', '')
+        pname = pname.replace('.py', '')
+        pname = pname.replace('.ps1', '')
+        if pname not in MATCH_MAP:
+            MATCH_MAP[pname] = v.get('repo_filename')
+
+        # network/f5/bigip_gtm_wide_ip.py
+        pname = k.replace('lib/ansible/modules/', '')
+        if pname not in MATCH_MAP:
+            MATCH_MAP[pname] = v.get('repo_filename')
+
+        # modules/packaging/os/pkgng.py
+        pname = k.replace('lib/ansible/', '')
+        if pname not in MATCH_MAP:
+            MATCH_MAP[pname] = v.get('repo_filename')
+
+    save_match_map(MATCH_MAP)
 
     total = len(METAFILES)
     for IDMF,MF in enumerate(METAFILES):
@@ -243,19 +292,26 @@ def main():
             if hurl in SKIP:
                 continue
 
+            # bad template or bad template parsing
+            if len(component) > 100:
+                continue
+
             iw = IssueWrapperMock(meta)
             if 'module' not in iw.body.lower() and 'module' not in iw.title.lower():
                 continue
 
+            expected_fns = []
+
             # OLD METHOD
-            cmf = get_component_match_facts(iw, meta, FI, MI, LABELS)
-            expected_fns = cmf.get('module_match')
-            if not isinstance(expected_fns, list):
-                expected_fns = [expected_fns]
-            expected_fns = [x['repo_filename'] for x in expected_fns if x]
-            if 'component_matches' in cmf:
-                expected_fns = [x['filename'] for x in cmf['component_matches']]
-            expected_fns = sorted(set(expected_fns))
+            if hurl not in EXPECTED and component not in MATCH_MAP:
+                cmf = get_component_match_facts(iw, meta, FI, MI, LABELS)
+                expected_fns = cmf.get('module_match')
+                if not isinstance(expected_fns, list):
+                    expected_fns = [expected_fns]
+                expected_fns = [x['repo_filename'] for x in expected_fns if x]
+                if 'component_matches' in cmf:
+                    expected_fns = [x['filename'] for x in cmf['component_matches']]
+                expected_fns = sorted(set(expected_fns))
 
             # NEW METHOD
             cmr = CM.match_components(iw.title, iw.body, iw.template_data.get('component_raw'))
@@ -274,6 +330,23 @@ def main():
             # USE THE CACHED MAP
             if component in MATCH_MAP:
                 expected_fns = MATCH_MAP[component]
+                if not isinstance(expected_fns, list):
+                    expected_fns = [expected_fns]
+            elif component.lower() in MATCH_MAP:
+                expected_fns = MATCH_MAP[component.lower()]
+                if not isinstance(expected_fns, list):
+                    expected_fns = [expected_fns]
+
+            # OLD CODE USED ACTION PLUGINS INSTEAD OF MODULES
+            if expected_fns != cmr_fns and hurl not in EXPECTED:
+                if len(expected_fns) == 1 and len(cmr_fns) == 1 and 'plugins/action' in expected_fns[0]:
+                    e_bn = os.path.basename(expected_fns[0])
+                    c_bn = os.path.basename(cmr_fns[0])
+                    if e_bn == c_bn:
+                        MATCH_MAP[component] = cmr_fns
+                        save_match_map(MATCH_MAP)
+                        continue
+                    #import epdb; epdb.st()
 
             # COMPARE AND RECORD
             if expected_fns != cmr_fns and hurl not in EXPECTED:
@@ -285,12 +358,19 @@ def main():
                 print('## RESULT ...')
                 pprint(cmr_fns)
 
-                if component in MATCH_MAP:
-                    if MATCH_MAP[component] == cmr_fns:
+                if component in MATCH_MAP or component.lower() in MATCH_MAP:
+                    if component.lower() in MATCH_MAP:
+                        mmc = MATCH_MAP[component.lower()]
+                    else:
+                        mmc = MATCH_MAP[component]
+                    if not isinstance(mmc, list):
+                        mmc == [mmc]
+                    if mmc == cmr_fns:
                         EXPECTED[iw.html_url] = cmr_fns
                         save_expected(EXPECTED)
                         continue
 
+                '''
                 print('--------------------------------')
                 res = raw_input('Is the result correct? (y/n/s/d): ')
                 if res.lower() in ['y', 'yes']:
@@ -304,9 +384,18 @@ def main():
                     continue
                 elif res.lower() in ['d', 'debug']:
                     import epdb; epdb.st()
+                '''
 
-                ERRORS2.append(iw.html_url)
-                ERROR2_COMPONENTS.append([iw.html_url, iw.template_data.get('component_raw'), cmr_fns, expected_fns, CM.strategy])
+                ERRORS.append(iw.html_url)
+                ERRORS_COMPONENTS.append(
+                    {
+                        'url': iw.html_url,
+                        'component': iw.template_data.get('component_raw'),
+                        'result': cmr_fns,
+                        'expected': expected_fns,
+                        'strategy': CM.strategy
+                    }
+                )
 
 
             else:
@@ -321,8 +410,10 @@ def main():
 
             continue
 
-    pprint(ERRORS2)
-    import epdb; epdb.st()
+    pprint(ERRORS)
+    with open('component_errors.json', 'wb') as f:
+        f.write(json.dumps(ERRORS_COMPONENTS, indent=2, sort_keys=True))
+    #import epdb; epdb.st()
 
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ from pprint import pprint
 class ComponentMatcher(object):
 
     STOPWORDS = ['ansible', 'core', 'plugin']
-    STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',']
+    STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',', ':', '?']
     BLACKLIST = ['new module', 'new modules']
     MODULE_NAMES = []
 
@@ -26,10 +26,18 @@ class ComponentMatcher(object):
         'ansible-vault': 'lib/ansible/parsing/vault',
         'become': 'lib/ansible/playbook/become.py',
         'block': 'lib/ansible/playbook/block.py',
+        'blocks': 'lib/ansible/playbook/block.py',
         'callback plugin': 'lib/ansible/plugins/callback',
         'callback plugins': 'lib/ansible/plugins/callback',
+        'conditional': 'lib/ansible/playbook/conditional.py',
+        'delegate_to': None,
+        'galaxy': 'lib/ansible/galaxy',
+        'groupvars': 'lib/ansible/vars/hostvars.py',
+        'group vars': 'lib/ansible/vars/hostvars.py',
         'handlers': 'lib/ansible/playbook/handler.py',
         'hostvars': 'lib/ansible/vars/hostvars.py',
+        'host vars': 'lib/ansible/vars/hostvars.py',
+        'integration tests': 'test/integration',
         'jinja2 template system': 'lib/ansible/template',
         'module_utils': 'lib/ansible/module_utils',
         'new module(s) request': None,
@@ -40,10 +48,13 @@ class ComponentMatcher(object):
         #'playbook roles': 'lib/ansible/playbook/role',
         'role': 'lib/ansible/playbook/role',
         'roles': 'lib/ansible/playbook/role',
+        'ssh authentication': 'lib/ansible/plugins/connection/ssh.py',
         'setup / facts': 'lib/ansible/modules/system/setup.py',
+        'task executor': 'lib/ansible/executor/task_executor.py',
         'vault': 'lib/ansible/parsing/vault',
         'vault edit': 'lib/ansible/parsing/vault',
         'vault documentation': 'lib/ansible/parsing/vault',
+        'with_items': 'lib/ansible/playbook/loop_control.py',
     }
 
     def __init__(self, cachedir=None, file_indexer=None, module_indexer=None):
@@ -183,6 +194,7 @@ class ComponentMatcher(object):
 
         for SC in self.STOPCHARS:
             component = component.replace(SC, '')
+        component = component.strip()
 
         # docker-container vs. docker_container
         if component not in self.MODULE_NAMES:
@@ -196,6 +208,7 @@ class ComponentMatcher(object):
                         matches.append(x['repo_filename'])
                 else:
                     matches.append(mmatch['repo_filename'])
+
         return matches
 
     def search_by_keywords(self, component):
@@ -287,6 +300,7 @@ class ComponentMatcher(object):
             r'\`(.*)\` module',
             r'(.*)\* modules',
             r'(.*) and (.*) modules',
+            r'(.*) or (.*) module',
             r'(.*)_module',
             r'action: (.*)',
         ]
@@ -334,7 +348,8 @@ class ComponentMatcher(object):
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
             [r'(.*) action plugin', 'lib/ansible/plugins/action'],
-            [r'(.*) dynamic inventory script', 'contrib/inventory'],
+            [r'(.*) dynamic inventory', 'contrib/inventory'],
+            [r'(.*) dynamic inventory (script|file)', 'contrib/inventory'],
             [r'(.*) inventory script', 'contrib/inventory'],
             [r'(.*) filter', 'lib/ansible/plugins/filter'],
             [r'(.*) fact caching plugin', 'lib/ansible/plugins/cache'],
@@ -342,9 +357,14 @@ class ComponentMatcher(object):
             [r'(.*) lookup', 'lib/ansible/plugins/lookup'],
             [r'(.*) callback plugin', 'lib/ansible/plugins/callback'],
             [r'callback plugin (.*)', 'lib/ansible/plugins/callback'],
+            [r'(.*) stdout callback', 'lib/ansible/plugins/callback'],
+            [r'(.*) callback plugin', 'lib/ansible/plugins/callback'],
             [r'(.*) connection plugin', 'lib/ansible/plugins/connection'],
             [r'(.*) connection type', 'lib/ansible/plugins/connection'],
             [r'(.*) connection', 'lib/ansible/plugins/connection'],
+            [r'(.*) transport', 'lib/ansible/plugins/connection'],
+            [r'connection=(.*)', 'lib/ansible/plugins/connection'],
+            [r'connection: (.*)', 'lib/ansible/plugins/connection'],
             [r'connection (.*)', 'lib/ansible/plugins/connection'],
             [r'(.*) strategy plugin', 'lib/ansible/plugins/strategy'],
             [r'(.*) module util', 'lib/ansible/module_utils'],
@@ -359,6 +379,7 @@ class ComponentMatcher(object):
             mobj = re.match(pattern[0], body, re.M | re.I)
             if mobj:
                 fname = mobj.group(1)
+                fname = fname.lower()
                 if not fname.endswith('.py'):
                     fpath = os.path.join(pattern[1], fname + '.py')
                 else:
@@ -426,6 +447,9 @@ class ComponentMatcher(object):
 
     def search_by_filepath(self, body, partial=False):
         """Find known filepaths in body"""
+
+        # /usr/lib/python2.7/site-packages/ansible/modules/core/packaging/os/rhn_register.py
+
         matches = []
 
         _body = body[:]
@@ -436,6 +460,10 @@ class ComponentMatcher(object):
             body = body.replace('modules/core/', 'modules/')
         if 'modules/extras/' in body:
             body = body.replace('modules/extras/', 'modules/')
+        if 'ansible-modules-core/' in body:
+            body = body.replace('ansible-modules-core/', '/')
+        if 'ansible-modules-extras/' in body:
+            body = body.replace('ansible-modules-extras/', '/')
 
         body_paths = body.split('/')
         if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
@@ -444,7 +472,7 @@ class ComponentMatcher(object):
         for fn in self.file_indexer.files:
 
             # narrow the context if possible
-            if 'module' in body and 'module' not in fn:
+            if 'module' in _body and '/modules/' not in fn:
                 continue
 
             if fn in body or fn.endswith(body):
@@ -497,6 +525,8 @@ class ComponentMatcher(object):
                 # reduce to longest path
                 for m in matches:
                     if match == m:
+                        continue
+                    if m is None or match is None:
                         continue
                     if len(m) < match and match.startswith(m) or match.endswith(m):
                         tr.append(m)
