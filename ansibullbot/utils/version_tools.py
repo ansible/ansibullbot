@@ -4,7 +4,8 @@ import datetime
 import logging
 import os
 import re
-from ansibullbot.utils.systemtools import *
+import subprocess
+from ansibullbot.utils.systemtools import run_command
 
 from distutils.version import StrictVersion
 from distutils.version import LooseVersion
