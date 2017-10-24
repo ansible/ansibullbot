@@ -40,10 +40,12 @@ class ComponentMatcher(object):
         'integration tests': 'test/integration',
         'jinja2 template system': 'lib/ansible/template',
         'module_utils': 'lib/ansible/module_utils',
+        'multiple modules': None,
         'new module(s) request': None,
         'new modules request': None,
         'new module request': None,
         'new module': None,
+        'network modules': 'lib/ansible/modules/network',
         #'playbook role': 'lib/ansible/playbook/role',
         #'playbook roles': 'lib/ansible/playbook/role',
         'role': 'lib/ansible/playbook/role',
@@ -55,6 +57,7 @@ class ComponentMatcher(object):
         'vault edit': 'lib/ansible/parsing/vault',
         'vault documentation': 'lib/ansible/parsing/vault',
         'with_items': 'lib/ansible/playbook/loop_control.py',
+        'windows modules': 'lib/ansible/modules/windows',
     }
 
     def __init__(self, cachedir=None, file_indexer=None, module_indexer=None):
@@ -124,6 +127,9 @@ class ComponentMatcher(object):
         matched_filenames = sorted(set(matched_filenames))
         for fn in matched_filenames:
             component_matches.append(self.get_meta_for_file(fn))
+
+        #if component.lower() == 'module: include_role':
+        #    import epdb; epdb.st()
 
         return component_matches
 
@@ -222,13 +228,13 @@ class ComponentMatcher(object):
             matches = [self.KEYWORDS[component]]
         else:
             for k,v in self.KEYWORDS.items():
-                if ' ' + k + ' ' in component:
+                if ' ' + k + ' ' in component or ' ' + k + ' ' in component.lower():
                     logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
-                elif ' ' + k + ':' in component:
+                elif ' ' + k + ':' in component or ' ' + k + ':' in component:
                     logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
-                elif component.endswith(' ' + k):
+                elif component.endswith(' ' + k) or component.lower().endswith(' ' + k):
                     logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
 
@@ -236,7 +242,7 @@ class ComponentMatcher(object):
                 #    logging.debug('keyword match: {}'.format(k))
                 #    matches.append(v)
 
-                elif k in component and k in self.BLACKLIST:
+                elif (k in component or k in component.lower()) and k in self.BLACKLIST:
                     logging.debug('blacklist  match: {}'.format(k))
                     matches.append(None)
 
@@ -268,12 +274,12 @@ class ComponentMatcher(object):
                 elif '_module.html' in url:
                     parts = url.split('/')
                     fn = parts[-1].replace('_module.html', '')
-                    choices = [x for x in self.file_indexer.files if '/' + fn in x]
+                    choices = [x for x in self.file_indexer.files if '/' + fn in x or '/_' + fn in x]
                     choices = [x for x in choices if 'lib/ansible/modules' in x]
 
                     if len(choices) > 1:
                         #choices = [x for x in choices if fn + '.py' in x or fn + '.ps1' in x]
-                        choices = [x for x in choices if fn + '.py' in x or fn + '.ps1' in x]
+                        choices = [x for x in choices if '/' + fn + '.py' in x or '/' + fn + '.ps1' in x or '/_' + fn + '.py' in x]
 
                     if not choices:
                         pass
@@ -285,6 +291,9 @@ class ComponentMatcher(object):
                 else:
                     pass
 
+        #if 's3_module' in body and not matches:
+        #    import epdb; epdb.st()
+
         return matches
 
     def search_by_regex_modules(self, body):
@@ -293,19 +302,34 @@ class ComponentMatcher(object):
         # foo* modules
         # foo* module
 
+        _body = body
+        body = body.lower()
+        for SC in self.STOPCHARS:
+            if SC in body:
+                body = body.replace(SC, '')
+        body = body.strip()
+
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
+            r'module\: (.*)',
+            r'module (.*)',
             r'new (.*) module',
+            r'the (.*) module',
             r'(.*) module',
+            r'(.*) core module',
+            r'(.*) extras module',
             r'\`(.*)\` module',
             r'(.*)\* modules',
             r'(.*) and (.*) modules',
             r'(.*) or (.*) module',
             r'(.*)_module',
             r'action: (.*)',
+            r'action (.*)',
         ]
 
         matches = []
+
+        logging.debug('check patterns against: {}'.format(body))
 
         for pattern in patterns:
             logging.debug('test pattern: {}'.format(pattern))
@@ -314,8 +338,15 @@ class ComponentMatcher(object):
                 for x in range(0,3):
                     try:
                         mname = mobj.group(x)
+                        if mname == body:
+                            continue
                         mname = mname.strip().lower()
-                        module = self.module_indexer.find_match(mname, exact=True)
+                        mname = mname.replace('.py', '').replace('.ps1', '')
+
+                        module = None
+                        if mname in self.MODULE_NAMES:
+                            module = self.module_indexer.find_match(mname, exact=True)
+
                         if not module:
                             pass
                         elif isinstance(module, list):
@@ -339,6 +370,9 @@ class ComponentMatcher(object):
         #if ' and ' in body and 'module' in body:
         #    import epdb; epdb.st()
 
+        #if body == 'module: include_role':
+        #    import epdb; epdb.st()
+
         return matches
 
     def search_by_regex_generic(self, body):
@@ -348,6 +382,7 @@ class ComponentMatcher(object):
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
             [r'(.*) action plugin', 'lib/ansible/plugins/action'],
+            [r'(.*) inventory plugin', 'lib/ansible/plugins/inventory'],
             [r'(.*) dynamic inventory', 'contrib/inventory'],
             [r'(.*) dynamic inventory (script|file)', 'contrib/inventory'],
             [r'(.*) inventory script', 'contrib/inventory'],
@@ -370,7 +405,16 @@ class ComponentMatcher(object):
             [r'(.*) module util', 'lib/ansible/module_utils'],
             [r'ansible-galaxy (.*)', 'lib/ansible/galaxy'],
             [r'ansible-playbook (.*)', 'lib/ansible/playbook'],
+            [r'ansible/module_utils/(.*)', 'lib/ansible/module_utils'],
+            [r'module_utils/(.*)', 'lib/ansible/module_utils'],
+            [r'lib/ansible/module_utils/(.*)', 'lib/ansible/module_utils'],
         ]
+
+        _body = body
+        for SC in self.STOPCHARS:
+            if SC in body:
+                body = body.replace(SC, '')
+        body = body.strip()
 
         matches = []
 
@@ -380,17 +424,28 @@ class ComponentMatcher(object):
             if mobj:
                 fname = mobj.group(1)
                 fname = fname.lower()
+
+                '''
                 if not fname.endswith('.py'):
                     fpath = os.path.join(pattern[1], fname + '.py')
                 else:
                     fpath = os.path.join(pattern[1], fname)
+                '''
+                fpath = os.path.join(pattern[1], fname)
+
                 if fpath in self.file_indexer.files:
                     matches.append(fpath)
+                elif os.path.join(pattern[1], fname + '.py') in self.file_indexer.files:
+                    fname = os.path.join(pattern[1], fname + '.py')
+                    matches.append(fname)
                 else:
                     # fallback to the directory
                     matches.append(pattern[1])
 
         #if 'module_utils/ec2.py' in body:
+        #    import epdb; epdb.st()
+
+        #if body == 'lib/ansible/module_utils/facts':
         #    import epdb; epdb.st()
 
         return matches
@@ -464,6 +519,8 @@ class ComponentMatcher(object):
             body = body.replace('ansible-modules-core/', '/')
         if 'ansible-modules-extras/' in body:
             body = body.replace('ansible-modules-extras/', '/')
+        if body.startswith('ansible/lib/ansible'):
+            body = body.replace('ansible/lib', 'lib')
 
         body_paths = body.split('/')
         if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):

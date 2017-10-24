@@ -250,6 +250,11 @@ def main():
         if pname not in MATCH_MAP:
             MATCH_MAP[pname] = v.get('repo_filename')
 
+        # ansible/lib/ansible/modules/monitoring/monit.py
+        pname = 'ansible/' + k
+        if pname not in MATCH_MAP:
+            MATCH_MAP[pname] = v.get('repo_filename')
+
         # network/f5/bigip_gtm_wide_ip
         pname = k.replace('lib/ansible/modules/', '')
         pname = pname.replace('.py', '')
@@ -336,6 +341,12 @@ def main():
                 expected_fns = MATCH_MAP[component.lower()]
                 if not isinstance(expected_fns, list):
                     expected_fns = [expected_fns]
+            elif component.startswith(':\n') and component.endswith(' module'):
+                mapkey = component.lstrip(':\n')
+                if mapkey in MATCH_MAP:
+                    expected_fns = MATCH_MAP[mapkey]
+                    if not isinstance(expected_fns, list):
+                        expected_fns = [expected_fns]
 
             # OLD CODE USED ACTION PLUGINS INSTEAD OF MODULES
             if expected_fns != cmr_fns and hurl not in EXPECTED:
@@ -346,7 +357,98 @@ def main():
                         MATCH_MAP[component] = cmr_fns
                         save_match_map(MATCH_MAP)
                         continue
-                    #import epdb; epdb.st()
+
+            # DOCS URLS
+            if expected_fns != cmr_fns and hurl not in EXPECTED:
+                if len(cmr_fns) == 1 and 'lib/ansible/modules' in cmr_fns[0]:
+                    c_bn = os.path.basename(cmr_fns[0])
+                    if 'docs.ansible.com/ansible/latest/{}_module.html'.format(c_bn) in component:
+                        MATCH_MAP[component] = cmr_fns
+                        save_match_map(MATCH_MAP)
+                        continue
+                    elif CM.strategy in ['search_by_regex_urls']:
+                        MATCH_MAP[component] = cmr_fns
+                        save_match_map(MATCH_MAP)
+                        continue
+
+            # NXOS ISSUES HAVE NXOS_VERSION HEADER
+            if '- nxos' in component:
+                if len(cmr_fns) == 1:
+                    if os.path.basename(cmr_fns[0]).replace('.py', '') in component:
+                        MATCH_MAP[component] = cmr_fns
+                        save_match_map(MATCH_MAP)
+                        continue
+                #import epdb; epdb.st()
+
+            # ODDBALL MODULE COMPONENTS
+            if len(cmr_fns) == 1 and 'lib/ansible/modules' in cmr_fns[0]:
+                bn = os.path.basename(cmr_fns[0])
+                bn = bn.replace('.py', '')
+                bn = bn.replace('.ps1', '')
+                if (bn in component or bn.lstrip('_') in component) and 'module' in component.lower():
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+                elif component == '- ' + bn:
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+                elif component == bn + '.py' or component == bn + '.ps1':
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+                elif component == '_' + bn + '.py' or component == '_' + bn + '.ps1':
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+                elif component == ':\n' + bn or component == ':\n' + bn.lstrip('_'):
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+
+            # 'multiple modules', etc ...
+            if component in CM.KEYWORDS or component.lower() in CM.KEYWORDS:
+                if component in CM.KEYWORDS and CM.KEYWORDS[component] is None and not cmr_fns:
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+                elif component.lower() in CM.KEYWORDS and CM.KEYWORDS[component.lower()] is None and not cmr_fns:
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+                elif len(cmr_fns) == 1 and cmr_fns[0] == CM.KEYWORDS.get(component):
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+                elif len(cmr_fns) == 1 and cmr_fns[0] == CM.KEYWORDS.get(component.lower()):
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+
+            if component.lstrip('-').strip() in CM.KEYWORDS and len(cmr_fns) == 1:
+                cname = component.lstrip('-').strip()
+                if CM.KEYWORDS[cname] == cmr_fns[0]:
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+
+            if component.endswith(' lookup') and len(cmr_fns) == 1 and 'lib/ansible/plugins/lookup' in cmr_fns[0]:
+                MATCH_MAP[component] = cmr_fns
+                save_match_map(MATCH_MAP)
+                continue
+
+            if component.endswith(' inventory script') and len(cmr_fns) == 1 and 'contrib/inventory' in cmr_fns[0]:
+                MATCH_MAP[component] = cmr_fns
+                save_match_map(MATCH_MAP)
+                continue
+
+            if component.startswith('ansible/lib') and len(cmr_fns) == 1:
+                fn = cmr_fns[0]
+                if 'ansible/' + fn == component:
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+
 
             # COMPARE AND RECORD
             if expected_fns != cmr_fns and hurl not in EXPECTED:
@@ -390,7 +492,8 @@ def main():
                 ERRORS_COMPONENTS.append(
                     {
                         'url': iw.html_url,
-                        'component': iw.template_data.get('component_raw'),
+                        'component': component,
+                        'component_raw': iw.template_data.get('component_raw'),
                         'result': cmr_fns,
                         'expected': expected_fns,
                         'strategy': CM.strategy
