@@ -458,7 +458,7 @@ class DefaultWrapper(object):
             try:
                 tf = self.repo.get_file_contents(tfile)
                 tf_content = tf.decoded_content
-            except Exception as e:
+            except Exception:
                 logging.warning('repo does not have {}'.format(tfile))
                 tf_content = ''
 
