@@ -198,3 +198,11 @@ class TestComponentMatcher(TestCase):
 
             res = CM.search_by_keywords(COMPONENT)
             self.assertEqual(EXPECTED, res)
+
+    # FIXME
+    # [2873] ec2_asg (AWS EC2 auto scaling groups)
+    # [2998] junos_command (but not only !)
+    # [3531] lib/ansible/modules/storage/netapp/sf_volume-manager.py
+    # [3739] tower_job_list module but I believe that also the other tower_* module have the same error
+    # [4039] netapp_e_storagepool storage module
+    # [4774] azure_rm_deployment (although azure_rm_common seems to be at work here)

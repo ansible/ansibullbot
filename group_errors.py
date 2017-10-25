@@ -32,11 +32,12 @@ for error in errors:
 
 GROUPS.sort(key=len)
 for group in GROUPS:
-    #print('')
-    #print('############################')
-    #pprint(sorted(group))
-    #print('----------------------------')
+    print('')
+    print('############################')
+    pprint(sorted(group))
+    print('----------------------------')
 
+    '''
     for x in group:
         matches = get_matches(errors, x)
         if not matches:
@@ -47,5 +48,6 @@ for group in GROUPS:
             print('---------------------')
             print('## {}'.format(x))
             pprint(matches)
+    '''
 
 import epdb; epdb.st()

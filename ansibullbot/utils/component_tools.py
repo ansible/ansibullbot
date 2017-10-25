@@ -26,6 +26,10 @@ class ComponentMatcher(object):
         'ansible playbooks': 'lib/ansible/playbook',
         'ansible-pull': 'lib/ansible/cli/pull.py',
         'ansible-vault': 'lib/ansible/parsing/vault',
+        'ansible-vault edit': 'lib/ansible/parsing/vault',
+        'ansible-vault show': 'lib/ansible/parsing/vault',
+        'ansible-vault decrypt': 'lib/ansible/parsing/vault',
+        'ansible-vault encrypt': 'lib/ansible/parsing/vault',
         'become': 'lib/ansible/playbook/become.py',
         'block': 'lib/ansible/playbook/block.py',
         'blocks': 'lib/ansible/playbook/block.py',
@@ -129,14 +133,20 @@ class ComponentMatcher(object):
                 for _component in components:
                     _matches = self._match_component(title, body, _component)
                     self.strategies.append(self.strategy)
+
                     # bypass for blacklist
                     if None in _matches:
                         _matches = []
+
                     matched_filenames += _matches
+
+                # do not process any more delimiters
                 break
 
         if not delimited:
             matched_filenames += self._match_component(title, body, component)
+            self.strategies.append(self.strategy)
+
             # bypass for blacklist
             if None in matched_filenames:
                 return []
@@ -163,7 +173,11 @@ class ComponentMatcher(object):
         matched_filenames = []
 
         # context sets the path prefix to narrow the search window
-        if 'module' in title.lower() or 'module' in component.lower():
+        if 'module_util' in title.lower() or 'module_util' in component.lower():
+            context = 'lib/ansible/module_utils'
+        elif 'module util' in title.lower() or 'module util' in component.lower():
+            context = 'lib/ansible/module_utils'
+        elif 'module' in title.lower() or 'module' in component.lower():
             context = 'lib/ansible/modules'
         elif 'dynamic inventory' in title.lower() or 'dynamic inventory' in component.lower():
             context = 'contrib/inventory'
@@ -174,7 +188,24 @@ class ComponentMatcher(object):
         else:
             context = None
 
-        if component not in self.STOPWORDS:
+        component = component.strip()
+        for SC in self.STOPCHARS:
+            if component.startswith(SC):
+                component = component.lstrip(SC)
+                component = component.strip()
+            if component.endswith(SC):
+                component = component.rstrip(SC)
+                component = component.strip()
+
+        if not component:
+            return []
+
+        if component not in self.STOPWORDS and component not in self.STOPCHARS:
+
+            if not matched_filenames:
+                matched_filenames += self.search_by_keywords(component, exact=True)
+                if matched_filenames:
+                    self.strategy = 'search_by_keywords'
 
             if not matched_filenames:
                 matched_filenames += self.search_by_module_name(component)
@@ -210,11 +241,10 @@ class ComponentMatcher(object):
                     if matched_filenames:
                         self.strategy = 'search_by_filepath[partial]'
 
-            if matched_filenames:
-                matched_filenames += self.include_modules_from_test_targets(matched_filenames)
-
             if not matched_filenames:
-                matched_filenames += self.search_by_keywords(component)
+                matched_filenames += self.search_by_keywords(component, exact=False)
+                if matched_filenames:
+                    self.strategy = 'search_by_keywords!exact'
 
             if matched_filenames:
                 matched_filenames += self.include_modules_from_test_targets(matched_filenames)
@@ -255,7 +285,7 @@ class ComponentMatcher(object):
 
         return matches
 
-    def search_by_keywords(self, component):
+    def search_by_keywords(self, component, exact=True):
         """Simple keyword search"""
 
         component = component.lower()
@@ -264,7 +294,7 @@ class ComponentMatcher(object):
             matches = [None]
         elif component in self.KEYWORDS:
             matches = [self.KEYWORDS[component]]
-        else:
+        elif not exact:
             for k,v in self.KEYWORDS.items():
                 if ' ' + k + ' ' in component or ' ' + k + ' ' in component.lower():
                     logging.debug('keyword match: {}'.format(k))
@@ -350,6 +380,7 @@ class ComponentMatcher(object):
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
             r'(.*)-module',
+            r'modules/(.*)',
             r'module\: (.*)',
             r'module (.*)',
             r'new (.*) module',
@@ -360,6 +391,7 @@ class ComponentMatcher(object):
             r'\`(.*)\` module',
             r'(.*)\* modules',
             r'(.*) and (.*)',
+            r'(.*) or (.*)',
             r'(.*) \+ (.*)',
             r'(.*) \& (.*)',
             r'(.*) and (.*) modules',
@@ -368,6 +400,7 @@ class ComponentMatcher(object):
             r'action: (.*)',
             r'action (.*)',
             r'ansible_module_(.*)\.py',
+            r'(.*) task',
         ]
 
         matches = []
@@ -405,20 +438,6 @@ class ComponentMatcher(object):
                 if matches:
                     break
 
-        #if body == 'user module':
-        #if body == 'lineinfile module':
-        #if body == 'service  module':
-        #    import epdb; epdb.st()
-
-        #if ' and ' in body and 'module' in body:
-        #    import epdb; epdb.st()
-
-        #if body == 'module: include_role':
-        #    import epdb; epdb.st()
-
-        #if 'setup' in body:
-        #    import epdb; epdb.st()
-
         return matches
 
     def search_by_regex_generic(self, body):
@@ -433,6 +452,9 @@ class ComponentMatcher(object):
             [r'(.*) dynamic inventory (script|file)', 'contrib/inventory'],
             [r'(.*) inventory script', 'contrib/inventory'],
             [r'(.*) filter', 'lib/ansible/plugins/filter'],
+            [r'(.*) jinja filter', 'lib/ansible/plugins/filter'],
+            [r'(.*) jinja2 filter', 'lib/ansible/plugins/filter'],
+            [r'(.*) template filter', 'lib/ansible/plugins/filter'],
             [r'(.*) fact caching plugin', 'lib/ansible/plugins/cache'],
             [r'(.*) fact caching module', 'lib/ansible/plugins/cache'],
             [r'(.*) lookup plugin', 'lib/ansible/plugins/lookup'],
@@ -569,6 +591,13 @@ class ComponentMatcher(object):
             if body.endswith(SC):
                 body = body.rstrip(SC)
                 body = body.strip()
+
+        if not body:
+            return []
+        if body.lower() in self.STOPCHARS:
+            return []
+        if body.lower() in self.STOPWORDS:
+            return []
 
         # 'inventory manager' vs. 'inventory/manager'
         if partial and ' ' in body:

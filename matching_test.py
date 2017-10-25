@@ -479,6 +479,9 @@ def main():
                 pprint(expected_fns)
                 print('## RESULT ...')
                 pprint(cmr_fns)
+                print('## STRATEGIES ..')
+                pprint(CM.strategy)
+                pprint(CM.strategies)
 
                 if component in MATCH_MAP or component.lower() in MATCH_MAP:
                     if component.lower() in MATCH_MAP:
@@ -492,6 +495,7 @@ def main():
                         save_expected(EXPECTED)
                         continue
 
+                '''
                 print('--------------------------------')
                 res = raw_input('Is the result correct? (y/n/s/d): ')
                 if res.lower() in ['y', 'yes']:
@@ -505,6 +509,7 @@ def main():
                     continue
                 elif res.lower() in ['d', 'debug']:
                     import epdb; epdb.st()
+                '''
 
                 ERRORS.append(iw.html_url)
                 ERRORS_COMPONENTS.append(
@@ -514,10 +519,10 @@ def main():
                         'component_raw': iw.template_data.get('component_raw'),
                         'result': cmr_fns,
                         'expected': expected_fns,
-                        'strategy': CM.strategy
+                        'strategy': CM.strategy,
+                        'strategies': CM.strategies
                     }
                 )
-
 
             else:
 
