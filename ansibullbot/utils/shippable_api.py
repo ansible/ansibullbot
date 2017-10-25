@@ -24,6 +24,7 @@ ANSIBLE_RUNS_URL = '%s/runs?projectIds=%s&isPullRequest=True' % (
     ANSIBLE_PROJECT_ID
 )
 
+TIMEOUT = 5  # seconds
 
 def has_commentable_data(test_results):
     # https://github.com/ansible/ansibullbot/issues/421
@@ -119,7 +120,7 @@ class ShippableRuns(object):
         updated = sorted(set(updated))
         return updated
 
-    def _get_url(self, url, usecache=False):
+    def _get_url(self, url, usecache=False, timeout=TIMEOUT):
         cdir = os.path.join(self.cachedir, '.raw')
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
@@ -144,7 +145,7 @@ class ShippableRuns(object):
         resp = None
         if not os.path.isfile(cfile) or not jdata or not usecache:
 
-            resp = self.fetch(url)
+            resp = self.fetch(url, timeout=timeout)
             if not resp:
                 return None
 
@@ -330,7 +331,7 @@ class ShippableRuns(object):
     def get_run_id(self, run_number):
         """trigger a new run"""
         run_url = "%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
-        response = self.fetch(run_url)
+        response = self.fetch(run_url, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)
         self.check_response(response)
@@ -346,7 +347,7 @@ class ShippableRuns(object):
         data = {'runId':run_id}
 
         newbuild_url = "%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
-        response = self.fetch(newbuild_url, verb='post', data=data)
+        response = self.fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST to %r" % newbuild_url)
         self.check_response(response)
