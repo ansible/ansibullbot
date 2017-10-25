@@ -10,7 +10,7 @@ from pprint import pprint
 class ComponentMatcher(object):
 
     STOPWORDS = ['ansible', 'core', 'plugin']
-    STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',', ':', '?']
+    STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',', ':', '?', '-']
     BLACKLIST = ['new module', 'new modules']
     MODULE_NAMES = []
 
@@ -528,37 +528,27 @@ class ComponentMatcher(object):
     def search_by_filepath(self, body, partial=False):
         """Find known filepaths in body"""
 
-        # /usr/lib/python2.7/site-packages/ansible/modules/core/packaging/os/rhn_register.py
-
-        # FIXME ...
-        # module/network/ios/ios_facts
-        # json_query
-        # module_common.py
-        # /network/dellos6/dellos6_config
-        # module_utils/vmware
-        # `azure_rm.py`
-        # vmware_inventory
-        # skippy
-        # azure_rm_common
-        # junit
-        # `plugins/strategy/__init__.py`
-        # - jabber.py
-        # - ios_config.py
-        # ansible-test
-        # inventory manager
-        # ansible/hacking/test-module
-        # - ansible-connection
-        # `validate-modules`
-        # `modules/cloud/docker/docker_container.py`
-        # packaging/language/maven_artifact
-        # `lib/ansible/executor/module_common.py`
-
         matches = []
 
-        _body = body[:]
-        if '/' not in body and '.' not in body:
-            return matches
+        #if '/' not in body and '.' not in body:
+        #    return matches
 
+        body = body.strip()
+        for SC in self.STOPCHARS:
+            if body.startswith(SC):
+                body = body.lstrip(SC)
+                body = body.strip()
+            if body.endswith(SC):
+                body = body.rstrip(SC)
+                body = body.strip()
+
+        # 'inventory manager' vs. 'inventory/manager'
+        if partial and ' ' in body:
+            body = body.replace(' ', '/')
+
+        if 'site-packages' in body:
+            res = re.match('(.*)/site-packages/(.*)', body)
+            body = res.group(2)
         if 'modules/core/' in body:
             body = body.replace('modules/core/', 'modules/')
         if 'modules/extras/' in body:
@@ -571,30 +561,66 @@ class ComponentMatcher(object):
             body = body.replace('ansible/lib', 'lib')
         if body.startswith('ansible/') and not body.startswith('ansible/modules'):
             body = body.replace('ansible/', '', 1)
+        if 'module/' in body:
+            body = body.replace('module/', 'modules/')
+
+        #print('FINAL BODY: {}'.format(body))
 
         body_paths = body.split('/')
         if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
             body_paths[-1] = body_paths[-1] + '.py'
 
-        for fn in self.file_indexer.files:
+        if body in self.file_indexer.files:
+            matches = [body]
+        else:
+            for fn in self.file_indexer.files:
 
-            # narrow the context if possible
-            if 'module' in _body and '/modules/' not in fn:
-                continue
+                '''
+                # narrow the context if possible
+                if 'module' in body and '/modules/' not in fn and not 'test-module' in body:
+                    continue
+                '''
 
-            if fn in body or fn.endswith(body):
-                matches.append(fn)
+                '''
+                if fn in body or fn.endswith(body):
+                    if fn not in matches:
+                        matches.append(fn)
+                elif fn in body or fn.endswith(body + '.py') or fn.endswith(body + '.ps1'):
+                    if fn not in matches:
+                        matches.append(fn)
+                '''
 
-            if partial:
+                if fn.endswith(body) or fn.endswith(body + '.py') or fn.endswith(body + '.ps1'):
+                    # ios_config.py -> test_ios_config.py vs. ios_config.py
+                    bn1 = os.path.basename(body)
+                    bn2 = os.path.basename(fn)
+                    if bn2.startswith(bn1):
+                        matches = [fn]
+                        #break
 
-                # if all subpaths are in this filepath, it is a match
-                bp_total = 0
-                fn_paths = fn.split('/')
-                for bp in body_paths:
-                    if bp in fn_paths:
-                        bp_total += 1
-                if bp_total == len(body_paths):
-                    matches.append(fn)
+                #if fn in body or fn.endswith(body):
+                #    if fn not in matches:
+                #        matches.append(fn)
+                #elif fn in body or fn.endswith(body + '.py') or fn.endswith(body + '.ps1'):
+                #    if fn not in matches:
+                #        matches.append(fn)
+
+                if partial:
+
+                    # if all subpaths are in this filepath, it is a match
+                    bp_total = 0
+                    fn_paths = fn.split('/')
+                    for bp in body_paths:
+                        if bp in fn_paths:
+                            bp_total += 1
+                    if bp_total == len(body_paths):
+                        if fn not in matches:
+                            matches.append(fn)
+                    #elif bp_total > 3:
+                    #    print('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
+                    #    print(body_paths)
+                    #    if 'rhn_register' in fn:
+                    #        import epdb; epdb.st()
 
         if matches:
             tr = []
@@ -610,6 +636,7 @@ class ComponentMatcher(object):
                 if r in matches:
                     matches.remove(r)
 
+        matches = sorted(set(matches))
         return matches
 
     def reduce_filepaths(self, matches):

@@ -217,6 +217,9 @@ def main():
         start_at = int(sys.argv[1])
 
     FI = FileIndexer(checkoutdir=CACHEDIR)
+    with open('/tmp/files.json', 'wb') as f:
+        f.write(json.dumps(FI.files, indent=2))
+
     GQLC = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
     #GWS = GithubWebScraper(cachedir=CACHEDIR)
     MI = ModuleIndexer(cachedir=CACHEDIR, gh_client=GQLC, blames=False, commits=False)

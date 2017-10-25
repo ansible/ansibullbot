@@ -11417,6 +11417,9 @@
   "lib/ansible/modules/storage/netapp/sf_volume-manager.py\nqos dict should be of type dict": [
     "lib/ansible/modules/storage/netapp"
   ], 
+  "lib/ansible/modules/windows/setup.ps1": [
+    "lib/ansible/modules/windows/setup.ps1"
+  ], 
   "lib/ansible/parsing/mod_args.py\nlib/ansible/plugins/": [
     "lib/ansible/parsing/mod_args.py", 
     "lib/ansible/plugins"
@@ -18155,8 +18158,7 @@
     "lib/ansible/modules/packaging/os/package.py"
   ], 
   "package and service modules": [
-    "lib/ansible/modules/packaging/os/package.py", 
-    "lib/ansible/modules/system/service.py"
+    "lib/ansible/modules/packaging/os/package.py"
   ], 
   "package module": [
     "lib/ansible/modules/packaging/os/package.py"
@@ -18968,7 +18970,6 @@
     "lib/ansible/modules/commands/shell.py"
   ], 
   "shell and command modules": [
-    "lib/ansible/modules/commands/command.py", 
     "lib/ansible/modules/commands/shell.py"
   ], 
   "shell module": [
