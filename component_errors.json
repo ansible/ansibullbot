@@ -738,32 +738,6 @@
     "url": "https://github.com/ansible/ansible/issues/25678"
   }, 
   {
-    "component": "ec2.py", 
-    "component_raw": "ec2.py", 
-    "expected": [
-      "contrib/inventory/ec2.py"
-    ], 
-    "result": [
-      "contrib/inventory/ec2.py", 
-      "lib/ansible/module_utils/ec2.py", 
-      "lib/ansible/modules/cloud/amazon/ec2.py", 
-      "lib/ansible/utils/module_docs_fragments/ec2.py", 
-      "test/legacy/cleanup_ec2.py"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/25718"
-  }, 
-  {
-    "component": "Ansible facts, specifically ansible_distribution et al, and how they are evaluated.", 
-    "component_raw": "Ansible facts, specifically ansible_distribution et al, and how they are evaluated.", 
-    "expected": [
-      "lib/ansible/module_utils/facts"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/25725"
-  }, 
-  {
     "component": "LineInFile + ansible-vault", 
     "component_raw": "LineInFile + ansible-vault", 
     "expected": [
@@ -982,16 +956,6 @@
     "result": [], 
     "strategy": null, 
     "url": "https://github.com/ansible/ansible/issues/26395"
-  }, 
-  {
-    "component": "facts", 
-    "component_raw": "facts", 
-    "expected": [
-      "lib/ansible/module_utils/facts"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/26424"
   }, 
   {
     "component": "- ios_config.py", 
@@ -1589,36 +1553,6 @@
     "url": "https://github.com/ansible/ansible/issues/27860"
   }, 
   {
-    "component": "gather facts inside roles/tasks/.yml", 
-    "component_raw": "gather facts inside roles/tasks/.yml", 
-    "expected": [
-      "lib/ansible/module_utils/facts"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/27875"
-  }, 
-  {
-    "component": "- ssh", 
-    "component_raw": "- ssh", 
-    "expected": [
-      "lib/ansible/plugins/connection/ssh.py"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/27919"
-  }, 
-  {
-    "component": "- ssh", 
-    "component_raw": "- ssh", 
-    "expected": [
-      "lib/ansible/plugins/connection/ssh.py"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/27938"
-  }, 
-  {
     "component": "shell or command", 
     "component_raw": "shell or command", 
     "expected": [
@@ -1731,7 +1665,9 @@
     "expected": [
       "docs/docsite/rst/modules"
     ], 
-    "result": [], 
+    "result": [
+      "lib/ansible/plugins/connection/paramiko_ssh.py"
+    ], 
     "strategy": null, 
     "url": "https://github.com/ansible/ansible/issues/28268"
   }, 
@@ -1756,19 +1692,6 @@
     "result": [], 
     "strategy": "search_by_module_name", 
     "url": "https://github.com/ansible/ansible/issues/28313"
-  }, 
-  {
-    "component": "docker inventory plugin", 
-    "component_raw": "docker inventory plugin", 
-    "expected": [
-      "contrib/inventory", 
-      "contrib/inventory/docker.py"
-    ], 
-    "result": [
-      "lib/ansible/plugins/inventory"
-    ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/28322"
   }, 
   {
     "component": "hacking/aws_config/setup-iam.yml", 
@@ -2359,16 +2282,6 @@
     "url": "https://github.com/ansible/ansible/issues/29569"
   }, 
   {
-    "component": "shell-module", 
-    "component_raw": "shell-module", 
-    "expected": [
-      "lib/ansible/plugins/shell"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/29571"
-  }, 
-  {
     "component": "nxos_command\nnxos_config", 
     "component_raw": "nxos_command\nnxos_config", 
     "expected": [
@@ -2446,22 +2359,6 @@
     ], 
     "strategy": "search_by_module_name", 
     "url": "https://github.com/ansible/ansible/issues/29639"
-  }, 
-  {
-    "component": "ec2.py", 
-    "component_raw": "ec2.py", 
-    "expected": [
-      "contrib/inventory/ec2.py"
-    ], 
-    "result": [
-      "contrib/inventory/ec2.py", 
-      "lib/ansible/module_utils/ec2.py", 
-      "lib/ansible/modules/cloud/amazon/ec2.py", 
-      "lib/ansible/utils/module_docs_fragments/ec2.py", 
-      "test/legacy/cleanup_ec2.py"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/29643"
   }, 
   {
     "component": "rhn_channel\nrhn_*", 
@@ -2748,22 +2645,6 @@
     "url": "https://github.com/ansible/ansible/issues/30239"
   }, 
   {
-    "component": "ec2.py", 
-    "component_raw": "ec2.py", 
-    "expected": [
-      "contrib/inventory/ec2.py"
-    ], 
-    "result": [
-      "contrib/inventory/ec2.py", 
-      "lib/ansible/module_utils/ec2.py", 
-      "lib/ansible/modules/cloud/amazon/ec2.py", 
-      "lib/ansible/utils/module_docs_fragments/ec2.py", 
-      "test/legacy/cleanup_ec2.py"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/30240"
-  }, 
-  {
     "component": "aws documentation fragment", 
     "component_raw": "aws documentation fragment", 
     "expected": [
@@ -2957,16 +2838,6 @@
     "url": "https://github.com/ansible/ansible/issues/30564"
   }, 
   {
-    "component": "network_cli", 
-    "component_raw": "network_cli", 
-    "expected": [
-      "lib/ansible/plugins/connection/network_cli.py"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30567"
-  }, 
-  {
     "component": "docker connection module, docker detailed guide.", 
     "component_raw": "docker connection module, docker detailed guide.", 
     "expected": [
@@ -3021,26 +2892,6 @@
     "url": "https://github.com/ansible/ansible/issues/30592"
   }, 
   {
-    "component": "Facts", 
-    "component_raw": "Facts", 
-    "expected": [
-      "lib/ansible/module_utils/facts"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30600"
-  }, 
-  {
-    "component": "Facts", 
-    "component_raw": "Facts", 
-    "expected": [
-      "lib/ansible/module_utils/facts"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30623"
-  }, 
-  {
     "component": "include_role\nimport_role", 
     "component_raw": "include_role\nimport_role", 
     "expected": [
@@ -3090,16 +2941,6 @@
     "url": "https://github.com/ansible/ansible/issues/30724"
   }, 
   {
-    "component": "ssh", 
-    "component_raw": "ssh", 
-    "expected": [
-      "lib/ansible/plugins/connection/ssh.py"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30760"
-  }, 
-  {
     "component": "WINRM issue with Windows Server 2012 R2\nWINRM service is stopping during playbook execution", 
     "component_raw": "WINRM issue with Windows Server 2012 R2\nWINRM service is stopping during playbook execution", 
     "expected": [
@@ -3135,16 +2976,6 @@
     ], 
     "strategy": null, 
     "url": "https://github.com/ansible/ansible/issues/30773"
-  }, 
-  {
-    "component": "ssh", 
-    "component_raw": "ssh", 
-    "expected": [
-      "lib/ansible/plugins/connection/ssh.py"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30775"
   }, 
   {
     "component": "- eos_config\n- eos_command", 
@@ -3378,18 +3209,6 @@
     "url": "https://github.com/ansible/ansible/issues/31162"
   }, 
   {
-    "component": "`script` inventory plugin", 
-    "component_raw": "`script` inventory plugin", 
-    "expected": [
-      "contrib/inventory"
-    ], 
-    "result": [
-      "lib/ansible/plugins/inventory/script.py"
-    ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/31195"
-  }, 
-  {
     "component": "`yum`", 
     "component_raw": "`yum`", 
     "expected": [], 
@@ -3438,16 +3257,6 @@
     ], 
     "strategy": "search_by_regex_generic", 
     "url": "https://github.com/ansible/ansible/issues/31260"
-  }, 
-  {
-    "component": "network_cli", 
-    "component_raw": "network_cli", 
-    "expected": [
-      "lib/ansible/plugins/connection/network_cli.py"
-    ], 
-    "result": [], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/31267"
   }, 
   {
     "component": "play_context.py", 

@@ -36,6 +36,9 @@
   "**: service module\n**": [
     "lib/ansible/modules/system/service.py"
   ], 
+  "**vca_vapp**": [
+    "lib/ansible/modules/cloud/vmware/vca_vapp.py"
+  ], 
   "+ docker_image": [
     "lib/ansible/modules/cloud/docker/docker_image.py"
   ], 
@@ -61,11 +64,21 @@
   "- Handlers and variable interpolation": [
     "lib/ansible/playbook/handler.py"
   ], 
+  "- Linode module": [
+    "lib/ansible/modules/cloud/linode/linode.py"
+  ], 
   "- Module : gce": [
     "lib/ansible/modules/cloud/google/gce.py"
   ], 
+  "- Module documentation tool (plugin_formatter)\n- docs/bin/plugin_formatter.py": [
+    "bin", 
+    "docs/bin/plugin_formatter.py"
+  ], 
   "- Modules": [], 
   "- Plugin": [], 
+  "- Redis Lookup Plugin": [
+    "lib/ansible/plugins/lookup"
+  ], 
   "- SophosUTM\nProbably this would be applicable for the XG firewall aswell.": [], 
   "- Template/Vars": [], 
   "- Unarchive module": [
@@ -81,6 +94,10 @@
   "- `docker_image_facts`": [], 
   "- `docker_image`": [], 
   "- `docker_network`": [], 
+  "- `template` lookup plugin\n- `regex_replace` filter\n- any other non-jinja2 native filters": [
+    "lib/ansible/plugins/filter", 
+    "lib/ansible/plugins/lookup"
+  ], 
   "- `uri` module": [], 
   "- `win_chocolatey`": [], 
   "- acl": [
@@ -111,6 +128,12 @@
   ], 
   "- docker_image": [
     "lib/ansible/modules/cloud/docker/docker_image.py"
+  ], 
+  "- docker_image\n- docker_container\n- docker_volume\n- docker_system\n- docker_network": [
+    "lib/ansible/modules/cloud/docker/docker_container.py", 
+    "lib/ansible/modules/cloud/docker/docker_image.py", 
+    "lib/ansible/modules/cloud/docker/docker_network.py", 
+    "lib/ansible/modules/cloud/docker/docker_volume.py"
   ], 
   "- ec2": [
     "lib/ansible/modules/cloud/amazon/ec2.py"
@@ -160,6 +183,10 @@
   ], 
   "- lxc_container": [
     "lib/ansible/modules/cloud/lxc/lxc_container.py"
+  ], 
+  "- meta\n- setup": [
+    "lib/ansible/modules/system/setup.py", 
+    "lib/ansible/modules/utilities/helper/meta.py"
   ], 
   "- module": [], 
   "- module:ios_command": [], 
@@ -229,6 +256,10 @@
   "- nxos_igmp_snooping": [
     "lib/ansible/modules/network/nxos/nxos_igmp_snooping.py"
   ], 
+  "- nxos_interface\n- nxos_config": [
+    "lib/ansible/modules/network/nxos/nxos_config.py", 
+    "lib/ansible/modules/network/nxos/nxos_interface.py"
+  ], 
   "- nxos_interface\n7.0(3)I2(5)": [
     "lib/ansible/modules/network/nxos/nxos_interface.py"
   ], 
@@ -261,6 +292,10 @@
   ], 
   "- nxos_nxapi\n7.0(3)I5(3)": [
     "lib/ansible/modules/network/nxos/nxos_nxapi.py"
+  ], 
+  "- nxos_ospf\n7.0(3)I5(3) All version tested failed idempotence test.": [
+    "lib/ansible/modules/network/nxos/nxos_ospf.py", 
+    "test"
   ], 
   "- nxos_ospf_vrf\n7.0(3)I5(3)": [
     "lib/ansible/modules/network/nxos/nxos_ospf_vrf.py"
@@ -307,6 +342,10 @@
   "- nxos_snmp_host": [
     "lib/ansible/modules/network/nxos/nxos_snmp_host.py"
   ], 
+  "- nxos_snmp_location\n- nxos_snmp_contact": [
+    "lib/ansible/modules/network/nxos/nxos_snmp_contact.py", 
+    "lib/ansible/modules/network/nxos/nxos_snmp_location.py"
+  ], 
   "- nxos_snmp_location\n7.0(3)I5(3)": [
     "lib/ansible/modules/network/nxos/nxos_snmp_location.py"
   ], 
@@ -314,6 +353,14 @@
     "lib/ansible/modules/network/nxos/nxos_snmp_traps.py"
   ], 
   "- nxos_vtp_version": [
+    "lib/ansible/modules/network/nxos/nxos_vtp_version.py"
+  ], 
+  "- nxos_vtp_version\n- nxos_feature": [
+    "lib/ansible/modules/network/nxos/nxos_feature.py", 
+    "lib/ansible/modules/network/nxos/nxos_vtp_version.py"
+  ], 
+  "- nxos_vtp_version\n-nxos_feature": [
+    "lib/ansible/modules/network/nxos/nxos_feature.py", 
     "lib/ansible/modules/network/nxos/nxos_vtp_version.py"
   ], 
   "- openssl_csr": [
@@ -335,6 +382,11 @@
     "lib/ansible/modules/database/postgresql/postgresql_user.py"
   ], 
   "- requirements.yml": [], 
+  "- role + include_role + include": [
+    "lib/ansible/modules/utilities/logic/_include.py", 
+    "lib/ansible/modules/utilities/logic/include_role.py", 
+    "lib/ansible/playbook/role"
+  ], 
   "- s3 module": [
     "lib/ansible/modules/cloud/amazon/_s3.py"
   ], 
@@ -348,6 +400,9 @@
     "lib/ansible/modules/commands/raw.py", 
     "lib/ansible/modules/commands/shell.py", 
     "lib/ansible/template"
+  ], 
+  "- ssh": [
+    "lib/ansible/plugins/connection/ssh.py"
   ], 
   "- sts_assume_role": [
     "lib/ansible/modules/cloud/amazon/sts_assume_role.py"
@@ -387,6 +442,10 @@
   ], 
   "- win_ping": [
     "lib/ansible/modules/windows/win_ping.py"
+  ], 
+  "- win_template\n- win_copy (EDIT)": [
+    "lib/ansible/modules/windows/win_copy.py", 
+    "lib/ansible/modules/windows/win_template.py"
   ], 
   "- with_subelements\n- loop_control.loop_var\n- when condition": [], 
   "- yum": [
@@ -3486,6 +3545,9 @@
   "/modules/windows/win_wakeonlan.py": "lib/ansible/modules/windows/win_wakeonlan.py", 
   "/modules/windows/win_webpicmd.ps1": "lib/ansible/modules/windows/win_webpicmd.ps1", 
   "/modules/windows/win_webpicmd.py": "lib/ansible/modules/windows/win_webpicmd.py", 
+  "/usr/bin/ansible-pull": [
+    "bin/ansible-pull"
+  ], 
   "/usr/lib/python2.7/site-packages/ansible/modules/network/nxos/nxos_system.py": [], 
   ":": [], 
   ":\n- cloud/amazon/route53": [], 
@@ -3516,6 +3578,9 @@
   ], 
   ":\nbigip_node": [
     "lib/ansible/modules/network/f5/bigip_node.py"
+  ], 
+  ":\ncloud/amazon/ec2_vol.py": [
+    "lib/ansible/modules/cloud/amazon/ec2_vol.py"
   ], 
   ":\ncloudtrail": [
     "lib/ansible/modules/cloud/amazon/cloudtrail.py"
@@ -3758,6 +3823,9 @@
   "<ios_command module": [], 
   "?": [], 
   "AWS Batch": [], 
+  "AWS EC2 Schedule Reserved": [
+    "lib/ansible/modules/cloud/amazon/ec2.py"
+  ], 
   "AWS NLB Cloud Module": [], 
   "AWS Plugin": [], 
   "Abort/fail if host is unreachable": [], 
@@ -3777,10 +3845,17 @@
   "Ansible Module: apt": [
     "lib/ansible/modules/packaging/os/apt.py"
   ], 
+  "Ansible Vault": [
+    "lib/ansible/parsing/vault"
+  ], 
   "Ansible command line": [
     "lib/ansible/modules/commands/command.py"
   ], 
   "Ansible core": [], 
+  "Ansible facts, specifically ansible_distribution et al, and how they are evaluated.": [
+    "lib/ansible/module_utils/facts"
+  ], 
+  "Ansible host pattern matching?": [], 
   "Ansible module naming": [], 
   "Ansible os_object.py": [], 
   "Ansible playbook": [
@@ -3858,6 +3933,9 @@
   "Facter module\n`lib/ansible/modules/system/facter.py`": [
     "lib/ansible/modules/system/facter.py"
   ], 
+  "Facts": [
+    "lib/ansible/module_utils/facts"
+  ], 
   "Fetch": [
     "lib/ansible/modules/files/fetch.py"
   ], 
@@ -3879,6 +3957,9 @@
   "Firewalld": [
     "lib/ansible/modules/system/firewalld.py"
   ], 
+  "Flush handlers by name": [
+    "lib/ansible/playbook/handler.py"
+  ], 
   "Foreman module": [
     "lib/ansible/modules/remote_management/foreman/foreman.py"
   ], 
@@ -3894,6 +3975,9 @@
   ], 
   "HaProxy Module": [
     "lib/ansible/modules/net_tools/haproxy.py"
+  ], 
+  "HomeBrew Modules": [
+    "lib/ansible/modules/packaging/os/homebrew.py"
   ], 
   "I guess this is in ansible core, or wheverever the jinja templating stuff lives.": [
     "lib/ansible/template"
@@ -4028,6 +4112,10 @@
     "lib/ansible/modules/packaging/os/yum.py"
   ], 
   "Modules": [], 
+  "Modules template, copy": [
+    "lib/ansible/modules/files/copy.py", 
+    "lib/ansible/modules/files/template.py"
+  ], 
   "Most closely to feature (or issue): How to perform privilege elevation using just \"su -\"?": [], 
   "N/A": [], 
   "NA": [], 
@@ -4047,6 +4135,7 @@
     "lib/ansible/modules/network"
   ], 
   "New module": [], 
+  "New module for aws step functions": [], 
   "New module that I have written to get the datastore name.": [], 
   "Not applicable.": [], 
   "Not sure -- something that handles dereferencing variables, presumably?": [], 
@@ -4061,6 +4150,9 @@
     "lib/ansible/modules/files/patch.py"
   ], 
   "Playbook": [], 
+  "Playbook & Inventory": [
+    "lib/ansible/inventory"
+  ], 
   "Playbook Roles and Include Statements": [
     "lib/ansible/modules/utilities/logic/_include.py", 
     "lib/ansible/playbook/role"
@@ -4098,6 +4190,9 @@
     "lib/ansible/plugins/connection/ssh.py"
   ], 
   "SSH Pipelining.": [], 
+  "SSH connection": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
   "SSH connection plugin": [
     "lib/ansible/plugins/connection/ssh.py"
   ], 
@@ -4105,6 +4200,10 @@
   "SU prompt": [], 
   "Script module": [
     "lib/ansible/modules/commands/script.py"
+  ], 
+  "Script, Windows modules to access c drives in windows": [
+    "lib/ansible/modules/commands/script.py", 
+    "lib/ansible/modules/windows"
   ], 
   "Seems to be a core feature.": [], 
   "Service Module": [
@@ -4127,6 +4226,9 @@
     "lib/ansible/modules/files/synchronize.py"
   ], 
   "TASK [setup]": [], 
+  "Task docker_service": [
+    "lib/ansible/modules/cloud/docker/docker_service.py"
+  ], 
   "Template": [
     "lib/ansible/modules/files/template.py"
   ], 
@@ -4135,6 +4237,9 @@
   ], 
   "Template module": [
     "lib/ansible/modules/files/template.py"
+  ], 
+  "Testing": [
+    "test/"
   ], 
   "Tests": [], 
   "The \"[unarchive](http://docs.ansible.com/ansible/latest/unarchive_module.html)\" module.": [
@@ -4302,6 +4407,9 @@
   "```\nec2_asg_facts\n```": [
     "lib/ansible/modules/cloud/amazon/ec2_asg_facts.py"
   ], 
+  "```\nnxos_vlan\n```": [
+    "lib/ansible/modules/network/nxos/nxos_vlan.py"
+  ], 
   "```\nproxmox_kvm module\n```": [
     "lib/ansible/modules/cloud/misc/proxmox_kvm.py"
   ], 
@@ -4311,6 +4419,9 @@
   ], 
   "`ansible.plugins.callback.default.CallbackModule`": [], 
   "`ansible/modules/source_control/git.py`": [], 
+  "`ansible_module_ec2_ami_copy.py`": [
+    "lib/ansible/modules/cloud/amazon/ec2_ami_copy.py"
+  ], 
   "`apt_key_module`": [
     "lib/ansible/modules/packaging/os/apt_key.py"
   ], 
@@ -4330,7 +4441,9 @@
   "`cloudwatchevent_rule`": [
     "lib/ansible/modules/cloud/amazon/cloudwatchevent_rule.py"
   ], 
-  "`command`-module": [], 
+  "`command`-module": [
+    "lib/ansible/modules/commands/command.py"
+  ], 
   "`consul_acl` module integration tests": [
     "lib/ansible/modules/clustering/consul_acl.py"
   ], 
@@ -4382,9 +4495,18 @@
   "`module_utils/basic.py`": [
     "lib/ansible/module_utils/basic.py"
   ], 
+  "`module_utils/urls.py` and the `SSLValidationHandler`": [
+    "lib/ansible/module_utils"
+  ], 
   "`modules/cloud/amazon/ecs_taskdefinition.py`": [], 
   "`modules/cloud/misc/proxmox_kvm.py`": [], 
   "`modules/system/service`": [], 
+  "`mysql_db`": [
+    "lib/ansible/modules/database/mysql/mysql_db.py"
+  ], 
+  "`mysql_user`": [
+    "lib/ansible/modules/database/mysql/mysql_user.py"
+  ], 
   "`mysql_user` module": [
     "lib/ansible/modules/database/mysql/mysql_user.py"
   ], 
@@ -4396,6 +4518,9 @@
   ], 
   "`s3` module": [
     "lib/ansible/modules/cloud/amazon/_s3.py"
+  ], 
+  "`script` inventory plugin": [
+    "lib/ansible/plugins/inventory/script.py"
   ], 
   "`script` module": [
     "lib/ansible/modules/commands/script.py"
@@ -4421,6 +4546,9 @@
   "`unarchive`": [
     "lib/ansible/modules/files/unarchive.py"
   ], 
+  "`uri`": [
+    "lib/ansible/modules/net_tools/basics/uri.py"
+  ], 
   "`user` module": [
     "lib/ansible/modules/system/user.py"
   ], 
@@ -4428,6 +4556,12 @@
     "lib/ansible/playbook/conditional.py"
   ], 
   "`when` conditionals": [], 
+  "`win_shell`": [
+    "lib/ansible/modules/windows/win_shell.ps1"
+  ], 
+  "`zypper_repository`": [
+    "lib/ansible/modules/packaging/os/zypper_repository.py"
+  ], 
   "a10_server": "lib/ansible/modules/network/a10/a10_server.py", 
   "a10_server module": "lib/ansible/modules/network/a10/a10_server.py", 
   "a10_server_axapi3": "lib/ansible/modules/network/a10/a10_server_axapi3.py", 
@@ -4559,6 +4693,10 @@
   "ansible playbooks": [
     "lib/ansible/playbook"
   ], 
+  "ansible web3 -m shell -a \"uptime\"\nansible web3 -m ping": [
+    "lib/ansible/modules/commands/shell.py", 
+    "lib/ansible/modules/system/ping.py"
+  ], 
   "ansible windows module: `win_scheduled_task`": [], 
   "ansible-2.2.0.0": [], 
   "ansible-galaxy": [
@@ -4567,6 +4705,9 @@
   "ansible-galaxy\nmodule_utils/urls.py": [
     "lib/ansible/galaxy", 
     "lib/ansible/module_utils/urls.py"
+  ], 
+  "ansible-galaxy and ansible-console": [
+    "lib/ansible/galaxy"
   ], 
   "ansible-galaxy init": [
     "lib/ansible/galaxy"
@@ -4617,7 +4758,17 @@
   "ansible-vault": [
     "lib/ansible/parsing/vault"
   ], 
+  "ansible.cfg": [
+    "examples/ansible.cfg", 
+    "lib/ansible/galaxy/data/container_enabled/tests/ansible.cfg", 
+    "test/integration/targets/pull/pull-integration-test/ansible.cfg", 
+    "test/sanity/ansible.cfg", 
+    "test/units/ansible.cfg"
+  ], 
   "ansible.module_utils.dellos6": [], 
+  "ansible/contrib/inventory/cloudforms.py": [
+    "contrib/inventory/cloudforms.py"
+  ], 
   "ansible/files/modules/archive.py": [
     "lib/ansible/modules/files/archive.py"
   ], 
@@ -7798,6 +7949,13 @@
   "apt module - install .deb packages": [
     "lib/ansible/modules/packaging/os/apt.py"
   ], 
+  "apt module, potentially other package managing modules": [
+    "lib/ansible/modules/packaging/os/apt.py", 
+    "lib/ansible/modules/packaging/os/package.py"
+  ], 
+  "apt-key": [
+    "lib/ansible/modules/packaging/os/apt_key.py"
+  ], 
   "apt-repository": [
     "lib/ansible/modules/packaging/os/apt_repository.py"
   ], 
@@ -7984,6 +8142,9 @@
   "avi_webhook module": "lib/ansible/modules/network/avi/avi_webhook.py", 
   "awall": "lib/ansible/modules/system/awall.py", 
   "awall module": "lib/ansible/modules/system/awall.py", 
+  "aws s3": [
+    "lib/ansible/modules/cloud/amazon/_s3.py"
+  ], 
   "aws/ec2/iam_server_certificate_facts": [], 
   "aws_acm_facts": "lib/ansible/modules/cloud/amazon/aws_acm_facts.py", 
   "aws_acm_facts module": "lib/ansible/modules/cloud/amazon/aws_acm_facts.py", 
@@ -8011,6 +8172,9 @@
   "azure": "lib/ansible/modules/cloud/azure/_azure.py", 
   "azure module": [
     "lib/ansible/modules/cloud/azure/_azure.py"
+  ], 
+  "azure/azure_rm_deployment": [
+    "lib/ansible/modules/cloud/azure/azure_rm_deployment.py"
   ], 
   "azure_rm.py": [
     "contrib/inventory/azure_rm.py"
@@ -8070,6 +8234,9 @@
   "azure_rm_publicipaddress_facts": "lib/ansible/modules/cloud/azure/azure_rm_publicipaddress_facts.py", 
   "azure_rm_publicipaddress_facts module": "lib/ansible/modules/cloud/azure/azure_rm_publicipaddress_facts.py", 
   "azure_rm_resourcegroup": [
+    "lib/ansible/modules/cloud/azure/azure_rm_resourcegroup.py"
+  ], 
+  "azure_rm_resourcegroup\nazure_rm_*": [
     "lib/ansible/modules/cloud/azure/azure_rm_resourcegroup.py"
   ], 
   "azure_rm_resourcegroup module": "lib/ansible/modules/cloud/azure/azure_rm_resourcegroup.py", 
@@ -8224,6 +8391,10 @@
   ], 
   "block": [
     "lib/ansible/playbook/block.py"
+  ], 
+  "block\ndelegate_to": [
+    "lib/ansible/playbook/block.py", 
+    "lib/ansible/playbook/task.py"
   ], 
   "block/rescue/always": [], 
   "blockinfile": [
@@ -9432,6 +9603,10 @@
   "cloudformation module": [
     "lib/ansible/modules/cloud/amazon/cloudformation.py"
   ], 
+  "cloudformation.py": [
+    "lib/ansible/modules/cloud/amazon/cloudformation.py", 
+    "test/units/modules/cloud/amazon/test_cloudformation.py"
+  ], 
   "cloudformation_facts": "lib/ansible/modules/cloud/amazon/cloudformation_facts.py", 
   "cloudformation_facts module": [
     "lib/ansible/modules/cloud/amazon/cloudformation_facts.py"
@@ -9525,6 +9700,10 @@
   ], 
   "composer module": "lib/ansible/modules/packaging/language/composer.py", 
   "configuration": [], 
+  "constants.py": [
+    "lib/ansible/constants.py", 
+    "test/units/test_constants.py"
+  ], 
   "consul": [
     "lib/ansible/modules/clustering/consul.py"
   ], 
@@ -9566,6 +9745,10 @@
   "copy\nOr playbook": [
     "lib/ansible/modules/files/copy.py"
   ], 
+  "copy\ntemplate": [
+    "lib/ansible/modules/files/copy.py", 
+    "lib/ansible/modules/files/template.py"
+  ], 
   "copy module": [
     "lib/ansible/modules/files/copy.py"
   ], 
@@ -9589,6 +9772,9 @@
   "core, I believe": [], 
   "core, I think?": [], 
   "core/include": [], 
+  "core: meta": [
+    "lib/ansible/modules/utilities/helper/meta.py"
+  ], 
   "cpanm": "lib/ansible/modules/packaging/language/cpanm.py", 
   "cpanm module": [
     "lib/ansible/modules/packaging/language/cpanm.py"
@@ -9797,8 +9983,20 @@
     "lib/ansible/modules/system/debconf.py"
   ], 
   "debug": "lib/ansible/modules/utilities/logic/debug.py", 
+  "debug\nhaproxy": [
+    "lib/ansible/modules/net_tools/haproxy.py", 
+    "lib/ansible/modules/utilities/logic/debug.py"
+  ], 
+  "debug callback plugin": [
+    "lib/ansible/plugins/callback/debug.py"
+  ], 
   "debug module": "lib/ansible/modules/utilities/logic/debug.py", 
-  "delegate_to": [], 
+  "delegate_to": [
+    "lib/ansible/playbook/task.py"
+  ], 
+  "delegate_to\nHave tested using as an option for the `shell` & `debug` tasks": [
+    "lib/ansible/playbook/task.py"
+  ], 
   "delegate_to + windows": [], 
   "delegated_facts": [], 
   "dellos*_* network modules": [
@@ -9895,6 +10093,9 @@
   "docker dynamic inventory": [
     "contrib/inventory/docker.py"
   ], 
+  "docker inventory plugin": [
+    "lib/ansible/plugins/inventory"
+  ], 
   "docker module": [
     "lib/ansible/modules/cloud/docker/_docker.py"
   ], 
@@ -9947,6 +10148,9 @@
   "docker_volume": "lib/ansible/modules/cloud/docker/docker_volume.py", 
   "docker_volume module": "lib/ansible/modules/cloud/docker/docker_volume.py", 
   "docs": [], 
+  "docs / website": [
+    "docs"
+  ], 
   "docs.ansible.com, man page": [
     "docs"
   ], 
@@ -9979,6 +10183,13 @@
   ], 
   "ec2 modules": [
     "lib/ansible/modules/cloud/amazon/ec2.py"
+  ], 
+  "ec2.py": [
+    "contrib/inventory/ec2.py", 
+    "lib/ansible/module_utils/ec2.py", 
+    "lib/ansible/modules/cloud/amazon/ec2.py", 
+    "lib/ansible/utils/module_docs_fragments/ec2.py", 
+    "test/legacy/cleanup_ec2.py"
   ], 
   "ec2.py dynamic inventory file for AWS": [
     "contrib/inventory/ec2.py"
@@ -10339,6 +10550,9 @@
   "fact related modules": [], 
   "facter": "lib/ansible/modules/system/facter.py", 
   "facter module": "lib/ansible/modules/system/facter.py", 
+  "facts": [
+    "lib/ansible/module_utils/facts"
+  ], 
   "facts  'virtualization_type' and 'virtualization_role'": [], 
   "facts plugin": [], 
   "fail": "lib/ansible/modules/utilities/logic/fail.py", 
@@ -10412,6 +10626,10 @@
   "find module": [
     "lib/ansible/modules/files/find.py"
   ], 
+  "find module, stat module": [
+    "lib/ansible/modules/files/find.py", 
+    "lib/ansible/modules/files/stat.py"
+  ], 
   "firewalld": [
     "lib/ansible/modules/system/firewalld.py"
   ], 
@@ -10429,6 +10647,9 @@
   "foreman module": [
     "lib/ansible/modules/remote_management/foreman/foreman.py"
   ], 
+  "foreman.py callback": [
+    "lib/ansible/plugins/callback/foreman.py"
+  ], 
   "fortios_*": [], 
   "fortios_address": "lib/ansible/modules/network/fortios/fortios_address.py", 
   "fortios_address module": "lib/ansible/modules/network/fortios/fortios_address.py", 
@@ -10438,6 +10659,9 @@
   "fortios_ipv4_policy module": "lib/ansible/modules/network/fortios/fortios_ipv4_policy.py", 
   "galaxy": [
     "lib/ansible/galaxy"
+  ], 
+  "gather facts inside roles/tasks/.yml": [
+    "lib/ansible/module_utils/facts"
   ], 
   "gather_facts": [], 
   "gather_facts, hostvars": [
@@ -10680,6 +10904,9 @@
   "https://github.com/ansible/ansible/blob/devel/lib/ansible/playbook/task.py#L86": [
     "lib/ansible/playbook/task.py"
   ], 
+  "https://github.com/ansible/ansible/blob/devel/lib/ansible/plugins/filter/core.py#L436": [
+    "lib/ansible/plugins/filter/core.py"
+  ], 
   "iOS_config": [
     "lib/ansible/modules/network/ios/ios_config.py"
   ], 
@@ -10849,8 +11076,15 @@
   "ios_command": [
     "lib/ansible/modules/network/ios/ios_command.py"
   ], 
+  "ios_command\nbut I suspect all commands are impacted": [
+    "lib/ansible/modules/network/ios/ios_command.py"
+  ], 
   "ios_command\nbut the issue might be caused by another module such as \"include_role\" for instance.": [
     "lib/ansible/modules/network/ios/ios_command.py"
+  ], 
+  "ios_command\nnxos_command": [
+    "lib/ansible/modules/network/ios/ios_command.py", 
+    "lib/ansible/modules/network/nxos/nxos_command.py"
   ], 
   "ios_command and ios_config": [
     "lib/ansible/modules/network/ios/ios_config.py"
@@ -10869,6 +11103,10 @@
     "lib/ansible/modules/network/ios/ios_config.py"
   ], 
   "ios_facts": [
+    "lib/ansible/modules/network/ios/ios_facts.py"
+  ], 
+  "ios_facts\nios_command\netc": [
+    "lib/ansible/modules/network/ios/ios_command.py", 
     "lib/ansible/modules/network/ios/ios_facts.py"
   ], 
   "ios_facts module": "lib/ansible/modules/network/ios/ios_facts.py", 
@@ -10916,6 +11154,9 @@
   "iosxr_user": "lib/ansible/modules/network/iosxr/iosxr_user.py", 
   "iosxr_user module": "lib/ansible/modules/network/iosxr/iosxr_user.py", 
   "ipa": [], 
+  "ipa-hbacrule": [
+    "lib/ansible/modules/identity/ipa/ipa_hbacrule.py"
+  ], 
   "ipa_dnsrecord": [
     "lib/ansible/modules/identity/ipa/ipa_dnsrecord.py"
   ], 
@@ -11167,65 +11408,14 @@
   "lib/ansible/modules/cloud/amazon": [
     "lib/ansible/modules/cloud/amazon"
   ], 
-  "lib/ansible/modules/cloud/amazon/aws_direct_connect_connection.py": [
-    "lib/ansible/modules/cloud/amazon/aws_direct_connect_connection.py"
-  ], 
-  "lib/ansible/modules/cloud/amazon/ec2.py": [
-    "lib/ansible/modules/cloud/amazon/ec2.py"
-  ], 
-  "lib/ansible/modules/cloud/amazon/iam.py": [
-    "lib/ansible/modules/cloud/amazon/iam.py"
-  ], 
-  "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py": [
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py"
-  ], 
-  "lib/ansible/modules/cloud/google/gce.py": [
-    "lib/ansible/modules/cloud/google/gce.py"
-  ], 
-  "lib/ansible/modules/cloud/ovirt/ovirt_clusters.py": [
-    "lib/ansible/modules/cloud/ovirt"
-  ], 
-  "lib/ansible/modules/clustering/consul_kv.py": [
-    "lib/ansible/modules/clustering/consul_kv.py"
-  ], 
-  "lib/ansible/modules/files/unarchive.py": [
-    "lib/ansible/modules/files/unarchive.py"
-  ], 
-  "lib/ansible/modules/files/xml.py": [
-    "lib/ansible/modules/files/xml.py"
-  ], 
   "lib/ansible/modules/network/enos/enos_facts.py\nlib/ansible/module_util/enos/enos.py": [
     "lib/ansible/modules/network/enos"
   ], 
   "lib/ansible/modules/network/netconf": [
     "lib/ansible/modules/network/netconf"
   ], 
-  "lib/ansible/modules/network/netconf/netconf_config.py": [
-    "lib/ansible/modules/network/netconf/netconf_config.py"
-  ], 
-  "lib/ansible/modules/packaging/language/pip.py": [
-    "lib/ansible/modules/packaging/language/pip.py"
-  ], 
-  "lib/ansible/modules/source_control/git_config.py": [
-    "lib/ansible/modules/source_control/git_config.py"
-  ], 
   "lib/ansible/modules/storage/netapp/sf_volume-manager.py\nqos dict should be of type dict": [
     "lib/ansible/modules/storage/netapp"
-  ], 
-  "lib/ansible/modules/system/systemd.py": [
-    "lib/ansible/modules/system/systemd.py"
-  ], 
-  "lib/ansible/modules/utilities/helper/_accelerate.py": [
-    "lib/ansible/modules/utilities/helper/_accelerate.py"
-  ], 
-  "lib/ansible/modules/web_infrastructure/jenkins_plugin.py": [
-    "lib/ansible/modules/web_infrastructure/jenkins_plugin.py"
-  ], 
-  "lib/ansible/modules/web_infrastructure/letsencrypt.py": [
-    "lib/ansible/modules/web_infrastructure/letsencrypt.py"
-  ], 
-  "lib/ansible/modules/windows/setup.ps1": [
-    "lib/ansible/modules/windows/setup.ps1"
   ], 
   "lib/ansible/parsing/mod_args.py\nlib/ansible/plugins/": [
     "lib/ansible/parsing/mod_args.py", 
@@ -11287,6 +11477,9 @@
   "logicmonitor module": "lib/ansible/modules/monitoring/logicmonitor.py", 
   "logicmonitor_facts": "lib/ansible/modules/monitoring/logicmonitor_facts.py", 
   "logicmonitor_facts module": "lib/ansible/modules/monitoring/logicmonitor_facts.py", 
+  "logstash callback plugin": [
+    "lib/ansible/plugins/callback/logstash.py"
+  ], 
   "logstash_plugin": "lib/ansible/modules/monitoring/logstash_plugin.py", 
   "logstash_plugin module": "lib/ansible/modules/monitoring/logstash_plugin.py", 
   "logstash_plugin to have option for installing offline plugin": [], 
@@ -11296,6 +11489,9 @@
   "lookup_plugins": [], 
   "loop": [], 
   "loop-until": [], 
+  "loop_control -> pause": [
+    "lib/ansible/modules/utilities/logic/pause.py"
+  ], 
   "lvg": [
     "lib/ansible/modules/system/lvg.py"
   ], 
@@ -11331,6 +11527,9 @@
     "lib/ansible/modules/notification/mail.py"
   ], 
   "mail module": "lib/ansible/modules/notification/mail.py", 
+  "main.yml inside vars folder of roles": [
+    "lib/ansible/playbook/role"
+  ], 
   "make": "lib/ansible/modules/system/make.py", 
   "make deb": [], 
   "make module": "lib/ansible/modules/system/make.py", 
@@ -11365,9 +11564,7 @@
   "messaging/rabbitmq_user.py": "lib/ansible/modules/messaging/rabbitmq_user.py", 
   "messaging/rabbitmq_vhost": "lib/ansible/modules/messaging/rabbitmq_vhost.py", 
   "messaging/rabbitmq_vhost.py": "lib/ansible/modules/messaging/rabbitmq_vhost.py", 
-  "meta": [
-    "lib/ansible/modules/utilities/helper/meta.py"
-  ], 
+  "meta": "meta", 
   "meta module": "lib/ansible/modules/utilities/helper/meta.py", 
   "meta: end_play": [], 
   "meta: reset_connection": [], 
@@ -11775,9 +11972,7 @@
   "module consul_acl": "lib/ansible/modules/clustering/consul_acl.py", 
   "module consul_kv": "lib/ansible/modules/clustering/consul_kv.py", 
   "module consul_session": "lib/ansible/modules/clustering/consul_session.py", 
-  "module copy": [
-    "lib/ansible/modules/files/copy.py"
-  ], 
+  "module copy": "lib/ansible/modules/files/copy.py", 
   "module cpanm": "lib/ansible/modules/packaging/language/cpanm.py", 
   "module cron": "lib/ansible/modules/system/cron.py", 
   "module cronvar": "lib/ansible/modules/system/cronvar.py", 
@@ -12007,9 +12202,7 @@
   "module gem": "lib/ansible/modules/packaging/language/gem.py", 
   "module get_url": "lib/ansible/modules/net_tools/basics/get_url.py", 
   "module getent": "lib/ansible/modules/system/getent.py", 
-  "module git": [
-    "lib/ansible/modules/source_control/git.py"
-  ], 
+  "module git": "lib/ansible/modules/source_control/git.py", 
   "module git_config": "lib/ansible/modules/source_control/git_config.py", 
   "module github_deploy_key": "lib/ansible/modules/source_control/github_deploy_key.py", 
   "module github_hooks": "lib/ansible/modules/source_control/github_hooks.py", 
@@ -12154,9 +12347,7 @@
   "module letsencrypt": "lib/ansible/modules/web_infrastructure/letsencrypt.py", 
   "module librato_annotation": "lib/ansible/modules/monitoring/librato_annotation.py", 
   "module lightsail": "lib/ansible/modules/cloud/amazon/lightsail.py", 
-  "module lineinfile": [
-    "lib/ansible/modules/files/lineinfile.py"
-  ], 
+  "module lineinfile": "lib/ansible/modules/files/lineinfile.py", 
   "module linode": "lib/ansible/modules/cloud/linode/linode.py", 
   "module lldp": "lib/ansible/modules/net_tools/lldp.py", 
   "module locale_gen": "lib/ansible/modules/system/locale_gen.py", 
@@ -12584,9 +12775,7 @@
   "module rds_subnet_group": "lib/ansible/modules/cloud/amazon/rds_subnet_group.py", 
   "module redhat_subscription": "lib/ansible/modules/packaging/os/redhat_subscription.py", 
   "module redis": "lib/ansible/modules/database/misc/redis.py", 
-  "module redshift": [
-    "lib/ansible/modules/cloud/amazon/redshift.py"
-  ], 
+  "module redshift": "lib/ansible/modules/cloud/amazon/redshift.py", 
   "module redshift_facts": "lib/ansible/modules/cloud/amazon/redshift_facts.py", 
   "module redshift_subnet_group": "lib/ansible/modules/cloud/amazon/redshift_subnet_group.py", 
   "module replace": "lib/ansible/modules/files/replace.py", 
@@ -12610,9 +12799,7 @@
   "module s3_logging": "lib/ansible/modules/cloud/amazon/s3_logging.py", 
   "module s3_sync": "lib/ansible/modules/cloud/amazon/s3_sync.py", 
   "module s3_website": "lib/ansible/modules/cloud/amazon/s3_website.py", 
-  "module script": [
-    "lib/ansible/modules/commands/script.py"
-  ], 
+  "module script": "lib/ansible/modules/commands/script.py", 
   "module seboolean": "lib/ansible/modules/system/seboolean.py", 
   "module sefcontext": "lib/ansible/modules/system/sefcontext.py", 
   "module selinux": "lib/ansible/modules/system/selinux.py", 
@@ -12625,9 +12812,7 @@
   "module sensu_subscription": "lib/ansible/modules/monitoring/sensu_subscription.py", 
   "module seport": "lib/ansible/modules/system/seport.py", 
   "module serverless": "lib/ansible/modules/cloud/misc/serverless.py", 
-  "module service": [
-    "lib/ansible/modules/system/service.py"
-  ], 
+  "module service": "lib/ansible/modules/system/service.py", 
   "module set_fact": "lib/ansible/modules/utilities/logic/set_fact.py", 
   "module set_stats": "lib/ansible/modules/utilities/logic/set_stats.py", 
   "module setup": "lib/ansible/modules/system/setup.py", 
@@ -12655,9 +12840,7 @@
   "module sorcery": "lib/ansible/modules/packaging/os/sorcery.py", 
   "module sqs_queue": "lib/ansible/modules/cloud/amazon/sqs_queue.py", 
   "module sros_command": "lib/ansible/modules/network/sros/sros_command.py", 
-  "module sros_config": [
-    "lib/ansible/modules/network/sros/sros_config.py"
-  ], 
+  "module sros_config": "lib/ansible/modules/network/sros/sros_config.py", 
   "module sros_rollback": "lib/ansible/modules/network/sros/sros_rollback.py", 
   "module stackdriver": "lib/ansible/modules/monitoring/stackdriver.py", 
   "module stacki_host": "lib/ansible/modules/remote_management/stacki/stacki_host.py", 
@@ -12675,9 +12858,7 @@
   "module sysctl": "lib/ansible/modules/system/sysctl.py", 
   "module syslogger": "lib/ansible/modules/notification/syslogger.py", 
   "module system/zfs": [], 
-  "module systemd": [
-    "lib/ansible/modules/system/systemd.py"
-  ], 
+  "module systemd": "lib/ansible/modules/system/systemd.py", 
   "module taiga_issue": "lib/ansible/modules/web_infrastructure/taiga_issue.py", 
   "module telegram": "lib/ansible/modules/notification/telegram.py", 
   "module telnet": "lib/ansible/modules/commands/telnet.py", 
@@ -12732,9 +12913,7 @@
   "module vmware_dvs_host": "lib/ansible/modules/cloud/vmware/vmware_dvs_host.py", 
   "module vmware_dvs_portgroup": "lib/ansible/modules/cloud/vmware/vmware_dvs_portgroup.py", 
   "module vmware_dvswitch": "lib/ansible/modules/cloud/vmware/vmware_dvswitch.py", 
-  "module vmware_guest": [
-    "lib/ansible/modules/cloud/vmware/vmware_guest.py"
-  ], 
+  "module vmware_guest": "lib/ansible/modules/cloud/vmware/vmware_guest.py", 
   "module vmware_guest_facts": "lib/ansible/modules/cloud/vmware/vmware_guest_facts.py", 
   "module vmware_guest_find": "lib/ansible/modules/cloud/vmware/vmware_guest_find.py", 
   "module vmware_guest_powerstate": "lib/ansible/modules/cloud/vmware/vmware_guest_powerstate.py", 
@@ -12962,9 +13141,7 @@
   "module: aci_tenant_span_src_group": "lib/ansible/modules/network/aci/aci_tenant_span_src_group.py", 
   "module: aci_tenant_span_src_group_to_dst_group": "lib/ansible/modules/network/aci/aci_tenant_span_src_group_to_dst_group.py", 
   "module: aci_vrf": "lib/ansible/modules/network/aci/aci_vrf.py", 
-  "module: acl": [
-    "lib/ansible/modules/files/acl.py"
-  ], 
+  "module: acl": "lib/ansible/modules/files/acl.py", 
   "module: add_host": "lib/ansible/modules/inventory/add_host.py", 
   "module: airbrake_deployment": "lib/ansible/modules/monitoring/airbrake_deployment.py", 
   "module: aireos_command": "lib/ansible/modules/network/aireos/aireos_command.py", 
@@ -12987,9 +13164,7 @@
   "module: apache2_mod_proxy": "lib/ansible/modules/web_infrastructure/apache2_mod_proxy.py", 
   "module: apache2_module": "lib/ansible/modules/web_infrastructure/apache2_module.py", 
   "module: apk": "lib/ansible/modules/packaging/os/apk.py", 
-  "module: apt": [
-    "lib/ansible/modules/packaging/os/apt.py"
-  ], 
+  "module: apt": "lib/ansible/modules/packaging/os/apt.py", 
   "module: apt_key": "lib/ansible/modules/packaging/os/apt_key.py", 
   "module: apt_repository": "lib/ansible/modules/packaging/os/apt_repository.py", 
   "module: apt_rpm": "lib/ansible/modules/packaging/os/apt_rpm.py", 
@@ -13342,9 +13517,7 @@
   "module: dellos10_facts": "lib/ansible/modules/network/dellos10/dellos10_facts.py", 
   "module: dellos6_command": "lib/ansible/modules/network/dellos6/dellos6_command.py", 
   "module: dellos6_config": "lib/ansible/modules/network/dellos6/dellos6_config.py", 
-  "module: dellos6_facts": [
-    "lib/ansible/modules/network/dellos6/dellos6_facts.py"
-  ], 
+  "module: dellos6_facts": "lib/ansible/modules/network/dellos6/dellos6_facts.py", 
   "module: dellos9_command": "lib/ansible/modules/network/dellos9/dellos9_command.py", 
   "module: dellos9_config": "lib/ansible/modules/network/dellos9/dellos9_config.py", 
   "module: dellos9_facts": "lib/ansible/modules/network/dellos9/dellos9_facts.py", 
@@ -13366,9 +13539,7 @@
   "module: dnsimple": "lib/ansible/modules/net_tools/dnsimple.py", 
   "module: dnsmadeeasy": "lib/ansible/modules/net_tools/dnsmadeeasy.py", 
   "module: docker": "lib/ansible/modules/cloud/docker/_docker.py", 
-  "module: docker_container": [
-    "lib/ansible/modules/cloud/docker/docker_container.py"
-  ], 
+  "module: docker_container": "lib/ansible/modules/cloud/docker/docker_container.py", 
   "module: docker_image": "lib/ansible/modules/cloud/docker/docker_image.py", 
   "module: docker_image_facts": "lib/ansible/modules/cloud/docker/docker_image_facts.py", 
   "module: docker_login": "lib/ansible/modules/cloud/docker/docker_login.py", 
@@ -13388,9 +13559,7 @@
   "module: ec2_asg": "lib/ansible/modules/cloud/amazon/ec2_asg.py", 
   "module: ec2_asg_facts": "lib/ansible/modules/cloud/amazon/ec2_asg_facts.py", 
   "module: ec2_customer_gateway": "lib/ansible/modules/cloud/amazon/ec2_customer_gateway.py", 
-  "module: ec2_eip": [
-    "lib/ansible/modules/cloud/amazon/ec2_eip.py"
-  ], 
+  "module: ec2_eip": "lib/ansible/modules/cloud/amazon/ec2_eip.py", 
   "module: ec2_elb": "lib/ansible/modules/cloud/amazon/ec2_elb.py", 
   "module: ec2_elb_facts": "lib/ansible/modules/cloud/amazon/ec2_elb_facts.py", 
   "module: ec2_elb_lb": "lib/ansible/modules/cloud/amazon/ec2_elb_lb.py", 
@@ -13583,9 +13752,7 @@
   "module: ios_logging": "lib/ansible/modules/network/ios/ios_logging.py", 
   "module: ios_ping": "lib/ansible/modules/network/ios/ios_ping.py", 
   "module: ios_static_route": "lib/ansible/modules/network/ios/ios_static_route.py", 
-  "module: ios_system": [
-    "lib/ansible/modules/network/ios/ios_system.py"
-  ], 
+  "module: ios_system": "lib/ansible/modules/network/ios/ios_system.py", 
   "module: ios_user": "lib/ansible/modules/network/ios/ios_user.py", 
   "module: ios_vrf": "lib/ansible/modules/network/ios/ios_vrf.py", 
   "module: iosxr_banner": "lib/ansible/modules/network/iosxr/iosxr_banner.py", 
@@ -13671,9 +13838,7 @@
   "module: logicmonitor": "lib/ansible/modules/monitoring/logicmonitor.py", 
   "module: logicmonitor_facts": "lib/ansible/modules/monitoring/logicmonitor_facts.py", 
   "module: logstash_plugin": "lib/ansible/modules/monitoring/logstash_plugin.py", 
-  "module: lvg": [
-    "lib/ansible/modules/system/lvg.py"
-  ], 
+  "module: lvg": "lib/ansible/modules/system/lvg.py", 
   "module: lvol": "lib/ansible/modules/system/lvol.py", 
   "module: lxc_container": "lib/ansible/modules/cloud/lxc/lxc_container.py", 
   "module: lxd_container": "lib/ansible/modules/cloud/lxd/lxd_container.py", 
@@ -14088,9 +14253,7 @@
   "module: rax_queue": "lib/ansible/modules/cloud/rackspace/rax_queue.py", 
   "module: rax_scaling_group": "lib/ansible/modules/cloud/rackspace/rax_scaling_group.py", 
   "module: rax_scaling_policy": "lib/ansible/modules/cloud/rackspace/rax_scaling_policy.py", 
-  "module: rds": [
-    "lib/ansible/modules/cloud/amazon/rds.py"
-  ], 
+  "module: rds": "lib/ansible/modules/cloud/amazon/rds.py", 
   "module: rds_param_group": "lib/ansible/modules/cloud/amazon/rds_param_group.py", 
   "module: rds_subnet_group": "lib/ansible/modules/cloud/amazon/rds_subnet_group.py", 
   "module: redhat_subscription": "lib/ansible/modules/packaging/os/redhat_subscription.py", 
@@ -14133,9 +14296,7 @@
   "module: seport": "lib/ansible/modules/system/seport.py", 
   "module: serverless": "lib/ansible/modules/cloud/misc/serverless.py", 
   "module: service": "lib/ansible/modules/system/service.py", 
-  "module: set_fact": [
-    "lib/ansible/modules/utilities/logic/set_fact.py"
-  ], 
+  "module: set_fact": "lib/ansible/modules/utilities/logic/set_fact.py", 
   "module: set_stats": "lib/ansible/modules/utilities/logic/set_stats.py", 
   "module: setup": "lib/ansible/modules/system/setup.py", 
   "module: sf_account_manager": "lib/ansible/modules/storage/netapp/sf_account_manager.py", 
@@ -14171,9 +14332,7 @@
   "module: svr4pkg": "lib/ansible/modules/packaging/os/svr4pkg.py", 
   "module: swdepot": "lib/ansible/modules/packaging/os/swdepot.py", 
   "module: swupd": "lib/ansible/modules/packaging/os/swupd.py", 
-  "module: synchronize": [
-    "lib/ansible/modules/files/synchronize.py"
-  ], 
+  "module: synchronize": "lib/ansible/modules/files/synchronize.py", 
   "module: sysctl": "lib/ansible/modules/system/sysctl.py", 
   "module: syslogger": "lib/ansible/modules/notification/syslogger.py", 
   "module: systemd": "lib/ansible/modules/system/systemd.py", 
@@ -14182,9 +14341,7 @@
   "module: telnet": "lib/ansible/modules/commands/telnet.py", 
   "module: tempfile": "lib/ansible/modules/files/tempfile.py", 
   "module: template": "lib/ansible/modules/files/template.py", 
-  "module: timezone": [
-    "lib/ansible/modules/system/timezone.py"
-  ], 
+  "module: timezone": "lib/ansible/modules/system/timezone.py", 
   "module: tower_credential": "lib/ansible/modules/web_infrastructure/ansible_tower/tower_credential.py", 
   "module: tower_group": "lib/ansible/modules/web_infrastructure/ansible_tower/tower_group.py", 
   "module: tower_host": "lib/ansible/modules/web_infrastructure/ansible_tower/tower_host.py", 
@@ -14253,9 +14410,7 @@
   "module: vmware_vmkernel_ip_config": "lib/ansible/modules/cloud/vmware/vmware_vmkernel_ip_config.py", 
   "module: vmware_vmotion": "lib/ansible/modules/cloud/vmware/vmware_vmotion.py", 
   "module: vmware_vsan_cluster": "lib/ansible/modules/cloud/vmware/vmware_vsan_cluster.py", 
-  "module: vmware_vswitch": [
-    "lib/ansible/modules/cloud/vmware/vmware_vswitch.py"
-  ], 
+  "module: vmware_vswitch": "lib/ansible/modules/cloud/vmware/vmware_vswitch.py", 
   "module: vsphere_copy": "lib/ansible/modules/cloud/vmware/vsphere_copy.py", 
   "module: vsphere_guest": "lib/ansible/modules/cloud/vmware/vsphere_guest.py", 
   "module: vyos_banner": "lib/ansible/modules/network/vyos/vyos_banner.py", 
@@ -14303,9 +14458,7 @@
   "module: win_file_version": "lib/ansible/modules/windows/win_file_version.py", 
   "module: win_find": "lib/ansible/modules/windows/win_find.py", 
   "module: win_firewall": "lib/ansible/modules/windows/win_firewall.py", 
-  "module: win_firewall_rule": [
-    "lib/ansible/modules/windows/win_firewall_rule.ps1"
-  ], 
+  "module: win_firewall_rule": "lib/ansible/modules/windows/win_firewall_rule.py", 
   "module: win_get_url": "lib/ansible/modules/windows/win_get_url.py", 
   "module: win_group": "lib/ansible/modules/windows/win_group.py", 
   "module: win_group_membership": "lib/ansible/modules/windows/win_group_membership.ps1", 
@@ -15314,6 +15467,10 @@
   "modules/network/eos/eos_user.py": "lib/ansible/modules/network/eos/eos_user.py", 
   "modules/network/eos/eos_vlan.py": "lib/ansible/modules/network/eos/eos_vlan.py", 
   "modules/network/eos/eos_vrf.py": "lib/ansible/modules/network/eos/eos_vrf.py", 
+  "modules/network/f5": [
+    "lib/ansible/modules/network/f5", 
+    "test/units/modules/network/f5"
+  ], 
   "modules/network/f5/bigip_command.py": "lib/ansible/modules/network/f5/bigip_command.py", 
   "modules/network/f5/bigip_config.py": "lib/ansible/modules/network/f5/bigip_config.py", 
   "modules/network/f5/bigip_configsync_action.py": "lib/ansible/modules/network/f5/bigip_configsync_action.py", 
@@ -15389,6 +15546,10 @@
   "modules/network/ios/ios_system.py": "lib/ansible/modules/network/ios/ios_system.py", 
   "modules/network/ios/ios_user.py": "lib/ansible/modules/network/ios/ios_user.py", 
   "modules/network/ios/ios_vrf.py": "lib/ansible/modules/network/ios/ios_vrf.py", 
+  "modules/network/iosxr": [
+    "lib/ansible/modules/network/iosxr", 
+    "test/units/modules/network/iosxr"
+  ], 
   "modules/network/iosxr/iosxr_banner.py": "lib/ansible/modules/network/iosxr/iosxr_banner.py", 
   "modules/network/iosxr/iosxr_command.py": "lib/ansible/modules/network/iosxr/iosxr_command.py", 
   "modules/network/iosxr/iosxr_config.py": "lib/ansible/modules/network/iosxr/iosxr_config.py", 
@@ -16160,6 +16321,9 @@
     "lib/ansible/modules/database/mysql/mysql_replication.py"
   ], 
   "mysql_user": [
+    "lib/ansible/modules/database/mysql/mysql_user.py"
+  ], 
+  "mysql_user\n(probably all of the mysql_* are affected)": [
     "lib/ansible/modules/database/mysql/mysql_user.py"
   ], 
   "mysql_user module": [
@@ -17294,7 +17458,13 @@
   "network/vyos/vyos_system.py": "lib/ansible/modules/network/vyos/vyos_system.py", 
   "network/vyos/vyos_user": "lib/ansible/modules/network/vyos/vyos_user.py", 
   "network/vyos/vyos_user.py": "lib/ansible/modules/network/vyos/vyos_user.py", 
+  "network_cli": [
+    "lib/ansible/plugins/connection/network_cli.py"
+  ], 
   "networking": [], 
+  "networking\neos-config": [
+    "lib/ansible/modules/network/eos/eos_config.py"
+  ], 
   "networking/ios_config": [], 
   "networking/ios_template": [], 
   "new module": [], 
@@ -17544,6 +17714,10 @@
   ], 
   "nxos_udld_interface module": "lib/ansible/modules/network/nxos/nxos_udld_interface.py", 
   "nxos_user": "lib/ansible/modules/network/nxos/nxos_user.py", 
+  "nxos_user\nnxos_vtp_password": [
+    "lib/ansible/modules/network/nxos/nxos_user.py", 
+    "lib/ansible/modules/network/nxos/nxos_vtp_password.py"
+  ], 
   "nxos_user module": "lib/ansible/modules/network/nxos/nxos_user.py", 
   "nxos_vlan": [
     "lib/ansible/modules/network/nxos/nxos_vlan.py"
@@ -17652,6 +17826,10 @@
   "openssl_publickey module": "lib/ansible/modules/crypto/openssl_publickey.py", 
   "openstack dynamic inventory script": [
     "contrib/inventory/openstack.py"
+  ], 
+  "openstack os_server, add_host": [
+    "lib/ansible/modules/cloud/openstack/os_server.py", 
+    "lib/ansible/modules/inventory/add_host.py"
   ], 
   "openstack/os_object": [
     "lib/ansible/modules/cloud/openstack/os_object.py"
@@ -18157,6 +18335,9 @@
   "passwordstore lookup": [
     "lib/ansible/plugins/lookup/passwordstore.py"
   ], 
+  "passwordstore lookup plugin": [
+    "lib/ansible/plugins/lookup/passwordstore.py"
+  ], 
   "patch": "lib/ansible/modules/files/patch.py", 
   "patch module": [
     "lib/ansible/modules/files/patch.py"
@@ -18172,6 +18353,9 @@
     "lib/ansible/modules/system/ping.py"
   ], 
   "ping module": "lib/ansible/modules/system/ping.py", 
+  "ping, playbook": [
+    "lib/ansible/modules/system/ping.py"
+  ], 
   "pingdom": "lib/ansible/modules/monitoring/pingdom.py", 
   "pingdom module": [
     "lib/ansible/modules/monitoring/pingdom.py"
@@ -18292,6 +18476,9 @@
   ], 
   "postgresql_user module": [
     "lib/ansible/modules/database/postgresql/postgresql_user.py"
+  ], 
+  "powershell over ssh connection": [
+    "lib/ansible/plugins/connection"
   ], 
   "pritunl_user.py": [], 
   "profitbricks": "lib/ansible/modules/cloud/profitbricks/profitbricks.py", 
@@ -18482,6 +18669,9 @@
   "redis": [
     "lib/ansible/modules/database/misc/redis.py"
   ], 
+  "redis fact caching module": [
+    "lib/ansible/plugins/cache/redis.py"
+  ], 
   "redis fact caching plugin": [
     "lib/ansible/plugins/cache/redis.py"
   ], 
@@ -18574,6 +18764,10 @@
   "rhn_channel module": "lib/ansible/modules/packaging/os/rhn_channel.py", 
   "rhn_register": "lib/ansible/modules/packaging/os/rhn_register.py", 
   "rhn_register module": "lib/ansible/modules/packaging/os/rhn_register.py", 
+  "rhn_register.py": [
+    "lib/ansible/modules/packaging/os/rhn_register.py", 
+    "test/units/modules/packaging/os/test_rhn_register.py"
+  ], 
   "riak": "lib/ansible/modules/database/misc/riak.py", 
   "riak module": "lib/ansible/modules/database/misc/riak.py", 
   "rocketchat": "lib/ansible/modules/notification/rocketchat.py", 
@@ -18783,6 +18977,9 @@
   "shell module and check mode": [
     "lib/ansible/modules/commands/shell.py"
   ], 
+  "shell-module": [
+    "lib/ansible/modules/commands/shell.py"
+  ], 
   "shell/command module": [], 
   "shell\u3001command and script": [
     "lib/ansible/modules/commands/script.py"
@@ -18851,6 +19048,9 @@
   "sros_config module": "lib/ansible/modules/network/sros/sros_config.py", 
   "sros_rollback": "lib/ansible/modules/network/sros/sros_rollback.py", 
   "sros_rollback module": "lib/ansible/modules/network/sros/sros_rollback.py", 
+  "ssh": [
+    "lib/ansible/plugins/connection/ssh.py"
+  ], 
   "ssh connection plugin": [
     "lib/ansible/plugins/connection/ssh.py"
   ], 
@@ -18964,6 +19164,9 @@
   "storage/zfs/zfs_facts.py": "lib/ansible/modules/storage/zfs/zfs_facts.py", 
   "storage/zfs/zpool_facts": "lib/ansible/modules/storage/zfs/zpool_facts.py", 
   "storage/zfs/zpool_facts.py": "lib/ansible/modules/storage/zfs/zpool_facts.py", 
+  "strategy free": [
+    "lib/ansible/plugins/strategy/free.py"
+  ], 
   "sts_assume_role": "lib/ansible/modules/cloud/amazon/sts_assume_role.py", 
   "sts_assume_role module": "lib/ansible/modules/cloud/amazon/sts_assume_role.py", 
   "sts_session_token": "lib/ansible/modules/cloud/amazon/sts_session_token.py", 
@@ -19133,6 +19336,7 @@
   "taiga_issue": "lib/ansible/modules/web_infrastructure/taiga_issue.py", 
   "taiga_issue module": "lib/ansible/modules/web_infrastructure/taiga_issue.py", 
   "task": [], 
+  "task `environment` argument (all modules, not specific to a any module)": [], 
   "task executor": [
     "lib/ansible/executor/task_executor.py"
   ], 
@@ -19261,6 +19465,9 @@
     "lib/ansible/modules/system/user.py"
   ], 
   "user module": [
+    "lib/ansible/modules/system/user.py"
+  ], 
+  "user, may be others": [
     "lib/ansible/modules/system/user.py"
   ], 
   "utilities/helper/_accelerate": "lib/ansible/modules/utilities/helper/_accelerate.py", 

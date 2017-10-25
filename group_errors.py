@@ -7,7 +7,7 @@ from pprint import pprint
 
 
 def get_matches(errors, pattern):
-    pprint([x for x in errors if x['component'] == pattern])
+    return [x for x in errors if x['component'] == pattern]
 
 
 with open('component_errors.json', 'rb') as f:
@@ -32,5 +32,20 @@ for error in errors:
 
 GROUPS.sort(key=len)
 for group in GROUPS:
-    pprint(sorted(group))
+    #print('')
+    #print('############################')
+    #pprint(sorted(group))
+    #print('----------------------------')
+
+    for x in group:
+        matches = get_matches(errors, x)
+        if not matches:
+            continue
+        matches = [m for m in matches if len(m['result']) > 0]
+        if matches:
+
+            print('---------------------')
+            print('## {}'.format(x))
+            pprint(matches)
+
 import epdb; epdb.st()

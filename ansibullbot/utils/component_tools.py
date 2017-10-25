@@ -18,6 +18,7 @@ class ComponentMatcher(object):
     # ALSO SEE search_by_regex_generic ...
     KEYWORDS = {
         'ansiballz': 'lib/ansible/executor/module_common.py',
+        'ansible-console': 'lib/ansible/cli/console.py',
         'ansible-galaxy': 'lib/ansible/galaxy',
         'ansible-playbook': 'lib/ansible/playbook',
         'ansible playbook': 'lib/ansible/playbook',
@@ -30,7 +31,8 @@ class ComponentMatcher(object):
         'callback plugin': 'lib/ansible/plugins/callback',
         'callback plugins': 'lib/ansible/plugins/callback',
         'conditional': 'lib/ansible/playbook/conditional.py',
-        'delegate_to': None,
+        'delegate_to': 'lib/ansible/playbook/task.py',
+        'facts': 'lib/ansible/module_utils/facts',
         'galaxy': 'lib/ansible/galaxy',
         'groupvars': 'lib/ansible/vars/hostvars.py',
         'group vars': 'lib/ansible/vars/hostvars.py',
@@ -38,6 +40,7 @@ class ComponentMatcher(object):
         'hostvars': 'lib/ansible/vars/hostvars.py',
         'host vars': 'lib/ansible/vars/hostvars.py',
         'integration tests': 'test/integration',
+        'inventory script': 'contrib/inventory',
         'jinja2 template system': 'lib/ansible/template',
         'module_utils': 'lib/ansible/module_utils',
         'multiple modules': None,
@@ -45,14 +48,21 @@ class ComponentMatcher(object):
         'new modules request': None,
         'new module request': None,
         'new module': None,
+        'network_cli': 'lib/ansible/plugins/connection/network_cli.py',
+        'network_cli.py': 'lib/ansible/plugins/connection/network_cli.py',
         'network modules': 'lib/ansible/modules/network',
         #'playbook role': 'lib/ansible/playbook/role',
         #'playbook roles': 'lib/ansible/playbook/role',
+        'paramiko': 'lib/ansible/plugins/connection/paramiko_ssh.py',
         'role': 'lib/ansible/playbook/role',
         'roles': 'lib/ansible/playbook/role',
+        'ssh': 'lib/ansible/plugins/connection/ssh.py',
         'ssh authentication': 'lib/ansible/plugins/connection/ssh.py',
         'setup / facts': 'lib/ansible/modules/system/setup.py',
+        'setup': 'lib/ansible/modules/system/setup.py',
         'task executor': 'lib/ansible/executor/task_executor.py',
+        'testing': 'test/',
+        'validate-modules': 'test/sanity/validate-modules',
         'vault': 'lib/ansible/parsing/vault',
         'vault edit': 'lib/ansible/parsing/vault',
         'vault documentation': 'lib/ansible/parsing/vault',
@@ -86,7 +96,8 @@ class ComponentMatcher(object):
                 self.KEYWORDS[v['name']] = v['repo_filename']
             if v['name'].startswith('_'):
                 vname = v['name'].replace('_', '', 1)
-                self.KEYWORDS[vname] = v['repo_filename']
+                if vname not in self.KEYWORDS:
+                    self.KEYWORDS[vname] = v['repo_filename']
 
         for k,v in self.file_indexer.CMAP.items():
             if k not in self.KEYWORDS:
@@ -104,15 +115,17 @@ class ComponentMatcher(object):
 
         matched_filenames = []
 
-        if '\n' in component:
-            components = component.split('\n')
-            for _component in components:
-                matched_filenames += self._match_component(title, body, _component)
-        elif ',' in component:
-            components = component.split(',')
-            for _component in components:
-                matched_filenames += self._match_component(title, body, _component)
-        else:
+        delimiters = ['\n', ',', ' + ', ' & ']
+        delimited = False
+        for delimiter in delimiters:
+            if delimiter in component:
+                delimited = True
+                components = component.split(delimiter)
+                for _component in components:
+                    matched_filenames += self._match_component(title, body, _component)
+                break
+
+        if not delimited:
             matched_filenames += self._match_component(title, body, component)
 
         # reduce subpaths
@@ -127,9 +140,6 @@ class ComponentMatcher(object):
         matched_filenames = sorted(set(matched_filenames))
         for fn in matched_filenames:
             component_matches.append(self.get_meta_for_file(fn))
-
-        #if component.lower() == 'module: include_role':
-        #    import epdb; epdb.st()
 
         return component_matches
 
@@ -311,6 +321,7 @@ class ComponentMatcher(object):
 
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
+            r'(.*)-module',
             r'module\: (.*)',
             r'module (.*)',
             r'new (.*) module',
@@ -320,11 +331,15 @@ class ComponentMatcher(object):
             r'(.*) extras module',
             r'\`(.*)\` module',
             r'(.*)\* modules',
+            r'(.*) and (.*)',
+            r'(.*) \+ (.*)',
+            r'(.*) \& (.*)',
             r'(.*) and (.*) modules',
             r'(.*) or (.*) module',
             r'(.*)_module',
             r'action: (.*)',
             r'action (.*)',
+            r'ansible_module_(.*)\.py',
         ]
 
         matches = []
@@ -373,6 +388,9 @@ class ComponentMatcher(object):
         #if body == 'module: include_role':
         #    import epdb; epdb.st()
 
+        #if 'setup' in body:
+        #    import epdb; epdb.st()
+
         return matches
 
     def search_by_regex_generic(self, body):
@@ -388,11 +406,15 @@ class ComponentMatcher(object):
             [r'(.*) inventory script', 'contrib/inventory'],
             [r'(.*) filter', 'lib/ansible/plugins/filter'],
             [r'(.*) fact caching plugin', 'lib/ansible/plugins/cache'],
+            [r'(.*) fact caching module', 'lib/ansible/plugins/cache'],
             [r'(.*) lookup plugin', 'lib/ansible/plugins/lookup'],
             [r'(.*) lookup', 'lib/ansible/plugins/lookup'],
             [r'(.*) callback plugin', 'lib/ansible/plugins/callback'],
+            [r'(.*)\.py callback', 'lib/ansible/plugins/callback'],
             [r'callback plugin (.*)', 'lib/ansible/plugins/callback'],
             [r'(.*) stdout callback', 'lib/ansible/plugins/callback'],
+            [r'stdout callback (.*)', 'lib/ansible/plugins/callback'],
+            [r'stdout_callback (.*)', 'lib/ansible/plugins/callback'],
             [r'(.*) callback plugin', 'lib/ansible/plugins/callback'],
             [r'(.*) connection plugin', 'lib/ansible/plugins/connection'],
             [r'(.*) connection type', 'lib/ansible/plugins/connection'],
@@ -401,6 +423,7 @@ class ComponentMatcher(object):
             [r'connection=(.*)', 'lib/ansible/plugins/connection'],
             [r'connection: (.*)', 'lib/ansible/plugins/connection'],
             [r'connection (.*)', 'lib/ansible/plugins/connection'],
+            [r'strategy (.*)', 'lib/ansible/plugins/strategy'],
             [r'(.*) strategy plugin', 'lib/ansible/plugins/strategy'],
             [r'(.*) module util', 'lib/ansible/module_utils'],
             [r'ansible-galaxy (.*)', 'lib/ansible/galaxy'],
@@ -419,9 +442,11 @@ class ComponentMatcher(object):
         matches = []
 
         for pattern in patterns:
-            logging.debug('test pattern: {}'.format(pattern))
+            #logging.debug('test pattern: {}'.format(pattern))
             mobj = re.match(pattern[0], body, re.M | re.I)
+
             if mobj:
+                logging.debug('pattern hit: {}'.format(pattern))
                 fname = mobj.group(1)
                 fname = fname.lower()
 
@@ -505,6 +530,29 @@ class ComponentMatcher(object):
 
         # /usr/lib/python2.7/site-packages/ansible/modules/core/packaging/os/rhn_register.py
 
+        # FIXME ...
+        # module/network/ios/ios_facts
+        # json_query
+        # module_common.py
+        # /network/dellos6/dellos6_config
+        # module_utils/vmware
+        # `azure_rm.py`
+        # vmware_inventory
+        # skippy
+        # azure_rm_common
+        # junit
+        # `plugins/strategy/__init__.py`
+        # - jabber.py
+        # - ios_config.py
+        # ansible-test
+        # inventory manager
+        # ansible/hacking/test-module
+        # - ansible-connection
+        # `validate-modules`
+        # `modules/cloud/docker/docker_container.py`
+        # packaging/language/maven_artifact
+        # `lib/ansible/executor/module_common.py`
+
         matches = []
 
         _body = body[:]
@@ -521,6 +569,8 @@ class ComponentMatcher(object):
             body = body.replace('ansible-modules-extras/', '/')
         if body.startswith('ansible/lib/ansible'):
             body = body.replace('ansible/lib', 'lib')
+        if body.startswith('ansible/') and not body.startswith('ansible/modules'):
+            body = body.replace('ansible/', '', 1)
 
         body_paths = body.split('/')
         if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
@@ -559,10 +609,6 @@ class ComponentMatcher(object):
             for r in tr:
                 if r in matches:
                     matches.remove(r)
-
-
-        #if _body == 'modules/core/system/setup.py':
-        #    import epdb; epdb.st()
 
         return matches
 

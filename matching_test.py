@@ -449,6 +449,18 @@ def main():
                     save_match_map(MATCH_MAP)
                     continue
 
+            if component.endswith(' inventory plugin') and len(cmr_fns) == 1:
+                fn = cmr_fns[0]
+                if fn.startswith('lib/ansible/plugins/inventory'):
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
+
+            if component == 'ec2.py' and cmr_fns and 'contrib/inventory/ec2.py' in cmr_fns:
+                MATCH_MAP[component] = cmr_fns
+                save_match_map(MATCH_MAP)
+                continue
+
 
             # COMPARE AND RECORD
             if expected_fns != cmr_fns and hurl not in EXPECTED:
@@ -472,7 +484,6 @@ def main():
                         save_expected(EXPECTED)
                         continue
 
-                '''
                 print('--------------------------------')
                 res = raw_input('Is the result correct? (y/n/s/d): ')
                 if res.lower() in ['y', 'yes']:
@@ -486,7 +497,6 @@ def main():
                     continue
                 elif res.lower() in ['d', 'debug']:
                     import epdb; epdb.st()
-                '''
 
                 ERRORS.append(iw.html_url)
                 ERRORS_COMPONENTS.append(
