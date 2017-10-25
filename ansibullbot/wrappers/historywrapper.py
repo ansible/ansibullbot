@@ -738,7 +738,12 @@ class ShippableHistory(object):
         this_history = [x for x in self.iw.history.history]
 
         for x in self.ci_status:
+            # target_url could be:
+            # https://app.shippable.com/github/ansible/ansible/runs/41758/summary
+            # https://app.shippable.com/github/ansible/ansible/runs/41758
             turl = x['target_url']
+            if turl.endswith('/summary'):
+                turl = turl[:-8]
             run_id = turl.split('/')[-1]
             rd = self.shippable.get_run_data(run_id, usecache=True)
 
