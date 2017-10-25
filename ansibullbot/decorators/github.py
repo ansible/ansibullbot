@@ -156,6 +156,11 @@ def RateLimited(fn):
                         # occurs most often when fetching file contents from
                         # the api such as the issue template
                         stime = get_reset_time(fn, args)
+                    elif 'No handler found for uri' in msg:
+                        # Not sure what is happening here ...
+                        # No handler found for uri
+                        # [/repos/ansible/ansible/issues/14171] and method [GET]
+                        stime = 2*60
                     else:
                         if C.DEFAULT_BREAKPOINTS:
                             logging.error('breakpoint!')
