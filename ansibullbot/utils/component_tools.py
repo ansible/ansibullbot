@@ -14,6 +14,7 @@ class ComponentMatcher(object):
     BLACKLIST = ['new module', 'new modules']
     FILE_NAMES = []
     MODULE_NAMES = []
+    MODULE_NAMESPACE_DIRECTORIES = []
 
     # FIXME: THESE NEED TO GO INTO BOTMETA
     # ALSO SEE search_by_regex_generic ...
@@ -81,7 +82,9 @@ class ComponentMatcher(object):
         self.FILE_NAMES = sorted(self.file_indexer.files)
         self.module_indexer = module_indexer
         self.MODULE_NAMES = [x['name'] for x in self.module_indexer.modules.values()]
-        #import epdb; epdb.st()
+
+        self.MODULE_NAMESPACE_DIRECTORIES = [os.path.dirname(x) for x in self.FILE_NAMES if x.startswith('lib/ansible/modules/')]
+        self.MODULE_NAMESPACE_DIRECTORIES = sorted(set(self.MODULE_NAMESPACE_DIRECTORIES))
 
         self.cache_keywords()
         self.strategy = None
@@ -211,6 +214,11 @@ class ComponentMatcher(object):
                 matched_filenames += self.search_by_module_name(component)
                 if matched_filenames:
                     self.strategy = 'search_by_module_name'
+
+            if not matched_filenames:
+                matched_filenames += self.search_by_regex_module_globs(component)
+                if matched_filenames:
+                    self.strategy = 'search_by_regex_module_globs'
 
             if not matched_filenames:
                 matched_filenames += self.search_by_regex_modules(component)
@@ -437,6 +445,67 @@ class ComponentMatcher(object):
 
                 if matches:
                     break
+
+        return matches
+
+    def search_by_regex_module_globs(self, body):
+        # All AWS modules
+        # BigIP modules
+        # NXOS modules
+        # azurerm modules
+
+        matches = []
+        body = body.lower()
+
+        #print('')
+        #print('BODY: {}'.format(body))
+
+        keymap = {
+            'ec2': 'lib/ansible/modules/cloud/amazon',
+            'ec2_*': 'lib/ansible/modules/cloud/amazon',
+            'aws': 'lib/ansible/modules/cloud/amazon',
+            'amazon': 'lib/ansible/modules/cloud/amazon',
+            'google': 'lib/ansible/modules/cloud/google',
+            'gce': 'lib/ansible/modules/cloud/google',
+            'bigip': 'lib/ansible/modules/network/f5',
+            'nxos': 'lib/ansible/modules/network/nxos',
+            'azure': 'lib/ansible/modules/cloud/azure',
+            'azurerm': 'lib/ansible/modules/cloud/azure',
+            'openstack': 'lib/ansible/modules/cloud/openstack',
+        }
+
+        regexes = [
+            r'all (\S+) based modules',
+            r'all (\S+) modules',
+            r'(\S+) modules',
+            r'(\S+\*) modules'
+        ]
+
+        mobj = None
+        for x in regexes:
+            mobj = re.match(x, body)
+            if mobj:
+                break
+
+        if mobj:
+            keyword = mobj.group(1)
+            if keyword in keymap:
+                matches.append(keymap[keyword])
+            else:
+
+                if '*' in keyword:
+                    print(keyword)
+                    import epdb; epdb.st()
+
+                # check for directories first
+                fns = [x for x in self.MODULE_NAMESPACE_DIRECTORIES if keyword in x]
+
+                # check for files second
+                if not fns:
+                    fns = [x for x in self.FILE_NAMES if 'lib/ansible/modules' in x and keyword in x]
+
+                if fns:
+                    matches += fns
 
         return matches
 

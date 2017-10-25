@@ -8504,6 +8504,9 @@
   "azure_rm_virtualnetwork module": "lib/ansible/modules/cloud/azure/azure_rm_virtualnetwork.py", 
   "azure_rm_virtualnetwork_facts": "lib/ansible/modules/cloud/azure/azure_rm_virtualnetwork_facts.py", 
   "azure_rm_virtualnetwork_facts module": "lib/ansible/modules/cloud/azure/azure_rm_virtualnetwork_facts.py", 
+  "azurerm modules": [
+    "lib/ansible/modules/cloud/azure"
+  ], 
   "base": [
     "lib/ansible/module_utils/facts/hardware/base.py"
   ], 
@@ -11779,17 +11782,11 @@
   "lib/ansible/modules/system/systemd.py": [
     "lib/ansible/modules/system/systemd.py"
   ], 
-  "lib/ansible/modules/utilities/helper/_accelerate.py": [
-    "lib/ansible/modules/utilities/helper/_accelerate.py"
-  ], 
   "lib/ansible/modules/web_infrastructure/jenkins_plugin.py": [
     "lib/ansible/modules/web_infrastructure/jenkins_plugin.py"
   ], 
   "lib/ansible/modules/web_infrastructure/letsencrypt.py": [
     "lib/ansible/modules/web_infrastructure/letsencrypt.py"
-  ], 
-  "lib/ansible/modules/windows/setup.ps1": [
-    "lib/ansible/modules/windows/setup.ps1"
   ], 
   "lib/ansible/parsing/mod_args.py\nlib/ansible/plugins/": [
     "lib/ansible/parsing/mod_args.py", 
@@ -12742,9 +12739,7 @@
   "module letsencrypt": "lib/ansible/modules/web_infrastructure/letsencrypt.py", 
   "module librato_annotation": "lib/ansible/modules/monitoring/librato_annotation.py", 
   "module lightsail": "lib/ansible/modules/cloud/amazon/lightsail.py", 
-  "module lineinfile": [
-    "lib/ansible/modules/files/lineinfile.py"
-  ], 
+  "module lineinfile": "lib/ansible/modules/files/lineinfile.py", 
   "module linode": "lib/ansible/modules/cloud/linode/linode.py", 
   "module lldp": "lib/ansible/modules/net_tools/lldp.py", 
   "module locale_gen": "lib/ansible/modules/system/locale_gen.py", 
@@ -13983,9 +13978,7 @@
   "module: ec2_asg": "lib/ansible/modules/cloud/amazon/ec2_asg.py", 
   "module: ec2_asg_facts": "lib/ansible/modules/cloud/amazon/ec2_asg_facts.py", 
   "module: ec2_customer_gateway": "lib/ansible/modules/cloud/amazon/ec2_customer_gateway.py", 
-  "module: ec2_eip": [
-    "lib/ansible/modules/cloud/amazon/ec2_eip.py"
-  ], 
+  "module: ec2_eip": "lib/ansible/modules/cloud/amazon/ec2_eip.py", 
   "module: ec2_elb": "lib/ansible/modules/cloud/amazon/ec2_elb.py", 
   "module: ec2_elb_facts": "lib/ansible/modules/cloud/amazon/ec2_elb_facts.py", 
   "module: ec2_elb_lb": "lib/ansible/modules/cloud/amazon/ec2_elb_lb.py", 

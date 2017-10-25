@@ -181,6 +181,36 @@ class TestComponentMatcher(TestCase):
                 res = CM.search_by_filepath(COMPONENT, context=CONTEXT)
                 self.assertEqual(EXPECTED, res)
 
+
+    def test_search_by_regex_module_globs(self):
+        MI = FakeIndexer()
+        FI = FakeIndexer()
+        with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
+            FI.files = json.loads(f.read())
+        CM = ComponentMatcher(None, FI, MI)
+
+        COMPONENTS = {
+            'All AWS modules': 'lib/ansible/modules/cloud/amazon',
+            'ec2_* modules': 'lib/ansible/modules/cloud/amazon',
+            'BigIP modules': 'lib/ansible/modules/network/f5',
+            'NXOS modules': 'lib/ansible/modules/network/nxos',
+            'azurerm modules': 'lib/ansible/modules/cloud/azure',
+            'ansiballz/ziploader for modules': [],
+            'elasticache modules': [
+                'lib/ansible/modules/cloud/amazon/elasticache.py',
+                'lib/ansible/modules/cloud/amazon/elasticache_parameter_group.py',
+                'lib/ansible/modules/cloud/amazon/elasticache_snapshot.py',
+                'lib/ansible/modules/cloud/amazon/elasticache_subnet_group.py',
+            ]
+        }
+
+        for COMPONENT,EXPECTED in COMPONENTS.items():
+            if not isinstance(EXPECTED, list):
+                EXPECTED = [EXPECTED]
+            res = CM.search_by_regex_module_globs(COMPONENT)
+            print(res)
+            self.assertEqual(EXPECTED, res)
+
     def test_search_by_keywords(self):
 
         MI = FakeIndexer()

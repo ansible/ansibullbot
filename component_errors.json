@@ -59,11 +59,13 @@
     "expected": [
       "docs/docsite/rst/modules"
     ], 
-    "result": [], 
-    "strategies": [
-      null
+    "result": [
+      "lib/ansible/modules/cloud/amazon"
     ], 
-    "strategy": null, 
+    "strategies": [
+      "search_by_regex_module_globs"
+    ], 
+    "strategy": "search_by_regex_module_globs", 
     "url": "https://github.com/ansible/ansible/issues/27800"
   }, 
   {
@@ -91,6 +93,21 @@
     ], 
     "strategy": null, 
     "url": "https://github.com/ansible/ansible/issues/27850"
+  }, 
+  {
+    "component": "virt modules", 
+    "component_raw": "virt modules", 
+    "expected": [
+      "lib/ansible/modules/cloud/misc/virt.py"
+    ], 
+    "result": [
+      "lib/ansible/modules/cloud/ovirt"
+    ], 
+    "strategies": [
+      "search_by_regex_module_globs"
+    ], 
+    "strategy": "search_by_regex_module_globs", 
+    "url": "https://github.com/ansible/ansible/issues/27905"
   }, 
   {
     "component": "netapp_e_storagepool storage module", 
@@ -194,11 +211,13 @@
     "expected": [
       "docs/docsite/rst/modules"
     ], 
-    "result": [], 
-    "strategies": [
-      null
+    "result": [
+      "lib/ansible/modules/network/nxos"
     ], 
-    "strategy": null, 
+    "strategies": [
+      "search_by_regex_module_globs"
+    ], 
+    "strategy": "search_by_regex_module_globs", 
     "url": "https://github.com/ansible/ansible/issues/29382"
   }, 
   {
@@ -240,6 +259,21 @@
     ], 
     "strategy": "search_by_keywords", 
     "url": "https://github.com/ansible/ansible/issues/29449"
+  }, 
+  {
+    "component": "all command modules", 
+    "component_raw": "all command modules", 
+    "expected": [
+      "lib/ansible/modules/commands/command.py"
+    ], 
+    "result": [
+      "lib/ansible/modules/commands"
+    ], 
+    "strategies": [
+      "search_by_regex_module_globs"
+    ], 
+    "strategy": "search_by_regex_module_globs", 
+    "url": "https://github.com/ansible/ansible/issues/29458"
   }, 
   {
     "component": "`docker_image`", 
@@ -421,13 +455,12 @@
       "lib/ansible/utils/module_docs_fragments/backup.py"
     ], 
     "result": [
-      "lib/ansible/modules/files/file.py", 
       "lib/ansible/modules/files/ini_file.py", 
       "lib/ansible/modules/files/lineinfile.py", 
       "lib/ansible/modules/files/template.py"
     ], 
     "strategies": [
-      "search_by_regex_modules", 
+      "search_by_regex_module_globs", 
       "search_by_keywords", 
       "search_by_keywords", 
       "search_by_keywords", 
@@ -597,6 +630,21 @@
     "url": "https://github.com/ansible/ansible/issues/29982"
   }, 
   {
+    "component": "ec2 modules", 
+    "component_raw": "ec2 modules", 
+    "expected": [
+      "lib/ansible/modules/cloud/amazon/ec2.py"
+    ], 
+    "result": [
+      "lib/ansible/modules/cloud/amazon"
+    ], 
+    "strategies": [
+      "search_by_regex_module_globs"
+    ], 
+    "strategy": "search_by_regex_module_globs", 
+    "url": "https://github.com/ansible/ansible/issues/29998"
+  }, 
+  {
     "component": ": ec2_asg", 
     "component_raw": ": ec2_asg", 
     "expected": [], 
@@ -624,6 +672,21 @@
     ], 
     "strategy": "search_by_filepath", 
     "url": "https://github.com/ansible/ansible/issues/30109"
+  }, 
+  {
+    "component": "ec2 modules", 
+    "component_raw": "ec2 modules", 
+    "expected": [
+      "lib/ansible/modules/cloud/amazon/ec2.py"
+    ], 
+    "result": [
+      "lib/ansible/modules/cloud/amazon"
+    ], 
+    "strategies": [
+      "search_by_regex_module_globs"
+    ], 
+    "strategy": "search_by_regex_module_globs", 
+    "url": "https://github.com/ansible/ansible/issues/30158"
   }, 
   {
     "component": "In the cloud module, in the docker module, the docker_volume command", 
@@ -1074,19 +1137,6 @@
     "url": "https://github.com/ansible/ansible/issues/30846"
   }, 
   {
-    "component": "azurerm modules", 
-    "component_raw": "azurerm modules", 
-    "expected": [
-      "docs/docsite/rst/modules"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30940"
-  }, 
-  {
     "component": "1. WINRM\n2. winrm send_input failed", 
     "component_raw": "1. WINRM\n2. winrm send_input failed", 
     "expected": [
@@ -1404,11 +1454,13 @@
     "expected": [
       "bigip_pool.py"
     ], 
-    "result": [], 
-    "strategies": [
-      null
+    "result": [
+      "lib/ansible/modules/network/f5"
     ], 
-    "strategy": null, 
+    "strategies": [
+      "search_by_regex_module_globs"
+    ], 
+    "strategy": "search_by_regex_module_globs", 
     "url": "https://github.com/ansible/ansible/issues/31341"
   }, 
   {
@@ -1498,14 +1550,18 @@
       "packaging/macports"
     ], 
     "result": [
+      "lib/ansible/modules/cloud/centurylink/clc_blueprint_package.py", 
+      "lib/ansible/modules/network/junos/junos_package.py", 
       "lib/ansible/modules/packaging/os/macports.py", 
-      "lib/ansible/modules/packaging/os/package.py"
+      "lib/ansible/modules/packaging/os/package.py", 
+      "lib/ansible/modules/windows/win_package.ps1", 
+      "lib/ansible/modules/windows/win_package.py"
     ], 
     "strategies": [
       "search_by_keywords", 
-      "search_by_regex_modules"
+      "search_by_regex_module_globs"
     ], 
-    "strategy": "search_by_regex_modules", 
+    "strategy": "search_by_regex_module_globs", 
     "url": "https://github.com/ansible/ansible/issues/31485"
   }, 
   {
