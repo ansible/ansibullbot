@@ -13,3 +13,6 @@ ansibullbot.cfg
 *.sublime-*
 Vagrantfile
 ansibullbot/utils/ghostdriver.log
+ansible/
+*.bak
+testrl.py

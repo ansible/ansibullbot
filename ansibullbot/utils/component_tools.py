@@ -12,6 +12,7 @@ class ComponentMatcher(object):
     STOPWORDS = ['ansible', 'core', 'plugin']
     STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',', ':', '?', '-']
     BLACKLIST = ['new module', 'new modules']
+    FILE_NAMES = []
     MODULE_NAMES = []
 
     # FIXME: THESE NEED TO GO INTO BOTMETA
@@ -73,12 +74,14 @@ class ComponentMatcher(object):
     def __init__(self, cachedir=None, file_indexer=None, module_indexer=None):
         self.cachedir = cachedir
         self.file_indexer = file_indexer
+        self.FILE_NAMES = sorted(self.file_indexer.files)
         self.module_indexer = module_indexer
         self.MODULE_NAMES = [x['name'] for x in self.module_indexer.modules.values()]
         #import epdb; epdb.st()
 
         self.cache_keywords()
         self.strategy = None
+        self.strategies = []
 
     def cache_keywords(self):
         """Make a map of keywords and module names"""
@@ -110,31 +113,43 @@ class ComponentMatcher(object):
         """Make a list of matching files with metadata"""
 
         self.strategy = None
+        self.strategies = []
+
         component = component.encode('ascii', 'ignore')
         logging.debug('match "{}"'.format(component))
 
         matched_filenames = []
 
-        delimiters = ['\n', ',', ' + ', ' & ']
+        delimiters = ['\n', ',', ' + ', ' & ', ': ']
         delimited = False
         for delimiter in delimiters:
             if delimiter in component:
                 delimited = True
                 components = component.split(delimiter)
                 for _component in components:
-                    matched_filenames += self._match_component(title, body, _component)
+                    _matches = self._match_component(title, body, _component)
+                    self.strategies.append(self.strategy)
+                    # bypass for blacklist
+                    if None in _matches:
+                        _matches = []
+                    matched_filenames += _matches
                 break
 
         if not delimited:
             matched_filenames += self._match_component(title, body, component)
+            # bypass for blacklist
+            if None in matched_filenames:
+                return []
 
         # reduce subpaths
         if matched_filenames:
             matched_filenames = self.reduce_filepaths(matched_filenames)
 
+        '''
         # bypass for blacklist
         if None in matched_filenames:
             return []
+        '''
 
         component_matches = []
         matched_filenames = sorted(set(matched_filenames))
@@ -146,6 +161,19 @@ class ComponentMatcher(object):
     def _match_component(self, title, body, component):
         """Find matches for a single line"""
         matched_filenames = []
+
+        # context sets the path prefix to narrow the search window
+        if 'module' in title.lower() or 'module' in component.lower():
+            context = 'lib/ansible/modules'
+        elif 'dynamic inventory' in title.lower() or 'dynamic inventory' in component.lower():
+            context = 'contrib/inventory'
+        elif 'inventory script' in title.lower() or 'inventory script' in component.lower():
+            context = 'contrib/inventory'
+        elif 'inventory plugin' in title.lower() or 'inventory plugin' in component.lower():
+            context = 'lib/ansible/plugins/inventory'
+        else:
+            context = None
+
         if component not in self.STOPWORDS:
 
             if not matched_filenames:
@@ -174,7 +202,7 @@ class ComponentMatcher(object):
                     self.strategy = 'search_by_tracebacks'
 
             if not matched_filenames:
-                matched_filenames += self.search_by_filepath(component)
+                matched_filenames += self.search_by_filepath(component, context=context)
                 if matched_filenames:
                     self.strategy = 'search_by_filepath'
                 if not matched_filenames:
@@ -525,7 +553,7 @@ class ComponentMatcher(object):
 
         return matches
 
-    def search_by_filepath(self, body, partial=False):
+    def search_by_filepath(self, body, partial=False, context=None):
         """Find known filepaths in body"""
 
         matches = []
@@ -567,28 +595,17 @@ class ComponentMatcher(object):
         #print('FINAL BODY: {}'.format(body))
 
         body_paths = body.split('/')
-        if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
-            body_paths[-1] = body_paths[-1] + '.py'
+        #if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
+        #    body_paths[-1] = body_paths[-1] + '.py'
 
         if body in self.file_indexer.files:
             matches = [body]
         else:
-            for fn in self.file_indexer.files:
+            for fn in self.FILE_NAMES:
 
-                '''
-                # narrow the context if possible
-                if 'module' in body and '/modules/' not in fn and not 'test-module' in body:
+                # limit the search set if a context is given
+                if context is not None and not fn.startswith(context):
                     continue
-                '''
-
-                '''
-                if fn in body or fn.endswith(body):
-                    if fn not in matches:
-                        matches.append(fn)
-                elif fn in body or fn.endswith(body + '.py') or fn.endswith(body + '.ps1'):
-                    if fn not in matches:
-                        matches.append(fn)
-                '''
 
                 if fn.endswith(body) or fn.endswith(body + '.py') or fn.endswith(body + '.ps1'):
                     # ios_config.py -> test_ios_config.py vs. ios_config.py
@@ -596,14 +613,7 @@ class ComponentMatcher(object):
                     bn2 = os.path.basename(fn)
                     if bn2.startswith(bn1):
                         matches = [fn]
-                        #break
-
-                #if fn in body or fn.endswith(body):
-                #    if fn not in matches:
-                #        matches.append(fn)
-                #elif fn in body or fn.endswith(body + '.py') or fn.endswith(body + '.ps1'):
-                #    if fn not in matches:
-                #        matches.append(fn)
+                        break
 
                 if partial:
 

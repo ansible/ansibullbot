@@ -417,6 +417,9 @@ class FileIndexer(ModuleIndexer):
         exclusive = False
         for f in files:
 
+            if f is None:
+                continue
+
             # only one match
             if exclusive:
                 continue
@@ -429,6 +432,7 @@ class FileIndexer(ModuleIndexer):
 
                 if 'labels' not in v:
                     continue
+
                 if v['regex'].match(f):
                     for label in v['labels']:
                         if label not in labels:
@@ -443,6 +447,9 @@ class FileIndexer(ModuleIndexer):
 
         exclusive = False
         for f in files:
+
+            if f is None:
+                continue
 
             # only one match
             if exclusive:

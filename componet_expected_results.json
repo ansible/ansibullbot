@@ -2550,6 +2550,9 @@
     "lib/ansible/modules/database/mysql/mysql_user.py"
   ], 
   "https://github.com/ansible/ansible/issues/24302": "lib/ansible/modules/files/stat.py", 
+  "https://github.com/ansible/ansible/issues/24319": [
+    "lib/ansible/plugins/filter/json_query.py"
+  ], 
   "https://github.com/ansible/ansible/issues/24326": [], 
   "https://github.com/ansible/ansible/issues/24327": [
     "lib/ansible/modules/files/copy.py"
@@ -2614,6 +2617,9 @@
   "https://github.com/ansible/ansible/issues/24481": [
     "lib/ansible/modules/utilities/logic/_include.py"
   ], 
+  "https://github.com/ansible/ansible/issues/24482": [
+    "lib/ansible/executor/module_common.py"
+  ], 
   "https://github.com/ansible/ansible/issues/24492": [
     "docs"
   ], 
@@ -2639,6 +2645,9 @@
   "https://github.com/ansible/ansible/issues/24543": [
     "lib/ansible/playbook/block.py", 
     "lib/ansible/playbook/task.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/24545": [
+    "lib/ansible/plugins/inventory/script.py"
   ], 
   "https://github.com/ansible/ansible/issues/24546": [
     "contrib/inventory"
@@ -2819,6 +2828,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/25077": [
     "lib/ansible/modules/windows/win_lineinfile.ps1"
+  ], 
+  "https://github.com/ansible/ansible/issues/25086": [
+    "contrib/inventory/vmware_inventory.py"
   ], 
   "https://github.com/ansible/ansible/issues/25091": [], 
   "https://github.com/ansible/ansible/issues/25097": [
@@ -3130,6 +3142,10 @@
   "https://github.com/ansible/ansible/issues/25732": [
     "lib/ansible/modules/commands/shell.py"
   ], 
+  "https://github.com/ansible/ansible/issues/25739": [
+    "bin/ansible-vault", 
+    "lib/ansible/modules/files/lineinfile.py"
+  ], 
   "https://github.com/ansible/ansible/issues/25743": [], 
   "https://github.com/ansible/ansible/issues/25746": [
     "lib/ansible/modules/cloud/ovirt/ovirt_tags.py"
@@ -3148,6 +3164,57 @@
   ], 
   "https://github.com/ansible/ansible/issues/25763": [
     "lib/ansible/utils/display.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/25775": [
+    "lib/ansible/modules/cloud/openstack/README.md", 
+    "lib/ansible/modules/cloud/openstack/__init__.py", 
+    "lib/ansible/modules/cloud/openstack/_os_server_actions.py", 
+    "lib/ansible/modules/cloud/openstack/os_auth.py", 
+    "lib/ansible/modules/cloud/openstack/os_client_config.py", 
+    "lib/ansible/modules/cloud/openstack/os_flavor_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_floating_ip.py", 
+    "lib/ansible/modules/cloud/openstack/os_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_image.py", 
+    "lib/ansible/modules/cloud/openstack/os_image_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_ironic.py", 
+    "lib/ansible/modules/cloud/openstack/os_ironic_inspect.py", 
+    "lib/ansible/modules/cloud/openstack/os_ironic_node.py", 
+    "lib/ansible/modules/cloud/openstack/os_keypair.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_domain.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_domain_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_endpoint.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_role.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_service.py", 
+    "lib/ansible/modules/cloud/openstack/os_network.py", 
+    "lib/ansible/modules/cloud/openstack/os_networks_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_nova_flavor.py", 
+    "lib/ansible/modules/cloud/openstack/os_nova_host_aggregate.py", 
+    "lib/ansible/modules/cloud/openstack/os_object.py", 
+    "lib/ansible/modules/cloud/openstack/os_port.py", 
+    "lib/ansible/modules/cloud/openstack/os_port_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_project.py", 
+    "lib/ansible/modules/cloud/openstack/os_project_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_quota.py", 
+    "lib/ansible/modules/cloud/openstack/os_recordset.py", 
+    "lib/ansible/modules/cloud/openstack/os_router.py", 
+    "lib/ansible/modules/cloud/openstack/os_security_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_security_group_rule.py", 
+    "lib/ansible/modules/cloud/openstack/os_server.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_action.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_volume.py", 
+    "lib/ansible/modules/cloud/openstack/os_stack.py", 
+    "lib/ansible/modules/cloud/openstack/os_subnet.py", 
+    "lib/ansible/modules/cloud/openstack/os_subnets_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_user.py", 
+    "lib/ansible/modules/cloud/openstack/os_user_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_user_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_user_role.py", 
+    "lib/ansible/modules/cloud/openstack/os_volume.py", 
+    "lib/ansible/modules/cloud/openstack/os_zone.py", 
+    "test/units/modules/cloud/openstack/__init__.py", 
+    "test/units/modules/cloud/openstack/test_os_server.py"
   ], 
   "https://github.com/ansible/ansible/issues/25781": [
     "lib/ansible/plugins/callback/logstash.py"

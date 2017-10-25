@@ -68,5 +68,8 @@
   "https://github.com/ansible/ansible/issues/23949", 
   "https://github.com/ansible/ansible/issues/24064", 
   "https://github.com/ansible/ansible/issues/24891", 
-  "https://github.com/ansible/ansible/issues/25437"
+  "https://github.com/ansible/ansible/issues/25437", 
+  "https://github.com/ansible/ansible/issues/24417", 
+  "https://github.com/ansible/ansible/issues/24629", 
+  "https://github.com/ansible/ansible/issues/25361"
 ]

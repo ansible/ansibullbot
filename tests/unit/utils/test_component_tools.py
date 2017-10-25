@@ -118,17 +118,20 @@ class TestComponentMatcher(TestCase):
             ],
         }
 
-        #COMPONENTS = ['ansible/hacking/test-module']
-        #COMPONENTS = ['packaging/language/maven_artifact']
-        #COMPONENTS = ['module/network/ios/ios_facts']
-        #COMPONENTS = ['/usr/lib/python2.7/site-packages/ansible/modules/core/packaging/os/rhn_register.py']
-
         MI = FakeIndexer()
         FI = FakeIndexer()
-        CM = ComponentMatcher(None, FI, MI)
-
         with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
             FI.files = json.loads(f.read())
+        CM = ComponentMatcher(None, FI, MI)
+
+        COMPONENTS = {
+            '`plugins/strategy/__init__.py`': [
+                'lib/ansible/plugins/strategy/__init__.py',
+                'lib/ansible/plugins/strategy/__init__.py'
+            ],
+        }
+
+        #import epdb; epdb.st()
 
         for k,v in COMPONENTS.items():
             COMPONENT = k
@@ -143,11 +146,55 @@ class TestComponentMatcher(TestCase):
             if EXPECTED[0] is None and not res:
                 pass
             else:
-                self.assertEqual(res, [EXPECTED[0]])
+                self.assertEqual([EXPECTED[0]], res)
 
             res = CM.search_by_filepath(COMPONENT, partial=True)
             #print('partial: {}'.format(res))
             if EXPECTED[1] is None and not res:
                 pass
             else:
-                self.assertEqual(res, [EXPECTED[1]])
+                self.assertEqual([EXPECTED[1]], res)
+
+    def test_search_by_filepath_with_context(self):
+
+        MI = FakeIndexer()
+        FI = FakeIndexer()
+        with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
+            FI.files = json.loads(f.read())
+        CM = ComponentMatcher(None, FI, MI)
+
+        COMPONENTS = {
+            'ec2.py': [
+                #{'context': None, 'expected': ['contrib/inventory/ec2.py']},
+                {'context': 'contrib/inventory', 'expected': ['contrib/inventory/ec2.py']},
+                {'context': 'lib/ansible/modules', 'expected': ['lib/ansible/modules/cloud/amazon/ec2.py']},
+            ]
+        }
+
+        for k,v in COMPONENTS.items():
+            COMPONENT = k
+            for v2 in v:
+                CONTEXT = v2.get('context')
+                EXPECTED = v2.get('expected')
+                #print('')
+                #print(v2)
+                res = CM.search_by_filepath(COMPONENT, context=CONTEXT)
+                self.assertEqual(EXPECTED, res)
+
+    def test_search_by_keywords(self):
+
+        MI = FakeIndexer()
+        FI = FakeIndexer()
+        CM = ComponentMatcher(None, FI, MI)
+
+        COMPONENTS = {
+            #'inventory script': ['lib/ansible/plugins/inventory/script.py'] #ix2390 https://github.com/ansible/ansible/issues/24545
+            'inventory script': ['contrib/inventory'] #ix2390 https://github.com/ansible/ansible/issues/24545
+        }
+
+        for k,v in COMPONENTS.items():
+            COMPONENT = k
+            EXPECTED = v
+
+            res = CM.search_by_keywords(COMPONENT)
+            self.assertEqual(EXPECTED, res)

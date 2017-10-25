@@ -36,6 +36,9 @@
   "**: service module\n**": [
     "lib/ansible/modules/system/service.py"
   ], 
+  "**mongodb_user**": [
+    "lib/ansible/modules/database/mongodb/mongodb_user.py"
+  ], 
   "**vca_vapp**": [
     "lib/ansible/modules/cloud/vmware/vca_vapp.py"
   ], 
@@ -698,6 +701,7 @@
   "/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
   "/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "/ansible/modules/cloud/dimensiondata/dimensiondata_network.py": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
   "/ansible/modules/cloud/docker/_docker.py": "lib/ansible/modules/cloud/docker/_docker.py", 
@@ -2239,6 +2243,7 @@
   "/modules/cloud/digital_ocean/digital_ocean_domain.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
   "/modules/cloud/digital_ocean/digital_ocean_floating_ip.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "/modules/cloud/digital_ocean/digital_ocean_sshkey.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "/modules/cloud/digital_ocean/digital_ocean_tag.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "/modules/cloud/dimensiondata/dimensiondata_network.py": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
   "/modules/cloud/docker/_docker.py": "lib/ansible/modules/cloud/docker/_docker.py", 
@@ -3545,6 +3550,9 @@
   "/modules/windows/win_wakeonlan.py": "lib/ansible/modules/windows/win_wakeonlan.py", 
   "/modules/windows/win_webpicmd.ps1": "lib/ansible/modules/windows/win_webpicmd.ps1", 
   "/modules/windows/win_webpicmd.py": "lib/ansible/modules/windows/win_webpicmd.py", 
+  "/network/dellos6/dellos6_config": [
+    "lib/ansible/modules/network/dellos6/dellos6_config.py"
+  ], 
   "/usr/bin/ansible-pull": [
     "bin/ansible-pull"
   ], 
@@ -3780,7 +3788,7 @@
     "lib/ansible/modules/cloud/misc/virt.py"
   ], 
   ":\nwindows setup modules": [
-    "lib/ansible/modules/windows/setup.ps1"
+    "lib/ansible/modules/system/setup.py"
   ], 
   ":\nyum module": [
     "lib/ansible/modules/packaging/os/yum.py"
@@ -3868,6 +3876,9 @@
     "lib/ansible/playbook/loop_control.py"
   ], 
   "Ansible's tag option": [], 
+  "Ansible, inventory script": [
+    "lib/ansible/plugins/inventory/script.py"
+  ], 
   "Ansible-Tower 3.1.3": [], 
   "Ansible-playbook": [
     "lib/ansible/playbook"
@@ -4029,6 +4040,10 @@
   ], 
   "Letsencrypt": [
     "lib/ansible/modules/web_infrastructure/letsencrypt.py"
+  ], 
+  "LineInFile + ansible-vault": [
+    "bin/ansible-vault", 
+    "lib/ansible/modules/files/lineinfile.py"
   ], 
   "Lineinfile": [
     "lib/ansible/modules/files/lineinfile.py"
@@ -4323,7 +4338,7 @@
     "lib/ansible/modules/packaging/language/npm.py"
   ], 
   "[windows] setup module": [
-    "lib/ansible/modules/windows/setup.ps1"
+    "lib/ansible/modules/system/setup.py"
   ], 
   "_Include_ task.": [], 
   "_accelerate": "lib/ansible/modules/utilities/helper/_accelerate.py", 
@@ -4434,6 +4449,9 @@
   "`assemble`": [
     "lib/ansible/modules/files/assemble.py"
   ], 
+  "`azure_rm.py`": [
+    "contrib/inventory/azure_rm.py"
+  ], 
   "`azure_rm_virtualmachine: ansible/lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py`": [
     "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py"
   ], 
@@ -4498,9 +4516,13 @@
   "`module_utils/urls.py` and the `SSLValidationHandler`": [
     "lib/ansible/module_utils"
   ], 
-  "`modules/cloud/amazon/ecs_taskdefinition.py`": [], 
+  "`modules/cloud/amazon/ecs_taskdefinition.py`": [
+    "lib/ansible/modules/cloud/amazon/ecs_taskdefinition.py"
+  ], 
   "`modules/cloud/misc/proxmox_kvm.py`": [], 
-  "`modules/system/service`": [], 
+  "`modules/system/service`": [
+    "lib/ansible/modules/system/service.py"
+  ], 
   "`mysql_db`": [
     "lib/ansible/modules/database/mysql/mysql_db.py"
   ], 
@@ -4683,6 +4705,57 @@
     "lib/ansible/modules/cloud/docker/docker_container.py"
   ], 
   "ansible / gather_facts": [], 
+  "ansible cloud module openstack": [
+    "lib/ansible/modules/cloud/openstack/README.md", 
+    "lib/ansible/modules/cloud/openstack/__init__.py", 
+    "lib/ansible/modules/cloud/openstack/_os_server_actions.py", 
+    "lib/ansible/modules/cloud/openstack/os_auth.py", 
+    "lib/ansible/modules/cloud/openstack/os_client_config.py", 
+    "lib/ansible/modules/cloud/openstack/os_flavor_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_floating_ip.py", 
+    "lib/ansible/modules/cloud/openstack/os_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_image.py", 
+    "lib/ansible/modules/cloud/openstack/os_image_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_ironic.py", 
+    "lib/ansible/modules/cloud/openstack/os_ironic_inspect.py", 
+    "lib/ansible/modules/cloud/openstack/os_ironic_node.py", 
+    "lib/ansible/modules/cloud/openstack/os_keypair.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_domain.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_domain_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_endpoint.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_role.py", 
+    "lib/ansible/modules/cloud/openstack/os_keystone_service.py", 
+    "lib/ansible/modules/cloud/openstack/os_network.py", 
+    "lib/ansible/modules/cloud/openstack/os_networks_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_nova_flavor.py", 
+    "lib/ansible/modules/cloud/openstack/os_nova_host_aggregate.py", 
+    "lib/ansible/modules/cloud/openstack/os_object.py", 
+    "lib/ansible/modules/cloud/openstack/os_port.py", 
+    "lib/ansible/modules/cloud/openstack/os_port_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_project.py", 
+    "lib/ansible/modules/cloud/openstack/os_project_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_quota.py", 
+    "lib/ansible/modules/cloud/openstack/os_recordset.py", 
+    "lib/ansible/modules/cloud/openstack/os_router.py", 
+    "lib/ansible/modules/cloud/openstack/os_security_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_security_group_rule.py", 
+    "lib/ansible/modules/cloud/openstack/os_server.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_action.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_server_volume.py", 
+    "lib/ansible/modules/cloud/openstack/os_stack.py", 
+    "lib/ansible/modules/cloud/openstack/os_subnet.py", 
+    "lib/ansible/modules/cloud/openstack/os_subnets_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_user.py", 
+    "lib/ansible/modules/cloud/openstack/os_user_facts.py", 
+    "lib/ansible/modules/cloud/openstack/os_user_group.py", 
+    "lib/ansible/modules/cloud/openstack/os_user_role.py", 
+    "lib/ansible/modules/cloud/openstack/os_volume.py", 
+    "lib/ansible/modules/cloud/openstack/os_zone.py", 
+    "test/units/modules/cloud/openstack/__init__.py", 
+    "test/units/modules/cloud/openstack/test_os_server.py"
+  ], 
   "ansible command": [
     "lib/ansible/modules/commands/command.py"
   ], 
@@ -4697,7 +4770,9 @@
     "lib/ansible/modules/commands/shell.py", 
     "lib/ansible/modules/system/ping.py"
   ], 
-  "ansible windows module: `win_scheduled_task`": [], 
+  "ansible windows module: `win_scheduled_task`": [
+    "lib/ansible/modules/windows/win_scheduled_task.ps1"
+  ], 
   "ansible-2.2.0.0": [], 
   "ansible-galaxy": [
     "lib/ansible/galaxy"
@@ -5022,6 +5097,7 @@
   "ansible/lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
   "ansible/lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "ansible/lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "ansible/lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "ansible/lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "ansible/lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
   "ansible/lib/ansible/modules/cloud/docker/_docker.py": "lib/ansible/modules/cloud/docker/_docker.py", 
@@ -6595,6 +6671,7 @@
   "ansible/modules/cloud/digital_ocean/digital_ocean_domain.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
   "ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "ansible/modules/cloud/digital_ocean/digital_ocean_tag.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "ansible/modules/cloud/dimensiondata/dimensiondata_network.py": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
   "ansible/modules/cloud/docker/_docker.py": "lib/ansible/modules/cloud/docker/_docker.py", 
@@ -8185,6 +8262,9 @@
   "azure_rm_availabilityset module": "lib/ansible/modules/cloud/azure/azure_rm_availabilityset.py", 
   "azure_rm_availabilityset_facts": "lib/ansible/modules/cloud/azure/azure_rm_availabilityset_facts.py", 
   "azure_rm_availabilityset_facts module": "lib/ansible/modules/cloud/azure/azure_rm_availabilityset_facts.py", 
+  "azure_rm_common": [
+    "lib/ansible/module_utils/azure_rm_common.py"
+  ], 
   "azure_rm_common.py": [
     "lib/ansible/module_utils/azure_rm_common.py"
   ], 
@@ -9086,6 +9166,8 @@
   "cloud/digital_ocean/digital_ocean_floating_ip.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "cloud/digital_ocean/digital_ocean_sshkey": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
   "cloud/digital_ocean/digital_ocean_sshkey.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "cloud/digital_ocean/digital_ocean_sshkey_facts": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
+  "cloud/digital_ocean/digital_ocean_sshkey_facts.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "cloud/digital_ocean/digital_ocean_tag": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "cloud/digital_ocean/digital_ocean_tag.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "cloud/dimensiondata/dimensiondata_network": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
@@ -10050,6 +10132,8 @@
   "digital_ocean_sshkey.py": [
     "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py"
   ], 
+  "digital_ocean_sshkey_facts": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
+  "digital_ocean_sshkey_facts module": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "digital_ocean_tag": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "digital_ocean_tag module": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "dimensiondata_network": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
@@ -10185,11 +10269,7 @@
     "lib/ansible/modules/cloud/amazon/ec2.py"
   ], 
   "ec2.py": [
-    "contrib/inventory/ec2.py", 
-    "lib/ansible/module_utils/ec2.py", 
-    "lib/ansible/modules/cloud/amazon/ec2.py", 
-    "lib/ansible/utils/module_docs_fragments/ec2.py", 
-    "test/legacy/cleanup_ec2.py"
+    "contrib/inventory/ec2.py"
   ], 
   "ec2.py dynamic inventory file for AWS": [
     "contrib/inventory/ec2.py"
@@ -11061,7 +11141,7 @@
     "lib/ansible/plugins/filter"
   ], 
   "inventory": [
-    "lib/ansible/inventory"
+    "contrib/inventory"
   ], 
   "inventory parsing": [
     "lib/ansible/inventory"
@@ -11263,6 +11343,12 @@
   "json stdout callback": [
     "lib/ansible/plugins/callback/json.py"
   ], 
+  "json_query": [
+    "lib/ansible/plugins/filter/json_query.py"
+  ], 
+  "junit": [
+    "lib/ansible/plugins/callback/junit.py"
+  ], 
   "junos_*\nmodule_utils/junos": [
     "lib/ansible/module_utils/junos.py"
   ], 
@@ -11416,9 +11502,6 @@
   ], 
   "lib/ansible/modules/storage/netapp/sf_volume-manager.py\nqos dict should be of type dict": [
     "lib/ansible/modules/storage/netapp"
-  ], 
-  "lib/ansible/modules/windows/setup.ps1": [
-    "lib/ansible/modules/windows/setup.ps1"
   ], 
   "lib/ansible/parsing/mod_args.py\nlib/ansible/plugins/": [
     "lib/ansible/parsing/mod_args.py", 
@@ -12046,6 +12129,7 @@
   "module digital_ocean_domain": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
   "module digital_ocean_floating_ip": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "module digital_ocean_sshkey": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "module digital_ocean_sshkey_facts": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "module digital_ocean_tag": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "module dimensiondata_network": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
   "module django_manage": "lib/ansible/modules/web_infrastructure/django_manage.py", 
@@ -12165,7 +12249,9 @@
   "module exo_dns_domain": "lib/ansible/modules/net_tools/exoscale/exo_dns_domain.py", 
   "module exo_dns_record": "lib/ansible/modules/net_tools/exoscale/exo_dns_record.py", 
   "module expect": "lib/ansible/modules/commands/expect.py", 
-  "module extra for windows: `win_scheduled_task`": [], 
+  "module extra for windows: `win_scheduled_task`": [
+    "lib/ansible/modules/windows/win_scheduled_task.ps1"
+  ], 
   "module facter": "lib/ansible/modules/system/facter.py", 
   "module fail": "lib/ansible/modules/utilities/logic/fail.py", 
   "module fetch": "lib/ansible/modules/files/fetch.py", 
@@ -13062,7 +13148,9 @@
   ], 
   "module/gce": [], 
   "module/ipa_groups": [], 
-  "module/iptables": [], 
+  "module/iptables": [
+    "lib/ansible/modules/system/iptables.py"
+  ], 
   "module/network/lenovo/enos_facts.py\nplugins/action/enos_facts.py": [], 
   "module/plugin/connection/winrm.py": [], 
   "module: _accelerate": "lib/ansible/modules/utilities/helper/_accelerate.py", 
@@ -13530,6 +13618,7 @@
   "module: digital_ocean_domain": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
   "module: digital_ocean_floating_ip": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "module: digital_ocean_sshkey": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "module: digital_ocean_sshkey_facts": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "module: digital_ocean_tag": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "module: dimensiondata_network": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
   "module: django_manage": "lib/ansible/modules/web_infrastructure/django_manage.py", 
@@ -14533,6 +14622,9 @@
   "module: zypper": "lib/ansible/modules/packaging/os/zypper.py", 
   "module: zypper_repository": "lib/ansible/modules/packaging/os/zypper_repository.py", 
   "module:pacman": [], 
+  "module_common.py": [
+    "lib/ansible/executor/module_common.py"
+  ], 
   "module_utils": [
     "lib/ansible/module_utils"
   ], 
@@ -14834,6 +14926,7 @@
   "modules/cloud/digital_ocean/digital_ocean_domain.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
   "modules/cloud/digital_ocean/digital_ocean_floating_ip.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
   "modules/cloud/digital_ocean/digital_ocean_sshkey.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
+  "modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
   "modules/cloud/digital_ocean/digital_ocean_tag.py": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
   "modules/cloud/dimensiondata/dimensiondata_network.py": "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
   "modules/cloud/docker/_docker.py": "lib/ansible/modules/cloud/docker/_docker.py", 
@@ -16956,7 +17049,9 @@
   "network/f5/bigip_gtm_pool.py": "lib/ansible/modules/network/f5/bigip_gtm_pool.py", 
   "network/f5/bigip_gtm_virtual_server": "lib/ansible/modules/network/f5/bigip_gtm_virtual_server.py", 
   "network/f5/bigip_gtm_virtual_server.py": "lib/ansible/modules/network/f5/bigip_gtm_virtual_server.py", 
-  "network/f5/bigip_gtm_wide_ip": "lib/ansible/modules/network/f5/bigip_gtm_wide_ip.py", 
+  "network/f5/bigip_gtm_wide_ip": [
+    "lib/ansible/modules/network/f5/bigip_gtm_wide_ip.py"
+  ], 
   "network/f5/bigip_gtm_wide_ip.py": "lib/ansible/modules/network/f5/bigip_gtm_wide_ip.py", 
   "network/f5/bigip_hostname": "lib/ansible/modules/network/f5/bigip_hostname.py", 
   "network/f5/bigip_hostname.py": "lib/ansible/modules/network/f5/bigip_hostname.py", 
@@ -18767,8 +18862,7 @@
   "rhn_register": "lib/ansible/modules/packaging/os/rhn_register.py", 
   "rhn_register module": "lib/ansible/modules/packaging/os/rhn_register.py", 
   "rhn_register.py": [
-    "lib/ansible/modules/packaging/os/rhn_register.py", 
-    "test/units/modules/packaging/os/test_rhn_register.py"
+    "lib/ansible/modules/packaging/os/rhn_register.py"
   ], 
   "riak": "lib/ansible/modules/database/misc/riak.py", 
   "riak module": "lib/ansible/modules/database/misc/riak.py", 
@@ -18951,7 +19045,7 @@
     "lib/ansible/modules/windows/setup.ps1"
   ], 
   "setup.py": [
-    "lib/ansible/modules/system/setup.py"
+    "setup.py"
   ], 
   "setup_module": [
     "lib/ansible/modules/system/setup.py"
@@ -19075,6 +19169,9 @@
   "statusio_maintenance module": "lib/ansible/modules/monitoring/statusio_maintenance.py", 
   "stdout from script module in Windows": [
     "lib/ansible/modules/commands/script.py"
+  ], 
+  "stdout_callback, skippy": [
+    "lib/ansible/plugins/callback/skippy.py"
   ], 
   "storage module netapp_e_volume": [
     "lib/ansible/modules/storage/netapp/netapp_e_volume.py"
@@ -19354,6 +19451,10 @@
   "template": [
     "lib/ansible/modules/files/template.py"
   ], 
+  "template\ncopy\n(template calls copy, I first spotted it when using template)": [
+    "lib/ansible/modules/files/copy.py", 
+    "lib/ansible/modules/files/template.py"
+  ], 
   "template module": [
     "lib/ansible/modules/files/template.py"
   ], 
@@ -19377,6 +19478,9 @@
   ], 
   "test/units/cli/test_galaxy.py": [
     "test/units/cli/test_galaxy.py"
+  ], 
+  "testing": [
+    "docs/docsite/rst/dev_guide/testing"
   ], 
   "the \"user\" module": [
     "lib/ansible/modules/system/user.py"
@@ -19526,7 +19630,7 @@
   "vars_plugins": [], 
   "vars_prompt": [], 
   "vault": [
-    "lib/ansible/parsing/vault"
+    "contrib/vault"
   ], 
   "vault documentation": [
     "lib/ansible/parsing/vault"
@@ -19618,6 +19722,9 @@
   "vmware_guest_tools_wait module": "lib/ansible/modules/cloud/vmware/vmware_guest_tools_wait.py", 
   "vmware_host": "lib/ansible/modules/cloud/vmware/vmware_host.py", 
   "vmware_host module": "lib/ansible/modules/cloud/vmware/vmware_host.py", 
+  "vmware_inventory": [
+    "contrib/inventory/vmware_inventory.py"
+  ], 
   "vmware_local_user_manager": "lib/ansible/modules/cloud/vmware/vmware_local_user_manager.py", 
   "vmware_local_user_manager module": "lib/ansible/modules/cloud/vmware/vmware_local_user_manager.py", 
   "vmware_local_user_manager.py": [
@@ -20323,8 +20430,7 @@
   ], 
   "yum or some common libs": [], 
   "yum.py": [
-    "lib/ansible/modules/packaging/os/yum.py", 
-    "test/units/modules/packaging/os/test_yum.py"
+    "lib/ansible/modules/packaging/os/yum.py"
   ], 
   "yum_repository": [
     "lib/ansible/modules/packaging/os/yum_repository.py"

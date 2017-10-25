@@ -464,6 +464,11 @@ def main():
                 save_match_map(MATCH_MAP)
                 continue
 
+            if len(expected_fns) == 1 and len(cmr_fns) == 1:
+                if os.path.basename(expected_fns[0]) == os.path.basename(cmr_fns[0]):
+                    MATCH_MAP[component] = cmr_fns
+                    save_match_map(MATCH_MAP)
+                    continue
 
             # COMPARE AND RECORD
             if expected_fns != cmr_fns and hurl not in EXPECTED:
