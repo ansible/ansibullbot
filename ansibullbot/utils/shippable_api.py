@@ -3,16 +3,19 @@
 # curl -H "Content-Type: application/json" -H "Authorization: apiToken XXXX"
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
+import ansibullbot.constants as C
+
 import datetime
 import json
 import logging
 import os
 import re
-import requests
 import requests_cache
 import time
 
-import ansibullbot.constants as C
+import requests
+from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
+
 
 ANSIBLE_PROJECT_ID = '573f79d02a8192902e20e34b'
 SHIPPABLE_URL = 'https://api.shippable.com'
@@ -350,36 +353,27 @@ class ShippableRuns(object):
         return response
 
     def fetch(self, url, verb='get', **kwargs):
-        resp = None
-
-        headers = dict(
-            Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
-        )
-
-        resp = None
-        success = False
-        retries = 0
-        while not success and retries < 2:
-            logging.debug('%s' % url)
+        """return response or None in case of failure, try twice"""
+        @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
+        def _fetch():
+            headers = dict(
+                Authorization='apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
+            )
 
             http_method = getattr(requests, verb)
-            try:
-                resp = http_method(url, headers=headers, **kwargs)
-            except requests.exceptions.ConnectionError:
-                time.sleep(2)
-                continue
+            resp = http_method(url, headers=headers, **kwargs)
 
             if resp.status_code not in [200, 302, 400]:
-                logging.error('RC: %s' % (resp.status_code))
-                retries += 1
-                time.sleep(2)
-                continue
-            success = True
+                logging.error('RC: %s', resp.status_code)
+                raise TryAgain
 
-        if not success:
-            return None
-        else:
             return resp
+
+        try:
+            logging.debug('%s', url)
+            return _fetch()
+        except RetryError:
+            pass
 
     def check_response(self, response):
         if response and response.status_code == 404:
