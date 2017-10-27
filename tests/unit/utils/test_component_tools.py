@@ -203,7 +203,11 @@ class TestComponentMatcher(TestCase):
                 #{'context': None, 'expected': ['contrib/inventory/ec2.py']},
                 {'context': 'contrib/inventory', 'expected': ['contrib/inventory/ec2.py']},
                 {'context': 'lib/ansible/modules', 'expected': ['lib/ansible/modules/cloud/amazon/ec2.py']},
+            ],
+            'netapp_e_storagepool storage module': [
+                {'context': 'lib/ansible/modules', 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
             ]
+
         }
 
         for k,v in COMPONENTS.items():
@@ -224,6 +228,7 @@ class TestComponentMatcher(TestCase):
         COMPONENTS = {
             'All AWS modules': 'lib/ansible/modules/cloud/amazon',
             'ec2_* modules': 'lib/ansible/modules/cloud/amazon',
+            'GCP ansible modules': 'lib/ansible/modules/cloud/amazon',
             'BigIP modules': 'lib/ansible/modules/network/f5',
             'NXOS modules': 'lib/ansible/modules/network/nxos',
             'azurerm modules': 'lib/ansible/modules/cloud/azure',
@@ -291,7 +296,13 @@ class TestComponentMatcher(TestCase):
             '`mysql_user` module': ['lib/ansible/modules/database/mysql/mysql_user.py'],
             '`s3` module': [],
             '`user` module': ['lib/ansible/modules/system/user.py'],
-            'the "user" module': ['lib/ansible/modules/system/user.py']
+            'the "user" module': ['lib/ansible/modules/system/user.py'],
+            '`ansible_module_ec2_ami_copy.py`': ['lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],
+            'module: `include_vars `': ['lib/ansible/modules/utilities/logic/include_vars.py'],
+            'rabbitmq_plugin  module': ['lib/ansible/modules/messaging/rabbitmq_plugin.py'],
+            'F5 bigip (bigip_selfip)': [''],
+            'module: `vsphere_guest`': [''],
+            'nxos_template': [''],
         }
 
         for COMPONENT,EXPECTED in COMPONENTS.items():

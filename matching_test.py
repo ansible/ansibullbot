@@ -290,6 +290,11 @@ def main():
             continue
 
         component = meta.get('template_data', {}).get('component_raw')
+
+        #if component != 'Module `synchronize`':
+        #if component != 'Module: include_role':
+        #    continue
+
         if component:
             print('------------------------------------------ {}|{}'.format(total, IDMF))
             print(meta['html_url'])
@@ -473,16 +478,6 @@ def main():
             # COMPARE AND RECORD
             if expected_fns != cmr_fns and hurl not in EXPECTED:
 
-                print('## COMPONENT ...')
-                print(component)
-                print('## EXPECTED ...')
-                pprint(expected_fns)
-                print('## RESULT ...')
-                pprint(cmr_fns)
-                print('## STRATEGIES ..')
-                pprint(CM.strategy)
-                pprint(CM.strategies)
-
                 if component in MATCH_MAP or component.lower() in MATCH_MAP:
                     if component.lower() in MATCH_MAP:
                         mmc = MATCH_MAP[component.lower()]
@@ -495,7 +490,16 @@ def main():
                         save_expected(EXPECTED)
                         continue
 
-                '''
+                print('## COMPONENT ...')
+                print(component)
+                print('## EXPECTED ...')
+                pprint(expected_fns)
+                print('## RESULT ...')
+                pprint(cmr_fns)
+                print('## STRATEGIES ..')
+                pprint(CM.strategy)
+                pprint(CM.strategies)
+
                 print('--------------------------------')
                 res = raw_input('Is the result correct? (y/n/s/d): ')
                 if res.lower() in ['y', 'yes']:
@@ -509,7 +513,6 @@ def main():
                     continue
                 elif res.lower() in ['d', 'debug']:
                     import epdb; epdb.st()
-                '''
 
                 ERRORS.append(iw.html_url)
                 ERRORS_COMPONENTS.append(

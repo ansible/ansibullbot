@@ -19,9 +19,11 @@ class ComponentMatcher(object):
     # FIXME: THESE NEED TO GO INTO BOTMETA
     # ALSO SEE search_by_regex_generic ...
     KEYWORDS = {
+        'all': None,
         'ansiballz': 'lib/ansible/executor/module_common.py',
         'ansible-console': 'lib/ansible/cli/console.py',
         'ansible-galaxy': 'lib/ansible/galaxy',
+        'ansible-inventory': 'lib/ansible/cli/inventory.py',
         'ansible-playbook': 'lib/ansible/playbook',
         'ansible playbook': 'lib/ansible/playbook',
         'ansible playbooks': 'lib/ansible/playbook',
@@ -144,7 +146,8 @@ class ComponentMatcher(object):
 
         matched_filenames = []
 
-        delimiters = ['\n', ',', ' + ', ' & ', ': ']
+        #delimiters = ['\n', ',', ' + ', ' & ', ': ']
+        delimiters = ['\n', ',', ' + ', ' & ']
         delimited = False
         for delimiter in delimiters:
             if delimiter in component:
@@ -405,6 +408,7 @@ class ComponentMatcher(object):
         #        body = body.replace(SC, '')
         #body = body.strip()
         body = body.lower()
+        logging.debug('regex match on: {}'.format(body))
 
         #body = self.clean_body(body, internal=True)
 
@@ -416,6 +420,7 @@ class ComponentMatcher(object):
             r'modules/(\S+)',
             r'module\: (\S+)',
             r'module (\S+)',
+            r'module `(\S+)`',
             r'module: (\S+)',
             #r'Module (\S+)',
             #r'Module: (\S+)',

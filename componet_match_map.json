@@ -154,7 +154,7 @@
     "lib/ansible/galaxy"
   ], 
   "- ansible-vault": [
-    "lib/ansible/parsing/vault"
+    "bin/ansible-vault"
   ], 
   "- apt": [
     "lib/ansible/modules/packaging/os/apt.py"
@@ -4080,7 +4080,35 @@
     "lib/ansible/modules/cloud/amazon/ec2.py"
   ], 
   "EOS network modules": [
-    "lib/ansible/modules/network"
+    "lib/ansible/modules/network/eos/__init__.py", 
+    "lib/ansible/modules/network/eos/eos_banner.py", 
+    "lib/ansible/modules/network/eos/eos_command.py", 
+    "lib/ansible/modules/network/eos/eos_config.py", 
+    "lib/ansible/modules/network/eos/eos_eapi.py", 
+    "lib/ansible/modules/network/eos/eos_facts.py", 
+    "lib/ansible/modules/network/eos/eos_logging.py", 
+    "lib/ansible/modules/network/eos/eos_system.py", 
+    "lib/ansible/modules/network/eos/eos_user.py", 
+    "lib/ansible/modules/network/eos/eos_vlan.py", 
+    "lib/ansible/modules/network/eos/eos_vrf.py", 
+    "test/units/modules/network/eos/__init__.py", 
+    "test/units/modules/network/eos/eos_module.py", 
+    "test/units/modules/network/eos/fixtures/eos_banner_show_banner.txt", 
+    "test/units/modules/network/eos/fixtures/eos_command_show_version.txt", 
+    "test/units/modules/network/eos/fixtures/eos_config_candidate.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_config_config.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_config_config_updated.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_eapi_show_mgmt.json", 
+    "test/units/modules/network/eos/fixtures/eos_eapi_show_mgmt_unconfigured.json", 
+    "test/units/modules/network/eos/fixtures/eos_eapi_show_vrf.text", 
+    "test/units/modules/network/eos/fixtures/eos_system_config.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_user_config.cfg", 
+    "test/units/modules/network/eos/test_eos_banner.py", 
+    "test/units/modules/network/eos/test_eos_command.py", 
+    "test/units/modules/network/eos/test_eos_config.py", 
+    "test/units/modules/network/eos/test_eos_eapi.py", 
+    "test/units/modules/network/eos/test_eos_system.py", 
+    "test/units/modules/network/eos/test_eos_user.py"
   ], 
   "Edit (Added for ease of readability) iosxr_config": [
     "lib/ansible/modules/network/iosxr/iosxr_config.py"
@@ -4157,6 +4185,11 @@
     "lib/ansible/modules/cloud/amazon/iam.py"
   ], 
   "IOS": [], 
+  "In the cloud module, in the docker module, the docker_volume command": [
+    "lib/ansible/modules/cloud/docker/_docker.py", 
+    "lib/ansible/modules/cloud/docker/docker_volume.py", 
+    "lib/ansible/modules/commands/command.py"
+  ], 
   "Included / imported plays and group_vars loading": [], 
   "Install/Upgrade": [], 
   "Installation of Ansible into a virtual environment (optionally, via Homebrew)": [
@@ -9595,6 +9628,9 @@
   "cloud/misc/helm.py": "lib/ansible/modules/cloud/misc/helm.py", 
   "cloud/misc/ovirt": "lib/ansible/modules/cloud/misc/ovirt.py", 
   "cloud/misc/ovirt.py": "lib/ansible/modules/cloud/misc/ovirt.py", 
+  "cloud/misc/ovirt.py\ncloud/misc/rhevm.py (new in 2.2)\ncloud/ovirt/ovirt_vms.py (new in 2.2)": [
+    "lib/ansible/modules/cloud/misc/ovirt.py"
+  ], 
   "cloud/misc/proxmox": "lib/ansible/modules/cloud/misc/proxmox.py", 
   "cloud/misc/proxmox.py": "lib/ansible/modules/cloud/misc/proxmox.py", 
   "cloud/misc/proxmox_kvm": "lib/ansible/modules/cloud/misc/proxmox_kvm.py", 
@@ -10669,6 +10705,9 @@
   "ec2 modules": [
     "lib/ansible/modules/cloud/amazon"
   ], 
+  "ec2-asg-facts": [
+    "lib/ansible/modules/cloud/amazon/ec2_asg_facts.py"
+  ], 
   "ec2.py": [
     "lib/ansible/modules/cloud/amazon/ec2.py"
   ], 
@@ -11535,7 +11574,7 @@
     "lib/ansible/modules/utilities/logic/include_role.py"
   ], 
   "include_task:\nwhen:\ninclude_role:\nwhen:": [
-    "lib/ansible/playbook/role/include.py"
+    "lib/ansible/modules/utilities/logic/include_role.py"
   ], 
   "include_tasks": [
     "lib/ansible/modules/utilities/logic/include_tasks.py"
@@ -20460,6 +20499,9 @@
   "vmware_vm_facts": "lib/ansible/modules/cloud/vmware/vmware_vm_facts.py", 
   "vmware_vm_facts module": "lib/ansible/modules/cloud/vmware/vmware_vm_facts.py", 
   "vmware_vm_shell": [
+    "lib/ansible/modules/cloud/vmware/vmware_vm_shell.py"
+  ], 
+  "vmware_vm_shell\nn": [
     "lib/ansible/modules/cloud/vmware/vmware_vm_shell.py"
   ], 
   "vmware_vm_shell module": "lib/ansible/modules/cloud/vmware/vmware_vm_shell.py", 

@@ -4169,6 +4169,9 @@
   "https://github.com/ansible/ansible/issues/28053": [
     "lib/ansible/modules/system/ping.py"
   ], 
+  "https://github.com/ansible/ansible/issues/28058": [
+    "bin/ansible-vault"
+  ], 
   "https://github.com/ansible/ansible/issues/28059": [], 
   "https://github.com/ansible/ansible/issues/28061": [
     "lib/ansible/modules/packaging/os/dnf.py", 
@@ -4281,6 +4284,37 @@
   ], 
   "https://github.com/ansible/ansible/issues/28299": [
     "lib/ansible/modules/network/nxos/nxos_udld_interface.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/28309": [
+    "lib/ansible/modules/network/eos/__init__.py", 
+    "lib/ansible/modules/network/eos/eos_banner.py", 
+    "lib/ansible/modules/network/eos/eos_command.py", 
+    "lib/ansible/modules/network/eos/eos_config.py", 
+    "lib/ansible/modules/network/eos/eos_eapi.py", 
+    "lib/ansible/modules/network/eos/eos_facts.py", 
+    "lib/ansible/modules/network/eos/eos_logging.py", 
+    "lib/ansible/modules/network/eos/eos_system.py", 
+    "lib/ansible/modules/network/eos/eos_user.py", 
+    "lib/ansible/modules/network/eos/eos_vlan.py", 
+    "lib/ansible/modules/network/eos/eos_vrf.py", 
+    "test/units/modules/network/eos/__init__.py", 
+    "test/units/modules/network/eos/eos_module.py", 
+    "test/units/modules/network/eos/fixtures/eos_banner_show_banner.txt", 
+    "test/units/modules/network/eos/fixtures/eos_command_show_version.txt", 
+    "test/units/modules/network/eos/fixtures/eos_config_candidate.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_config_config.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_config_config_updated.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_eapi_show_mgmt.json", 
+    "test/units/modules/network/eos/fixtures/eos_eapi_show_mgmt_unconfigured.json", 
+    "test/units/modules/network/eos/fixtures/eos_eapi_show_vrf.text", 
+    "test/units/modules/network/eos/fixtures/eos_system_config.cfg", 
+    "test/units/modules/network/eos/fixtures/eos_user_config.cfg", 
+    "test/units/modules/network/eos/test_eos_banner.py", 
+    "test/units/modules/network/eos/test_eos_command.py", 
+    "test/units/modules/network/eos/test_eos_config.py", 
+    "test/units/modules/network/eos/test_eos_eapi.py", 
+    "test/units/modules/network/eos/test_eos_system.py", 
+    "test/units/modules/network/eos/test_eos_user.py"
   ], 
   "https://github.com/ansible/ansible/issues/28310": [], 
   "https://github.com/ansible/ansible/issues/28312": [
@@ -5196,6 +5230,9 @@
   "https://github.com/ansible/ansible/issues/29369": [
     "lib/ansible/modules/network/asa/asa_command.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29370": [
+    "lib/ansible/modules/cloud/misc/ovirt.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29371": [
     "lib/ansible/modules/system/known_hosts.py"
   ], 
@@ -5244,6 +5281,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/29391": [
     "lib/ansible/modules/cloud/misc/proxmox.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29392": [
+    "lib/ansible/modules/cloud/amazon/ec2_asg_facts.py"
   ], 
   "https://github.com/ansible/ansible/issues/29393": [
     "lib/ansible/modules/system/iptables.py"
@@ -6876,6 +6916,9 @@
   "https://github.com/ansible/ansible/issues/30108": [
     "lib/ansible/modules/packaging/os/yum.py"
   ], 
+  "https://github.com/ansible/ansible/issues/30109": [
+    "lib/ansible/modules/cloud/vmware/vmware_vm_shell.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30110": [
     "lib/ansible/modules/cloud/amazon/_s3.py"
   ], 
@@ -7180,6 +7223,11 @@
   "https://github.com/ansible/ansible/issues/30235": [
     "lib/ansible/modules/files/lineinfile.py"
   ], 
+  "https://github.com/ansible/ansible/issues/30239": [
+    "lib/ansible/modules/cloud/docker/_docker.py", 
+    "lib/ansible/modules/cloud/docker/docker_volume.py", 
+    "lib/ansible/modules/commands/command.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30246": [
     "lib/ansible/modules/system/setup.py"
   ], 
@@ -7247,6 +7295,9 @@
     "lib/ansible/modules/cloud/openstack/os_keypair.py"
   ], 
   "https://github.com/ansible/ansible/issues/30341": [], 
+  "https://github.com/ansible/ansible/issues/30351": [
+    "lib/ansible/modules/utilities/logic/include_role.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30354": [
     "lib/ansible/modules/cloud/docker/docker_service.py"
   ], 
