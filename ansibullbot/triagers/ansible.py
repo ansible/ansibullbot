@@ -157,7 +157,13 @@ class AnsibleTriage(DefaultTriager):
         'close_me'
     ]
 
-    def __init__(self, args):
+    def __init__(self):
+
+        super(AnsibleTriage, self).__init__()
+
+        # get valid labels
+        logging.info('getting labels')
+        self.valid_labels = self.get_valid_labels("ansible/ansible")
 
         self._ansible_members = []
         self._ansible_core_team = []
@@ -165,36 +171,7 @@ class AnsibleTriage(DefaultTriager):
         self.botmeta = {}
         self.automerge_on = False
 
-        self.args = args
-        self.last_run = None
-        self.daemonize = None
-        self.daemonize_interval = None
-        self.dry_run = False
-        self.force = False
-
-        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
-        self.github_token = C.DEFAULT_GITHUB_TOKEN
-        self.github_user = C.DEFAULT_GITHUB_USERNAME
-
-        self.logfile = None
-        self.no_since = False
-        self.only_closed = False
-        self.only_issues = False
-        self.only_open = False
-        self.only_prs = False
-        self.pause = False
-        self.always_pause = False
-        self.pr = False
-        self.repo = None
-        self.safe_force = False
-        self.skiprepo = []
-        self.start_at = False
-        self.verbose = False
-
-        # where to store junk
-        self.cachedir = '~/.ansibullbot/cache'
-        self.cachedir = os.path.expanduser(self.cachedir)
-        self.cachedir_base = self.cachedir
+        self.cachedir_base = os.path.expanduser(self.cachedir_base)
 
         # repo objects
         self.repos = {}
@@ -202,52 +179,26 @@ class AnsibleTriage(DefaultTriager):
         # scraped summaries for all issues
         self.issue_summaries = {}
 
-        self.set_logger()
-        logging.info('starting bot')
-
-        logging.debug('setting bot attributes')
-        for x in vars(self.args):
-            try:
-                val = getattr(self.args, x)
-                setattr(self, x, val)
-            except AttributeError:
-                pass
-
-        if hasattr(self.args, 'pause') and self.args.pause:
-            self.always_pause = True
-
-        # connect to github
-        logging.info('creating api connection')
-        self.gh = self._connect()
-
-        # wrap the connection
-        logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh)
-
         # create the scraper for www data
         logging.info('creating webscraper')
-        self.gws = GithubWebScraper(cachedir=self.cachedir)
+        self.gws = GithubWebScraper(cachedir=self.cachedir_base)
         if C.DEFAULT_GITHUB_TOKEN:
             self.gqlc = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
         else:
             self.gqlc = None
-
-        # get valid labels
-        logging.info('getting labels')
-        self.valid_labels = self.get_valid_labels('ansible/ansible')
 
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer()
         logging.info('creating file indexer')
         self.file_indexer = FileIndexer(
-            botmetafile=self.args.botmetafile,
+            botmetafile=self.botmetafile,
             checkoutdir=self.cachedir_base
         )
 
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer(
-            botmetafile=self.args.botmetafile,
+            botmetafile=self.botmetafile,
             gh_client=self.gqlc,
             cachedir=self.cachedir_base
         )
@@ -263,18 +214,12 @@ class AnsibleTriage(DefaultTriager):
         self.IM = IssueMigrator(C.DEFAULT_GITHUB_TOKEN)
 
         # resume is just an overload for the start-at argument
-        resume = self.resume
+        resume = self.get_resume()
         if resume:
-            if self.args.sort == 'desc':
-                self.args.start_at = resume['number'] - 1
+            if self.sort == 'desc':
+                self.start_at = resume['number'] - 1
             else:
-                self.args.start_at = resume['number'] + 1
-
-    def _get_repo_path(self):
-        if self.github_repo in ['core', 'extras']:
-            return "ansible/ansible-modules-%s" % self.github_repo
-        else:
-            return "ansible/%s" % self.github_repo
+                self.start_at = resume['number'] + 1
 
     @property
     def ansible_members(self):
@@ -312,8 +257,8 @@ class AnsibleTriage(DefaultTriager):
             self.SR.update()
 
         # is automerge allowed?
-        if self.args.botmetafile is not None:
-            with open(self.args.botmetafile, 'rb') as f:
+        if self.botmetafile is not None:
+            with open(self.botmetafile, 'rb') as f:
                 self._botmeta_content = f.read()
         else:
             self._botmeta_content = self.file_indexer.get_file_content('.github/BOTMETA.yml')
@@ -327,7 +272,7 @@ class AnsibleTriage(DefaultTriager):
         self.collect_repos()
 
         # stop here if we're just collecting issues to populate cache
-        if self.args.collect_only:
+        if self.collect_only:
             return
 
         # loop through each repo made by collect_repos
@@ -336,9 +281,7 @@ class AnsibleTriage(DefaultTriager):
             repo = item[1]['repo']
 
             # set the relative cachedir
-            self.cachedir = os.path.join(self.cachedir_base, repopath)
-            # this is where the issue history cache goes
-            hcache = os.path.join(self.cachedir, repopath)
+            cachedir = os.path.join(self.cachedir_base, repopath)
 
             for issue in item[1]['issues']:
 
@@ -350,23 +293,22 @@ class AnsibleTriage(DefaultTriager):
 
                 self.meta = {}
                 number = issue.number
-                self.number = number
                 self.set_resume(item[0], number)
 
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(number)
 
-                if issue.state == 'closed' and not self.args.ignore_state:
+                if issue.state == 'closed' and not self.ignore_state:
                     logging.info(str(number) + ' is closed, skipping')
                     redo = False
                     continue
 
-                if self.args.only_prs and 'pull' not in issue.html_url:
+                if self.only_prs and 'pull' not in issue.html_url:
                     logging.info(str(number) + ' is issue, skipping')
                     redo = False
                     continue
 
-                if self.args.only_issues and 'pull' in issue.html_url:
+                if self.only_issues and 'pull' in issue.html_url:
                     logging.info(str(number) + ' is pullrequest, skipping')
                     redo = False
                     continue
@@ -397,11 +339,11 @@ class AnsibleTriage(DefaultTriager):
                         github=self.ghw,
                         repo=repo,
                         issue=issue,
-                        cachedir=self.cachedir,
+                        cachedir=cachedir,
                         file_indexer=self.file_indexer
                     )
 
-                    if self.args.skip_no_update:
+                    if self.skip_no_update:
                         lmeta = self.load_meta(iw)
 
                         if lmeta:
@@ -479,7 +421,7 @@ class AnsibleTriage(DefaultTriager):
                         self.process(iw)
                     else:
                         # module repo processing ...
-                        self.run_module_repo_issue(iw, actions, hcache=hcache)
+                        self.run_module_repo_issue(iw, actions)
                         # do nothing else on these repos
                         redo = False
                         continue
@@ -565,7 +507,7 @@ class AnsibleTriage(DefaultTriager):
                     logging.warning("'pr' switch is used by but Github authentication token isn't set: all pull-requests will be scrapped")
 
                 cachefile = os.path.join(
-                    self.cachedir,
+                    self.cachedir_base, rp,
                     '%s__scraped_issues.json' % rp
                 )
                 self.issue_summaries[repopath] = self.gws.get_issue_summaries(
@@ -631,7 +573,7 @@ class AnsibleTriage(DefaultTriager):
             dmeta
         )
 
-    def run_module_repo_issue(self, iw, actions, hcache=None):
+    def run_module_repo_issue(self, iw, actions):
         ''' Module Repos are dead!!! '''
 
         if iw.created_at >= REPOMERGEDATE:
@@ -1300,16 +1242,18 @@ class AnsibleTriage(DefaultTriager):
                         import epdb; epdb.st()
                     raise LabelWafflingError(msg)
 
+    def apply_actions(self, iw, actions):
+        if self.safe_force:
+            self.check_safe_match(iw, actions)
+        return super(AnsibleTriage, self).apply_actions(iw, actions)
+
     def check_safe_match(self, iw, actions):
 
-        if hasattr(self, 'safe_force_script'):
-
-            if self.safe_force_script:
-
-                with open(self.safe_force_script, 'rb') as f:
-                    fdata = f.read()
-                self.force = bool(eval(fdata))
-                return self.force
+        if self.safe_force_script:
+            with open(self.safe_force_script, 'rb') as f:
+                fdata = f.read()
+            self.force = bool(eval(fdata))
+            return self.force
 
         safe = True
 
@@ -1372,7 +1316,6 @@ class AnsibleTriage(DefaultTriager):
         self.module_maintainers = []
         self.module = None
         self.template_data = {}
-        self.github_repo = issue.repo_full_name
         self.match = {}
 
         comment = self.render_comment(boilerplate=bp)
@@ -1396,7 +1339,6 @@ class AnsibleTriage(DefaultTriager):
         self.module_maintainers = []
         self.module = None
         self.template_data = {}
-        self.github_repo = issue.repo_full_name
         self.match = {}
 
         comment = self.render_comment(boilerplate=bp)
@@ -1408,31 +1350,6 @@ class AnsibleTriage(DefaultTriager):
         pprint(vars(actions))
         action_meta = self.apply_actions(issue, actions)
         return action_meta
-
-    def trigger_rate_limit(self):
-        '''Repeatedly make calls to exhaust rate limit'''
-
-        self.gh = self._connect()
-        self.ghw = GithubWrapper(self.gh)
-
-        while True:
-            for repo in REPOS:
-                cachedir = os.path.join(self.cachedir, repo)
-                thisrepo = self.ghw.get_repo(repo, verbose=False)
-                issues = thisrepo.repo.get_issues()
-                rl = thisrepo.get_rate_limit()
-                pprint(rl)
-
-                for issue in issues:
-                    iw = IssueWrapper(
-                            github=self.ghw,
-                            repo=thisrepo,
-                            issue=issue,
-                            cachedir=cachedir
-                    )
-                    iw.history
-                    rl = thisrepo.get_rate_limit()
-                    pprint(rl)
 
     def get_stale_numbers(self, reponame):
         # https://github.com/ansible/ansibullbot/issues/458
@@ -1493,14 +1410,14 @@ class AnsibleTriage(DefaultTriager):
 
         for repo in REPOS:
             # skip repos based on args
-            if self.args.repo and self.args.repo != repo:
+            if self.repo and self.repo != repo:
                 continue
             if self.skiprepo:
                 if repo in self.skiprepo:
                     continue
-            if self.args.skip_module_repos and 'module' in repo:
+            if self.skip_module_repos and 'module' in repo:
                 continue
-            if self.args.module_repos_only and 'module' not in repo:
+            if self.module_repos_only and 'module' not in repo:
                 continue
             self._collect_repo(repo)
 
@@ -1539,12 +1456,12 @@ class AnsibleTriage(DefaultTriager):
         numbers = set(int(x) for x in numbers)
         logging.info('%s known numbers' % len(numbers))
 
-        if self.args.pr:
-            if os.path.isfile(self.args.pr) and \
-                    os.access(self.args.pr, os.X_OK):
+        if self.pr:
+            if os.path.isfile(self.pr) and \
+                    os.access(self.pr, os.X_OK):
                 # allow for scripts when trying to target spec issues
-                logging.info('executing %s' % self.args.pr)
-                (rc, so, se) = run_command(self.args.pr)
+                logging.info('executing %s' % self.pr)
+                (rc, so, se) = run_command(self.pr)
                 param_numbers = json.loads(so)
                 param_numbers = [int(x) for x in param_numbers]
                 logging.info(
@@ -1560,7 +1477,7 @@ class AnsibleTriage(DefaultTriager):
             numbers.intersection_update(param_numbers)
             numbers = list(numbers)
 
-        if self.args.daemonize:
+        if self.daemonize:
 
             if not self.repos[repo]['since']:
                 ts = [
@@ -1602,13 +1519,13 @@ class AnsibleTriage(DefaultTriager):
                     (len(numbers), since)
                 )
 
-        if self.args.start_at and self.repos[repo]['loopcount'] == 0:
-            numbers = [x for x in numbers if x <= self.args.start_at]
+        if self.start_at and self.repos[repo]['loopcount'] == 0:
+            numbers = [x for x in numbers if x <= self.start_at]
             logging.info('%s numbers after start-at' % len(numbers))
 
         # Get stale numbers if not targeting
         if repo not in MREPOS:
-            if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
+            if self.daemonize and self.repos[repo]['loopcount'] > 0:
                 stale = self.get_stale_numbers(repo)
                 self.repos[repo]['stale'] = [int(x) for x in stale]
                 numbers += [int(x) for x in stale]
@@ -1620,7 +1537,7 @@ class AnsibleTriage(DefaultTriager):
         ################################################################
 
         # filter just the open numbers
-        if not self.args.only_closed and not self.args.ignore_state:
+        if not self.only_closed and not self.ignore_state:
             numbers = [
                 x for x in numbers
                 if str(x) in self.issue_summaries[repo] and
@@ -1629,13 +1546,13 @@ class AnsibleTriage(DefaultTriager):
             logging.info('%s numbers after checking state' % len(numbers))
 
         # filter by type
-        if self.args.only_issues:
+        if self.only_issues:
             numbers = [
                 x for x in numbers
                 if self.issue_summaries[repo][str(x)]['type'].lower() == 'issue'
             ]
             logging.info('%s numbers after checking type' % len(numbers))
-        elif self.args.only_prs:
+        elif self.only_prs:
             numbers = [
                 x for x in numbers
                 if self.issue_summaries[repo][str(x)]['type'].lower() ==
@@ -1645,7 +1562,7 @@ class AnsibleTriage(DefaultTriager):
 
         # Use iterator to avoid requesting all issues upfront
         numbers = sorted(set([int(x) for x in numbers]))
-        if self.args.sort == 'desc':
+        if self.sort == 'desc':
             numbers = [x for x in reversed(numbers)]
 
         self.repos[repo]['issues'] = RepoIssuesIterator(
@@ -2094,3 +2011,97 @@ class AnsibleTriage(DefaultTriager):
         """Renders templates into comments using the boilerplate as filename"""
         template = environment.get_template('%s.j2' % boilerplate)
         return template.render()
+
+    @classmethod
+    def create_parser(cls):
+
+        parser = DefaultTriager.create_parser()
+
+        parser.description = "Triage issue and pullrequest queues for Ansible.\n" \
+                             " (NOTE: only useful if you have commit access to" \
+                             " the repo in question.)"
+
+        parser.add_argument("--repo", "-r", type=str, choices=MREPOS,
+                    help="Github repo to triage (defaults to all)")
+
+        parser.add_argument("--skip_no_update", action="store_true",
+                            help="skip processing if updated_at hasn't changed")
+
+        parser.add_argument("--skip_no_update_timeout", action="store_true",
+                            help="ignore skip logic if last processed >={} days ago".format(C.DEFAULT_STALE_WINDOW))
+
+        parser.add_argument("--collect_only", action="store_true",
+                            help="stop after caching issues")
+
+        parser.add_argument("--skip_module_repos", action="store_true",
+                            help="ignore the module repos")
+        parser.add_argument("--module_repos_only", action="store_true",
+                            help="only process the module repos")
+
+        parser.add_argument("--sort", default='desc', choices=['asc', 'desc'],
+                            help="Direction to sort issues [desc=9-0 asc=0-9]")
+
+        parser.add_argument("--skiprepo", action='append',
+                            help="Github repo to skip triaging")
+
+        parser.add_argument("--only_prs", action="store_true",
+                            help="Triage pullrequests only")
+        parser.add_argument("--only_issues", action="store_true",
+                            help="Triage issues only")
+
+        parser.add_argument("--only_open", action="store_true",
+                            help="Triage open issues|prs only")
+        parser.add_argument("--only_closed", action="store_true",
+                            help="Triage closed issues|prs only")
+
+        parser.add_argument("--safe_force", action="store_true",
+                            help="Prompt only on specific actions")
+        parser.add_argument("--safe_force_script", type=str,
+                            help="Script to check safe force")
+        parser.add_argument("--ignore_state", action="store_true",
+                            help="Do not skip processing closed issues")
+
+        # ALWAYS ON NOW
+        #parser.add_argument("--issue_component_matching", action="store_true",
+        #                    help="Try to enumerate the component labels for issues")
+
+        parser.add_argument(
+            "--pr", "--id", type=str,
+            help="Triage only the specified pr|issue (separated by commas)"
+        )
+
+        parser.add_argument("--start-at", "--resume_id", type=int,
+                            help="Start triage at the specified pr|issue")
+        parser.add_argument("--resume", action="store_true", dest="resume_enabled",
+                            help="pickup right after where the bot last stopped")
+        parser.add_argument("--no_since", action="store_true",
+                            help="Do not use the since keyword to fetch issues")
+
+        return parser
+
+    def get_resume(self):
+        '''Returns a dict with the last issue repo+number processed'''
+        if self.pr or not self.resume_enabled:
+            return
+
+        resume_file = os.path.join(self.cachedir_base, 'resume.json')
+        if not os.path.isfile(resume_file):
+            logging.error('Resume: %r not found', resume_file)
+            return None
+
+        logging.debug('Resume: read %r', resume_file)
+        with open(resume_file, 'rb') as f:
+            data = json.loads(f.read())
+        return data
+
+    def set_resume(self, repo, number):
+        if self.pr or not self.resume_enabled:
+            return
+
+        data = {
+            'repo': repo,
+            'number': number
+        }
+        resume_file = os.path.join(self.cachedir_base, 'resume.json')
+        with open(resume_file, 'wb') as f:
+            f.write(json.dumps(data, indent=2))

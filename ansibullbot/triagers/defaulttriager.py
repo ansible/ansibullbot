@@ -17,8 +17,8 @@
 
 from __future__ import print_function
 
-import ConfigParser
 import abc
+import argparse
 import json
 import logging
 import os
@@ -26,12 +26,14 @@ import sys
 import time
 import pickle
 from datetime import datetime
+from pprint import pprint
 
 # remember to pip install PyGithub, kids!
 from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
+import ansibullbot.constants as C
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
@@ -73,52 +75,26 @@ class DefaultTriager(object):
 
     ITERATION = 0
 
-    def __init__(self, args):
+    def __init__(self):
 
-        self.args = args
+        parser = self.create_parser()
+        args = parser.parse_args()
+
+        for x in vars(args):
+            val = getattr(args, x)
+            setattr(self, x, val)
+
         self.last_run = None
-        self.daemonize = None
-        self.daemonize_interval = None
-        self.dry_run = False
-        self.force = False
 
-        self.configfile = self.args.configfile
-        self.config = ConfigParser.ConfigParser()
-        self.config.read([self.configfile])
-
-        try:
-            self.github_user = self.config.get('defaults', 'github_username')
-        except:
-            self.github_user = None
-
-        try:
-            self.github_pass = self.config.get('defaults', 'github_password')
-        except:
-            self.github_pass = None
-
-        try:
-            self.github_token = self.config.get('defaults', 'github_token')
-        except:
-            self.github_token = None
-
-        self.repopath = self.args.repo
-        self.logfile = self.args.logfile
+        self.github_user = C.DEFAULT_GITHUB_USERNAME
+        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
+        self.github_token = C.DEFAULT_GITHUB_TOKEN
 
         # where to store junk
-        self.cachedir = self.args.cachedir
-        self.cachedir = os.path.expanduser(self.cachedir)
-        self.cachedir_base = self.cachedir
+        self.cachedir_base = os.path.expanduser(self.cachedir_base)
 
         self.set_logger()
         logging.info('starting bot')
-
-        logging.debug('setting bot attributes')
-        for x in vars(self.args):
-            val = getattr(self.args, x)
-            setattr(self, x, val)
-
-        if hasattr(self.args, 'pause') and self.args.pause:
-            self.always_pause = True
 
         # connect to github
         logging.info('creating api connection')
@@ -126,79 +102,65 @@ class DefaultTriager(object):
 
         # wrap the connection
         logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir)
+        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
 
-        # get valid labels
-        logging.info('getting labels')
-        self.valid_labels = self.get_valid_labels(self.repopath)
+    @classmethod
+    def create_parser(cls):
+        """Creates an argument parser
 
-    @property
-    def resume(self):
-        '''Returns a dict with the last issue repo+number processed'''
-        if not hasattr(self, 'args'):
-            return None
-        if hasattr(self.args, 'pr') and self.args.pr:
-            return None
-        if not hasattr(self.args, 'resume'):
-            return None
-        if not self.args.resume:
-            return None
-
-        if hasattr(self, 'cachedir_base'):
-            resume_file = os.path.join(self.cachedir_base, 'resume.json')
-        else:
-            resume_file = os.path.join(self.cachedir, 'resume.json')
-        if not os.path.isfile(resume_file):
-            return None
-
-        with open(resume_file, 'rb') as f:
-            data = json.loads(f.read())
-        return data
-
-    def set_resume(self, repo, number):
-        if not hasattr(self, 'args'):
-            return None
-        if hasattr(self.args, 'pr') and self.args.pr:
-            return None
-        if not hasattr(self.args, 'resume'):
-            return None
-        if not self.args.resume:
-            return None
-
-        data = {
-            'repo': repo,
-            'number': number
-        }
-        if hasattr(self, 'cachedir_base'):
-            resume_file = os.path.join(self.cachedir_base, 'resume.json')
-        else:
-            resume_file = os.path.join(self.cachedir, 'resume.json')
-        with open(resume_file, 'wb') as f:
-            f.write(json.dumps(data, indent=2))
+        Returns:
+            A argparse.ArgumentParser object
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--cachedir", type=str, dest='cachedir_base',
+                            default='~/.ansibullbot/cache')
+        parser.add_argument("--logfile", type=str,
+                            default='/var/log/ansibullbot.log',
+                            help="Send logging to this file")
+        parser.add_argument("--daemonize", action="store_true",
+                            help="run in a continuos loop")
+        parser.add_argument("--daemonize_interval", type=int, default=(30 * 60),
+                            help="seconds to sleep between loop iterations")
+        parser.add_argument("--debug", "-d", action="store_true",
+                            help="Debug output")
+        parser.add_argument("--verbose", "-v", action="store_true",
+                            help="Verbose output")
+        parser.add_argument("--dry-run", "-n", action="store_true",
+                            help="Don't make any changes")
+        parser.add_argument("--force", "-f", action="store_true",
+                            help="Do not ask questions")
+        parser.add_argument("--pause", "-p", action="store_true", dest="always_pause",
+                            help="Always pause between prs|issues")
+        parser.add_argument("--force_rate_limit", action="store_true",
+                            help="debug: force the rate limit")
+        parser.add_argument("--force_description_fixer", action="store_true",
+                            help="Always invoke the description fixer")
+        # useful for debugging
+        parser.add_argument("--dump_actions", action="store_true",
+                            help="serialize the actions to disk [/tmp/actions]")
+        parser.add_argument("--botmetafile", type=str,
+                            default=None,
+                            help="Use this filepath for botmeta instead of from the repo")
+        return parser
 
     def set_logger(self):
-        if hasattr(self.args, 'debug') and self.args.debug:
+        if self.debug:
             logging.level = logging.DEBUG
         else:
             logging.level = logging.INFO
         logFormatter = \
             logging.Formatter("%(asctime)s %(levelname)s %(message)s")
         rootLogger = logging.getLogger()
-        if hasattr(self.args, 'debug') and self.args.debug:
+        if self.debug:
             rootLogger.setLevel(logging.DEBUG)
         else:
             rootLogger.setLevel(logging.INFO)
 
-        if hasattr(self.args, 'logfile'):
-            logfile = self.args.logfile
-        else:
-            logfile = '/tmp/ansibullbot.log'
-
-        logdir = os.path.dirname(logfile)
+        logdir = os.path.dirname(self.logfile)
         if logdir and not os.path.isdir(logdir):
             os.makedirs(logdir)
 
-        fileHandler = logging.FileHandler(logfile)
+        fileHandler = logging.FileHandler(self.logfile)
         fileHandler.setFormatter(logFormatter)
         rootLogger.addHandler(fileHandler)
         consoleHandler = logging.StreamHandler()
@@ -207,13 +169,12 @@ class DefaultTriager(object):
 
     def start(self):
 
-        if hasattr(self.args, 'force_rate_limit') and \
-                self.args.force_rate_limit:
+        if self.force_rate_limit:
             logging.warning('attempting to trigger rate limit')
             self.trigger_rate_limit()
             return
 
-        if hasattr(self.args, 'daemonize') and self.args.daemonize:
+        if self.daemonize:
             logging.info('starting daemonize loop')
             self.loop()
         else:
@@ -231,10 +192,6 @@ class DefaultTriager(object):
                 login_or_token=self.github_user,
                 password=self.github_pass
             )
-
-    @abc.abstractmethod
-    def _get_repo_path(self):
-        pass
 
     def is_pr(self, issue):
         if '/pull/' in issue.html_url:
@@ -261,13 +218,11 @@ class DefaultTriager(object):
         now = self.get_current_time()
         gh_org = self._connect().get_organization(organization)
 
-        cachedir = self.cachedir
-        if cachedir.endswith('/issues'):
-            cachedir = os.path.dirname(cachedir)
-        cachefile = os.path.join(cachedir, 'members.pickle')
-
+        cachedir = os.path.join(self.cachedir_base, organization)
         if not os.path.isdir(cachedir):
             os.makedirs(cachedir)
+
+        cachefile = os.path.join(cachedir, 'members.pickle')
 
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
@@ -314,39 +269,26 @@ class DefaultTriager(object):
         return sorted(members)
 
     #@RateLimited
-    def get_valid_labels(self, repo=None):
+    def get_valid_labels(self, repo):
 
         # use the repo wrapper to enable caching+updating
         if not self.ghw:
             self.gh = self._connect()
             self.ghw = GithubWrapper(self.gh)
 
-        if not repo:
-            # OLD workflow
-            self.repo = self.ghw.get_repo(self._get_repo_path())
-            vlabels = []
-            for vl in self.repo.get_labels():
-                vlabels.append(vl.name)
-        else:
-            # v3 workflow
-            rw = self.ghw.get_repo(repo)
-            vlabels = []
-            for vl in rw.get_labels():
-                vlabels.append(vl.name)
+        rw = self.ghw.get_repo(repo)
+        vlabels = []
+        for vl in rw.get_labels():
+            vlabels.append(vl.name)
 
         return vlabels
-
-    def debug(self, msg=""):
-        """Prints debug message if verbosity is given"""
-        if self.verbose:
-            print("Debug: " + msg)
 
     def loop(self):
         '''Call the run method in a defined interval'''
         while True:
             self.run()
             self.ITERATION += 1
-            interval = self.args.daemonize_interval
+            interval = self.daemonize_interval
             logging.info('sleep %ss (%sm)' % (interval, interval / 60))
             time.sleep(interval)
 
@@ -362,52 +304,14 @@ class DefaultTriager(object):
         comment = template.render(**tvars)
         return comment
 
-    def check_safe_match(self, iw, actions):
-        """ Turn force on or off depending on match characteristics """
-        safe_match = False
-
-        if actions.count() == 0:
-            safe_match = True
-
-        elif not actions.close and not actions.unlabel:
-            if len(actions.newlabel) == 1:
-                if actions.newlabel[0].startswith('affects_'):
-                    safe_match = True
-
-        else:
-            safe_match = False
-            if self.module:
-                if self.module in iw.instance.title.lower():
-                    safe_match = True
-
-        # be more lenient on re-notifications
-        if not safe_match:
-            if not actions.close and \
-                    not actions.unlabel and \
-                    not actions.newlabel:
-
-                if len(actions.comments) == 1:
-                    if 'still waiting' in actions.comments[0]:
-                        safe_match = True
-
-        if safe_match:
-            self.force = True
-        else:
-            self.force = False
-
     def apply_actions(self, iw, actions):
 
         action_meta = {'REDO': False}
 
-        if hasattr(self, 'safe_force') and self.safe_force:
-            self.check_safe_match(iw, actions)
-
         if actions.count() > 0:
 
-            if hasattr(self, 'args'):
-                if hasattr(self.args, 'dump_actions'):
-                    if self.args.dump_actions:
-                        self.dump_action_dict(iw, actions)
+            if self.dump_actions:
+                self.dump_action_dict(iw, actions)
 
             if self.dry_run:
                 print("Dry-run specified, skipping execution of actions")
@@ -444,7 +348,11 @@ class DefaultTriager(object):
                 # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
-        elif hasattr(self, 'force_description_fixer') and self.args.force_description_fixer:
+        elif self.force_description_fixer:
+            # FIXME: self.FIXED_ISSUES not defined since 1cf9674cd38edbd17aff906d72296c99043e5c13
+            #        either define self.FIXED_ISSUES, either remove this method
+            # FIXME force_description_fixer is not known by DefaultTriager (only
+            #       by AnsibleTriage): if not removed, move it to AnsibleTriage
             if iw.html_url not in self.FIXED_ISSUES:
                 if self.meta['template_missing_sections']:
                     changed = self.template_wizard(iw)
@@ -530,20 +438,41 @@ class DefaultTriager(object):
             iw.merge()
 
     @RateLimited
-    def is_pr_merged(self, number, repo=None):
+    def is_pr_merged(self, number, repo):
         '''Check if a PR# has been merged or not'''
         merged = False
         pr = None
         try:
-            if not repo:
-                pr = self.repo.get_pullrequest(number)
-            else:
-                pr = repo.get_pullrequest(number)
+            pr = repo.get_pullrequest(number)
         except Exception as e:
             print(e)
         if pr:
             merged = pr.merged
         return merged
+
+    def trigger_rate_limit(self):
+        '''Repeatedly make calls to exhaust rate limit'''
+
+        self.gh = self._connect()
+        self.ghw = GithubWrapper(self.gh)
+
+        while True:
+            cachedir = os.path.join(self.cachedir_base, self.repo)
+            thisrepo = self.ghw.get_repo(self.repo, verbose=False)
+            issues = thisrepo.repo.get_issues()
+            rl = thisrepo.get_rate_limit()
+            pprint(rl)
+
+            for issue in issues:
+                iw = IssueWrapper(
+                        github=self.ghw,
+                        repo=thisrepo,
+                        issue=issue,
+                        cachedir=cachedir
+                )
+                iw.history
+                rl = thisrepo.get_rate_limit()
+                pprint(rl)
 
     def dump_action_dict(self, issue, actions):
         '''Serialize the action dict to disk for quick(er) debugging'''

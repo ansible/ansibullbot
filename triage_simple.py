@@ -17,53 +17,12 @@
 
 from __future__ import print_function
 
-import argparse
 from ansibullbot.triagers.simpletriager import SimpleTriager
 
 
 def main():
-    description = "Triage issue and pullrequest queues for any github repo.\n"
-    description += " (NOTE: only useful if you have commit access to"
-    description += " the repo in question.)"
-
-    parser = argparse.ArgumentParser(description=description)
-
-    parser.add_argument("--configfile", type=str,
-                        default='/tmp/triager_cache/config.cfg')
-    parser.add_argument("--cachedir", type=str,
-                        default='/tmp/triager_cache')
-    parser.add_argument("--logfile", type=str,
-                        default='/tmp/triager_cache/bot.log',
-                        help="Send logging to this file")
-    parser.add_argument("--daemonize", action="store_true",
-                        help="run in a continuos loop")
-    parser.add_argument("--daemonize_interval", type=int, default=(30 * 60),
-                        help="seconds to sleep between loop iterations")
-
-    parser.add_argument("--repo", "-r", type=str, required=True,
-                        help="Github repo to triage")
-
-    parser.add_argument("--debug", "-d", action="store_true",
-                        help="Debug output")
-    parser.add_argument("--verbose", "-v", action="store_true",
-                        help="Verbose output")
-
-    parser.add_argument("--dry-run", "-n", action="store_true",
-                        help="Don't make any changes")
-    parser.add_argument("--force", "-f", action="store_true",
-                        help="Do not ask questions")
-    parser.add_argument("--always_pause", "-p", action="store_true",
-                        help="Always pause between prs|issues")
-
-    parser.add_argument(
-        "--number", "--pr", "--id", type=str,
-        help="Triage only the specified pr|issue (separated by commas)"
-    )
-
-    args = parser.parse_args()
-
     # Run the triager ...
-    SimpleTriager(args).start()
+    SimpleTriager().start()
 
 
 if __name__ == "__main__":

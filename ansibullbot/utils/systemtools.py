@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 
-import os
 import subprocess
-import sys
 
 
 def run_command(cmd):
@@ -15,6 +13,4 @@ def fglob(directory, pattern, depth=1):
     (rc, so, se) = run_command(cmd)
     filepaths = so.split('\n')
     filepaths = [x.strip() for x in filepaths if x.strip()]
-    #import epdb; epdb.st()
     return filepaths
-
