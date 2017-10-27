@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import json
+import os
 from unittest import TestCase
 
 from ansibullbot.utils.component_tools import ComponentMatcher
@@ -12,14 +13,50 @@ class FakeIndexer(object):
     modules = {}
     files = []
 
+    def find_match(self, name, exact=True):
+        '''Adapter for moduleindexer's function'''
+        for k,v in self.modules.items():
+            if v['name'] == name:
+                return v
+        return None
+
+
+def get_component_matcher():
+
+    # Make indexers
+    MI = FakeIndexer()
+    FI = FakeIndexer()
+
+    # Load the files
+    with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
+        FI.files = json.loads(f.read())
+
+    # Load the modules
+    mfiles = [x for x in FI.files if 'lib/ansible/modules' in x]
+    mfiles = [x for x in mfiles if x.endswith('.py') or x.endswith('.ps1')]
+    mfiles = [x for x in mfiles if x != '__init__.py']
+    mnames =[]
+    for mfile in mfiles:
+        mname = os.path.basename(mfile)
+        mname = mname.replace('.py', '')
+        mname = mname.replace('.ps1', '')
+        mnames.append(mname)
+        MI.modules[mfile] = {'name': mname, 'repo_filename': mfile}
+
+    # Init the matcher
+    CM = ComponentMatcher(None, FI, MI)
+
+    return CM
+
 
 class TestComponentMatcher(TestCase):
 
     def test_reduce_filepaths(self):
 
-        MI = FakeIndexer()
-        FI = FakeIndexer()
-        CM = ComponentMatcher(None, FI, MI)
+        #MI = FakeIndexer()
+        #FI = FakeIndexer()
+        #CM = ComponentMatcher(None, FI, MI)
+        CM = get_component_matcher()
 
         filepaths = ['commands/command.py', 'lib/ansible/modules/commands/command.py']
         reduced = CM.reduce_filepaths(filepaths)
@@ -77,12 +114,16 @@ class TestComponentMatcher(TestCase):
                 'lib/ansible/plugins/strategy/__init__.py'
             ],
             '- jabber.py': [
-                'lib/ansible/plugins/callback/jabber.py',
-                'lib/ansible/plugins/callback/jabber.py'
+                #'lib/ansible/plugins/callback/jabber.py',
+                #'lib/ansible/plugins/callback/jabber.py'
+                'lib/ansible/modules/notification/jabber.py',
+                'lib/ansible/modules/notification/jabber.py',
             ],
             '- ios_config.py': [
-                'lib/ansible/plugins/action/ios_config.py',
-                'lib/ansible/plugins/action/ios_config.py'
+                #'lib/ansible/plugins/action/ios_config.py',
+                #'lib/ansible/plugins/action/ios_config.py'
+                'lib/ansible/modules/network/ios/ios_config.py',
+                'lib/ansible/modules/network/ios/ios_config.py',
             ],
             'ansible-test': [
                 'test/runner/ansible-test',
@@ -101,8 +142,10 @@ class TestComponentMatcher(TestCase):
                 'bin/ansible-connection'
             ],
             '`validate-modules`': [
-                'test/sanity/validate-modules/validate-modules',
-                'test/sanity/validate-modules/validate-modules'
+                #'test/sanity/validate-modules/validate-modules',
+                #'test/sanity/validate-modules/validate-modules'
+                'test/sanity/validate-modules',
+                'test/sanity/validate-modules',
             ],
             '`modules/cloud/docker/docker_container.py`': [
                 'lib/ansible/modules/cloud/docker/docker_container.py',
@@ -118,18 +161,14 @@ class TestComponentMatcher(TestCase):
             ],
         }
 
-        MI = FakeIndexer()
-        FI = FakeIndexer()
-        with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
-            FI.files = json.loads(f.read())
-        CM = ComponentMatcher(None, FI, MI)
+        CM = get_component_matcher()
 
-        COMPONENTS = {
-            '`plugins/strategy/__init__.py`': [
-                'lib/ansible/plugins/strategy/__init__.py',
-                'lib/ansible/plugins/strategy/__init__.py'
-            ],
-        }
+        #COMPONENTS = {
+        #    '`plugins/strategy/__init__.py`': [
+        #        'lib/ansible/plugins/strategy/__init__.py',
+        #        'lib/ansible/plugins/strategy/__init__.py'
+        #    ],
+        #}
 
         #import epdb; epdb.st()
 
@@ -157,11 +196,7 @@ class TestComponentMatcher(TestCase):
 
     def test_search_by_filepath_with_context(self):
 
-        MI = FakeIndexer()
-        FI = FakeIndexer()
-        with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
-            FI.files = json.loads(f.read())
-        CM = ComponentMatcher(None, FI, MI)
+        CM = get_component_matcher()
 
         COMPONENTS = {
             'ec2.py': [
@@ -183,11 +218,8 @@ class TestComponentMatcher(TestCase):
 
 
     def test_search_by_regex_module_globs(self):
-        MI = FakeIndexer()
-        FI = FakeIndexer()
-        with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
-            FI.files = json.loads(f.read())
-        CM = ComponentMatcher(None, FI, MI)
+
+        CM = get_component_matcher()
 
         COMPONENTS = {
             'All AWS modules': 'lib/ansible/modules/cloud/amazon',
@@ -201,21 +233,25 @@ class TestComponentMatcher(TestCase):
                 'lib/ansible/modules/cloud/amazon/elasticache_parameter_group.py',
                 'lib/ansible/modules/cloud/amazon/elasticache_snapshot.py',
                 'lib/ansible/modules/cloud/amazon/elasticache_subnet_group.py',
-            ]
+            ],
+            'All FreeIPA Modules': [],
+            'All modules': [],
+            'All Cisco IOS Modules': [],
+            'All EC2 based modules, possibly more.': 'lib/ansible/modules/cloud/amazon',
         }
 
         for COMPONENT,EXPECTED in COMPONENTS.items():
             if not isinstance(EXPECTED, list):
                 EXPECTED = [EXPECTED]
             res = CM.search_by_regex_module_globs(COMPONENT)
-            print(res)
+            #print('')
+            #print(COMPONENT)
+            #print(res)
             self.assertEqual(EXPECTED, res)
 
     def test_search_by_keywords(self):
 
-        MI = FakeIndexer()
-        FI = FakeIndexer()
-        CM = ComponentMatcher(None, FI, MI)
+        CM = get_component_matcher()
 
         COMPONENTS = {
             #'inventory script': ['lib/ansible/plugins/inventory/script.py'] #ix2390 https://github.com/ansible/ansible/issues/24545
@@ -225,8 +261,41 @@ class TestComponentMatcher(TestCase):
         for k,v in COMPONENTS.items():
             COMPONENT = k
             EXPECTED = v
-
             res = CM.search_by_keywords(COMPONENT)
+            self.assertEqual(EXPECTED, res)
+
+    def test_search_by_regex_modules(self):
+
+        CM = get_component_matcher()
+
+        COMPONENTS = {
+            'Module: include_role': ['lib/ansible/modules/utilities/logic/include_role.py'],
+            'module: include_role': ['lib/ansible/modules/utilities/logic/include_role.py'],
+            'module include_role': ['lib/ansible/modules/utilities/logic/include_role.py'],
+            #'ec2_asg (AWS EC2 auto scaling groups)': ['lib/ansible/modules/cloud/amazon/ec2_asg.py'],
+            'junos_command (but not only !)': ['lib/ansible/modules/network/junos/junos_command.py'],
+            'tower_job_list module but I believe that also the other tower_* module have the same error':
+                ['lib/ansible/modules/web_infrastructure/ansible_tower/tower_job_list.py'],
+            #'F5 bigip (bigip_selfip)': ['lib/ansible/modules/network/f5/bigip_selfip.py'],
+            'ansible_modules_vsphere_guest': ['lib/ansible/modules/cloud/vmware/vsphere_guest.py'],
+            'shell-module': ['lib/ansible/modules/commands/shell.py'],
+            'the docker_volume command': ['lib/ansible/modules/cloud/docker/docker_volume.py'],
+            'Azure Inventory Script - azure_rm.py': [],
+            ':\n`at` module': ['lib/ansible/modules/system/at.py'],
+            ':\n`rax` module': ['lib/ansible/modules/cloud/rackspace/rax.py'],
+            '`apt_key` module': ['lib/ansible/modules/packaging/os/apt_key.py'],
+            '`apt` module': ['lib/ansible/modules/packaging/os/apt.py'],
+            '`ecs_service` module': ['lib/ansible/modules/cloud/amazon/ecs_service.py'],
+            '`meta` module': ['lib/ansible/modules/utilities/helper/meta.py'],
+            '`meta` module': ['lib/ansible/modules/utilities/helper/meta.py'],
+            '`mysql_user` module': ['lib/ansible/modules/database/mysql/mysql_user.py'],
+            '`s3` module': [],
+            '`user` module': ['lib/ansible/modules/system/user.py'],
+            'the "user" module': ['lib/ansible/modules/system/user.py']
+        }
+
+        for COMPONENT,EXPECTED in COMPONENTS.items():
+            res = CM.search_by_regex_modules(COMPONENT)
             self.assertEqual(EXPECTED, res)
 
     # FIXME

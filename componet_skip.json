@@ -80,5 +80,9 @@
   "https://github.com/ansible/ansible/issues/27563", 
   "https://github.com/ansible/ansible/issues/28233", 
   "https://github.com/ansible/ansible/issues/28268", 
-  "https://github.com/ansible/ansible/issues/28751"
+  "https://github.com/ansible/ansible/issues/28751", 
+  "https://github.com/ansible/ansible/issues/27594", 
+  "https://github.com/ansible/ansible/issues/27697", 
+  "https://github.com/ansible/ansible/issues/28322", 
+  "https://github.com/ansible/ansible/issues/29312"
 ]

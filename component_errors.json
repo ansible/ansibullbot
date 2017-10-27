@@ -1,36 +1,22 @@
 [
   {
-    "component": "junos_command (but not only !)", 
-    "component_raw": "junos_command (but not only !)", 
+    "component": "`ansible_module_ec2_ami_copy.py`", 
+    "component_raw": "`ansible_module_ec2_ami_copy.py`", 
     "expected": [
-      "junos_command.py"
+      "lib/ansible/modules/cloud/amazon/ec2_ami_copy.py"
     ], 
     "result": [], 
     "strategies": [
       null
     ], 
     "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/26236"
-  }, 
-  {
-    "component": "lib/ansible/modules/storage/netapp/sf_volume-manager.py\nqos dict should be of type dict", 
-    "component_raw": "lib/ansible/modules/storage/netapp/sf_volume-manager.py\nqos dict should be of type dict", 
-    "expected": [
-      "lib/ansible/modules/storage/netapp"
-    ], 
-    "result": [], 
-    "strategies": [
-      null, 
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/27594"
+    "url": "https://github.com/ansible/ansible/issues/26971"
   }, 
   {
     "component": "debug var", 
     "component_raw": "debug var", 
     "expected": [
-      "lib/ansible/plugins/callback/debug.py"
+      "lib/ansible/modules/utilities/logic/debug.py"
     ], 
     "result": [], 
     "strategies": [
@@ -40,80 +26,25 @@
     "url": "https://github.com/ansible/ansible/issues/27694"
   }, 
   {
-    "component": "testing ansible-test", 
-    "component_raw": "testing ansible-test", 
+    "component": "- ansible-vault", 
+    "component_raw": "- ansible-vault", 
     "expected": [
-      "docs/docsite/rst/dev_guide/testing", 
-      "test/integration/targets/module_utils/library/test.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/27697"
-  }, 
-  {
-    "component": "All AWS modules", 
-    "component_raw": "All AWS modules", 
-    "expected": [
-      "docs/docsite/rst/modules"
+      "lib/ansible/parsing/vault"
     ], 
     "result": [
-      "lib/ansible/modules/cloud/amazon"
+      "bin/ansible-vault"
     ], 
     "strategies": [
-      "search_by_regex_module_globs"
+      "search_by_filepath"
     ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/27800"
-  }, 
-  {
-    "component": "unit tests", 
-    "component_raw": "unit tests", 
-    "expected": [
-      "hacking/tests"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/27810"
-  }, 
-  {
-    "component": "tower_job_list module but I believe that also the other tower_* module have the same error", 
-    "component_raw": "tower_job_list module but I believe that also the other tower_* module have the same error", 
-    "expected": [
-      "lib/ansible/module_utils/facts/other"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/27850"
-  }, 
-  {
-    "component": "virt modules", 
-    "component_raw": "virt modules", 
-    "expected": [
-      "lib/ansible/modules/cloud/misc/virt.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/cloud/ovirt"
-    ], 
-    "strategies": [
-      "search_by_regex_module_globs"
-    ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/27905"
+    "strategy": "search_by_filepath", 
+    "url": "https://github.com/ansible/ansible/issues/28058"
   }, 
   {
     "component": "netapp_e_storagepool storage module", 
     "component_raw": "netapp_e_storagepool storage module", 
     "expected": [
-      "netapp_e_storagepool.py"
+      "lib/ansible/modules/storage/netapp/netapp_e_storagepool.py"
     ], 
     "result": [], 
     "strategies": [
@@ -123,59 +54,78 @@
     "url": "https://github.com/ansible/ansible/issues/28161"
   }, 
   {
-    "component": "- Conditional & Error Handling", 
-    "component_raw": "- Conditional & Error Handling", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/playbook/conditional.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/28455"
-  }, 
-  {
-    "component": "azure_rm_deployment (although azure_rm_common seems to be at work here)", 
-    "component_raw": "azure_rm_deployment (although azure_rm_common seems to be at work here)", 
+    "component": "EOS network modules", 
+    "component_raw": "EOS network modules", 
     "expected": [
-      "azure_rm_deployment.py"
+      "lib/ansible/modules/network"
     ], 
     "result": [
-      "lib/ansible/modules/system/at.py"
+      "lib/ansible/modules/network/eos/__init__.py", 
+      "lib/ansible/modules/network/eos/eos_banner.py", 
+      "lib/ansible/modules/network/eos/eos_command.py", 
+      "lib/ansible/modules/network/eos/eos_config.py", 
+      "lib/ansible/modules/network/eos/eos_eapi.py", 
+      "lib/ansible/modules/network/eos/eos_facts.py", 
+      "lib/ansible/modules/network/eos/eos_logging.py", 
+      "lib/ansible/modules/network/eos/eos_system.py", 
+      "lib/ansible/modules/network/eos/eos_user.py", 
+      "lib/ansible/modules/network/eos/eos_vlan.py", 
+      "lib/ansible/modules/network/eos/eos_vrf.py", 
+      "test/units/modules/network/eos/__init__.py", 
+      "test/units/modules/network/eos/eos_module.py", 
+      "test/units/modules/network/eos/fixtures/eos_banner_show_banner.txt", 
+      "test/units/modules/network/eos/fixtures/eos_command_show_version.txt", 
+      "test/units/modules/network/eos/fixtures/eos_config_candidate.cfg", 
+      "test/units/modules/network/eos/fixtures/eos_config_config.cfg", 
+      "test/units/modules/network/eos/fixtures/eos_config_config_updated.cfg", 
+      "test/units/modules/network/eos/fixtures/eos_eapi_show_mgmt.json", 
+      "test/units/modules/network/eos/fixtures/eos_eapi_show_mgmt_unconfigured.json", 
+      "test/units/modules/network/eos/fixtures/eos_eapi_show_vrf.text", 
+      "test/units/modules/network/eos/fixtures/eos_system_config.cfg", 
+      "test/units/modules/network/eos/fixtures/eos_user_config.cfg", 
+      "test/units/modules/network/eos/test_eos_banner.py", 
+      "test/units/modules/network/eos/test_eos_command.py", 
+      "test/units/modules/network/eos/test_eos_config.py", 
+      "test/units/modules/network/eos/test_eos_eapi.py", 
+      "test/units/modules/network/eos/test_eos_system.py", 
+      "test/units/modules/network/eos/test_eos_user.py"
     ], 
     "strategies": [
-      "search_by_keywords!exact"
+      "search_by_filepath[partial]"
     ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/28916"
+    "strategy": "search_by_filepath[partial]", 
+    "url": "https://github.com/ansible/ansible/issues/28309"
   }, 
   {
-    "component": "`/ansible/ansible-modules-extras/cloud/amazon/ecs_service_facts.py`", 
-    "component_raw": "`/ansible/ansible-modules-extras/cloud/amazon/ecs_service_facts.py`", 
+    "component": "- nxos_interface_ospf\nAll", 
+    "component_raw": "- nxos_interface_ospf\nAll", 
     "expected": [
-      "docs/docsite/rst/modules"
+      "lib/ansible/modules/network/nxos/nxos_interface_ospf.py"
+    ], 
+    "result": [
+      "lib/ansible/modules/inventory/group_by.py", 
+      "lib/ansible/modules/network/nxos/nxos_interface_ospf.py", 
+      "test/integration/targets/group_by/group_vars/all"
+    ], 
+    "strategies": [
+      "search_by_module_name", 
+      "search_by_filepath"
+    ], 
+    "strategy": "search_by_filepath", 
+    "url": "https://github.com/ansible/ansible/issues/28897"
+  }, 
+  {
+    "component": "rabbitmq_plugin  module", 
+    "component_raw": "rabbitmq_plugin  module", 
+    "expected": [
+      "lib/ansible/modules/messaging/rabbitmq_plugin.py"
     ], 
     "result": [], 
     "strategies": [
       null
     ], 
     "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/29312"
-  }, 
-  {
-    "component": "`ecs_service_facts`", 
-    "component_raw": "`ecs_service_facts`", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/ecs_service_facts.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29355"
+    "url": "https://github.com/ansible/ansible/issues/29196"
   }, 
   {
     "component": "F5 bigip (bigip_selfip)", 
@@ -206,313 +156,60 @@
     "url": "https://github.com/ansible/ansible/issues/29370"
   }, 
   {
-    "component": "NXOS modules", 
-    "component_raw": "NXOS modules", 
-    "expected": [
-      "docs/docsite/rst/modules"
-    ], 
-    "result": [
-      "lib/ansible/modules/network/nxos"
-    ], 
-    "strategies": [
-      "search_by_regex_module_globs"
-    ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/29382"
-  }, 
-  {
     "component": "ec2-asg-facts", 
     "component_raw": "ec2-asg-facts", 
     "expected": [
       "contrib/inventory/ec2.py"
     ], 
-    "result": [], 
-    "strategies": [
-      null
+    "result": [
+      "lib/ansible/modules/cloud/amazon/ec2_asg_facts.py"
     ], 
-    "strategy": null, 
+    "strategies": [
+      "search_by_module_name"
+    ], 
+    "strategy": "search_by_module_name", 
     "url": "https://github.com/ansible/ansible/issues/29392"
   }, 
   {
-    "component": "cloud/profitbricks", 
-    "component_raw": "cloud/profitbricks", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/profitbricks"
-    ], 
-    "strategies": [
-      "search_by_filepath"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/29402"
-  }, 
-  {
-    "component": "component: ec2_ami", 
-    "component_raw": "component: ec2_ami", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/ec2_ami.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29449"
-  }, 
-  {
-    "component": "all command modules", 
-    "component_raw": "all command modules", 
+    "component": "Module `synchronize`", 
+    "component_raw": "Module `synchronize`", 
     "expected": [
-      "lib/ansible/modules/commands/command.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/commands"
-    ], 
-    "strategies": [
-      "search_by_regex_module_globs"
-    ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/29458"
-  }, 
-  {
-    "component": "`docker_image`", 
-    "component_raw": "`docker_image`", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/docker/docker_image.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29521"
-  }, 
-  {
-    "component": "* docker_service", 
-    "component_raw": "* docker_service", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/docker/docker_service.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29527"
-  }, 
-  {
-    "component": "network, netcli, ios_command.py, ios_config.py", 
-    "component_raw": "network, netcli, ios_command.py, ios_config.py", 
-    "expected": [
-      "lib/ansible/module_utils/netcli.py", 
-      "lib/ansible/plugins/action/ios_config.py", 
-      "lib/ansible/plugins/filter/network.py"
-    ], 
-    "result": [
-      "lib/ansible/module_utils/netcli.py", 
-      "lib/ansible/modules/network/ios/ios_command.py", 
-      "lib/ansible/modules/network/ios/ios_config.py"
-    ], 
-    "strategies": [
-      "search_by_filepath", 
-      "search_by_filepath[partial]", 
-      "search_by_filepath", 
-      "search_by_filepath"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/29548"
-  }, 
-  {
-    "component": "`azure_rm_storageaccount_facts`", 
-    "component_raw": "`azure_rm_storageaccount_facts`", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/azure/azure_rm_storageaccount_facts.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29550"
-  }, 
-  {
-    "component": "ansible_module_vsphere_guest", 
-    "component_raw": "ansible_module_vsphere_guest", 
-    "expected": [
-      "vsphere_guest.py"
+      "lib/ansible/modules/files/synchronize.py"
     ], 
     "result": [], 
     "strategies": [
       null
     ], 
     "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/29569"
+    "url": "https://github.com/ansible/ansible/issues/29483"
   }, 
   {
-    "component": "shell-module", 
-    "component_raw": "shell-module", 
+    "component": "module `setup`\nin a playbook as `gather_facts: yes`", 
+    "component_raw": "module `setup`\nin a playbook as `gather_facts: yes`", 
     "expected": [
-      "lib/ansible/modules/commands/shell.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/29571"
-  }, 
-  {
-    "component": "nxos_command\nnxos_config", 
-    "component_raw": "nxos_command\nnxos_config", 
-    "expected": [
-      "lib/ansible/plugins/action/nxos_config.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/network/nxos/nxos_command.py", 
-      "lib/ansible/modules/network/nxos/nxos_config.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29592"
-  }, 
-  {
-    "component": "gem:", 
-    "component_raw": "gem:", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/packaging/language/gem.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29599"
-  }, 
-  {
-    "component": "Different modules keep temporary files after execution.\n- command\n- yum\n- setup\n- file\n- lineinfile", 
-    "component_raw": "Different modules keep temporary files after execution.\n- command\n- yum\n- setup\n- file\n- lineinfile", 
-    "expected": [
-      "docs/docsite/rst/modules", 
-      "lib/ansible/plugins/lookup/file.py", 
-      "lib/ansible/utils/module_docs_fragments/files.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/commands/command.py", 
-      "lib/ansible/modules/files/file.py", 
-      "lib/ansible/modules/files/lineinfile.py", 
-      "lib/ansible/modules/packaging/os/yum.py", 
       "lib/ansible/modules/system/setup.py"
     ], 
-    "strategies": [
-      null, 
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29622"
-  }, 
-  {
-    "component": "ios_template & ios_command", 
-    "component_raw": "ios_template & ios_command", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/network/ios/ios_command.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29624"
-  }, 
-  {
-    "component": "mysql_user:", 
-    "component_raw": "mysql_user:", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/database/mysql/mysql_user.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29627"
-  }, 
-  {
-    "component": "File modules with `backup` option: `copy`, `template`, `lineinfile`, `ini_file`, `replace`.", 
-    "component_raw": "File modules with `backup` option: `copy`, `template`, `lineinfile`, `ini_file`, `replace`.", 
-    "expected": [
-      "docs/docsite/rst/modules", 
-      "lib/ansible/plugins/action/copy.py", 
-      "lib/ansible/plugins/lookup/template.py", 
-      "lib/ansible/utils/module_docs_fragments/backup.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/files/ini_file.py", 
-      "lib/ansible/modules/files/lineinfile.py", 
-      "lib/ansible/modules/files/template.py"
-    ], 
-    "strategies": [
-      "search_by_regex_module_globs", 
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29639"
-  }, 
-  {
-    "component": "rhn_channel\nrhn_*", 
-    "component_raw": "rhn_channel\nrhn_*", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/packaging/os/rhn_channel.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29649"
-  }, 
-  {
-    "component": "adhoc/playbook cli", 
-    "component_raw": "adhoc/playbook cli", 
-    "expected": [
-      "lib/ansible/cli"
-    ], 
     "result": [], 
     "strategies": [
+      null, 
       null
     ], 
     "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/29653"
+    "url": "https://github.com/ansible/ansible/issues/29590"
   }, 
   {
-    "component": "template module, copy module", 
-    "component_raw": "template module, copy module", 
+    "component": "module: `vsphere_guest`\nusing: `vm_disk`", 
+    "component_raw": "module: `vsphere_guest`\nusing: `vm_disk`", 
     "expected": [
-      "lib/ansible/plugins/action/copy.py", 
-      "lib/ansible/plugins/lookup/template.py"
+      "lib/ansible/modules/cloud/vmware/vsphere_guest.py"
     ], 
-    "result": [
-      "lib/ansible/modules/files/copy.py", 
-      "lib/ansible/modules/files/template.py"
-    ], 
+    "result": [], 
     "strategies": [
-      "search_by_regex_modules", 
-      "search_by_regex_modules"
+      null, 
+      null
     ], 
-    "strategy": "search_by_regex_modules", 
-    "url": "https://github.com/ansible/ansible/issues/29685"
+    "strategy": null, 
+    "url": "https://github.com/ansible/ansible/issues/29672"
   }, 
   {
     "component": "nxos_template", 
@@ -528,165 +225,18 @@
     "url": "https://github.com/ansible/ansible/issues/29744"
   }, 
   {
-    "component": "shell (or apt, depending on your perspective)", 
-    "component_raw": "shell (or apt, depending on your perspective)", 
-    "expected": [
-      "lib/ansible/plugins/shell"
-    ], 
-    "result": [
-      "lib/ansible/modules/commands/shell.py", 
-      "lib/ansible/modules/packaging/os/apt.py"
-    ], 
-    "strategies": [
-      "search_by_regex_modules", 
-      "search_by_regex_modules"
-    ], 
-    "strategy": "search_by_regex_modules", 
-    "url": "https://github.com/ansible/ansible/issues/29752"
-  }, 
-  {
-    "component": "`apt_repository`", 
-    "component_raw": "`apt_repository`", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/packaging/os/apt_repository.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29754"
-  }, 
-  {
-    "component": "amazon/rds.py", 
-    "component_raw": "amazon/rds.py", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/rds.py"
-    ], 
-    "strategies": [
-      "search_by_filepath"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/29831"
-  }, 
-  {
-    "component": ": yum", 
-    "component_raw": ": yum", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/packaging/os/yum.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29857"
-  }, 
-  {
-    "component": ":\ns3 - manage objects in S3", 
-    "component_raw": ":\ns3 - manage objects in S3", 
-    "expected": [
-      "lib/ansible/parsing/yaml/objects.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/_s3.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/29890"
-  }, 
-  {
-    "component": "openssl_csr\nopenssl_certificate", 
-    "component_raw": "openssl_csr\nopenssl_certificate", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/crypto/openssl_certificate.py", 
-      "lib/ansible/modules/crypto/openssl_csr.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29946"
-  }, 
-  {
-    "component": "mount\nFrom @sivakom on 2015-12-04T001428Z", 
-    "component_raw": "mount\nFrom @sivakom on 2015-12-04T001428Z", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/system/mount.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/29982"
-  }, 
-  {
-    "component": "ec2 modules", 
-    "component_raw": "ec2 modules", 
-    "expected": [
-      "lib/ansible/modules/cloud/amazon/ec2.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon"
-    ], 
-    "strategies": [
-      "search_by_regex_module_globs"
-    ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/29998"
-  }, 
-  {
-    "component": ": ec2_asg", 
-    "component_raw": ": ec2_asg", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/ec2_asg.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30067"
-  }, 
-  {
     "component": "vmware_vm_shell\nn", 
     "component_raw": "vmware_vm_shell\nn", 
     "expected": [], 
     "result": [
-      "lib/ansible/module_utils/network_common.py", 
       "lib/ansible/modules/cloud/vmware/vmware_vm_shell.py"
     ], 
     "strategies": [
       "search_by_keywords", 
-      "search_by_filepath"
+      "search_by_keywords"
     ], 
-    "strategy": "search_by_filepath", 
+    "strategy": "search_by_keywords", 
     "url": "https://github.com/ansible/ansible/issues/30109"
-  }, 
-  {
-    "component": "ec2 modules", 
-    "component_raw": "ec2 modules", 
-    "expected": [
-      "lib/ansible/modules/cloud/amazon/ec2.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon"
-    ], 
-    "strategies": [
-      "search_by_regex_module_globs"
-    ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/30158"
   }, 
   {
     "component": "In the cloud module, in the docker module, the docker_volume command", 
@@ -709,89 +259,40 @@
     "url": "https://github.com/ansible/ansible/issues/30239"
   }, 
   {
-    "component": "aws documentation fragment", 
-    "component_raw": "aws documentation fragment", 
+    "component": "include_task:\nwhen:\ninclude_role:\nwhen:", 
+    "component_raw": "include_task:\nwhen:\ninclude_role:\nwhen:", 
     "expected": [
-      "lib/ansible/utils/module_docs_fragments/aws.py"
+      "lib/ansible/playbook/role/include.py"
     ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30249"
-  }, 
-  {
-    "component": "eos_vrf\neos_eapi", 
-    "component_raw": "eos_vrf\neos_eapi", 
-    "expected": [], 
     "result": [
-      "lib/ansible/modules/network/eos/eos_eapi.py", 
-      "lib/ansible/modules/network/eos/eos_vrf.py"
+      "lib/ansible/modules/utilities/logic/include_role.py"
     ], 
     "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
+      null, 
+      null, 
+      "search_by_module_name", 
+      "search_by_module_name"
     ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30250"
+    "strategy": "search_by_module_name", 
+    "url": "https://github.com/ansible/ansible/issues/30351"
   }, 
   {
-    "component": "win_command\nwin_shell\nwin_stat\n+ others?", 
-    "component_raw": "win_command\nwin_shell\nwin_stat\n+ others?", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/windows/win_command.ps1", 
-      "lib/ansible/modules/windows/win_shell.ps1", 
-      "lib/ansible/modules/windows/win_stat.ps1"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30258"
-  }, 
-  {
-    "component": "components which use \"show running-config all\" etc.", 
-    "component_raw": "components which use \"show running-config all\" etc.", 
+    "component": "- nxos_snmp_community\nAll", 
+    "component_raw": "- nxos_snmp_community\nAll", 
     "expected": [
-      "lib/ansible/config"
+      "lib/ansible/modules/network/nxos/nxos_snmp_community.py"
     ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30310"
-  }, 
-  {
-    "component": "Ansible Filters (based off of Jinja2 \"builtin filters\")", 
-    "component_raw": "Ansible Filters (based off of Jinja2 \"builtin filters\")", 
-    "expected": [], 
     "result": [
-      "lib/ansible/plugins/filter"
+      "lib/ansible/modules/inventory/group_by.py", 
+      "lib/ansible/modules/network/nxos/nxos_snmp_community.py", 
+      "test/integration/targets/group_by/group_vars/all"
     ], 
     "strategies": [
-      "search_by_regex_generic"
+      "search_by_module_name", 
+      "search_by_filepath"
     ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/30366"
-  }, 
-  {
-    "component": "delegate_to / lineinfile", 
-    "component_raw": "delegate_to / lineinfile", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/files/lineinfile.py"
-    ], 
-    "strategies": [
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/30413"
+    "strategy": "search_by_filepath", 
+    "url": "https://github.com/ansible/ansible/issues/30378"
   }, 
   {
     "component": "GCP ansible modules", 
@@ -805,96 +306,6 @@
     ], 
     "strategy": null, 
     "url": "https://github.com/ansible/ansible/issues/30414"
-  }, 
-  {
-    "component": "callback_plugins        = plugins\nstdout_callback         = actionable", 
-    "component_raw": "callback_plugins        = plugins\nstdout_callback         = actionable", 
-    "expected": [
-      "docs/docsite/rst/plugins", 
-      "lib/ansible/plugins/callback/actionable.py"
-    ], 
-    "result": [
-      "lib/ansible/plugins/callback"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_regex_generic"
-    ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/30438"
-  }, 
-  {
-    "component": "User Module, Ansible core module", 
-    "component_raw": "User Module, Ansible core module", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/system/user.py"
-    ], 
-    "strategies": [
-      "search_by_regex_modules", 
-      "search_by_regex_modules"
-    ], 
-    "strategy": "search_by_regex_modules", 
-    "url": "https://github.com/ansible/ansible/issues/30445"
-  }, 
-  {
-    "component": "Installation of Ansible into a virtual environment (optionally, via Homebrew)", 
-    "component_raw": "Installation of Ansible into a virtual environment (optionally, via Homebrew)", 
-    "expected": [
-      "lib/ansible/module_utils/facts/virtual"
-    ], 
-    "result": [
-      "lib/ansible/modules/packaging/os/homebrew.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/30497"
-  }, 
-  {
-    "component": "**nxos_facts**", 
-    "component_raw": "**nxos_facts**", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/network/nxos/nxos_facts.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30529"
-  }, 
-  {
-    "component": "* tempfile\n* remote files handling in general", 
-    "component_raw": "* tempfile\n* remote files handling in general", 
-    "expected": [
-      "lib/ansible/utils/module_docs_fragments/files.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/files/tempfile.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30540"
-  }, 
-  {
-    "component": "Module: Copy\nOption: decrypt: no #new in version 2.4.", 
-    "component_raw": "Module: Copy\nOption: decrypt: no #new in version 2.4.", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/files/copy.py"
-    ], 
-    "strategies": [
-      "search_by_regex_modules", 
-      "search_by_regex_modules"
-    ], 
-    "strategy": "search_by_regex_modules", 
-    "url": "https://github.com/ansible/ansible/issues/30556"
   }, 
   {
     "component": "The new ACI modules, for instance aci_tenant.", 
@@ -914,121 +325,18 @@
     "component": "docker connection module, docker detailed guide.", 
     "component_raw": "docker connection module, docker detailed guide.", 
     "expected": [
-      "contrib/inventory/docker.py", 
-      "lib/ansible/plugins/connection"
+      "lib/ansible/modules/cloud/docker/_docker.py"
     ], 
     "result": [
+      "lib/ansible/modules/cloud/docker/_docker.py", 
       "lib/ansible/plugins/connection/docker.py"
     ], 
     "strategies": [
       "search_by_regex_generic", 
-      "search_by_regex_generic"
+      "search_by_keywords!exact"
     ], 
-    "strategy": "search_by_regex_generic", 
+    "strategy": "search_by_keywords!exact", 
     "url": "https://github.com/ansible/ansible/issues/30574"
-  }, 
-  {
-    "component": "`aws_s3`", 
-    "component_raw": "`aws_s3`", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/aws_s3.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30576"
-  }, 
-  {
-    "component": "Ansible Inventory YAML", 
-    "component_raw": "Ansible Inventory YAML", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/inventory"
-    ], 
-    "strategies": [
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/30586"
-  }, 
-  {
-    "component": "- AWS SNS", 
-    "component_raw": "- AWS SNS", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/sns.py"
-    ], 
-    "strategies": [
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/30590"
-  }, 
-  {
-    "component": "CLI error/warnings reporting when running from a path containing UTF-8 chars", 
-    "component_raw": "CLI error/warnings reporting when running from a path containing UTF-8 chars", 
-    "expected": [
-      "lib/ansible/utils/path.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30592"
-  }, 
-  {
-    "component": "include_role\nimport_role", 
-    "component_raw": "include_role\nimport_role", 
-    "expected": [
-      "lib/ansible/playbook/role/include.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/utilities/logic/import_role.py", 
-      "lib/ansible/playbook/role/include.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30700"
-  }, 
-  {
-    "component": "* unarchive\n* tempfile", 
-    "component_raw": "* unarchive\n* tempfile", 
-    "expected": [
-      "lib/ansible/plugins/action/unarchive.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/files/tempfile.py", 
-      "lib/ansible/modules/files/unarchive.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30703"
-  }, 
-  {
-    "component": "ansible-playbook, --ssh-extra-args flag", 
-    "component_raw": "ansible-playbook, --ssh-extra-args flag", 
-    "expected": [
-      "lib/ansible/playbook", 
-      "lib/ansible/plugins/connection/ssh.py"
-    ], 
-    "result": [
-      "lib/ansible/playbook"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30720"
   }, 
   {
     "component": "Appears to affect all s3_* modules.", 
@@ -1061,54 +369,6 @@
     "url": "https://github.com/ansible/ansible/issues/30765"
   }, 
   {
-    "component": "ansible/module_utils/basic.py", 
-    "component_raw": "ansible/module_utils/basic.py", 
-    "expected": [
-      "test_module.py"
-    ], 
-    "result": [
-      "lib/ansible/module_utils/basic.py"
-    ], 
-    "strategies": [
-      "search_by_regex_generic"
-    ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/30771"
-  }, 
-  {
-    "component": "templating, host vars", 
-    "component_raw": "templating, host vars", 
-    "expected": [
-      "lib/ansible/plugins/vars"
-    ], 
-    "result": [
-      "lib/ansible/vars/hostvars.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30773"
-  }, 
-  {
-    "component": "- eos_config\n- eos_command", 
-    "component_raw": "- eos_config\n- eos_command", 
-    "expected": [
-      "eos_config.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/network/eos/eos_command.py", 
-      "lib/ansible/modules/network/eos/eos_config.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30802"
-  }, 
-  {
     "component": "lookups http//docs.ansible.com/ansible/latest/playbooks_lookups.html", 
     "component_raw": "lookups http//docs.ansible.com/ansible/latest/playbooks_lookups.html", 
     "expected": [
@@ -1120,67 +380,6 @@
     ], 
     "strategy": null, 
     "url": "https://github.com/ansible/ansible/issues/30829"
-  }, 
-  {
-    "component": "- nxos_vpc\n- nxos_vpc_interface", 
-    "component_raw": "- nxos_vpc\n- nxos_vpc_interface", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/network/nxos/nxos_vpc.py", 
-      "lib/ansible/modules/network/nxos/nxos_vpc_interface.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/30846"
-  }, 
-  {
-    "component": "1. WINRM\n2. winrm send_input failed", 
-    "component_raw": "1. WINRM\n2. winrm send_input failed", 
-    "expected": [
-      "lib/ansible/plugins/connection/winrm.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null, 
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/30950"
-  }, 
-  {
-    "component": "include, or tags, or maybe it's a problem with the core functionality", 
-    "component_raw": "include, or tags, or maybe it's a problem with the core functionality", 
-    "expected": [
-      "lib/ansible/playbook/role/include.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/utilities/logic/_include.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31012"
-  }, 
-  {
-    "component": "junos_netconf\njunos_command", 
-    "component_raw": "junos_netconf\njunos_command", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/network/junos/junos_command.py", 
-      "lib/ansible/modules/network/junos/junos_netconf.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31028"
   }, 
   {
     "component": "Module: include_role", 
@@ -1215,57 +414,6 @@
     "url": "https://github.com/ansible/ansible/issues/31093"
   }, 
   {
-    "component": "Trying to use ios_config module but can't open shell to device.", 
-    "component_raw": "Trying to use ios_config module but can't open shell to device.", 
-    "expected": [
-      "lib/ansible/plugins/action/ios_config.py", 
-      "lib/ansible/plugins/shell"
-    ], 
-    "result": [
-      "lib/ansible/modules/commands/shell.py", 
-      "lib/ansible/modules/network/ios/ios_config.py"
-    ], 
-    "strategies": [
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/31098"
-  }, 
-  {
-    "component": "azure_rm_virtualmachine\n(probably applies to all azure)", 
-    "component_raw": "azure_rm_virtualmachine\n(probably applies to all azure)", 
-    "expected": [
-      "lib/ansible/utils/module_docs_fragments/azure.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/cloud/azure/_azure.py", 
-      "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/31105"
-  }, 
-  {
-    "component": "core.py plugins", 
-    "component_raw": "core.py plugins", 
-    "expected": [
-      "docs/docsite/rst/plugins", 
-      "lib/ansible/plugins/filter/core.py"
-    ], 
-    "result": [
-      "lib/ansible/plugins/filter/core.py", 
-      "lib/ansible/plugins/test/core.py"
-    ], 
-    "strategies": [
-      "search_by_filepath[partial]"
-    ], 
-    "strategy": "search_by_filepath[partial]", 
-    "url": "https://github.com/ansible/ansible/issues/31115"
-  }, 
-  {
     "component": "Shows in nxos/ios_config modules but probably a Core issue.", 
     "component_raw": "Shows in nxos/ios_config modules but probably a Core issue.", 
     "expected": [
@@ -1292,104 +440,19 @@
     "url": "https://github.com/ansible/ansible/issues/31141"
   }, 
   {
-    "component": "- fail\n- debug", 
-    "component_raw": "- fail\n- debug", 
+    "component": "- ansible-vault", 
+    "component_raw": "- ansible-vault", 
     "expected": [
-      "lib/ansible/plugins/action/fail.py", 
-      "lib/ansible/plugins/callback/debug.py"
+      "lib/ansible/parsing/vault"
     ], 
     "result": [
-      "lib/ansible/modules/utilities/logic/debug.py", 
-      "lib/ansible/modules/utilities/logic/fail.py"
+      "bin/ansible-vault"
     ], 
     "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
+      "search_by_filepath"
     ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31147"
-  }, 
-  {
-    "component": "ios_logging\nCisco IOS - \"flash:c2600-ipbasek9-mz.124-18c.bin\"", 
-    "component_raw": "ios_logging\nCisco IOS - \"flash:c2600-ipbasek9-mz.124-18c.bin\"", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/network/ios/ios_logging.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31162"
-  }, 
-  {
-    "component": "`yum`", 
-    "component_raw": "`yum`", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/packaging/os/yum.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31211"
-  }, 
-  {
-    "component": "s3 and aws_s3", 
-    "component_raw": "s3 and aws_s3", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/cloud/amazon/_s3.py", 
-      "lib/ansible/modules/cloud/amazon/aws_s3.py"
-    ], 
-    "strategies": [
-      "search_by_regex_modules"
-    ], 
-    "strategy": "search_by_regex_modules", 
-    "url": "https://github.com/ansible/ansible/issues/31232"
-  }, 
-  {
-    "component": "`include*` and `import*`", 
-    "component_raw": "`include*` and `import*`", 
-    "expected": [
-      "lib/ansible/playbook/role/include.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/utilities/logic/_include.py"
-    ], 
-    "strategies": [
-      "search_by_regex_modules"
-    ], 
-    "strategy": "search_by_regex_modules", 
-    "url": "https://github.com/ansible/ansible/issues/31236"
-  }, 
-  {
-    "component": "`subversion`", 
-    "component_raw": "`subversion`", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/source_control/subversion.py"
-    ], 
-    "strategies": [
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31250"
-  }, 
-  {
-    "component": "* New Inventory plugins", 
-    "component_raw": "* New Inventory plugins", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/plugins/inventory"
-    ], 
-    "strategies": [
-      "search_by_regex_generic"
-    ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/31260"
+    "strategy": "search_by_filepath", 
+    "url": "https://github.com/ansible/ansible/issues/31226"
   }, 
   {
     "component": "`ansible-doc` command error", 
@@ -1407,21 +470,6 @@
     "url": "https://github.com/ansible/ansible/issues/31282"
   }, 
   {
-    "component": "Ansible Inventory Manager (`manager.py`)", 
-    "component_raw": "Ansible Inventory Manager (`manager.py`)", 
-    "expected": [
-      "lib/ansible/inventory/manager.py"
-    ], 
-    "result": [
-      "lib/ansible/inventory"
-    ], 
-    "strategies": [
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/31290"
-  }, 
-  {
     "component": "./contrib/vault/vault-keyring.py", 
     "component_raw": "./contrib/vault/vault-keyring.py", 
     "expected": [
@@ -1433,257 +481,6 @@
     ], 
     "strategy": null, 
     "url": "https://github.com/ansible/ansible/issues/31304"
-  }, 
-  {
-    "component": "jenkins_plugin\nor main ansible http_proxy", 
-    "component_raw": "jenkins_plugin\nor main ansible http_proxy", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/web_infrastructure/jenkins_plugin.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31307"
-  }, 
-  {
-    "component": "BigIP modules", 
-    "component_raw": "BigIP modules", 
-    "expected": [
-      "bigip_pool.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/network/f5"
-    ], 
-    "strategies": [
-      "search_by_regex_module_globs"
-    ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/31341"
-  }, 
-  {
-    "component": "InventoryManager and Inventory Plugins", 
-    "component_raw": "InventoryManager and Inventory Plugins", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/plugins/inventory"
-    ], 
-    "strategies": [
-      "search_by_regex_generic"
-    ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/31382"
-  }, 
-  {
-    "component": "```hacking/env-setup.fish```", 
-    "component_raw": "```hacking/env-setup.fish```", 
-    "expected": [], 
-    "result": [
-      "hacking/env-setup.fish"
-    ], 
-    "strategies": [
-      "search_by_filepath"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/31398"
-  }, 
-  {
-    "component": "task meta: refresh inventory", 
-    "component_raw": "task meta: refresh inventory", 
-    "expected": [
-      "contrib/inventory"
-    ], 
-    "result": [
-      "lib/ansible/inventory", 
-      "lib/ansible/modules/utilities/helper/meta.py"
-    ], 
-    "strategies": [
-      "search_by_keywords!exact", 
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/31411"
-  }, 
-  {
-    "component": "Ansible install (module `copy`, see below)", 
-    "component_raw": "Ansible install (module `copy`, see below)", 
-    "expected": [
-      "lib/ansible/plugins/action/copy.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null, 
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/31419"
-  }, 
-  {
-    "component": "- play\n- role\n- loop\n- with_items", 
-    "component_raw": "- play\n- role\n- loop\n- with_items", 
-    "expected": [
-      "lib/ansible/playbook/play.py", 
-      "lib/ansible/playbook/role"
-    ], 
-    "result": [
-      "lib/ansible/playbook/loop_control.py", 
-      "lib/ansible/playbook/play.py", 
-      "lib/ansible/playbook/role"
-    ], 
-    "strategies": [
-      "search_by_filepath", 
-      "search_by_keywords", 
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31422"
-  }, 
-  {
-    "component": "macports, package modules", 
-    "component_raw": "macports, package modules", 
-    "expected": [
-      "docs/docsite/rst/modules", 
-      "lib/ansible/plugins/action/package.py", 
-      "packaging/macports"
-    ], 
-    "result": [
-      "lib/ansible/modules/cloud/centurylink/clc_blueprint_package.py", 
-      "lib/ansible/modules/network/junos/junos_package.py", 
-      "lib/ansible/modules/packaging/os/macports.py", 
-      "lib/ansible/modules/packaging/os/package.py", 
-      "lib/ansible/modules/windows/win_package.ps1", 
-      "lib/ansible/modules/windows/win_package.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_regex_module_globs"
-    ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/31485"
-  }, 
-  {
-    "component": "shell module\ncommand module", 
-    "component_raw": "shell module\ncommand module", 
-    "expected": [
-      "lib/ansible/plugins/shell"
-    ], 
-    "result": [
-      "lib/ansible/modules/commands/command.py", 
-      "lib/ansible/modules/commands/shell.py"
-    ], 
-    "strategies": [
-      "search_by_regex_modules", 
-      "search_by_regex_modules"
-    ], 
-    "strategy": "search_by_regex_modules", 
-    "url": "https://github.com/ansible/ansible/issues/31494"
-  }, 
-  {
-    "component": "yum module + with_items", 
-    "component_raw": "yum module + with_items", 
-    "expected": [
-      "lib/ansible/modules/packaging/os/yum.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/packaging/os/yum.py", 
-      "lib/ansible/playbook/loop_control.py"
-    ], 
-    "strategies": [
-      "search_by_regex_modules", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31534"
-  }, 
-  {
-    "component": "- module_utils/netcfg.py +label networking", 
-    "component_raw": "- module_utils/netcfg.py +label networking", 
-    "expected": [
-      "lib/ansible/module_utils/netcfg.py"
-    ], 
-    "result": [
-      "lib/ansible/module_utils"
-    ], 
-    "strategies": [
-      "search_by_regex_generic"
-    ], 
-    "strategy": "search_by_regex_generic", 
-    "url": "https://github.com/ansible/ansible/issues/31568"
-  }, 
-  {
-    "component": "import_playbook, probably", 
-    "component_raw": "import_playbook, probably", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/utilities/logic/import_playbook.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31595"
-  }, 
-  {
-    "component": "asa_config\nasa_acl", 
-    "component_raw": "asa_config\nasa_acl", 
-    "expected": [
-      "lib/ansible/plugins/action/asa_config.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/network/asa/asa_acl.py", 
-      "lib/ansible/modules/network/asa/asa_config.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31611"
-  }, 
-  {
-    "component": "tower_credential\ntower_*", 
-    "component_raw": "tower_credential\ntower_*", 
-    "expected": [], 
-    "result": [
-      "lib/ansible/modules/web_infrastructure/ansible_tower/tower_credential.py"
-    ], 
-    "strategies": [
-      "search_by_keywords", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31655"
-  }, 
-  {
-    "component": "include (but probably any task as well)", 
-    "component_raw": "include (but probably any task as well)", 
-    "expected": [
-      "lib/ansible/playbook/role/include.py", 
-      "lib/ansible/playbook/task.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/31673"
-  }, 
-  {
-    "component": "task exexutor", 
-    "component_raw": "task exexutor", 
-    "expected": [
-      "lib/ansible/playbook/task.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/31693"
   }, 
   {
     "component": "Hostvars loaded from host_vars/hostname.yml, when hostname is not part of current play", 
@@ -1702,39 +499,6 @@
     "url": "https://github.com/ansible/ansible/issues/31758"
   }, 
   {
-    "component": "vars injected before conditional of include_role task", 
-    "component_raw": "vars injected before conditional of include_role task", 
-    "expected": [
-      "lib/ansible/playbook/conditional.py", 
-      "lib/ansible/playbook/task.py", 
-      "lib/ansible/plugins/vars"
-    ], 
-    "result": [
-      "lib/ansible/playbook/conditional.py", 
-      "lib/ansible/playbook/role/include.py"
-    ], 
-    "strategies": [
-      "search_by_keywords!exact"
-    ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/31820"
-  }, 
-  {
-    "component": "almost all nxos modules and probably the module_utils/nxos.py", 
-    "component_raw": "almost all nxos modules and probably the module_utils/nxos.py", 
-    "expected": [
-      "docs/docsite/rst/modules", 
-      "lib/ansible/module_utils/nxos.py", 
-      "lib/ansible/plugins/action/nxos.py"
-    ], 
-    "result": [], 
-    "strategies": [
-      null
-    ], 
-    "strategy": null, 
-    "url": "https://github.com/ansible/ansible/issues/31837"
-  }, 
-  {
     "component": "Azure Inventory Script - azure_rm.py", 
     "component_raw": "Azure Inventory Script - azure_rm.py", 
     "expected": [
@@ -1748,39 +512,5 @@
     ], 
     "strategy": "search_by_regex_generic", 
     "url": "https://github.com/ansible/ansible/issues/31867"
-  }, 
-  {
-    "component": "module_utils/vmware.py\nvmware_guest", 
-    "component_raw": "module_utils/vmware.py\nvmware_guest", 
-    "expected": [
-      "lib/ansible/modules/cloud/vmware/vmware_guest.py"
-    ], 
-    "result": [
-      "lib/ansible/module_utils/vmware.py", 
-      "lib/ansible/modules/cloud/vmware/vmware_guest.py"
-    ], 
-    "strategies": [
-      "search_by_regex_generic", 
-      "search_by_keywords"
-    ], 
-    "strategy": "search_by_keywords", 
-    "url": "https://github.com/ansible/ansible/issues/31868"
-  }, 
-  {
-    "component": "lookup plugin, credstash", 
-    "component_raw": "lookup plugin, credstash", 
-    "expected": [
-      "lib/ansible/plugins/lookup", 
-      "lib/ansible/plugins/lookup/credstash.py"
-    ], 
-    "result": [
-      "lib/ansible/plugins/lookup/credstash.py"
-    ], 
-    "strategies": [
-      null, 
-      "search_by_filepath"
-    ], 
-    "strategy": "search_by_filepath", 
-    "url": "https://github.com/ansible/ansible/issues/31869"
   }
 ]

@@ -4000,6 +4000,7 @@
   "https://github.com/ansible/ansible/issues/27799": [
     "lib/ansible/modules/clustering/pacemaker_cluster.py"
   ], 
+  "https://github.com/ansible/ansible/issues/27810": [], 
   "https://github.com/ansible/ansible/issues/27815": [
     "lib/ansible/modules/network/junos/junos_command.py"
   ], 
@@ -4047,6 +4048,9 @@
   "https://github.com/ansible/ansible/issues/27903": [
     "lib/ansible/modules/network/cloudengine/ce_command.py", 
     "lib/ansible/modules/network/cloudengine/ce_config.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/27905": [
+    "lib/ansible/modules/cloud/ovirt"
   ], 
   "https://github.com/ansible/ansible/issues/27908": [
     "lib/ansible/modules/network/nxos/nxos_snapshot.py"
@@ -4375,6 +4379,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/28451": [
     "lib/ansible/modules/system/setup.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/28455": [
+    "lib/ansible/playbook/conditional.py"
   ], 
   "https://github.com/ansible/ansible/issues/28461": [], 
   "https://github.com/ansible/ansible/issues/28463": [
@@ -5160,6 +5167,9 @@
     "lib/ansible/modules/files/archive.py"
   ], 
   "https://github.com/ansible/ansible/issues/29354": [], 
+  "https://github.com/ansible/ansible/issues/29355": [
+    "lib/ansible/modules/cloud/amazon/ecs_service_facts.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29358": [
     "lib/ansible/modules/monitoring/datadog_event.py"
   ], 
@@ -5262,6 +5272,9 @@
   "https://github.com/ansible/ansible/issues/29401": [
     "lib/ansible/modules/database/misc/elasticsearch_plugin.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29402": [
+    "lib/ansible/modules/cloud/profitbricks"
+  ], 
   "https://github.com/ansible/ansible/issues/29403": [
     "lib/ansible/modules/packaging/os/homebrew_cask.py"
   ], 
@@ -5351,6 +5364,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/29448": [
     "lib/ansible/modules/network/ios/ios_config.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29449": [
+    "lib/ansible/modules/cloud/amazon/ec2_ami.py"
   ], 
   "https://github.com/ansible/ansible/issues/29450": [
     "lib/ansible/modules/files/synchronize.py"
@@ -5512,8 +5528,14 @@
   "https://github.com/ansible/ansible/issues/29517": [
     "lib/ansible/modules/files/copy.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29519": [
+    "lib/ansible/modules/cloud/amazon/ec2_group.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29520": [
     "lib/ansible/modules/system/service.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29521": [
+    "lib/ansible/modules/cloud/docker/docker_image.py"
   ], 
   "https://github.com/ansible/ansible/issues/29522": [
     "lib/ansible/modules/network/nxos/nxos_reboot.py"
@@ -5523,6 +5545,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/29525": [
     "lib/ansible/modules/files/copy.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29527": [
+    "lib/ansible/modules/cloud/docker/docker_service.py"
   ], 
   "https://github.com/ansible/ansible/issues/29528": [
     "lib/ansible/modules/packaging/os/apt.py"
@@ -5566,8 +5591,16 @@
   "https://github.com/ansible/ansible/issues/29547": [
     "lib/ansible/modules/system/setup.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29548": [
+    "lib/ansible/module_utils/netcli.py", 
+    "lib/ansible/modules/network/ios/ios_command.py", 
+    "lib/ansible/modules/network/ios/ios_config.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29549": [
     "lib/ansible/modules/packaging/os/apt_repository.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29550": [
+    "lib/ansible/modules/cloud/azure/azure_rm_storageaccount_facts.py"
   ], 
   "https://github.com/ansible/ansible/issues/29551": [
     "lib/ansible/modules/cloud/amazon/ec2_elb_lb.py"
@@ -5667,6 +5700,10 @@
   "https://github.com/ansible/ansible/issues/29589": [
     "lib/ansible/modules/files/copy.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29592": [
+    "lib/ansible/modules/network/nxos/nxos_command.py", 
+    "lib/ansible/modules/network/nxos/nxos_config.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29593": [
     "lib/ansible/modules/cloud/azure/azure_rm_subnet.py"
   ], 
@@ -5682,6 +5719,9 @@
   "https://github.com/ansible/ansible/issues/29597": [], 
   "https://github.com/ansible/ansible/issues/29598": [
     "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29599": [
+    "lib/ansible/modules/packaging/language/gem.py"
   ], 
   "https://github.com/ansible/ansible/issues/29601": [
     "lib/ansible/modules/packaging/os/yum.py"
@@ -5722,14 +5762,27 @@
   "https://github.com/ansible/ansible/issues/29621": [
     "lib/ansible/modules/cloud/amazon/ec2_group.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29622": [
+    "lib/ansible/modules/commands/command.py", 
+    "lib/ansible/modules/files/file.py", 
+    "lib/ansible/modules/files/lineinfile.py", 
+    "lib/ansible/modules/packaging/os/yum.py", 
+    "lib/ansible/modules/system/setup.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29623": [
     "lib/ansible/modules/files/lineinfile.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29624": [
+    "lib/ansible/modules/network/ios/ios_command.py"
   ], 
   "https://github.com/ansible/ansible/issues/29625": [
     "lib/ansible/modules/database/mysql/mysql_user.py"
   ], 
   "https://github.com/ansible/ansible/issues/29626": [
     "lib/ansible/modules/system/mount.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29627": [
+    "lib/ansible/modules/database/mysql/mysql_user.py"
   ], 
   "https://github.com/ansible/ansible/issues/29629": [
     "lib/ansible/modules/inventory/group_by.py"
@@ -5761,6 +5814,11 @@
   "https://github.com/ansible/ansible/issues/29638": [
     "lib/ansible/modules/cloud/amazon/ec2_ami_find.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29639": [
+    "lib/ansible/modules/files/ini_file.py", 
+    "lib/ansible/modules/files/lineinfile.py", 
+    "lib/ansible/modules/files/template.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29640": [
     "lib/ansible/modules/cloud/vmware/vsphere_guest.py"
   ], 
@@ -5779,12 +5837,16 @@
   "https://github.com/ansible/ansible/issues/29647": [
     "lib/ansible/modules/system/mount.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29649": [
+    "lib/ansible/modules/packaging/os/rhn_channel.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29651": [
     "lib/ansible/modules/files/lineinfile.py"
   ], 
   "https://github.com/ansible/ansible/issues/29652": [
     "lib/ansible/modules/source_control/git.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29653": [], 
   "https://github.com/ansible/ansible/issues/29654": [
     "lib/ansible/modules/source_control/git.py"
   ], 
@@ -5842,6 +5904,10 @@
   ], 
   "https://github.com/ansible/ansible/issues/29684": [
     "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29685": [
+    "lib/ansible/modules/files/copy.py", 
+    "lib/ansible/modules/files/template.py"
   ], 
   "https://github.com/ansible/ansible/issues/29686": [
     "lib/ansible/modules/packaging/os/yum.py"
@@ -5992,8 +6058,15 @@
   "https://github.com/ansible/ansible/issues/29751": [
     "lib/ansible/modules/packaging/os/yum.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29752": [
+    "lib/ansible/modules/commands/shell.py", 
+    "lib/ansible/modules/packaging/os/apt.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29753": [
     "lib/ansible/modules/cloud/digital_ocean/digital_ocean.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/29754": [
+    "lib/ansible/modules/packaging/os/apt_repository.py"
   ], 
   "https://github.com/ansible/ansible/issues/29755": [
     "lib/ansible/modules/packaging/os/rpm_key.py"
@@ -6192,6 +6265,9 @@
   "https://github.com/ansible/ansible/issues/29830": [
     "lib/ansible/modules/cloud/amazon/_ec2_vpc.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29831": [
+    "lib/ansible/modules/cloud/amazon/rds.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29832": [
     "lib/ansible/modules/system/user.py"
   ], 
@@ -6234,6 +6310,10 @@
   "https://github.com/ansible/ansible/issues/29848": [
     "lib/ansible/modules/cloud/amazon/ec2_vol.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29849": [
+    "lib/ansible/modules/files/copy.py", 
+    "lib/ansible/modules/files/template.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29851": [
     "lib/ansible/modules/cloud/docker/_docker.py"
   ], 
@@ -6271,6 +6351,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/29887": [], 
   "https://github.com/ansible/ansible/issues/29888": [], 
+  "https://github.com/ansible/ansible/issues/29890": [
+    "lib/ansible/modules/cloud/amazon/_s3.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29891": [
     "lib/ansible/modules/system/authorized_key.py"
   ], 
@@ -6407,6 +6490,10 @@
   "https://github.com/ansible/ansible/issues/29942": [
     "lib/ansible/modules/packaging/language/pip.py"
   ], 
+  "https://github.com/ansible/ansible/issues/29946": [
+    "lib/ansible/modules/crypto/openssl_certificate.py", 
+    "lib/ansible/modules/crypto/openssl_csr.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29951": [
     "lib/ansible/modules/crypto/openssl_certificate.py"
   ], 
@@ -6465,6 +6552,9 @@
     "lib/ansible/modules/cloud/amazon/ec2_asg.py"
   ], 
   "https://github.com/ansible/ansible/issues/29981": [], 
+  "https://github.com/ansible/ansible/issues/29982": [
+    "lib/ansible/modules/system/mount.py"
+  ], 
   "https://github.com/ansible/ansible/issues/29983": [
     "lib/ansible/modules/packaging/os/yum.py"
   ], 
@@ -6673,6 +6763,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/30066": [
     "lib/ansible/modules/cloud/docker/_docker.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30067": [
+    "lib/ansible/modules/cloud/amazon/ec2_asg.py"
   ], 
   "https://github.com/ansible/ansible/issues/30070": [
     "lib/ansible/modules/system/mount.py"
@@ -7090,6 +7183,15 @@
   "https://github.com/ansible/ansible/issues/30246": [
     "lib/ansible/modules/system/setup.py"
   ], 
+  "https://github.com/ansible/ansible/issues/30250": [
+    "lib/ansible/modules/network/eos/eos_eapi.py", 
+    "lib/ansible/modules/network/eos/eos_vrf.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30258": [
+    "lib/ansible/modules/windows/win_command.ps1", 
+    "lib/ansible/modules/windows/win_shell.ps1", 
+    "lib/ansible/modules/windows/win_stat.ps1"
+  ], 
   "https://github.com/ansible/ansible/issues/30260": [
     "lib/ansible/modules/cloud/amazon/ec2_group.py"
   ], 
@@ -7120,6 +7222,7 @@
   "https://github.com/ansible/ansible/issues/30307": [
     "lib/ansible/modules/cloud/amazon/sns_topic.py"
   ], 
+  "https://github.com/ansible/ansible/issues/30310": [], 
   "https://github.com/ansible/ansible/issues/30315": [
     "lib/ansible/modules/windows/win_file.ps1"
   ], 
@@ -7151,6 +7254,9 @@
     "lib/ansible/modules/cloud/amazon/ec2_vpc_net.py"
   ], 
   "https://github.com/ansible/ansible/issues/30362": "lib/ansible/modules/cloud/amazon/ec2.py", 
+  "https://github.com/ansible/ansible/issues/30366": [
+    "lib/ansible/plugins/filter"
+  ], 
   "https://github.com/ansible/ansible/issues/30367": [
     "lib/ansible/modules/network/junos/junos_config.py"
   ], 
@@ -7195,6 +7301,9 @@
   "https://github.com/ansible/ansible/issues/30412": [
     "lib/ansible/modules/windows/win_iis_website.py"
   ], 
+  "https://github.com/ansible/ansible/issues/30413": [
+    "lib/ansible/modules/files/lineinfile.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30418": [
     "lib/ansible/modules/system/ping.py"
   ], 
@@ -7205,6 +7314,12 @@
     "lib/ansible/modules/files/xml.py"
   ], 
   "https://github.com/ansible/ansible/issues/30431": "lib/ansible/modules/windows/win_regedit.ps1", 
+  "https://github.com/ansible/ansible/issues/30438": [
+    "lib/ansible/plugins/callback"
+  ], 
+  "https://github.com/ansible/ansible/issues/30445": [
+    "lib/ansible/modules/system/user.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30454": [], 
   "https://github.com/ansible/ansible/issues/30455": [
     "lib/ansible/modules/cloud/docker/docker_container.py"
@@ -7224,6 +7339,9 @@
     "lib/ansible/parsing/vault"
   ], 
   "https://github.com/ansible/ansible/issues/30494": [], 
+  "https://github.com/ansible/ansible/issues/30497": [
+    "lib/ansible/modules/packaging/os/homebrew.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30500": [
     "lib/ansible/modules/database/mysql/mysql_db.py"
   ], 
@@ -7248,12 +7366,21 @@
     "lib/ansible/playbook"
   ], 
   "https://github.com/ansible/ansible/issues/30527": [], 
+  "https://github.com/ansible/ansible/issues/30529": [
+    "lib/ansible/modules/network/nxos/nxos_facts.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30534": "lib/ansible/inventory", 
+  "https://github.com/ansible/ansible/issues/30540": [
+    "lib/ansible/modules/files/tempfile.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30548": [
     "lib/ansible/modules/cloud/docker/docker_service.py"
   ], 
   "https://github.com/ansible/ansible/issues/30555": [
     "lib/ansible/modules/windows/win_domain_membership.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30556": [
+    "lib/ansible/modules/files/copy.py"
   ], 
   "https://github.com/ansible/ansible/issues/30557": [], 
   "https://github.com/ansible/ansible/issues/30561": [
@@ -7271,12 +7398,22 @@
   "https://github.com/ansible/ansible/issues/30571": [
     "lib/ansible/modules/cloud/lxc/lxc_container.py"
   ], 
+  "https://github.com/ansible/ansible/issues/30576": [
+    "lib/ansible/modules/cloud/amazon/aws_s3.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30578": [
     "lib/ansible/modules/cloud/amazon/elb_application_lb.py"
   ], 
   "https://github.com/ansible/ansible/issues/30585": [
     "lib/ansible/playbook"
   ], 
+  "https://github.com/ansible/ansible/issues/30586": [
+    "lib/ansible/inventory"
+  ], 
+  "https://github.com/ansible/ansible/issues/30590": [
+    "lib/ansible/modules/cloud/amazon/sns.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30592": [], 
   "https://github.com/ansible/ansible/issues/30597": [], 
   "https://github.com/ansible/ansible/issues/30599": [
     "lib/ansible/modules/files/ini_file.py"
@@ -7373,12 +7510,23 @@
   "https://github.com/ansible/ansible/issues/30698": [
     "lib/ansible/modules/network/eos/eos_config.py"
   ], 
+  "https://github.com/ansible/ansible/issues/30700": [
+    "lib/ansible/modules/utilities/logic/import_role.py", 
+    "lib/ansible/playbook/role/include.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30701": [], 
+  "https://github.com/ansible/ansible/issues/30703": [
+    "lib/ansible/modules/files/tempfile.py", 
+    "lib/ansible/modules/files/unarchive.py"
+  ], 
   "https://github.com/ansible/ansible/issues/30709": [
     "lib/ansible/modules/network/nxos/nxos_command.py"
   ], 
   "https://github.com/ansible/ansible/issues/30719": [
     "lib/ansible/modules/files/ini_file.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30720": [
+    "lib/ansible/playbook"
   ], 
   "https://github.com/ansible/ansible/issues/30744": [], 
   "https://github.com/ansible/ansible/issues/30751": [
@@ -7393,6 +7541,12 @@
   ], 
   "https://github.com/ansible/ansible/issues/30768": [
     "lib/ansible/modules/system/interfaces_file.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30771": [
+    "lib/ansible/module_utils/basic.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30773": [
+    "lib/ansible/vars/hostvars.py"
   ], 
   "https://github.com/ansible/ansible/issues/30774": [
     "lib/ansible/modules/source_control/git.py"
@@ -7417,6 +7571,10 @@
   ], 
   "https://github.com/ansible/ansible/issues/30800": [
     "lib/ansible/modules/cloud/amazon/ec2_instance_facts.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30802": [
+    "lib/ansible/modules/network/eos/eos_command.py", 
+    "lib/ansible/modules/network/eos/eos_config.py"
   ], 
   "https://github.com/ansible/ansible/issues/30803": [
     "lib/ansible/modules/source_control/git.py"
@@ -7445,6 +7603,10 @@
   "https://github.com/ansible/ansible/issues/30837": [], 
   "https://github.com/ansible/ansible/issues/30843": [
     "lib/ansible/modules/utilities/logic/assert.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/30846": [
+    "lib/ansible/modules/network/nxos/nxos_vpc.py", 
+    "lib/ansible/modules/network/nxos/nxos_vpc_interface.py"
   ], 
   "https://github.com/ansible/ansible/issues/30848": [
     "lib/ansible/modules/system/mount.py"
@@ -7568,6 +7730,9 @@
   "https://github.com/ansible/ansible/issues/31009": [
     "lib/ansible/modules/cloud/amazon/ec2_lc.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31012": [
+    "lib/ansible/modules/utilities/logic/_include.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31017": [
     "lib/ansible/module_utils/basic.py"
   ], 
@@ -7582,6 +7747,10 @@
   ], 
   "https://github.com/ansible/ansible/issues/31027": [
     "lib/ansible/module_utils/junos.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31028": [
+    "lib/ansible/modules/network/junos/junos_command.py", 
+    "lib/ansible/modules/network/junos/junos_netconf.py"
   ], 
   "https://github.com/ansible/ansible/issues/31030": [], 
   "https://github.com/ansible/ansible/issues/31032": [], 
@@ -7632,13 +7801,25 @@
   ], 
   "https://github.com/ansible/ansible/issues/31091": [], 
   "https://github.com/ansible/ansible/issues/31095": [], 
+  "https://github.com/ansible/ansible/issues/31098": [
+    "lib/ansible/modules/commands/shell.py", 
+    "lib/ansible/modules/network/ios/ios_config.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31101": [], 
+  "https://github.com/ansible/ansible/issues/31105": [
+    "lib/ansible/modules/cloud/azure/_azure.py", 
+    "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31106": [
     "lib/ansible/plugins/connection/network_cli.py"
   ], 
   "https://github.com/ansible/ansible/issues/31107": "lib/ansible/plugins/connection/netconf.py", 
   "https://github.com/ansible/ansible/issues/31109": [
     "lib/ansible/module_utils/urls.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31115": [
+    "lib/ansible/plugins/filter/core.py", 
+    "lib/ansible/plugins/test/core.py"
   ], 
   "https://github.com/ansible/ansible/issues/31116": [
     "lib/ansible/modules/system/ping.py"
@@ -7655,6 +7836,10 @@
   "https://github.com/ansible/ansible/issues/31145": [
     "lib/ansible/modules/packaging/os/apt.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31147": [
+    "lib/ansible/modules/utilities/logic/debug.py", 
+    "lib/ansible/modules/utilities/logic/fail.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31148": [], 
   "https://github.com/ansible/ansible/issues/31150": [
     "lib/ansible/modules/files/file.py"
@@ -7663,6 +7848,9 @@
     "lib/ansible/modules/source_control/hg.py"
   ], 
   "https://github.com/ansible/ansible/issues/31161": [], 
+  "https://github.com/ansible/ansible/issues/31162": [
+    "lib/ansible/modules/network/ios/ios_logging.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31166": [
     "lib/ansible/modules/windows/win_uri.py"
   ], 
@@ -7698,17 +7886,30 @@
   "https://github.com/ansible/ansible/issues/31223": [], 
   "https://github.com/ansible/ansible/issues/31225": [], 
   "https://github.com/ansible/ansible/issues/31229": [], 
+  "https://github.com/ansible/ansible/issues/31232": [
+    "lib/ansible/modules/cloud/amazon/_s3.py", 
+    "lib/ansible/modules/cloud/amazon/aws_s3.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31234": [
     "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py"
   ], 
   "https://github.com/ansible/ansible/issues/31235": [
     "lib/ansible/modules/system/selinux.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31236": [
+    "lib/ansible/modules/utilities/logic/_include.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31239": [
     "lib/ansible/modules/system/setup.py"
   ], 
   "https://github.com/ansible/ansible/issues/31249": [
     "lib/ansible/playbook"
+  ], 
+  "https://github.com/ansible/ansible/issues/31250": [
+    "lib/ansible/modules/source_control/subversion.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31260": [
+    "lib/ansible/plugins/inventory"
   ], 
   "https://github.com/ansible/ansible/issues/31266": [
     "lib/ansible/modules/system/parted.py"
@@ -7735,6 +7936,9 @@
   "https://github.com/ansible/ansible/issues/31280": [
     "lib/ansible/module_utils/junos.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31290": [
+    "lib/ansible/inventory"
+  ], 
   "https://github.com/ansible/ansible/issues/31295": [], 
   "https://github.com/ansible/ansible/issues/31296": [], 
   "https://github.com/ansible/ansible/issues/31299": [], 
@@ -7743,6 +7947,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/31301": [], 
   "https://github.com/ansible/ansible/issues/31303": [], 
+  "https://github.com/ansible/ansible/issues/31307": [
+    "lib/ansible/modules/web_infrastructure/jenkins_plugin.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31309": [
     "lib/ansible/modules/system/cronvar.py"
   ], 
@@ -7757,6 +7964,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/31338": [
     "lib/ansible/modules/cloud/docker/docker_container.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31341": [
+    "lib/ansible/modules/network/f5"
   ], 
   "https://github.com/ansible/ansible/issues/31344": [
     "lib/ansible/modules/system/service.py"
@@ -7790,21 +8000,37 @@
   "https://github.com/ansible/ansible/issues/31378": [
     "lib/ansible/modules/cloud/amazon/elb_target_group.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31382": [
+    "lib/ansible/plugins/inventory"
+  ], 
   "https://github.com/ansible/ansible/issues/31390": [
     "lib/ansible/modules/commands/expect.py"
   ], 
   "https://github.com/ansible/ansible/issues/31391": [
     "lib/ansible/modules/network/ios/ios_config.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31398": [
+    "hacking/env-setup.fish"
+  ], 
   "https://github.com/ansible/ansible/issues/31403": [], 
   "https://github.com/ansible/ansible/issues/31404": [
     "lib/ansible/modules/cloud/google/gce_img.py"
   ], 
   "https://github.com/ansible/ansible/issues/31409": [], 
+  "https://github.com/ansible/ansible/issues/31411": [
+    "lib/ansible/inventory", 
+    "lib/ansible/modules/utilities/helper/meta.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31412": [
     "lib/ansible/modules/packaging/os/yum.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31419": [], 
   "https://github.com/ansible/ansible/issues/31420": [], 
+  "https://github.com/ansible/ansible/issues/31422": [
+    "lib/ansible/playbook/loop_control.py", 
+    "lib/ansible/playbook/play.py", 
+    "lib/ansible/playbook/role"
+  ], 
   "https://github.com/ansible/ansible/issues/31423": [
     "lib/ansible/modules/windows/win_regedit.ps1"
   ], 
@@ -7841,11 +8067,23 @@
   "https://github.com/ansible/ansible/issues/31483": [
     "lib/ansible/modules/packaging/os/rpm_key.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31485": [
+    "lib/ansible/modules/cloud/centurylink/clc_blueprint_package.py", 
+    "lib/ansible/modules/network/junos/junos_package.py", 
+    "lib/ansible/modules/packaging/os/macports.py", 
+    "lib/ansible/modules/packaging/os/package.py", 
+    "lib/ansible/modules/windows/win_package.ps1", 
+    "lib/ansible/modules/windows/win_package.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31489": [
     "lib/ansible/modules/network/junos/junos_facts.py"
   ], 
   "https://github.com/ansible/ansible/issues/31490": [
     "lib/ansible/modules/network/ios/ios_facts.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31494": [
+    "lib/ansible/modules/commands/command.py", 
+    "lib/ansible/modules/commands/shell.py"
   ], 
   "https://github.com/ansible/ansible/issues/31502": [
     "lib/ansible/modules/windows/win_dsc.ps1lib/ansible/modules/windows/win_dsc.py"
@@ -7863,6 +8101,10 @@
   "https://github.com/ansible/ansible/issues/31521": [], 
   "https://github.com/ansible/ansible/issues/31527": [], 
   "https://github.com/ansible/ansible/issues/31532": [], 
+  "https://github.com/ansible/ansible/issues/31534": [
+    "lib/ansible/modules/packaging/os/yum.py", 
+    "lib/ansible/playbook/loop_control.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31545": [], 
   "https://github.com/ansible/ansible/issues/31547": [
     "lib/ansible/modules/system/timezone.py"
@@ -7878,6 +8120,9 @@
   ], 
   "https://github.com/ansible/ansible/issues/31561": [], 
   "https://github.com/ansible/ansible/issues/31567": [], 
+  "https://github.com/ansible/ansible/issues/31568": [
+    "lib/ansible/module_utils"
+  ], 
   "https://github.com/ansible/ansible/issues/31574": [
     "lib/ansible/modules/network/eos/eos_config.py"
   ], 
@@ -7905,6 +8150,9 @@
   "https://github.com/ansible/ansible/issues/31594": [
     "lib/ansible/modules/files/file.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31595": [
+    "lib/ansible/modules/utilities/logic/import_playbook.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31599": [
     "lib/ansible/modules/windows/win_reboot.py"
   ], 
@@ -7912,6 +8160,10 @@
     "lib/ansible/modules/clustering/kubernetes.py"
   ], 
   "https://github.com/ansible/ansible/issues/31609": [
+    "lib/ansible/modules/network/asa/asa_config.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31611": [
+    "lib/ansible/modules/network/asa/asa_acl.py", 
     "lib/ansible/modules/network/asa/asa_config.py"
   ], 
   "https://github.com/ansible/ansible/issues/31615": [
@@ -7949,8 +8201,14 @@
   "https://github.com/ansible/ansible/issues/31651": [
     "lib/ansible/modules/system/setup.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31655": [
+    "lib/ansible/modules/web_infrastructure/ansible_tower/tower_credential.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31666": [
     "lib/ansible/modules/cloud/vmware/vmware_guest_facts.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31673": [
+    "lib/ansible/modules/utilities/logic/_include.py"
   ], 
   "https://github.com/ansible/ansible/issues/31674": [
     "lib/ansible/vars/hostvars.py"
@@ -7971,6 +8229,7 @@
   "https://github.com/ansible/ansible/issues/31691": [
     "lib/ansible/modules/packaging/os/apt_key.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31693": [], 
   "https://github.com/ansible/ansible/issues/31694": [], 
   "https://github.com/ansible/ansible/issues/31704": [
     "lib/ansible/modules/cloud/amazon/ec2_group.py"
@@ -8055,6 +8314,10 @@
   "https://github.com/ansible/ansible/issues/31816": [
     "lib/ansible/modules/packaging/language/composer.py"
   ], 
+  "https://github.com/ansible/ansible/issues/31820": [
+    "lib/ansible/playbook/conditional.py", 
+    "lib/ansible/playbook/role/include.py"
+  ], 
   "https://github.com/ansible/ansible/issues/31824": [
     "lib/ansible/modules/database/misc/elasticsearch_plugin.py"
   ], 
@@ -8080,6 +8343,13 @@
   ], 
   "https://github.com/ansible/ansible/issues/31862": [
     "lib/ansible/modules/network/eos/eos_logging.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31868": [
+    "lib/ansible/module_utils/vmware.py", 
+    "lib/ansible/modules/cloud/vmware/vmware_guest.py"
+  ], 
+  "https://github.com/ansible/ansible/issues/31869": [
+    "lib/ansible/plugins/lookup/credstash.py"
   ], 
   "https://github.com/ansible/ansible/issues/31875": [
     "lib/ansible/inventory"

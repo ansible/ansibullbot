@@ -74,6 +74,7 @@ class ComponentMatcher(object):
         'vault documentation': 'lib/ansible/parsing/vault',
         'with_items': 'lib/ansible/playbook/loop_control.py',
         'windows modules': 'lib/ansible/modules/windows',
+        'winrm': 'lib/ansible/plugins/connection/winrm.py'
     }
 
     def __init__(self, cachedir=None, file_indexer=None, module_indexer=None):
@@ -115,6 +116,22 @@ class ComponentMatcher(object):
 
         for kw in self.BLACKLIST:
             self.KEYWORDS[kw] = None
+
+    def clean_body(self, body, internal=False):
+        body = body.lower()
+        body = body.strip()
+        for SC in self.STOPCHARS:
+            if body.startswith(SC):
+                body = body.lstrip(SC)
+                body = body.strip()
+            if body.endswith(SC):
+                body = body.rstrip(SC)
+                body = body.strip()
+            if internal and SC in body:
+                body = body.replace(SC, '')
+                body = body.strip()
+        body = body.strip()
+        return body
 
     def match_components(self, title, body, component):
         """Make a list of matching files with metadata"""
@@ -191,14 +208,16 @@ class ComponentMatcher(object):
         else:
             context = None
 
-        component = component.strip()
-        for SC in self.STOPCHARS:
-            if component.startswith(SC):
-                component = component.lstrip(SC)
-                component = component.strip()
-            if component.endswith(SC):
-                component = component.rstrip(SC)
-                component = component.strip()
+        #component = component.strip()
+        #for SC in self.STOPCHARS:
+        #    if component.startswith(SC):
+        #        component = component.lstrip(SC)
+        #        component = component.strip()
+        #    if component.endswith(SC):
+        #        component = component.rstrip(SC)
+        #        component = component.strip()
+
+        #component = self.clean_body(component)
 
         if not component:
             return []
@@ -274,9 +293,10 @@ class ComponentMatcher(object):
 
         _component = component
 
-        for SC in self.STOPCHARS:
-            component = component.replace(SC, '')
-        component = component.strip()
+        #for SC in self.STOPCHARS:
+        #    component = component.replace(SC, '')
+        #component = component.strip()
+        component = self.clean_body(component)
 
         # docker-container vs. docker_container
         if component not in self.MODULE_NAMES:
@@ -379,53 +399,78 @@ class ComponentMatcher(object):
         # foo* module
 
         _body = body
+        #body = body.lower()
+        #for SC in self.STOPCHARS:
+        #    if SC in body:
+        #        body = body.replace(SC, '')
+        #body = body.strip()
         body = body.lower()
-        for SC in self.STOPCHARS:
-            if SC in body:
-                body = body.replace(SC, '')
-        body = body.strip()
+
+        #body = self.clean_body(body, internal=True)
 
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
-            r'(.*)-module',
-            r'modules/(.*)',
-            r'module\: (.*)',
-            r'module (.*)',
-            r'new (.*) module',
-            r'the (.*) module',
-            r'(.*) module',
-            r'(.*) core module',
-            r'(.*) extras module',
-            r'\`(.*)\` module',
-            r'(.*)\* modules',
-            r'(.*) and (.*)',
-            r'(.*) or (.*)',
-            r'(.*) \+ (.*)',
-            r'(.*) \& (.*)',
-            r'(.*) and (.*) modules',
-            r'(.*) or (.*) module',
-            r'(.*)_module',
-            r'action: (.*)',
-            r'action (.*)',
-            r'ansible_module_(.*)\.py',
-            r'(.*) task',
+            r'the (\S+) command',
+            r'(\S+) \(.*\)',
+            r'(\S+)\-module',
+            r'modules/(\S+)',
+            r'module\: (\S+)',
+            r'module (\S+)',
+            r'module: (\S+)',
+            #r'Module (\S+)',
+            #r'Module: (\S+)',
+            r'new (\S+) module',
+            r'the (\S+) module',
+            r'the \"(\S+)\" module',
+            r':\n(\S+) module',
+            r'(\S+) module',
+            r'(\S+) core module',
+            r'(\S+) extras module',
+            r':\n\`(\S+)\` module',
+            r'\`(\S+)\` module',
+            r'`(\S+)` module',
+            r'(\S+)\* modules',
+            r'(\S+) and (\S+)',
+            r'(\S+) or (\S+)',
+            r'(\S+) \+ (\S+)',
+            r'(\S+) \& (\S)',
+            r'(\S+) and (\S+) modules',
+            r'(\S+) or (\S+) module',
+            r'(\S+)_module',
+            r'action: (\S+)',
+            r'action (\S+)',
+            r'ansible_module_(\S+)\.py',
+            r'ansible_module_(\S+)',
+            r'ansible_modules_(\S+)\.py',
+            r'ansible_modules_(\S+)',
+            r'(\S+) task',
+            #r'(\S+) (\S+)',
+            #r'(\S+) .*',
         ]
 
         matches = []
 
         logging.debug('check patterns against: {}'.format(body))
 
+        #if 'junos' in body:
+        #    import epdb; epdb.st()
+
         for pattern in patterns:
-            logging.debug('test pattern: {}'.format(pattern))
+            #logging.debug('test pattern: {}'.format(pattern))
+
             mobj = re.match(pattern, body, re.M | re.I)
             if mobj:
-                for x in range(0,3):
+
+                logging.debug('pattern {} matched on "{}"'.format(pattern, body))
+
+                for x in range(0,mobj.lastindex+1):
                     try:
                         mname = mobj.group(x)
                         if mname == body:
                             continue
                         mname = mname.strip().lower()
                         mname = mname.replace('.py', '').replace('.ps1', '')
+                        logging.debug('--> {}'.format(mname))
 
                         module = None
                         if mname in self.MODULE_NAMES:
@@ -443,6 +488,30 @@ class ComponentMatcher(object):
                     except Exception as e:
                         logging.error(e)
 
+                '''
+                mname = mobj.group(mobj.lastindex)
+                if mname == body:
+                    continue
+                mname = mname.strip().lower()
+                mname = mname.replace('.py', '').replace('.ps1', '')
+
+                module = None
+                if mname in self.MODULE_NAMES:
+                    module = self.module_indexer.find_match(mname, exact=True)
+                else:
+                    print('{} NOT IN MODULE NAMES'.format(mname))
+
+                if not module:
+                    pass
+                elif isinstance(module, list):
+                    for m in module:
+                        #logging.debug('matched {}'.format(m['name']))
+                        matches.append(m['repo_filename'])
+                elif isinstance(module, dict):
+                    #logging.debug('matched {}'.format(module['name']))
+                    matches.append(module['repo_filename'])
+                '''
+
                 if matches:
                     break
 
@@ -455,30 +524,36 @@ class ComponentMatcher(object):
         # azurerm modules
 
         matches = []
-        body = body.lower()
+        #body = body.lower()
+        body = self.clean_body(body)
 
         #print('')
         #print('BODY: {}'.format(body))
 
         keymap = {
+            'all': None,
             'ec2': 'lib/ansible/modules/cloud/amazon',
             'ec2_*': 'lib/ansible/modules/cloud/amazon',
             'aws': 'lib/ansible/modules/cloud/amazon',
             'amazon': 'lib/ansible/modules/cloud/amazon',
             'google': 'lib/ansible/modules/cloud/google',
             'gce': 'lib/ansible/modules/cloud/google',
+            'gcp': 'lib/ansible/modules/cloud/google',
             'bigip': 'lib/ansible/modules/network/f5',
             'nxos': 'lib/ansible/modules/network/nxos',
             'azure': 'lib/ansible/modules/cloud/azure',
             'azurerm': 'lib/ansible/modules/cloud/azure',
             'openstack': 'lib/ansible/modules/cloud/openstack',
+            'ios': 'lib/ansible/modules/network/ios',
         }
 
         regexes = [
             r'all (\S+) based modules',
             r'all (\S+) modules',
+            r'.* all (\S+) modules.*',
             r'(\S+) modules',
-            r'(\S+\*) modules'
+            r'(\S+\*) modules',
+            r'all cisco (\S+\*) modules',
         ]
 
         mobj = None
@@ -490,12 +565,15 @@ class ComponentMatcher(object):
         if mobj:
             keyword = mobj.group(1)
             if keyword in keymap:
-                matches.append(keymap[keyword])
+                if keymap[keyword]:
+                    matches.append(keymap[keyword])
             else:
 
+                '''
                 if '*' in keyword:
                     print(keyword)
                     import epdb; epdb.st()
+                '''
 
                 # check for directories first
                 fns = [x for x in self.MODULE_NAMESPACE_DIRECTORIES if keyword in x]
@@ -550,13 +628,15 @@ class ComponentMatcher(object):
             [r'ansible/module_utils/(.*)', 'lib/ansible/module_utils'],
             [r'module_utils/(.*)', 'lib/ansible/module_utils'],
             [r'lib/ansible/module_utils/(.*)', 'lib/ansible/module_utils'],
+            [r'(\S+) documentation fragment', 'lib/ansible/utils/module_docs_fragments'],
         ]
 
         _body = body
-        for SC in self.STOPCHARS:
-            if SC in body:
-                body = body.replace(SC, '')
-        body = body.strip()
+        #for SC in self.STOPCHARS:
+        #    if SC in body:
+        #        body = body.replace(SC, '')
+        #body = body.strip()
+        body = self.clean_body(body)
 
         matches = []
 
@@ -569,12 +649,6 @@ class ComponentMatcher(object):
                 fname = mobj.group(1)
                 fname = fname.lower()
 
-                '''
-                if not fname.endswith('.py'):
-                    fpath = os.path.join(pattern[1], fname + '.py')
-                else:
-                    fpath = os.path.join(pattern[1], fname)
-                '''
                 fpath = os.path.join(pattern[1], fname)
 
                 if fpath in self.file_indexer.files:
@@ -585,12 +659,6 @@ class ComponentMatcher(object):
                 else:
                     # fallback to the directory
                     matches.append(pattern[1])
-
-        #if 'module_utils/ec2.py' in body:
-        #    import epdb; epdb.st()
-
-        #if body == 'lib/ansible/module_utils/facts':
-        #    import epdb; epdb.st()
 
         return matches
 
@@ -652,14 +720,16 @@ class ComponentMatcher(object):
         #if '/' not in body and '.' not in body:
         #    return matches
 
-        body = body.strip()
-        for SC in self.STOPCHARS:
-            if body.startswith(SC):
-                body = body.lstrip(SC)
-                body = body.strip()
-            if body.endswith(SC):
-                body = body.rstrip(SC)
-                body = body.strip()
+        #body = body.strip()
+        #for SC in self.STOPCHARS:
+        #    if body.startswith(SC):
+        #        body = body.lstrip(SC)
+        #        body = body.strip()
+        #    if body.endswith(SC):
+        #        body = body.rstrip(SC)
+        #        body = body.strip()
+        #body = body.strip()
+        body = self.clean_body(body)
 
         if not body:
             return []
@@ -689,6 +759,9 @@ class ComponentMatcher(object):
             body = body.replace('ansible/', '', 1)
         if 'module/' in body:
             body = body.replace('module/', 'modules/')
+
+        if len(body) < 2:
+            return []
 
         #print('FINAL BODY: {}'.format(body))
 
