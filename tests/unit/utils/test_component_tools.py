@@ -300,9 +300,8 @@ class TestComponentMatcher(TestCase):
             '`ansible_module_ec2_ami_copy.py`': ['lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],
             'module: `include_vars `': ['lib/ansible/modules/utilities/logic/include_vars.py'],
             'rabbitmq_plugin  module': ['lib/ansible/modules/messaging/rabbitmq_plugin.py'],
-            'F5 bigip (bigip_selfip)': [''],
-            'module: `vsphere_guest`': [''],
-            'nxos_template': [''],
+            'F5 bigip (bigip_selfip)': ['lib/ansible/modules/network/f5/bigip_selfip.py'],
+            'module: `vsphere_guest`': ['lib/ansible/modules/cloud/vmware/vsphere_guest.py'],
         }
 
         for COMPONENT,EXPECTED in COMPONENTS.items():
