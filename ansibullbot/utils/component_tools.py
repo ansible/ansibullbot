@@ -414,10 +414,15 @@ class ComponentMatcher(object):
 
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
+            r'\`ansible_module_(\S+)\.py\`',
+            r'module(\s+)(\S+)',
+            r'\`(\S+)\`(\s+)module',
+            r'(\S+)(\s+)module',
             r'the (\S+) command',
             r'(\S+) \(.*\)',
             r'(\S+)\-module',
             r'modules/(\S+)',
+            r'module\:(\s+)\`(\S+)\`',
             r'module\: (\S+)',
             r'module (\S+)',
             r'module `(\S+)`',
@@ -449,6 +454,8 @@ class ComponentMatcher(object):
             r'ansible_modules_(\S+)\.py',
             r'ansible_modules_(\S+)',
             r'(\S+) task',
+            r'(\s+)\((\S+)\)',
+            #r'(.*)(\s+)\((\S+)\)',
             #r'(\S+) (\S+)',
             #r'(\S+) .*',
         ]
@@ -473,13 +480,19 @@ class ComponentMatcher(object):
                         mname = mobj.group(x)
                         if mname == body:
                             continue
+                        mname = self.clean_body(mname)
+                        if not mname.strip():
+                            continue
                         mname = mname.strip().lower()
+                        if ' ' in mname:
+                            continue
                         mname = mname.replace('.py', '').replace('.ps1', '')
-                        logging.debug('--> {}'.format(mname))
+                        #logging.debug('--> {}'.format(mname))
 
                         module = None
                         if mname in self.MODULE_NAMES:
                             module = self.module_indexer.find_match(mname, exact=True)
+                        #logging.debug('---> {}'.format(module['name']))
 
                         if not module:
                             pass
@@ -531,6 +544,7 @@ class ComponentMatcher(object):
         matches = []
         #body = body.lower()
         body = self.clean_body(body)
+        logging.debug('try globs on: {}'.format(body))
 
         #print('')
         #print('BODY: {}'.format(body))
@@ -553,6 +567,7 @@ class ComponentMatcher(object):
         }
 
         regexes = [
+            r'(\S+) ansible modules',
             r'all (\S+) based modules',
             r'all (\S+) modules',
             r'.* all (\S+) modules.*',
@@ -565,11 +580,17 @@ class ComponentMatcher(object):
         for x in regexes:
             mobj = re.match(x, body)
             if mobj:
+                logging.debug('matched glob: {}'.format(x))
                 break
+
+        if not mobj:
+            logging.debug('no glob matches')
 
         if mobj:
             keyword = mobj.group(1)
-            if keyword in keymap:
+            if not keyword.strip():
+                pass
+            elif keyword in keymap:
                 if keymap[keyword]:
                     matches.append(keymap[keyword])
             else:
@@ -735,6 +756,7 @@ class ComponentMatcher(object):
         #        body = body.strip()
         #body = body.strip()
         body = self.clean_body(body)
+        #logging.debug('search filepath [{}]: {}'.format(context, body))
 
         if not body:
             return []
@@ -765,6 +787,7 @@ class ComponentMatcher(object):
         if 'module/' in body:
             body = body.replace('module/', 'modules/')
 
+        logging.debug('search filepath [{}] [{}]: {}'.format(context, partial, body))
         if len(body) < 2:
             return []
 
@@ -793,15 +816,33 @@ class ComponentMatcher(object):
 
                 if partial:
 
+                    # netapp_e_storagepool storage module
+                    # lib/ansible/modules/storage/netapp/netapp_e_storagepool.py
+
                     # if all subpaths are in this filepath, it is a match
                     bp_total = 0
                     fn_paths = fn.split('/')
+                    fn_paths.append(fn_paths[-1].replace('.py', '').replace('.ps1', ''))
+
                     for bp in body_paths:
                         if bp in fn_paths:
                             bp_total += 1
+
+                    #if fn == 'lib/ansible/modules/storage/netapp/netapp_e_storagepool.py':
+                    #    if 'storagepool' in body:
+                    #        import epdb; epdb.st()
+
                     if bp_total == len(body_paths):
                         if fn not in matches:
                             matches.append(fn)
+                    elif bp_total > 1:
+                        if (float(bp_total) / float(len(body_paths))) >= (2.0 / 3.3):
+                            if fn not in matches:
+                                matches.append(fn)
+
+                    elif bp_total > 0:
+                        logging.debug('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
+
                     #elif bp_total > 3:
                     #    print('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
                     #    print(body_paths)

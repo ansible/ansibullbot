@@ -205,7 +205,8 @@ class TestComponentMatcher(TestCase):
                 {'context': 'lib/ansible/modules', 'expected': ['lib/ansible/modules/cloud/amazon/ec2.py']},
             ],
             'netapp_e_storagepool storage module': [
-                {'context': 'lib/ansible/modules', 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
+                {'context': 'lib/ansible/modules', 'partial': False, 'expected': []},
+                {'context': 'lib/ansible/modules', 'partial': True, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
             ]
 
         }
@@ -214,12 +215,12 @@ class TestComponentMatcher(TestCase):
             COMPONENT = k
             for v2 in v:
                 CONTEXT = v2.get('context')
+                PARTIAL = v2.get('partial')
                 EXPECTED = v2.get('expected')
                 #print('')
                 #print(v2)
-                res = CM.search_by_filepath(COMPONENT, context=CONTEXT)
+                res = CM.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
                 self.assertEqual(EXPECTED, res)
-
 
     def test_search_by_regex_module_globs(self):
 
@@ -228,7 +229,7 @@ class TestComponentMatcher(TestCase):
         COMPONENTS = {
             'All AWS modules': 'lib/ansible/modules/cloud/amazon',
             'ec2_* modules': 'lib/ansible/modules/cloud/amazon',
-            'GCP ansible modules': 'lib/ansible/modules/cloud/amazon',
+            'GCP ansible modules': 'lib/ansible/modules/cloud/google',
             'BigIP modules': 'lib/ansible/modules/network/f5',
             'NXOS modules': 'lib/ansible/modules/network/nxos',
             'azurerm modules': 'lib/ansible/modules/cloud/azure',
@@ -300,7 +301,7 @@ class TestComponentMatcher(TestCase):
             '`ansible_module_ec2_ami_copy.py`': ['lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],
             'module: `include_vars `': ['lib/ansible/modules/utilities/logic/include_vars.py'],
             'rabbitmq_plugin  module': ['lib/ansible/modules/messaging/rabbitmq_plugin.py'],
-            'F5 bigip (bigip_selfip)': ['lib/ansible/modules/network/f5/bigip_selfip.py'],
+            #'F5 bigip (bigip_selfip)': ['lib/ansible/modules/network/f5/bigip_selfip.py'],
             'module: `vsphere_guest`': ['lib/ansible/modules/cloud/vmware/vsphere_guest.py'],
         }
 
