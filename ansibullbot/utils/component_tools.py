@@ -833,15 +833,28 @@ class ComponentMatcher(object):
                     #        import epdb; epdb.st()
 
                     if bp_total == len(body_paths):
-                        if fn not in matches:
-                            matches.append(fn)
+                        #if fn not in matches:
+                        #    matches.append(fn)
+
+                        #logging.debug('100% match on {}'.format(fn))
+
+                        matches = [fn]
+                        break
+
                     elif bp_total > 1:
-                        if (float(bp_total) / float(len(body_paths))) >= (2.0 / 3.3):
+                        #logging.debug('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
+
+                        if (float(bp_total) / float(len(body_paths))) >= (2.0 / 3.0):
                             if fn not in matches:
+                                #import epdb; epdb.st()
                                 matches.append(fn)
 
-                    elif bp_total > 0:
-                        logging.debug('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
+                    #else:
+                    #    if 'archive' in fn and 'archive' in body:
+                    #        import epdb; epdb.st()
+
+                    #elif bp_total > 0:
+                    #    logging.debug('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
 
                     #elif bp_total > 3:
                     #    print('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
@@ -861,9 +874,11 @@ class ComponentMatcher(object):
 
             for r in tr:
                 if r in matches:
+                    logging.debug('trimming {}'.format(r))
                     matches.remove(r)
 
         matches = sorted(set(matches))
+        logging.debug('return: {}'.format(matches))
         return matches
 
     def reduce_filepaths(self, matches):

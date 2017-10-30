@@ -207,8 +207,10 @@ class TestComponentMatcher(TestCase):
             'netapp_e_storagepool storage module': [
                 {'context': 'lib/ansible/modules', 'partial': False, 'expected': []},
                 {'context': 'lib/ansible/modules', 'partial': True, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
+            ],
+            'ansible/files/modules/archive.py' : [
+                {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/files/archive.py']}
             ]
-
         }
 
         for k,v in COMPONENTS.items():
