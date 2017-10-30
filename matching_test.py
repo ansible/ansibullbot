@@ -500,6 +500,7 @@ def main():
                 pprint(CM.strategy)
                 pprint(CM.strategies)
 
+                '''
                 print('--------------------------------')
                 res = raw_input('Is the result correct? (y/n/s/d): ')
                 if res.lower() in ['y', 'yes']:
@@ -513,6 +514,7 @@ def main():
                     continue
                 elif res.lower() in ['d', 'debug']:
                     import epdb; epdb.st()
+                '''
 
                 ERRORS.append(iw.html_url)
                 ERRORS_COMPONENTS.append(
