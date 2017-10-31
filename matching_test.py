@@ -219,11 +219,12 @@ def main():
     FI = FileIndexer(checkoutdir=CACHEDIR)
     with open('/tmp/files.json', 'wb') as f:
         f.write(json.dumps(FI.files, indent=2))
-
     GQLC = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
     #GWS = GithubWebScraper(cachedir=CACHEDIR)
     MI = ModuleIndexer(cachedir=CACHEDIR, gh_client=GQLC, blames=False, commits=False)
-    CM = ComponentMatcher(cachedir=CACHEDIR, module_indexer=MI, file_indexer=FI)
+
+    #CM = ComponentMatcher(cachedir=CACHEDIR, module_indexer=MI, file_indexer=FI)
+    CM = ComponentMatcher(cachedir=CACHEDIR)
 
     for k,v in MI.modules.items():
         if k in MATCH_MAP:

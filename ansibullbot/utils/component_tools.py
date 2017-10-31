@@ -4,11 +4,16 @@ import logging
 import os
 import re
 
-from pprint import pprint
+from ansibullbot.parsers.botmetadata import BotMetadataParser
+from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.utils.systemtools import run_command
 
 
 class ComponentMatcher(object):
 
+    BOTMETA = {}
+    INDEX = {}
+    REPO = 'https://github.com/ansible/ansible'
     STOPWORDS = ['ansible', 'core', 'plugin']
     STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',', ':', '?', '-']
     BLACKLIST = ['new module', 'new modules']
@@ -79,8 +84,11 @@ class ComponentMatcher(object):
         'winrm': 'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, cachedir=None, file_indexer=None, module_indexer=None):
+    def __init__(self, botmetafile=None, cachedir=None, file_indexer=None, module_indexer=None):
         self.cachedir = cachedir
+        self.botmetafile = botmetafile
+
+        '''
         self.file_indexer = file_indexer
         self.FILE_NAMES = sorted(self.file_indexer.files)
         self.module_indexer = module_indexer
@@ -88,12 +96,65 @@ class ComponentMatcher(object):
 
         self.MODULE_NAMESPACE_DIRECTORIES = [os.path.dirname(x) for x in self.FILE_NAMES if x.startswith('lib/ansible/modules/')]
         self.MODULE_NAMESPACE_DIRECTORIES = sorted(set(self.MODULE_NAMESPACE_DIRECTORIES))
+        '''
+
+        self.gitrepo = GitRepoWrapper(cachedir=self.cachedir, repo=self.REPO)
+        self.gitrepo.update()
+        self.index_files()
+        #import epdb; epdb.st()
 
         self.cache_keywords()
         self.strategy = None
         self.strategies = []
 
+    def index_files(self):
+
+        self.MODULE_NAMESPACE_DIRECTORIES = [os.path.dirname(x) for x in self.gitrepo.module_files]
+        self.MODULE_NAMESPACE_DIRECTORIES = sorted(set(self.MODULE_NAMESPACE_DIRECTORIES))
+
+        # make a list of names by enumerating the files
+        self.MODULE_NAMES = [os.path.basename(x) for x in self.gitrepo.module_files]
+        self.MODULE_NAMES = [x for x in self.MODULE_NAMES if x.endswith('.py') or x.endswith('.ps1')]
+        self.MODULE_NAMES = [x.replace('.ps1', '').replace('.py', '') for x in self.MODULE_NAMES]
+        self.MODULE_NAMES = [x for x in self.MODULE_NAMES if not x.startswith('__')]
+        self.MODULE_NAMES = sorted(set(self.MODULE_NAMES))
+
+        # make a list of names by calling ansible-doc
+        cmd = 'source {}/hacking/env-setup; ansible-doc -t module -l'.format(self.gitrepo.checkoutdir)
+        logging.debug(cmd)
+        (rc, so, se) = run_command(cmd)
+        mnames = so.split('\n')
+        mnames = [x.strip() for x in mnames if x.strip()]
+        mnames = [x.split()[0] for x in mnames]
+        self.MODULE_NAMES += mnames
+        self.MODULE_NAMES = sorted(set(self.MODULE_NAMES))
+
+        # ansible-doc: error: option -t: invalid choice: u'None' (choose from
+        # 'cache', 'callback', 'connection', 'inventory', 'lookup', 'module',
+        # 'strategy', 'vars')
+        #import epdb; epdb.st()
+
+        self.load_meta()
+
+    def load_meta(self):
+        if self.botmetafile is not None:
+            with open(self.botmetafile, 'rb') as f:
+                rdata = f.read()
+        else:
+            fp = '.github/BOTMETA.yml'
+            rdata = self.gitrepo.get_file_content(fp)
+        self.BOTMETA = BotMetadataParser.parse_yaml(rdata)
+        #import epdb; epdb.st()
+
     def cache_keywords(self):
+        for k,v in self.BOTMETA['files'].items():
+            if not v.get('keywords'):
+                continue
+            for kw in v['keywords']:
+                if kw not in self.KEYWORDS:
+                    self.KEYWORDS[kw] = k
+
+    def _cache_keywords(self):
         """Make a map of keywords and module names"""
         for k,v in self.file_indexer.botmeta['files'].items():
             if not v.get('keywords'):
@@ -281,6 +342,7 @@ class ComponentMatcher(object):
 
         return matched_filenames
 
+    '''
     def search_by_fileindexer(self, title, body, component):
         """Use the fileindexers component matching algo"""
         matches = []
@@ -290,11 +352,12 @@ class ComponentMatcher(object):
             components = self.file_indexer.find_component_matches_by_file(ckeys)
             import epdb; epdb.st()
         return matches
+    '''
 
     def search_by_module_name(self, component):
         matches = []
 
-        _component = component
+        #_component = component
 
         #for SC in self.STOPCHARS:
         #    component = component.replace(SC, '')
@@ -306,7 +369,8 @@ class ComponentMatcher(object):
             component = component.replace('-', '_')
 
         if component in self.MODULE_NAMES:
-            mmatch = self.module_indexer.find_match(component, exact=True)
+            #mmatch = self.module_indexer.find_match(component, exact=True)
+            mmatch = self.find_module_match(component)
             if mmatch:
                 if isinstance(mmatch, list):
                     for x in mmatch:
@@ -373,7 +437,7 @@ class ComponentMatcher(object):
                 elif '_module.html' in url:
                     parts = url.split('/')
                     fn = parts[-1].replace('_module.html', '')
-                    choices = [x for x in self.file_indexer.files if '/' + fn in x or '/_' + fn in x]
+                    choices = [x for x in self.gitrepo.files if '/' + fn in x or '/_' + fn in x]
                     choices = [x for x in choices if 'lib/ansible/modules' in x]
 
                     if len(choices) > 1:
@@ -401,7 +465,7 @@ class ComponentMatcher(object):
         # foo* modules
         # foo* module
 
-        _body = body
+        #_body = body
         #body = body.lower()
         #for SC in self.STOPCHARS:
         #    if SC in body:
@@ -491,7 +555,8 @@ class ComponentMatcher(object):
 
                         module = None
                         if mname in self.MODULE_NAMES:
-                            module = self.module_indexer.find_match(mname, exact=True)
+                            #module = self.module_indexer.find_match(mname, exact=True)
+                            module = self.find_module_match(mname)
                         #logging.debug('---> {}'.format(module['name']))
 
                         if not module:
@@ -657,7 +722,7 @@ class ComponentMatcher(object):
             [r'(\S+) documentation fragment', 'lib/ansible/utils/module_docs_fragments'],
         ]
 
-        _body = body
+        #_body = body
         #for SC in self.STOPCHARS:
         #    if SC in body:
         #        body = body.replace(SC, '')
@@ -677,9 +742,11 @@ class ComponentMatcher(object):
 
                 fpath = os.path.join(pattern[1], fname)
 
-                if fpath in self.file_indexer.files:
+                #if fpath in self.file_indexer.files:
+                if fpath in self.gitrepo.files:
                     matches.append(fpath)
-                elif os.path.join(pattern[1], fname + '.py') in self.file_indexer.files:
+                #elif os.path.join(pattern[1], fname + '.py') in self.file_indexer.files:
+                elif os.path.join(pattern[1], fname + '.py') in self.gitrepo.files:
                     fname = os.path.join(pattern[1], fname + '.py')
                     matches.append(fname)
                 else:
@@ -797,7 +864,8 @@ class ComponentMatcher(object):
         #if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
         #    body_paths[-1] = body_paths[-1] + '.py'
 
-        if body in self.file_indexer.files:
+        #if body in self.file_indexer.files:
+        if body in self.gitrepo.files:
             matches = [body]
         else:
             for fn in self.FILE_NAMES:
@@ -919,7 +987,8 @@ class ComponentMatcher(object):
                 paths = match.split('/')
                 tindex = paths.index('targets')
                 mname = paths[tindex+1]
-                mrs = self.module_indexer.find_match(mname, exact=True)
+                #mrs = self.module_indexer.find_match(mname, exact=True)
+                mrs = self.find_module_match(mname, exact=True)
                 if mrs:
                     if not isinstance(mrs, list):
                         mrs = [mrs]
@@ -929,6 +998,79 @@ class ComponentMatcher(object):
         return new_matches
 
     def get_meta_for_file(self, filename):
+        meta = {
+            'repo_filename': filename,
+            'name': os.path.basename(filename).split('.')[0],
+            'notify': [],
+            'assign': [],
+            'maintainers': [],
+            'labels': [],
+            'ignore': [],
+            #'keywords': [],
+            'support': None,
+            'deprecated': False,
+        }
+
+        if filename in self.BOTMETA['files']:
+            fdata = self.BOTMETA['files'][filename].copy()
+            if 'maintainers' in fdata:
+                meta['notify'] += fdata['maintainers']
+                meta['assign'] += fdata['maintainers']
+                meta['maintainers'] += fdata['maintainers']
+            if 'notify' in fdata:
+                meta['notify'] += fdata['notify']
+            if 'labels' in fdata:
+                meta['labels'] += fdata['labels']
+            if 'ignore' in fdata:
+                meta['ignore'] += fdata['ignore']
+            #if 'keywords' in fdata:
+            #    meta['keywords'] += fdata['keywords']
+            if 'support' in fdata:
+                if isinstance(fdata['support'], list):
+                    meta['support'] = fdata['support'][0]
+                else:
+                    meta['support'] = fdata['support']
+            if 'deprecated' in fdata:
+                meta['deprecated'] = fdata['deprecated']
+
+        # walk up the tree for more meta
+        paths = filename.split('/')
+        for idx,x in enumerate(paths):
+            idx -= 1
+            logging.debug(idx)
+            if idx < 1:
+                continue
+            thispath = '/'.join(paths[:(0-idx)])
+            if thispath in self.BOTMETA['files']:
+                fdata = self.BOTMETA['files'][thispath].copy()
+                if 'support' in fdata and not meta['support']:
+                    if isinstance(fdata['support'], list):
+                        meta['support'] = fdata['support'][0]
+                    else:
+                        meta['support'] = fdata['support']
+                #if 'keywords' in fdata:
+                #    meta['keywords'] += fdata['keywords']
+                if 'labels' in fdata:
+                    meta['labels'] += fdata['labels']
+                if 'maintainers' in fdata:
+                    meta['notify'] += fdata['maintainers']
+                    meta['assign'] += fdata['maintainers']
+                    meta['maintainers'] += fdata['maintainers']
+                if 'ignore' in fdata:
+                    meta['ignore'] += fdata['ignore']
+                if 'notify' in fdata:
+                    meta['notify'] += fdata['notify']
+                #import epdb; epdb.st()
+
+        # clean up the result
+        _meta = meta.copy()
+        for k,v in _meta.items():
+            if isinstance(v, list):
+                meta[k] = sorted(set(v))
+
+        return meta
+
+    def _get_meta_for_file(self, filename):
         """Compile metadata for a matched filename"""
 
         meta = {
@@ -951,3 +1093,90 @@ class ComponentMatcher(object):
 
         #import epdb; epdb.st()
         return meta
+
+    def find_module_match(self, pattern):
+        '''Exact module name matching'''
+
+        logging.debug('find_module_match for "{}"'.format(pattern))
+        candidate = None
+
+        BLACKLIST = [
+            'module_utils',
+            'callback',
+            'network modules',
+            'networking modules'
+            'windows modules'
+        ]
+
+        if not pattern or pattern is None:
+            return None
+
+        # https://github.com/ansible/ansible/issues/19755
+        if pattern == 'setup':
+            pattern = 'lib/ansible/modules/system/setup.py'
+
+        if '/facts.py' in pattern or ' facts.py' in pattern:
+            pattern = 'lib/ansible/modules/system/setup.py'
+
+        # https://github.com/ansible/ansible/issues/18527
+        #   docker-container -> docker_container
+        if '-' in pattern:
+            pattern = pattern.replace('-', '_')
+
+        if 'module_utils' in pattern:
+            # https://github.com/ansible/ansible/issues/20368
+            return None
+        elif 'callback' in pattern:
+            return None
+        elif 'lookup' in pattern:
+            return None
+        elif 'contrib' in pattern and 'inventory' in pattern:
+            return None
+        elif pattern.lower() in BLACKLIST:
+            return None
+        elif '/' in pattern and not self._find_module_match(pattern):
+            # https://github.com/ansible/ansible/issues/20520
+            if not pattern.startswith('lib/'):
+                keys = self.modules.keys()
+                for k in keys:
+                    if pattern in k:
+                        ppy = pattern + '.py'
+                        if k.endswith(pattern) or k.endswith(ppy):
+                            return self.modules[k]
+
+        elif pattern.endswith('.py') and self._find_module_match(pattern):
+            # https://github.com/ansible/ansible/issues/19889
+            candidate = self._find_match(pattern, exact=False)
+
+            if isinstance(candidate, list):
+                if len(candidate) == 1:
+                    candidate = candidate[0]
+
+            if candidate['filename'] == pattern:
+                return candidate
+
+        return candidate
+
+    def _find_module_match(self, pattern):
+
+        logging.debug('matching on {}'.format(pattern))
+
+        matches = []
+
+        if isinstance(pattern, unicode):
+            pattern = pattern.encode('ascii', 'ignore')
+
+        import epdb; epdb.st()
+        for k,v in self.modules.iteritems():
+            if v['name'] == pattern:
+                logging.debug('match {} on name: {}'.format(k, v['name']))
+                matches = [v]
+                break
+
+        if not matches:
+            # search by key ... aka the filepath
+            for k,v in self.modules.iteritems():
+                if k == pattern:
+                    logging.debug('match {} on key: {}'.format(k, k))
+                    matches = [v]
+                    break
