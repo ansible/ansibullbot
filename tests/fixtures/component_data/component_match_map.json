@@ -3723,7 +3723,7 @@
     "lib/ansible/modules/cloud/docker/_docker.py"
   ], 
   ":\ndocker.py": [
-    "contrib/inventory/docker.py"
+    "lib/ansible/modules/cloud/docker/_docker.py"
   ], 
   ":\nec2": [
     "lib/ansible/modules/cloud/amazon/ec2.py"
@@ -3914,7 +3914,7 @@
     "lib/ansible/modules/cloud/misc/virt.py"
   ], 
   ":\nwindows setup modules": [
-    "lib/ansible/modules/windows/setup.ps1"
+    "lib/ansible/modules/system/setup.py"
   ], 
   ":\nyum module": [
     "lib/ansible/modules/packaging/os/yum.py"
@@ -4181,6 +4181,9 @@
   "GCE": [
     "lib/ansible/modules/cloud/google/gce.py"
   ], 
+  "GCP ansible modules": [
+    "lib/ansible/modules/cloud/google"
+  ], 
   "GUIDELINES.md": "lib/ansible/modules/cloud/amazon/GUIDELINES.md", 
   "GUIDELINES.md module": "lib/ansible/modules/cloud/amazon/GUIDELINES.md", 
   "Gathering Facts": [], 
@@ -4204,8 +4207,6 @@
   ], 
   "IOS": [], 
   "In the cloud module, in the docker module, the docker_volume command": [
-    "lib/ansible/modules/cloud/docker/_docker.py", 
-    "lib/ansible/modules/cloud/docker/docker_volume.py", 
     "lib/ansible/modules/commands/command.py"
   ], 
   "Included / imported plays and group_vars loading": [], 
@@ -4362,9 +4363,7 @@
   "NPM": [
     "lib/ansible/modules/packaging/language/npm.py"
   ], 
-  "NXOS SCP file from server (nxos_copy ?)": [
-    "lib/ansible/modules/files/file.py"
-  ], 
+  "NXOS SCP file from server (nxos_copy ?)": [], 
   "NXOS modules": [
     "lib/ansible/modules/network/nxos"
   ], 
@@ -4439,9 +4438,7 @@
   "Role dependencies": [
     "lib/ansible/playbook/role/requirement.py"
   ], 
-  "SFTP (for template transfer)": [
-    "lib/ansible/modules/files/template.py"
-  ], 
+  "SFTP (for template transfer)": [], 
   "SNS_Topic": [
     "lib/ansible/modules/cloud/amazon/sns_topic.py"
   ], 
@@ -4517,7 +4514,6 @@
   "There is no module for modifying DNS zones.": [], 
   "Tower": [], 
   "Trying to use ios_config module but can't open shell to device.": [
-    "lib/ansible/modules/commands/shell.py", 
     "lib/ansible/modules/network/ios/ios_config.py"
   ], 
   "Type conversion": [], 
@@ -4561,7 +4557,7 @@
     "lib/ansible/modules/windows"
   ], 
   "Windows setup module (setup.ps1)": [
-    "lib/ansible/modules/windows/setup.ps1"
+    "lib/ansible/modules/system/setup.py"
   ], 
   "XML Module": [
     "lib/ansible/modules/files/xml.py"
@@ -4589,7 +4585,9 @@
     "lib/ansible/modules/cloud/amazon/ec2_vpc_nat_gateway.py"
   ], 
   "[helm module](https//docs.ansible.com/ansible/2.4/helm_module.html)": [], 
-  "[include_vars](http//docs.ansible.com/ansible/latest/include_vars_module.htmloptions)": [], 
+  "[include_vars](http//docs.ansible.com/ansible/latest/include_vars_module.htmloptions)": [
+    "lib/ansible/modules/utilities/logic/include_vars.py"
+  ], 
   "[module: database/mysql/mysql_replication.py]": [], 
   "[npm](http://docs.ansible.com/ansible/npm_module.html)": [
     "lib/ansible/modules/packaging/language/npm.py"
@@ -4872,7 +4870,7 @@
     "lib/ansible/modules/system/user.py"
   ], 
   "`validate-modules`": [
-    "test/sanity/validate-modules"
+    "test/sanity/validate-modules/__init__.py"
   ], 
   "`when` conditional": [
     "lib/ansible/playbook/conditional.py"
@@ -8342,8 +8340,7 @@
     "lib/ansible/modules/packaging/os/apt.py"
   ], 
   "apt module, potentially other package managing modules": [
-    "lib/ansible/modules/packaging/os/apt.py", 
-    "lib/ansible/modules/packaging/os/package.py"
+    "lib/ansible/modules/packaging/os/apt.py"
   ], 
   "apt-key": [
     "lib/ansible/modules/packaging/os/apt_key.py"
@@ -10250,7 +10247,8 @@
     "lib/ansible/modules/files/copy.py"
   ], 
   "copy shell  modules": [
-    "lib/ansible/modules/commands/shell.py"
+    "lib/ansible/modules/commands/shell.py", 
+    "lib/ansible/modules/files/copy.py"
   ], 
   "copy_module": [
     "lib/ansible/modules/files/copy.py"
@@ -10546,7 +10544,7 @@
     "lib/ansible/modules/cloud/digital_ocean/digital_ocean.py"
   ], 
   "digital_ocean.py inventory script": [
-    "contrib/inventory/digital_ocean.py"
+    "lib/ansible/modules/cloud/digital_ocean/digital_ocean.py"
   ], 
   "digital_ocean_block_storage": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_block_storage.py", 
   "digital_ocean_block_storage module": "lib/ansible/modules/cloud/digital_ocean/digital_ocean_block_storage.py", 
@@ -10599,7 +10597,7 @@
     "lib/ansible/modules/cloud/docker/_docker.py"
   ], 
   "docker connection module, docker detailed guide.": [
-    "lib/ansible/modules/cloud/docker/_docker.py"
+    "lib/ansible/plugins/connection/docker.py"
   ], 
   "docker connection plugin": [
     "lib/ansible/plugins/connection/docker.py"
@@ -10711,7 +10709,7 @@
     "lib/ansible/modules/cloud/amazon/ec2.py"
   ], 
   "ec2.py dynamic inventory file for AWS": [
-    "contrib/inventory/ec2.py"
+    "lib/ansible/modules/cloud/amazon/ec2.py"
   ], 
   "ec2.py dynamic inventory script": [
     "contrib/inventory/ec2"
@@ -11156,8 +11154,7 @@
     "lib/ansible/modules/files/find.py"
   ], 
   "find module, stat module": [
-    "lib/ansible/modules/files/find.py", 
-    "lib/ansible/modules/files/stat.py"
+    "lib/ansible/modules/files/find.py"
   ], 
   "firewalld": [
     "lib/ansible/modules/system/firewalld.py"
@@ -11177,7 +11174,7 @@
     "lib/ansible/modules/remote_management/foreman/foreman.py"
   ], 
   "foreman.py callback": [
-    "lib/ansible/plugins/callback/foreman.py"
+    "lib/ansible/modules/remote_management/foreman/foreman.py"
   ], 
   "fortios_*": [], 
   "fortios_address": "lib/ansible/modules/network/fortios/fortios_address.py", 
@@ -12018,500 +12015,7 @@
     "lib/ansible/modules/cloud/google/gce.py"
   ], 
   "lib/ansible/modules/cloud/ovirt/ovirt_clusters.py": [
-    "lib/ansible/modules/cloud/__init__.py", 
-    "lib/ansible/modules/cloud/amazon/GUIDELINES.md", 
-    "lib/ansible/modules/cloud/amazon/__init__.py", 
-    "lib/ansible/modules/cloud/amazon/_ec2_ami_search.py", 
-    "lib/ansible/modules/cloud/amazon/_ec2_facts.py", 
-    "lib/ansible/modules/cloud/amazon/_ec2_remote_facts.py", 
-    "lib/ansible/modules/cloud/amazon/_ec2_vpc.py", 
-    "lib/ansible/modules/cloud/amazon/_ec2_vpc_dhcp_options.py", 
-    "lib/ansible/modules/cloud/amazon/_ec2_vpc_dhcp_options_facts.py", 
-    "lib/ansible/modules/cloud/amazon/_iam_cert_facts.py", 
-    "lib/ansible/modules/cloud/amazon/_s3.py", 
-    "lib/ansible/modules/cloud/amazon/aws_acm_facts.py", 
-    "lib/ansible/modules/cloud/amazon/aws_api_gateway.py", 
-    "lib/ansible/modules/cloud/amazon/aws_direct_connect_connection.py", 
-    "lib/ansible/modules/cloud/amazon/aws_direct_connect_link_aggregation_group.py", 
-    "lib/ansible/modules/cloud/amazon/aws_kms.py", 
-    "lib/ansible/modules/cloud/amazon/aws_kms_facts.py", 
-    "lib/ansible/modules/cloud/amazon/aws_s3.py", 
-    "lib/ansible/modules/cloud/amazon/aws_s3_bucket_facts.py", 
-    "lib/ansible/modules/cloud/amazon/aws_ssm_parameter_store.py", 
-    "lib/ansible/modules/cloud/amazon/aws_waf_facts.py", 
-    "lib/ansible/modules/cloud/amazon/cloudformation.py", 
-    "lib/ansible/modules/cloud/amazon/cloudformation_facts.py", 
-    "lib/ansible/modules/cloud/amazon/cloudfront_facts.py", 
-    "lib/ansible/modules/cloud/amazon/cloudtrail.py", 
-    "lib/ansible/modules/cloud/amazon/cloudwatchevent_rule.py", 
-    "lib/ansible/modules/cloud/amazon/data_pipeline.py", 
-    "lib/ansible/modules/cloud/amazon/dynamodb_table.py", 
-    "lib/ansible/modules/cloud/amazon/dynamodb_ttl.py", 
-    "lib/ansible/modules/cloud/amazon/ec2.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_ami.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_ami_copy.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_ami_find.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_asg.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_asg_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_customer_gateway.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_eip.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_elb.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_elb_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_elb_lb.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_eni.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_eni_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_group.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_group_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_instance_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_key.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_lc.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_lc_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_lc_find.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_metadata_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_metric_alarm.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_scaling_policy.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_snapshot.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_snapshot_copy.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_snapshot_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_tag.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vol.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vol_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_dhcp_option.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_dhcp_option_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_endpoint.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_endpoint_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_igw.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_igw_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_nacl.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_nacl_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_nat_gateway.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_nat_gateway_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_net.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_net_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_peer.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_peering_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_route_table.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_route_table_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_subnet.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_subnet_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_vgw.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_vgw_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_vpc_vpn.py", 
-    "lib/ansible/modules/cloud/amazon/ec2_win_password.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_attribute.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_cluster.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_ecr.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_service.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_service_facts.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_task.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_taskdefinition.py", 
-    "lib/ansible/modules/cloud/amazon/ecs_taskdefinition_facts.py", 
-    "lib/ansible/modules/cloud/amazon/efs.py", 
-    "lib/ansible/modules/cloud/amazon/efs_facts.py", 
-    "lib/ansible/modules/cloud/amazon/elasticache.py", 
-    "lib/ansible/modules/cloud/amazon/elasticache_parameter_group.py", 
-    "lib/ansible/modules/cloud/amazon/elasticache_snapshot.py", 
-    "lib/ansible/modules/cloud/amazon/elasticache_subnet_group.py", 
-    "lib/ansible/modules/cloud/amazon/elb_application_lb.py", 
-    "lib/ansible/modules/cloud/amazon/elb_application_lb_facts.py", 
-    "lib/ansible/modules/cloud/amazon/elb_classic_lb.py", 
-    "lib/ansible/modules/cloud/amazon/elb_classic_lb_facts.py", 
-    "lib/ansible/modules/cloud/amazon/elb_instance.py", 
-    "lib/ansible/modules/cloud/amazon/elb_target_group.py", 
-    "lib/ansible/modules/cloud/amazon/elb_target_group_facts.py", 
-    "lib/ansible/modules/cloud/amazon/execute_lambda.py", 
-    "lib/ansible/modules/cloud/amazon/iam.py", 
-    "lib/ansible/modules/cloud/amazon/iam_cert.py", 
-    "lib/ansible/modules/cloud/amazon/iam_group.py", 
-    "lib/ansible/modules/cloud/amazon/iam_managed_policy.py", 
-    "lib/ansible/modules/cloud/amazon/iam_mfa_device_facts.py", 
-    "lib/ansible/modules/cloud/amazon/iam_policy.py", 
-    "lib/ansible/modules/cloud/amazon/iam_role.py", 
-    "lib/ansible/modules/cloud/amazon/iam_server_certificate_facts.py", 
-    "lib/ansible/modules/cloud/amazon/kinesis_stream.py", 
-    "lib/ansible/modules/cloud/amazon/lambda.py", 
-    "lib/ansible/modules/cloud/amazon/lambda_alias.py", 
-    "lib/ansible/modules/cloud/amazon/lambda_event.py", 
-    "lib/ansible/modules/cloud/amazon/lambda_facts.py", 
-    "lib/ansible/modules/cloud/amazon/lambda_policy.py", 
-    "lib/ansible/modules/cloud/amazon/lightsail.py", 
-    "lib/ansible/modules/cloud/amazon/rds.py", 
-    "lib/ansible/modules/cloud/amazon/rds_param_group.py", 
-    "lib/ansible/modules/cloud/amazon/rds_subnet_group.py", 
-    "lib/ansible/modules/cloud/amazon/redshift.py", 
-    "lib/ansible/modules/cloud/amazon/redshift_facts.py", 
-    "lib/ansible/modules/cloud/amazon/redshift_subnet_group.py", 
-    "lib/ansible/modules/cloud/amazon/route53.py", 
-    "lib/ansible/modules/cloud/amazon/route53_facts.py", 
-    "lib/ansible/modules/cloud/amazon/route53_health_check.py", 
-    "lib/ansible/modules/cloud/amazon/route53_zone.py", 
-    "lib/ansible/modules/cloud/amazon/s3_bucket.py", 
-    "lib/ansible/modules/cloud/amazon/s3_lifecycle.py", 
-    "lib/ansible/modules/cloud/amazon/s3_logging.py", 
-    "lib/ansible/modules/cloud/amazon/s3_sync.py", 
-    "lib/ansible/modules/cloud/amazon/s3_website.py", 
-    "lib/ansible/modules/cloud/amazon/sns.py", 
-    "lib/ansible/modules/cloud/amazon/sns_topic.py", 
-    "lib/ansible/modules/cloud/amazon/sqs_queue.py", 
-    "lib/ansible/modules/cloud/amazon/sts_assume_role.py", 
-    "lib/ansible/modules/cloud/amazon/sts_session_token.py", 
-    "lib/ansible/modules/cloud/atomic/__init__.py", 
-    "lib/ansible/modules/cloud/atomic/atomic_container.py", 
-    "lib/ansible/modules/cloud/atomic/atomic_host.py", 
-    "lib/ansible/modules/cloud/atomic/atomic_image.py", 
-    "lib/ansible/modules/cloud/azure/__init__.py", 
-    "lib/ansible/modules/cloud/azure/_azure.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_acs.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_availabilityset.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_availabilityset_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_deployment.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_dnsrecordset.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_dnsrecordset_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_dnszone.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_dnszone_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_functionapp.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_functionapp_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_loadbalancer.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_loadbalancer_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_managed_disk.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_managed_disk_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_networkinterface.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_networkinterface_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_publicipaddress.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_publicipaddress_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_resourcegroup.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_resourcegroup_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_securitygroup.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_securitygroup_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_storageaccount.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_storageaccount_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_storageblob.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_subnet.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine_extension.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine_scaleset.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualmachine_scaleset_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualmachineimage_facts.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualnetwork.py", 
-    "lib/ansible/modules/cloud/azure/azure_rm_virtualnetwork_facts.py", 
-    "lib/ansible/modules/cloud/centurylink/__init__.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_aa_policy.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_alert_policy.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_blueprint_package.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_firewall_policy.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_group.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_loadbalancer.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_modify_server.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_publicip.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_server.py", 
-    "lib/ansible/modules/cloud/centurylink/clc_server_snapshot.py", 
-    "lib/ansible/modules/cloud/cloudscale/__init__.py", 
-    "lib/ansible/modules/cloud/cloudscale/cloudscale_server.py", 
-    "lib/ansible/modules/cloud/cloudstack/__init__.py", 
-    "lib/ansible/modules/cloud/cloudstack/_cs_nic.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_account.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_affinitygroup.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_cluster.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_configuration.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_domain.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_facts.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_firewall.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_host.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_instance.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_instance_facts.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_instance_nic.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_instance_nic_secondaryip.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_instancegroup.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_ip_address.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_iso.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_loadbalancer_rule.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_loadbalancer_rule_member.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_network.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_network_acl.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_network_acl_rule.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_pod.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_portforward.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_project.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_region.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_resourcelimit.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_role.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_router.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_securitygroup.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_securitygroup_rule.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_snapshot_policy.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_sshkeypair.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_staticnat.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_storage_pool.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_template.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_user.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_vmsnapshot.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_volume.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_vpc.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_vpn_gateway.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_zone.py", 
-    "lib/ansible/modules/cloud/cloudstack/cs_zone_facts.py", 
-    "lib/ansible/modules/cloud/digital_ocean/__init__.py", 
-    "lib/ansible/modules/cloud/digital_ocean/digital_ocean.py", 
-    "lib/ansible/modules/cloud/digital_ocean/digital_ocean_block_storage.py", 
-    "lib/ansible/modules/cloud/digital_ocean/digital_ocean_domain.py", 
-    "lib/ansible/modules/cloud/digital_ocean/digital_ocean_floating_ip.py", 
-    "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey.py", 
-    "lib/ansible/modules/cloud/digital_ocean/digital_ocean_sshkey_facts.py", 
-    "lib/ansible/modules/cloud/digital_ocean/digital_ocean_tag.py", 
-    "lib/ansible/modules/cloud/dimensiondata/__init__.py", 
-    "lib/ansible/modules/cloud/dimensiondata/dimensiondata_network.py", 
-    "lib/ansible/modules/cloud/docker/__init__.py", 
-    "lib/ansible/modules/cloud/docker/_docker.py", 
-    "lib/ansible/modules/cloud/docker/docker_container.py", 
-    "lib/ansible/modules/cloud/docker/docker_image.py", 
-    "lib/ansible/modules/cloud/docker/docker_image_facts.py", 
-    "lib/ansible/modules/cloud/docker/docker_login.py", 
-    "lib/ansible/modules/cloud/docker/docker_network.py", 
-    "lib/ansible/modules/cloud/docker/docker_secret.py", 
-    "lib/ansible/modules/cloud/docker/docker_service.py", 
-    "lib/ansible/modules/cloud/docker/docker_volume.py", 
-    "lib/ansible/modules/cloud/google/__init__.py", 
-    "lib/ansible/modules/cloud/google/gc_storage.py", 
-    "lib/ansible/modules/cloud/google/gcdns_record.py", 
-    "lib/ansible/modules/cloud/google/gcdns_zone.py", 
-    "lib/ansible/modules/cloud/google/gce.py", 
-    "lib/ansible/modules/cloud/google/gce_eip.py", 
-    "lib/ansible/modules/cloud/google/gce_img.py", 
-    "lib/ansible/modules/cloud/google/gce_instance_template.py", 
-    "lib/ansible/modules/cloud/google/gce_labels.py", 
-    "lib/ansible/modules/cloud/google/gce_lb.py", 
-    "lib/ansible/modules/cloud/google/gce_mig.py", 
-    "lib/ansible/modules/cloud/google/gce_net.py", 
-    "lib/ansible/modules/cloud/google/gce_pd.py", 
-    "lib/ansible/modules/cloud/google/gce_snapshot.py", 
-    "lib/ansible/modules/cloud/google/gce_tag.py", 
-    "lib/ansible/modules/cloud/google/gcp_backend_service.py", 
-    "lib/ansible/modules/cloud/google/gcp_forwarding_rule.py", 
-    "lib/ansible/modules/cloud/google/gcp_healthcheck.py", 
-    "lib/ansible/modules/cloud/google/gcp_target_proxy.py", 
-    "lib/ansible/modules/cloud/google/gcp_url_map.py", 
-    "lib/ansible/modules/cloud/google/gcpubsub.py", 
-    "lib/ansible/modules/cloud/google/gcpubsub_facts.py", 
-    "lib/ansible/modules/cloud/google/gcspanner.py", 
-    "lib/ansible/modules/cloud/linode/__init__.py", 
-    "lib/ansible/modules/cloud/linode/linode.py", 
-    "lib/ansible/modules/cloud/lxc/__init__.py", 
-    "lib/ansible/modules/cloud/lxc/lxc_container.py", 
-    "lib/ansible/modules/cloud/lxd/__init__.py", 
-    "lib/ansible/modules/cloud/lxd/lxd_container.py", 
-    "lib/ansible/modules/cloud/lxd/lxd_profile.py", 
-    "lib/ansible/modules/cloud/misc/__init__.py", 
-    "lib/ansible/modules/cloud/misc/helm.py", 
-    "lib/ansible/modules/cloud/misc/ovirt.py", 
-    "lib/ansible/modules/cloud/misc/proxmox.py", 
-    "lib/ansible/modules/cloud/misc/proxmox_kvm.py", 
-    "lib/ansible/modules/cloud/misc/proxmox_template.py", 
-    "lib/ansible/modules/cloud/misc/rhevm.py", 
-    "lib/ansible/modules/cloud/misc/serverless.py", 
-    "lib/ansible/modules/cloud/misc/virt.py", 
-    "lib/ansible/modules/cloud/misc/virt_net.py", 
-    "lib/ansible/modules/cloud/misc/virt_pool.py", 
-    "lib/ansible/modules/cloud/misc/xenserver_facts.py", 
-    "lib/ansible/modules/cloud/openstack/README.md", 
-    "lib/ansible/modules/cloud/openstack/__init__.py", 
-    "lib/ansible/modules/cloud/openstack/_os_server_actions.py", 
-    "lib/ansible/modules/cloud/openstack/os_auth.py", 
-    "lib/ansible/modules/cloud/openstack/os_client_config.py", 
-    "lib/ansible/modules/cloud/openstack/os_flavor_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_floating_ip.py", 
-    "lib/ansible/modules/cloud/openstack/os_group.py", 
-    "lib/ansible/modules/cloud/openstack/os_image.py", 
-    "lib/ansible/modules/cloud/openstack/os_image_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_ironic.py", 
-    "lib/ansible/modules/cloud/openstack/os_ironic_inspect.py", 
-    "lib/ansible/modules/cloud/openstack/os_ironic_node.py", 
-    "lib/ansible/modules/cloud/openstack/os_keypair.py", 
-    "lib/ansible/modules/cloud/openstack/os_keystone_domain.py", 
-    "lib/ansible/modules/cloud/openstack/os_keystone_domain_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_keystone_endpoint.py", 
-    "lib/ansible/modules/cloud/openstack/os_keystone_role.py", 
-    "lib/ansible/modules/cloud/openstack/os_keystone_service.py", 
-    "lib/ansible/modules/cloud/openstack/os_network.py", 
-    "lib/ansible/modules/cloud/openstack/os_networks_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_nova_flavor.py", 
-    "lib/ansible/modules/cloud/openstack/os_nova_host_aggregate.py", 
-    "lib/ansible/modules/cloud/openstack/os_object.py", 
-    "lib/ansible/modules/cloud/openstack/os_port.py", 
-    "lib/ansible/modules/cloud/openstack/os_port_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_project.py", 
-    "lib/ansible/modules/cloud/openstack/os_project_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_quota.py", 
-    "lib/ansible/modules/cloud/openstack/os_recordset.py", 
-    "lib/ansible/modules/cloud/openstack/os_router.py", 
-    "lib/ansible/modules/cloud/openstack/os_security_group.py", 
-    "lib/ansible/modules/cloud/openstack/os_security_group_rule.py", 
-    "lib/ansible/modules/cloud/openstack/os_server.py", 
-    "lib/ansible/modules/cloud/openstack/os_server_action.py", 
-    "lib/ansible/modules/cloud/openstack/os_server_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_server_group.py", 
-    "lib/ansible/modules/cloud/openstack/os_server_volume.py", 
-    "lib/ansible/modules/cloud/openstack/os_stack.py", 
-    "lib/ansible/modules/cloud/openstack/os_subnet.py", 
-    "lib/ansible/modules/cloud/openstack/os_subnets_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_user.py", 
-    "lib/ansible/modules/cloud/openstack/os_user_facts.py", 
-    "lib/ansible/modules/cloud/openstack/os_user_group.py", 
-    "lib/ansible/modules/cloud/openstack/os_user_role.py", 
-    "lib/ansible/modules/cloud/openstack/os_volume.py", 
-    "lib/ansible/modules/cloud/openstack/os_zone.py", 
-    "lib/ansible/modules/cloud/ovh/__init__.py", 
-    "lib/ansible/modules/cloud/ovh/ovh_ip_loadbalancing_backend.py", 
-    "lib/ansible/modules/cloud/ovirt/README.rst", 
-    "lib/ansible/modules/cloud/ovirt/__init__.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_affinity_groups.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_affinity_labels.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_affinity_labels_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_clusters.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_clusters_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_datacenters.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_datacenters_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_disks.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_external_providers.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_external_providers_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_groups.py", 
-    "lib/ansible/modules/cloud/ovirt/_ovirt_groups_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_affinity_group.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_affinity_label.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_affinity_label_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_api_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_auth.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_cluster.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_cluster_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_datacenter.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_datacenter_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_disk.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_disk_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_external_provider.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_external_provider_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_group.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_group_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_host_networks.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_host_pm.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_host_storage_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_hosts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_hosts_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_mac_pools.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_networks.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_networks_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_nics.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_nics_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_permissions.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_permissions_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_quotas.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_quotas_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_scheduling_policies_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_snapshots.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_snapshots_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_storage_connections.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_storage_domains.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_storage_domains_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_storage_templates_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_storage_vms_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_tags.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_tags_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_templates.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_templates_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_users.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_users_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_vmpools.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_vmpools_facts.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_vms.py", 
-    "lib/ansible/modules/cloud/ovirt/ovirt_vms_facts.py", 
-    "lib/ansible/modules/cloud/packet/__init__.py", 
-    "lib/ansible/modules/cloud/packet/packet_device.py", 
-    "lib/ansible/modules/cloud/packet/packet_sshkey.py", 
-    "lib/ansible/modules/cloud/profitbricks/__init__.py", 
-    "lib/ansible/modules/cloud/profitbricks/profitbricks.py", 
-    "lib/ansible/modules/cloud/profitbricks/profitbricks_datacenter.py", 
-    "lib/ansible/modules/cloud/profitbricks/profitbricks_nic.py", 
-    "lib/ansible/modules/cloud/profitbricks/profitbricks_volume.py", 
-    "lib/ansible/modules/cloud/profitbricks/profitbricks_volume_attachments.py", 
-    "lib/ansible/modules/cloud/pubnub/__init__.py", 
-    "lib/ansible/modules/cloud/pubnub/pubnub_blocks.py", 
-    "lib/ansible/modules/cloud/rackspace/__init__.py", 
-    "lib/ansible/modules/cloud/rackspace/rax.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_cbs.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_cbs_attachments.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_cdb.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_cdb_database.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_cdb_user.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_clb.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_clb_nodes.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_clb_ssl.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_dns.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_dns_record.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_facts.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_files.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_files_objects.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_identity.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_keypair.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_meta.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_mon_alarm.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_mon_check.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_mon_entity.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_mon_notification.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_mon_notification_plan.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_network.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_queue.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_scaling_group.py", 
-    "lib/ansible/modules/cloud/rackspace/rax_scaling_policy.py", 
-    "lib/ansible/modules/cloud/smartos/__init__.py", 
-    "lib/ansible/modules/cloud/smartos/imgadm.py", 
-    "lib/ansible/modules/cloud/smartos/smartos_image_facts.py", 
-    "lib/ansible/modules/cloud/smartos/vmadm.py", 
-    "lib/ansible/modules/cloud/softlayer/__init__.py", 
-    "lib/ansible/modules/cloud/softlayer/sl_vm.py", 
-    "lib/ansible/modules/cloud/univention/__init__.py", 
-    "lib/ansible/modules/cloud/univention/udm_dns_record.py", 
-    "lib/ansible/modules/cloud/univention/udm_dns_zone.py", 
-    "lib/ansible/modules/cloud/univention/udm_group.py", 
-    "lib/ansible/modules/cloud/univention/udm_share.py", 
-    "lib/ansible/modules/cloud/univention/udm_user.py", 
-    "lib/ansible/modules/cloud/vmware/__init__.py", 
-    "lib/ansible/modules/cloud/vmware/vca_fw.py", 
-    "lib/ansible/modules/cloud/vmware/vca_nat.py", 
-    "lib/ansible/modules/cloud/vmware/vca_vapp.py", 
-    "lib/ansible/modules/cloud/vmware/vcenter_license.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_cluster.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_datacenter.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_dns_config.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_dvs_host.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_dvs_portgroup.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_dvswitch.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_guest.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_guest_facts.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_guest_find.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_guest_powerstate.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_guest_snapshot.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_guest_tools_wait.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_host.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_local_user_manager.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_maintenancemode.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_migrate_vmk.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_portgroup.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_resource_pool.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_target_canonical_facts.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vm_facts.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vm_shell.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vm_vss_dvs_migrate.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vmkernel.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vmkernel_ip_config.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vmotion.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vsan_cluster.py", 
-    "lib/ansible/modules/cloud/vmware/vmware_vswitch.py", 
-    "lib/ansible/modules/cloud/vmware/vsphere_copy.py", 
-    "lib/ansible/modules/cloud/vmware/vsphere_guest.py", 
-    "lib/ansible/modules/cloud/webfaction/__init__.py", 
-    "lib/ansible/modules/cloud/webfaction/webfaction_app.py", 
-    "lib/ansible/modules/cloud/webfaction/webfaction_db.py", 
-    "lib/ansible/modules/cloud/webfaction/webfaction_domain.py", 
-    "lib/ansible/modules/cloud/webfaction/webfaction_mailbox.py", 
-    "lib/ansible/modules/cloud/webfaction/webfaction_site.py"
+    "lib/ansible/modules/cloud/ovirt/_ovirt_clusters.py"
   ], 
   "lib/ansible/modules/clustering/consul_kv.py": [
     "lib/ansible/modules/clustering/consul_kv.py"
@@ -12721,9 +12225,7 @@
   "messaging/rabbitmq_user.py": "lib/ansible/modules/messaging/rabbitmq_user.py", 
   "messaging/rabbitmq_vhost": "lib/ansible/modules/messaging/rabbitmq_vhost.py", 
   "messaging/rabbitmq_vhost.py": "lib/ansible/modules/messaging/rabbitmq_vhost.py", 
-  "meta": [
-    "lib/ansible/modules/utilities/helper/meta.py"
-  ], 
+  "meta": "meta", 
   "meta module": "lib/ansible/modules/utilities/helper/meta.py", 
   "meta: end_play": [], 
   "meta: reset_connection": [], 
@@ -14040,7 +13542,9 @@
   "module synchronize": "lib/ansible/modules/files/synchronize.py", 
   "module sysctl": "lib/ansible/modules/system/sysctl.py", 
   "module syslogger": "lib/ansible/modules/notification/syslogger.py", 
-  "module system/zfs": [], 
+  "module system/zfs": [
+    "lib/ansible/modules/storage/zfs/zfs.py"
+  ], 
   "module systemd": [
     "lib/ansible/modules/system/systemd.py"
   ], 
@@ -15958,7 +15462,9 @@
   "modules/cloud/amazon/route53_facts.py": "lib/ansible/modules/cloud/amazon/route53_facts.py", 
   "modules/cloud/amazon/route53_health_check.py": "lib/ansible/modules/cloud/amazon/route53_health_check.py", 
   "modules/cloud/amazon/route53_zone.py": "lib/ansible/modules/cloud/amazon/route53_zone.py", 
-  "modules/cloud/amazon/s3": [], 
+  "modules/cloud/amazon/s3": [
+    "lib/ansible/modules/cloud/amazon/_s3.py"
+  ], 
   "modules/cloud/amazon/s3.py": "lib/ansible/modules/cloud/amazon/_s3.py", 
   "modules/cloud/amazon/s3_bucket.py": "lib/ansible/modules/cloud/amazon/s3_bucket.py", 
   "modules/cloud/amazon/s3_lifecycle.py": "lib/ansible/modules/cloud/amazon/s3_lifecycle.py", 
@@ -16343,7 +15849,7 @@
     "lib/ansible/modules/cloud/amazon/iam.py"
   ], 
   "modules/core/system/setup.py": [
-    "lib/ansible/modules/system/setup.py"
+    "lib/ansible/modules/windows/setup.ps1"
   ], 
   "modules/core/system/user": [
     "lib/ansible/modules/system/user.py"
@@ -16756,7 +16262,7 @@
   "modules/network/f5/bigip_vlan.py": "lib/ansible/modules/network/f5/bigip_vlan.py", 
   "modules/network/f5/bigip_wait.py": "lib/ansible/modules/network/f5/bigip_wait.py", 
   "modules/network/fortios\nBackuping": [
-    "lib/ansible/modules/network/fortios"
+    "lib/ansible/modules/network/fortios/__init__.py"
   ], 
   "modules/network/fortios/fortios_address.py": "lib/ansible/modules/network/fortios/fortios_address.py", 
   "modules/network/fortios/fortios_config.py": "lib/ansible/modules/network/fortios/fortios_config.py", 
@@ -16824,7 +16330,9 @@
   "modules/network/layer2/net_vlan.py": "lib/ansible/modules/network/layer2/net_vlan.py", 
   "modules/network/layer3/net_l3_interface.py": "lib/ansible/modules/network/layer3/net_l3_interface.py", 
   "modules/network/layer3/net_vrf.py": "lib/ansible/modules/network/layer3/net_vrf.py", 
-  "modules/network/ldap_attr": [], 
+  "modules/network/ldap_attr": [
+    "lib/ansible/modules/net_tools/ldap/ldap_attr.py"
+  ], 
   "modules/network/lenovo/cnos_backup.py": "lib/ansible/modules/network/lenovo/cnos_backup.py", 
   "modules/network/lenovo/cnos_bgp.py": "lib/ansible/modules/network/lenovo/cnos_bgp.py", 
   "modules/network/lenovo/cnos_command.py": "lib/ansible/modules/network/lenovo/cnos_command.py", 
@@ -16988,7 +16496,9 @@
   "modules/network/protocol/net_lldp.py": "lib/ansible/modules/network/protocol/net_lldp.py", 
   "modules/network/radware/vdirect_file.py": "lib/ansible/modules/network/radware/vdirect_file.py", 
   "modules/network/routing/net_static_route.py": "lib/ansible/modules/network/routing/net_static_route.py", 
-  "modules/network/snmp_facts": [], 
+  "modules/network/snmp_facts": [
+    "lib/ansible/modules/net_tools/snmp_facts.py"
+  ], 
   "modules/network/sros/sros_command.py": "lib/ansible/modules/network/sros/sros_command.py", 
   "modules/network/sros/sros_config.py": "lib/ansible/modules/network/sros/sros_config.py", 
   "modules/network/sros/sros_rollback.py": "lib/ansible/modules/network/sros/sros_rollback.py", 
@@ -19687,7 +19197,7 @@
   ], 
   "plugins.shell.ShellBase.mkdtemp": [], 
   "plugins/action/synchronize.py": [
-    "lib/ansible/plugins/action/synchronize.py"
+    "lib/ansible/modules/files/synchronize.py"
   ], 
   "plugins/connection/network_cli": [
     "lib/ansible/plugins/connection/network_cli.py"
@@ -19986,7 +19496,7 @@
     "lib/ansible/plugins/filter"
   ], 
   "regex_replace filter in raw module": [
-    "lib/ansible/plugins/filter"
+    "lib/ansible/modules/commands/raw.py"
   ], 
   "register, set_fact or with_dict": [
     "lib/ansible/modules/utilities/logic/set_fact.py"
@@ -20255,7 +19765,7 @@
     "lib/ansible/modules/windows/setup.ps1"
   ], 
   "setup.py": [
-    "setup.py"
+    "lib/ansible/modules/system/setup.py"
   ], 
   "setup_module": [
     "lib/ansible/modules/system/setup.py"
@@ -20297,7 +19807,9 @@
   "shell-module": [
     "lib/ansible/modules/commands/shell.py"
   ], 
-  "shell/command module": [], 
+  "shell/command module": [
+    "lib/ansible/modules/commands/command.py"
+  ], 
   "shell\u3001command and script": [
     "lib/ansible/modules/commands/script.py"
   ], 
@@ -20673,9 +20185,7 @@
     "lib/ansible/inventory", 
     "lib/ansible/modules/utilities/helper/meta.py"
   ], 
-  "tasks-execution, path-creation, to be observed at least in the copy-module": [
-    "lib/ansible/modules/system/at.py"
-  ], 
+  "tasks-execution, path-creation, to be observed at least in the copy-module": [], 
   "telegram": "lib/ansible/modules/notification/telegram.py", 
   "telegram module": "lib/ansible/modules/notification/telegram.py", 
   "telnet": "lib/ansible/modules/commands/telnet.py", 
@@ -20701,11 +20211,9 @@
     "lib/ansible/modules/files/template.py"
   ], 
   "template module, copy module": [
-    "lib/ansible/modules/files/copy.py", 
     "lib/ansible/modules/files/template.py"
   ], 
   "template module.\ncan apply to copy module": [
-    "lib/ansible/modules/files/copy.py", 
     "lib/ansible/modules/files/template.py"
   ], 
   "template task": [
@@ -20883,7 +20391,7 @@
   "variable precedence": [], 
   "variables": [], 
   "vars": [
-    "lib/ansible/galaxy/data/container_enabled/vars"
+    "lib/ansible/template/vars.py"
   ], 
   "vars injected before conditional of include_role task": [
     "lib/ansible/playbook/conditional.py", 

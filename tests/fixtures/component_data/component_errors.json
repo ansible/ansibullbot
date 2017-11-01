@@ -1,22 +1,5 @@
 [
   {
-    "component": "Windows module: win_robocopy\nhttp://docs.ansible.com/ansible/latest/win_robocopy_module.html", 
-    "component_raw": "Windows module: win_robocopy\nhttp://docs.ansible.com/ansible/latest/win_robocopy_module.html", 
-    "expected": [
-      "lib/ansible/modules/windows/win_robocopy.py"
-    ], 
-    "result": [
-      "lib/ansible/modules/windows/win_robocopy.ps1", 
-      "lib/ansible/modules/windows/win_robocopy.py"
-    ], 
-    "strategies": [
-      "search_by_filepath[partial]", 
-      "search_by_filepath[partial]"
-    ], 
-    "strategy": "search_by_filepath[partial]", 
-    "url": "https://github.com/ansible/ansible/issues/28571"
-  }, 
-  {
     "component": "dellos*_* network modules", 
     "component_raw": "dellos*_* network modules", 
     "expected": [
@@ -587,6 +570,7 @@
       "test/units/modules/network/f5/fixtures/cert1.key", 
       "test/units/modules/network/f5/fixtures/cert2.crt", 
       "test/units/modules/network/f5/fixtures/cert2.key", 
+      "test/units/modules/network/f5/fixtures/chain1.crt", 
       "test/units/modules/network/f5/fixtures/create_gtm_irule.tcl", 
       "test/units/modules/network/f5/fixtures/create_iapp_service_parameters_f5_http.json", 
       "test/units/modules/network/f5/fixtures/create_iapp_template.iapp", 
@@ -654,6 +638,7 @@
       "test/units/modules/network/ios/fixtures/ios_config_config.cfg", 
       "test/units/modules/network/ios/fixtures/ios_config_defaults.cfg", 
       "test/units/modules/network/ios/fixtures/ios_config_src.cfg", 
+      "test/units/modules/network/ios/fixtures/ios_logging_config.cfg", 
       "test/units/modules/network/ios/fixtures/ios_ping_ping_10.255.255.250_repeat_2", 
       "test/units/modules/network/ios/fixtures/ios_ping_ping_8.8.8.8_repeat_2", 
       "test/units/modules/network/ios/fixtures/ios_system_config.cfg", 
@@ -664,6 +649,7 @@
       "test/units/modules/network/ios/test_ios_banner.py", 
       "test/units/modules/network/ios/test_ios_command.py", 
       "test/units/modules/network/ios/test_ios_config.py", 
+      "test/units/modules/network/ios/test_ios_logging.py", 
       "test/units/modules/network/ios/test_ios_ping.py", 
       "test/units/modules/network/ios/test_ios_system.py", 
       "test/units/modules/network/ios/test_ios_user.py", 
@@ -848,35 +834,48 @@
     "url": "https://github.com/ansible/ansible/issues/30350"
   }, 
   {
-    "component": "GCP ansible modules", 
-    "component_raw": "GCP ansible modules", 
+    "component": "lib/ansible/modules/cloud/amazon", 
+    "component_raw": "lib/ansible/modules/cloud/amazon", 
     "expected": [
-      "docs/docsite/rst/modules"
+      "lib/ansible/modules/cloud/amazon"
     ], 
     "result": [
-      "lib/ansible/modules/cloud/google"
+      "lib/ansible/modules/cloud/amazon/GUIDELINES.md"
     ], 
     "strategies": [
-      "search_by_regex_module_globs"
+      "search_by_filepath[partial]"
     ], 
-    "strategy": "search_by_regex_module_globs", 
-    "url": "https://github.com/ansible/ansible/issues/30414"
+    "strategy": "search_by_filepath[partial]", 
+    "url": "https://github.com/ansible/ansible/issues/31216"
   }, 
   {
-    "component": "docker connection module, docker detailed guide.", 
-    "component_raw": "docker connection module, docker detailed guide.", 
+    "component": "modules/network/f5", 
+    "component_raw": "modules/network/f5", 
     "expected": [
-      "lib/ansible/modules/cloud/docker/_docker.py"
+      "lib/ansible/modules/network/f5"
     ], 
     "result": [
-      "lib/ansible/modules/cloud/docker/_docker.py", 
-      "lib/ansible/plugins/connection/docker.py"
+      "lib/ansible/modules/network/f5/__init__.py"
     ], 
     "strategies": [
-      "search_by_regex_generic", 
-      "search_by_keywords!exact"
+      "search_by_filepath[partial]"
     ], 
-    "strategy": "search_by_keywords!exact", 
-    "url": "https://github.com/ansible/ansible/issues/30574"
+    "strategy": "search_by_filepath[partial]", 
+    "url": "https://github.com/ansible/ansible/issues/31416"
+  }, 
+  {
+    "component": "modules/network/iosxr", 
+    "component_raw": "modules/network/iosxr", 
+    "expected": [
+      "lib/ansible/modules/network/iosxr"
+    ], 
+    "result": [
+      "lib/ansible/modules/network/iosxr/__init__.py"
+    ], 
+    "strategies": [
+      "search_by_filepath[partial]"
+    ], 
+    "strategy": "search_by_filepath[partial]", 
+    "url": "https://github.com/ansible/ansible/issues/31714"
   }
 ]

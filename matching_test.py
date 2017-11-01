@@ -21,6 +21,7 @@ from pprint import pprint
 
 LABELS = []
 CACHEDIR = os.path.expanduser('~/.ansibullbot/cache')
+FIXTUREDIR = 'tests/fixtures/component_data'
 METADIR = '/home/jtanner/workspace/scratch/metafiles'
 METAFILES = glob.glob('{}/*.json'.format(METADIR))
 METAFILES = sorted(set(METAFILES))
@@ -158,33 +159,39 @@ class IssueWrapperMock(object):
 
 
 def load_expected():
-    with open('componet_expected_results.json', 'rb') as f:
+    fn = os.path.join(FIXTUREDIR, 'component_expected_results.json')
+    with open(fn, 'rb') as f:
         fdata = json.loads(f.read())
     return fdata
 
 
 def save_expected(data):
-    with open('componet_expected_results.json', 'wb') as f:
+    fn = os.path.join(FIXTUREDIR, 'component_expected_results.json')
+    with open(fn, 'wb') as f:
         f.write(json.dumps(data, indent=2, sort_keys=True))
 
 
 def load_match_map():
-    with open('componet_match_map.json', 'rb') as f:
+    fn = os.path.join(FIXTUREDIR, 'component_match_map.json')
+    with open(fn, 'rb') as f:
         data = json.loads(f.read())
     return data
 
 def save_match_map(data):
-    with open('componet_match_map.json', 'wb') as f:
+    fn = os.path.join(FIXTUREDIR, 'component_match_map.json')
+    with open(fn, 'wb') as f:
         f.write(json.dumps(data, indent=2, sort_keys=True))
 
 def load_skip():
-    with open('componet_skip.json', 'rb') as f:
+    fn = os.path.join(FIXTUREDIR, 'component_skip.json')
+    with open(fn, 'rb') as f:
         data = json.loads(f.read())
     return data
 
 
 def save_skip(data):
-    with open('componet_skip.json', 'wb') as f:
+    fn = os.path.join(FIXTUREDIR, 'component_skip.json')
+    with open(fn, 'wb') as f:
         f.write(json.dumps(data, indent=2, sort_keys=True))
 
 
