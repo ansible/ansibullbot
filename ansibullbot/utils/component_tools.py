@@ -503,6 +503,7 @@ class ComponentMatcher(object):
 
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
+            r'\:\n(\S+)\.py',
             r'(\S+)\.py',
             r'\-(\s+)(\S+)(\s+)module',
             r'\`ansible_module_(\S+)\.py\`',
@@ -550,8 +551,12 @@ class ComponentMatcher(object):
             #r'(.*)(\s+)\((\S+)\)',
             #r'(\S+) (\S+)',
             #r'(\S+) .*',
+            r'(\S+)(\s+)(\S+)(\s+)modules',
             r'(\S+)(\s+)module\:(\s+)(\S+)',
             r'\-(\s+)(\S+)(\s+)module',
+            r'\:(\s+)(\S+)(\s+)module',
+            r'\-(\s+)ansible(\s+)(\S+)(\s+)(\S+)(\s+)module',
+            r'.*(\s+)(\S+)(\s+)module.*'
         ]
 
         matches = []
@@ -562,8 +567,11 @@ class ComponentMatcher(object):
             #logging.debug('test pattern: {}'.format(pattern))
 
             mobj = re.match(pattern, body, re.M | re.I)
-            if mobj:
 
+            #if not mobj:
+            #    logging.debug('pattern {} !matched on "{}"'.format(pattern, body))
+
+            if mobj:
                 logging.debug('pattern {} matched on "{}"'.format(pattern, body))
 
                 for x in range(0,mobj.lastindex+1):
@@ -580,18 +588,8 @@ class ComponentMatcher(object):
                         mname = mname.replace('.py', '').replace('.ps1', '')
                         logging.debug('--> {}'.format(mname))
 
+                        # attempt to match a module
                         module = None
-                        '''
-                        if mname in self.MODULE_NAMES or '_' + mname in self.MODULE_NAMES:
-                            #module = self.module_indexer.find_match(mname, exact=True)
-                            module = self.find_module_match(mname)
-                        elif mname.endswith('.py'):
-                            if mname.replace('.py', '') in self.MODULE_NAMES:
-                                module = self.find_module_match(mname)
-                        elif mname.endswith('.ps1'):
-                            if mname.replace('.ps1', '') in self.MODULE_NAMES:
-                                module = self.find_module_match(mname)
-                        '''
                         module = self.find_module_match(mname)
 
                         if not module:

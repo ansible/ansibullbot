@@ -224,12 +224,12 @@ class TestComponentMatcher(TestCase):
                 {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/cloud/amazon']}
             ],
            'modules/network/f5': [
-                {'context': None, 'partial': False, 'expected': ['modules/network/f5']},
-                {'context': None, 'partial': True, 'expected': ['modules/network/f5']}
+                {'context': None, 'partial': False, 'expected': ['lib/ansible/modules/network/f5']},
+                {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/network/f5']}
             ],
            'modules/network/iosxr': [
-                {'context': None, 'partial': False, 'expected': ['modules/network/iosxr']},
-                {'context': None, 'partial': True, 'expected': ['modules/network/iosxr']}
+                {'context': None, 'partial': False, 'expected': ['lib/ansible/modules/network/iosxr']},
+                {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/network/iosxr']}
             ]
         }
 
