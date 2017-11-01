@@ -18,6 +18,7 @@ class ComponentMatcher(object):
     STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',', ':', '?', '-']
     BLACKLIST = ['new module', 'new modules']
     FILE_NAMES = []
+    MODULES = {}
     MODULE_NAMES = []
     MODULE_NAMESPACE_DIRECTORIES = []
 
@@ -109,6 +110,19 @@ class ComponentMatcher(object):
 
     def index_files(self):
 
+
+        for fn in self.gitrepo.module_files:
+            mname = os.path.basename(fn)
+            mname = mname.replace('.py', '').replace('.ps1', '')
+            if mname.startswith('__'):
+                continue
+            mdata = {
+                'name': mname,
+                'repo_filename': fn,
+                'filename': fn
+            }
+            self.MODULES[fn] = mdata.copy()
+
         self.MODULE_NAMESPACE_DIRECTORIES = [os.path.dirname(x) for x in self.gitrepo.module_files]
         self.MODULE_NAMESPACE_DIRECTORIES = sorted(set(self.MODULE_NAMESPACE_DIRECTORIES))
 
@@ -128,6 +142,22 @@ class ComponentMatcher(object):
         mnames = [x.split()[0] for x in mnames]
         self.MODULE_NAMES += mnames
         self.MODULE_NAMES = sorted(set(self.MODULE_NAMES))
+
+
+        for mname in self.MODULE_NAMES:
+            matched = False
+            for k,v in self.MODULES.items():
+                if v['name'] == mname:
+                    matched = True
+                    break
+            if not matched:
+                fn = 'lib/ansible/modules/None/{}'.format(mname)
+                mdata = {
+                    'name': mname,
+                    'repo_filename': fn,
+                    'filename': fn
+                }
+                self.MODULES[fn] = mdata.copy()
 
         # ansible-doc: error: option -t: invalid choice: u'None' (choose from
         # 'cache', 'callback', 'connection', 'inventory', 'lookup', 'module',
@@ -478,6 +508,7 @@ class ComponentMatcher(object):
 
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
+            r'\-(\s+)(\S+)module',
             r'\`ansible_module_(\S+)\.py\`',
             r'module(\s+)(\S+)',
             r'\`(\S+)\`(\s+)module',
@@ -522,6 +553,7 @@ class ComponentMatcher(object):
             #r'(.*)(\s+)\((\S+)\)',
             #r'(\S+) (\S+)',
             #r'(\S+) .*',
+            r'(\S+)(\s+)module\:(\s+)(\S+)',
         ]
 
         matches = []
@@ -532,7 +564,7 @@ class ComponentMatcher(object):
         #    import epdb; epdb.st()
 
         for pattern in patterns:
-            #logging.debug('test pattern: {}'.format(pattern))
+            logging.debug('test pattern: {}'.format(pattern))
 
             mobj = re.match(pattern, body, re.M | re.I)
             if mobj:
@@ -551,7 +583,7 @@ class ComponentMatcher(object):
                         if ' ' in mname:
                             continue
                         mname = mname.replace('.py', '').replace('.ps1', '')
-                        #logging.debug('--> {}'.format(mname))
+                        logging.debug('--> {}'.format(mname))
 
                         module = None
                         if mname in self.MODULE_NAMES:
@@ -570,30 +602,6 @@ class ComponentMatcher(object):
                             matches.append(module['repo_filename'])
                     except Exception as e:
                         logging.error(e)
-
-                '''
-                mname = mobj.group(mobj.lastindex)
-                if mname == body:
-                    continue
-                mname = mname.strip().lower()
-                mname = mname.replace('.py', '').replace('.ps1', '')
-
-                module = None
-                if mname in self.MODULE_NAMES:
-                    module = self.module_indexer.find_match(mname, exact=True)
-                else:
-                    print('{} NOT IN MODULE NAMES'.format(mname))
-
-                if not module:
-                    pass
-                elif isinstance(module, list):
-                    for m in module:
-                        #logging.debug('matched {}'.format(m['name']))
-                        matches.append(m['repo_filename'])
-                elif isinstance(module, dict):
-                    #logging.debug('matched {}'.format(module['name']))
-                    matches.append(module['repo_filename'])
-                '''
 
                 if matches:
                     break
@@ -1134,26 +1142,24 @@ class ComponentMatcher(object):
             return None
         elif pattern.lower() in BLACKLIST:
             return None
-        elif '/' in pattern and not self._find_module_match(pattern):
-            # https://github.com/ansible/ansible/issues/20520
-            if not pattern.startswith('lib/'):
-                keys = self.modules.keys()
-                for k in keys:
-                    if pattern in k:
-                        ppy = pattern + '.py'
-                        if k.endswith(pattern) or k.endswith(ppy):
-                            return self.modules[k]
 
-        elif pattern.endswith('.py') and self._find_module_match(pattern):
-            # https://github.com/ansible/ansible/issues/19889
-            candidate = self._find_match(pattern, exact=False)
+        candidate = self._find_module_match(pattern)
 
-            if isinstance(candidate, list):
-                if len(candidate) == 1:
-                    candidate = candidate[0]
+        if not candidate and '/' in pattern and not pattern.startswith('lib/'):
+            ppy = None
+            ps1 = None
+            if not pattern.endswith('.py') and not pattern.endswith('.ps1'):
+                ppy = pattern + '.py'
+            if not pattern.endswith('.py') and not pattern.endswith('.ps1'):
+                ps1 = pattern + '.ps1'
+            for mf in self.gitrepo.module_files:
+                if pattern in mf:
+                    if mf.endswith(pattern) or mf.endswith(ppy) or mf.endswith(ps1):
+                        candidate = mf
+                        break
 
-            if candidate['filename'] == pattern:
-                return candidate
+        #if pattern == 'lxd_container':
+        #    import epdb; epdb.st()
 
         return candidate
 
@@ -1166,8 +1172,7 @@ class ComponentMatcher(object):
         if isinstance(pattern, unicode):
             pattern = pattern.encode('ascii', 'ignore')
 
-        import epdb; epdb.st()
-        for k,v in self.modules.iteritems():
+        for k,v in self.MODULES.items():
             if v['name'] == pattern:
                 logging.debug('match {} on name: {}'.format(k, v['name']))
                 matches = [v]
@@ -1175,8 +1180,10 @@ class ComponentMatcher(object):
 
         if not matches:
             # search by key ... aka the filepath
-            for k,v in self.modules.iteritems():
+            for k,v in self.MODULES.items():
                 if k == pattern:
                     logging.debug('match {} on key: {}'.format(k, k))
                     matches = [v]
                     break
+
+        return matches
