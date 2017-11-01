@@ -21,21 +21,37 @@ class FakeIndexer(object):
         return None
 
 
+class FakeGitRepo(object):
+    files = []
+    module_files = []
+    checkoutdir = None
+
+
 def get_component_matcher():
 
     # Make indexers
     MI = FakeIndexer()
     FI = FakeIndexer()
+    GR = FakeGitRepo()
 
     # Load the files
     with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
-        FI.files = json.loads(f.read())
+        _files = json.loads(f.read())
+    _files = sorted(set(_files))
+
+    #with open('tests/fixtures/botmeta/BOTMETA-2017-11-01.yml', 'rb') as f:
+    #    botmeta = f.read()
+    botmetafile = 'tests/fixtures/botmeta/BOTMETA-2017-11-01.yml'
+
+    FI.files = _files
+    GR.files = _files
+    GR.module_files = [x for x in _files if x.startswith('lib/ansible/modules')]
 
     # Load the modules
     mfiles = [x for x in FI.files if 'lib/ansible/modules' in x]
     mfiles = [x for x in mfiles if x.endswith('.py') or x.endswith('.ps1')]
     mfiles = [x for x in mfiles if x != '__init__.py']
-    mnames =[]
+    mnames = []
     for mfile in mfiles:
         mname = os.path.basename(mfile)
         mname = mname.replace('.py', '')
@@ -44,7 +60,8 @@ def get_component_matcher():
         MI.modules[mfile] = {'name': mname, 'repo_filename': mfile}
 
     # Init the matcher
-    CM = ComponentMatcher(None, FI, MI)
+    #CM = ComponentMatcher(None, FI, MI)
+    CM = ComponentMatcher(botmetafile=botmetafile, gitrepo=GR, file_indexer=FI, module_indexer=MI)
 
     return CM
 
@@ -163,15 +180,6 @@ class TestComponentMatcher(TestCase):
 
         CM = get_component_matcher()
 
-        #COMPONENTS = {
-        #    '`plugins/strategy/__init__.py`': [
-        #        'lib/ansible/plugins/strategy/__init__.py',
-        #        'lib/ansible/plugins/strategy/__init__.py'
-        #    ],
-        #}
-
-        #import epdb; epdb.st()
-
         for k,v in COMPONENTS.items():
             COMPONENT = k
             EXPECTED = v
@@ -208,7 +216,7 @@ class TestComponentMatcher(TestCase):
                 {'context': 'lib/ansible/modules', 'partial': False, 'expected': []},
                 {'context': 'lib/ansible/modules', 'partial': True, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
             ],
-            'ansible/files/modules/archive.py' : [
+            'ansible/files/modules/archive.py': [
                 {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/files/archive.py']}
             ]
         }
@@ -252,9 +260,14 @@ class TestComponentMatcher(TestCase):
             if not isinstance(EXPECTED, list):
                 EXPECTED = [EXPECTED]
             res = CM.search_by_regex_module_globs(COMPONENT)
+
             #print('')
             #print(COMPONENT)
             #print(res)
+
+            #if COMPONENT == 'elasticache modules':
+            #    import epdb; epdb.st()
+
             self.assertEqual(EXPECTED, res)
 
     def test_search_by_keywords(self):
@@ -263,7 +276,7 @@ class TestComponentMatcher(TestCase):
 
         COMPONENTS = {
             #'inventory script': ['lib/ansible/plugins/inventory/script.py'] #ix2390 https://github.com/ansible/ansible/issues/24545
-            'inventory script': ['contrib/inventory'] #ix2390 https://github.com/ansible/ansible/issues/24545
+            'inventory script': ['contrib/inventory']  # ix2390 https://github.com/ansible/ansible/issues/24545
         }
 
         for k,v in COMPONENTS.items():
@@ -295,9 +308,9 @@ class TestComponentMatcher(TestCase):
             '`apt` module': ['lib/ansible/modules/packaging/os/apt.py'],
             '`ecs_service` module': ['lib/ansible/modules/cloud/amazon/ecs_service.py'],
             '`meta` module': ['lib/ansible/modules/utilities/helper/meta.py'],
-            '`meta` module': ['lib/ansible/modules/utilities/helper/meta.py'],
+            #'`meta` module': ['lib/ansible/modules/utilities/helper/meta.py'],
             '`mysql_user` module': ['lib/ansible/modules/database/mysql/mysql_user.py'],
-            '`s3` module': [],
+            '`s3` module': ['lib/ansible/modules/cloud/amazon/_s3.py'],
             '`user` module': ['lib/ansible/modules/system/user.py'],
             'the "user" module': ['lib/ansible/modules/system/user.py'],
             '`ansible_module_ec2_ami_copy.py`': ['lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],

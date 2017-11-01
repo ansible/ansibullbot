@@ -85,7 +85,7 @@ class ComponentMatcher(object):
         'winrm': 'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, botmetafile=None, cachedir=None, file_indexer=None, module_indexer=None):
+    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, file_indexer=None, module_indexer=None):
         self.cachedir = cachedir
         self.botmetafile = botmetafile
 
@@ -99,10 +99,13 @@ class ComponentMatcher(object):
         self.MODULE_NAMESPACE_DIRECTORIES = sorted(set(self.MODULE_NAMESPACE_DIRECTORIES))
         '''
 
-        self.gitrepo = GitRepoWrapper(cachedir=self.cachedir, repo=self.REPO)
-        self.gitrepo.update()
+        if gitrepo:
+            self.gitrepo = gitrepo
+        else:
+            self.gitrepo = GitRepoWrapper(cachedir=self.cachedir, repo=self.REPO)
+            self.gitrepo.update()
+
         self.index_files()
-        #import epdb; epdb.st()
 
         self.cache_keywords()
         self.strategy = None
@@ -495,21 +498,15 @@ class ComponentMatcher(object):
         # foo* modules
         # foo* module
 
-        #_body = body
-        #body = body.lower()
-        #for SC in self.STOPCHARS:
-        #    if SC in body:
-        #        body = body.replace(SC, '')
-        #body = body.strip()
         body = body.lower()
         logging.debug('regex match on: {}'.format(body))
 
-        #body = self.clean_body(body, internal=True)
-
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
-            r'\-(\s+)(\S+)module',
+            r'(\S+)\.py',
+            r'\-(\s+)(\S+)(\s+)module',
             r'\`ansible_module_(\S+)\.py\`',
+            r'module(\s+)\-(\s+)(\S+)',
             r'module(\s+)(\S+)',
             r'\`(\S+)\`(\s+)module',
             r'(\S+)(\s+)module',
@@ -554,17 +551,15 @@ class ComponentMatcher(object):
             #r'(\S+) (\S+)',
             #r'(\S+) .*',
             r'(\S+)(\s+)module\:(\s+)(\S+)',
+            r'\-(\s+)(\S+)(\s+)module',
         ]
 
         matches = []
 
         logging.debug('check patterns against: {}'.format(body))
 
-        #if 'junos' in body:
-        #    import epdb; epdb.st()
-
         for pattern in patterns:
-            logging.debug('test pattern: {}'.format(pattern))
+            #logging.debug('test pattern: {}'.format(pattern))
 
             mobj = re.match(pattern, body, re.M | re.I)
             if mobj:
@@ -586,10 +581,18 @@ class ComponentMatcher(object):
                         logging.debug('--> {}'.format(mname))
 
                         module = None
-                        if mname in self.MODULE_NAMES:
+                        '''
+                        if mname in self.MODULE_NAMES or '_' + mname in self.MODULE_NAMES:
                             #module = self.module_indexer.find_match(mname, exact=True)
                             module = self.find_module_match(mname)
-                        #logging.debug('---> {}'.format(module['name']))
+                        elif mname.endswith('.py'):
+                            if mname.replace('.py', '') in self.MODULE_NAMES:
+                                module = self.find_module_match(mname)
+                        elif mname.endswith('.ps1'):
+                            if mname.replace('.ps1', '') in self.MODULE_NAMES:
+                                module = self.find_module_match(mname)
+                        '''
+                        module = self.find_module_match(mname)
 
                         if not module:
                             pass
@@ -615,12 +618,8 @@ class ComponentMatcher(object):
         # azurerm modules
 
         matches = []
-        #body = body.lower()
         body = self.clean_body(body)
         logging.debug('try globs on: {}'.format(body))
-
-        #print('')
-        #print('BODY: {}'.format(body))
 
         keymap = {
             'all': None,
@@ -668,21 +667,25 @@ class ComponentMatcher(object):
                     matches.append(keymap[keyword])
             else:
 
-                '''
                 if '*' in keyword:
                     print(keyword)
                     import epdb; epdb.st()
-                '''
 
                 # check for directories first
                 fns = [x for x in self.MODULE_NAMESPACE_DIRECTORIES if keyword in x]
 
                 # check for files second
                 if not fns:
-                    fns = [x for x in self.FILE_NAMES if 'lib/ansible/modules' in x and keyword in x]
+                    fns = [x for x in self.gitrepo.module_files if 'lib/ansible/modules' in x and keyword in x]
 
                 if fns:
                     matches += fns
+
+        #if body.lower() == 'elasticache modules':
+        #    import epdb; epdb.st()
+
+        if matches:
+            matches = sorted(set(matches))
 
         return matches
 
@@ -817,19 +820,6 @@ class ComponentMatcher(object):
         """Find known filepaths in body"""
 
         matches = []
-
-        #if '/' not in body and '.' not in body:
-        #    return matches
-
-        #body = body.strip()
-        #for SC in self.STOPCHARS:
-        #    if body.startswith(SC):
-        #        body = body.lstrip(SC)
-        #        body = body.strip()
-        #    if body.endswith(SC):
-        #        body = body.rstrip(SC)
-        #        body = body.strip()
-        #body = body.strip()
         body = self.clean_body(body)
         #logging.debug('search filepath [{}]: {}'.format(context, body))
 
@@ -863,20 +853,25 @@ class ComponentMatcher(object):
             body = body.replace('module/', 'modules/')
 
         logging.debug('search filepath [{}] [{}]: {}'.format(context, partial, body))
+        #print('search filepath [{}] [{}]: {}'.format(context, partial, body))
         if len(body) < 2:
             return []
 
-        #print('FINAL BODY: {}'.format(body))
-
         body_paths = body.split('/')
-        #if not body_paths[-1].endswith('.py') and not body_paths[-1].endswith('.ps1'):
-        #    body_paths[-1] = body_paths[-1] + '.py'
 
-        #if body in self.file_indexer.files:
+        if not context or 'lib/ansible/modules' in context:
+            mmatch = self.find_module_match(body)
+            if mmatch:
+                if isinstance(mmatch, list):
+                    return [x['repo_filename'] for x in mmatch]
+                else:
+                    return [mmatch['repo_filename']]
+
         if body in self.gitrepo.files:
             matches = [body]
         else:
-            for fn in self.FILE_NAMES:
+            #for fn in self.FILE_NAMES:
+            for fn in self.gitrepo.files:
 
                 # limit the search set if a context is given
                 if context is not None and not fn.startswith(context):
@@ -889,6 +884,14 @@ class ComponentMatcher(object):
                     if bn2.startswith(bn1):
                         matches = [fn]
                         break
+
+                '''
+                fn_paths = fn.split('/')
+                if body in fn_paths:
+                    matches.append(fn)
+                    if 'ec2.py' in body:
+                        import epdb; epdb.st()
+                '''
 
                 if partial:
 
@@ -904,39 +907,16 @@ class ComponentMatcher(object):
                         if bp in fn_paths:
                             bp_total += 1
 
-                    #if fn == 'lib/ansible/modules/storage/netapp/netapp_e_storagepool.py':
-                    #    if 'storagepool' in body:
-                    #        import epdb; epdb.st()
-
                     if bp_total == len(body_paths):
-                        #if fn not in matches:
-                        #    matches.append(fn)
-
-                        #logging.debug('100% match on {}'.format(fn))
-
                         matches = [fn]
                         break
 
                     elif bp_total > 1:
-                        #logging.debug('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
 
                         if (float(bp_total) / float(len(body_paths))) >= (2.0 / 3.0):
                             if fn not in matches:
-                                #import epdb; epdb.st()
                                 matches.append(fn)
-
-                    #else:
-                    #    if 'archive' in fn and 'archive' in body:
-                    #        import epdb; epdb.st()
-
-                    #elif bp_total > 0:
-                    #    logging.debug('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
-
-                    #elif bp_total > 3:
-                    #    print('{}/{} match on {}'.format(bp_total, len(body_paths), fn))
-                    #    print(body_paths)
-                    #    if 'rhn_register' in fn:
-                    #        import epdb; epdb.st()
+                                #break
 
         if matches:
             tr = []
@@ -955,6 +935,10 @@ class ComponentMatcher(object):
 
         matches = sorted(set(matches))
         logging.debug('return: {}'.format(matches))
+
+        #if 'validate-modules' in body:
+        #    import epdb; epdb.st()
+
         return matches
 
     def reduce_filepaths(self, matches):
@@ -1144,6 +1128,11 @@ class ComponentMatcher(object):
             return None
 
         candidate = self._find_module_match(pattern)
+        #if 'jabber' in pattern:
+        #    import epdb; epdb.st()
+
+        if not candidate:
+            candidate = self._find_module_match(os.path.basename(pattern))
 
         if not candidate and '/' in pattern and not pattern.startswith('lib/'):
             ppy = None
@@ -1158,9 +1147,6 @@ class ComponentMatcher(object):
                         candidate = mf
                         break
 
-        #if pattern == 'lxd_container':
-        #    import epdb; epdb.st()
-
         return candidate
 
     def _find_module_match(self, pattern):
@@ -1172,8 +1158,12 @@ class ComponentMatcher(object):
         if isinstance(pattern, unicode):
             pattern = pattern.encode('ascii', 'ignore')
 
+        logging.debug('_find_module_match: {}'.format(pattern))
+
+        noext = pattern.replace('.py', '').replace('.ps1', '')
+
         for k,v in self.MODULES.items():
-            if v['name'] == pattern:
+            if v['name'] in [pattern, '_' + pattern, noext, '_' + noext]:
                 logging.debug('match {} on name: {}'.format(k, v['name']))
                 matches = [v]
                 break
