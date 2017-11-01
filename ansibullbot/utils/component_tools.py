@@ -150,7 +150,7 @@ class ComponentMatcher(object):
         for mname in self.MODULE_NAMES:
             matched = False
             for k,v in self.MODULES.items():
-                if v['name'] == mname:
+                if v['name'] in [mname, '_' + mname]:
                     matched = True
                     break
             if not matched:

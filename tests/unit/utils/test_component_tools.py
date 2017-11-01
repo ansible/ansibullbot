@@ -274,13 +274,6 @@ class TestComponentMatcher(TestCase):
                 EXPECTED = [EXPECTED]
             res = CM.search_by_regex_module_globs(COMPONENT)
 
-            #print('')
-            #print(COMPONENT)
-            #print(res)
-
-            #if COMPONENT == 'elasticache modules':
-            #    import epdb; epdb.st()
-
             self.assertEqual(EXPECTED, res)
 
     def test_search_by_keywords(self):
