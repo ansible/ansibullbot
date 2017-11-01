@@ -668,8 +668,9 @@ class ComponentMatcher(object):
             else:
 
                 if '*' in keyword:
-                    print(keyword)
-                    import epdb; epdb.st()
+                    #print(keyword)
+                    keyword = keyword.replace('*', '')
+                    #import epdb; epdb.st()
 
                 # check for directories first
                 fns = [x for x in self.MODULE_NAMESPACE_DIRECTORIES if keyword in x]
@@ -980,7 +981,7 @@ class ComponentMatcher(object):
                 tindex = paths.index('targets')
                 mname = paths[tindex+1]
                 #mrs = self.module_indexer.find_match(mname, exact=True)
-                mrs = self.find_module_match(mname, exact=True)
+                mrs = self.find_module_match(mname)
                 if mrs:
                     if not isinstance(mrs, list):
                         mrs = [mrs]
@@ -1029,7 +1030,7 @@ class ComponentMatcher(object):
         paths = filename.split('/')
         for idx,x in enumerate(paths):
             idx -= 1
-            logging.debug(idx)
+            #logging.debug(idx)
             if idx < 1:
                 continue
             thispath = '/'.join(paths[:(0-idx)])

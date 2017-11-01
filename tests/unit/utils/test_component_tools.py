@@ -218,6 +218,18 @@ class TestComponentMatcher(TestCase):
             ],
             'ansible/files/modules/archive.py': [
                 {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/files/archive.py']}
+            ],
+            'lib/ansible/modules/cloud/amazon': [
+                {'context': None, 'partial': False, 'expected': ['lib/ansible/modules/cloud/amazon']},
+                {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/cloud/amazon']}
+            ],
+           'modules/network/f5': [
+                {'context': None, 'partial': False, 'expected': ['modules/network/f5']},
+                {'context': None, 'partial': True, 'expected': ['modules/network/f5']}
+            ],
+           'modules/network/iosxr': [
+                {'context': None, 'partial': False, 'expected': ['modules/network/iosxr']},
+                {'context': None, 'partial': True, 'expected': ['modules/network/iosxr']}
             ]
         }
 
@@ -244,6 +256,7 @@ class TestComponentMatcher(TestCase):
             'NXOS modules': 'lib/ansible/modules/network/nxos',
             'azurerm modules': 'lib/ansible/modules/cloud/azure',
             'ansiballz/ziploader for modules': [],
+            'dellos*_* network modules': [],
             'elasticache modules': [
                 'lib/ansible/modules/cloud/amazon/elasticache.py',
                 'lib/ansible/modules/cloud/amazon/elasticache_parameter_group.py',
@@ -318,6 +331,31 @@ class TestComponentMatcher(TestCase):
             'rabbitmq_plugin  module': ['lib/ansible/modules/messaging/rabbitmq_plugin.py'],
             #'F5 bigip (bigip_selfip)': ['lib/ansible/modules/network/f5/bigip_selfip.py'],
             'module: `vsphere_guest`': ['lib/ansible/modules/cloud/vmware/vsphere_guest.py'],
+            'Add to vmware_guest module, Clone to Virtual Machine task': [
+                'lib/ansible/modules/cloud/vmware/vmware_guest.py'
+            ],
+            'Jinja2 includes in ansible template module': [
+                'lib/ansible/modules/files/template.py'
+            ],
+            ': ec2_vpc_route_table module': [
+                'lib/ansible/modules/cloud/amazon/ec2_vpc_route_table.py'
+            ],
+            'copy shell  modules': [
+                'lib/ansible/modules/files/copy.py',
+                'lib/ansible/modules/commands/shell.py'
+            ],
+            ':\ndocker.py': [
+                'lib/ansible/modules/cloud/docker/_docker.py'
+            ],
+            ': s3 module': [
+                'lib/ansible/modules/cloud/amazon/_s3.py'
+            ],
+            'The new ldap_attr module.': [
+                'lib/ansible/modules/net_tools/ldap/ldap_attr.py'
+            ],
+            '- Ansible Core/Cisco ios_command module': [
+                'lib/ansible/modules/network/ios/ios_command.py'
+            ]
         }
 
         for COMPONENT,EXPECTED in COMPONENTS.items():
