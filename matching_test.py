@@ -548,7 +548,8 @@ def main():
             continue
 
     pprint(ERRORS)
-    with open('component_errors.json', 'wb') as f:
+    fn = os.path.join(FIXTUREDIR, 'component_errors.json')
+    with open(fn, 'wb') as f:
         f.write(json.dumps(ERRORS_COMPONENTS, indent=2, sort_keys=True))
     #import epdb; epdb.st()
 
