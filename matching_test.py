@@ -6,9 +6,11 @@ import glob
 import logging
 import os
 import sys
+import tempfile
 
 import ansibullbot.constants as C
 
+from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.component_tools import ComponentMatcher
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
@@ -22,112 +24,13 @@ from pprint import pprint
 LABELS = []
 CACHEDIR = os.path.expanduser('~/.ansibullbot/cache')
 FIXTUREDIR = 'tests/fixtures/component_data'
-METADIR = '/home/jtanner/workspace/scratch/metafiles'
-METAFILES = glob.glob('{}/*.json'.format(METADIR))
-METAFILES = sorted(set(METAFILES))
-
-'''
-# These do not match the cache but are the valid results
-EXPECTED = {
-    'https://github.com/ansible/ansible/issues/25863': [
-        'lib/ansible/modules/identity/ipa/ipa_host.py',
-        'lib/ansible/modules/identity/ipa/ipa_user.py',
-        'lib/ansible/modules/identity/ipa/ipa_sudorule.py',
-    ],
-    'https://github.com/ansible/ansible/issues/26763': 'lib/ansible/modules/cloud/openstack/os_user_role.py',
-    'https://github.com/ansible/ansible/issues/24574': 'lib/ansible/modules/windows/setup.ps1',
-    'https://github.com/ansible/ansible/issues/25333': 'lib/ansible/modules/files/tempfile.py',
-    'https://github.com/ansible/ansible/issues/25384': None,
-    'https://github.com/ansible/ansible/issues/25662': None,
-    'https://github.com/ansible/ansible/issues/25946': 'lib/ansible/modules/network/nxos/nxos_hsrp.py',
-    'https://github.com/ansible/ansible/issues/26003': 'lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py',
-    'https://github.com/ansible/ansible/issues/26095': 'lib/ansible/modules/cloud/vmware/vmware_guest.py',
-    'https://github.com/ansible/ansible/issues/26162': 'lib/ansible/modules/network/nxos/nxos_system.py',
-    'https://github.com/ansible/ansible/issues/27024': 'lib/ansible/modules/utilities/logic/_include.py',
-    'https://github.com/ansible/ansible/issues/27275': 'lib/ansible/modules/network/ios/ios_command.py',
-    'https://github.com/ansible/ansible/issues/27836': 'lib/ansible/modules/net_tools/basics/get_url.py',
-    #'https://github.com/ansible/ansible/issues/27903': [
-    #    'lib/ansible/modules/network/cloudengine/ce_command.py',
-    #    'lib/ansible/modules/network/cloudengine/ce_config.py'
-    #],
-    'https://github.com/ansible/ansible/issues/29470': 'lib/ansible/modules/cloud/docker/docker_container.py',
-    'https://github.com/ansible/ansible/issues/27903': [
-        'lib/ansible/modules/network/cloudengine/ce_command.py',
-        'lib/ansible/modules/network/cloudengine/ce_config.py'
-    ],
-    'https://github.com/ansible/ansible/issues/27836': 'lib/ansible/modules/net_tools/basics/get_url.py',
-    'https://github.com/ansible/ansible/issues/27024': 'lib/ansible/modules/utilities/logic/_include.py',
-    'https://github.com/ansible/ansible/issues/26763': 'lib/ansible/modules/cloud/openstack/os_user_role.py',
-    'https://github.com/ansible/ansible/issues/26162': 'lib/ansible/modules/network/nxos/nxos_system.py',
-    'https://github.com/ansible/ansible/issues/26095': 'lib/ansible/modules/cloud/vmware/vmware_guest.py',
-    'https://github.com/ansible/ansible/issues/26003': 'lib/ansible/modules/cloud/azure/azure_rm_virtualmachine.py',
-    'https://github.com/ansible/ansible/issues/25946': 'lib/ansible/modules/network/nxos/nxos_hsrp.py',
-    'https://github.com/ansible/ansible/issues/25897': 'lib/ansible/modules/system/setup.py',
-    'https://github.com/ansible/ansible/issues/30852': 'lib/ansible/modules/cloud/docker/docker_container.py',
-    'https://github.com/ansible/ansible/issues/30534': 'lib/ansible/inventory',
-    'https://github.com/ansible/ansible/issues/30431': 'lib/ansible/modules/windows/win_regedit.ps1',
-    'https://github.com/ansible/ansible/issues/30362': 'lib/ansible/modules/cloud/amazon/ec2.py',
-    'https://github.com/ansible/ansible/issues/29796': 'lib/ansible/modules/cloud/amazon/iam.py',
-    'https://github.com/ansible/ansible/issues/29423': [
-        'lib/ansible/module_utils/ipa.py',
-        'lib/ansible/utils/module_docs_fragments/ipa.py'
-    ],
-    'https://github.com/ansible/ansible/issues/29417': [
-        'lib/ansible/module_utils/ipa.py',
-        'lib/ansible/utils/module_docs_fragments/ipa.py'
-    ],
-    #'https://github.com/ansible/ansible/issues/25863': [
-    #    'lib/ansible/module_utils/ipa.py',
-    #    'lib/ansible/utils/module_docs_fragments/ipa.py'
-    #],
-    'https://github.com/ansible/ansible/issues/28223': 'lib/ansible/modules/utilities/logic/import_playbook.py',
-    'https://github.com/ansible/ansible/issues/24572': 'lib/ansible/modules/windows/setup.ps1',
-    'https://github.com/ansible/ansible/issues/24302': 'lib/ansible/modules/files/stat.py',
-    'https://github.com/ansible/ansible/issues/22789': 'lib/ansible/modules/windows/win_package.ps1',
-    'https://github.com/ansible/ansible/issues/15491': [
-        'lib/ansible/modules/source_control/git.py',
-        'test/integration/targets/git',
-    ],
-    'https://github.com/ansible/ansible/issues/26883': 'lib/ansible/modules/network/netconf',
-    'https://github.com/ansible/ansible/issues/31502': [
-        'lib/ansible/modules/windows/win_dsc.ps1'
-        'lib/ansible/modules/windows/win_dsc.py',
-    ],
-    'https://github.com/ansible/ansible/issues/31107': 'lib/ansible/plugins/connection/netconf.py',
-    'https://github.com/ansible/ansible/issues/31086': 'bin/ansible',
-    'https://github.com/ansible/ansible/issues/31918': 'lib/ansible/modules/files/xml.py',
-    'https://github.com/ansible/ansible/issues/31905': 'lib/ansible/modules/cloud/amazon/ec2_vpc_subnet.py',
-    'https://github.com/ansible/ansible/issues/31901': 'lib/ansible/modules/network/nxos/nxos_config.py',
-    'https://github.com/ansible/ansible/issues/31919': 'lib/ansible/modules/cloud/amazon/elb_target_group.py',
-    'https://github.com/ansible/ansible/issues/31891': 'lib/ansible/modules/files/replace.py',
-    'https://github.com/ansible/ansible/issues/31890': 'lib/ansible/modules/network/nxos/nxos_static_route.py',
-    'https://github.com/ansible/ansible/issues/31888': 'lib/ansible/modules/network/nxos/nxos_ip_interface.py',
-    'https://github.com/ansible/ansible/issues/31887': 'lib/ansible/modules/network/nxos/nxos_portchannel.py',
-}
-'''
-
-'''
-SKIP = [
-    'https://github.com/ansible/ansible/issues/13406',
-    'https://github.com/ansible/ansible/issues/17950',
-    'https://github.com/ansible/ansible/issues/22237',  # Network modules
-    'https://github.com/ansible/ansible/issues/22607',  # contrib/inventory/linode
-    'https://github.com/ansible/ansible/issues/24082',  # synchronize + copy
-    'https://github.com/ansible/ansible/issues/24971',
-    'https://github.com/ansible/ansible/issues/25333',
-    'https://github.com/ansible/ansible/issues/26485',  # windows modules
-    'https://github.com/ansible/ansible/issues/27136',  # network modules
-    'https://github.com/ansible/ansible/issues/27349',  # selinux semodule
-    'https://github.com/ansible/ansible/issues/28247',  # Ansible core modules (system/systemd, system/service)
-    'https://github.com/ansible/ansible/issues/13026',
-    'https://github.com/ansible/ansible/issues/13278',
-    'https://github.com/ansible/ansible/issues/15297'
-    'https://github.com/ansible/ansible/issues/15902'
-]
-'''
-
-
 MATCH_MAP = {}
+
+#METADIR = '/home/jtanner/workspace/scratch/metafiles'
+#METAFILES = glob.glob('{}/*.json'.format(METADIR))
+#METAFILES = sorted(set(METAFILES))
+
+METATAR = 'tests/fixtures/issuemeta/metafiles-2017-11-02.tar.gz'
 
 
 class IssueWrapperMock(object):
@@ -156,6 +59,24 @@ class IssueWrapperMock(object):
     @property
     def template_data(self):
         return self.meta.get('template_data', {})
+
+
+def extract_metafiles():
+    # make tempdir
+    # extract files to tempdir
+    # return list of json files in tempdir
+    tarfile = os.path.abspath(METATAR)
+    tdir = tempfile.mkdtemp()
+    cmd = 'cd {} ; tar xzvf {}'.format(tdir, tarfile)
+    (rc, so, se) = run_command(cmd)
+    metafiles = glob.glob('{}/metafiles/*.json'.format(tdir))
+    metafiles= sorted(set(metafiles))
+    return metafiles
+
+
+def clean_metafiles(filenames):
+    for x in filenames:
+        os.remove(x)
 
 
 def load_expected():
@@ -211,10 +132,11 @@ def main():
 
     set_logger()
 
+    METAFILES = extract_metafiles()
+
     SKIP = load_skip()
     EXPECTED = load_expected()
     MATCH_MAP = load_match_map()
-
 
     ERRORS = []
     ERRORS_COMPONENTS = []
@@ -547,11 +469,13 @@ def main():
 
             continue
 
+
     pprint(ERRORS)
     fn = os.path.join(FIXTUREDIR, 'component_errors.json')
     with open(fn, 'wb') as f:
         f.write(json.dumps(ERRORS_COMPONENTS, indent=2, sort_keys=True))
-    #import epdb; epdb.st()
+
+    clean_metafiles(METAFILES)
 
 
 if __name__ == "__main__":
