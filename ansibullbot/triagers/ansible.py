@@ -40,6 +40,7 @@ from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, 
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
+from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
@@ -107,6 +108,8 @@ class AnsibleActions(DefaultActions):
 class AnsibleTriage(DefaultTriager):
 
     BOTNAMES = ['ansibot', 'ansibotdev', 'gregdek', 'robynbergeron']
+
+    COMPONENTS = []
 
     EMPTY_META = {
     }
@@ -203,6 +206,13 @@ class AnsibleTriage(DefaultTriager):
             cachedir=self.cachedir_base
         )
 
+        logging.info('creating component matcher')
+        self.component_matcher = AnsibleComponentMatcher(
+            botmetafile=self.botmetafile,
+            cachedir=self.cachedir_base,
+            email_cache=self.module_indexer.emails_cache
+        )
+
         # instantiate shippable api
         logging.info('creating shippable wrapper')
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
@@ -253,6 +263,9 @@ class AnsibleTriage(DefaultTriager):
             logging.info('updating file indexer')
             self.file_indexer.update()
 
+            # update component matcher
+            self.component_matcher.update(email_cache=self.module_indexer.emails_cache)
+
             # update shippable run data
             self.SR.update()
 
@@ -291,6 +304,7 @@ class AnsibleTriage(DefaultTriager):
                         import epdb; epdb.st()
                     continue
 
+                self.COMPONENTS = []
                 self.meta = {}
                 number = issue.number
                 self.set_resume(item[0], number)
@@ -466,7 +480,7 @@ class AnsibleTriage(DefaultTriager):
                                 iw.number,
                                 force=True
                             )
-                        pprint(summary)
+                        #pprint(summary)
 
                         if self.meta.get('mergeable_state') == 'unknown':
                             pprint(vars(actions))
@@ -897,7 +911,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('module')
 
         # component labels
-        if self.meta['component_labels'] and not self.meta['merge_commits']:
+        if self.meta.get('component_labels') and not self.meta.get('merge_commits'):
 
             # only add these labels to pullrequest or un-triaged issues
             if iw.is_pullrequest() or \
@@ -1632,11 +1646,17 @@ class AnsibleTriage(DefaultTriager):
             get_component_match_facts(
                 iw,
                 self.meta,
+                self.component_matcher,
                 self.file_indexer,
                 self.module_indexer,
                 self.valid_labels
             )
         )
+
+        #self.COMPONENTS = self.component_matcher.match(iw)
+        #if not self.COMPONENTS and (self.meta.get('module_match') or self.meta.get('guessed_components')):
+        #    import epdb; epdb.st()
+        #import epdb; epdb.st()
 
         # python3 ?
         self.meta.update(get_python3_facts(iw))
@@ -1887,7 +1907,8 @@ class AnsibleTriage(DefaultTriager):
     def waiting_on(self, issuewrapper, meta):
         iw = issuewrapper
         wo = None
-        if meta['is_issue']:
+        #if meta['is_issue']:
+        if iw.is_issue():
             if meta['is_needs_info']:
                 wo = iw.submitter
             elif 'needs_contributor' in meta['maintainer_commands']:

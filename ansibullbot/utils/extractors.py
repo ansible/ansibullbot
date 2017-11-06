@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
+import ast
 import logging
 import operator
 import re
 #import shlex
+import yaml
 #from jinja2 import Template
 from string import Template
 
@@ -69,7 +71,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
             after = upper_body[v + len(k)]
             header = before + '${section}' + after
             headers.append(header)
-        except:
+        except Exception as e:
             pass
 
     # pick the most common header and re-search with it
@@ -288,6 +290,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     return tdict
 
+
 def clean_bad_characters(raw_text, exclude=[]):
     badchars = ['#', ':', ';', ',', '*', '"', "'", '`', '---', '__']
 
@@ -402,3 +405,163 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
             raise Exception('parsing error')
 
     return number
+
+
+class ModuleExtractor(object):
+
+    _AUTHORS = None
+    _AUTHORS_DATA = None
+    _AUTHORS_RAW = None
+    _DOCUMENTATION_RAW = None
+    _FILEDATA = None
+    _METADATA = None
+
+    def __init__(self, filepath, email_cache=None):
+        self.filepath = filepath
+        self.email_cache = email_cache
+
+    @property
+    def filedata(self):
+        if self._FILEDATA is None:
+            with open(self.filepath, 'rb') as f:
+                self._FILEDATA = f.read()
+        return self._FILEDATA
+
+    @property
+    def authors(self):
+        if self._AUTHORS is None:
+            self._AUTHORS = self.get_module_authors()
+        return self._AUTHORS
+
+    @property
+    def metadata(self):
+        if self._METADATA is None:
+            self._METADATA = self.get_module_metadata()
+        return self._METADATA
+
+    def get_module_authors(self):
+        """Grep the authors out of the module docstrings"""
+
+        documentation = ''
+        inphase = False
+
+        lines = self.filedata.split('\n')
+        for line in lines:
+            if 'DOCUMENTATION' in line:
+                inphase = True
+                continue
+            if line.strip().endswith("'''") or line.strip().endswith('"""'):
+                #phase = None
+                break
+            if inphase:
+                documentation += line + '\n'
+
+        if not documentation:
+            logging.debug('no documentation found in {}'.format(self.filepath))
+            return []
+
+        # clean out any other yaml besides author to save time
+        inphase = False
+        author_lines = ''
+        self._DOCUMENTATION_RAW = documentation
+        doc_lines = documentation.split('\n')
+        for idx,x in enumerate(doc_lines):
+            if x.startswith('author'):
+                #print("START ON %s" % x)
+                inphase = True
+                #continue
+            if inphase and not x.strip().startswith('-') and \
+                    not x.strip().startswith('author'):
+                #print("BREAK ON %s" % x)
+                inphase = False
+                break
+            if inphase:
+                author_lines += x + '\n'
+
+        if not author_lines:
+            logging.debug('no author lines found in {}'.format(self.filepath))
+            return []
+
+        self._AUTHORS_RAW = author_lines
+        ydata = {}
+        try:
+            ydata = yaml.load(author_lines)
+            self._AUTHORS_DATA = ydata
+        except Exception as e:
+            print e
+            return []
+
+        # quit early if the yaml was not valid
+        if not ydata:
+            return []
+
+        # sometimes the field is 'author', sometimes it is 'authors'
+        if 'authors' in ydata:
+            ydata['author'] = ydata['authors']
+
+        # quit if the key was not found
+        if 'author' not in ydata:
+            return []
+
+        if type(ydata['author']) != list:
+            ydata['author'] = [ydata['author']]
+
+        authors = []
+        for author in ydata['author']:
+            github_ids = self.extract_github_id(author)
+            if github_ids:
+                authors.extend(github_ids)
+        return authors
+
+    def extract_github_id(self, author):
+        authors = set()
+
+        if 'ansible core team' in author.lower():
+            authors.add('ansible')
+        elif '@' in author:
+            # match github ids but not emails
+            authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
+        elif 'github.com/' in author:
+            # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
+            idx = author.find('github.com/')
+            author = author[idx+11:]
+            authors.add(author.replace(')', ''))
+        elif '(' in author and len(author.split()) == 3:
+            # Mathieu Bultel (matbu)
+            idx = author.find('(')
+            author = author[idx+1:]
+            authors.add(author.replace(')', ''))
+
+        # search for emails
+        for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
+            github_id = self.email_cache.get(email)
+            if github_id:
+                authors.add(github_id)
+
+        return list(authors)
+
+    def get_module_metadata(self):
+        meta = {}
+        rawmeta = ''
+
+        lines = self.filedata.split('\n')
+
+        inphase = False
+        lines = self.filedata.split('\n')
+        for line in lines:
+            if line.startswith('ANSIBLE_METADATA'):
+                inphase = True
+                #continue
+            if line.startswith('DOCUMENTATION'):
+                break
+            if inphase:
+                rawmeta += line
+
+        rawmeta = rawmeta.replace('ANSIBLE_METADATA =', '', 1)
+        rawmeta = rawmeta.strip()
+        try:
+            meta = ast.literal_eval(rawmeta)
+        except SyntaxError:
+            pass
+
+        return meta

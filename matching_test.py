@@ -11,7 +11,7 @@ import tempfile
 import ansibullbot.constants as C
 
 from ansibullbot.utils.systemtools import run_command
-from ansibullbot.utils.component_tools import ComponentMatcher
+from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.utils.moduletools import ModuleIndexer
@@ -153,7 +153,7 @@ def main():
     MI = ModuleIndexer(cachedir=CACHEDIR, gh_client=GQLC, blames=False, commits=False)
 
     #CM = ComponentMatcher(cachedir=CACHEDIR, module_indexer=MI, file_indexer=FI)
-    CM = ComponentMatcher(cachedir=CACHEDIR)
+    CM = AnsibleComponentMatcher(cachedir=CACHEDIR)
 
     for k,v in MI.modules.items():
         if k in MATCH_MAP:

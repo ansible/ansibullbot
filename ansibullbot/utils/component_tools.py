@@ -4,12 +4,18 @@ import logging
 import os
 import re
 
+from Levenshtein import distance
+from Levenshtein import jaro
+from Levenshtein import jaro_winkler
+from Levenshtein import ratio
+
 from ansibullbot.parsers.botmetadata import BotMetadataParser
+from ansibullbot.utils.extractors import ModuleExtractor
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 
 
-class ComponentMatcher(object):
+class AnsibleComponentMatcher(object):
 
     BOTMETA = {}
     INDEX = {}
@@ -45,6 +51,7 @@ class ComponentMatcher(object):
         'callback plugin': 'lib/ansible/plugins/callback',
         'callback plugins': 'lib/ansible/plugins/callback',
         'conditional': 'lib/ansible/playbook/conditional.py',
+        'docs': 'docs',
         'delegate_to': 'lib/ansible/playbook/task.py',
         'facts': 'lib/ansible/module_utils/facts',
         'galaxy': 'lib/ansible/galaxy',
@@ -85,9 +92,10 @@ class ComponentMatcher(object):
         'winrm': 'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, file_indexer=None, module_indexer=None):
+    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, file_indexer=None, module_indexer=None, email_cache=None):
         self.cachedir = cachedir
         self.botmetafile = botmetafile
+        self.email_cache = email_cache
 
         '''
         self.file_indexer = file_indexer
@@ -103,16 +111,27 @@ class ComponentMatcher(object):
             self.gitrepo = gitrepo
         else:
             self.gitrepo = GitRepoWrapper(cachedir=self.cachedir, repo=self.REPO)
-            self.gitrepo.update()
 
-        self.index_files()
-
-        self.cache_keywords()
         self.strategy = None
         self.strategies = []
 
+        self.update()
+
+    def update(self, email_cache=None):
+        if email_cache:
+            self.email_cache = email_cache
+        self.gitrepo.update()
+        self.index_files()
+        self.cache_keywords()
+
     def index_files(self):
 
+        self.BOTMETA = {}
+        self.MODULES = {}
+        self.MODULE_NAMES = []
+        self.MODULE_NAMESPACE_DIRECTORIES = []
+
+        self.load_meta()
 
         for fn in self.gitrepo.module_files:
             mname = os.path.basename(fn)
@@ -137,37 +156,54 @@ class ComponentMatcher(object):
         self.MODULE_NAMES = sorted(set(self.MODULE_NAMES))
 
         # make a list of names by calling ansible-doc
-        cmd = 'source {}/hacking/env-setup; ansible-doc -t module -l'.format(self.gitrepo.checkoutdir)
+        checkoutdir = self.gitrepo.checkoutdir
+        checkoutdir = os.path.abspath(checkoutdir)
+        cmd = 'source {}/hacking/env-setup; ansible-doc -t module -F'.format(checkoutdir)
         logging.debug(cmd)
         (rc, so, se) = run_command(cmd)
-        mnames = so.split('\n')
-        mnames = [x.strip() for x in mnames if x.strip()]
-        mnames = [x.split()[0] for x in mnames]
-        self.MODULE_NAMES += mnames
-        self.MODULE_NAMES = sorted(set(self.MODULE_NAMES))
+        lines = so.split('\n')
+        for line in lines:
 
+            parts = line.split()
+            parts = [x.strip() for x in parts]
 
-        for mname in self.MODULE_NAMES:
-            matched = False
-            for k,v in self.MODULES.items():
-                if v['name'] in [mname, '_' + mname]:
-                    matched = True
-                    break
-            if not matched:
-                fn = 'lib/ansible/modules/None/{}'.format(mname)
-                mdata = {
+            if len(parts) != 2 or checkoutdir not in line:
+                continue
+
+            mname = parts[0]
+            if mname not in self.MODULE_NAMES:
+                self.MODULE_NAMES.append(mname)
+
+            fpath = parts[1]
+            fpath = fpath.replace(checkoutdir + '/', '')
+            #import epdb; epdb.st()
+
+            if fpath not in self.MODULES:
+                self.MODULES[fpath] = {
                     'name': mname,
-                    'repo_filename': fn,
-                    'filename': fn
+                    'repo_filename': fpath,
+                    'filename': fpath
                 }
-                self.MODULES[fn] = mdata.copy()
 
-        # ansible-doc: error: option -t: invalid choice: u'None' (choose from
-        # 'cache', 'callback', 'connection', 'inventory', 'lookup', 'module',
-        # 'strategy', 'vars')
+        _modules = self.MODULES.copy()
+        for k,v in _modules.items():
+            ME = ModuleExtractor(os.path.join(checkoutdir, k), email_cache=self.email_cache)
+            if k not in self.BOTMETA:
+                self.BOTMETA[k] = {
+                    'deprecated': os.path.basename(k).startswith('_'),
+                    'labels': os.path.dirname(k).split('/'),
+                    'maintainers': ME.authors,
+                    'maintainers_keys': [],
+                    'notify': [],
+                    'ignored': [],
+                    'support': ME.metadata.get('supported_by', 'community'),
+                    'metadata': ME.metadata
+                }
+            else:
+                import epdb; epdb.st()
+
+        #self.load_meta()
         #import epdb; epdb.st()
-
-        self.load_meta()
 
     def load_meta(self):
         if self.botmetafile is not None:
@@ -229,16 +265,28 @@ class ComponentMatcher(object):
         body = body.strip()
         return body
 
-    def match_components(self, title, body, component):
+    def match(self, issuewrapper):
+        iw = issuewrapper
+        matchdata = self.match_components(
+            iw.title,
+            iw.body,
+            iw.template_data.get('component name'),
+            files=iw.files
+        )
+        return matchdata
+
+    def match_components(self, title, body, component, files=None):
         """Make a list of matching files with metadata"""
 
         self.strategy = None
         self.strategies = []
 
+        matched_filenames = []
+        if component is None:
+            return matched_filenames
+
         component = component.encode('ascii', 'ignore')
         logging.debug('match "{}"'.format(component))
-
-        matched_filenames = []
 
         #delimiters = ['\n', ',', ' + ', ' & ', ': ']
         delimiters = ['\n', ',', ' + ', ' & ']
@@ -272,12 +320,7 @@ class ComponentMatcher(object):
         if matched_filenames:
             matched_filenames = self.reduce_filepaths(matched_filenames)
 
-        '''
-        # bypass for blacklist
-        if None in matched_filenames:
-            return []
-        '''
-
+        # create metadata for each matched file
         component_matches = []
         matched_filenames = sorted(set(matched_filenames))
         for fn in matched_filenames:
@@ -856,7 +899,20 @@ class ComponentMatcher(object):
         if len(body) < 2:
             return []
 
-        body_paths = body.split('/')
+        if '/' in body:
+            body_paths = body.split('/')
+        elif ' ' in body:
+            body_paths = body.split()
+            body_paths = [x.strip() for x in body_paths if x.strip()]
+        else:
+            body_paths = [body]
+
+        if 'networking' in body_paths:
+            ix = body_paths.index('networking')
+            body_paths[ix] = 'network'
+        if 'plugin' in body_paths:
+            ix = body_paths.index('plugin')
+            body_paths[ix] = 'plugins'
 
         if not context or 'lib/ansible/modules' in context:
             mmatch = self.find_module_match(body)
@@ -883,14 +939,6 @@ class ComponentMatcher(object):
                     if bn2.startswith(bn1):
                         matches = [fn]
                         break
-
-                '''
-                fn_paths = fn.split('/')
-                if body in fn_paths:
-                    matches.append(fn)
-                    if 'ec2.py' in body:
-                        import epdb; epdb.st()
-                '''
 
                 if partial:
 
@@ -1127,8 +1175,6 @@ class ComponentMatcher(object):
             return None
 
         candidate = self._find_module_match(pattern)
-        #if 'jabber' in pattern:
-        #    import epdb; epdb.st()
 
         if not candidate:
             candidate = self._find_module_match(os.path.basename(pattern))
@@ -1174,5 +1220,18 @@ class ComponentMatcher(object):
                     logging.debug('match {} on key: {}'.format(k, k))
                     matches = [v]
                     break
+
+        # spellcheck
+        if not matches and not '/' in pattern:
+            candidates = []
+            for k,v in self.MODULES.items():
+                jw = jaro_winkler(v['name'], pattern)
+                if jw > .9:
+                    candidates.append((jw, k))
+            for candidate in candidates:
+                matches.append(self.MODULES[candidate[1]])
+
+        if 'lineinfile' in pattern:
+            import epdb; epdb.st()
 
         return matches

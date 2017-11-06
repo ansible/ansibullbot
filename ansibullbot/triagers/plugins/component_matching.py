@@ -5,7 +5,7 @@ import logging
 import os
 
 
-def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, valid_labels):
+def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexer, module_indexer, valid_labels):
     '''High level abstraction for matching components to repo files'''
 
     # These should never return a match
@@ -14,6 +14,8 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     ]
 
     iw = issuewrapper
+
+    CM_MATCHES = component_matcher.match(iw)
 
     cmeta = {}
     cmeta['is_bad_pr'] = False
@@ -264,6 +266,10 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     # make module matches a non-list if only one
     if isinstance(cmeta['module_match'], list) and len(cmeta['module_match']) == 1:
         cmeta['module_match'] = cmeta['module_match'][0]
+
+
+    if not CM_MATCHES and (cmeta.get('module_match') or cmeta.get('guessed_components')):
+        import epdb; epdb.st()
 
     return cmeta
 
