@@ -4,10 +4,10 @@ import logging
 import os
 import re
 
-from Levenshtein import distance
-from Levenshtein import jaro
+#from Levenshtein import distance
+#from Levenshtein import jaro
 from Levenshtein import jaro_winkler
-from Levenshtein import ratio
+#from Levenshtein import ratio
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.extractors import ModuleExtractor
@@ -45,6 +45,7 @@ class AnsibleComponentMatcher(object):
         'ansible-vault show': 'lib/ansible/parsing/vault',
         'ansible-vault decrypt': 'lib/ansible/parsing/vault',
         'ansible-vault encrypt': 'lib/ansible/parsing/vault',
+        'async': 'lib/ansible/modules/utilities/logic/async_wrapper.py',
         'become': 'lib/ansible/playbook/become.py',
         'block': 'lib/ansible/playbook/block.py',
         'blocks': 'lib/ansible/playbook/block.py',
@@ -96,16 +97,6 @@ class AnsibleComponentMatcher(object):
         self.cachedir = cachedir
         self.botmetafile = botmetafile
         self.email_cache = email_cache
-
-        '''
-        self.file_indexer = file_indexer
-        self.FILE_NAMES = sorted(self.file_indexer.files)
-        self.module_indexer = module_indexer
-        self.MODULE_NAMES = [x['name'] for x in self.module_indexer.modules.values()]
-
-        self.MODULE_NAMESPACE_DIRECTORIES = [os.path.dirname(x) for x in self.FILE_NAMES if x.startswith('lib/ansible/modules/')]
-        self.MODULE_NAMESPACE_DIRECTORIES = sorted(set(self.MODULE_NAMESPACE_DIRECTORIES))
-        '''
 
         if gitrepo:
             self.gitrepo = gitrepo
@@ -188,8 +179,8 @@ class AnsibleComponentMatcher(object):
         _modules = self.MODULES.copy()
         for k,v in _modules.items():
             ME = ModuleExtractor(os.path.join(checkoutdir, k), email_cache=self.email_cache)
-            if k not in self.BOTMETA:
-                self.BOTMETA[k] = {
+            if k not in self.BOTMETA['files']:
+                self.BOTMETA['files'][k] = {
                     'deprecated': os.path.basename(k).startswith('_'),
                     'labels': os.path.dirname(k).split('/'),
                     'maintainers': ME.authors,
@@ -197,13 +188,26 @@ class AnsibleComponentMatcher(object):
                     'notify': [],
                     'ignored': [],
                     'support': ME.metadata.get('supported_by', 'community'),
-                    'metadata': ME.metadata
+                    'metadata': ME.metadata.copy()
                 }
             else:
-                import epdb; epdb.st()
-
-        #self.load_meta()
-        #import epdb; epdb.st()
+                bmeta = self.BOTMETA['files'][k].copy()
+                bmeta['metadata'] = ME.metadata.copy()
+                if 'notify' not in bmeta:
+                    bmeta['notify'] = []
+                if 'maintainers' not in bmeta:
+                    bmeta['maintainers'] = []
+                if not bmeta.get('supported_by'):
+                    bmeta['supported_by'] = ME.metadata.get('supported_by', 'community')
+                for x in ME.authors:
+                    if x not in bmeta['maintainers']:
+                        bmeta['maintainers'].append(x)
+                    if x not in bmeta['notify']:
+                        bmeta['notify'].append(x)
+                if not bmeta.get('labels'):
+                    bmeta['labels'] = os.path.dirname(k).split('/')
+                bmeta['deprecated'] = os.path.basename(k).startswith('_')
+                self.BOTMETA['files'][k].update(bmeta)
 
     def load_meta(self):
         if self.botmetafile is not None:
@@ -270,7 +274,7 @@ class AnsibleComponentMatcher(object):
         matchdata = self.match_components(
             iw.title,
             iw.body,
-            iw.template_data.get('component name'),
+            iw.template_data.get('component_raw'),
             files=iw.files
         )
         return matchdata
@@ -281,44 +285,47 @@ class AnsibleComponentMatcher(object):
         self.strategy = None
         self.strategies = []
 
-        matched_filenames = []
-        if component is None:
-            return matched_filenames
+        # No matching necessary for PRs, but should provide consistent api
+        if files:
+            matched_filenames = files[:]
+        else:
+            matched_filenames = []
+            if component is None:
+                return matched_filenames
 
-        component = component.encode('ascii', 'ignore')
-        logging.debug('match "{}"'.format(component))
+            component = component.encode('ascii', 'ignore')
+            logging.debug('match "{}"'.format(component))
 
-        #delimiters = ['\n', ',', ' + ', ' & ', ': ']
-        delimiters = ['\n', ',', ' + ', ' & ']
-        delimited = False
-        for delimiter in delimiters:
-            if delimiter in component:
-                delimited = True
-                components = component.split(delimiter)
-                for _component in components:
-                    _matches = self._match_component(title, body, _component)
-                    self.strategies.append(self.strategy)
+            delimiters = ['\n', ',', ' + ', ' & ']
+            delimited = False
+            for delimiter in delimiters:
+                if delimiter in component:
+                    delimited = True
+                    components = component.split(delimiter)
+                    for _component in components:
+                        _matches = self._match_component(title, body, _component)
+                        self.strategies.append(self.strategy)
 
-                    # bypass for blacklist
-                    if None in _matches:
-                        _matches = []
+                        # bypass for blacklist
+                        if None in _matches:
+                            _matches = []
 
-                    matched_filenames += _matches
+                        matched_filenames += _matches
 
-                # do not process any more delimiters
-                break
+                    # do not process any more delimiters
+                    break
 
-        if not delimited:
-            matched_filenames += self._match_component(title, body, component)
-            self.strategies.append(self.strategy)
+            if not delimited:
+                matched_filenames += self._match_component(title, body, component)
+                self.strategies.append(self.strategy)
 
-            # bypass for blacklist
-            if None in matched_filenames:
-                return []
+                # bypass for blacklist
+                if None in matched_filenames:
+                    return []
 
-        # reduce subpaths
-        if matched_filenames:
-            matched_filenames = self.reduce_filepaths(matched_filenames)
+            # reduce subpaths
+            if matched_filenames:
+                matched_filenames = self.reduce_filepaths(matched_filenames)
 
         # create metadata for each matched file
         component_matches = []
@@ -1042,16 +1049,28 @@ class AnsibleComponentMatcher(object):
             'name': os.path.basename(filename).split('.')[0],
             'notify': [],
             'assign': [],
+            'authors': [],
+            'committers': [],
             'maintainers': [],
             'labels': [],
             'ignore': [],
             #'keywords': [],
             'support': None,
             'deprecated': False,
+            'topic': None,
+            'subtopic': None,
+            'namespace': None,
         }
 
         if filename in self.BOTMETA['files']:
             fdata = self.BOTMETA['files'][filename].copy()
+
+            # powershell meta is in the python file
+            if filename.endswith('.ps1'):
+                pyfile = filename.replace('.ps1', '.py')
+                if pyfile in self.BOTMETA['files']:
+                    fdata.update(self.BOTMETA['files'][pyfile])
+
             if 'maintainers' in fdata:
                 meta['notify'] += fdata['maintainers']
                 meta['assign'] += fdata['maintainers']
@@ -1069,6 +1088,12 @@ class AnsibleComponentMatcher(object):
                     meta['support'] = fdata['support'][0]
                 else:
                     meta['support'] = fdata['support']
+            elif 'supported_by' in fdata:
+                    if isinstance(fdata['supported_by'], list):
+                        meta['support'] = fdata['supported_by'][0]
+                    else:
+                        meta['support'] = fdata['supported_by']
+
             if 'deprecated' in fdata:
                 meta['deprecated'] = fdata['deprecated']
 
@@ -1101,6 +1126,17 @@ class AnsibleComponentMatcher(object):
                     meta['notify'] += fdata['notify']
                 #import epdb; epdb.st()
 
+        if 'lib/ansible/modules' in filename:
+            topics = [x for x in paths if x not in ['lib', 'ansible', 'modules']]
+            topics = [x for x in topics if x != os.path.basename(filename)]
+            if len(topics) == 2:
+                meta['topic'] = topics[0]
+                meta['subtopic'] = topics[1]
+            elif len(topics) == 1:
+                meta['topic'] = topics[0]
+
+            meta['namespace'] = '/'.join(topics)
+
         # clean up the result
         _meta = meta.copy()
         for k,v in _meta.items():
@@ -1130,7 +1166,9 @@ class AnsibleComponentMatcher(object):
             else:
                 import epdb; epdb.st()
 
-        #import epdb; epdb.st()
+        #if 'docker_network' in filename:
+        #    import epdb; epdb.st()
+
         return meta
 
     def find_module_match(self, pattern):
@@ -1222,7 +1260,7 @@ class AnsibleComponentMatcher(object):
                     break
 
         # spellcheck
-        if not matches and not '/' in pattern:
+        if not matches and '/' not in pattern:
             candidates = []
             for k,v in self.MODULES.items():
                 jw = jaro_winkler(v['name'], pattern)
@@ -1231,7 +1269,7 @@ class AnsibleComponentMatcher(object):
             for candidate in candidates:
                 matches.append(self.MODULES[candidate[1]])
 
-        if 'lineinfile' in pattern:
-            import epdb; epdb.st()
+        #if 'lineinfile' in pattern:
+        #    import epdb; epdb.st()
 
         return matches

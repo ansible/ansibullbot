@@ -21,6 +21,7 @@ def get_notification_facts(issuewrapper, meta, file_indexer):
     # add people from files and from matches
     if iw.is_pullrequest() or meta.get('guessed_components') or meta.get('component_matches') or meta.get('module_match'):
 
+        '''
         fnotify = []
         fassign = []
 
@@ -69,6 +70,10 @@ def get_notification_facts(issuewrapper, meta, file_indexer):
 
         fassign = sorted(set(fassign))
         fnotify = sorted(set(fnotify))
+        '''
+
+        fassign = meta['component_maintainers'][:]
+        fnotify = meta['component_notifiers'][:]
 
         for user in fnotify:
             if user == iw.submitter:

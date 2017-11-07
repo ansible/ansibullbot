@@ -1,0 +1,9 @@
+Files identified in the description:
+{% for x in meta['component_matches'] %}
+* {{ '[' + x['repo_filename'] + '](' + 'https://github.com/ansible/ansible/blob/devel/' + x['repo_filename'] + ')'}}
+{% endfor %}
+
+If these files are inaccurate, please update the `component name` section of the description or use the `!component` bot command.
+
+[click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
+<!--- boilerplate: components_banner --->

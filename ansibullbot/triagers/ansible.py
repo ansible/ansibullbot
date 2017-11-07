@@ -676,9 +676,21 @@ class AnsibleTriage(DefaultTriager):
                 actions.newlabel.append('bot_broken')
             return
 
-        elif 'bot_skip' in self.meta['maintainer_commands'] or \
-                'bot_skip' in self.meta['submitter_commands']:
-            return
+        #elif 'bot_skip' in self.meta['maintainer_commands'] or \
+        #        'bot_skip' in self.meta['submitter_commands']:
+        #    return
+
+        # indicate what components were matched
+        if iw.is_issue() and self.meta.get('needs_component_message'):
+            tvars = {
+                'meta': self.meta
+            }
+            comment = self.render_boilerplate(
+                tvars, boilerplate='components_banner'
+            )
+            #import epdb; epdb.st()
+            if comment not in actions.comments:
+                actions.comments.append(comment)
 
         # UNKNOWN!!! ... sigh.
         if iw.is_pullrequest():
@@ -868,22 +880,28 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['is_new_module'] or self.meta['is_module']:
             # add topic labels
             for t in ['topic', 'subtopic']:
-                label = self.meta['module_match'].get(t)
-                if label in self.MODULE_NAMESPACE_LABELS:
-                    label = self.MODULE_NAMESPACE_LABELS[label]
 
-                if label and label in self.valid_labels and \
-                        label not in iw.labels and \
-                        not iw.history.was_unlabeled(label):
-                    actions.newlabel.append(label)
+                mmatches = self.meta['module_match']
+                if not isinstance(mmatches, list):
+                    mmatches = [mmatches]
 
-            # add namespace labels
-            namespace = self.meta['module_match'].get('namespace')
-            if namespace in self.MODULE_NAMESPACE_LABELS:
-                label = self.MODULE_NAMESPACE_LABELS[namespace]
-                if label not in iw.labels and \
-                        not iw.history.was_unlabeled(label):
-                    actions.newlabel.append(label)
+                for mmatch in mmatches:
+                    label = mmatch.get(t)
+                    if label in self.MODULE_NAMESPACE_LABELS:
+                        label = self.MODULE_NAMESPACE_LABELS[label]
+
+                    if label and label in self.valid_labels and \
+                            label not in iw.labels and \
+                            not iw.history.was_unlabeled(label):
+                        actions.newlabel.append(label)
+
+                    # add namespace labels
+                    namespace = mmatch.get('namespace')
+                    if namespace in self.MODULE_NAMESPACE_LABELS:
+                        label = self.MODULE_NAMESPACE_LABELS[namespace]
+                        if label not in iw.labels and \
+                                not iw.history.was_unlabeled(label):
+                            actions.newlabel.append(label)
 
         # NEW MODULE
         if self.meta['is_new_module']:
@@ -1099,9 +1117,13 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/29
         if self.meta['is_module']:
-            if self.meta['module_match']['deprecated']:
-                if 'deprecated' not in iw.labels:
-                    actions.newlabel.append('deprecated')
+            mmatches = self.meta['module_match']
+            if not isinstance(mmatches, list):
+                mmatches = [mmatches]
+            for mmatch in mmatches:
+                if mmatch.get('deprecated'):
+                    if 'deprecated' not in iw.labels:
+                        actions.newlabel.append('deprecated')
 
         # https://github.com/ansible/ansibullbot/issues/406
         if iw.is_pullrequest():
@@ -1143,18 +1165,32 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/589
         if self.meta['module_match'] and not self.meta['is_new_module']:
-            if not self.meta['module_match']['maintainers']:
+            mmatches = self.meta['module_match']
+            if not isinstance(mmatches, list):
+                mmatches = [mmatches]
+            needs_maintainer = False
+            for mmatch in mmatches:
+                needs_maintainer = False
+                if not mmatch['maintainers']:
+                    needs_maintainer = True
+                    break
+            if needs_maintainer:
                 # 'ansible' is cleared from the primary key, so we need
                 # to check the original copy before deciding this isn't
                 # being maintained.
-                if not self.meta['module_match'].get('_maintainers'):
-                    if 'needs_maintainer' not in iw.labels:
-                        actions.newlabel.append('needs_maintainer')
+
+                #if not self.meta['module_match'].get('_maintainers'):
+                #    if 'needs_maintainer' not in iw.labels:
+                #        actions.newlabel.append('needs_maintainer')
+
+                if 'needs_maintainer' not in iw.labels:
+                    actions.newlabel.append('needs_maintainer')
             else:
                 if 'needs_maintainer' in iw.labels:
                     actions.unlabel.append('needs_maintainer')
 
         # https://github.com/ansible/ansibullbot/issues/608
+        '''
         cs_label = 'support:core'
         if self.meta['module_match']:
             mm = self.meta['module_match']
@@ -1174,7 +1210,6 @@ class AnsibleTriage(DefaultTriager):
                     pass
                 else:
                     cs_label = 'support:community'
-
         if cs_label not in iw.labels:
             actions.newlabel.append(cs_label)
 
@@ -1183,6 +1218,24 @@ class AnsibleTriage(DefaultTriager):
         for x in cs_labels:
             if x != cs_label:
                 actions.unlabel.append(x)
+        '''
+
+        if not self.meta.get('component_support'):
+            cs_labels = ['suppport:core']
+        else:
+            cs_labels = []
+            for sb in self.meta.get('component_support'):
+                if sb is None:
+                    sb = 'core'
+                cs_label = 'support:%s' % sb
+                cs_labels.append(cs_label)
+        for cs_label in cs_labels:
+            if cs_label not in iw.labels:
+                actions.newlabel.append(cs_label)
+        other_cs_labels = [x for x in iw.labels if x.startswith('support:')]
+        for ocs_label in other_cs_labels:
+            if ocs_label not in cs_labels:
+                actions.unlabel.append(ocs_label)
 
         if not self.meta['stale_reviews']:
             if 'stale_review' in iw.labels:
@@ -1241,6 +1294,20 @@ class AnsibleTriage(DefaultTriager):
             else:
                 if 'new_contributor' in iw.labels:
                     actions.unlabel.append('new_contributor')
+
+        '''
+        # indicate what components were matched
+        if iw.is_issue() and self.meta.get('needs_component_message'):
+            tvars = {
+                'meta': self.meta
+            }
+            comment = self.render_boilerplate(
+                tvars, boilerplate='components_banner'
+            )
+            #import epdb; epdb.st()
+            if comment not in actions.comments:
+                actions.comments.append(comment)
+        '''
 
         actions.newlabel = sorted(set(actions.newlabel))
         actions.unlabel = sorted(set(actions.unlabel))
@@ -1840,9 +1907,14 @@ class AnsibleTriage(DefaultTriager):
         iw = issuewrapper
 
         maintainers = []
-        if meta['module_match']:
-            maintainers += meta.get('module_match', {}).get('maintainers', [])
-            maintainers += meta.get('module_match', {}).get('authors', [])
+        #if meta['module_match']:
+        #    maintainers += meta.get('module_match', {}).get('maintainers', [])
+        #    maintainers += meta.get('module_match', {}).get('authors', [])
+
+        maintainers += meta.get('component_authors', [])
+        maintainers += meta.get('component_maintainers', [])
+        maintainers += meta.get('component_notifiers', [])
+
         maintainers += [x.login for x in iw.repo.assignees]
         maintainers = sorted(set(maintainers))
 
@@ -1935,6 +2007,7 @@ class AnsibleTriage(DefaultTriager):
             'maintainer_triaged': False
         }
 
+        '''
         if not meta['module_match']:
             return tfacts
         if not meta['module_match'].get('metadata'):
@@ -1943,9 +2016,14 @@ class AnsibleTriage(DefaultTriager):
             return tfacts
         if not meta['module_match'].get('maintainers'):
             return tfacts
+        '''
+
+        if not meta.get('component_maintainers'):
+            return tfacts
 
         iw = issuewrapper
-        maintainers = [x for x in meta['module_match']['maintainers']]
+        #maintainers = [x for x in meta['module_match']['maintainers']]
+        maintainers = meta['component_maintainers'][:]
         maintainers += [x for x in self.ansible_core_team]
         maintainers = [x for x in maintainers if x != iw.submitter]
         maintainers = sorted(set(maintainers))
@@ -2043,7 +2121,7 @@ class AnsibleTriage(DefaultTriager):
                              " the repo in question.)"
 
         parser.add_argument("--repo", "-r", type=str, choices=MREPOS,
-                    help="Github repo to triage (defaults to all)")
+                            help="Github repo to triage (defaults to all)")
 
         parser.add_argument("--skip_no_update", action="store_true",
                             help="skip processing if updated_at hasn't changed")
