@@ -971,7 +971,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.newlabel.append(label)
 
         # use the filemap to add labels
-        if iw.is_pullrequest():
+        if iw.is_pullrequest() and not self.meta.get('merge_commits'):
             fmap_labels = self.file_indexer.get_filemap_labels_for_files(iw.files)
             for label in fmap_labels:
                 if label in self.valid_labels and \
@@ -1190,36 +1190,6 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('needs_maintainer')
 
         # https://github.com/ansible/ansibullbot/issues/608
-        '''
-        cs_label = 'support:core'
-        if self.meta['module_match']:
-            mm = self.meta['module_match']
-            sb = mm.get('metadata', {}).get('supported_by')
-            if sb:
-                cs_label = 'support:%s' % sb
-        elif self.meta['component_matches']:
-            levels = [x.get('supported_by') for x in self.meta['component_matches']]
-            levels = sorted(set([x for x in levels if x]))
-            if len(levels) == 1:
-                cs_label = 'support:{}'.format(levels[0])
-            elif len(levels) > 1:
-                # use the highest level of support
-                if 'network' in levels:
-                    cs_label = 'support:network'
-                elif 'core' in levels:
-                    pass
-                else:
-                    cs_label = 'support:community'
-        if cs_label not in iw.labels:
-            actions.newlabel.append(cs_label)
-
-        # https://github.com/ansible/ansibullbot/issues/707
-        cs_labels = [x for x in iw.labels if x.startswith('support:')]
-        for x in cs_labels:
-            if x != cs_label:
-                actions.unlabel.append(x)
-        '''
-
         if not self.meta.get('component_support'):
             cs_labels = ['suppport:core']
         else:
@@ -1294,20 +1264,6 @@ class AnsibleTriage(DefaultTriager):
             else:
                 if 'new_contributor' in iw.labels:
                     actions.unlabel.append('new_contributor')
-
-        '''
-        # indicate what components were matched
-        if iw.is_issue() and self.meta.get('needs_component_message'):
-            tvars = {
-                'meta': self.meta
-            }
-            comment = self.render_boilerplate(
-                tvars, boilerplate='components_banner'
-            )
-            #import epdb; epdb.st()
-            if comment not in actions.comments:
-                actions.comments.append(comment)
-        '''
 
         actions.newlabel = sorted(set(actions.newlabel))
         actions.unlabel = sorted(set(actions.unlabel))

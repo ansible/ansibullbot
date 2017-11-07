@@ -36,19 +36,26 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
     cmeta['component_filenames'] = []
     cmeta['component_labels'] = []
     cmeta['component_maintainers'] = []
+    cmeta['component_namespace_maintainers'] = []
     cmeta['component_notifiers'] = []
     cmeta['component_support'] = []
 
     cmeta['needs_component_message'] = False
 
-    t_component = iw.template_data.get('component name')
-    cmeta['component_name'] = t_component
+    if iw.is_issue():
+        t_component = iw.template_data.get('component name')
+        cmeta['component_name'] = t_component
 
-    if not t_component or t_component.lower() in BLACKLIST_COMPONENTS:
-        if t_component is None:
-            logging.debug('component is None')
-        elif t_component.lower() in BLACKLIST_COMPONENTS:
-            logging.debug('{} is a blacklisted component'.format(t_component))
+        if not t_component or t_component.lower() in BLACKLIST_COMPONENTS:
+            if t_component is None:
+                logging.debug('component is None')
+            elif t_component.lower() in BLACKLIST_COMPONENTS:
+                logging.debug('{} is a blacklisted component'.format(t_component))
+            return cmeta
+
+    # Check if this PR is screwed up in some way
+    cmeta.update(get_pr_quality_facts(iw))
+    if cmeta['is_bad_pr']:
         return cmeta
 
     # Try to match against something known ...
@@ -80,6 +87,12 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
         for y in x['maintainers']:
             if y not in cmeta['component_maintainers']:
                 cmeta['component_maintainers'].append(y)
+
+    # Reduce the set of namespace maintainers
+    for x in CM_MATCHES:
+        for y in x.get('namespace_maintainers', []):
+            if y not in cmeta['component_namespace_maintainers']:
+                cmeta['component_namespace_maintainers'].append(y)
 
     # Reduce the set of notifiers
     for x in CM_MATCHES:
@@ -119,7 +132,10 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
         #cmeta['is_new_module'] = False
         #cmeta['is_new_directory'] = False
         #cmeta['is_new_plugin'] = False
-        import epdb; epdb.st()
+
+        if iw.new_modules:
+            cmeta['is_new_module'] = True
+            cmeta['is_new_plugin'] = True
 
     # welcome message to indicate which files the bot matched
     if iw.is_issue():
@@ -170,6 +186,24 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
 
     return CM_MATCHES
 
+
+def get_pr_quality_facts(issuewrapper):
+
+    iw = issuewrapper
+
+    qmeta = {
+        'is_bad_pr': False
+    }
+
+    if not iw.is_pullrequest():
+        return qmeta
+
+    for f in iw.files:
+        if f.startswith('lib/ansible/modules/core') or \
+                f.startswith('lib/ansible/modules/extras'):
+            qmeta['is_bad_pr'] = True
+
+    return qmeta
 
 
 """

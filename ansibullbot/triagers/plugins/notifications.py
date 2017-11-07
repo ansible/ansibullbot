@@ -72,8 +72,13 @@ def get_notification_facts(issuewrapper, meta, file_indexer):
         fnotify = sorted(set(fnotify))
         '''
 
-        fassign = meta['component_maintainers'][:]
-        fnotify = meta['component_notifiers'][:]
+        fassign = sorted(set(meta['component_maintainers'][:]))
+        fnotify = sorted(set(meta['component_notifiers'][:]))
+
+        if 'ansible' in fassign:
+            fassign.remove('ansible')
+        if 'ansible' in fnotify:
+            fnotify.remove('ansible')
 
         for user in fnotify:
             if user == iw.submitter:

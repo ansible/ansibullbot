@@ -1060,6 +1060,7 @@ class AnsibleComponentMatcher(object):
             'topic': None,
             'subtopic': None,
             'namespace': None,
+            'namespace_maintainers': []
         }
 
         if filename in self.BOTMETA['files']:
@@ -1136,6 +1137,15 @@ class AnsibleComponentMatcher(object):
                 meta['topic'] = topics[0]
 
             meta['namespace'] = '/'.join(topics)
+
+        # set namespace maintainers (skip !modules for now)
+        if filename.startswith('lib/ansible/modules'):
+            ns = meta.get('namespace')
+            keys = self.BOTMETA['files'].keys()
+            keys = [x for x in keys if x.startswith(os.path.join('lib/ansible/modules', ns))]
+            for key in keys:
+                meta['namespace_maintainers'] += self.BOTMETA['files'][key].get('maintainers', [])
+            #import epdb; epdb.st()
 
         # clean up the result
         _meta = meta.copy()

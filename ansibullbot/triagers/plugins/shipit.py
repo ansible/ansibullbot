@@ -239,7 +239,8 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         logging.debug('PRs with needs_revision or needs_rebase label do not get shipits')
         return nmeta
 
-    maintainers = meta['module_match']['maintainers']
+    #maintainers = meta['module_match']['maintainers']
+    maintainers = meta.get('component_maintainers', [])
     maintainers = \
         ModuleIndexer.replace_ansible(
             maintainers,
@@ -255,9 +256,12 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     nmeta['owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
 
     # community is the other maintainers in the same namespace
-    mnamespace = meta['module_match']['namespace']
-    community = \
-        module_indexer.get_maintainers_for_namespace(mnamespace)
+
+    #mnamespace = meta['module_match']['namespace']
+    #community = \
+    #    module_indexer.get_maintainers_for_namespace(mnamespace)
+
+    community = meta.get('component_namespace_maintainers', [])
     community = [x for x in community if x != 'ansible' and
                  x not in core_team and
                  x != 'DEPRECATED']
@@ -372,6 +376,7 @@ def get_supported_by(issuewrapper, meta):
     # core: maintained by the ansible core team.
     # network: maintained by the ansible network team.
 
+    '''
     supported_by = 'core'
     mmatch = meta.get('module_match')
     if mmatch:
@@ -380,4 +385,11 @@ def get_supported_by(issuewrapper, meta):
             supported_by = mmeta.get('supported_by', 'core')
     if meta['is_new_module']:
         supported_by = 'community'
+    '''
+
+    if len(meta.get('component_support', [])) == 1:
+           return meta['component_support'][0]
+    else:
+        import epdb; epdb.st()
+
     return supported_by

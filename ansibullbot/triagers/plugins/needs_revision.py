@@ -94,8 +94,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
     maintainers = [x for x in triager.ansible_core_team
                    if x not in triager.BOTNAMES]
-    if meta.get('module_match'):
-        maintainers += meta['module_match'].get('maintainers', [])
+
+    #if meta.get('module_match'):
+    #    maintainers += meta['module_match'].get('maintainers', [])
+    maintainers += meta.get('component_maintainers', [])
 
     # get the exact state from shippable ...
     #   success/pending/failure/... ?
