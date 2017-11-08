@@ -1056,6 +1056,7 @@ class AnsibleComponentMatcher(object):
             'ignore': [],
             #'keywords': [],
             'support': None,
+            'supported_by': None,
             'deprecated': False,
             'topic': None,
             'subtopic': None,
@@ -1146,6 +1147,11 @@ class AnsibleComponentMatcher(object):
             for key in keys:
                 meta['namespace_maintainers'] += self.BOTMETA['files'][key].get('maintainers', [])
             #import epdb; epdb.st()
+
+        # new modules should default to "community" support
+        if filename.startswith('lib/ansible/modules') and filename not in self.gitrepo.files:
+            meta['support'] = 'community'
+            meta['supported_by'] = 'community'
 
         # clean up the result
         _meta = meta.copy()

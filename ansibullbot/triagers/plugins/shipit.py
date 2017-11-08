@@ -130,10 +130,10 @@ def needs_community_review(meta, issue):
     if not mm:
         return False
 
-    metadata = mm.get('metadata') or {}
-    supported_by = metadata.get('supported_by')
-
-    if supported_by != 'community':
+    #metadata = mm.get('metadata') or {}
+    #supported_by = metadata.get('supported_by')
+    #if supported_by != 'community':
+    if meta['component_support'] != ['community']:
         return False
 
     # expensive call done earlier in processing
