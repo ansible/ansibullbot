@@ -167,14 +167,37 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
     """Allow components to be set by bot commands"""
     component_commands = iw.history.get_component_commands(botnames=[])
     component_filenames = [x['repo_filename'] for x in CM_MATCHES]
+
     for ccx in component_commands:
-        filen = ccx['body'].split()[1]
-        action = filen[0]
-        filen = filen[1:]
-        if action == '+' and filen not in component_filenames:
-            component_filenames.append(filen)
-        elif action == '-' and filen in component_filenames:
-            component_filenames.remove(filen)
+
+        if '\n' in ccx['body']:
+            lines = ccx['body'].split('\n')
+            lines = [x.strip() for x in lines if x.strip()]
+        else:
+            lines = [ccx['body'].strip()]
+
+        # keep track if files are reset in the same comment
+        cleared = False
+
+        for line in lines:
+
+            # !component [action][filename]
+            filen = line.split()[1]
+            action = filen[0]
+            filen = filen[1:]
+
+            if action == '+' and filen not in component_filenames:
+                component_filenames.append(filen)
+            elif action == '-' and filen in component_filenames:
+                component_filenames.remove(filen)
+            elif action == '=':
+                # possibly unintuitive but multiple ='s in the same comment
+                # should initially clear the set and then become additive.
+                if not cleared:
+                    component_filenames = [filen]
+                else:
+                    component_filenames.append(filen)
+                cleared = True
 
     for cm in CM_MATCHES[:]:
         if cm['repo_filename'] not in component_filenames:

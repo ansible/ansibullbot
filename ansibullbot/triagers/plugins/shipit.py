@@ -257,8 +257,8 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     modules_files_owned = 0
     if not meta['is_new_module']:
         for f in iw.files:
-            import epdb; epdb.st()
-            if f.startswith('lib/ansible/modules') and iw.submitter in module_indexer.modules[f]['maintainers']:
+            #if f.startswith('lib/ansible/modules') and iw.submitter in module_indexer.modules[f]['maintainers']:
+            if f.startswith('lib/ansible/modules') and iw.submitter in meta['component_maintainers']:
                 modules_files_owned += 1
     nmeta['owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
 

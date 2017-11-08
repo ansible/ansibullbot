@@ -1284,6 +1284,12 @@ class AnsibleTriage(DefaultTriager):
                     if C.DEFAULT_BREAKPOINTS:
                         import epdb; epdb.st()
                     raise LabelWafflingError(msg)
+            elif label in actions.newlabel and label in actions.unlabel:
+                msg = '"{}" label is waffling on {}'.format(label, iw.html_url)
+                logging.error(msg)
+                if C.DEFAULT_BREAKPOINTS:
+                    import epdb; epdb.st()
+                raise LabelWafflingError(msg)
 
     def apply_actions(self, iw, actions):
         if self.safe_force:
