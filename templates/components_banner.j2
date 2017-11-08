@@ -1,7 +1,11 @@
 Files identified in the description:
+{% if meta['component_matches'] %}
 {% for x in meta['component_matches'] %}
 * {{ '[' + x['repo_filename'] + '](' + 'https://github.com/ansible/ansible/blob/devel/' + x['repo_filename'] + ')'}}
 {% endfor %}
+{% else %}
+None
+{% endif %}
 
 If these files are inaccurate, please update the `component name` section of the description or use the `!component` bot command.
 

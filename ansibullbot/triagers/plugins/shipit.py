@@ -74,10 +74,16 @@ def automergeable(meta, issuewrapper):
         return False
 
     for pr_file in issue.pr_files:
-        matched_filename = meta['module_match'].get('repo_filename')
-        if matched_filename and pr_file.filename == matched_filename:
+
+        #matched_filename = meta['module_match'].get('repo_filename')
+        #if matched_filename and pr_file.filename == matched_filename:
+        #    continue
+
+        thisfn = pr_file.filename
+        if thisfn.startswith('lib/ansible/modules'):
             continue
-        elif fnmatch(pr_file.filename, 'test/sanity/*/*.txt'):
+
+        elif fnmatch(thisfn, 'test/sanity/*/*.txt'):
             if pr_file.additions or pr_file.status == 'added':
                 # new exception added, addition must be checked by an human
                 return False
@@ -251,6 +257,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     modules_files_owned = 0
     if not meta['is_new_module']:
         for f in iw.files:
+            import epdb; epdb.st()
             if f.startswith('lib/ansible/modules') and iw.submitter in module_indexer.modules[f]['maintainers']:
                 modules_files_owned += 1
     nmeta['owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)

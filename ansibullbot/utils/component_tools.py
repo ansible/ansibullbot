@@ -1064,8 +1064,15 @@ class AnsibleComponentMatcher(object):
             'namespace_maintainers': []
         }
 
-        if filename in self.BOTMETA['files']:
-            fdata = self.BOTMETA['files'][filename].copy()
+        _filename = filename
+        _filename = os.path.splitext(filename)[0]
+
+        if filename in self.BOTMETA['files'] or _filename in self.BOTMETA['files']:
+
+            if filename in self.BOTMETA['files']:
+                fdata = self.BOTMETA['files'][filename].copy()
+            elif _filename in self.BOTMETA['files']:
+                fdata = self.BOTMETA['files'][_filename].copy()
 
             # powershell meta is in the python file
             if filename.endswith('.ps1'):
@@ -1153,12 +1160,60 @@ class AnsibleComponentMatcher(object):
             meta['support'] = 'community'
             meta['supported_by'] = 'community'
 
+        # test targets for modules should inherit from their modules
+        if filename.startswith('test/integration/targets') and filename not in self.BOTMETA['files']:
+            whitelist = [
+                'labels',
+                'ignore',
+                'deprecated',
+                'authors',
+                'assign',
+                'maintainers',
+                'notify',
+                'topic',
+                'subtopic',
+                'support'
+            ]
+
+            paths = filename.split('/')
+            tindex = paths.index('targets')
+            mname = paths[tindex+1]
+            mmatch = self._find_module_match(mname)
+            if mmatch:
+                mmeta = self.get_meta_for_file(mmatch[0]['repo_filename'])
+                for k,v in mmeta.items():
+                    if k in whitelist and v:
+                        if isinstance(meta[k], list):
+                            meta[k] = sorted(set(meta[k] + v))
+                        elif not meta[k]:
+                            meta[k] = v
+
+            # make new test targets community by default
+            if not meta['support'] and not meta['supported_by']:
+                meta['support'] = 'community'
+
+        # it's okay to remove things from legacy-files.txt
+        if filename == 'test/sanity/pep8/legacy-files.txt' and not meta['support']:
+            meta['support'] = 'community'
+
+        # fallback to core support
+        if not meta['support']:
+            meta['support'] = 'core'
+
+        # align support and supported_by
+        if meta['support'] != meta['supported_by']:
+            if meta['support'] and not meta['supported_by']:
+                meta['supported_by'] = meta['support']
+            elif not meta['support'] and meta['supported_by']:
+                meta['support'] = meta['supported_by']
+
         # clean up the result
         _meta = meta.copy()
         for k,v in _meta.items():
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
 
+        #import epdb; epdb.st()
         return meta
 
     def _get_meta_for_file(self, filename):

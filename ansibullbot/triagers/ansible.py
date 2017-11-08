@@ -447,10 +447,16 @@ class AnsibleTriage(DefaultTriager):
                     # DEBUG!
                     logging.info('url: %s' % iw.html_url)
                     logging.info('title: %s' % iw.title)
-                    logging.info(
-                        'component: %s' %
-                        self.template_data.get('component_raw')
-                    )
+                    if iw.is_pullrequest():
+                        for fn in iw.files:
+                            logging.info('component[f]: %s' % fn)
+                    else:
+                        #logging.info('component[t]: %s' % iw.template_data.get('component name'))
+                        for line in iw.template_data.get('component_raw').split('\n'):
+                            logging.info('component[t]: %s' % line)
+                        for fn in self.meta['component_filenames']:
+                            logging.info('component[m]: %s' % fn)
+
                     if self.meta['template_missing_sections']:
                         logging.info(
                             'missing sections: ' +
