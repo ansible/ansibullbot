@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import datetime
 import logging
 import os
 import re
@@ -106,6 +107,8 @@ class AnsibleComponentMatcher(object):
         self.strategy = None
         self.strategies = []
 
+        self.indexed_at = False
+        self.updated_at = None
         self.update()
 
     def update(self, email_cache=None):
@@ -113,7 +116,9 @@ class AnsibleComponentMatcher(object):
             self.email_cache = email_cache
         self.gitrepo.update()
         self.index_files()
+        self.indexed_at = datetime.datetime.now()
         self.cache_keywords()
+        self.updated_at = datetime.datetime.now()
 
     def index_files(self):
 
@@ -134,7 +139,10 @@ class AnsibleComponentMatcher(object):
                 'repo_filename': fn,
                 'filename': fn
             }
-            self.MODULES[fn] = mdata.copy()
+            if fn not in self.MODULES:
+                self.MODULES[fn] = mdata.copy()
+            else:
+                self.MODULES[fn].update(mdata)
 
         self.MODULE_NAMESPACE_DIRECTORIES = [os.path.dirname(x) for x in self.gitrepo.module_files]
         self.MODULE_NAMESPACE_DIRECTORIES = sorted(set(self.MODULE_NAMESPACE_DIRECTORIES))
@@ -167,7 +175,6 @@ class AnsibleComponentMatcher(object):
 
             fpath = parts[1]
             fpath = fpath.replace(checkoutdir + '/', '')
-            #import epdb; epdb.st()
 
             if fpath not in self.MODULES:
                 self.MODULES[fpath] = {
@@ -183,9 +190,10 @@ class AnsibleComponentMatcher(object):
                 self.BOTMETA['files'][k] = {
                     'deprecated': os.path.basename(k).startswith('_'),
                     'labels': os.path.dirname(k).split('/'),
+                    'authors': ME.authors,
                     'maintainers': ME.authors,
                     'maintainers_keys': [],
-                    'notify': [],
+                    'notify': ME.authors,
                     'ignored': [],
                     'support': ME.metadata.get('supported_by', 'community'),
                     'metadata': ME.metadata.copy()
@@ -213,6 +221,9 @@ class AnsibleComponentMatcher(object):
                 bmeta['deprecated'] = os.path.basename(k).startswith('_')
                 self.BOTMETA['files'][k].update(bmeta)
 
+            # write back to the modules
+            self.MODULES[k].update(self.BOTMETA['files'][k])
+
     def load_meta(self):
         if self.botmetafile is not None:
             with open(self.botmetafile, 'rb') as f:
@@ -221,7 +232,6 @@ class AnsibleComponentMatcher(object):
             fp = '.github/BOTMETA.yml'
             rdata = self.gitrepo.get_file_content(fp)
         self.BOTMETA = BotMetadataParser.parse_yaml(rdata)
-        #import epdb; epdb.st()
 
     def cache_keywords(self):
         for k,v in self.BOTMETA['files'].items():
@@ -429,26 +439,9 @@ class AnsibleComponentMatcher(object):
 
         return matched_filenames
 
-    '''
-    def search_by_fileindexer(self, title, body, component):
-        """Use the fileindexers component matching algo"""
-        matches = []
-        template_data = {'component name': component, 'component_raw': component}
-        ckeys = self.file_indexer.find_component_match(title, body, template_data)
-        if ckeys:
-            components = self.file_indexer.find_component_matches_by_file(ckeys)
-            import epdb; epdb.st()
-        return matches
-    '''
-
     def search_by_module_name(self, component):
         matches = []
 
-        #_component = component
-
-        #for SC in self.STOPCHARS:
-        #    component = component.replace(SC, '')
-        #component = component.strip()
         component = self.clean_body(component)
 
         # docker-container vs. docker_container
@@ -487,10 +480,6 @@ class AnsibleComponentMatcher(object):
                 elif component.endswith(' ' + k) or component.lower().endswith(' ' + k):
                     logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
-
-                #elif k + ' module' in component:
-                #    logging.debug('keyword match: {}'.format(k))
-                #    matches.append(v)
 
                 elif (k in component or k in component.lower()) and k in self.BLACKLIST:
                     logging.debug('blacklist  match: {}'.format(k))
@@ -536,13 +525,9 @@ class AnsibleComponentMatcher(object):
                     elif len(choices) == 1:
                         matches.append(choices[0])
                     else:
-                        #import epdb; epdb.st()
                         pass
                 else:
                     pass
-
-        #if 's3_module' in body and not matches:
-        #    import epdb; epdb.st()
 
         return matches
 
@@ -720,9 +705,7 @@ class AnsibleComponentMatcher(object):
             else:
 
                 if '*' in keyword:
-                    #print(keyword)
                     keyword = keyword.replace('*', '')
-                    #import epdb; epdb.st()
 
                 # check for directories first
                 fns = [x for x in self.MODULE_NAMESPACE_DIRECTORIES if keyword in x]
@@ -733,9 +716,6 @@ class AnsibleComponentMatcher(object):
 
                 if fns:
                     matches += fns
-
-        #if body.lower() == 'elasticache modules':
-        #    import epdb; epdb.st()
 
         if matches:
             matches = sorted(set(matches))
@@ -994,9 +974,6 @@ class AnsibleComponentMatcher(object):
         matches = sorted(set(matches))
         logging.debug('return: {}'.format(matches))
 
-        #if 'validate-modules' in body:
-        #    import epdb; epdb.st()
-
         return matches
 
     def reduce_filepaths(self, matches):
@@ -1044,7 +1021,6 @@ class AnsibleComponentMatcher(object):
                         mrs = [mrs]
                     for mr in mrs:
                         new_matches.append(mr['repo_filename'])
-                #import epdb; epdb.st()
         return new_matches
 
     def get_meta_for_file(self, filename):
@@ -1068,6 +1044,7 @@ class AnsibleComponentMatcher(object):
             'namespace_maintainers': []
         }
 
+        populated = False
         _filename = filename
         _filename = os.path.splitext(filename)[0]
 
@@ -1112,6 +1089,8 @@ class AnsibleComponentMatcher(object):
             if 'deprecated' in fdata:
                 meta['deprecated'] = fdata['deprecated']
 
+            populated = True
+
         # walk up the tree for more meta
         paths = filename.split('/')
         for idx,x in enumerate(paths):
@@ -1139,7 +1118,6 @@ class AnsibleComponentMatcher(object):
                     meta['ignore'] += fdata['ignore']
                 if 'notify' in fdata:
                     meta['notify'] += fdata['notify']
-                #import epdb; epdb.st()
 
         if 'lib/ansible/modules' in filename:
             topics = [x for x in paths if x not in ['lib', 'ansible', 'modules']]
@@ -1159,7 +1137,6 @@ class AnsibleComponentMatcher(object):
             keys = [x for x in keys if x.startswith(os.path.join('lib/ansible/modules', ns))]
             for key in keys:
                 meta['namespace_maintainers'] += self.BOTMETA['files'][key].get('maintainers', [])
-            #import epdb; epdb.st()
 
         # new modules should default to "community" support
         if filename.startswith('lib/ansible/modules') and filename not in self.gitrepo.files:
@@ -1219,38 +1196,7 @@ class AnsibleComponentMatcher(object):
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
 
-        #if 'facts' in filename:
-        #    import epdb; epdb.st()
-
         return meta
-
-    '''
-    def _get_meta_for_file(self, filename):
-        """Compile metadata for a matched filename"""
-
-        meta = {
-            'repo_filename': filename
-        }
-
-        meta['labels'] = self.file_indexer.get_filemap_labels_for_files([filename])
-        (to_notify, to_assign) = self.file_indexer.get_filemap_users_for_files([filename])
-        meta['notify'] = to_notify
-        meta['assign'] = to_assign
-
-        if 'lib/ansible/modules' in filename:
-            mmeta = self.module_indexer.find_match(filename, exact=True)
-            if not mmeta:
-                pass
-            elif mmeta and len(mmeta) == 1:
-                meta.update(mmeta[0])
-            else:
-                import epdb; epdb.st()
-
-        #if 'docker_network' in filename:
-        #    import epdb; epdb.st()
-
-        return meta
-    '''
 
     def find_module_match(self, pattern):
         '''Exact module name matching'''
@@ -1349,8 +1295,5 @@ class AnsibleComponentMatcher(object):
                     candidates.append((jw, k))
             for candidate in candidates:
                 matches.append(self.MODULES[candidate[1]])
-
-        #if 'lineinfile' in pattern:
-        #    import epdb; epdb.st()
 
         return matches

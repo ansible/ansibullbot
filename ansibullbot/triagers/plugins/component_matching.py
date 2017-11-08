@@ -199,6 +199,7 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
                     component_filenames.append(filen)
                 cleared = True
 
+    '''
     for cm in CM_MATCHES[:]:
         if cm['repo_filename'] not in component_filenames:
             CM_MATCHES.remove(cm)
@@ -206,6 +207,8 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
         if cm not in [x['repo_filename'] for x in CM_MATCHES]:
             cmeta = component_matcher.get_meta_for_file(cm)
             CM_MATCHES.append(cmeta)
+    '''
+    CM_MATCHES = component_matcher.match_components('', '', '', files=component_filenames)
 
     return CM_MATCHES
 
