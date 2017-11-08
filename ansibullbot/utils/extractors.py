@@ -511,6 +511,7 @@ class ModuleExtractor(object):
             github_ids = self.extract_github_id(author)
             if github_ids:
                 authors.extend(github_ids)
+
         return authors
 
     def extract_github_id(self, author):

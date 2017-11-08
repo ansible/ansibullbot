@@ -199,7 +199,11 @@ class AnsibleComponentMatcher(object):
                     bmeta['maintainers'] = []
                 if not bmeta.get('supported_by'):
                     bmeta['supported_by'] = ME.metadata.get('supported_by', 'community')
+                if 'authors' not in bmeta:
+                    bmeta['authors'] = []
                 for x in ME.authors:
+                    if x not in bmeta['authors']:
+                        bmeta['authors'].append(x)
                     if x not in bmeta['maintainers']:
                         bmeta['maintainers'].append(x)
                     if x not in bmeta['notify']:
@@ -1080,6 +1084,8 @@ class AnsibleComponentMatcher(object):
                 if pyfile in self.BOTMETA['files']:
                     fdata.update(self.BOTMETA['files'][pyfile])
 
+            if 'authors' in fdata:
+                meta['authors'] = fdata['authors']
             if 'maintainers' in fdata:
                 meta['notify'] += fdata['maintainers']
                 meta['assign'] += fdata['maintainers']
@@ -1213,9 +1219,12 @@ class AnsibleComponentMatcher(object):
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
 
-        #import epdb; epdb.st()
+        #if 'facts' in filename:
+        #    import epdb; epdb.st()
+
         return meta
 
+    '''
     def _get_meta_for_file(self, filename):
         """Compile metadata for a matched filename"""
 
@@ -1241,6 +1250,7 @@ class AnsibleComponentMatcher(object):
         #    import epdb; epdb.st()
 
         return meta
+    '''
 
     def find_module_match(self, pattern):
         '''Exact module name matching'''
