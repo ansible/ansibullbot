@@ -387,9 +387,18 @@ def get_supported_by(issuewrapper, meta):
         supported_by = 'community'
     '''
 
-    if len(meta.get('component_support', [])) == 1:
-           return meta['component_support'][0]
-    else:
-        import epdb; epdb.st()
+    supported_by = 'core'
+    if not meta.get('component_support'):
+        return supported_by
+    if len(meta.get('component_support', [])) == 1 and meta['component_support'][0]:
+        return meta['component_support'][0]
+    elif None in meta.get('component_support', []):
+        supported_by = 'community'
+    elif 'core' in meta.get('component_support', []):
+        supported_by = 'core'
+    elif 'network' in meta.get('component_support', []):
+        supported_by = 'network'
+    elif 'certified' in meta.get('component_support', []):
+        supported_by = 'certified'
 
     return supported_by
