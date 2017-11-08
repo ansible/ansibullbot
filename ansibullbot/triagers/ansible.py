@@ -1198,7 +1198,7 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/608
         if not self.meta.get('component_support'):
-            cs_labels = ['suppport:core']
+            cs_labels = ['support:core']
         else:
             cs_labels = []
             for sb in self.meta.get('component_support'):
@@ -1272,8 +1272,8 @@ class AnsibleTriage(DefaultTriager):
                 if 'new_contributor' in iw.labels:
                     actions.unlabel.append('new_contributor')
 
-        actions.newlabel = sorted(set(actions.newlabel))
-        actions.unlabel = sorted(set(actions.unlabel))
+        actions.newlabel = sorted(set([x.encode('ascii') for x in actions.newlabel]))
+        actions.unlabel = sorted(set([x.encode('ascii') for x in actions.unlabel]))
 
         # check for waffling
         labels = sorted(set(actions.newlabel + actions.unlabel))
