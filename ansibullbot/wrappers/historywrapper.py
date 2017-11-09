@@ -235,6 +235,8 @@ class HistoryWrapper(object):
                 for y in command_keys:
                     if event['body'].startswith('_From @'):
                         continue
+                    if y != 'bot_broken' and 'bot_broken' in event['body']:
+                        continue
                     if y in event['body'] and not '!' + y in event['body']:
                         if timestamps:
                             commands.append((event['created_at'], y))

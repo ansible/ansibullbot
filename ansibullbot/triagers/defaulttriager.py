@@ -437,9 +437,14 @@ class DefaultTriager(object):
         if actions.merge:
             iw.merge()
 
-    @RateLimited
+    #@RateLimited
     def is_pr_merged(self, number, repo):
         '''Check if a PR# has been merged or not'''
+
+        if number is None:
+            import epdb; epdb.st()
+            raise Exception('Can not check merge state on the number: None')
+
         merged = False
         pr = None
         try:
@@ -447,7 +452,11 @@ class DefaultTriager(object):
         except Exception as e:
             print(e)
         if pr:
-            merged = pr.merged
+            try:
+                merged = pr.merged
+            except Exception as e:
+                logging.debug(e)
+                import epdb; epdb.st()
         return merged
 
     def trigger_rate_limit(self):

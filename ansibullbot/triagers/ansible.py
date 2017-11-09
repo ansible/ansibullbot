@@ -452,7 +452,7 @@ class AnsibleTriage(DefaultTriager):
                             logging.info('component[f]: %s' % fn)
                     else:
                         #logging.info('component[t]: %s' % iw.template_data.get('component name'))
-                        for line in iw.template_data.get('component_raw').split('\n'):
+                        for line in iw.template_data.get('component_raw', '').split('\n'):
                             logging.info('component[t]: %s' % line)
                         for fn in self.meta['component_filenames']:
                             logging.info('component[m]: %s' % fn)
@@ -1177,8 +1177,7 @@ class AnsibleTriage(DefaultTriager):
             needs_maintainer = False
             for mmatch in mmatches:
                 needs_maintainer = False
-                if not mmatch['maintainers']:
-                    import epdb; epdb.st()
+                if not mmatch['maintainers'] and mmatch['support'] != 'core':
                     needs_maintainer = True
                     break
             if needs_maintainer:
@@ -1918,6 +1917,7 @@ class AnsibleTriage(DefaultTriager):
             # find the comment
             mc = iw.history.get_user_comments(maintainers)
             mc = [x for x in mc if 'resolved_by_pr' in x]
+
             # extract the PR
             pr_number = extract_pr_number_from_comment(mc[-1])
             # was it merged?
