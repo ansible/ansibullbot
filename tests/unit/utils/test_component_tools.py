@@ -54,12 +54,21 @@ def get_component_matcher():
     if not os.path.isdir(GR.checkoutdir):
         os.makedirs(GR.checkoutdir)
 
-    tarfile = 'tests/fixtures/ansible-2017-10-24.tar.gz'
+    tarname = 'ansible-2017-10-24.tar.gz'
+    tarurl = 'http://tannerjc.net/ansible/{}'.format(tarname)
+    tarfile = 'tests/fixtures/{}'.format(tarname)
     tarfile = os.path.abspath(tarfile)
+
+    if not os.path.isfile(tarfile):
+        cmd = 'cd {}; wget {}'.format(os.path.dirname(tarfile), tarurl)
+        (rc, so, se) = run_command(cmd)
+        print(so)
+        print(se)
+        assert rc == 0
+
     cmd = 'cd {} ; tar xzvf {}'.format(GR.checkoutdir, tarfile)
     (rc, so, se) = run_command(cmd)
     GR.checkoutdir = GR.checkoutdir + '/ansible'
-    #import epdb; epdb.st()
 
     # Load the files
     with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
