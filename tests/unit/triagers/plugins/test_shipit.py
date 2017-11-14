@@ -84,7 +84,6 @@ class TestShipitFacts(unittest.TestCase):
             self.assertEqual(facts['shipit_count_community'], 1)   # LinusU, mscherer
             self.assertFalse(facts['shipit'])
 
-    @unittest.skip('disabled')
     def test_submitter_is_core_team_and_maintainer(self):
         """
         Submitter is a namespace maintainer *and* a core team member: approval
@@ -95,7 +94,12 @@ class TestShipitFacts(unittest.TestCase):
         statusfile = 'tests/fixtures/shipit/1_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
             namespace_maintainers = ['LinusU']
-            facts = get_shipit_facts(iw, self.meta, ModuleIndexerMock(namespace_maintainers), core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+
+            _meta = self.meta.copy()
+            _meta['component_maintainers'] = []
+            _meta['component_namespace_maintainers'] = namespace_maintainers[:]
+
+            facts = get_shipit_facts(iw, _meta, ModuleIndexerMock(namespace_maintainers), core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
             self.assertEqual(iw.submitter, 'mscherer')
             self.assertEqual(['LinusU'], facts['community_usernames'])
