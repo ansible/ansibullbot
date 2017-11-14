@@ -130,6 +130,8 @@ class AnsibleComponentMatcher(object):
         self.load_meta()
 
         for fn in self.gitrepo.module_files:
+            if os.path.isdir(fn):
+                continue
             mname = os.path.basename(fn)
             mname = mname.replace('.py', '').replace('.ps1', '')
             if mname.startswith('__'):
@@ -185,7 +187,15 @@ class AnsibleComponentMatcher(object):
 
         _modules = self.MODULES.copy()
         for k,v in _modules.items():
-            ME = ModuleExtractor(os.path.join(checkoutdir, k), email_cache=self.email_cache)
+            kparts = os.path.splitext(k)
+            if kparts[-1] == '.ps1':
+                _k = kparts[0] + '.py'
+                checkpath = os.path.join(checkoutdir, _k)
+                if not os.path.isfile(checkpath):
+                    _k = k
+            else:
+                _k = k
+            ME = ModuleExtractor(os.path.join(checkoutdir, _k), email_cache=self.email_cache)
             if k not in self.BOTMETA['files']:
                 self.BOTMETA['files'][k] = {
                     'deprecated': os.path.basename(k).startswith('_'),
@@ -538,7 +548,7 @@ class AnsibleComponentMatcher(object):
         # foo* module
 
         body = body.lower()
-        logging.debug('regex match on: {}'.format(body))
+        logging.debug('attempt regex match on: {}'.format(body))
 
         # https://www.tutorialspoint.com/python/python_reg_expressions.htm
         patterns = [
@@ -604,42 +614,61 @@ class AnsibleComponentMatcher(object):
 
         for pattern in patterns:
             #logging.debug('test pattern: {}'.format(pattern))
-
             mobj = re.match(pattern, body, re.M | re.I)
-
             #if not mobj:
             #    logging.debug('pattern {} !matched on "{}"'.format(pattern, body))
 
             if mobj:
                 logging.debug('pattern {} matched on "{}"'.format(pattern, body))
+                #print('pattern {} matched on "{}"'.format(pattern, body))
 
                 for x in range(0,mobj.lastindex+1):
                     try:
                         mname = mobj.group(x)
+                        #print(mname)
+                        logging.debug('mname: {}'.format(mname))
                         if mname == body:
                             continue
                         mname = self.clean_body(mname)
+                        #print(mname)
                         if not mname.strip():
                             continue
                         mname = mname.strip().lower()
+                        #print(mname)
                         if ' ' in mname:
                             continue
+                        if '/' in mname:
+                            continue
+
+                        '''
+                        # skip over things like core/cisco
+                        bad = False
+                        for sw in self.STOPWORDS:
+                            if sw in mname:
+                                print('{} in {} ... bad'.format(sw, mname))
+                                bad =True
+                        if bad:
+                            continue
+                        '''
+
                         mname = mname.replace('.py', '').replace('.ps1', '')
                         logging.debug('--> {}'.format(mname))
+                        #print('--> {}'.format(mname))
 
                         # attempt to match a module
-                        module = None
-                        module = self.find_module_match(mname)
+                        module_match = self.find_module_match(mname)
+                        #print('--> {}'.format(module_match))
+                        #print(type(module_match))
 
-                        if not module:
+                        if not module_match:
                             pass
-                        elif isinstance(module, list):
-                            for m in module:
+                        elif isinstance(module_match, list):
+                            for m in module_match:
                                 #logging.debug('matched {}'.format(m['name']))
                                 matches.append(m['repo_filename'])
-                        elif isinstance(module, dict):
+                        elif isinstance(module_match, dict):
                             #logging.debug('matched {}'.format(module['name']))
-                            matches.append(module['repo_filename'])
+                            matches.append(module_match['repo_filename'])
                     except Exception as e:
                         logging.error(e)
 
@@ -887,6 +916,7 @@ class AnsibleComponentMatcher(object):
 
         logging.debug('search filepath [{}] [{}]: {}'.format(context, partial, body))
         #print('search filepath [{}] [{}]: {}'.format(context, partial, body))
+
         if len(body) < 2:
             return []
 
@@ -908,7 +938,10 @@ class AnsibleComponentMatcher(object):
         if not context or 'lib/ansible/modules' in context:
             mmatch = self.find_module_match(body)
             if mmatch:
-                if isinstance(mmatch, list):
+                if isinstance(mmatch, list) and len(mmatch) > 1:
+                    # globbing should occur in one of the other functions
+                    pass
+                elif isinstance(mmatch, list):
                     return [x['repo_filename'] for x in mmatch]
                 else:
                     return [mmatch['repo_filename']]
@@ -974,6 +1007,7 @@ class AnsibleComponentMatcher(object):
         matches = sorted(set(matches))
         logging.debug('return: {}'.format(matches))
 
+        #import epdb; epdb.st()
         return matches
 
     def reduce_filepaths(self, matches):
@@ -1288,9 +1322,15 @@ class AnsibleComponentMatcher(object):
 
         # spellcheck
         if not matches and '/' not in pattern:
+            _pattern = pattern
+            if not isinstance(_pattern, unicode):
+                _pattern = _pattern.decode('utf-8')
             candidates = []
             for k,v in self.MODULES.items():
-                jw = jaro_winkler(v['name'], pattern)
+                vname = v['name']
+                if not isinstance(_pattern, unicode):
+                    vname = vname.decode('utf-8')
+                jw = jaro_winkler(vname, _pattern)
                 if jw > .9:
                     candidates.append((jw, k))
             for candidate in candidates:

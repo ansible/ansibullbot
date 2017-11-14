@@ -450,7 +450,7 @@ class ModuleExtractor(object):
             if 'DOCUMENTATION' in line:
                 inphase = True
                 continue
-            if line.strip().endswith("'''") or line.strip().endswith('"""'):
+            if inphase and (line.strip().endswith("'''") or line.strip().endswith('"""')):
                 #phase = None
                 break
             if inphase:

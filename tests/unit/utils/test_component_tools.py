@@ -2,9 +2,12 @@
 
 import json
 import os
+import tempfile
+import unittest
 from unittest import TestCase
 
-from ansibullbot.utils.component_tools import ComponentMatcher
+from ansibullbot.utils.systemtools import run_command
+from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
 
 
 class FakeIndexer(object):
@@ -26,6 +29,18 @@ class FakeGitRepo(object):
     module_files = []
     checkoutdir = None
 
+    @property
+    def module_files(self):
+        mfiles = [x for x in self.files if x.startswith('lib/ansible/modules')]
+        mfiles = [
+            x for x in mfiles if
+            not os.path.isdir(os.path.join(self.checkoutdir, x))
+        ]
+        return mfiles
+
+    def update(self):
+        pass
+
 
 def get_component_matcher():
 
@@ -33,6 +48,18 @@ def get_component_matcher():
     MI = FakeIndexer()
     FI = FakeIndexer()
     GR = FakeGitRepo()
+
+    GR.checkoutdir = tempfile.mkdtemp()
+
+    if not os.path.isdir(GR.checkoutdir):
+        os.makedirs(GR.checkoutdir)
+
+    tarfile = 'tests/fixtures/ansible-2017-10-24.tar.gz'
+    tarfile = os.path.abspath(tarfile)
+    cmd = 'cd {} ; tar xzvf {}'.format(GR.checkoutdir, tarfile)
+    (rc, so, se) = run_command(cmd)
+    GR.checkoutdir = GR.checkoutdir + '/ansible'
+    #import epdb; epdb.st()
 
     # Load the files
     with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
@@ -45,7 +72,7 @@ def get_component_matcher():
 
     FI.files = _files
     GR.files = _files
-    GR.module_files = [x for x in _files if x.startswith('lib/ansible/modules')]
+    #GR.module_files = [x for x in _files if x.startswith('lib/ansible/modules')]
 
     # Load the modules
     mfiles = [x for x in FI.files if 'lib/ansible/modules' in x]
@@ -61,7 +88,14 @@ def get_component_matcher():
 
     # Init the matcher
     #CM = ComponentMatcher(None, FI, MI)
-    CM = ComponentMatcher(botmetafile=botmetafile, gitrepo=GR, file_indexer=FI, module_indexer=MI)
+
+    CM = ComponentMatcher(
+        botmetafile=botmetafile,
+        email_cache={},
+        gitrepo=GR,
+        file_indexer=FI,
+        module_indexer=MI
+    )
 
     return CM
 
@@ -70,11 +104,7 @@ class TestComponentMatcher(TestCase):
 
     def test_reduce_filepaths(self):
 
-        #MI = FakeIndexer()
-        #FI = FakeIndexer()
-        #CM = ComponentMatcher(None, FI, MI)
         CM = get_component_matcher()
-
         filepaths = ['commands/command.py', 'lib/ansible/modules/commands/command.py']
         reduced = CM.reduce_filepaths(filepaths)
         self.assertEqual(reduced, ['lib/ansible/modules/commands/command.py'])
@@ -223,15 +253,24 @@ class TestComponentMatcher(TestCase):
                 {'context': None, 'partial': False, 'expected': ['lib/ansible/modules/cloud/amazon']},
                 {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/cloud/amazon']}
             ],
-           'modules/network/f5': [
+            'modules/network/f5': [
                 {'context': None, 'partial': False, 'expected': ['lib/ansible/modules/network/f5']},
                 {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/network/f5']}
             ],
-           'modules/network/iosxr': [
+            'modules/network/iosxr': [
                 {'context': None, 'partial': False, 'expected': ['lib/ansible/modules/network/iosxr']},
                 {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/network/iosxr']}
             ]
         }
+
+        '''
+        COMPONENTS = {
+            'netapp_e_storagepool storage module': [
+                {'context': 'lib/ansible/modules', 'partial': False, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
+                {'context': 'lib/ansible/modules', 'partial': True, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
+            ],
+        }
+        '''
 
         for k,v in COMPONENTS.items():
             COMPONENT = k
@@ -242,6 +281,7 @@ class TestComponentMatcher(TestCase):
                 #print('')
                 #print(v2)
                 res = CM.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
+                #import epdb; epdb.st()
                 self.assertEqual(EXPECTED, res)
 
     def test_search_by_regex_module_globs(self):
@@ -350,6 +390,12 @@ class TestComponentMatcher(TestCase):
                 'lib/ansible/modules/network/ios/ios_command.py'
             ]
         }
+
+        #COMPONENTS = {
+        #    '- Ansible Core/Cisco ios_command module': [
+        #        'lib/ansible/modules/network/ios/ios_command.py'
+        #    ]
+        #}
 
         for COMPONENT,EXPECTED in COMPONENTS.items():
             res = CM.search_by_regex_modules(COMPONENT)
