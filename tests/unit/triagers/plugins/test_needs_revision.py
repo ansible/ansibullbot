@@ -3,6 +3,7 @@
 import datetime
 import json
 import six
+import unittest
 from unittest import TestCase
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
