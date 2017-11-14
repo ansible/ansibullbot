@@ -60,7 +60,6 @@ class TestShipitFacts(unittest.TestCase):
             'is_module_util': False,
         }
 
-    @unittest.skip('disabled')
     def test_submitter_is_maintainer(self):
         """
         Submitter is a namespace maintainer: approval must be automatically
@@ -70,7 +69,12 @@ class TestShipitFacts(unittest.TestCase):
         statusfile = 'tests/fixtures/shipit/0_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
             namespace_maintainers = ['LinusU', 'mscherer']
-            facts = get_shipit_facts(iw, self.meta, ModuleIndexerMock(namespace_maintainers), core_team=['bcoca'], botnames=['ansibot'])
+
+            _meta = self.meta.copy()
+            _meta['component_maintainers'] = []
+            _meta['component_namespace_maintainers'] = namespace_maintainers[:]
+
+            facts = get_shipit_facts(iw, _meta, ModuleIndexerMock(namespace_maintainers), core_team=['bcoca'], botnames=['ansibot'])
 
             self.assertEqual(iw.submitter, 'mscherer')
             self.assertEqual(['LinusU', 'mscherer'], facts['community_usernames'])
