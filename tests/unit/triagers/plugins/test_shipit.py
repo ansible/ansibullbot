@@ -21,6 +21,14 @@ from ansibullbot.triagers.plugins.shipit import get_shipit_facts
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 
+class ComponentMatcherMock(object):
+
+    expected_results = []
+
+    def match(self, issuewrapper):
+        return self.expected_results
+
+
 class ModuleIndexerMock(object):
 
     def __init__(self, namespace_maintainers):
@@ -31,6 +39,9 @@ class ModuleIndexerMock(object):
 
 
 class FileIndexerMock(object):
+
+    files = []
+
     def find_component_matches_by_file(self, filenames):
         return []
 
@@ -150,7 +161,7 @@ class TestOwnerPR(unittest.TestCase):
             'is_needs_rebase': False,
         }
 
-    @unittest.skip('disabled')
+    #@unittest.skip('disabled')
     def test_owner_pr_submitter_is_maintainer_one_module_utils_file_updated(self):
         """
         Submitter is a maintainer: ensure owner_pr is set (only one file below module_utils updated)
@@ -177,8 +188,24 @@ class TestOwnerPR(unittest.TestCase):
         iw = IssueWrapper(cachedir="", issue=issue)
         iw.pr_files = [MockFile('lib/ansible/module_utils/foo/bar.py')]
 
+        # need to give the wrapper a list of known files to compare against
+        iw.file_indexer = FileIndexerMock()
+
+        # predefine what the matcher is going to return
+        CM = ComponentMatcherMock()
+        CM.expected_results = [
+            {
+                'repo_filename': 'lib/ansible/module_utils/foo/bar.py',
+                'labels': [],
+                'support': None,
+                'maintainers': ['ElsA', 'Oliver'],
+                'notify': ['ElsA', 'Oliver'],
+                'ignore': [],
+            }
+        ]
+
         meta = self.meta.copy()
-        meta.update(get_component_match_facts(iw, None, FileIndexerMock(), module_indexer, []))
+        meta.update(get_component_match_facts(iw, meta, CM, FileIndexerMock(), module_indexer, []))
         facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'ElsA')
