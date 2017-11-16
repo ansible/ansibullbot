@@ -100,6 +100,8 @@ class TestReviewMethods(TestCase):
 
             {'user': {'login': 'reviewer4'}, 'submitted_at': '2017-05-01T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
         ]
+        for review in reviews:
+            review['commit_id'] = '569597fac8175e6c63cbb415080ce42f9992a0c9'
         submitter = 'submitter'
 
         filtered = get_review_state(reviews, submitter)
@@ -114,8 +116,80 @@ class TestReviewMethods(TestCase):
             'reviewer1': self.make_time('2017-02-04T00:00:00Z'),  # newer, overrides CHANGES_REQUESTED review
             'reviewer3': self.make_time('2017-04-01T00:00:00Z'),  # older, doesn't override CHANGES_REQUESTED review
         }
-        requested_by = changes_requested_by(filtered, shipits)
+
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review=None)
         self.assertEqual(sorted(requested_by), ['reviewer3', 'reviewer4'])
+
+    def test_review_older_than_ready_for_review(self):
+        """Check that:
+        - CHANGES_REQUESTED review older than ready_for_review comment wrote by submitter
+        => review is ignored
+        """
+        reviews = [
+            # oldest first
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-01-01T00:00:00Z', 'state': 'CHANGES_REQUESTED',
+             'commit_id': '569597fac8175e6c63cbb415080ce42f9992a0c9'},
+        ]
+        submitter = 'submitter'
+
+        filtered = get_review_state(reviews, submitter)
+
+        self.assertEqual(filtered['reviewer0']['state'], 'CHANGES_REQUESTED')
+
+        shipits = {}
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        ready_for_review = self.make_time('2017-02-02T00:00:00Z')
+
+        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review)
+        self.assertFalse(requested_by)  # CHANGES_REQUESTED review ignored
+
+    def test_ready_for_review_older_than_review(self):
+        """Check that:
+        - CHANGES_REQUESTED review younger than ready_for_review comment wrote by submitter
+        => review isn't ignored
+        """
+        reviews = [
+            # oldest first
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-02-02T00:00:00Z', 'state': 'CHANGES_REQUESTED',
+             'commit_id': '569597fac8175e6c63cbb415080ce42f9992a0c9'},
+        ]
+        submitter = 'submitter'
+
+        filtered = get_review_state(reviews, submitter)
+
+        self.assertEqual(filtered['reviewer0']['state'], 'CHANGES_REQUESTED')
+
+        shipits = {}
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        ready_for_review = self.make_time('2017-01-01T00:00:00Z')
+
+        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review)
+        self.assertEqual(requested_by, ['reviewer0'])  # HANGES_REQUESTED review isn't ignored
+
+    def test_review_older_than_ready_for_review_PR_not_updated(self):
+        """Check that:
+        - CHANGES_REQUESTED review older than ready_for_review comment wrote by submitter
+        - but submitter didn't update the pull request
+        => review isn't ignored
+        """
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        reviews = [
+            # oldest first
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-01-01T00:00:00Z', 'state': 'CHANGES_REQUESTED',
+             'commit_id': last_commit},
+        ]
+        submitter = 'submitter'
+
+        filtered = get_review_state(reviews, submitter)
+
+        self.assertEqual(filtered['reviewer0']['state'], 'CHANGES_REQUESTED')
+
+        shipits = {}
+        ready_for_review = self.make_time('2017-02-02T00:00:00Z')
+
+        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review)
+        self.assertEqual(requested_by, ['reviewer0'])  # HANGES_REQUESTED review isn't ignored
 
     @staticmethod
     def make_time(data):
