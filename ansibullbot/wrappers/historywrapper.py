@@ -272,9 +272,14 @@ class HistoryWrapper(object):
             if event['actor'] in botnames:
                 continue
             if event['event'] == 'commented':
-                if not event['body'].startswith(command_key):
-                    continue
-                commands.append(event)
+                matched = False
+                lines = event['body'].split('\n')
+                for line in lines:
+                    if line.strip().startswith(command_key):
+                        matched = True
+                        break
+                if matched:
+                    commands.append(event)
 
         return commands
 
