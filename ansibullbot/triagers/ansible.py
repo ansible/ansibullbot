@@ -682,9 +682,9 @@ class AnsibleTriage(DefaultTriager):
                 actions.newlabel.append('bot_broken')
             return
 
-        #elif 'bot_skip' in self.meta['maintainer_commands'] or \
-        #        'bot_skip' in self.meta['submitter_commands']:
-        #    return
+        elif 'bot_skip' in self.meta['maintainer_commands'] or \
+                'bot_skip' in self.meta['submitter_commands']:
+            return
 
         # indicate what components were matched
         if iw.is_issue() and self.meta.get('needs_component_message'):
