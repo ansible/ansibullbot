@@ -1652,6 +1652,14 @@ class AnsibleTriage(DefaultTriager):
             # look for best match?
             self.meta['issue_type'] = self.guess_issue_type(iw)
 
+        # needed for bot status
+        if iw.is_issue():
+            self.meta['is_issue'] = True
+            self.meta['is_pullrequest'] = False
+        else:
+            self.meta['is_issue'] = False
+            self.meta['is_pullrequest'] = True
+
         # get ansible version
         if iw.is_issue():
             self.meta['ansible_version'] = \

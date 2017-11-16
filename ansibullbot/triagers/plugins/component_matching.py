@@ -32,6 +32,7 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
 
     cmeta['component'] = None
     cmeta['component_name'] = []
+    cmeta['component_match_strategy'] = None
     cmeta['component_matches'] = []
     cmeta['component_filenames'] = []
     cmeta['component_labels'] = []
@@ -60,10 +61,14 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
 
     # Try to match against something known ...
     CM_MATCHES = component_matcher.match(iw)
+    cmeta['component_match_strategy'] = component_matcher.strategies
 
     # Reconcile with component commands ...
     if iw.is_issue():
+        _CM_MATCHES = CM_MATCHES[:]
         CM_MATCHES = reconcile_component_commands(iw, component_matcher, CM_MATCHES)
+        if _CM_MATCHES != CM_MATCHES:
+            cmeta['component_match_strategy'] = ['component_command']
 
     # sort so that the filenames show up in the alphabetical/consisten order
     CM_MATCHES = sorted(CM_MATCHES, key=lambda k: k['repo_filename'])
@@ -139,27 +144,30 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
 
     # welcome message to indicate which files the bot matched
     if iw.is_issue():
-        bpcs = iw.history.get_boilerplate_comments(dates=True, content=True, botnames=['ansibot', 'ansibotdev'])
-        bpcs = [x for x in bpcs if x[1] == 'components_banner']
 
-        if not bpcs:
+        if len(iw.comments) == 0:
             cmeta['needs_component_message'] = True
-        else:
-            # was the last list of files correct?
-            lbpc = bpcs[-1]
-            lbpc = lbpc[-1]
-            _filenames = []
-            for line in lbpc.split('\n'):
-                if line.startswith('*'):
-                    parts = line.split()
-                    fn = re.match('\[(\S+)\].*', parts[1]).group(1)
-                    _filenames.append(fn)
-            _filenames = sorted(set(_filenames))
-            expected = sorted(set([x['repo_filename'] for x in CM_MATCHES]))
-            if _filenames != expected:
-                cmeta['needs_component_message'] = True
 
-    #import epdb; epdb.st()
+        else:
+
+            bpcs = iw.history.get_boilerplate_comments(dates=True, content=True, botnames=['ansibot', 'ansibotdev'])
+            bpcs = [x for x in bpcs if x[1] == 'components_banner']
+
+            if bpcs:
+                # was the last list of files correct?
+                lbpc = bpcs[-1]
+                lbpc = lbpc[-1]
+                _filenames = []
+                for line in lbpc.split('\n'):
+                    if line.startswith('*'):
+                        parts = line.split()
+                        fn = re.match('\[(\S+)\].*', parts[1]).group(1)
+                        _filenames.append(fn)
+                _filenames = sorted(set(_filenames))
+                expected = sorted(set([x['repo_filename'] for x in CM_MATCHES]))
+                if _filenames != expected:
+                    cmeta['needs_component_message'] = True
+
     return cmeta
 
 

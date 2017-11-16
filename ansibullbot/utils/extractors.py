@@ -176,9 +176,6 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
         # remove markdown comments from the sections
         v = remove_markdown_comments(v)
 
-        #if issue_number == 4238 and k == 'component name':
-        #    import epdb; epdb.st()
-
         # remove non-ascii chars
         v = v.encode('ascii',errors='ignore')
 
@@ -283,7 +280,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # quick clean and add raw component to the dict
     component_raw = remove_markdown_comments(component_raw)
-    component_raw = clean_bad_characters(component_raw)
+    component_raw = clean_bad_characters(component_raw, exclude=['*'])
     component_raw = '\n'.join([x.strip() for x in component_raw.split('\n') if x.strip()])
     component_raw = '\n'.join([x for x in component_raw.split('\n') if not x.startswith('#')])
     tdict['component_raw'] = component_raw
@@ -291,8 +288,11 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
     return tdict
 
 
-def clean_bad_characters(raw_text, exclude=[]):
+def clean_bad_characters(raw_text, exclude=None):
     badchars = ['#', ':', ';', ',', '*', '"', "'", '`', '---', '__']
+
+    if exclude is None:
+        exclude = []
 
     # Exclude patterns of word, word,word
     if re.search(r'(\w+,\s?)+\w+', raw_text):
@@ -303,7 +303,11 @@ def clean_bad_characters(raw_text, exclude=[]):
         exclude.extend("'")
 
     # Don't remove characters passed in as an exclusion
-    badchars = [x for x in badchars if x not in exclude]
+    if exclude:
+        if isinstance(exclude, list):
+            badchars = [x for x in badchars if x not in exclude]
+        elif exclude:
+            badchars = [x for x in badchars if x != exclude]
 
     for bc in badchars:
         raw_text = raw_text.replace(bc, '')

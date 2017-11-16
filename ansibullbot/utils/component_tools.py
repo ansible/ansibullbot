@@ -939,8 +939,11 @@ class AnsibleComponentMatcher(object):
             mmatch = self.find_module_match(body)
             if mmatch:
                 if isinstance(mmatch, list) and len(mmatch) > 1:
-                    # globbing should occur in one of the other functions
-                    pass
+
+                    # only allow for exact prefix globbing here ...
+                    if [x for x in mmatch if x['repo_filename'].startswith(body)]:
+                        return [x['repo_filename'] for x in mmatch]
+
                 elif isinstance(mmatch, list):
                     return [x['repo_filename'] for x in mmatch]
                 else:
@@ -1328,7 +1331,7 @@ class AnsibleComponentMatcher(object):
             candidates = []
             for k,v in self.MODULES.items():
                 vname = v['name']
-                if not isinstance(_pattern, unicode):
+                if not isinstance(vname, unicode):
                     vname = vname.decode('utf-8')
                 jw = jaro_winkler(vname, _pattern)
                 if jw > .9:
