@@ -189,6 +189,9 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
 
         for line in lines:
 
+            if not line.strip().startswith('!component'):
+                continue
+
             # !component [action][filename]
             filen = line.split()[1]
             action = filen[0]
