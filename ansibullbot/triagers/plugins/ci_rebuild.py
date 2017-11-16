@@ -41,7 +41,8 @@ def get_rebuild_facts(iw, meta, shippable, force=False):
         'rebuild_run_id': None
     }
 
-    if not meta['is_pullrequest']:
+    #if not meta['is_pullrequest']:
+    if not iw.is_pullrequest():
         return rbmeta
 
     if not force:

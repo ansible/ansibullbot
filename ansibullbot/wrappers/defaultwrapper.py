@@ -838,6 +838,8 @@ class DefaultWrapper(object):
 
     @property
     def files(self):
+        if self.is_issue():
+            return None
         if not self.pr_files:
             self.pr_files = self.load_update_fetch('files')
         files = [x.filename for x in self.pr_files]

@@ -92,6 +92,7 @@ class IssueMock(object):
         self._events = self.ydata.get('events', [])
         self.events = []
         self.events_url = None
+        self.files = None
         self.html_url = self.ydata.get(
             'html_url',
             'https://github.com/ansible/ansible-modules-core/issues/1'

@@ -11,6 +11,8 @@ def is_needsinfo(triager, issue):
 
     maintainers = [x for x in triager.ansible_members]
     maintainers += [x for x in triager.ansible_core_team]
+
+    '''
     if triager.meta.get('module_match'):
         maintainers += triager.meta['module_match'].get('maintainers', [])
         ns = triager.meta['module_match'].get('namespace')
@@ -23,6 +25,8 @@ def is_needsinfo(triager, issue):
         rfn = triager.meta['module_match']['repo_filename']
         if triager.module_indexer.committers.get(rfn):
             maintainers += triager.module_indexer.committers.get(rfn).keys()
+    '''
+    #import epdb; epdb.st()
 
     maintainers = sorted(
         set(
@@ -43,8 +47,12 @@ def is_needsinfo(triager, issue):
             needs_info = False
             continue
 
-        if event['actor'] in triager.BOTNAMES or \
-                event['actor'] not in maintainers:
+        #if event['actor'] in triager.BOTNAMES or \
+        #        event['actor'] not in maintainers:
+        #    continue
+
+        # allow anyone to trigger needs_info
+        if event['actor'] in triager.BOTNAMES:
             continue
 
         if event['event'] == 'labeled':

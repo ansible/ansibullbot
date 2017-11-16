@@ -157,6 +157,7 @@ Command | Scope | Allowed | Description
 **<a name="cmd-add-label">+label</a>** | issues pull requests | staff maintainers | Add a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
 **<a name="cmd-remove-label">-label</a>** | issues pull requests | staff maintainers | Remove a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
 **<a name="cmd-rebuild_merge">rebuild_merge</a>** | pull requests | staff | Allow core team members to trigger CI, then the pull request is automatically merged if CI results are successful.
+**<a name="cmd-component">!component</a>** | issues | anyone | Set, append or remove a file from the matched components.
 
 ## Labels
 

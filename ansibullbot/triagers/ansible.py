@@ -40,6 +40,7 @@ from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, 
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
+from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
@@ -107,6 +108,8 @@ class AnsibleActions(DefaultActions):
 class AnsibleTriage(DefaultTriager):
 
     BOTNAMES = ['ansibot', 'ansibotdev', 'gregdek', 'robynbergeron']
+
+    COMPONENTS = []
 
     EMPTY_META = {
     }
@@ -203,6 +206,13 @@ class AnsibleTriage(DefaultTriager):
             cachedir=self.cachedir_base
         )
 
+        logging.info('creating component matcher')
+        self.component_matcher = AnsibleComponentMatcher(
+            botmetafile=self.botmetafile,
+            cachedir=self.cachedir_base,
+            email_cache=self.module_indexer.emails_cache
+        )
+
         # instantiate shippable api
         logging.info('creating shippable wrapper')
         spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
@@ -253,6 +263,9 @@ class AnsibleTriage(DefaultTriager):
             logging.info('updating file indexer')
             self.file_indexer.update()
 
+            # update component matcher
+            self.component_matcher.update(email_cache=self.module_indexer.emails_cache)
+
             # update shippable run data
             self.SR.update()
 
@@ -291,6 +304,7 @@ class AnsibleTriage(DefaultTriager):
                         import epdb; epdb.st()
                     continue
 
+                self.COMPONENTS = []
                 self.meta = {}
                 number = issue.number
                 self.set_resume(item[0], number)
@@ -433,10 +447,16 @@ class AnsibleTriage(DefaultTriager):
                     # DEBUG!
                     logging.info('url: %s' % iw.html_url)
                     logging.info('title: %s' % iw.title)
-                    logging.info(
-                        'component: %s' %
-                        self.template_data.get('component_raw')
-                    )
+                    if iw.is_pullrequest():
+                        for fn in iw.files:
+                            logging.info('component[f]: %s' % fn)
+                    else:
+                        #logging.info('component[t]: %s' % iw.template_data.get('component name'))
+                        for line in iw.template_data.get('component_raw', '').split('\n'):
+                            logging.info('component[t]: %s' % line)
+                        for fn in self.meta['component_filenames']:
+                            logging.info('component[m]: %s' % fn)
+
                     if self.meta['template_missing_sections']:
                         logging.info(
                             'missing sections: ' +
@@ -466,7 +486,7 @@ class AnsibleTriage(DefaultTriager):
                                 iw.number,
                                 force=True
                             )
-                        pprint(summary)
+                        #pprint(summary)
 
                         if self.meta.get('mergeable_state') == 'unknown':
                             pprint(vars(actions))
@@ -666,6 +686,18 @@ class AnsibleTriage(DefaultTriager):
                 'bot_skip' in self.meta['submitter_commands']:
             return
 
+        # indicate what components were matched
+        if iw.is_issue() and self.meta.get('needs_component_message'):
+            tvars = {
+                'meta': self.meta
+            }
+            comment = self.render_boilerplate(
+                tvars, boilerplate='components_banner'
+            )
+            #import epdb; epdb.st()
+            if comment not in actions.comments:
+                actions.comments.append(comment)
+
         # UNKNOWN!!! ... sigh.
         if iw.is_pullrequest():
             if self.meta['mergeable_state'] == 'unknown' and iw.state != 'closed':
@@ -854,22 +886,28 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['is_new_module'] or self.meta['is_module']:
             # add topic labels
             for t in ['topic', 'subtopic']:
-                label = self.meta['module_match'].get(t)
-                if label in self.MODULE_NAMESPACE_LABELS:
-                    label = self.MODULE_NAMESPACE_LABELS[label]
 
-                if label and label in self.valid_labels and \
-                        label not in iw.labels and \
-                        not iw.history.was_unlabeled(label):
-                    actions.newlabel.append(label)
+                mmatches = self.meta['module_match']
+                if not isinstance(mmatches, list):
+                    mmatches = [mmatches]
 
-            # add namespace labels
-            namespace = self.meta['module_match'].get('namespace')
-            if namespace in self.MODULE_NAMESPACE_LABELS:
-                label = self.MODULE_NAMESPACE_LABELS[namespace]
-                if label not in iw.labels and \
-                        not iw.history.was_unlabeled(label):
-                    actions.newlabel.append(label)
+                for mmatch in mmatches:
+                    label = mmatch.get(t)
+                    if label in self.MODULE_NAMESPACE_LABELS:
+                        label = self.MODULE_NAMESPACE_LABELS[label]
+
+                    if label and label in self.valid_labels and \
+                            label not in iw.labels and \
+                            not iw.history.was_unlabeled(label):
+                        actions.newlabel.append(label)
+
+                    # add namespace labels
+                    namespace = mmatch.get('namespace')
+                    if namespace in self.MODULE_NAMESPACE_LABELS:
+                        label = self.MODULE_NAMESPACE_LABELS[namespace]
+                        if label not in iw.labels and \
+                                not iw.history.was_unlabeled(label):
+                            actions.newlabel.append(label)
 
         # NEW MODULE
         if self.meta['is_new_module']:
@@ -897,7 +935,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('module')
 
         # component labels
-        if self.meta['component_labels'] and not self.meta['merge_commits']:
+        if self.meta.get('component_labels') and not self.meta.get('merge_commits'):
 
             # only add these labels to pullrequest or un-triaged issues
             if iw.is_pullrequest() or \
@@ -939,7 +977,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.newlabel.append(label)
 
         # use the filemap to add labels
-        if iw.is_pullrequest():
+        if iw.is_pullrequest() and not self.meta.get('merge_commits'):
             fmap_labels = self.file_indexer.get_filemap_labels_for_files(iw.files)
             for label in fmap_labels:
                 if label in self.valid_labels and \
@@ -1085,9 +1123,13 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/29
         if self.meta['is_module']:
-            if self.meta['module_match']['deprecated']:
-                if 'deprecated' not in iw.labels:
-                    actions.newlabel.append('deprecated')
+            mmatches = self.meta['module_match']
+            if not isinstance(mmatches, list):
+                mmatches = [mmatches]
+            for mmatch in mmatches:
+                if mmatch.get('deprecated'):
+                    if 'deprecated' not in iw.labels:
+                        actions.newlabel.append('deprecated')
 
         # https://github.com/ansible/ansibullbot/issues/406
         if iw.is_pullrequest():
@@ -1129,46 +1171,47 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/589
         if self.meta['module_match'] and not self.meta['is_new_module']:
-            if not self.meta['module_match']['maintainers']:
+            mmatches = self.meta['module_match']
+            if not isinstance(mmatches, list):
+                mmatches = [mmatches]
+            needs_maintainer = False
+            for mmatch in mmatches:
+                needs_maintainer = False
+                if not mmatch['maintainers'] and mmatch['support'] != 'core':
+                    needs_maintainer = True
+                    break
+            if needs_maintainer:
                 # 'ansible' is cleared from the primary key, so we need
                 # to check the original copy before deciding this isn't
                 # being maintained.
-                if not self.meta['module_match'].get('_maintainers'):
-                    if 'needs_maintainer' not in iw.labels:
-                        actions.newlabel.append('needs_maintainer')
+
+                #if not self.meta['module_match'].get('_maintainers'):
+                #    if 'needs_maintainer' not in iw.labels:
+                #        actions.newlabel.append('needs_maintainer')
+
+                if 'needs_maintainer' not in iw.labels:
+                    actions.newlabel.append('needs_maintainer')
             else:
                 if 'needs_maintainer' in iw.labels:
                     actions.unlabel.append('needs_maintainer')
 
         # https://github.com/ansible/ansibullbot/issues/608
-        cs_label = 'support:core'
-        if self.meta['module_match']:
-            mm = self.meta['module_match']
-            sb = mm.get('metadata', {}).get('supported_by')
-            if sb:
+        if not self.meta.get('component_support'):
+            cs_labels = ['support:core']
+        else:
+            cs_labels = []
+            for sb in self.meta.get('component_support'):
+                if sb is None:
+                    sb = 'core'
                 cs_label = 'support:%s' % sb
-        elif self.meta['component_matches']:
-            levels = [x.get('supported_by') for x in self.meta['component_matches']]
-            levels = sorted(set([x for x in levels if x]))
-            if len(levels) == 1:
-                cs_label = 'support:{}'.format(levels[0])
-            elif len(levels) > 1:
-                # use the highest level of support
-                if 'network' in levels:
-                    cs_label = 'support:network'
-                elif 'core' in levels:
-                    pass
-                else:
-                    cs_label = 'support:community'
-
-        if cs_label not in iw.labels:
-            actions.newlabel.append(cs_label)
-
-        # https://github.com/ansible/ansibullbot/issues/707
-        cs_labels = [x for x in iw.labels if x.startswith('support:')]
-        for x in cs_labels:
-            if x != cs_label:
-                actions.unlabel.append(x)
+                cs_labels.append(cs_label)
+        for cs_label in cs_labels:
+            if cs_label not in iw.labels:
+                actions.newlabel.append(cs_label)
+        other_cs_labels = [x for x in iw.labels if x.startswith('support:')]
+        for ocs_label in other_cs_labels:
+            if ocs_label not in cs_labels:
+                actions.unlabel.append(ocs_label)
 
         if not self.meta['stale_reviews']:
             if 'stale_review' in iw.labels:
@@ -1228,8 +1271,8 @@ class AnsibleTriage(DefaultTriager):
                 if 'new_contributor' in iw.labels:
                     actions.unlabel.append('new_contributor')
 
-        actions.newlabel = sorted(set(actions.newlabel))
-        actions.unlabel = sorted(set(actions.unlabel))
+        actions.newlabel = sorted(set([x.encode('ascii') for x in actions.newlabel]))
+        actions.unlabel = sorted(set([x.encode('ascii') for x in actions.unlabel]))
 
         # check for waffling
         labels = sorted(set(actions.newlabel + actions.unlabel))
@@ -1241,6 +1284,12 @@ class AnsibleTriage(DefaultTriager):
                     if C.DEFAULT_BREAKPOINTS:
                         import epdb; epdb.st()
                     raise LabelWafflingError(msg)
+            elif label in actions.newlabel and label in actions.unlabel:
+                msg = '"{}" label is waffling on {}'.format(label, iw.html_url)
+                logging.error(msg)
+                if C.DEFAULT_BREAKPOINTS:
+                    import epdb; epdb.st()
+                raise LabelWafflingError(msg)
 
     def apply_actions(self, iw, actions):
         if self.safe_force:
@@ -1603,6 +1652,14 @@ class AnsibleTriage(DefaultTriager):
             # look for best match?
             self.meta['issue_type'] = self.guess_issue_type(iw)
 
+        # needed for bot status
+        if iw.is_issue():
+            self.meta['is_issue'] = True
+            self.meta['is_pullrequest'] = False
+        else:
+            self.meta['is_issue'] = False
+            self.meta['is_pullrequest'] = True
+
         # get ansible version
         if iw.is_issue():
             self.meta['ansible_version'] = \
@@ -1632,11 +1689,17 @@ class AnsibleTriage(DefaultTriager):
             get_component_match_facts(
                 iw,
                 self.meta,
+                self.component_matcher,
                 self.file_indexer,
                 self.module_indexer,
                 self.valid_labels
             )
         )
+
+        #self.COMPONENTS = self.component_matcher.match(iw)
+        #if not self.COMPONENTS and (self.meta.get('module_match') or self.meta.get('guessed_components')):
+        #    import epdb; epdb.st()
+        #import epdb; epdb.st()
 
         # python3 ?
         self.meta.update(get_python3_facts(iw))
@@ -1820,9 +1883,14 @@ class AnsibleTriage(DefaultTriager):
         iw = issuewrapper
 
         maintainers = []
-        if meta['module_match']:
-            maintainers += meta.get('module_match', {}).get('maintainers', [])
-            maintainers += meta.get('module_match', {}).get('authors', [])
+        #if meta['module_match']:
+        #    maintainers += meta.get('module_match', {}).get('maintainers', [])
+        #    maintainers += meta.get('module_match', {}).get('authors', [])
+
+        maintainers += meta.get('component_authors', [])
+        maintainers += meta.get('component_maintainers', [])
+        maintainers += meta.get('component_notifiers', [])
+
         maintainers += [x.login for x in iw.repo.assignees]
         maintainers = sorted(set(maintainers))
 
@@ -1857,6 +1925,7 @@ class AnsibleTriage(DefaultTriager):
             # find the comment
             mc = iw.history.get_user_comments(maintainers)
             mc = [x for x in mc if 'resolved_by_pr' in x]
+
             # extract the PR
             pr_number = extract_pr_number_from_comment(mc[-1])
             # was it merged?
@@ -1887,7 +1956,8 @@ class AnsibleTriage(DefaultTriager):
     def waiting_on(self, issuewrapper, meta):
         iw = issuewrapper
         wo = None
-        if meta['is_issue']:
+        #if meta['is_issue']:
+        if iw.is_issue():
             if meta['is_needs_info']:
                 wo = iw.submitter
             elif 'needs_contributor' in meta['maintainer_commands']:
@@ -1914,6 +1984,7 @@ class AnsibleTriage(DefaultTriager):
             'maintainer_triaged': False
         }
 
+        '''
         if not meta['module_match']:
             return tfacts
         if not meta['module_match'].get('metadata'):
@@ -1922,9 +1993,14 @@ class AnsibleTriage(DefaultTriager):
             return tfacts
         if not meta['module_match'].get('maintainers'):
             return tfacts
+        '''
+
+        if not meta.get('component_maintainers'):
+            return tfacts
 
         iw = issuewrapper
-        maintainers = [x for x in meta['module_match']['maintainers']]
+        #maintainers = [x for x in meta['module_match']['maintainers']]
+        maintainers = meta['component_maintainers'][:]
         maintainers += [x for x in self.ansible_core_team]
         maintainers = [x for x in maintainers if x != iw.submitter]
         maintainers = sorted(set(maintainers))
@@ -2022,7 +2098,7 @@ class AnsibleTriage(DefaultTriager):
                              " the repo in question.)"
 
         parser.add_argument("--repo", "-r", type=str, choices=MREPOS,
-                    help="Github repo to triage (defaults to all)")
+                            help="Github repo to triage (defaults to all)")
 
         parser.add_argument("--skip_no_update", action="store_true",
                             help="skip processing if updated_at hasn't changed")

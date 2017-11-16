@@ -148,6 +148,8 @@ class HistoryWrapper(object):
                     matching_events.append(event)
                 elif type(actor) == list and event['actor'] in actor:
                     matching_events.append(event)
+                elif not actor:
+                    matching_events.append(event)
                 if len(matching_events) == maxcount:
                     break
         return matching_events
@@ -233,6 +235,8 @@ class HistoryWrapper(object):
                 for y in command_keys:
                     if event['body'].startswith('_From @'):
                         continue
+                    if y != 'bot_broken' and 'bot_broken' in event['body']:
+                        continue
                     if y in event['body'] and not '!' + y in event['body']:
                         if timestamps:
                             commands.append((event['created_at'], y))
@@ -250,6 +254,27 @@ class HistoryWrapper(object):
                         commands.append((event['created_at'], y))
                     else:
                         commands.append('!' + event['label'])
+
+        return commands
+
+    def get_component_commands(self, command_key='!component', botnames=[]):
+        """Given a list of phrase keys, return a list of phrases used"""
+        commands = []
+
+        comments = self._find_events_by_actor(
+            'commented',
+            None,
+            maxcount=999
+        )
+        events = sorted(comments, key=itemgetter('created_at'))
+
+        for event in events:
+            if event['actor'] in botnames:
+                continue
+            if event['event'] == 'commented':
+                if not event['body'].startswith(command_key):
+                    continue
+                commands.append(event)
 
         return commands
 
@@ -470,20 +495,34 @@ class HistoryWrapper(object):
                     break
         return labeled
 
-    def get_boilerplate_comments(self, botname='ansibot', dates=False):
+    def get_boilerplate_comments(self, botname='ansibot', botnames=None, dates=False, content=True):
         boilerplates = []
-        comments = self._find_events_by_actor('commented',
-                                              botname,
-                                              maxcount=999)
+        if botnames:
+            comments = self._find_events_by_actor('commented',
+                                                botnames,
+                                                maxcount=999)
+        else:
+            comments = self._find_events_by_actor('commented',
+                                                botname,
+                                                maxcount=999)
         for comment in comments:
             if 'boilerplate:' in comment['body']:
                 lines = [x for x in comment['body'].split('\n')
                          if x.strip() and 'boilerplate:' in x]
                 bp = lines[0].split()[2]
-                if dates:
-                    boilerplates.append((comment['created_at'], bp))
+
+                if dates or content:
+                    bpc = []
+                    if dates:
+                        bpc.append(comment['created_at'])
+                    bpc.append(bp)
+                    if content:
+                        bpc.append(comment['body'])
+                    #boilerplates.append((comment['created_at'], bp))
+                    boilerplates.append(bpc)
                 else:
                     boilerplates.append(bp)
+
         return boilerplates
 
     def get_boilerplate_comments_content(self, botname='ansibot', bfilter=None):

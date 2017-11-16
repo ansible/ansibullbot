@@ -3,6 +3,7 @@
 import datetime
 import json
 import six
+import unittest
 from unittest import TestCase
 
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
@@ -17,6 +18,13 @@ from tests.utils.helpers import get_issue
 from ansibullbot.triagers.plugins.needs_revision import changes_requested_by, get_needs_revision_facts, get_review_state
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
+
+class ComponentMatcherMock(object):
+
+    expected_results = []
+
+    def match(self, issuewrapper):
+        return self.expected_results
 
 
 class ModuleIndexerMock(object):
@@ -47,6 +55,7 @@ class TestNeedsRevisionFacts(TestCase):
             }
         }
 
+    #@unittest.skip('disabled')
     def test_shipit_overrides_changes_requested_github_review(self):
         """
         Ansibot should ignore CHANGES_REQUESTED Github review when the author of the
@@ -69,6 +78,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._pr_reviews = json.load(reviews)
                     iw._history.merge_reviews(iw.reviews)
 
+                self.meta['component_maintainers'] = ['robinro']
                 facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta)
 
                 self.assertFalse(facts['is_needs_revision'])

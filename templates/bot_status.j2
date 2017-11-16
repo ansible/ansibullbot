@@ -1,20 +1,12 @@
+### Components
+{% for component in component_matches %}
+{{ '[' + component['repo_filename'] + '](' + 'https://github.com/ansible/ansible/blob/devel/' + component['repo_filename'] + ')'}}
+support: {{ component['support'] }}
+maintainers: {{ component['maintainers']|join(' ') }}
+
+{% endfor %}
+### Metadata
 **waiting_on**: {{ waiting_on }}
-{% if is_module and not is_new_module %}
-**module**: {{ module_match['name'] }}
-**[supported_by](http://docs.ansible.com/ansible/devel/dev_guide/developing_modules_documenting.html#ansible-metadata-block)**: {{ module_match['metadata']['supported_by'] }}
-{% if module_match['metadata']['supported_by'] == 'core' %}
-**maintainers**: ansible core team
-{% else %}
-**maintainers**: {{ module_match['maintainers']|join(' ') or 'no maintainer(s)' }}
-{% endif %}
-{% else %}
-{% if is_new_module %}
-module: {{ component }}
-{% else %}
-component: {{ component }}
-**supported_by**: core
-{% endif %}
-{% endif %}
 {% if is_issue %}
 [needs_info](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
 {% else %}

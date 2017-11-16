@@ -74,10 +74,16 @@ def automergeable(meta, issuewrapper):
         return False
 
     for pr_file in issue.pr_files:
-        matched_filename = meta['module_match'].get('repo_filename')
-        if matched_filename and pr_file.filename == matched_filename:
+
+        #matched_filename = meta['module_match'].get('repo_filename')
+        #if matched_filename and pr_file.filename == matched_filename:
+        #    continue
+
+        thisfn = pr_file.filename
+        if thisfn.startswith('lib/ansible/modules'):
             continue
-        elif fnmatch(pr_file.filename, 'test/sanity/*/*.txt'):
+
+        elif fnmatch(thisfn, 'test/sanity/*/*.txt'):
             if pr_file.additions or pr_file.status == 'added':
                 # new exception added, addition must be checked by an human
                 return False
@@ -88,9 +94,11 @@ def automergeable(meta, issuewrapper):
             # other file modified, pull-request must be checked by an human
             return False
 
-    metadata = meta['module_match']['metadata']
-    supported_by = metadata.get('supported_by')
-    if supported_by != 'community':
+    #metadata = meta['module_match']['metadata']
+    #supported_by = metadata.get('supported_by')
+    #if supported_by != 'community':
+    #    return False
+    if meta.get('community_support') != ['community']:
         return False
 
     return True
@@ -130,10 +138,10 @@ def needs_community_review(meta, issue):
     if not mm:
         return False
 
-    metadata = mm.get('metadata') or {}
-    supported_by = metadata.get('supported_by')
-
-    if supported_by != 'community':
+    #metadata = mm.get('metadata') or {}
+    #supported_by = metadata.get('supported_by')
+    #if supported_by != 'community':
+    if meta['component_support'] != ['community']:
         return False
 
     # expensive call done earlier in processing
@@ -239,7 +247,8 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         logging.debug('PRs with needs_revision or needs_rebase label do not get shipits')
         return nmeta
 
-    maintainers = meta['module_match']['maintainers']
+    #maintainers = meta['module_match']['maintainers']
+    maintainers = meta.get('component_maintainers', [])
     maintainers = \
         ModuleIndexer.replace_ansible(
             maintainers,
@@ -250,14 +259,18 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     modules_files_owned = 0
     if not meta['is_new_module']:
         for f in iw.files:
-            if f.startswith('lib/ansible/modules') and iw.submitter in module_indexer.modules[f]['maintainers']:
+            #if f.startswith('lib/ansible/modules') and iw.submitter in module_indexer.modules[f]['maintainers']:
+            if f.startswith('lib/ansible/modules') and iw.submitter in meta['component_maintainers']:
                 modules_files_owned += 1
     nmeta['owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
 
     # community is the other maintainers in the same namespace
-    mnamespace = meta['module_match']['namespace']
-    community = \
-        module_indexer.get_maintainers_for_namespace(mnamespace)
+
+    #mnamespace = meta['module_match']['namespace']
+    #community = \
+    #    module_indexer.get_maintainers_for_namespace(mnamespace)
+
+    community = meta.get('component_namespace_maintainers', [])
     community = [x for x in community if x != 'ansible' and
                  x not in core_team and
                  x != 'DEPRECATED']
@@ -372,6 +385,7 @@ def get_supported_by(issuewrapper, meta):
     # core: maintained by the ansible core team.
     # network: maintained by the ansible network team.
 
+    '''
     supported_by = 'core'
     mmatch = meta.get('module_match')
     if mmatch:
@@ -380,4 +394,20 @@ def get_supported_by(issuewrapper, meta):
             supported_by = mmeta.get('supported_by', 'core')
     if meta['is_new_module']:
         supported_by = 'community'
+    '''
+
+    supported_by = 'core'
+    if not meta.get('component_support'):
+        return supported_by
+    if len(meta.get('component_support', [])) == 1 and meta['component_support'][0]:
+        return meta['component_support'][0]
+    elif None in meta.get('component_support', []):
+        supported_by = 'community'
+    elif 'core' in meta.get('component_support', []):
+        supported_by = 'core'
+    elif 'network' in meta.get('component_support', []):
+        supported_by = 'network'
+    elif 'certified' in meta.get('component_support', []):
+        supported_by = 'certified'
+
     return supported_by
