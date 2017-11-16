@@ -94,9 +94,11 @@ def automergeable(meta, issuewrapper):
             # other file modified, pull-request must be checked by an human
             return False
 
-    metadata = meta['module_match']['metadata']
-    supported_by = metadata.get('supported_by')
-    if supported_by != 'community':
+    #metadata = meta['module_match']['metadata']
+    #supported_by = metadata.get('supported_by')
+    #if supported_by != 'community':
+    #    return False
+    if meta.get('community_support') != ['community']:
         return False
 
     return True
