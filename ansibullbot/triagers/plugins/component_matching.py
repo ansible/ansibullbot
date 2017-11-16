@@ -5,14 +5,17 @@ import logging
 import os
 
 
-def find_module_match(issuewrapper, module_indexer):
+def find_module_match(issuewrapper, module_indexer, filename=None):
 
     iw = issuewrapper
-
     match = None
 
-    cname = iw.template_data.get('component name')
-    craw = iw.template_data.get('component_raw')
+    if filename:
+        cname = filename
+        craw = filename
+    else:
+        cname = iw.template_data.get('component name')
+        craw = iw.template_data.get('component_raw')
 
     if module_indexer.find_match(cname, exact=True):
         match = module_indexer.find_match(cname, exact=True)
@@ -50,17 +53,66 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
     cmeta['is_core'] = False
     cmeta['is_multi_module'] = False
     cmeta['module_match'] = None
+    cmeta['module_matches'] = []
     cmeta['component'] = None
     cmeta['is_migrated'] = False
     cmeta['component_matches'] = []
+    cmeta['filenames'] = []
 
-    # https://github.com/ansible/ansibullbot/issues/562
+    if iw.is_pullrequest() and len(iw.files) > 100:
+        # das merge?
+        cmeta['bad_pr'] = True
+        return cmeta
+
+    # all detected files
     filenames = []
-    if iw.is_pullrequest():
+
+    # Figure out what this is ...
+    if iw.is_issue():
+
+        # sometimes the user is helpful enough to provide a full path
+        craw = iw.template_data.get('component_raw', '').strip()
+        if craw and craw in file_indexer.files:
+            cmeta['component_matches'] = file_indexer.find_component_matches_by_file([craw])
+        else:
+            ckeys = file_indexer.find_component_match(iw.title, iw.body, iw.template_data)
+            if ckeys:
+                cmeta['component_matches'] = file_indexer.find_component_matches_by_file(ckeys)
+
+        # set the filenames for later comparison
+        if cmeta['component_matches']:
+            for cm in cmeta['component_matches']:
+                filenames.append(cm['filename'])
+
+        # check if these are modules
+        for filename in filenames:
+            if 'module' in cm['filename']:
+                match = find_module_match(iw, module_indexer, filename=filename)
+                if match:
+                    cmeta['is_module'] = True
+                    cmeta['is_plugin'] = True
+                    cmeta['module_matches'].append(copy.deepcopy(match))
+
+        # check with the moduleindexer
+        if iw.template_data.get('component name'):
+            match = find_module_match(iw, module_indexer)
+            if match:
+                cmeta['is_module'] = True
+                cmeta['is_plugin'] = True
+                cmeta['module_match'] = copy.deepcopy(match)
+                cmeta['module_matches'].append(copy.deepcopy(match))
+                cmeta['component'] = match['name']
+
+                if match not in cmeta['module_matches']:
+                    cmeta['module_matches'].append(copy.deepcopy(match))
+
+    else:
+
         filenames = iw.files
         checked = []
         to_add = []
         for fn in filenames:
+            # https://github.com/ansible/ansibullbot/issues/562
             if fn.startswith('test/integration/targets/'):
                 bn = fn.split('/')[3]
                 if bn in checked:
@@ -70,43 +122,13 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
                 mmatch = module_indexer.find_match(bn)
                 if mmatch:
                     to_add.append(mmatch['repo_filename'])
-
-                '''
-                # FIXME - enumerate aliases file for additional modules
-                td = '/'.join(fn.split('/')[0:4])
-                aliases_file = os.path.join(td, 'aliases')
-                aliases = file_indexer.get_file_content(aliases_file)
-                if aliases:
-                    import epdb; epdb.st()
-                '''
-
         if to_add:
             filenames = sorted(set(filenames + to_add))
 
-    if iw.is_pullrequest():
+        # get all the components via the filenames
         cmeta['component_matches'] = file_indexer.find_component_matches_by_file(filenames)
-    else:
-        ckeys = file_indexer.find_component_match(iw.title, iw.body, iw.template_data)
-        if ckeys:
-            cmeta['component_matches'] = file_indexer.find_component_matches_by_file(ckeys)
 
-    if iw.is_issue():
-        if iw.template_data.get('component name'):
-
-            match = find_module_match(iw, module_indexer)
-            if match:
-                cmeta['is_module'] = True
-                cmeta['is_plugin'] = True
-                cmeta['module_match'] = copy.deepcopy(match)
-                cmeta['component'] = match['name']
-
-    elif len(iw.files) > 100:
-        # das merge?
-        cmeta['bad_pr'] = True
-        cmeta['component_matches'] = []
-
-    else:
-        # assume pullrequest
+        # extra metadata about pullrequests ...
         for f in iw.files:
 
             # creating a new dir?
@@ -125,9 +147,9 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
             if f.startswith('lib/ansible/plugins/action'):
                 cmeta['is_action_plugin'] = True
 
-            if f.startswith('lib/ansible') \
-                    and not f.startswith('lib/ansible/modules'):
-                cmeta['is_core'] = True
+            #if f.startswith('lib/ansible') \
+            #        and not f.startswith('lib/ansible/modules'):
+            #    cmeta['is_core'] = True
 
             if not f.startswith('lib/ansible/modules') and \
                     not f.startswith('lib/ansible/plugins/actions'):
@@ -152,6 +174,7 @@ def get_component_match_facts(issuewrapper, meta, file_indexer, module_indexer, 
                 cmeta['is_module'] = True
                 cmeta['is_plugin'] = True
                 cmeta['module_match'] = copy.deepcopy(match)
+                cmeta['module_matches'].append(copy.deepcopy(match))
                 cmeta['component'] = match['name']
 
             elif f.startswith('lib/ansible/modules') \
