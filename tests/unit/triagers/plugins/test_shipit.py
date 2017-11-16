@@ -23,6 +23,7 @@ from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 class ComponentMatcherMock(object):
 
+    strategies = []
     expected_results = []
 
     def match(self, issuewrapper):

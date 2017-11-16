@@ -280,7 +280,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # quick clean and add raw component to the dict
     component_raw = remove_markdown_comments(component_raw)
-    component_raw = clean_bad_characters(component_raw, exclude=['*'])
+    component_raw = clean_bad_characters(component_raw, exclude=None)
     component_raw = '\n'.join([x.strip() for x in component_raw.split('\n') if x.strip()])
     component_raw = '\n'.join([x for x in component_raw.split('\n') if not x.startswith('#')])
     tdict['component_raw'] = component_raw
