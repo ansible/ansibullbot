@@ -547,7 +547,7 @@ def get_shippable_run_facts(iw, meta, shippable=None):
         s_bpcs = iw.history.get_boilerplate_comments_content(
             bfilter='shippable_test_result'
         )
-        s_bpcs = [x[0] for x in s_bpcs]
+
         if s_bpcs:
             # was this specific result shown?
             job_ids = [x['job_id'] for x in shippable_test_results]
