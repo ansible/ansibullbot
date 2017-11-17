@@ -117,6 +117,7 @@ def needs_info_template_facts(iw, meta):
 
         # trigger the warning comment
         bpcs = iw.history.get_boilerplate_comments()
+        bpcs = [x[0] for x in bpcs]
         if 'issue_missing_data' not in bpcs:
             nifacts['template_warning_required'] = True
 

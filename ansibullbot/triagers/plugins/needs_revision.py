@@ -87,6 +87,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     if not iw.is_pullrequest():
         return rmeta
 
+    bpcs = iw.history.get_boilerplate_comments()
+    bpcs = [x[0] for x in bpcs]
+
     # Scrape web data for debug purposes
     #rfn = iw.repo_full_name
     #www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
@@ -259,8 +262,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
             merge_commits.append(mc.html_url)
             needs_rebase_msgs.append('merge commit %s' % mc.commit.sha)
 
-        bpc = iw.history.get_boilerplate_comments()
-        if 'merge_commit_notify' not in bpc:
+        if 'merge_commit_notify' not in bpcs:
             has_merge_commit_notification = False
         else:
             mc_comments = iw.history.search_user_comments(
@@ -303,7 +305,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
     # make sure they're notified about the problem
     if has_commit_mention:
-        if 'commit_msg_mentions' in iw.history.get_boilerplate_comments():
+        if 'commit_msg_mentions' in bpcs:
             has_commit_mention_notification = True
 
     if has_travis:
@@ -311,7 +313,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         needs_rebase_msgs.append('travis-ci found in status')
 
         # 'has_travis_notification': has_travis_notification,
-        if 'travis_notify' in iw.history.get_boilerplate_comments():
+        if 'travis_notify' in bpcs:
             has_travis_notification = True
         else:
             has_travis_notification = False
@@ -327,7 +329,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     if not has_shippable_yaml:
         needs_rebase = True
         needs_rebase_msgs.append('missing shippable.yml')
-        if 'no_shippable_yaml' in iw.history.get_boilerplate_comments():
+        if 'no_shippable_yaml' in bpcs:
             has_shippable_yaml_notification = True
         else:
             has_shippable_yaml_notification = False
@@ -369,7 +371,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     # https://github.com/ansible/ansibullbot/issues/302
     if len(iw.new_modules) > 1:
         has_multiple_modules = True
-        if 'multiple_module_notify' not in iw.history.get_boilerplate_comments():
+        if 'multiple_module_notify' not in bpcs:
             needs_multiple_new_modules_notification = True
         needs_revision = True
         needs_revision_msgs.append('multiple new modules')
@@ -542,15 +544,16 @@ def get_shippable_run_facts(iw, meta, shippable=None):
         needs_testresult_notification = False
     else:
 
-        bpcs = iw.history.get_boilerplate_comments_content(
+        s_bpcs = iw.history.get_boilerplate_comments_content(
             bfilter='shippable_test_result'
         )
-        if bpcs:
+
+        if s_bpcs:
             # was this specific result shown?
             job_ids = [x['job_id'] for x in shippable_test_results]
             job_ids = sorted(set(job_ids))
             found = []
-            for bp in bpcs:
+            for bp in s_bpcs:
                 for job_id in [x for x in job_ids if x not in found]:
                     if job_id in bp and job_id not in found:
                         found.append(job_id)
