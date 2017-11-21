@@ -479,6 +479,25 @@ class DefaultWrapper(object):
                 sections=tf_sections.keys()
             )
 
+        # try comments if the description was insufficient
+        if len(template_data.keys()) <= 2:
+            s_comments = self.history.get_user_comments(self.submitter)
+            for s_comment in s_comments:
+
+                _template_data = extract_template_data(
+                    s_comment,
+                    issue_number=self.number,
+                    issue_class=self.github_type,
+                    sections=tf_sections.keys()
+                )
+
+                if _template_data:
+                    for k,v in _template_data.items():
+                        if not v:
+                            continue
+                        if v and (k not in template_data or not template_data.get(k)):
+                            template_data[k] = v
+
         return template_data
 
     @property
