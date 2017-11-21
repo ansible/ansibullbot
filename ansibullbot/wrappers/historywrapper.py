@@ -672,6 +672,7 @@ class HistoryWrapper(object):
             #event['created_at'] = dts
             event['created_at'] = adts
             event['event'] = 'committed'
+            event['message'] = xc.commit.message
             self.history.append(event)
 
         self.fix_history_tz()

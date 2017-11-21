@@ -450,7 +450,6 @@ class DefaultWrapper(object):
         else:
             tfile = '.github/PULL_REQUEST_TEMPLATE.md'
 
-
         # use the fileindexer whenever possible to conserve ratelimits
         if self.file_indexer:
             tf_content = self.file_indexer.get_file_content(tfile)
@@ -497,6 +496,117 @@ class DefaultWrapper(object):
                             continue
                         if v and (k not in template_data or not template_data.get(k)):
                             template_data[k] = v
+
+        if 'ANSIBLE VERSION' in tf_sections and 'ansible version' not in template_data:
+
+            # FIXME - abstract this into a historywrapper method
+            vlabels = [x for x in self.history.history if x['event'] == 'labeled']
+            vlabels = [x for x in vlabels if x['actor'] not in ['ansibot', 'ansibotdev']]
+            vlabels = [x['label'] for x in vlabels if x['label'].startswith('affects_')]
+            vlabels = [x for x in vlabels if x.startswith('affects_')]
+
+            versions = [x.split('_')[1] for x in vlabels]
+            versions = [float(x) for x in versions]
+            if versions:
+                version = versions[-1]
+                template_data['ansible version'] = str(version)
+
+        if 'COMPONENT NAME' in tf_sections and 'component name' not in template_data:
+            if self.is_pullrequest():
+                fns = self.files
+                if fns:
+                    template_data['component name'] = '\n'.join(fns)
+                    template_data['component_raw'] = '\n'.join(fns)
+            else:
+                clabels = [x for x in self.labels if x.startswith('c:')]
+                if clabels:
+                    fns = []
+                    for clabel in clabels:
+                        clabel = clabel.replace('c:', '')
+                        fns.append('lib/ansible/' + clabel)
+                    template_data['component name'] = '\n'.join(fns)
+                    template_data['component_raw'] = '\n'.join(fns)
+
+                elif 'documentation' in template_data.get('issue type', '').lower():
+                    template_data['component name'] = 'docs'
+                    template_data['component_raw'] = 'docs'
+
+        if 'ISSUE TYPE' in tf_sections and 'issue type' not in template_data:
+
+            # FIXME - turn this into a real classifier based on work done in
+            # jctanner/pr-triage repo.
+
+            itype = None
+
+            while not itype:
+
+                for label in self.labels:
+                    if label.startswith('bug'):
+                        itype = 'bug'
+                        break
+                    elif label.startswith('feature'):
+                        itype = 'feature'
+                        break
+                    elif label.startswith('doc'):
+                        itype = 'docs'
+                        break
+                if itype:
+                    break
+
+                if self.is_pullrequest():
+                    fns = self.files
+                    for fn in fns:
+                        if fn.startswith('doc'):
+                            itype = 'docs'
+                            break
+                if itype:
+                    break
+
+                msgs = [self.title, self.body]
+                if self.is_pullrequest():
+                    msgs += [x['message'] for x in self.history.history if x['event'] == 'committed']
+
+                msgs = [x for x in msgs if x]
+                msgs = [x.lower() for x in msgs]
+
+                for msg in msgs:
+                    if 'fix' in msg:
+                        itype = 'bug'
+                        break
+                    if 'addresses' in msg:
+                        itype = 'bug'
+                        break
+                    if 'broke' in msg:
+                        itype = 'bug'
+                        break
+                    if 'add' in msg:
+                        itype = 'feature'
+                        break
+                    if 'should' in msg:
+                        itype = 'feature'
+                        break
+                    if 'please' in msg:
+                        itype = 'feature'
+                        break
+                    if 'feature' in msg:
+                        itype = 'feature'
+                        break
+
+                # quit now
+                break
+
+            if itype and itype == 'bug' and self.is_issue():
+                template_data['issue type'] = 'bug report'
+            elif itype and itype == 'bug' and not self.is_issue():
+                template_data['issue type'] = 'bugfix pullrequest'
+            elif itype and itype == 'feature' and self.is_issue():
+                template_data['issue type'] = 'feature idea'
+            elif itype and itype == 'feature' and not self.is_issue():
+                template_data['issue type'] = 'feature pullrequest'
+            elif itype and itype == 'docs' and self.is_issue():
+                template_data['issue type'] = 'documentation report'
+            elif itype and itype == 'docs' and not self.is_issue():
+                template_data['issue type'] = 'documenation pullrequest'
 
         return template_data
 
