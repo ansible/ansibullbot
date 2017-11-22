@@ -1037,6 +1037,7 @@ class AnsibleTriage(DefaultTriager):
                 'action': self.meta['needs_info_action'],
                 'itype': iw.github_type
             }
+            tvars.update(self.meta)
 
             comment = self.render_boilerplate(
                 tvars,
