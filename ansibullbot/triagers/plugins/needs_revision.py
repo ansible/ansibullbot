@@ -221,7 +221,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
             if event['actor'] == iw.submitter:
                 if event['event'] == 'commented':
                     if 'ready_for_review' in event['body']:
-                        ready_for_review = True
+                        if ready_for_review is None or event['created_at'] > ready_for_review:
+                            ready_for_review = event['created_at']
                         needs_revision = False
                         needs_revision_msgs.append(
                             '[%s] ready_for_review' % event['actor']
@@ -229,6 +230,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         continue
                     if 'shipit' in event['body'].lower():
                         ready_for_review = True
+                        if ready_for_review is None or event['created_at'] > ready_for_review:
+                            ready_for_review = event['created_at']
                         needs_revision = False
                         needs_revision_msgs.append(
                             '[%s] shipit' % event['actor']
@@ -244,7 +247,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         )
 
         if user_reviews:
-            change_requested = changes_requested_by(user_reviews, shipits)
+            last_commit = iw.commits[-1].sha
+            change_requested = changes_requested_by(user_reviews, shipits, last_commit, ready_for_review)
             if change_requested:
                 needs_revision = True
                 needs_revision_msgs.append(
@@ -403,7 +407,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'reviews': iw.reviews,
         #'www_summary': www_summary,
         #'www_reviews': www_reviews,
-        'ready_for_review': ready_for_review,
+        'ready_for_review': bool(ready_for_review),
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
         'has_remote_repo': has_remote_repo,
@@ -415,7 +419,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     return rmeta
 
 
-def changes_requested_by(user_reviews, shipits):
+def changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
     outstanding = set()
     for actor, review in user_reviews.items():
         if review['state'] == 'CHANGES_REQUESTED':
@@ -427,6 +431,16 @@ def changes_requested_by(user_reviews, shipits):
                     # ignore review older than shipit
                     # https://github.com/ansible/ansibullbot/issues/671
                     continue
+
+            if ready_for_review:
+                review_time = datetime.datetime.strptime(review['submitted_at'], '%Y-%m-%dT%H:%M:%SZ')
+                review_time = pytz.utc.localize(review_time)
+                if review['commit_id'] != last_commit and review_time < ready_for_review:
+                    # ignore review older than ready_for_review comment wrote by submitter
+                    # but only if the pull request has been updated (meaning the
+                    # last commit isn't the reviewed commit).
+                    continue
+
             outstanding.add(actor)
         elif review['state'] not in ['APPROVED', 'COMMENTED']:
             logging.error('breakpoint!')
@@ -451,21 +465,25 @@ def get_review_state(reviews, submitter, number=None, store=False):
 
             state = review['state']
             submitted_at = review['submitted_at']
+            commit_id = review['commit_id']
 
             if state in ['CHANGES_REQUESTED', 'APPROVED']:
                 user_reviews[actor]['state'] = state
                 user_reviews[actor]['submitted_at'] = submitted_at
+                user_reviews[actor]['commit_id'] = commit_id
 
             elif state == 'COMMENTED':
                 # comments do not override change requests
                 if user_reviews[actor].get('state') != 'CHANGES_REQUESTED':
                     user_reviews[actor]['state'] = state
                     user_reviews[actor]['submitted_at'] = submitted_at
+                    user_reviews[actor]['commit_id'] = commit_id
 
             elif state == 'DISMISSED':
                 # a dismissed review 'magically' turns into a comment
                 user_reviews[actor]['state'] = 'COMMENTED'
                 user_reviews[actor]['submitted_at'] = submitted_at
+                user_reviews[actor]['commit_id'] = commit_id
 
             elif state == 'PENDING':
                 pass
