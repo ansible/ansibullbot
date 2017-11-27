@@ -229,7 +229,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         )
                         continue
                     if 'shipit' in event['body'].lower():
-                        ready_for_review = True
+                        #ready_for_review = True
                         if ready_for_review is None or event['created_at'] > ready_for_review:
                             ready_for_review = event['created_at']
                         needs_revision = False
@@ -407,6 +407,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'reviews': iw.reviews,
         #'www_summary': www_summary,
         #'www_reviews': www_reviews,
+        'ready_for_review_date': ready_for_review.isoformat(),
         'ready_for_review': bool(ready_for_review),
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
