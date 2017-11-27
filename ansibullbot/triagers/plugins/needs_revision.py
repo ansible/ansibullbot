@@ -172,7 +172,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         #pending_reviews = []
         #hash_reviews = {}
         user_reviews = {}
-        shipits = {} # key: actor, value: created_at
+        shipits = {}  # key: actor, value: created_at
 
         for event in iw.history.history:
 
@@ -407,7 +407,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'reviews': iw.reviews,
         #'www_summary': www_summary,
         #'www_reviews': www_reviews,
-        'ready_for_review_date': ready_for_review.isoformat(),
+        'ready_for_review_date': ready_for_review,
         'ready_for_review': bool(ready_for_review),
         'has_shippable_yaml': has_shippable_yaml,
         'has_shippable_yaml_notification': has_shippable_yaml_notification,
@@ -416,6 +416,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_multiple_modules': has_multiple_modules,
         'needs_multiple_new_modules_notification': needs_multiple_new_modules_notification
     }
+    if rmeta['ready_for_review_date']:
+        rmeta['ready_for_review_date'] = rmeta['ready_for_review_date'].isoformat()
 
     return rmeta
 
