@@ -178,7 +178,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-test_pull_request">test_pull_request</a>** | pull requests | no | Identify pull requests related to tests.
 **<a name="label-easyfix">easyfix</a>** | issue or pull requests | no | Identify easy entrance point for people who are looking to start contributing.
 **<a name="label-new_module">new_module</a>** | pull requests | yes | Identify pull requests adding new module.
-**<a name="label-module">module</a>** | pull requests | yes | Identify pull requests updating existing modules.
+**<a name="label-module">module</a>** | pull requests | no | Identify pull requests updating existing modules.
 **<a name="label-WIP">WIP</a>** | pull requests | yes | Identify pull requests which are not ready (from the submitter point of view) to be merged.
 **<a name="label-ci_verified">ci_verified</a>** | pull requests | yes | Identify pull requests for which CI failed. A pull request must successfully pass CI in order to be merged.
 **<a name="label-needs_ci">needs_ci</a>** | pull requests | no | Identify pull requests for which CI status is missing. When a pull request is closed and reopened or when new commits are updated, the CI is triggered again.
@@ -194,7 +194,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-owner_pr">owner_pr</a>** | pull requests | no | Identify pull requests made by module maintainers.
 **<a name="label-shipit">shipit</a>** | pull requests | no | Identify pull requests for which the required number of `shipit` has been reached. For [community](#community) reviewed pull requests, if `automerge` workflow applies, then pull request should be automatically merged. For all other cases, merge should be performed by a core team members. If your pull request gets no comment and becomes tagged with [`stale_review`](#label-stale_review), you can add it to the [IRC core team meeting agenda](https://github.com/ansible/community/blob/master/meetings/core-team.yaml) to receive more comments.
 **<a name="label-automerge">automerge</a>** | pull requests | no | Identify pull requests automatically merged by the bot.
-**<a name="label-bot_broken">bot_broken</a>** | pull requests | no | Allow to identify pull requests for which [`bot_broken`](#cmd-bot_broken) had been used.
+**<a name="label-bot_broken">bot_broken</a>** | pull requests | yes | Allow to identify pull requests for which [`bot_broken`](#cmd-bot_broken) had been used.
 
 Some labels are used to categorize issues and pull requests:
 
