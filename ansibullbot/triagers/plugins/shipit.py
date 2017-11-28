@@ -26,51 +26,67 @@ def automergeable(meta, issuewrapper):
 
     # https://github.com/ansible/ansibullbot/issues/430
     if meta['is_backport']:
+        logging.debug('automerge backport test failed')
         return False
 
     if issue.wip:
+        logging.debug('automerge WIP test failed')
         return False
 
     if not issue.is_pullrequest():
+        logging.debug('automerge is_pullrequest test failed')
         return False
 
     if meta['is_new_directory']:
+        logging.debug('automerge is_new_directory test failed')
         return False
 
     if meta['merge_commits']:
+        logging.debug('automerge merge_commits test failed')
         return False
 
     if meta['has_commit_mention']:
+        logging.debug('automerge commit @mention test failed')
         return False
 
     if meta['is_needs_revision']:
+        logging.debug('automerge needs_revision test failed')
         return False
 
     if meta['is_needs_rebase']:
+        logging.debug('automerge needs_rebase test failed')
         return False
 
     if meta['is_needs_info']:
+        logging.debug('automerge needs_info test failed')
         return False
 
     if not meta['has_shippable']:
+        logging.debug('automerge has_shippable test failed')
         return False
 
     if meta['has_travis']:
+        logging.debug('automerge has_travis test failed')
         return False
 
     if not meta['mergeable']:
+        logging.debug('automerge mergeable test failed')
         return False
 
     if meta['is_new_module']:
+        logging.debug('automerge new_module test failed')
         return False
 
     if not meta['is_module']:
+        logging.debug('automerge is_module test failed')
         return False
 
     if not meta['module_match']:
+        logging.debug('automerge module_match test failed')
         return False
 
     if meta['ci_stale']:
+        logging.debug('automerge ci_stale test failed')
         return False
 
     for pr_file in issue.pr_files:
@@ -86,19 +102,22 @@ def automergeable(meta, issuewrapper):
         elif fnmatch(thisfn, 'test/sanity/*/*.txt'):
             if pr_file.additions or pr_file.status == 'added':
                 # new exception added, addition must be checked by an human
+                logging.debug('automerge new file(s) test failed')
                 return False
             if pr_file.deletions:
                 # new exception delete
                 continue
         else:
             # other file modified, pull-request must be checked by an human
+            logging.debug('automerge !module file(s) test failed')
             return False
 
     #metadata = meta['module_match']['metadata']
     #supported_by = metadata.get('supported_by')
     #if supported_by != 'community':
     #    return False
-    if meta.get('community_support') != ['community']:
+    if meta.get('component_support') != ['community']:
+        logging.debug('automerge community support test failed')
         return False
 
     return True
