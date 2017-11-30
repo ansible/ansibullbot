@@ -300,3 +300,61 @@ class TestModuleIndexer(TestCase):
         # -1: ignore 'meta' entry
         self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
+
+    def test_deprecated_module_ignore_author(self):
+        """Check that author flagged as ignored in BOTMETA for a deprecated module is ignored
+
+        Some authors are defined in 'author' field of 'DOCUMENTATION' module
+        metadata and ignored in BOTMETA: ignored authors aren't maintainers.
+        BOTMETA refers to module path not prefixed with '_'.
+        """
+        BOTMETA = """
+        ---
+        macros:
+            modules: lib/ansible/modules
+        files:
+            $modules/baz/test/code.py:
+                maintainers: bob
+                ignored: Oliver
+        """
+
+        filepaths = {
+            'lib/ansible/modules/baz/test/_code.py': ['Louise', 'Oliver'],
+        }
+
+        expected_maintainers = sorted(['bob', 'Louise'])  # Oliver not here
+
+        indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
+
+        # -1: ignore 'meta' entry, +1: one deprecated module creates two entries in indexer.modules
+        self.assertEqual(len(indexer.modules) - 1, len(filepaths) + 1)  # ensure only fake data are loaded
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/_code.py']['maintainers']), expected_maintainers)
+
+    def test_deprecated_module_ignore_author2(self):
+        """Check that author flagged as ignored in BOTMETA for a deprecated module is ignored
+
+        Some authors are defined in 'author' field of 'DOCUMENTATION' module
+        metadata and ignored in BOTMETA: ignored authors aren't maintainers.
+        BOTMETA refers to the deprecated module path which is prefixed with '_'.
+        """
+        BOTMETA = """
+        ---
+        macros:
+            modules: lib/ansible/modules
+        files:
+            $modules/baz/test/_code.py:
+                maintainers: bob
+                ignored: Oliver
+        """
+
+        filepaths = {
+            'lib/ansible/modules/baz/test/_code.py': ['Louise', 'Oliver'],
+        }
+
+        expected_maintainers = sorted(['bob', 'Louise'])  # Oliver not here
+
+        indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
+
+        # -1: ignore 'meta' entry, +1: one deprecated module creates two entries in indexer.modules
+        self.assertEqual(len(indexer.modules) - 1, len(filepaths) + 1)  # ensure only fake data are loaded
+        self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/_code.py']['maintainers']), expected_maintainers)
