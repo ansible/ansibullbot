@@ -177,6 +177,7 @@ class TestModuleIndexer(TestCase):
 
         indexer = create_indexer(textwrap.dedent(self.BOTMETA), filepaths)
 
+        # -1: ignore 'meta' entry
         self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
 
         for k in expected:
@@ -207,6 +208,7 @@ class TestModuleIndexer(TestCase):
 
         indexer = create_indexer(textwrap.dedent(self.BOTMETA), filepaths)
 
+        # -1: ignore 'meta' entry
         self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
 
@@ -230,6 +232,7 @@ class TestModuleIndexer(TestCase):
 
         indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
+        # -1: ignore 'meta' entry
         self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
 
@@ -259,6 +262,7 @@ class TestModuleIndexer(TestCase):
 
         indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
+        # -1: ignore 'meta' entry
         self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code1.py']['maintainers']), ['ElsA'])
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code2.py']['maintainers']), sorted(['ElsA', 'Oliver']))
@@ -293,5 +297,6 @@ class TestModuleIndexer(TestCase):
 
         indexer = create_indexer(textwrap.dedent(BOTMETA), filepaths)
 
+        # -1: ignore 'meta' entry
         self.assertEqual(len(indexer.modules) - 1, len(filepaths))  # ensure only fake data are loaded
         self.assertEqual(sorted(indexer.modules['lib/ansible/modules/baz/test/code.py']['maintainers']), expected_maintainers)
