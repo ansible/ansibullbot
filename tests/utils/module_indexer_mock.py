@@ -20,6 +20,7 @@ def create_indexer(BOTMETA, filepaths):
     def set_modules(self):
         '''list modules from filesystem'''
         self.populate_modules(filepaths.keys())
+        self.modules_reorg()
 
     def set_authors(self, mfile):
         '''set authors from module source code: 'author' field in DOCUMENTATION metadata'''

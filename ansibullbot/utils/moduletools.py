@@ -372,36 +372,7 @@ class ModuleIndexer(object):
 
         self.populate_modules(matches)
 
-        # custom fixes
-        newitems = []
-        for k,v in self.modules.iteritems():
-
-            # include* is almost always an ansible/ansible issue
-            # https://github.com/ansible/ansibullbot/issues/214
-            if k.endswith('/include.py'):
-                self.modules[k]['repository'] = 'ansible'
-            # https://github.com/ansible/ansibullbot/issues/214
-            if k.endswith('/include_vars.py'):
-                self.modules[k]['repository'] = 'ansible'
-            if k.endswith('/include_role.py'):
-                self.modules[k]['repository'] = 'ansible'
-
-            # ansible maintains these
-            if 'include' in k:
-                self.modules[k]['maintainers'] = ['ansible']
-
-            # deprecated modules are annoying
-            if v['name'].startswith('_'):
-
-                dkey = os.path.dirname(v['filepath'])
-                dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
-                if dkey not in self.modules:
-                    nd = v.copy()
-                    nd['name'] = nd['name'].replace('_', '', 1)
-                    newitems.append((dkey, nd))
-
-        for ni in newitems:
-            self.modules[ni[0]] = ni[1]
+        self.modules_reorg()
 
         # parse metadata
         logging.debug('set module metadata')
@@ -477,6 +448,39 @@ class ModuleIndexer(object):
         self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
         self.modules['meta']['name'] = 'meta'
         self.modules['meta']['repo_filename'] = 'meta'
+
+    def modules_reorg(self):
+        """Apply some fixes on self.modules"""
+        # custom fixes
+        newitems = []
+        for k, v in self.modules.iteritems():
+
+            # include* is almost always an ansible/ansible issue
+            # https://github.com/ansible/ansibullbot/issues/214
+            if k.endswith('/include.py'):
+                self.modules[k]['repository'] = 'ansible'
+            # https://github.com/ansible/ansibullbot/issues/214
+            if k.endswith('/include_vars.py'):
+                self.modules[k]['repository'] = 'ansible'
+            if k.endswith('/include_role.py'):
+                self.modules[k]['repository'] = 'ansible'
+
+            # ansible maintains these
+            if 'include' in k:
+                self.modules[k]['maintainers'] = ['ansible']
+
+            # deprecated modules are annoying
+            if v['name'].startswith('_'):
+
+                dkey = os.path.dirname(v['filepath'])
+                dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
+                if dkey not in self.modules:
+                    nd = v.copy()
+                    nd['name'] = nd['name'].replace('_', '', 1)
+                    newitems.append((dkey, nd))
+
+        for ni in newitems:
+            self.modules[ni[0]] = ni[1]
 
     def get_module_commits(self):
         keys = self.modules.keys()
