@@ -769,24 +769,33 @@ class ModuleIndexer(object):
                 sorted(set(self.modules[k]['maintainers']))
 
         metadata = self.botmeta['files'].keys()
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if k == 'meta':
                 continue
 
-            if k in self.botmeta['files']:
+            # BOTMETA might refer to lib/ansible/modules/namespace/module.py
+            # even if module has been deprecated, meaning the path of the module
+            # is in fact lib/ansible/modules/namespace/_module.py
+            deprecated = self.modules[k]['deprecated_filename']
+            if deprecated:
+                mfile = deprecated
+            else:
+                mfile = k
+
+            if mfile in self.botmeta['files']:
                 # There are metadata in .github/BOTMETA.yml for this file
                 # copy maintainers_keys
-                self.modules[k]['maintainers_keys'] = self.botmeta['files'][k]['maintainers_keys'][:]
+                self.modules[k]['maintainers_keys'] = self.botmeta['files'][mfile]['maintainers_keys'][:]
 
-                if self.botmeta['files'][k]:
-                    maintainers = self.botmeta['files'][k].get('maintainers', [])
+                if self.botmeta['files'][mfile]:
+                    maintainers = self.botmeta['files'][mfile].get('maintainers', [])
                     for maintainer in maintainers:
                         if maintainer not in self.modules[k]['maintainers']:
                             self.modules[k]['maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
-                    if 'ignored' in self.botmeta['files'][k]:
-                        ignored = self.botmeta['files'][k]['ignored']
+                    if 'ignored' in self.botmeta['files'][mfile]:
+                        ignored = self.botmeta['files'][mfile]['ignored']
                         for x in ignored:
                             if x in self.modules[k]['maintainers']:
                                 self.modules[k]['maintainers'].remove(x)
