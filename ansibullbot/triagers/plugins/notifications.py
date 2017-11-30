@@ -12,6 +12,9 @@ def get_notification_facts(issuewrapper, meta, file_indexer):
         'to_assign': []
     }
 
+    if iw.is_pullrequest() and iw.merge_commits:
+        return nfacts
+
     # who is assigned?
     current_assignees = iw.assignees
 
