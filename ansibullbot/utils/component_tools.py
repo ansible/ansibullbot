@@ -1051,8 +1051,7 @@ class AnsibleComponentMatcher(object):
                 paths = match.split('/')
                 tindex = paths.index('targets')
                 mname = paths[tindex+1]
-                #mrs = self.module_indexer.find_match(mname, exact=True)
-                mrs = self.find_module_match(mname)
+                mrs = self.find_module_match(mname, exact=True)
                 if mrs:
                     if not isinstance(mrs, list):
                         mrs = [mrs]
@@ -1198,7 +1197,7 @@ class AnsibleComponentMatcher(object):
             paths = filename.split('/')
             tindex = paths.index('targets')
             mname = paths[tindex+1]
-            mmatch = self._find_module_match(mname)
+            mmatch = self._find_module_match(mname, exact=True)
             if mmatch:
                 mmeta = self.get_meta_for_file(mmatch[0]['repo_filename'])
                 for k,v in mmeta.items():
@@ -1296,7 +1295,7 @@ class AnsibleComponentMatcher(object):
 
         return candidate
 
-    def _find_module_match(self, pattern):
+    def _find_module_match(self, pattern, exact=False):
 
         logging.debug('matching on {}'.format(pattern))
 
@@ -1309,8 +1308,14 @@ class AnsibleComponentMatcher(object):
 
         noext = pattern.replace('.py', '').replace('.ps1', '')
 
+        # exact is looking for a very precise name such as "vmware_guest"
+        if exact:
+            candidates = [pattern]
+        else:
+            candidates = [pattern, '_' + pattern, noext, '_' + noext]
+
         for k,v in self.MODULES.items():
-            if v['name'] in [pattern, '_' + pattern, noext, '_' + noext]:
+            if v['name'] in candidates:
                 logging.debug('match {} on name: {}'.format(k, v['name']))
                 matches = [v]
                 break
@@ -1324,7 +1329,7 @@ class AnsibleComponentMatcher(object):
                     break
 
         # spellcheck
-        if not matches and '/' not in pattern:
+        if not exact and not matches and '/' not in pattern:
             _pattern = pattern
             if not isinstance(_pattern, unicode):
                 _pattern = _pattern.decode('utf-8')
