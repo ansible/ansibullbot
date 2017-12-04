@@ -459,7 +459,6 @@ class AnsibleComponentMatcher(object):
             component = component.replace('-', '_')
 
         if component in self.MODULE_NAMES:
-            #mmatch = self.module_indexer.find_match(component, exact=True)
             mmatch = self.find_module_match(component)
             if mmatch:
                 if isinstance(mmatch, list):
@@ -1010,7 +1009,6 @@ class AnsibleComponentMatcher(object):
         matches = sorted(set(matches))
         logging.debug('return: {}'.format(matches))
 
-        #import epdb; epdb.st()
         return matches
 
     def reduce_filepaths(self, matches):
@@ -1171,8 +1169,15 @@ class AnsibleComponentMatcher(object):
             ns = meta.get('namespace')
             keys = self.BOTMETA['files'].keys()
             keys = [x for x in keys if x.startswith(os.path.join('lib/ansible/modules', ns))]
+            ignored = []
+
             for key in keys:
                 meta['namespace_maintainers'] += self.BOTMETA['files'][key].get('maintainers', [])
+                ignored += self.BOTMETA['files'][key].get('ignored', [])
+
+            for ignoree in ignored:
+                while ignoree in meta['namespace_maintainers']:
+                    meta['namespace_maintainers'].remove(ignoree)
 
         # new modules should default to "community" support
         if filename.startswith('lib/ansible/modules') and filename not in self.gitrepo.files:
