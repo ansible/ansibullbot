@@ -1239,7 +1239,7 @@ class AnsibleComponentMatcher(object):
 
         return meta
 
-    def find_module_match(self, pattern):
+    def find_module_match(self, pattern, exact=False):
         '''Exact module name matching'''
 
         logging.debug('find_module_match for "{}"'.format(pattern))
@@ -1280,7 +1280,7 @@ class AnsibleComponentMatcher(object):
         elif pattern.lower() in BLACKLIST:
             return None
 
-        candidate = self._find_module_match(pattern)
+        candidate = self._find_module_match(pattern, exact=exact)
 
         if not candidate:
             candidate = self._find_module_match(os.path.basename(pattern))
