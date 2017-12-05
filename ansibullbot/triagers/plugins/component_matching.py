@@ -193,7 +193,10 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
                 continue
 
             # !component [action][filename]
-            filen = line.split()[1]
+            try:
+                filen = line.split()[1]
+            except IndexError:
+                filen = line.replace('!component', '')
             action = filen[0]
             filen = filen[1:]
 
