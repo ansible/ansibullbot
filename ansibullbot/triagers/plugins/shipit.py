@@ -8,7 +8,10 @@ import ansibullbot.constants as C
 
 
 def is_approval(body):
-    return 'shipit' in body or '+1' in body or 'LGTM' in body
+    if not body:
+        return False
+    lines = [x.strip() for x in body.split()]
+    return 'shipit' in lines or '+1' in lines or 'LGTM' in lines
 
 
 def automergeable(meta, issuewrapper):
