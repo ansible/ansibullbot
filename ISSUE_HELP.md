@@ -97,6 +97,8 @@ Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/l
 
 :information_source: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes. When other changes are line deletions in `ansible/test/*/*.txt` files, the `supported_by` property isn't ignored.
 
+:information_source: if the pull request has more than one committer, then number of commits must be equal to number of authors and lower than 11.
+
 The possible values of `supported_by` are:
 
 ##### core
