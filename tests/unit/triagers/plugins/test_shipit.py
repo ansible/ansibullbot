@@ -17,7 +17,7 @@ from tests.utils.issue_mock import IssueMock
 from tests.utils.helpers import get_issue
 from tests.utils.module_indexer_mock import create_indexer
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
-from ansibullbot.triagers.plugins.shipit import get_shipit_facts
+from ansibullbot.triagers.plugins.shipit import get_shipit_facts, is_approval
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 
@@ -157,6 +157,28 @@ class TestShipitFacts(unittest.TestCase):
         meta = copy.deepcopy(self.meta)
         meta['is_needs_revision'] = True
         self.needs_rebase_or_revision_prevent_shipit(meta)
+
+
+class TestIsApproval(unittest.TestCase):
+
+    def test_is_approval(self):
+        self.assertTrue(is_approval('shipit'))
+        self.assertTrue(is_approval('+1'))
+        self.assertTrue(is_approval('LGTM'))
+
+        self.assertTrue(is_approval(' shipit '))
+        self.assertTrue(is_approval("\tshipit\t"))
+        self.assertTrue(is_approval("\tshipit\n"))
+        self.assertTrue(is_approval('Hey, LGTM !'))
+
+        self.assertFalse(is_approval(':+1:'))
+        self.assertFalse(is_approval('lgtm'))
+        self.assertFalse(is_approval('Shipit'))
+        self.assertFalse(is_approval('shipit!'))
+
+        self.assertFalse(is_approval('shipits'))
+        self.assertFalse(is_approval('LGTM.'))
+        self.assertFalse(is_approval('Looks good to me'))
 
 
 class TestOwnerPR(unittest.TestCase):
