@@ -1107,6 +1107,8 @@ class AnsibleComponentMatcher(object):
                 meta['labels'] += fdata['labels']
             if 'ignore' in fdata:
                 meta['ignore'] += fdata['ignore']
+            if 'ignored' in fdata:
+                meta['ignore'] += fdata['ignored']
             #if 'keywords' in fdata:
             #    meta['keywords'] += fdata['keywords']
             if 'support' in fdata:
@@ -1236,6 +1238,17 @@ class AnsibleComponentMatcher(object):
         for k,v in _meta.items():
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
+
+        # process ignores AGAIN.
+        if meta.get('ignore'):
+            for k,v in meta.items():
+                if k == 'ignore':
+                    continue
+                if not isinstance(v, list):
+                    continue
+                for ignoree in meta['ignore']:
+                    if ignoree in v:
+                        meta[k].remove(ignoree)
 
         return meta
 
