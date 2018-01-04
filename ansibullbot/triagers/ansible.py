@@ -674,29 +674,31 @@ class AnsibleTriage(DefaultTriager):
 
     def create_actions(self, iw, actions):
         '''Parse facts and make actions from them'''
-        if 'bot_broken' in self.meta['maintainer_commands'] or \
-                'bot_broken' in self.meta['submitter_commands'] or \
-                'bot_broken' in iw.labels:
-            logging.warning('bot broken!')
-            if 'bot_broken' not in iw.labels:
-                actions.newlabel.append('bot_broken')
-            return
+        # bot_broken + bot_skip bypass all actions
+        if not self.ignore_bot_broken:
+            if 'bot_broken' in self.meta['maintainer_commands'] or \
+                    'bot_broken' in self.meta['submitter_commands'] or \
+                    'bot_broken' in iw.labels:
+                logging.warning('bot broken!')
+                if 'bot_broken' not in iw.labels:
+                    actions.newlabel.append('bot_broken')
+                return
 
-        elif 'bot_skip' in self.meta['maintainer_commands'] or \
-                'bot_skip' in self.meta['submitter_commands']:
-            return
+            elif 'bot_skip' in self.meta['maintainer_commands'] or \
+                    'bot_skip' in self.meta['submitter_commands']:
+                return
 
         # indicate what components were matched
-        if iw.is_issue() and self.meta.get('needs_component_message'):
-            tvars = {
-                'meta': self.meta
-            }
-            comment = self.render_boilerplate(
-                tvars, boilerplate='components_banner'
-            )
-            #import epdb; epdb.st()
-            if comment not in actions.comments:
-                actions.comments.append(comment)
+        if not self.meta['is_bad_pr']:
+            if iw.is_issue() and self.meta.get('needs_component_message'):
+                tvars = {
+                    'meta': self.meta
+                }
+                comment = self.render_boilerplate(
+                    tvars, boilerplate='components_banner'
+                )
+                if comment not in actions.comments:
+                    actions.comments.append(comment)
 
         # UNKNOWN!!! ... sigh.
         if iw.is_pullrequest():
@@ -779,7 +781,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
 
         # SHIPIT+AUTOMERGE
-        if iw.is_pullrequest():
+        if iw.is_pullrequest() and not self.meta['is_bad_pr']:
             if self.meta['shipit']:
 
                 if 'shipit' not in iw.labels:
@@ -804,7 +806,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('automerge')
 
         # NAMESPACE MAINTAINER NOTIFY
-        if iw.is_pullrequest():
+        if iw.is_pullrequest() and not self.meta['is_bad_pr']:
             if needs_community_review(self.meta, iw):
 
                 comment = self.render_boilerplate(
@@ -847,7 +849,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
 
         # shippable failures shippable_test_result
-        if iw.is_pullrequest():
+        if iw.is_pullrequest() and not self.meta['is_bad_pr']:
             if self.meta['ci_state'] == 'failure' and \
                     self.meta['needs_testresult_notification']:
                 tvars = {
@@ -883,82 +885,85 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('needs_ci')
 
         # MODULE CATEGORY LABELS
-        if self.meta['is_new_module'] or self.meta['is_module']:
-            # add topic labels
-            for t in ['topic', 'subtopic']:
+        if not self.meta['is_bad_pr']:
+            if self.meta['is_new_module'] or self.meta['is_module']:
+                # add topic labels
+                for t in ['topic', 'subtopic']:
 
-                mmatches = self.meta['module_match']
-                if not isinstance(mmatches, list):
-                    mmatches = [mmatches]
+                    mmatches = self.meta['module_match']
+                    if not isinstance(mmatches, list):
+                        mmatches = [mmatches]
 
-                for mmatch in mmatches:
-                    label = mmatch.get(t)
-                    if label in self.MODULE_NAMESPACE_LABELS:
-                        label = self.MODULE_NAMESPACE_LABELS[label]
+                    for mmatch in mmatches:
+                        label = mmatch.get(t)
+                        if label in self.MODULE_NAMESPACE_LABELS:
+                            label = self.MODULE_NAMESPACE_LABELS[label]
 
-                    if label and label in self.valid_labels and \
-                            label not in iw.labels and \
-                            not iw.history.was_unlabeled(label):
-                        actions.newlabel.append(label)
-
-                    # add namespace labels
-                    namespace = mmatch.get('namespace')
-                    if namespace in self.MODULE_NAMESPACE_LABELS:
-                        label = self.MODULE_NAMESPACE_LABELS[namespace]
-                        if label not in iw.labels and \
+                        if label and label in self.valid_labels and \
+                                label not in iw.labels and \
                                 not iw.history.was_unlabeled(label):
                             actions.newlabel.append(label)
 
-        # NEW MODULE
-        if self.meta['is_new_module']:
-            if 'new_module' not in iw.labels:
-                actions.newlabel.append('new_module')
-        else:
-            if 'new_module' in iw.labels:
-                actions.unlabel.append('new_module')
+                        # add namespace labels
+                        namespace = mmatch.get('namespace')
+                        if namespace in self.MODULE_NAMESPACE_LABELS:
+                            label = self.MODULE_NAMESPACE_LABELS[namespace]
+                            if label not in iw.labels and \
+                                    not iw.history.was_unlabeled(label):
+                                actions.newlabel.append(label)
 
-        if self.meta['is_module']:
-            if 'module' not in iw.labels:
-                # don't add manually removed label
-                if not iw.history.was_unlabeled(
-                    'module',
-                    bots=self.BOTNAMES
-                ):
-                    actions.newlabel.append('module')
-        else:
-            if 'module' in iw.labels:
-                # don't remove manually added label
-                if not iw.history.was_labeled(
-                    'module',
-                    bots=self.BOTNAMES
-                ):
-                    actions.unlabel.append('module')
+        # NEW MODULE
+        if not self.meta['is_bad_pr']:
+            if self.meta['is_new_module']:
+                if 'new_module' not in iw.labels:
+                    actions.newlabel.append('new_module')
+            else:
+                if 'new_module' in iw.labels:
+                    actions.unlabel.append('new_module')
+
+            if self.meta['is_module']:
+                if 'module' not in iw.labels:
+                    # don't add manually removed label
+                    if not iw.history.was_unlabeled(
+                        'module',
+                        bots=self.BOTNAMES
+                    ):
+                        actions.newlabel.append('module')
+            else:
+                if 'module' in iw.labels:
+                    # don't remove manually added label
+                    if not iw.history.was_labeled(
+                        'module',
+                        bots=self.BOTNAMES
+                    ):
+                        actions.unlabel.append('module')
 
         # component labels
-        if self.meta.get('component_labels') and not self.meta.get('merge_commits'):
+        if not self.meta['is_bad_pr']:
+            if self.meta.get('component_labels') and not self.meta.get('merge_commits'):
 
-            # only add these labels to pullrequest or un-triaged issues
-            if iw.is_pullrequest() or \
-                    (iw.is_issue() and
-                     (not iw.labels or
-                      'needs_triage' in iw.labels)):
+                # only add these labels to pullrequest or un-triaged issues
+                if iw.is_pullrequest() or \
+                        (iw.is_issue() and
+                        (not iw.labels or
+                        'needs_triage' in iw.labels)):
 
-                # only add these if no c: labels have ever been changed by human
-                clabels = iw.history.get_changed_labels(
-                    prefix='c:',
-                    bots=self.BOTNAMES
-                )
+                    # only add these if no c: labels have ever been changed by human
+                    clabels = iw.history.get_changed_labels(
+                        prefix='c:',
+                        bots=self.BOTNAMES
+                    )
 
-                if not clabels:
-                    for cl in self.meta['component_labels']:
-                        ul = iw.history.was_unlabeled(
-                            cl,
-                            bots=self.BOTNAMES
-                        )
-                        if not ul and \
-                                cl not in iw.labels and \
-                                cl not in actions.newlabel:
-                            actions.newlabel.append(cl)
+                    if not clabels:
+                        for cl in self.meta['component_labels']:
+                            ul = iw.history.was_unlabeled(
+                                cl,
+                                bots=self.BOTNAMES
+                            )
+                            if not ul and \
+                                    cl not in iw.labels and \
+                                    cl not in actions.newlabel:
+                                actions.newlabel.append(cl)
 
         if self.meta['ansible_label_version']:
             vlabels = [x for x in iw.labels if x.startswith('affects_')]
@@ -977,21 +982,23 @@ class AnsibleTriage(DefaultTriager):
                     actions.newlabel.append(label)
 
         # use the filemap to add labels
-        if iw.is_pullrequest() and not self.meta.get('merge_commits'):
-            fmap_labels = self.file_indexer.get_filemap_labels_for_files(iw.files)
-            for label in fmap_labels:
-                if label in self.valid_labels and \
-                        label not in iw.labels:
-                    # do not re-add these labels
-                    if not iw.history.was_unlabeled(label):
-                        actions.newlabel.append(label)
+        if not self.meta['is_bad_pr']:
+            if iw.is_pullrequest() and not self.meta.get('merge_commits'):
+                fmap_labels = self.file_indexer.get_filemap_labels_for_files(iw.files)
+                for label in fmap_labels:
+                    if label in self.valid_labels and \
+                            label not in iw.labels:
+                        # do not re-add these labels
+                        if not iw.history.was_unlabeled(label):
+                            actions.newlabel.append(label)
 
         # python3 ... obviously!
-        if self.meta['is_py3']:
-            if 'python3' not in iw.labels:
-                # do not re-add py3
-                if not iw.history.was_unlabeled('python3'):
-                    actions.newlabel.append('python3')
+        if not self.meta['is_bad_pr']:
+            if self.meta['is_py3']:
+                if 'python3' not in iw.labels:
+                    # do not re-add py3
+                    if not iw.history.was_unlabeled('python3'):
+                        actions.newlabel.append('python3')
 
         # needs info?
         if self.meta['is_needs_info']:
@@ -1047,11 +1054,12 @@ class AnsibleTriage(DefaultTriager):
             actions.comments.append(comment)
 
         # notify?
-        if self.meta['to_notify']:
-            tvars = {'notify': self.meta['to_notify']}
-            comment = self.render_boilerplate(tvars, boilerplate='notify')
-            if comment not in actions.comments:
-                actions.comments.append(comment)
+        if not self.meta['is_bad_pr']:
+            if self.meta['to_notify']:
+                tvars = {'notify': self.meta['to_notify']}
+                comment = self.render_boilerplate(tvars, boilerplate='notify')
+                if comment not in actions.comments:
+                    actions.comments.append(comment)
 
         # needs_contributor
         if 'needs_contributor' in self.meta['maintainer_commands']:
@@ -1162,57 +1170,60 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('needs_repo')
 
         # https://github.com/ansible/ansibullbot/issues/458
-        if iw.is_pullrequest():
-            if self.meta['ci_stale']:
-                if 'stale_ci' not in iw.labels:
-                    actions.newlabel.append('stale_ci')
-            else:
-                if 'stale_ci' in iw.labels:
-                    actions.unlabel.append('stale_ci')
+        if not self.meta['is_bad_pr']:
+            if iw.is_pullrequest():
+                if self.meta['ci_stale']:
+                    if 'stale_ci' not in iw.labels:
+                        actions.newlabel.append('stale_ci')
+                else:
+                    if 'stale_ci' in iw.labels:
+                        actions.unlabel.append('stale_ci')
 
         # https://github.com/ansible/ansibullbot/issues/589
-        if self.meta['module_match'] and not self.meta['is_new_module']:
-            mmatches = self.meta['module_match']
-            if not isinstance(mmatches, list):
-                mmatches = [mmatches]
-            needs_maintainer = False
-            for mmatch in mmatches:
+        if not self.meta['is_bad_pr']:
+            if self.meta['module_match'] and not self.meta['is_new_module']:
+                mmatches = self.meta['module_match']
+                if not isinstance(mmatches, list):
+                    mmatches = [mmatches]
                 needs_maintainer = False
-                if not mmatch['maintainers'] and mmatch['support'] != 'core':
-                    needs_maintainer = True
-                    break
-            if needs_maintainer:
-                # 'ansible' is cleared from the primary key, so we need
-                # to check the original copy before deciding this isn't
-                # being maintained.
+                for mmatch in mmatches:
+                    needs_maintainer = False
+                    if not mmatch['maintainers'] and mmatch['support'] != 'core':
+                        needs_maintainer = True
+                        break
+                if needs_maintainer:
+                    # 'ansible' is cleared from the primary key, so we need
+                    # to check the original copy before deciding this isn't
+                    # being maintained.
 
-                #if not self.meta['module_match'].get('_maintainers'):
-                #    if 'needs_maintainer' not in iw.labels:
-                #        actions.newlabel.append('needs_maintainer')
+                    #if not self.meta['module_match'].get('_maintainers'):
+                    #    if 'needs_maintainer' not in iw.labels:
+                    #        actions.newlabel.append('needs_maintainer')
 
-                if 'needs_maintainer' not in iw.labels:
-                    actions.newlabel.append('needs_maintainer')
-            else:
-                if 'needs_maintainer' in iw.labels:
-                    actions.unlabel.append('needs_maintainer')
+                    if 'needs_maintainer' not in iw.labels:
+                        actions.newlabel.append('needs_maintainer')
+                else:
+                    if 'needs_maintainer' in iw.labels:
+                        actions.unlabel.append('needs_maintainer')
 
         # https://github.com/ansible/ansibullbot/issues/608
-        if not self.meta.get('component_support'):
-            cs_labels = ['support:core']
-        else:
-            cs_labels = []
-            for sb in self.meta.get('component_support'):
-                if sb is None:
-                    sb = 'core'
-                cs_label = 'support:%s' % sb
-                cs_labels.append(cs_label)
-        for cs_label in cs_labels:
-            if cs_label not in iw.labels:
-                actions.newlabel.append(cs_label)
-        other_cs_labels = [x for x in iw.labels if x.startswith('support:')]
-        for ocs_label in other_cs_labels:
-            if ocs_label not in cs_labels:
-                actions.unlabel.append(ocs_label)
+        if not self.meta['is_bad_pr']:
+            if not self.meta.get('component_support'):
+                cs_labels = ['support:core']
+            else:
+                cs_labels = []
+                for sb in self.meta.get('component_support'):
+                    if sb is None:
+                        sb = 'core'
+                    cs_label = 'support:%s' % sb
+                    cs_labels.append(cs_label)
+            for cs_label in cs_labels:
+                if cs_label not in iw.labels:
+                    actions.newlabel.append(cs_label)
+            other_cs_labels = [x for x in iw.labels if x.startswith('support:')]
+            for ocs_label in other_cs_labels:
+                if ocs_label not in cs_labels:
+                    actions.unlabel.append(ocs_label)
 
         if not self.meta['stale_reviews']:
             if 'stale_review' in iw.labels:
@@ -1222,16 +1233,17 @@ class AnsibleTriage(DefaultTriager):
                 actions.newlabel.append('stale_review')
 
         # https://github.com/ansible/ansibullbot/issues/302
-        if iw.is_pullrequest():
-            if self.meta['needs_multiple_new_modules_notification']:
-                tvars = {
-                    'submitter': iw.submitter
-                }
-                comment = self.render_boilerplate(
-                    tvars, boilerplate='multiple_module_notify'
-                )
-                if comment not in actions.comments:
-                    actions.comments.append(comment)
+        if not self.meta['is_bad_pr']:
+            if iw.is_pullrequest():
+                if self.meta['needs_multiple_new_modules_notification']:
+                    tvars = {
+                        'submitter': iw.submitter
+                    }
+                    comment = self.render_boilerplate(
+                        tvars, boilerplate='multiple_module_notify'
+                    )
+                    if comment not in actions.comments:
+                        actions.comments.append(comment)
 
         # https://github.com/ansible/ansible/pull/26921
         if self.meta['is_filament']:
@@ -1260,8 +1272,9 @@ class AnsibleTriage(DefaultTriager):
                 actions.unlabel.append('stale_ci')
 
         # https://github.com/ansible/ansibullbot/issues/640
-        if not self.meta['needs_rebuild'] and self.meta['admin_merge']:
-            actions.merge = True
+        if not self.meta['is_bad_pr']:
+            if not self.meta['needs_rebuild'] and self.meta['admin_merge']:
+                actions.merge = True
 
         # https://github.com/ansible/ansibullbot/issues/785
         if iw.is_pullrequest():
@@ -1778,6 +1791,13 @@ class AnsibleTriage(DefaultTriager):
         # first time contributor?
         self.meta.update(get_contributor_facts(iw))
 
+
+        # need these keys to always exist
+        if 'merge_commits' not in self.meta:
+            self.meta['merge_commits'] = []
+        if not 'is_bad_pr' in self.meta:
+            self.meta['is_bad_pr'] = False
+
         if iw.migrated:
             miw = iw._migrated_issue
             self.meta['is_migrated'] = True
@@ -2137,6 +2157,8 @@ class AnsibleTriage(DefaultTriager):
                             help="Script to check safe force")
         parser.add_argument("--ignore_state", action="store_true",
                             help="Do not skip processing closed issues")
+        parser.add_argument("--ignore_bot_broken", action="store_true",
+                            help="Do not skip processing bot_broken|bot_skip issues")
 
         # ALWAYS ON NOW
         #parser.add_argument("--issue_component_matching", action="store_true",
