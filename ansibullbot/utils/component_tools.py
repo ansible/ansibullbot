@@ -1239,6 +1239,25 @@ class AnsibleComponentMatcher(object):
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
 
+        # walk up the botmeta tree looking for ignores to include
+        if meta.get('repo_filename'):
+            namespace_paths = os.path.dirname(meta['repo_filename'])
+            namespace_paths = namespace_paths.split('/')
+            for x in reversed(range(0, len(namespace_paths) + 1)):
+                this_ns_path = '/'.join(namespace_paths[:x])
+                if not this_ns_path:
+                    continue
+                print('check {}'.format(this_ns_path))
+                if this_ns_path in self.BOTMETA['files']:
+                    this_ignore = self.BOTMETA['files'][this_ns_path].get('ignore') or \
+                        self.BOTMETA['files'][this_ns_path].get('ignored') or \
+                        self.BOTMETA['files'][this_ns_path].get('ignores')
+                    print('ignored: {}'.format(this_ignore))
+                    if this_ignore:
+                        for username in this_ignore:
+                            if username not in meta['ignore']:
+                                meta['ignore'].append(username)
+
         # process ignores AGAIN.
         if meta.get('ignore'):
             for k,v in meta.items():
