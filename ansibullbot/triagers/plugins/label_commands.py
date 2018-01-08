@@ -70,3 +70,32 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
     }
 
     return fact
+
+
+def get_waffling_overrides(issuewrapper, meta, module_indexer, core_team=[], valid_labels=[]):
+
+    iw = issuewrapper
+    overrides = []
+
+    iw = issuewrapper
+    maintainers = [x for x in core_team]
+    maintainers += module_indexer.all_maintainers
+    maintainers = sorted(set(maintainers))
+
+    for ev in iw.history.history:
+        if ev['actor'] in maintainers and ev['event'] == 'commented':
+            if '!waffling' in ev.get('body', ''):
+                lines = ev['body'].split('\n')
+                for line in lines:
+                    if line.strip().startswith('!waffling'):
+                        line = line.strip()
+                        parts = line.strip().split()
+                        thislabel = parts[1].strip()
+                        if thislabel not in overrides:
+                            overrides.append(thislabel)
+
+    fact = {
+        'label_waffling_overrides': overrides
+    }
+
+    return fact
