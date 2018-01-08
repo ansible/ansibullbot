@@ -64,6 +64,7 @@ from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
+from ansibullbot.triagers.plugins.label_commands import get_waffling_overrides
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
 from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
 from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
@@ -1291,6 +1292,8 @@ class AnsibleTriage(DefaultTriager):
         # check for waffling
         labels = sorted(set(actions.newlabel + actions.unlabel))
         for label in labels:
+            if label in self.meta['label_waffling_overrides']:
+                continue
             if iw.history.label_is_waffling(label):
                 if label in actions.newlabel or label in actions.unlabel:
                     msg = '"{}" label is waffling on {}'.format(label, iw.html_url)
@@ -1761,6 +1764,17 @@ class AnsibleTriage(DefaultTriager):
         # community label manipulation
         self.meta.update(
             get_label_command_facts(
+                iw,
+                self.meta,
+                self.module_indexer,
+                core_team=self.ansible_core_team,
+                valid_labels=self.valid_labels
+            )
+        )
+
+        # waffling overrides [label_waffling_overrides]
+        self.meta.update(
+            get_waffling_overrides(
                 iw,
                 self.meta,
                 self.module_indexer,
