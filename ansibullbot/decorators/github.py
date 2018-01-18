@@ -161,6 +161,8 @@ def RateLimited(fn):
                         # No handler found for uri
                         # [/repos/ansible/ansible/issues/14171] and method [GET]
                         stime = 2*60
+                    elif msg.lower() == 'issues are disabled for this repo':
+                        return None
                     else:
                         if C.DEFAULT_BREAKPOINTS:
                             logging.error('breakpoint!')
