@@ -1816,9 +1816,14 @@ class AnsibleTriage(DefaultTriager):
             miw = iw._migrated_issue
             self.meta['is_migrated'] = True
             self.meta['migrated_from'] = str(miw)
-            self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
-            self.meta['migrated_issue_number'] = miw.number
-            self.meta['migrated_issue_state'] = miw.state
+            try:
+                self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
+                self.meta['migrated_issue_number'] = miw.number
+                self.meta['migrated_issue_state'] = miw.state
+            except AttributeError:
+                self.meta['migrated_issue_repo_path'] = None
+                self.meta['migrated_issue_number'] = None
+                self.meta['migrated_issue_state'] = None
 
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
@@ -1828,8 +1833,9 @@ class AnsibleTriage(DefaultTriager):
 
         if iw.migrated:
             mi = self.get_migrated_issue(iw.migrated_from)
-            iw.history.merge_history(mi.history.history)
-            iw._migrated_issue = mi
+            if mi:
+                iw.history.merge_history(mi.history.history)
+                iw._migrated_issue = mi
 
         if iw.is_pullrequest():
             iw.history.merge_reviews(iw.reviews)
@@ -1894,6 +1900,10 @@ class AnsibleTriage(DefaultTriager):
 
         mrepo = self.repos[repo_path]['repo']
         missue = mrepo.get_issue(number)
+
+        if not missue:
+            return None
+
         mw = IssueWrapper(
             github=self.ghw,
             repo=mrepo,
