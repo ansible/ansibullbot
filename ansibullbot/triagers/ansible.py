@@ -971,10 +971,12 @@ class AnsibleTriage(DefaultTriager):
                 version = self.version_indexer.strip_ansible_version(self.meta['base_ref'])
                 if version:
                     for label in self.valid_labels:
-                        if label.endswith(version) and label not in iw.labels:
-                            actions.newlabel.append(label)
-                        if label.startswith('affects_') and label in iw.labels:
-                            actions.unlabel.append(label)
+                        if label.startswith('affects_'):
+                            if label.endswith(version):
+                                if label not in iw.labels:
+                                    actions.newlabel.append(label)
+                            elif label in iw.labels:
+                                actions.unlabel.append(label)
 
         if not self.meta['is_pullrequest']:
             if self.meta['ansible_label_version']:
