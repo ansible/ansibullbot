@@ -231,6 +231,13 @@ class AnsibleComponentMatcher(object):
                 bmeta['deprecated'] = os.path.basename(k).startswith('_')
                 self.BOTMETA['files'][k].update(bmeta)
 
+            # clean out the ignorees
+            if 'ignored' in self.BOTMETA['files'][k]:
+                for ignoree in self.BOTMETA['files'][k]['ignored']:
+                    for thiskey in ['maintainers', 'notify']:
+                        while ignoree in self.BOTMETA['files'][k][thiskey]:
+                            self.BOTMETA['files'][k][thiskey].remove(ignoree)
+
             # write back to the modules
             self.MODULES[k].update(self.BOTMETA['files'][k])
 
