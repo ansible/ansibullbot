@@ -11,6 +11,7 @@ from collections import defaultdict
 from operator import itemgetter
 
 from tenacity import retry, wait_random, stop_after_attempt
+from ansibullbot.utils.receiver_client import post_to_receiver
 
 
 QUERY_FIELDS = """
@@ -112,6 +113,14 @@ class GithubGraphQLClient(object):
         issues = {}
         for x in summaries:
             issues[str(x['number'])] = x
+
+        # keep the summaries for out of band analysis
+        repodata = {
+            'user': repo_url.split('/', 1)[0],
+            'repo': repo_url.split('/', 1)[1],
+        }
+        post_to_receiver('summaries', repodata, issues)
+
         return issues
 
     def get_last_number(self, repo_path):
@@ -242,7 +251,6 @@ class GithubGraphQLClient(object):
 
         return nodes
 
-
     def get_summary(self, repo_url, otype, number):
         """Collect all the summary data for issues or pull requests ids
 
@@ -340,12 +348,13 @@ class GithubGraphQLClient(object):
         response.raise_for_status()
         # GitHub GraphQL will happily return a 200 result with errors. One
         # must dig through the data to see if there were errors.
-	errors = response.json().get('errors')
+        errors = response.json().get('errors')
         if errors:
             msgs = ', '.join([e['message'] for e in errors])
             raise requests.exceptions.InvalidSchema(
                 'Error(s) from graphql: %s' % msgs)
         return response
+
 
 ###################################
 # TESTING ...
