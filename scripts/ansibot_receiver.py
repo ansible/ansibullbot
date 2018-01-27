@@ -28,6 +28,17 @@ def get_summary_numbers_for_repo(org, repo):
     return res
 
 
+def get_summary_numbers_with_state_for_repo(org, repo):
+    pipeline = [
+        {'$match': {'github_org': org, 'github_repo': repo}},
+        {'$project': {'_id': 0, 'state': 1, 'number': 1}}
+    ]
+
+    cursor = mongo.db.summaries.aggregate(pipeline)
+    res = list(cursor)
+    return res
+
+
 @app.route('/dedupe', methods=['GET'])
 def dedupe_summaries():
 
@@ -124,9 +135,14 @@ def summaries():
 
     username = request.args.get('user')
     reponame = request.args.get('repo')
+    state = request.args.get('state')
     number = request.args.get('number')
     if number:
         number = int(number)
+    print(request.args)
+    print(username)
+    print(reponame)
+    print(number)
 
     if not username or not reponame:
         raise BadRequest('user and repo must be supplied as parameters')
@@ -167,21 +183,31 @@ def summaries():
                 data['github_number'] = data['number']
                 documents.append(data)
 
+            print('insert {} summaries'.format(len(documents)))
             mongo.db.summaries.insert_many(documents)
             res['inserted'] += len(documents)
 
         # incremental inspect and replace
         if to_inspect:
+
+            known_list = get_summary_numbers_with_state_for_repo(username, reponame)
+            known_states = {}
+            for x in known_list:
+                known_states[str(x['number'])] = x['state']
+
+            print('inspecting {} summaries'.format(len(to_inspect)))
             for x in to_inspect:
                 data = content[x].copy()
                 data['github_org'] = username
                 data['github_repo'] = reponame
                 data['github_number'] = data['number']
 
+                '''
                 # get the existing document
                 doc = mongo.db.summaries.find_one(
                     {'github_org': username, 'github_repo': reponame, 'number': data['number']}
                 )
+
                 # compare it
                 cdict = dict(doc)
                 cdict.pop('_id', None)
@@ -192,19 +218,29 @@ def summaries():
                     #print('replace %s' % x)
                     mongo.db.summaries.replace_one(doc, data)
                     res['replaced'] += 1
+                '''
+
+                if data['state'] != known_states[str(data['number'])]:
+                    print('replacing {}'.format(data['number']))
+                    filterdict = {'github_org': username, 'github_repo': reponame, 'github_number': data['number']}
+                    mongo.db.summaries.replace_one(filterdict, data)
 
         return jsonify(res)
 
     elif request.method == 'GET':
         # get the existing document
-        cursor = mongo.db.summaries.find(
-            {'github_org': username, 'github_repo': reponame, 'number': number}
-        )
+        qdict = {'github_org': username, 'github_repo': reponame}
+        if number:
+            qdict['number'] = number
+        if state:
+            qdict['state'] = state
+        cursor = mongo.db.summaries.find(qdict)
         docs = list(cursor)
         docs = [dict(x) for x in docs]
         for idx,x in enumerate(docs):
             x.pop('_id', None)
             docs[idx] = x
+        print(len(docs))
         return jsonify(docs)
 
     return 'summaries\n'
