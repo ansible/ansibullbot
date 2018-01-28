@@ -22,6 +22,7 @@ def main():
     ISSUES = {}
     BYFILE = {}
     BYISSUE = {}
+    BYMAINTAINER = {}
 
     summaries = get_receiver_summaries('ansible', 'ansible', state='open')
     for summary in summaries:
@@ -42,6 +43,13 @@ def main():
 
             if not filename:
                 continue
+
+            if 'maintainers' in component:
+                for maintainer in component['maintainers']:
+                    if maintainer not in BYMAINTAINER:
+                        BYMAINTAINER[maintainer] = []
+                    if url not in BYMAINTAINER[maintainer]:
+                        BYMAINTAINER[maintainer].append(url)
 
             BYISSUE[url].append(filename)
 
@@ -65,6 +73,24 @@ def main():
     tuples.reverse()
 
     destfile = os.path.join(destdir, 'byfile_sorted.txt')
+    with open(destfile, 'w') as f:
+        for tup in tuples:
+            f.write('{}\n'.format(tup[0]))
+            for issue in tup[1:]:
+                f.write('\t{}\n'.format(issue))
+
+    tuples = BYMAINTAINER.items()
+    for idx, x in enumerate(tuples):
+        x = [x[0]] + x[1]
+        tuples[idx] = x
+    tuples.sort(key=len)
+    tuples.reverse()
+
+    destfile = os.path.join(destdir, 'bymaintainer.json')
+    with open(destfile, 'w') as f:
+        f.write(json.dumps(BYMAINTAINER, indent=2, sort_keys=True))
+
+    destfile = os.path.join(destdir, 'bymaintainer_sorted.txt')
     with open(destfile, 'w') as f:
         for tup in tuples:
             f.write('{}\n'.format(tup[0]))
