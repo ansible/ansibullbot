@@ -72,9 +72,54 @@ def get_receiver_summaries(username, reponame, state=None, number=None):
         except Exception as e:
             logging.warning(e)
 
-        #for k,v in rr.json().items():
-        #    logging.info('RECEIVER: %s %s' % (v, k))
         if rr:
             return rr.json()
 
     return None
+
+
+def get_receiver_metadata(username, reponame, number=None):
+    '''
+    @app.route('/metadata', methods=['GET', 'POST'])
+    def metadata():
+        print('metadata!')
+        print(request)
+        username = request.args.get('user')
+        reponame = request.args.get('repo')
+        number = request.args.get('number')
+    '''
+
+    if not username or not reponame:
+        return
+
+    if not C.DEFAULT_RECEIVER_HOST or 'none' in C.DEFAULT_RECEIVER_HOST.lower():
+        return
+
+    if C.DEFAULT_RECEIVER_HOST:
+        receiverurl = 'http://'
+        receiverurl += C.DEFAULT_RECEIVER_HOST
+        receiverurl += ':'
+        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
+        receiverurl += '/'
+        receiverurl += 'metadata'
+        logging.info('RECEIVER: GET %s' % receiverurl)
+
+        params={'user': username, 'repo': reponame}
+        if number:
+            params['number'] = number
+
+        rr = None
+        try:
+            rr = requests.get(
+                receiverurl,
+                params=params
+            )
+        except Exception as e:
+            logging.warning(e)
+
+        if rr:
+            return rr.json()
+
+    return None
+
+
