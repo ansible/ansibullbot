@@ -37,7 +37,7 @@ class GithubWebScraper(object):
     def load_summaries(self, repo_url):
         issues = {}
         ns,repo = self.split_repo_url(repo_url)
-        cachefile = os.path.join(self.cachedir, ns, repo, 'summaries.json')
+        cachefile = os.path.join(self.cachedir, ns, repo, 'html_summaries.json')
         if os.path.isfile(cachefile):
             try:
                 with open(cachefile, 'rb') as f:
@@ -52,7 +52,7 @@ class GithubWebScraper(object):
                     raise Exception(str(e))
         return issues
 
-    def dump_summaries(self, repo_url, issues, filename="summaries"):
+    def dump_summaries(self, repo_url, issues, filename="html_summaries"):
 
         """
         [jtanner@fedmac ansibullbot]$ sudo ls -al /proc/10895/fd
@@ -109,7 +109,7 @@ class GithubWebScraper(object):
         shutil.move(tfn, cachefile)
 
     def dump_summaries_tmp(self, repo_url, issues):
-        self.dump_summaries(repo_url, issues, filename="summaries-tmp")
+        self.dump_summaries(repo_url, issues, filename="html_summaries-tmp")
 
     def get_last_number(self, repo_path):
         repo_url = self.baseurl + '/' + repo_path
@@ -149,7 +149,7 @@ class GithubWebScraper(object):
         data = self._parse_issue_summary_page(soup)
         if data['issues']:
             # send to receiver
-            post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, data['issues'])
+            post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, data['issues'])
             # update master list
             issues.update(data['issues'])
 
@@ -162,7 +162,7 @@ class GithubWebScraper(object):
             data = self._parse_issue_summary_page(soup)
 
             # send to receiver
-            post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, data['issues'])
+            post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, data['issues'])
 
             if not data['next_page'] or not data['issues']:
                 break
@@ -198,7 +198,7 @@ class GithubWebScraper(object):
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
-                    post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, {x: summary})
+                    post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, {x: summary})
                     if not isinstance(x, unicode):
                         x = u'%s' % x
                     issues[x] = summary
@@ -210,7 +210,7 @@ class GithubWebScraper(object):
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
-                    post_to_receiver('summaries', {'user': namespace, 'repo': reponame}, {x: summary})
+                    post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, {x: summary})
                     if not isinstance(x, unicode):
                         x = u'%s' % x
                     issues[x] = summary
