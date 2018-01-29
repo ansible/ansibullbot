@@ -102,6 +102,7 @@ def metadata():
             mongo.db.metadata.insert_one(data)
             res['result'] = 'inserted'
         else:
+            '''
             # compare it
             cdict = dict(doc)
             cdict.pop('_id', None)
@@ -110,6 +111,9 @@ def metadata():
             else:
                 mongo.db.metadata.replace_one(doc, data)
                 res['result'] = 'replaced'
+            '''
+            mongo.db.metadata.replace_one({'html_url': data['html_url']}, data)
+            res['result'] = 'replaced'
 
         return jsonify(res)
 
