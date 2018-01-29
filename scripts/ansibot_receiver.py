@@ -16,25 +16,35 @@ app.config['MONGO_DBNAME'] = 'ansibot_reciever'
 mongo = PyMongo(app)
 
 
-def get_summary_numbers_for_repo(org, repo):
+def get_summary_numbers_for_repo(org, repo, collection_name=None):
     pipeline = [
         {'$match': {'github_org': org, 'github_repo': repo}},
         {'$project': {'_id': 0, 'number': 1}}
     ]
 
-    cursor = mongo.db.summaries.aggregate(pipeline)
+    if collection_name:
+        collection = getattr(mongo.db, collection_name)
+        cursor = collection.aggregate(pipeline)
+    else:
+        cursor = mongo.db.summaries.aggregate(pipeline)
+
     res = list(cursor)
     res = [x['number'] for x in res]
     return res
 
 
-def get_summary_numbers_with_state_for_repo(org, repo):
+def get_summary_numbers_with_state_for_repo(org, repo, collection_name=None):
     pipeline = [
         {'$match': {'github_org': org, 'github_repo': repo}},
         {'$project': {'_id': 0, 'state': 1, 'number': 1}}
     ]
 
-    cursor = mongo.db.summaries.aggregate(pipeline)
+    if collection_name:
+        collection = getattr(mongo.db, collection_name)
+        cursor = collection.aggregate(pipeline)
+    else:
+        cursor = mongo.db.summaries.aggregate(pipeline)
+
     res = list(cursor)
     return res
 
@@ -102,16 +112,6 @@ def metadata():
             mongo.db.metadata.insert_one(data)
             res['result'] = 'inserted'
         else:
-            '''
-            # compare it
-            cdict = dict(doc)
-            cdict.pop('_id', None)
-            if cdict == data:
-                res['result'] = 'skipped'
-            else:
-                mongo.db.metadata.replace_one(doc, data)
-                res['result'] = 'replaced'
-            '''
             mongo.db.metadata.replace_one({'html_url': data['html_url']}, data)
             res['result'] = 'replaced'
 
@@ -133,8 +133,16 @@ def metadata():
 
 
 @app.route('/summaries', methods=['GET', 'POST'])
+@app.route('/html_summaries', methods=['GET', 'POST'])
 def summaries():
-    print('summaries!')
+
+    rule = request.url_rule
+    if rule.rule.endswith('html_summaries'):
+        collection_name = 'html_summaries'
+    else:
+        collection_name = 'summaries'
+
+    print('{}!'.format(collection_name))
     print(request)
 
     username = request.args.get('user')
@@ -160,7 +168,7 @@ def summaries():
         }
 
         # make list of known numbers for namespace/repo
-        known = get_summary_numbers_for_repo(username, reponame)
+        known = get_summary_numbers_for_repo(username, reponame, collection_name=collection_name)
         print('total known: %s' % len(known))
 
         # group by missing or needs evaluation
@@ -194,7 +202,7 @@ def summaries():
         # incremental inspect and replace
         if to_inspect:
 
-            known_list = get_summary_numbers_with_state_for_repo(username, reponame)
+            known_list = get_summary_numbers_with_state_for_repo(username, reponame, collection_name=collection_name)
             known_states = {}
             for x in known_list:
                 known_states[str(x['number'])] = x['state']
@@ -227,7 +235,9 @@ def summaries():
                 if data['state'] != known_states[str(data['number'])]:
                     print('replacing {}'.format(data['number']))
                     filterdict = {'github_org': username, 'github_repo': reponame, 'github_number': data['number']}
-                    mongo.db.summaries.replace_one(filterdict, data)
+                    #mongo.db.summaries.replace_one(filterdict, data)
+                    collection = getattr(mongo.db, collection_name)
+                    collection.replace_one(filterdict, data)
 
         return jsonify(res)
 
@@ -238,7 +248,9 @@ def summaries():
             qdict['number'] = number
         if state:
             qdict['state'] = state
-        cursor = mongo.db.summaries.find(qdict)
+        #cursor = mongo.db.summaries.find(qdict)
+        collection = getattr(mongo.db, collection_name)
+        cursor = collection.find(qdict)
         docs = list(cursor)
         docs = [dict(x) for x in docs]
         for idx,x in enumerate(docs):
