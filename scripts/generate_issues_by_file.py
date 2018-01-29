@@ -37,12 +37,12 @@ def main():
         ISSUES[url] = this_meta
         BYISSUE[url] = []
 
-
         try:
-            components = this_meta.get('component_matches', [])
+            this_meta.get('component_matches', [])
         except Exception as e:
             print(e)
-            import epdb; epdb.st()
+            #import epdb; epdb.st()
+            continue
 
         for component in this_meta.get('component_matches', []):
             # we seem to have some variation in the keys ...
@@ -69,7 +69,8 @@ def main():
 
             if filename not in BYFILE:
                 BYFILE[filename] = []
-            BYFILE[filename].append(url)
+            if url not in BYFILE[filename]:
+                BYFILE[filename].append(url)
 
     destfile = os.path.join(destdir, 'byissue.json')
     with open(destfile, 'w') as f:
