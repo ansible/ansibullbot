@@ -28,10 +28,21 @@ def main():
     for summary in summaries:
         number = summary['github_number']
         this_meta = get_receiver_metadata('ansible', 'ansible', number=number)
+
+        if not this_meta:
+            continue
+
         this_meta = this_meta[0]
         url = this_meta['html_url']
         ISSUES[url] = this_meta
         BYISSUE[url] = []
+
+
+        try:
+            components = this_meta.get('component_matches', [])
+        except Exception as e:
+            print(e)
+            import epdb; epdb.st()
 
         for component in this_meta.get('component_matches', []):
             # we seem to have some variation in the keys ...
@@ -43,6 +54,9 @@ def main():
 
             if not filename:
                 continue
+
+            #if filename.endswith('connection/docker.py'):
+            #    import epdb; epdb.st()
 
             if 'maintainers' in component:
                 for maintainer in component['maintainers']:
@@ -77,7 +91,27 @@ def main():
         for tup in tuples:
             f.write('{}\n'.format(tup[0]))
             for issue in tup[1:]:
-                f.write('\t{}\n'.format(issue))
+                issue = issue.encode('ascii', 'ignore')
+                title = ISSUES[issue]['title']
+                title = title.encode('ascii', 'ignore')
+                f.write('\t{}\t{}\n'.format(issue, title))
+
+    destfile = os.path.join(destdir, 'byfile_sorted.html')
+    with open(destfile, 'w') as f:
+        for tup in tuples:
+            f.write('<div style="background-color: #cfc ; padding: 10px; border: 1px solid green;">\n')
+            file_ref = '<a href="https://github.com/ansible/ansible/blob/devel/{}">https://github.com/ansible/ansible/blob/devel/{}</a>'.format(tup[0], tup[0])
+            f.write('{}\n'.format(file_ref))
+            f.write('</div>')
+            f.write('<br>\n')
+            for issue in tup[1:]:
+                issue = issue.encode('ascii', 'ignore')
+                title = ISSUES[issue]['title']
+                title = title.encode('ascii', 'ignore')
+
+                issue_ref = '<a href="{}">{}</a>'.format(issue, issue)
+                f.write('\t{}\t{}<br>\n'.format(issue_ref, title))
+            f.write('<br>\n')
 
     tuples = BYMAINTAINER.items()
     for idx, x in enumerate(tuples):
