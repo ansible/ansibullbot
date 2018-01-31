@@ -144,12 +144,11 @@ def needs_info_timeout_facts(iw, meta):
     la = iw.history.label_last_applied('needs_info')
     ni_bpd = iw.history.last_date_for_boilerplate('needs_info_base')
     md_bpd = iw.history.last_date_for_boilerplate('issue_missing_data')
-    if not ni_bpd and not md_bpd:
-        return nif
 
     now = pytz.utc.localize(datetime.datetime.now())
 
     # use the most recent date among the two templates
+    bpd = None
     if not ni_bpd and md_bpd:
         bpd = md_bpd
     elif ni_bpd and not md_bpd:
