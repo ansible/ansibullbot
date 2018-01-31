@@ -164,7 +164,8 @@ def needs_info_timeout_facts(iw, meta):
     else:
         delta = (now - la).days
 
-    if delta > NI_EXPIRE:
+    # close only if boilerplate has been sent before
+    if delta > NI_EXPIRE and bpd:
         nif['needs_info_action'] = 'close'
     elif delta > NI_WARN:
         nif['needs_info_action'] = 'warn'
