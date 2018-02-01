@@ -419,6 +419,7 @@ class ModuleExtractor(object):
     _DOCUMENTATION_RAW = None
     _FILEDATA = None
     _METADATA = None
+    _DEPRECATION = None
 
     def __init__(self, filepath, email_cache=None):
         self.filepath = filepath
@@ -442,6 +443,12 @@ class ModuleExtractor(object):
         if self._METADATA is None:
             self._METADATA = self.get_module_metadata()
         return self._METADATA
+
+    @property
+    def deprecation_info(self):
+        if self._DEPRECATION is None:
+            self._DEPRECATION = self.get_deprecation_info()
+        return self._DEPRECATION
 
     def get_module_authors(self):
         """Grep the authors out of the module docstrings"""
@@ -570,3 +577,50 @@ class ModuleExtractor(object):
             pass
 
         return meta
+
+    def get_deprecation_info(self):
+        dmeta = {
+            'deprecated': False,
+            'alternatives': None,
+            'deprecated_in': None,
+            'removed_in': None,
+            'why': None
+        }
+
+        documentation = ''
+        inphase = False
+
+        lines = self.filedata.split('\n')
+        for line in lines:
+            if 'DOCUMENTATION' in line:
+                inphase = True
+                continue
+            if inphase and (line.strip().endswith("'''") or line.strip().endswith('"""')):
+                #phase = None
+                break
+            if inphase:
+                documentation += line + '\n'
+
+        if not documentation:
+            logging.debug('no documentation found in {}'.format(self.filepath))
+            return []
+
+        if 'deprecat' not in documentation:
+            return dmeta
+
+        docs_dict = yaml.load(documentation)
+        if 'deprecated' not in docs_dict:
+            return dmeta
+
+        dmeta['deprecated'] = True
+        for k,v in docs_dict['deprecated'].items():
+            dmeta[k] = v
+            if k == 'alternative':
+                dmeta['alternatives'] = []
+                alts = v.split()
+                alts = [x for x in alts if x.startswith('M(')]
+                alts = [x.replace('M(', '') for x in alts]
+                alts = [x.replace(')', '') for x in alts]
+                dmeta['alternatives'] = alts[:]
+
+        return dmeta

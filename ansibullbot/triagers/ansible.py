@@ -63,6 +63,7 @@ from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
+from ansibullbot.triagers.plugins.file_deprecations import get_deprecation_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
 from ansibullbot.triagers.plugins.label_commands import get_waffling_overrides
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
@@ -1818,6 +1819,8 @@ class AnsibleTriage(DefaultTriager):
         # first time contributor?
         self.meta.update(get_contributor_facts(iw))
 
+        # deprecated and closeable?
+        self.meta.update(get_deprecation_facts(iw, self.meta, self.version_indexer))
 
         # need these keys to always exist
         if 'merge_commits' not in self.meta:

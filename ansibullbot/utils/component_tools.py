@@ -199,6 +199,7 @@ class AnsibleComponentMatcher(object):
             if k not in self.BOTMETA['files']:
                 self.BOTMETA['files'][k] = {
                     'deprecated': os.path.basename(k).startswith('_'),
+                    'deprecation_info': ME.deprecation_info,
                     'labels': os.path.dirname(k).split('/'),
                     'authors': ME.authors,
                     'maintainers': ME.authors,
@@ -229,6 +230,8 @@ class AnsibleComponentMatcher(object):
                 if not bmeta.get('labels'):
                     bmeta['labels'] = os.path.dirname(k).split('/')
                 bmeta['deprecated'] = os.path.basename(k).startswith('_')
+                bmeta['deprecated'] = os.path.basename(k).startswith('_')
+                bmeta['deprecation_info'] = ME.deprecation_info
                 self.BOTMETA['files'][k].update(bmeta)
 
             # clean out the ignorees
@@ -1082,7 +1085,8 @@ class AnsibleComponentMatcher(object):
             'topic': None,
             'subtopic': None,
             'namespace': None,
-            'namespace_maintainers': []
+            'namespace_maintainers': [],
+            'deprecation_info': {},
         }
 
         populated = False
@@ -1131,6 +1135,9 @@ class AnsibleComponentMatcher(object):
 
             if 'deprecated' in fdata:
                 meta['deprecated'] = fdata['deprecated']
+
+            if 'deprecation_info' in fdata:
+                meta['deprecation_info'] = fdata['deprecation_info'].copy()
 
             populated = True
 
