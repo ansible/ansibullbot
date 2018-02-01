@@ -23,6 +23,7 @@ import logging
 import operator
 import os
 import pickle
+import re
 import shutil
 import sys
 import time
@@ -848,6 +849,13 @@ class DefaultWrapper(object):
 
     @property
     def submitter(self):
+        # auto-migrated issue by ansibot{-dev}
+        # figure out the original submitter
+        if self.instance.user.login.startswith('ansibot'):
+            m = re.match('From @(.*) on', self.instance.body)
+            if m:
+                return m.group(1)
+
         return self.instance.user.login
 
     @property
