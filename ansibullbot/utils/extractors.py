@@ -417,6 +417,7 @@ class ModuleExtractor(object):
     _AUTHORS_DATA = None
     _AUTHORS_RAW = None
     _DOCUMENTATION_RAW = None
+    _DOCUMENTATION = None
     _FILEDATA = None
     _METADATA = None
     _DEPRECATION = None
@@ -449,6 +450,40 @@ class ModuleExtractor(object):
         if self._DEPRECATION is None:
             self._DEPRECATION = self.get_deprecation_info()
         return self._DEPRECATION
+
+    @property
+    def documentation(self):
+        if self._DOCUMENTATION is None:
+            self._DOCUMENTATION = self.get_documentation()
+        return self._DOCUMENTATION
+
+    def get_documentation(self):
+        documentation = ''
+        inphase = False
+        lines = self.filedata.split('\n')
+        for line in lines:
+            if 'DOCUMENTATION' in line:
+                inphase = True
+                continue
+            if inphase and (line.strip().endswith("'''") or line.strip().endswith('"""')):
+                #phase = None
+                break
+            if inphase:
+                documentation += line + '\n'
+
+        if not documentation:
+            logging.debug('no documentation found in {}'.format(self.filepath))
+            return []
+
+        docs_dict = {}
+        try:
+            docs_dict = yaml.load(documentation)
+        except Exception as e:
+            #logging.error(e)
+            #import epdb; epdb.st()
+            pass
+
+        return docs_dict
 
     def get_module_authors(self):
         """Grep the authors out of the module docstrings"""
@@ -587,28 +622,30 @@ class ModuleExtractor(object):
             'why': None
         }
 
-        documentation = ''
-        inphase = False
+        #documentation = ''
+        #inphase = False
 
-        lines = self.filedata.split('\n')
-        for line in lines:
-            if 'DOCUMENTATION' in line:
-                inphase = True
-                continue
-            if inphase and (line.strip().endswith("'''") or line.strip().endswith('"""')):
-                #phase = None
-                break
-            if inphase:
-                documentation += line + '\n'
+        #lines = self.filedata.split('\n')
+        #for line in lines:
+        #    if 'DOCUMENTATION' in line:
+        #        inphase = True
+        #        continue
+        #    if inphase and (line.strip().endswith("'''") or line.strip().endswith('"""')):
+        #        #phase = None
+        #        break
+        #    if inphase:
+        #        documentation += line + '\n'
 
-        if not documentation:
-            logging.debug('no documentation found in {}'.format(self.filepath))
-            return []
+        #if not documentation:
+        #    logging.debug('no documentation found in {}'.format(self.filepath))
+        #    return []
 
-        if 'deprecat' not in documentation:
-            return dmeta
+        #if 'deprecat' not in documentation:
+        #    return dmeta
 
-        docs_dict = yaml.load(documentation)
+        #docs_dict = yaml.load(documentation)
+
+        docs_dict = self.documentation
         if 'deprecated' not in docs_dict:
             return dmeta
 
@@ -621,6 +658,8 @@ class ModuleExtractor(object):
                 alts = [x for x in alts if x.startswith('M(')]
                 alts = [x.replace('M(', '') for x in alts]
                 alts = [x.replace(')', '') for x in alts]
+                alts = [x.replace("'s", '') for x in alts]
+                alts = [x.replace(".", '') for x in alts]
                 dmeta['alternatives'] = alts[:]
 
         return dmeta
