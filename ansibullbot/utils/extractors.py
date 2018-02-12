@@ -622,31 +622,11 @@ class ModuleExtractor(object):
             'why': None
         }
 
-        #documentation = ''
-        #inphase = False
-
-        #lines = self.filedata.split('\n')
-        #for line in lines:
-        #    if 'DOCUMENTATION' in line:
-        #        inphase = True
-        #        continue
-        #    if inphase and (line.strip().endswith("'''") or line.strip().endswith('"""')):
-        #        #phase = None
-        #        break
-        #    if inphase:
-        #        documentation += line + '\n'
-
-        #if not documentation:
-        #    logging.debug('no documentation found in {}'.format(self.filepath))
-        #    return []
-
-        #if 'deprecat' not in documentation:
-        #    return dmeta
-
-        #docs_dict = yaml.load(documentation)
-
         docs_dict = self.documentation
         if 'deprecated' not in docs_dict:
+            return dmeta
+
+        if not isinstance(docs_dict['deprecated'], dict):
             return dmeta
 
         dmeta['deprecated'] = True
