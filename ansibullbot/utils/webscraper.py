@@ -951,8 +951,9 @@ class GithubWebScraper(object):
         if not data['updated_at']:
             events = comments + commits
             events = sorted(set(events))
-            data['updated_at'] = events[-1]
-            #import epdb; epdb.st()
+            if events:
+                data['updated_at'] = events[-1]
+            else:
+                data['updated_at'] = data['created_at']
 
-        #import epdb; epdb.st()
         return data
