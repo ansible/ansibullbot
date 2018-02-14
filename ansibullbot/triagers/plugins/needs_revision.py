@@ -107,11 +107,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     ci_status = iw.pullrequest_status
 
     # code quality hooks
-    if [x for x in ci_status if 'landscape.io' in x['target_url']]:
+    if [x for x in ci_status if isinstance(x, dict) and
+            'landscape.io' in x['target_url']]:
         has_landscape = True
 
     ci_states = [x['state'] for x in ci_status
-                 if 'shippable.com' in x['target_url']]
+                 if isinstance(x, dict) and 'shippable.com' in x['target_url']]
 
     if not ci_states:
         ci_state = None
