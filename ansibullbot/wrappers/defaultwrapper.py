@@ -808,6 +808,7 @@ class DefaultWrapper(object):
         return self.instance.title
 
     @property
+    @RateLimited
     def repo_full_name(self):
         return self.repo.repo.full_name
 
