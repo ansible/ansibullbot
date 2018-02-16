@@ -1137,9 +1137,6 @@ class AnsibleComponentMatcher(object):
         # walk up the tree for more meta
         paths = filename.split('/')
         for idx,x in enumerate(paths):
-            print(idx)
-            if idx < 0:
-                continue
             thispath = '/'.join(paths[:(0-idx)])
             if thispath in self.BOTMETA['files']:
                 fdata = self.BOTMETA['files'][thispath].copy()
