@@ -26,6 +26,7 @@ import sys
 import time
 import pickle
 from datetime import datetime
+from logging.handlers import WatchedFileHandler
 from pprint import pprint
 
 # remember to pip install PyGithub, kids!
@@ -160,7 +161,7 @@ class DefaultTriager(object):
         if logdir and not os.path.isdir(logdir):
             os.makedirs(logdir)
 
-        fileHandler = logging.FileHandler(self.logfile)
+        fileHandler = WatchedFileHandler(self.logfile)
         fileHandler.setFormatter(logFormatter)
         rootLogger.addHandler(fileHandler)
         consoleHandler = logging.StreamHandler()
