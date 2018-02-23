@@ -72,6 +72,7 @@ from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
 from ansibullbot.triagers.plugins.needs_revision import get_shippable_run_facts
 from ansibullbot.triagers.plugins.contributors import get_contributor_facts
 from ansibullbot.triagers.plugins.notifications import get_notification_facts
+from ansibullbot.triagers.plugins.performance import get_performance_facts
 from ansibullbot.triagers.plugins.py3 import get_python3_facts
 from ansibullbot.triagers.plugins.shipit import automergeable
 from ansibullbot.triagers.plugins.shipit import get_review_facts
@@ -1113,6 +1114,11 @@ class AnsibleTriage(DefaultTriager):
             if comment not in actions.comments:
                 actions.comments.append(comment)
 
+        # performance issue/PR
+        if self.meta['is_performance']:
+            if 'performance' not in iw.labels:
+                actions.newlabel.append('performance')
+
         # label commands
         if self.meta['label_cmds']:
             if self.meta['label_cmds']['add']:
@@ -1736,6 +1742,9 @@ class AnsibleTriage(DefaultTriager):
 
         # backports
         self.meta.update(get_backport_facts(iw, self.meta))
+
+        # performance
+        self.meta.update(get_performance_facts(iw, self.meta))
 
         # shipit?
         self.meta.update(
