@@ -121,8 +121,8 @@ class AnsibleTriage(DefaultTriager):
         'bugfix pull request': 'bugfix_pull_request',
         'feature idea': 'feature_idea',
         'feature pull request': 'feature_pull_request',
-        'documentation report': 'docs_report',
-        'docs pull request': 'docs_pull_request',
+        'documentation report': 'docs',
+        'docs pull request': 'docs',
         'new module pull request': 'new_plugin'
     }
 
