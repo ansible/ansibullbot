@@ -53,21 +53,19 @@ def render():
 
     pprint(filepaths)
 
-    fn,fh = tempfile.mkstemp(dir='/tmp/botmeta', suffix='.yml')
-    with open(fh, 'w') as f:
+    fh,fn = tempfile.mkstemp(dir='/tmp/botmeta', suffix='.yml')
+    with open(fn, 'w') as f:
         f.write(meta)
 
     rendered = BW.render(
-        None,
+        fn,
         filepaths
     )
     pprint(rendered)
 
-    os.remove(fh)
+    os.remove(fn)
 
     return jsonify(rendered)
-    #stringified = json.dumps(rendered, indent=2, sort_keys=True)
-    #return stringified
 
 
 @app.route('/current')
