@@ -1,0 +1,19 @@
+version: '3.3'
+services:
+  flaskapp:
+    build: .
+    networks:
+      - web_nw
+  nginx:
+    image: "nginx:1.13.5"
+    ports:
+      - "8080:80"
+    volumes:
+      - ./conf.d:/etc/nginx/conf.d
+    networks:
+      - web_nw
+    depends_on: 
+      - flaskapp
+networks:
+  web_nw:
+    driver: bridge
