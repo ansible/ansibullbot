@@ -1,0 +1,17 @@
+argparse
+beautifulsoup4
+fuzzywuzzy
+jinja2
+PyYAML
+pygithub
+python-Levenshtein
+pytz
+requests
+requests_cache
+ruamel.yaml
+six
+sqlalchemy
+tenacity
+textblob
+mock ; python_version < '3.3'
+Flask
