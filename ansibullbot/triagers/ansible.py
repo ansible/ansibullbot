@@ -117,10 +117,10 @@ class AnsibleTriage(DefaultTriager):
     }
 
     ISSUE_TYPES = {
-        'bug report': 'bug_report',
-        'bugfix pull request': 'bugfix_pull_request',
-        'feature idea': 'feature_idea',
-        'feature pull request': 'feature_pull_request',
+        'bug report': 'bug',
+        'bugfix pull request': 'bug',
+        'feature idea': 'feature',
+        'feature pull request': 'feature',
         'documentation report': 'docs',
         'docs pull request': 'docs',
         'new module pull request': 'new_plugin'
