@@ -7,8 +7,17 @@ def get_performance_facts(issuewrapper, meta):
         'is_performance': False
     }
 
-    body = iw.body.lower()
-    title = iw.title.lower()
+    body = ''
+    try:
+        body = iw.body.lower()
+    except AttributeError:
+        pass
+
+    title = ''
+    try:
+        title = iw.title.lower()
+    except AttributeError:
+        pass
 
     # TODO search in comments too?
     for data in (body, title):
