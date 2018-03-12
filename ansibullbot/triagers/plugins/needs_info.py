@@ -129,7 +129,7 @@ def needs_info_timeout_facts(iw, meta):
     # warn at 30 days
     NI_WARN = int(C.DEFAULT_NEEDS_INFO_WARN)
     # close at 60 days
-    NI_EXPIRE = int(C.DEFAULT_NEEDS_INFO_EXPIRE)
+    NI_EXPIRE = int(C.DEFAULT_NEEDS_INFO_EXPIRE - C.DEFAULT_NEEDS_INFO_WARN)
 
     nif = {
         'needs_info_action': None
@@ -160,14 +160,13 @@ def needs_info_timeout_facts(iw, meta):
             bpd = md_bpd
 
     if bpd:
+        # close only if boilerplate has been sent before
         delta = (now - bpd).days
+        if delta > NI_EXPIRE:
+            nif['needs_info_action'] = 'close'
     else:
         delta = (now - la).days
-
-    # close only if boilerplate has been sent before
-    if delta > NI_EXPIRE and bpd:
-        nif['needs_info_action'] = 'close'
-    elif delta > NI_WARN:
-        nif['needs_info_action'] = 'warn'
+        if delta > NI_WARN:
+            nif['needs_info_action'] = 'warn'
 
     return nif
