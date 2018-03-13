@@ -1020,6 +1020,13 @@ class DefaultWrapper(object):
     def reviews(self):
         if self._pr_reviews is False:
             self._pr_reviews = self.get_reviews()
+
+        # https://github.com/ansible/ansibullbot/issues/881
+        # https://github.com/ansible/ansibullbot/issues/883
+        for idx,x in enumerate(self._pr_reviews):
+            if not 'commit_id' in x:
+                self._pr_reviews[idx]['commit_id'] = None
+
         return self._pr_reviews
 
     @RateLimited
