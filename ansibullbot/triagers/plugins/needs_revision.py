@@ -469,7 +469,10 @@ def get_review_state(reviews, submitter, number=None, store=False):
 
             state = review['state']
             submitted_at = review['submitted_at']
-            commit_id = review['commit_id']
+            if 'commit_id' in review:
+                commit_id = review['commit_id']
+            else:
+                commit_id = None
 
             if state in ['CHANGES_REQUESTED', 'APPROVED']:
                 user_reviews[actor]['state'] = state
