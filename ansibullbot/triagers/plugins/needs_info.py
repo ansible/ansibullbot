@@ -160,6 +160,13 @@ def needs_info_timeout_facts(iw, meta):
             bpd = md_bpd
 
     if bpd:
+        # fix multiple warnings
+        bp_comments = iw.history.get_boilerplate_comments()
+        bp_comments_found = [c for c in bp_comments if c[0] == 'needs_info_base']
+        if bp_comments_found > 1:
+            nif['needs_info_action'] = 'close'
+            return nif
+
         # close only if boilerplate has been sent before
         delta = (now - bpd).days
         if delta > NI_EXPIRE:
