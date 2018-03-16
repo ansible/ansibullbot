@@ -101,7 +101,7 @@ def main():
     with open(destfile, 'w') as f:
         for idp,tup in enumerate(tuples):
             f.write('<div style="background-color: #cfc ; padding: 10px; border: 1px solid green;">\n')
-            file_ref = '%s. <a href="https://github.com/ansible/ansible/blob/devel/{}">https://github.com/ansible/ansible/blob/devel/{}</a> %s'.format(
+            file_ref = '{}. <a href="https://github.com/ansible/ansible/blob/devel/{}">https://github.com/ansible/ansible/blob/devel/{}</a> {} total'.format(
                 (idp+1), tup[0], tup[0], len(tup[1:])
             )
             f.write('{}\n'.format(file_ref))
