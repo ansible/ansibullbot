@@ -99,9 +99,9 @@ def main():
 
     destfile = os.path.join(destdir, 'byfile_sorted.html')
     with open(destfile, 'w') as f:
-        for tup in tuples:
+        for idp,tup in enumerate(tuples):
             f.write('<div style="background-color: #cfc ; padding: 10px; border: 1px solid green;">\n')
-            file_ref = '<a href="https://github.com/ansible/ansible/blob/devel/{}">https://github.com/ansible/ansible/blob/devel/{}</a>'.format(tup[0], tup[0])
+            file_ref = '%s. <a href="https://github.com/ansible/ansible/blob/devel/{}">https://github.com/ansible/ansible/blob/devel/{}</a>'.format((idp+1), tup[0], tup[0])
             f.write('{}\n'.format(file_ref))
             f.write('</div>')
             f.write('<br>\n')
