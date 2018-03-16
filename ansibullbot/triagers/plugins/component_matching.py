@@ -197,6 +197,11 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
                 filen = line.split()[1]
             except IndexError:
                 filen = line.replace('!component', '')
+
+            # https://github.com/ansible/ansible/issues/37494#issuecomment-373548008
+            if not filen:
+                continue
+
             action = filen[0]
             filen = filen[1:]
 
