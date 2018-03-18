@@ -50,3 +50,11 @@ class TestNeedsInfoTimeoutFacts(unittest.TestCase):
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
             self.assertEquals(facts['needs_info_action'], 'close')
+
+    def test_too_quick_close(self):
+        # https://github.com/ansible/ansible/issues/37518
+        datafile = 'tests/fixtures/needs_info/2_noclose.yml'
+        with get_issue(datafile, self.statusfile) as iw:
+            facts = needs_info.needs_info_timeout_facts(iw, self.meta)
+
+            self.assertEquals(facts['needs_info_action'], None)

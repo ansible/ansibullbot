@@ -106,6 +106,7 @@ def needs_info_template_facts(iw, meta):
                 pass
             else:
                 missing.append(exp)
+
     if missing:
         nifacts['template_missing_sections'] = missing
 
@@ -135,6 +136,8 @@ def needs_info_timeout_facts(iw, meta):
         'needs_info_action': None
     }
 
+    meta['is_needs_info'] = True
+
     if not meta['is_needs_info']:
         return nif
 
@@ -163,14 +166,11 @@ def needs_info_timeout_facts(iw, meta):
         # fix multiple warnings
         bp_comments = iw.history.get_boilerplate_comments()
         bp_comments_found = [c for c in bp_comments if c[0] == 'needs_info_base']
-        if bp_comments_found > 1:
-            nif['needs_info_action'] = 'close'
-            return nif
 
-        # close only if boilerplate has been sent before
         delta = (now - bpd).days
-        if delta > NI_EXPIRE:
-            nif['needs_info_action'] = 'close'
+        if delta >= NI_EXPIRE:
+            if len(bp_comments_found) >= 1:
+                nif['needs_info_action'] = 'close'
     else:
         delta = (now - la).days
         if delta > NI_WARN:
