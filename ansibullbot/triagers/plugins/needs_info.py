@@ -136,8 +136,6 @@ def needs_info_timeout_facts(iw, meta):
         'needs_info_action': None
     }
 
-    meta['is_needs_info'] = True
-
     if not meta['is_needs_info']:
         return nif
 
