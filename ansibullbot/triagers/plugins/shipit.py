@@ -14,8 +14,8 @@ def is_approval(body):
     return 'shipit' in lines or '+1' in lines or 'LGTM' in lines
 
 
-def automergeable(meta, issuewrapper):
-    '''Can this be automerged?'''
+def get_automerge_facts(issuewrapper, meta):
+    '''Can this be automerged? If not, why?'''
 
     # AUTOMERGE
     # * New module, existing namespace: require a "shipit" from some
@@ -25,78 +25,64 @@ def automergeable(meta, issuewrapper):
     #   of the namespace, which will likely be a vendor.
     # * And all new modules, of course, go in as "preview" mode.
 
+    def create_ameta(automerge, automerge_status):
+        return {'automerge': automerge, 'automerge_status': automerge_status}
+
     issue = issuewrapper
+
+    if not meta['shipit']:
+        return create_ameta(False, 'automerge shipit test failed')
 
     # https://github.com/ansible/ansibullbot/issues/430
     if meta['is_backport']:
-        logging.debug('automerge backport test failed')
-        return False
+        return create_ameta(False, 'automerge backport test failed')
 
     if issue.wip:
-        logging.debug('automerge WIP test failed')
-        return False
+        return create_ameta(False, 'automerge WIP test failed')
 
     if not issue.is_pullrequest():
-        logging.debug('automerge is_pullrequest test failed')
-        return False
+        return create_ameta(False, 'automerge is_pullrequest test failed')
 
     if meta['is_new_directory']:
-        logging.debug('automerge is_new_directory test failed')
-        return False
+        return create_ameta(False, 'automerge is_new_directory test failed')
 
     if meta['merge_commits']:
-        logging.debug('automerge merge_commits test failed')
-        return False
+        return create_ameta(False, 'automerge merge_commits test failed')
 
     if meta['has_commit_mention']:
-        logging.debug('automerge commit @mention test failed')
-        return False
+        return create_ameta(False, 'automerge commit @mention test failed')
 
     if meta['is_needs_revision']:
-        logging.debug('automerge needs_revision test failed')
-        return False
+        return create_ameta(False, 'automerge needs_revision test failed')
 
     if meta['is_needs_rebase']:
-        logging.debug('automerge needs_rebase test failed')
-        return False
+        return create_ameta(False, 'automerge needs_rebase test failed')
 
     if meta['is_needs_info']:
-        logging.debug('automerge needs_info test failed')
-        return False
+        return create_ameta(False, 'automerge needs_info test failed')
 
     if not meta['has_shippable']:
-        logging.debug('automerge has_shippable test failed')
-        return False
+        return create_ameta(False, 'automerge has_shippable test failed')
 
     if meta['has_travis']:
-        logging.debug('automerge has_travis test failed')
-        return False
+        return create_ameta(False, 'automerge has_travis test failed')
 
     if not meta['mergeable']:
-        logging.debug('automerge mergeable test failed')
-        return False
+        return create_ameta(False, 'automerge mergeable test failed')
 
     if meta['is_new_module']:
-        logging.debug('automerge new_module test failed')
-        return False
+        return create_ameta(False, 'automerge new_module test failed')
 
     if not meta['is_module']:
-        logging.debug('automerge is_module test failed')
-        return False
+        return create_ameta(False, 'automerge is_module test failed')
 
     if not meta['module_match']:
-        logging.debug('automerge module_match test failed')
-        return False
+        return create_ameta(False, 'automerge module_match test failed')
 
     if meta['ci_stale']:
-        logging.debug('automerge ci_stale test failed')
-        return False
+        return create_ameta(False, 'automerge ci_stale test failed')
 
     for pr_file in issue.pr_files:
-
-        #matched_filename = meta['module_match'].get('repo_filename')
-        #if matched_filename and pr_file.filename == matched_filename:
-        #    continue
 
         thisfn = pr_file.filename
         if thisfn.startswith('lib/ansible/modules'):
@@ -105,25 +91,18 @@ def automergeable(meta, issuewrapper):
         elif fnmatch(thisfn, 'test/sanity/*/*.txt'):
             if pr_file.additions or pr_file.status == 'added':
                 # new exception added, addition must be checked by an human
-                logging.debug('automerge new file(s) test failed')
-                return False
+                return create_ameta(False, 'automerge new file(s) test failed')
             if pr_file.deletions:
                 # new exception delete
                 continue
         else:
             # other file modified, pull-request must be checked by an human
-            logging.debug('automerge !module file(s) test failed')
-            return False
+            return create_ameta(False, 'automerge !module file(s) test failed')
 
-    #metadata = meta['module_match']['metadata']
-    #supported_by = metadata.get('supported_by')
-    #if supported_by != 'community':
-    #    return False
     if meta.get('component_support') != ['community']:
-        logging.debug('automerge community support test failed')
-        return False
+        return create_ameta(False, 'automerge community support test failed')
 
-    return True
+    return create_ameta(True, 'automerge tests passed')
 
 
 def needs_community_review(meta, issue):
