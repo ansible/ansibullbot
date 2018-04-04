@@ -74,7 +74,7 @@ from ansibullbot.triagers.plugins.contributors import get_contributor_facts
 from ansibullbot.triagers.plugins.notifications import get_notification_facts
 from ansibullbot.triagers.plugins.performance import get_performance_facts
 from ansibullbot.triagers.plugins.py3 import get_python3_facts
-from ansibullbot.triagers.plugins.shipit import automergeable
+from ansibullbot.triagers.plugins.shipit import get_automerge_facts
 from ansibullbot.triagers.plugins.shipit import get_review_facts
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
@@ -789,13 +789,14 @@ class AnsibleTriage(DefaultTriager):
                 if 'shipit' not in iw.labels:
                     actions.newlabel.append('shipit')
 
-                if automergeable(self.meta, iw):
-                    logging.info('auto-merge tests passed')
+                if self.meta['automerge']:
+                    logging.info(self.meta['automerge_status'])
                     if 'automerge' not in iw.labels:
                         actions.newlabel.append('automerge')
                     if self.automerge_on:
                         actions.merge = True
                 else:
+                    logging.debug(self.meta['automerge_status'])
                     if 'automerge' in iw.labels:
                         actions.unlabel.append('automerge')
 
@@ -1846,6 +1847,9 @@ class AnsibleTriage(DefaultTriager):
                 self.meta['migrated_issue_repo_path'] = None
                 self.meta['migrated_issue_number'] = None
                 self.meta['migrated_issue_state'] = None
+
+        # automerge
+        self.meta.update(get_automerge_facts(iw, self.meta))
 
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
