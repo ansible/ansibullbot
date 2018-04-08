@@ -229,7 +229,7 @@ def main():
         'Qalthos,amitsi,gundalow,privateip': 'netvisor',
         'haroldwongms,nitzmahone,tstringer': 'azure',
         'dagwieers,jborean93,jhawkesworth': 'windows',
-        'dagwieers,dav1x,jctanner,nerzhul': 'vmware',
+        'dagwieers,dav1x,jctanner': 'vmware',
         'isharacomix,jrrivers,privateip': 'cumulus',
         'chiradeep,giorgos-nikolopoulos': 'netscaler',
         'ericsysmin,grastogi23,khaltore': 'avi',
