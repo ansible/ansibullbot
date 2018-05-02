@@ -33,6 +33,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     has_landscape = False
     has_travis = False
     has_travis_notification = False
+    has_zuul = False
     ci_state = None
     ci_stale = None
     mstate = None
@@ -65,6 +66,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         'has_landscape': has_landscape,
         'has_travis': has_travis,
         'has_travis_notification': has_travis_notification,
+        'has_zuul': has_zuul,
         'merge_commits': merge_commits,
         'has_merge_commit_notification': has_merge_commit_notification,
         'mergeable': None,
@@ -110,6 +112,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     if [x for x in ci_status if isinstance(x, dict) and
             'landscape.io' in x['target_url']]:
         has_landscape = True
+
+    if [x for x in ci_status if isinstance(x, dict) and
+            'zuul' in x['target_url']]:
+        has_zuul = True
 
     ci_states = [x['state'] for x in ci_status
                  if isinstance(x, dict) and 'shippable.com' in x['target_url']]
