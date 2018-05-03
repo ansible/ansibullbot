@@ -65,6 +65,7 @@ from ansibullbot.triagers.plugins.component_matching import get_component_match_
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
 from ansibullbot.triagers.plugins.label_commands import get_waffling_overrides
+from ansibullbot.triagers.plugins.needs_contributor import get_needs_contributor_facts
 from ansibullbot.triagers.plugins.needs_info import is_needsinfo
 from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
 from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
@@ -1078,7 +1079,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
 
         # needs_contributor
-        if 'needs_contributor' in self.meta['maintainer_commands']:
+        if self.meta['is_needs_contributor']:
             if 'waiting_on_contributor' not in iw.labels:
                 actions.newlabel.append('waiting_on_contributor')
         elif 'waiting_on_contributor' in iw.labels:
@@ -1756,6 +1757,15 @@ class AnsibleTriage(DefaultTriager):
             )
         )
 
+        # needs_contributor?
+        self.meta.update(
+            get_needs_contributor_facts(
+                self,
+                iw,
+                self.meta,
+            )
+        )
+
         self.meta.update(get_notification_facts(iw, self.meta, self.file_indexer))
 
         # ci_verified and test results
@@ -1950,13 +1960,12 @@ class AnsibleTriage(DefaultTriager):
         vcommands.remove('!needs_rebase')
         vcommands.remove('needs_revision')
         vcommands.remove('!needs_revision')
+        vcommands.remove('needs_contributor')
+        vcommands.remove('!needs_contributor')
 
         iw = issuewrapper
 
         maintainers = []
-        #if meta['module_match']:
-        #    maintainers += meta.get('module_match', {}).get('maintainers', [])
-        #    maintainers += meta.get('module_match', {}).get('authors', [])
 
         maintainers += meta.get('component_authors', [])
         maintainers += meta.get('component_maintainers', [])
@@ -2031,7 +2040,7 @@ class AnsibleTriage(DefaultTriager):
         if iw.is_issue():
             if meta['is_needs_info']:
                 wo = iw.submitter
-            elif 'needs_contributor' in meta['maintainer_commands']:
+            elif meta['is_needs_contributor']:
                 wo = 'contributor'
             else:
                 wo = 'maintainer'
