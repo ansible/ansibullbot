@@ -80,7 +80,7 @@ If you are not sure who the pull request is waiting on, please use the [`bot_st
 The bot will label a pull request with [`shipit`](#label-shipit) when at least **two** [`shipit`] commands are issued, the following rules describe how [`shipit`](#cmd-shipit) commands are count:
 
 * [`shipit`](#cmd-shipit) issued by a module maintainer or a maintainer of a module in the same namespace or a core team member are always taken in account
-* when the submitter is a module maintainer or a maintainer of a module in the same namespace or a core team member, his [`shipit`](#cmd-shipit) is automatically counted
+* when the submitter is a module maintainer or a maintainer of a module in the same namespace or a core team member, their [`shipit`](#cmd-shipit) is automatically counted
 * [`shipit`](#cmd-shipit) issued by anyone else is taken in account when both conditions are met:
   * at least one module maintainer or a maintainer of a module in the same namespace or a core team member has approved the pull request with a [`shipit`](#cmd-shipit) command
   * at least three people which aren't maintainer nor core team member have approved the pull request using the [`shipit`](#cmd-shipit)
@@ -169,7 +169,7 @@ The bot adds many labels on issues and pull requests.
 Label | Scope | Prevent automerge | Description
 --- | --- | --- | ---
 **<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week. When a pull request is closed and reopened, the CI is triggered again. In some case, the bot will automatically trigger the CI when a pull request is labeled with both [`shipit`](#label-shipit) and `stale_ci`.
-**<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update his review.
+**<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update their review.
 **<a name="label-core_review">core_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
 **<a name="label-committer_review">committer_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [certified](#certified) review workflow.
 **<a name="label-community_review">community_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
