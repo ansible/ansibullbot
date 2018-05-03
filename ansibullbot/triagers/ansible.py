@@ -1987,6 +1987,15 @@ class AnsibleTriage(DefaultTriager):
             botnames=self.BOTNAMES
         )
 
+        # JIMI_SKIP!!!
+        if issuewrapper.submitter in ['jimi-c']:
+            if 'bot_skip' not in meta['maintainer_commands']:
+                meta['maintainer_commands'].append('bot_skip')
+            if '!bot_skip' in meta['maintainer_commands']:
+                meta['maintainer_commands'].remove('!bot_skip')
+            if '!bot_skip' in meta['submitter_commands']:
+                meta['submitter_commands'].remove('!bot_skip')
+
         negative_commands = \
             [x for x in self.VALID_COMMANDS if x.startswith('!')]
         negative_commands = [x.replace('!', '') for x in negative_commands]
