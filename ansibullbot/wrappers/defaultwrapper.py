@@ -947,6 +947,7 @@ class DefaultWrapper(object):
             if pdata[0] < self.pullrequest.updated_at or force_fetch:
                 logging.info('fetching pr status: <date')
                 jdata = self._fetch_api_url(surl)
+                self.log_ci_status(jdata)
                 fetched = True
             else:
                 jdata = pdata[1]
@@ -967,6 +968,41 @@ class DefaultWrapper(object):
         #jdata = sort_unique_statuses(jdata)
 
         return jdata
+
+    def log_ci_status(self, status_data):
+        '''Keep track of historical CI statuses'''
+
+        logfile = os.path.join(
+            self.cachedir,
+            'issues',
+            str(self.number),
+            'pr_status_log.json'
+        )
+
+        jdata = {}
+        if os.path.isfile(logfile):
+            with open(logfile, 'r') as f:
+                jdata = json.loads(f.read())
+
+        # the "url" field is constant
+        # the "target_url" field varies between CI providers
+
+        for sd in status_data:
+            turl = sd['target_url']
+            if turl not in jdata:
+                jdata[turl] = {
+                    'meta': sd.copy(),
+                    'history': {}
+                }
+            else:
+                if jdata[turl]['meta']['updated_at'] < sd['updated_at']:
+                    jdata[turl]['meta'] = sd.copy()
+            ts = sd['updated_at']
+            if ts not in jdata[turl]['history']:
+                jdata[turl]['history'][ts] = sd['state']
+
+        with open(logfile, 'w') as f:
+            f.write(json.dumps(jdata))
 
     @property
     def pullrequest_status(self):
