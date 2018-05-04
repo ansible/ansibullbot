@@ -82,6 +82,10 @@ def get_automerge_facts(issuewrapper, meta):
     if meta['ci_stale']:
         return create_ameta(False, 'automerge ci_stale test failed')
 
+    # https://github.com/ansible/ansibullbot/issues/904
+    if meta['ci_state'] != 'success':
+        return create_ameta(False, 'automerge ci_state test failed')
+
     for pr_file in issue.pr_files:
 
         thisfn = pr_file.filename
