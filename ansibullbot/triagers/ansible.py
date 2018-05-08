@@ -32,6 +32,7 @@ import json
 import logging
 import os
 import pytz
+import requests
 
 import ansibullbot.constants as C
 
@@ -503,7 +504,47 @@ class AnsibleTriage(DefaultTriager):
 
                 logging.info('finished triage for %s' % str(iw))
 
-    def update_issue_summaries(self, repopath=None):
+    def eval_pr_param(self, pr):
+        '''PR/ID can be a number, numberlist, script, jsonfile, or url'''
+
+        if isinstance(pr, list):
+            pass
+
+        elif pr.isdigit():
+            pr = int(pr)
+
+        elif pr.startswith('http'):
+            rr = requests.get(pr)
+            numbers = rr.json()
+            pr = numbers[:]
+
+        elif os.path.isfile(pr) and not os.access(pr, os.X_OK):
+            with open(pr, 'r') as f:
+                numbers = json.loads(f.read())
+            pr = numbers[:]
+
+        elif os.path.isfile(pr) and os.access(pr, os.X_OK):
+            # allow for scripts when trying to target spec issues
+            logging.info('executing %s' % pr)
+            (rc, so, se) = run_command(pr)
+            numbers = json.loads(so)
+            numbers = [int(x) for x in numbers]
+            logging.info(
+                '%s numbers after running script' % len(numbers)
+            )
+            pr = numbers[:]
+
+        elif ',' in pr:
+            numbers = [int(x) for x in pr.split(',')]
+            pr = numbers[:]
+
+        if not isinstance(pr, list):
+            pr = [pr]
+
+        return pr
+
+
+    def update_issue_summaries(self, issuenums=None, repopath=None):
 
         if repopath:
             repopaths = [repopath]
@@ -512,15 +553,17 @@ class AnsibleTriage(DefaultTriager):
 
         for rp in repopaths:
             if self.gqlc:
-                if self.pr and not os.path.isfile(self.pr):
+                if issuenums and len(issuenums) <= 10:
                     self.issue_summaries[repopath] = {}
-                    for pr in self.pr.split(','):
+
+                    for num in issuenums:
                         # --pr is an alias to --id and can also be for issues
-                        node = self.gqlc.get_summary(rp, 'pullRequest', pr)
+                        node = self.gqlc.get_summary(rp, 'pullRequest', num)
                         if node is None:
-                            node = self.gqlc.get_summary(rp, 'issue', pr)
+                            node = self.gqlc.get_summary(rp, 'issue', num)
                         if node is not None:
-                            self.issue_summaries[repopath][pr] = node
+                            self.issue_summaries[repopath][num] = node
+
                 else:
                     self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
             else:
@@ -1506,12 +1549,17 @@ class AnsibleTriage(DefaultTriager):
                 continue
             if self.module_repos_only and 'module' not in repo:
                 continue
-            self._collect_repo(repo)
+
+            if self.pr:
+                numbers = self.eval_pr_param(self.pr)
+                self._collect_repo(repo, issuenums=numbers)
+            else:
+                self._collect_repo(repo)
 
         logging.info('finished collecting issues')
 
     @RateLimited
-    def _collect_repo(self, repo):
+    def _collect_repo(self, repo, issuenums=None):
         '''Collect issues for an individual repo'''
 
         logging.info('getting repo obj for %s' % repo)
@@ -1536,33 +1584,15 @@ class AnsibleTriage(DefaultTriager):
         issuecache = {}
 
         logging.info('getting issue objs for %s' % repo)
-        self.update_issue_summaries(repopath=repo)
+        self.update_issue_summaries(repopath=repo, issuenums=issuenums)
 
         issuecache = {}
         numbers = self.issue_summaries[repo].keys()
         numbers = set(int(x) for x in numbers)
-        logging.info('%s known numbers' % len(numbers))
-
-        if self.pr:
-            if os.path.isfile(self.pr) and \
-                    os.access(self.pr, os.X_OK):
-                # allow for scripts when trying to target spec issues
-                logging.info('executing %s' % self.pr)
-                (rc, so, se) = run_command(self.pr)
-                param_numbers = json.loads(so)
-                param_numbers = [int(x) for x in param_numbers]
-                logging.info(
-                    '%s numbers after running script' % len(param_numbers)
-                )
-            else:
-                # the issue id can be a list separated by commas
-                if ',' in self.pr:
-                    param_numbers = [int(x) for x in self.pr.split(',')]
-                else:
-                    param_numbers = [int(self.pr)]
-            logging.info('%s numbers from --id/--pr' % len(param_numbers))
-            numbers.intersection_update(param_numbers)
+        if issuenums:
+            numbers.intersection_update(issuenums)
             numbers = list(numbers)
+        logging.info('%s known numbers' % len(numbers))
 
         if self.daemonize:
 
