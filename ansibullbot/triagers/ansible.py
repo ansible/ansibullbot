@@ -1708,6 +1708,7 @@ class AnsibleTriage(DefaultTriager):
         # clear the actions+meta
         self.meta = copy.deepcopy(self.EMPTY_META)
 
+        self.meta['state'] = iw.state
         self.meta['submitter'] = iw.submitter
 
         # extract template data
