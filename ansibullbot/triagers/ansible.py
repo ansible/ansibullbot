@@ -563,7 +563,7 @@ class AnsibleTriage(DefaultTriager):
                         if node is None:
                             node = self.gqlc.get_summary(rp, 'issue', num)
                         if node is not None:
-                            self.issue_summaries[repopath][num] = node
+                            self.issue_summaries[repopath][str(num)] = node
 
                 else:
                     self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
@@ -589,7 +589,7 @@ class AnsibleTriage(DefaultTriager):
         if self.gqlc:
             import epdb; epdb.st()
         else:
-            self.issue_summaries[rp][number] = \
+            self.issue_summaries[rp][str(number)] = \
                 self.gws.get_single_issue_summary(rp, number, force=True)
 
     @RateLimited
@@ -1658,8 +1658,8 @@ class AnsibleTriage(DefaultTriager):
         if not self.only_closed and not self.ignore_state:
             numbers = [
                 x for x in numbers
-                if str(x) in self.issue_summaries[repo] and
-                self.issue_summaries[repo][str(x)]['state'] == 'open'
+                if (str(x) in self.issue_summaries[repo] and
+                self.issue_summaries[repo][str(x)]['state'] == 'open' )
             ]
             logging.info('%s numbers after checking state' % len(numbers))
 
