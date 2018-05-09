@@ -79,6 +79,7 @@ from ansibullbot.triagers.plugins.py3 import get_python3_facts
 from ansibullbot.triagers.plugins.shipit import get_automerge_facts
 from ansibullbot.triagers.plugins.shipit import get_review_facts
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
+from ansibullbot.triagers.plugins.shipit import get_submitter_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
@@ -1808,6 +1809,16 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(self.process_comment_commands(iw, self.meta))
         self.meta.update(needs_info_template_facts(iw, self.meta))
         self.meta.update(needs_info_timeout_facts(iw, self.meta))
+
+        # who is this person?
+        self.meta.update(
+            get_submitter_facts(
+                iw,
+                self.meta,
+                self.module_indexer,
+                self.component_matcher
+            )
+        )
 
         # shipit?
         self.meta.update(
