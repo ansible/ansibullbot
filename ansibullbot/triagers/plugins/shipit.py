@@ -221,6 +221,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         'shipit_count_community': False,
         'shipit_count_maintainer': False,
         'shipit_count_ansible': False,
+        'shipit_count_vtotal': False,
         'shipit_actors': None,
         'community_usernames': [],
         'notify_community_shipit': False,
@@ -240,8 +241,8 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             nmeta['owner_pr'] = True
             return nmeta
 
-    if not meta['module_match']:
-        return nmeta
+    #if not meta['module_match']:
+    #    return nmeta
 
     # https://github.com/ansible/ansibullbot/issues/722
     if iw.wip:
@@ -252,7 +253,6 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         logging.debug('PRs with needs_revision or needs_rebase label do not get shipits')
         return nmeta
 
-    #maintainers = meta['module_match']['maintainers']
     maintainers = meta.get('component_maintainers', [])
     maintainers = \
         ModuleIndexer.replace_ansible(
@@ -264,17 +264,11 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     modules_files_owned = 0
     if not meta['is_new_module']:
         for f in iw.files:
-            #if f.startswith('lib/ansible/modules') and iw.submitter in module_indexer.modules[f]['maintainers']:
             if f.startswith('lib/ansible/modules') and iw.submitter in meta['component_maintainers']:
                 modules_files_owned += 1
     nmeta['owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
 
     # community is the other maintainers in the same namespace
-
-    #mnamespace = meta['module_match']['namespace']
-    #community = \
-    #    module_indexer.get_maintainers_for_namespace(mnamespace)
-
     community = meta.get('component_namespace_maintainers', [])
     community = [x for x in community if x != 'ansible' and
                  x not in core_team and
@@ -362,6 +356,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     nmeta['community_usernames'] = sorted(community)
 
     total = community_shipits + maintainer_shipits + ansible_shipits
+    nmeta['shipit_count_vtotal'] = total + other_shipits
 
     # include shipits from other people to push over the edge
     if total == 1 and other_shipits > 2:
@@ -417,3 +412,35 @@ def get_supported_by(issuewrapper, meta):
         supported_by = 'certified'
 
     return supported_by
+
+
+def get_submitter_facts(issuewrapper, meta, module_indexer, component_matcher):
+    '''Summary stats of submitter's commit history'''
+    sfacts = {
+        'submitter_previous_commits': 0,
+        'submitter_previous_commits_for_pr_files': 0,
+    }
+
+    login = issuewrapper.submitter
+    emails = set()
+    for k,v in component_matcher.email_cache.items():
+        if v == login:
+            emails.add(k)
+    for k,v in module_indexer.emails_cache.items():
+        if v == login:
+            emails.add(k)
+
+    email_map = \
+        component_matcher.gitrepo.get_commits_by_email(emails)
+
+    for k,v in email_map.items():
+        sfacts['submitter_previous_commits'] += v['commit_count']
+
+    if meta.get('component_filenames'):
+        for filen in meta['component_filenames']:
+            for k,v in email_map.items():
+                if filen in v['commit_count_byfile']:
+                    sfacts['submitter_previous_commits_for_pr_files'] += \
+                        v['commit_count_byfile'][filen]
+
+    return sfacts
