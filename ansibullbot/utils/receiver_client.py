@@ -27,9 +27,13 @@ def post_to_receiver(path, params, data):
         except Exception as e:
             logging.warning(e)
 
-    if rr is not None:
-        for k,v in rr.json().items():
-            logging.info('RECEIVER: %s %s' % (v, k))
+    try:
+        if rr is not None:
+            for k, v in rr.json().items():
+                logging.info('RECEIVER: %s %s' % (v, k))
+    except ValueError as e:
+        logging.debug('RECEIVER: status_code = %s' % rr.status_code)
+        logging.warning(e)
 
 
 def get_receiver_summaries(username, reponame, state=None, number=None):
