@@ -93,7 +93,7 @@ Once the pull request labeled with [`shipit`](#label-shipit), the module will be
 
 #### Existing Modules
 
-Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/latest/dev_guide/developing_modules_documenting.html#ansible-metadata-block) field per the [metadata proposal](https://github.com/ansible/proposals/issues/30).
+Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/devel/dev_guide/developing_modules_documenting.html#ansible-metadata-block) field per the [metadata proposal](https://github.com/ansible/proposals/issues/30).
 
 :information_source: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes. When other changes are line deletions in `ansible/test/*/*.txt` files, the `supported_by` property isn't ignored.
 
@@ -187,10 +187,10 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-needs_ci">needs_ci</a>** | pull requests | no | Identify pull requests for which CI status is missing. When a pull request is closed and reopened or when new commits are updated, the CI is triggered again.
 **<a name="label-needs_info">needs_info</a>** | issues | yes | Identify issues for which reviewer requested further information.
 **<a name="label-waiting_on_contributor">waiting_on_contributor</a>** | issues pull requests | no | Identify issues for which help is needed
-**<a name="label-needs_maintainer">needs_maintainer</a>** | pull requests | no | Ansibullbot is unable to identify authors or maintainers of the related module. Check `author` field format in [`DOCUMENTATION block`](http://docs.ansible.com/ansible/dev_guide/developing_modules_documenting.html#documentation-block).
+**<a name="label-needs_maintainer">needs_maintainer</a>** | pull requests | no | Ansibullbot is unable to identify authors or maintainers of the related module. Check `author` field format in [`DOCUMENTATION block`](http://docs.ansible.com/ansible/devel/dev_guide/developing_modules_documenting.html#documentation-block).
 **<a name="label-merge_commit">merge_commit</a>** | pull requests | no | Added to pull requests containing at least one merge commit. Pull requests must not contain merge commit.
 **<a name="label-needs_revision">needs_revision</a>** | pull requests | yes | Used for pull request which fail continuous integration tests or if a maintainer has requested a review/revision of the code. This label can be cleared by fixing any failed tests or by commenting [`ready_for_review`](#cmd-ready_for_review).
-**<a name="label-needs_rebase">needs_rebase</a>** | pull requests | yes | Pull requests which are out of sync with ansible/ansible's `devel` branch. Please review the [rebase guide](http://docs.ansible.com/ansible/dev_guide/developing_rebasing.html) for further information.
+**<a name="label-needs_rebase">needs_rebase</a>** | pull requests | yes | Pull requests which are out of sync with ansible/ansible's `devel` branch. Please review the [rebase guide](http://docs.ansible.com/ansible/devel/dev_guide/developing_rebasing.html) for further information.
 **<a name="label-needs_template">needs_template</a>** | issues pull requests | no | Label added when description is incomplete. See [issue template](https://raw.githubusercontent.com/ansible/ansible/devel/.github/ISSUE_TEMPLATE.md), pull request [template](https://raw.githubusercontent.com/ansible/ansible/devel/.github/PULL_REQUEST_TEMPLATE.md).
 **<a name="label-needs_triage">needs_triage</a>** | issues pull requests | no | This label will be added if your issue is being labeled for the first time. We (ansible staff and maintainers) use this label to find issues that need a human first touch. We'll remove it once we've given the issue a quick look for any labeling problems or missing data.
 **<a name="label-filament">filament</a>** | pull requests | no | Identify pull requests related to [Ansible Lightbulb](https://github.com/ansible/lightbulb) project.
