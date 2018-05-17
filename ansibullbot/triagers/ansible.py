@@ -1023,27 +1023,24 @@ class AnsibleTriage(DefaultTriager):
                                     cl not in actions.newlabel:
                                 actions.newlabel.append(cl)
 
-        if self.meta['is_pullrequest']:
-            if self.meta['is_backport']:
-                version = self.version_indexer.strip_ansible_version(self.meta['base_ref'])
-                if version:
-                    for label in self.valid_labels:
-                        if label.startswith('affects_'):
-                            if label.endswith(version):
-                                if label not in iw.labels:
-                                    actions.newlabel.append(label)
-                            elif label in iw.labels:
-                                actions.unlabel.append(label)
-
-        if not self.meta['is_pullrequest']:
-            if self.meta['ansible_label_version']:
-                vlabels = [x for x in iw.labels if x.startswith('affects_')]
-                if not vlabels:
-                    label = 'affects_%s' % self.meta['ansible_label_version']
-                    if label not in iw.labels:
-                        # do not re-add version labels
-                        if not iw.history.was_unlabeled(label):
-                            actions.newlabel.append(label)
+        if self.meta['is_pullrequest'] and self.meta['is_backport']:
+            version = self.version_indexer.strip_ansible_version(self.meta['base_ref'])
+            if version:
+                for label in self.valid_labels:
+                    if label.startswith('affects_'):
+                        if label.endswith(version):
+                            if label not in iw.labels:
+                                actions.newlabel.append(label)
+                        elif label in iw.labels:
+                            actions.unlabel.append(label)
+        elif self.meta['ansible_label_version']:
+            vlabels = [x for x in iw.labels if x.startswith('affects_')]
+            if not vlabels:
+                label = 'affects_%s' % self.meta['ansible_label_version']
+                if label not in iw.labels:
+                    # do not re-add version labels
+                    if not iw.history.was_unlabeled(label):
+                        actions.newlabel.append(label)
 
         if self.meta['issue_type']:
             label = self.ISSUE_TYPES.get(self.meta['issue_type'])
