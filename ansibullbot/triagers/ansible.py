@@ -1682,14 +1682,13 @@ class AnsibleTriage(DefaultTriager):
         if self.only_issues:
             numbers = [
                 x for x in numbers
-                if self.issue_summaries[repo][str(x)]['type'].lower() == 'issue'
+                if self.issue_summaries[repo][str(x)]['type'] == 'issue'
             ]
             logging.info('%s numbers after checking type' % len(numbers))
         elif self.only_prs:
             numbers = [
                 x for x in numbers
-                if self.issue_summaries[repo][str(x)]['type'].lower() ==
-                'pullrequest'
+                if self.issue_summaries[repo][str(x)]['type'] == 'pullrequest'
             ]
             logging.info('%s numbers after checking type' % len(numbers))
 
