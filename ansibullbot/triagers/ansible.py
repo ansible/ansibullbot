@@ -435,7 +435,6 @@ class AnsibleTriage(DefaultTriager):
                         self.build_history(iw)
 
                     actions = AnsibleActions()
-                    actionuss
                     if iw.repo_full_name not in MREPOS:
                         # basic processing for ansible/ansible
                         self.process(iw)
