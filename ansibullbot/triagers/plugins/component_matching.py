@@ -236,7 +236,8 @@ def get_pr_quality_facts(issuewrapper):
     iw = issuewrapper
 
     qmeta = {
-        'is_bad_pr': False
+        'is_bad_pr': False,
+        'is_empty_pr': False
     }
 
     if not iw.is_pullrequest():
@@ -246,6 +247,14 @@ def get_pr_quality_facts(issuewrapper):
         if f.startswith('lib/ansible/modules/core') or \
                 f.startswith('lib/ansible/modules/extras'):
             qmeta['is_bad_pr'] = True
+
+    # https://github.com/ansible/ansibullbot/issues/534
+    try:
+        if len(iw.files) == 0:
+            qmeta['is_bad_pr'] = True
+            qmeta['is_empty_pr'] = True
+    except:
+        pass
 
     try:
         if len(iw.files) > 50:
