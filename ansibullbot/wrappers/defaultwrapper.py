@@ -878,7 +878,7 @@ class DefaultWrapper(object):
             # the underlying call is wrapper with ratelimited ...
             self._pr = self.repo.get_pullrequest(self.number)
             self.get_pullrequest_status(force_fetch=True)
-            self.get_reviews()
+            self._pr_reviews = False
             self._merge_commits = False
             self._committer_emails = False
 
