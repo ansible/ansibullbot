@@ -986,6 +986,16 @@ class AnsibleTriage(DefaultTriager):
                     ):
                         actions.unlabel.append('module')
 
+        # NEW PLUGIN
+        if not self.meta['is_bad_pr']:
+            label = 'new_plugin'
+            if self.meta['is_new_plugin']:
+                if label not in iw.labels and not iw.history.was_unlabeled(label):
+                    actions.newlabel.append(label)
+            else:
+                if label in iw.labels and not iw.history.was_labeled(label):
+                    actions.unlabel.append(label)
+
         # component labels
         if not self.meta['is_bad_pr']:
             if self.meta.get('component_labels') and not self.meta.get('merge_commits'):
