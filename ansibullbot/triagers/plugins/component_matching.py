@@ -142,6 +142,12 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
             cmeta['is_new_module'] = True
             cmeta['is_new_plugin'] = True
 
+        # https://github.com/ansible/ansibullbot/issues/684
+        if iw.new_files:
+            for x in iw.new_files:
+                if '/plugins/' in x:
+                    cmeta['is_new_plugin'] = True
+
     # welcome message to indicate which files the bot matched
     if iw.is_issue():
 
