@@ -435,6 +435,7 @@ class AnsibleTriage(DefaultTriager):
                         self.build_history(iw)
 
                     actions = AnsibleActions()
+                    actionuss
                     if iw.repo_full_name not in MREPOS:
                         # basic processing for ansible/ansible
                         self.process(iw)
@@ -1360,6 +1361,11 @@ class AnsibleTriage(DefaultTriager):
             else:
                 if 'new_contributor' in iw.labels:
                     actions.unlabel.append('new_contributor')
+
+        # https://github.com/ansible/ansibullbot/issues/534
+        if iw.is_pullrequest() and self.meta['is_empty_pr'] and not iw.wip:
+            actions = AnsibleActions()
+            actions.close = True
 
         actions.newlabel = sorted(set([x.encode('ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([x.encode('ascii') for x in actions.unlabel]))
