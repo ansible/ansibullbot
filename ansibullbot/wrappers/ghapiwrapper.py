@@ -54,6 +54,8 @@ class RepoWrapper(object):
         self._pullrequest_summaries = False
         self.repo = self.get_repo(repo_path)
 
+        self._labels = False
+
     @RateLimited
     def get_repo(self, repo_path):
         repo = self.gh.get_repo(repo_path)
@@ -132,6 +134,12 @@ class RepoWrapper(object):
     def get_pullrequest(self, number):
         pr = self.repo.get_pull(number)
         return pr
+
+    @property
+    def labels(self):
+        if self._labels is False:
+            self._labels = [x.name for x in self.get_labels()]
+        return self._labels
 
     @RateLimited
     def get_labels(self):

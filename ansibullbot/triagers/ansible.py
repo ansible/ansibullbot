@@ -1358,6 +1358,19 @@ class AnsibleTriage(DefaultTriager):
                 if 'new_contributor' in iw.labels:
                     actions.unlabel.append('new_contributor')
 
+        # https://github.com/ansible/ansibullbot/issues/535
+        if not self.meta['is_bad_pr']:
+            for cm in self.meta['component_matches']:
+                if cm.get('labels'):
+                    for label in cm['labels']:
+                        exists = label in iw.labels
+                        unlabeled = iw.history.was_unlabeled(label)
+                        valid = label in iw.repo.labels
+
+                        # add it if a human did not remove it and is valid
+                        if not exists and not unlabeled and valid:
+                            actions.newlabel.append(label)
+
         # https://github.com/ansible/ansibullbot/issues/534
         if iw.is_pullrequest() and self.meta['is_empty_pr'] and not iw.wip:
             actions = AnsibleActions()
