@@ -81,6 +81,7 @@ from ansibullbot.triagers.plugins.shipit import get_review_facts
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
 from ansibullbot.triagers.plugins.shipit import get_submitter_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
+from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 
@@ -1172,6 +1173,11 @@ class AnsibleTriage(DefaultTriager):
             if 'performance' not in iw.labels:
                 actions.newlabel.append('performance')
 
+        # traceback
+        if self.meta['has_traceback']:
+            if 'traceback' not in iw.labels:
+                actions.newlabel.append('traceback')
+
         # label commands
         if self.meta['label_cmds']:
             if self.meta['label_cmds']['add']:
@@ -1803,6 +1809,9 @@ class AnsibleTriage(DefaultTriager):
 
         # performance
         self.meta.update(get_performance_facts(iw, self.meta))
+
+        # traceback
+        self.meta.update(get_traceback_facts(iw))
 
         # shipit?
         self.meta.update(
