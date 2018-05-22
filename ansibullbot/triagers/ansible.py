@@ -82,6 +82,7 @@ from ansibullbot.triagers.plugins.shipit import get_review_facts
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
 from ansibullbot.triagers.plugins.shipit import get_submitter_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
+from ansibullbot.triagers.plugins.small_patch import get_small_patch_facts
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
@@ -1200,6 +1201,16 @@ class AnsibleTriage(DefaultTriager):
                     if label in actions.newlabel:
                         actions.newlabel.remove(label)
 
+        # small patch?
+        if iw.is_pullrequest():
+            label_name = 'small_patch'
+            if self.meta['is_small_patch']:
+                if label_name not in iw.labels:
+                    actions.newlabel.append(label_name)
+            else:
+                if label_name in iw.labels:
+                    actions.unlabel.append(label_name)
+
         if iw.is_pullrequest():
 
             # https://github.com/ansible/ansibullbot/issues/312
@@ -1819,6 +1830,9 @@ class AnsibleTriage(DefaultTriager):
 
         # traceback
         self.meta.update(get_traceback_facts(iw))
+
+        # small_patch
+        self.meta.update(get_small_patch_facts(iw))
 
         # shipit?
         self.meta.update(
