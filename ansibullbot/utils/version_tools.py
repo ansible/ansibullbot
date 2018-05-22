@@ -53,26 +53,47 @@ class AnsibleVersionIndexer(object):
         cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
             % self.checkoutdir
         (rc, so, se) = run_command(cmd)
-        print str(so) + str(se)
+        print(str(so) + str(se))
 
     def update_checkout(self):
         """rebase + pull + update the checkout"""
         cmd = "cd %s ; git pull --rebase" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
-        print str(so) + str(se)
+        print(str(so) + str(se))
         cmd = "cd %s ; git submodule update --recursive" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
-        print str(so) + str(se)
+        print(str(so) + str(se))
 
-    def _get_versions(self):
-        self.VALIDVERSIONS = {}
+    def _get_devel_version(self):
         # get devel's version
         vpath = os.path.join(self.checkoutdir, 'VERSION')
         vpath = os.path.expanduser(vpath)
         devel_version = None
-        with open(vpath, 'rb') as f:
-            devel_version = f.read().strip().split()[0]
-            self.VALIDVERSIONS[devel_version] = 'devel'
+
+        if os.path.isfile(vpath):
+            with open(vpath, 'rb') as f:
+                devel_version = f.read().strip().split()[0]
+                self.VALIDVERSIONS[devel_version] = 'devel'
+        else:
+            # __version__ = '2.6.0dev0'
+            vpath = os.path.join(self.checkoutdir, 'lib/ansible/release.py')
+            with open(vpath, 'r') as f:
+                flines = f.readlines()
+            for line in flines:
+                line = line.strip()
+                if line.startswith('__version__'):
+                    devel_version = line.split('=')[-1].strip()
+                    devel_version = devel_version.replace("'", '')
+                    devel_version = devel_version.replace('"', '')
+                    break
+
+        return devel_version
+
+    def _get_versions(self):
+        self.VALIDVERSIONS = {}
+
+        # get devel's version
+        devel_version = self._get_devel_version()
 
         # branches
         cmd = 'cd %s;' % self.checkoutdir
@@ -384,12 +405,9 @@ class AnsibleVersionIndexer(object):
         if commithash in self.COMMITVERSIONS:
             aversion = self.COMMITVERSIONS[commithash]
         else:
+
             # get devel's version
-            vpath = os.path.join(self.checkoutdir, 'VERSION')
-            vpath = os.path.expanduser(vpath)
-            devel_version = None
-            with open(vpath, 'rb') as f:
-                devel_version = f.read().strip().split()[0]
+            devel_version = self._get_devel_version()
 
             cmd = 'cd %s;' % self.checkoutdir
             cmd += 'git branch -r --contains %s' % commithash
