@@ -64,16 +64,14 @@ class AnsibleVersionIndexer(object):
         (rc, so, se) = run_command(cmd)
         print str(so) + str(se)
 
-    def _get_devel_version(self):
-        version_helper_path = os.path.join(self.checkoutdir, 'packaging/release/versionhelper/version_helper.py')
-        cmd = "python %s --raw" % version_helper_path
-        (rc, so, se) = run_command(cmd)
-        return so.strip().split()[0]
-
     def _get_versions(self):
         self.VALIDVERSIONS = {}
-        devel_version = self._get_devel_version()
-        if devel_version:
+        # get devel's version
+        vpath = os.path.join(self.checkoutdir, 'VERSION')
+        vpath = os.path.expanduser(vpath)
+        devel_version = None
+        with open(vpath, 'rb') as f:
+            devel_version = f.read().strip().split()[0]
             self.VALIDVERSIONS[devel_version] = 'devel'
 
         # branches
@@ -386,7 +384,12 @@ class AnsibleVersionIndexer(object):
         if commithash in self.COMMITVERSIONS:
             aversion = self.COMMITVERSIONS[commithash]
         else:
-            devel_version = self._get_devel_version()
+            # get devel's version
+            vpath = os.path.join(self.checkoutdir, 'VERSION')
+            vpath = os.path.expanduser(vpath)
+            devel_version = None
+            with open(vpath, 'rb') as f:
+                devel_version = f.read().strip().split()[0]
 
             cmd = 'cd %s;' % self.checkoutdir
             cmd += 'git branch -r --contains %s' % commithash
