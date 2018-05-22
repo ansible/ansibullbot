@@ -60,6 +60,7 @@ from ansibullbot.errors import LabelWafflingError
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
+from ansibullbot.triagers.plugins.ci_rebuild import get_ci_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
@@ -108,6 +109,7 @@ class AnsibleActions(DefaultActions):
         super(AnsibleActions, self).__init__()
         self.close_migrated = False
         self.rebuild = False
+        self.cancel_ci = False
 
 
 class AnsibleTriage(DefaultTriager):
@@ -812,9 +814,14 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
                     if 'merge_commit' not in iw.labels:
                         actions.newlabel.append('merge_commit')
+                actions.cancel_ci = True
             else:
                 if 'merge_commit' in iw.labels:
                     actions.unlabel.append('merge_commit')
+
+        # BAD PR
+        if iw.is_pullrequest() and self.meta['is_bad_pr']:
+            actions.cancel_ci = True
 
         # @YOU IN COMMIT MSGS
         if iw.is_pullrequest():
@@ -1888,8 +1895,11 @@ class AnsibleTriage(DefaultTriager):
         # filament
         self.meta.update(get_filament_facts(iw, self.meta))
 
+        # ci
+        self.meta.update(get_ci_facts(iw))
+
         # ci rebuilds
-        self.meta.update(get_rebuild_facts(iw, self.meta, self.SR))
+        self.meta.update(get_rebuild_facts(iw, self.meta))
 
         # ci rebuild + merge
         self.meta.update(
@@ -1897,7 +1907,6 @@ class AnsibleTriage(DefaultTriager):
                 iw,
                 self.meta,
                 self.ansible_core_team,
-                self.SR
             )
         )
 
@@ -2230,12 +2239,21 @@ class AnsibleTriage(DefaultTriager):
             mi.instance.edit(state='closed')
 
         if actions.rebuild:
-            runid = self.meta.get('rebuild_run_number')
+            runid = self.meta.get('ci_run_number')
             if runid:
                 self.SR.rebuild(runid)
             else:
                 logging.error(
-                    'no shippable runid for {}'.format(iw.number)
+                    'rebuild: no shippable runid for {}'.format(iw.number)
+                )
+
+        if actions.cancel_ci:
+            runid = self.meta.get('ci_run_number')
+            if runid:
+                self.SR.cancel(runid)
+            else:
+                logging.error(
+                    'cancel: no shippable runid for {}'.format(iw.number)
                 )
 
     def render_comment(self, boilerplate=None):

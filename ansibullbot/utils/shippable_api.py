@@ -330,7 +330,7 @@ class ShippableRuns(object):
 
     def get_run_id(self, run_number):
         """trigger a new run"""
-        run_url = "%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
+        run_url = "%s&runNumbers=%s" % (self.url, run_number)
         response = self.fetch(run_url, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)
@@ -350,6 +350,20 @@ class ShippableRuns(object):
         response = self.fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST to %r" % newbuild_url)
+        self.check_response(response)
+        return response
+
+    def cancel(self, run_number):
+        """cancel existing run"""
+
+        # always pass the runId in a dict() to requests
+        run_id = self.get_run_id(run_number)
+        data = {'runId': run_id}
+
+        cancel_url = "%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
+        response = self.fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
+        if not response:
+            raise Exception("Unable to POST to %r" % cancel_url)
         self.check_response(response)
         return response
 
