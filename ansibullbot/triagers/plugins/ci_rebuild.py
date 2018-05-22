@@ -121,9 +121,4 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     if pr_status[-1][-1] == 'success' and pr_status[-1][0] > last_command:
         rbmerge_meta['admin_merge'] = True
 
-    # always need the run number if rebuild is going to happen
-    if not meta.get('ci_run_number') and rbmerge_meta['needs_rebuild']:
-        rfacts = get_rebuild_facts(iw, meta, force=True)
-        rbmerge_meta['ci_run_number'] = rfacts['ci_run_number']
-
     return rbmerge_meta
