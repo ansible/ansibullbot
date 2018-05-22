@@ -17,3 +17,4 @@
     - fail2ban
     - mongodb
     - ansibullbot
+    - yum-cron
