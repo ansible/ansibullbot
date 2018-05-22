@@ -1,0 +1,4 @@
+yumcron_download_updates: 'yes'
+yumcron_apply_updates:
+  hourly: 'no'
+  daily: 'yes'

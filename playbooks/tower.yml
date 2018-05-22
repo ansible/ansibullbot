@@ -11,3 +11,4 @@
     - firewall
     - fail2ban
     - certbot
+    - yum-cron
