@@ -33,15 +33,20 @@ def status_to_date_and_runid(status, keepstate=False):
         return (ts, target)
 
 
-def get_rebuild_facts(iw, meta, shippable, force=False):
+def get_ci_facts(iw):
+    pr_status = [x for x in iw.pullrequest_status]
+    ci_run_ids = [status_to_date_and_runid(x) for x in pr_status]
+    ci_run_ids.sort(key=lambda x: x[0])
+    last_run = ci_run_ids[-1][1]
+
+    return {'ci_run_number': last_run}
+
+def get_rebuild_facts(iw, meta, force=False):
 
     rbmeta = {
         'needs_rebuild': False,
-        'rebuild_run_number': None,
-        'rebuild_run_id': None
     }
 
-    #if not meta['is_pullrequest']:
     if not iw.is_pullrequest():
         return rbmeta
 
@@ -64,19 +69,13 @@ def get_rebuild_facts(iw, meta, shippable, force=False):
         if not meta['shipit']:
             return rbmeta
 
-    pr_status = [x for x in iw.pullrequest_status]
-    ci_run_ids = [status_to_date_and_runid(x) for x in pr_status]
-    ci_run_ids.sort(key=lambda x: x[0])
-    last_run = ci_run_ids[-1][1]
-
-    rbmeta['rebuild_run_number'] = last_run
     rbmeta['needs_rebuild'] = True
 
     return rbmeta
 
 
 # https://github.com/ansible/ansibullbot/issues/640
-def get_rebuild_merge_facts(iw, meta, core_team, shippable):
+def get_rebuild_merge_facts(iw, meta, core_team):
 
     rbcommand = 'rebuild_merge'
 
@@ -121,10 +120,5 @@ def get_rebuild_merge_facts(iw, meta, core_team, shippable):
 
     if pr_status[-1][-1] == 'success' and pr_status[-1][0] > last_command:
         rbmerge_meta['admin_merge'] = True
-
-    # always need the run number if rebuild is going to happen
-    if not meta.get('rebuild_run_number') and rbmerge_meta['needs_rebuild']:
-        rfacts = get_rebuild_facts(iw, meta, shippable, force=True)
-        rbmerge_meta['rebuild_run_number'] = rfacts['rebuild_run_number']
 
     return rbmerge_meta

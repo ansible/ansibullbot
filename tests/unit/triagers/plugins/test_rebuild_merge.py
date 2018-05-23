@@ -39,9 +39,9 @@ class TestRebuildMergeFacts(unittest.TestCase):
                 'is_needs_revision': False,
                 'is_needs_rebase': False,
                 'needs_rebuild': False,
-                'rebuild_run_number': 0,
+                'ci_run_number': 0,
             }
-            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
+            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
             assert rbfacts['needs_rebuild'] == False
             assert rbfacts['admin_merge'] == True
 
@@ -55,9 +55,9 @@ class TestRebuildMergeFacts(unittest.TestCase):
                 'is_needs_revision': False,
                 'is_needs_rebase': False,
                 'needs_rebuild': False,
-                'rebuild_run_number': 0
+                'ci_run_number': 0
             }
-            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
+            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
             assert rbfacts['needs_rebuild'] == False
             assert rbfacts['admin_merge'] == False
 
@@ -71,9 +71,9 @@ class TestRebuildMergeFacts(unittest.TestCase):
                 'is_needs_revision': False,
                 'is_needs_rebase': False,
                 'needs_rebuild': False,
-                'rebuild_run_number': 0
+                'ci_run_number': 0
             }
-            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
+            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
             assert rbfacts['needs_rebuild'] == True
             assert rbfacts['admin_merge'] == False
 
@@ -87,8 +87,8 @@ class TestRebuildMergeFacts(unittest.TestCase):
                 'is_needs_revision': False,
                 'is_needs_rebase': False,
                 'needs_rebuild': False,
-                'rebuild_run_number': 0
+                'ci_run_number': 0
             }
-            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'], None)
+            rbfacts = get_rebuild_merge_facts(iw, meta, ['superman'])
             assert rbfacts['needs_rebuild'] == False
             assert rbfacts['admin_merge'] == False
