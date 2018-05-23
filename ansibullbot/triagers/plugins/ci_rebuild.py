@@ -34,6 +34,9 @@ def status_to_date_and_runid(status, keepstate=False):
 
 
 def get_ci_facts(iw):
+    if not iw.is_pullrequest():
+        return {'ci_run_number': None}
+
     pr_status = [x for x in iw.pullrequest_status]
     ci_run_ids = [status_to_date_and_runid(x) for x in pr_status]
     ci_run_ids.sort(key=lambda x: x[0])
