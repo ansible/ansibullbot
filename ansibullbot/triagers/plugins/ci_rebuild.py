@@ -34,13 +34,20 @@ def status_to_date_and_runid(status, keepstate=False):
 
 
 def get_ci_facts(iw):
+    cifacts = {
+        'ci_run_number': None
+    }
+
     if not iw.is_pullrequest():
-        return {'ci_run_number': None}
+        return cifacts
 
     pr_status = [x for x in iw.pullrequest_status]
     ci_run_ids = [status_to_date_and_runid(x) for x in pr_status]
     ci_run_ids.sort(key=lambda x: x[0])
-    last_run = ci_run_ids[-1][1]
+    if ci_run_ids:
+        last_run = ci_run_ids[-1][1]
+    else:
+        return cifacts
 
     return {'ci_run_number': last_run}
 
