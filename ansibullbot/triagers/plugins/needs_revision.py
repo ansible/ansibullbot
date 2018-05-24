@@ -636,24 +636,21 @@ def get_shippable_full_run_dates(ci_status, shippable):
             runids[idx] = paths[-2]
     runids = set(runids)
 
-    # get the referenced job for each jobid if it exists
+    # get the referenced run for each runid if it exists
     rundata = {}
     for runid in runids:
         rundata[runid] = {
             'runid': runid,
             'created_at': None,
-            'status_code': None,
             'rerun_batch_id': None,
             'rerun_batch_createdat': None
         }
         rdata = shippable.get_run_data(runid)
         rundata[runid]['rerun_batch_id'] = rdata.get('reRunBatchId')
         rundata[runid]['created_at'] = rdata.get('createdAt')
-        rundata[runid]['status_code'] = rdata.get('statusCode')
         if rundata[runid]['rerun_batch_id']:
             rjdata = shippable.get_run_data(rundata[runid]['rerun_batch_id'])
             rundata[runid]['rerun_batch_createdat'] = rundata[runid]['created_at']
             rundata[runid]['created_at'] = rjdata.get('createdAt')
-            rundata[runid]['status_code'] = rjdata.get('statusCode')
 
     return rundata.values()
