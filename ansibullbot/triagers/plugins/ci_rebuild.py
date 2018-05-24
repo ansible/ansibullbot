@@ -7,6 +7,10 @@ import pytz
 def status_to_date_and_runid(status, keepstate=False):
     """convert pr status to a tuple of date and runid"""
 
+    # https://github.com/ansible/ansibullbot/issues/934
+    if not status.get('creator', {}).get('login', '') == 'shipabull':
+        return None
+
     created_at = status.get('created_at')
     target = status.get('target_url')
     if target.endswith('/summary'):
@@ -42,14 +46,20 @@ def get_ci_facts(iw):
         return cifacts
 
     pr_status = [x for x in iw.pullrequest_status]
-    ci_run_ids = [status_to_date_and_runid(x) for x in pr_status]
-    ci_run_ids.sort(key=lambda x: x[0])
-    if ci_run_ids:
-        last_run = ci_run_ids[-1][1]
-    else:
+    ci_run_ids = []
+    for x in pr_status:
+        date_and_runid = status_to_date_and_runid(x)
+        if date_and_runid is not None:
+            ci_run_ids.append(date_and_runid)
+
+    if not ci_run_ids:
         return cifacts
 
+    ci_run_ids.sort(key=lambda x: x[0])
+    last_run = ci_run_ids[-1][1]
+
     return {'ci_run_number': last_run}
+
 
 def get_rebuild_facts(iw, meta, force=False):
 
