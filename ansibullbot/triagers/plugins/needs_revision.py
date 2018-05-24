@@ -127,15 +127,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     logging.info('ci_state == %s' % ci_state)
 
     # https://github.com/ansible/ansibullbot/issues/935
-    ci_dates = get_shippable_full_run_dates(ci_status, shippable)
-    ci_dates = [x['created_at'] for x in ci_dates]
-    ci_dates = sorted(set(ci_dates))
+    ci_date = get_last_shippable_full_run_date(ci_status, shippable)
 
     # https://github.com/ansible/ansibullbot/issues/458
-    if ci_dates:
-        last_ci_date = ci_dates[-1]
-        last_ci_date = datetime.datetime.strptime(last_ci_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-        ci_delta = (datetime.datetime.now() - last_ci_date).days
+    if ci_date:
+        ci_date = datetime.datetime.strptime(ci_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        ci_delta = (datetime.datetime.now() - ci_date).days
         if ci_delta > 7:
             ci_stale = True
         else:
@@ -612,7 +609,7 @@ def get_shippable_run_facts(iw, meta, shippable=None):
     return rmeta
 
 
-def get_shippable_full_run_dates(ci_status, shippable):
+def get_last_shippable_full_run_date(ci_status, shippable):
     '''Map partial re-runs back to their full jobids'''
 
     # https://github.com/ansible/ansibullbot/issues/935
@@ -631,26 +628,25 @@ def get_shippable_full_run_dates(ci_status, shippable):
     for idx, x in enumerate(runids):
         paths = x.split('/')
         if paths[-1].isdigit():
-            runids[idx] = paths[-1]
+            runids[idx] = int(paths[-1])
         elif paths[-2].isdigit():
-            runids[idx] = paths[-2]
-    runids = set(runids)
+            runids[idx] = int(paths[-2])
+    runids = sorted(set(runids))
 
-    # get the referenced run for each runid if it exists
-    rundata = {}
-    for runid in runids:
-        rundata[runid] = {
-            'runid': runid,
-            'created_at': None,
-            'rerun_batch_id': None,
-            'rerun_batch_createdat': None
-        }
-        rdata = shippable.get_run_data(runid)
-        rundata[runid]['rerun_batch_id'] = rdata.get('reRunBatchId')
-        rundata[runid]['created_at'] = rdata.get('createdAt')
-        if rundata[runid]['rerun_batch_id']:
-            rjdata = shippable.get_run_data(rundata[runid]['rerun_batch_id'])
-            rundata[runid]['rerun_batch_createdat'] = rundata[runid]['created_at']
-            rundata[runid]['created_at'] = rjdata.get('createdAt')
+    # get the referenced run for the last runid if it exists
+    runid = runids[-1]
+    rundata = {
+        'runid': runid,
+        'created_at': None,
+        'rerun_batch_id': None,
+        'rerun_batch_createdat': None
+    }
+    rdata = shippable.get_run_data(str(runid), usecache=False)
+    rundata['rerun_batch_id'] = rdata.get('reRunBatchId')
+    rundata['created_at'] = rdata.get('createdAt')
+    if rundata['rerun_batch_id']:
+        rjdata = shippable.get_run_data(rundata['rerun_batch_id'])
+        rundata['rerun_batch_createdat'] = rundata['created_at']
+        rundata['created_at'] = rjdata.get('createdAt')
 
-    return rundata.values()
+    return rundata['created_at']
