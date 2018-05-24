@@ -8,7 +8,7 @@ def status_to_date_and_runid(status, keepstate=False):
     """convert pr status to a tuple of date and runid"""
 
     # https://github.com/ansible/ansibullbot/issues/934
-    if not status.get('creator', {}).get('login', '') == 'shipabull':
+    if not status.get('context', '') == 'Shippable':
         return None
 
     created_at = status.get('created_at')
@@ -136,6 +136,9 @@ def get_rebuild_merge_facts(iw, meta, core_team):
         date_and_runid = status_to_date_and_runid(x, keepstate=True)
         if date_and_runid is not None:
             pr_status.append(date_and_runid)
+
+    if not pr_status:
+        return rbmerge_meta
 
     pr_status.sort(key=lambda x: x[0])
 
