@@ -71,6 +71,10 @@ class IssueMock(object):
     def get_raw_data(self):
         return {}
 
+    @property
+    def commits(self):
+        return self._commits
+
     def load_data(self, datafile):
         ydata = None
         fdata = None
@@ -86,7 +90,7 @@ class IssueMock(object):
         self.closed_at = None
         self.closed_by = None
         self.comments = []
-        self.commits = []
+        self._commits = []
         self.comments_url = None
         self.created_at = self.ydata.get('created_at')
         self._events = self.ydata.get('events', [])
@@ -202,6 +206,9 @@ class IssueMock(object):
     def get_pullrequest_status(self):
         return []
 
+    def get_pullrequest(self):
+        self.calls.append('get_pullrequest')
+
     def remove_from_labels(self, label):
         self.calls.append(('remove_from_labels', label))
 
@@ -210,3 +217,7 @@ class IssueMock(object):
 
     def _useAttributes(self):
         self.calls.append(('_useAttributes'))
+
+    def get_commits(self):
+        self.calls.append('get_commits')
+        return []

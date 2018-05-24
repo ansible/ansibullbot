@@ -622,6 +622,9 @@ def get_last_shippable_full_run_date(ci_status, shippable):
     # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
     # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
 
+    if shippable is None:
+        return None
+
     # extract and unique the jobids from the target urls
     runids = ci_status[:]
     runids = [x['target_url'] for x in runids if 'shippable.com' in x['target_url']]
