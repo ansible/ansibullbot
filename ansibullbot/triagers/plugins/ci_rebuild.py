@@ -131,8 +131,12 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    pr_status = [x for x in iw.pullrequest_status]
-    pr_status = [status_to_date_and_runid(x, keepstate=True) for x in pr_status]
+    pr_status = []
+    for x in iw.pullrequest_status:
+        date_and_runid = status_to_date_and_runid(x, keepstate=True)
+        if date_and_runid is not None:
+            pr_status.append(date_and_runid)
+
     pr_status.sort(key=lambda x: x[0])
 
     if pr_status[-1][-1] != 'pending' and pr_status[-1][0] < last_command:
