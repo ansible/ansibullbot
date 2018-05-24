@@ -610,7 +610,7 @@ def get_shippable_run_facts(iw, meta, shippable=None):
 
 
 def get_last_shippable_full_run_date(ci_status, shippable):
-    '''Map partial re-runs back to their full jobids'''
+    '''Map partial re-runs back to their last full run date'''
 
     # https://github.com/ansible/ansibullbot/issues/935
 
@@ -634,22 +634,39 @@ def get_last_shippable_full_run_date(ci_status, shippable):
             runids[idx] = int(paths[-1])
         elif paths[-2].isdigit():
             runids[idx] = int(paths[-2])
+
+    # get rid of duplicates and sort
     runids = sorted(set(runids))
 
-    # get the referenced run for the last runid if it exists
+    # always use the numerically higher run id
     runid = runids[-1]
+
+    # build a datastructure to hold the info collected
     rundata = {
         'runid': runid,
         'created_at': None,
         'rerun_batch_id': None,
         'rerun_batch_createdat': None
     }
+
+    # query the api for all data on this runid
     rdata = shippable.get_run_data(str(runid), usecache=False)
+
+    # get the referenced run for the last runid if it exists
     rundata['rerun_batch_id'] = rdata.get('reRunBatchId')
+
+    # keep the timestamp too
     rundata['created_at'] = rdata.get('createdAt')
+
+    # if it had a rerunbatchid it was a partial run and
+    # we need to go get the date on the original run
     if rundata['rerun_batch_id']:
+        # the original run data
         rjdata = shippable.get_run_data(rundata['rerun_batch_id'])
+        # swap the timestamp
         rundata['rerun_batch_createdat'] = rundata['created_at']
+        # get the old timestamp
         rundata['created_at'] = rjdata.get('createdAt')
 
+    # return only the timestamp from the last full run
     return rundata['created_at']
