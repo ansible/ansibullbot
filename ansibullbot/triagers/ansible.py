@@ -1826,6 +1826,7 @@ class AnsibleTriage(DefaultTriager):
                 self,
                 iw,
                 self.meta,
+                shippable=self.SR
             )
         )
 

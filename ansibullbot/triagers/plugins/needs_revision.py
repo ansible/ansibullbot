@@ -126,12 +126,15 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         ci_state = ci_states[0]
     logging.info('ci_state == %s' % ci_state)
 
-    # https://github.com/ansible/ansibullbot/issues/458
-    ci_dates = [x['created_at'] for x in ci_status]
+    # https://github.com/ansible/ansibullbot/issues/935
+    ci_dates = get_shippable_full_run_dates(ci_status, shippable)
+    ci_dates = [x['created_at'] for x in ci_dates]
     ci_dates = sorted(set(ci_dates))
+
+    # https://github.com/ansible/ansibullbot/issues/458
     if ci_dates:
         last_ci_date = ci_dates[-1]
-        last_ci_date = datetime.datetime.strptime(last_ci_date, '%Y-%m-%dT%H:%M:%SZ')
+        last_ci_date = datetime.datetime.strptime(last_ci_date, '%Y-%m-%dT%H:%M:%S.%fZ')
         ci_delta = (datetime.datetime.now() - last_ci_date).days
         if ci_delta > 7:
             ci_stale = True
@@ -607,3 +610,50 @@ def get_shippable_run_facts(iw, meta, shippable=None):
     }
 
     return rmeta
+
+
+def get_shippable_full_run_dates(ci_status, shippable):
+    '''Map partial re-runs back to their full jobids'''
+
+    # https://github.com/ansible/ansibullbot/issues/935
+
+    # (Epdb) pp [x['target_url'] for x in ci_status]
+    # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
+
+    # extract and unique the jobids from the target urls
+    runids = ci_status[:]
+    runids = [x['target_url'] for x in runids if 'shippable.com' in x['target_url']]
+    for idx, x in enumerate(runids):
+        paths = x.split('/')
+        if paths[-1].isdigit():
+            runids[idx] = paths[-1]
+        elif paths[-2].isdigit():
+            runids[idx] = paths[-2]
+    runids = set(runids)
+
+    # get the referenced job for each jobid if it exists
+    rundata = {}
+    for runid in runids:
+        rundata[runid] = {
+            'runid': runid,
+            'created_at': None,
+            'status_code': None,
+            'rerun_batch_id': None,
+            'rerun_batch_createdat': None
+        }
+        rdata = shippable.get_run_data(runid)
+        rundata[runid]['rerun_batch_id'] = rdata.get('reRunBatchId')
+        rundata[runid]['created_at'] = rdata.get('createdAt')
+        rundata[runid]['status_code'] = rdata.get('statusCode')
+        if rundata[runid]['rerun_batch_id']:
+            rjdata = shippable.get_run_data(rundata[runid]['rerun_batch_id'])
+            rundata[runid]['rerun_batch_createdat'] = rundata[runid]['created_at']
+            rundata[runid]['created_at'] = rjdata.get('createdAt')
+            rundata[runid]['status_code'] = rjdata.get('statusCode')
+
+    return rundata.values()
