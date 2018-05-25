@@ -625,7 +625,7 @@ def get_last_shippable_full_run_date(ci_status, shippable):
     if shippable is None:
         return None
 
-    # extract and unique the jobids from the target urls
+    # extract and unique the run ids from the target urls
     runids = ci_status[:]
     runids = [x['target_url'] for x in runids if 'shippable.com' in x['target_url']]
     for idx, x in enumerate(runids):
@@ -660,13 +660,15 @@ def get_last_shippable_full_run_date(ci_status, shippable):
 
     # if it had a rerunbatchid it was a partial run and
     # we need to go get the date on the original run
-    if rundata['rerun_batch_id']:
+    while rundata['rerun_batch_id']:
         # the original run data
         rjdata = shippable.get_run_data(rundata['rerun_batch_id'])
         # swap the timestamp
         rundata['rerun_batch_createdat'] = rundata['created_at']
         # get the old timestamp
         rundata['created_at'] = rjdata.get('createdAt')
+        # get the new batchid
+        rundata['rerun_batch_id'] = rjdata.get('reRunBatchId')
 
     # return only the timestamp from the last full run
     return rundata['created_at']
