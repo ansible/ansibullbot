@@ -626,14 +626,7 @@ def get_last_shippable_full_run_date(ci_status, shippable):
         return None
 
     # extract and unique the run ids from the target urls
-    runids = ci_status[:]
-    runids = [x['target_url'] for x in runids if 'shippable.com' in x['target_url']]
-    for idx, x in enumerate(runids):
-        paths = x.split('/')
-        if paths[-1].isdigit():
-            runids[idx] = int(paths[-1])
-        elif paths[-2].isdigit():
-            runids[idx] = int(paths[-2])
+    runids = [get_runid_from_status(x) for x in ci_status]
 
     # get rid of duplicates and sort
     runids = sorted(set(runids))
@@ -651,6 +644,10 @@ def get_last_shippable_full_run_date(ci_status, shippable):
 
     # query the api for all data on this runid
     rdata = shippable.get_run_data(str(runid), usecache=False)
+
+    # whoops ...
+    if rdata is None:
+        return None
 
     # get the referenced run for the last runid if it exists
     rundata['rerun_batch_id'] = rdata.get('reRunBatchId')
@@ -672,3 +669,33 @@ def get_last_shippable_full_run_date(ci_status, shippable):
 
     # return only the timestamp from the last full run
     return rundata['created_at']
+
+
+def get_runid_from_status(status):
+    # (Epdb) pp [(x['target_url'], x['description']) for x in ci_status]
+    # [(u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
+    # u'Run 16560 status is SUCCESS. '),
+    # (u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
+    # u'Run 16560 status is PROCESSING. '),
+    # (u'https://app.shippable.com/github/ansible/ansible/runs/16560',
+    # u'Run 16560 status is WAITING. ')]
+
+    # (Epdb) pp [x['target_url'] for x in ci_status]
+    # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
+
+    paths = status['target_url'].split('/')
+    if paths[-1].isdigit():
+        return int(paths[-1])
+    if paths[-2].isdigit():
+        return int(paths[-2])
+    for x in status['description'].split():
+        if x.isdigit():
+            return int(x)
+
+    return None
+
