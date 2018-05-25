@@ -232,6 +232,7 @@ class TestOwnerPR(unittest.TestCase):
         ]
 
         meta = self.meta.copy()
+        iw._commits = []
         meta.update(get_component_match_facts(iw, meta, CM, FileIndexerMock(), module_indexer, []))
         facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
@@ -388,6 +389,7 @@ class TestOwnerPR(unittest.TestCase):
         iw.repo = MockRepo(repo_path='ansible/ansible')
 
         meta = self.meta.copy()
+        iw._commits = []
         meta.update(get_component_match_facts(iw, {}, CM, FileIndexerMock(), module_indexer, []))
         facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
@@ -452,6 +454,7 @@ class TestOwnerPR(unittest.TestCase):
             #iw.file_indexer.files.append('lib/ansible/modules/foo/bar.py'),
             #iw.file_indexer.files.append('lib/ansible/module_utils/baz/bar.py')
 
+            iw._commits = []
             meta.update(get_component_match_facts(iw, {}, CM, iw.file_indexer, module_indexer, []))
             facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 

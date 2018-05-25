@@ -126,13 +126,13 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         ci_state = ci_states[0]
     logging.info('ci_state == %s' % ci_state)
 
+    # https://github.com/ansible/ansibullbot/issues/935
+    ci_date = get_last_shippable_full_run_date(ci_status, shippable)
+
     # https://github.com/ansible/ansibullbot/issues/458
-    ci_dates = [x['created_at'] for x in ci_status]
-    ci_dates = sorted(set(ci_dates))
-    if ci_dates:
-        last_ci_date = ci_dates[-1]
-        last_ci_date = datetime.datetime.strptime(last_ci_date, '%Y-%m-%dT%H:%M:%SZ')
-        ci_delta = (datetime.datetime.now() - last_ci_date).days
+    if ci_date:
+        ci_date = datetime.datetime.strptime(ci_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+        ci_delta = (datetime.datetime.now() - ci_date).days
         if ci_delta > 7:
             ci_stale = True
         else:
@@ -607,3 +607,68 @@ def get_shippable_run_facts(iw, meta, shippable=None):
     }
 
     return rmeta
+
+
+def get_last_shippable_full_run_date(ci_status, shippable):
+    '''Map partial re-runs back to their last full run date'''
+
+    # https://github.com/ansible/ansibullbot/issues/935
+
+    # (Epdb) pp [x['target_url'] for x in ci_status]
+    # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
+
+    if shippable is None:
+        return None
+
+    # extract and unique the run ids from the target urls
+    runids = ci_status[:]
+    runids = [x['target_url'] for x in runids if 'shippable.com' in x['target_url']]
+    for idx, x in enumerate(runids):
+        paths = x.split('/')
+        if paths[-1].isdigit():
+            runids[idx] = int(paths[-1])
+        elif paths[-2].isdigit():
+            runids[idx] = int(paths[-2])
+
+    # get rid of duplicates and sort
+    runids = sorted(set(runids))
+
+    # always use the numerically higher run id
+    runid = runids[-1]
+
+    # build a datastructure to hold the info collected
+    rundata = {
+        'runid': runid,
+        'created_at': None,
+        'rerun_batch_id': None,
+        'rerun_batch_createdat': None
+    }
+
+    # query the api for all data on this runid
+    rdata = shippable.get_run_data(str(runid), usecache=False)
+
+    # get the referenced run for the last runid if it exists
+    rundata['rerun_batch_id'] = rdata.get('reRunBatchId')
+
+    # keep the timestamp too
+    rundata['created_at'] = rdata.get('createdAt')
+
+    # if it had a rerunbatchid it was a partial run and
+    # we need to go get the date on the original run
+    while rundata['rerun_batch_id']:
+        # the original run data
+        rjdata = shippable.get_run_data(rundata['rerun_batch_id'])
+        # swap the timestamp
+        rundata['rerun_batch_createdat'] = rundata['created_at']
+        # get the old timestamp
+        rundata['created_at'] = rjdata.get('createdAt')
+        # get the new batchid
+        rundata['rerun_batch_id'] = rjdata.get('reRunBatchId')
+
+    # return only the timestamp from the last full run
+    return rundata['created_at']
