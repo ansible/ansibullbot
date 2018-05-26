@@ -815,14 +815,17 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
                     if 'merge_commit' not in iw.labels:
                         actions.newlabel.append('merge_commit')
-                actions.cancel_ci = True
+                if self.meta.get('has_shippable'):
+                    actions.cancel_ci = True
             else:
                 if 'merge_commit' in iw.labels:
                     actions.unlabel.append('merge_commit')
 
+        '''
         # BAD PR
         if iw.is_pullrequest() and self.meta['is_bad_pr']:
             actions.cancel_ci = True
+        '''
 
         # @YOU IN COMMIT MSGS
         if iw.is_pullrequest():

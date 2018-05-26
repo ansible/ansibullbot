@@ -9,6 +9,7 @@ from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.shippable_api import has_commentable_data
 from ansibullbot.utils.shippable_api import ShippableRuns
 from ansibullbot.wrappers.historywrapper import ShippableHistory
+from ansibullbot.utils.shippable_api import ShippableNoData
 
 
 def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
@@ -108,6 +109,16 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     #   success/pending/failure/... ?
     ci_status = iw.pullrequest_status
 
+    # check if this has shippable and or travis
+    if ci_status:
+        for x in ci_status:
+            if 'travis-ci.org' in x['target_url']:
+                has_travis = True
+                continue
+            if 'shippable.com' in x['target_url']:
+                has_shippable = True
+                continue
+
     # code quality hooks
     if [x for x in ci_status if isinstance(x, dict) and
             'landscape.io' in x['target_url']]:
@@ -126,19 +137,23 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         ci_state = ci_states[0]
     logging.info('ci_state == %s' % ci_state)
 
-    # https://github.com/ansible/ansibullbot/issues/935
-    ci_date = get_last_shippable_full_run_date(ci_status, shippable)
+    # decide if the CI run is "stale"
+    if not has_shippable:
+        ci_stale = True
+    else:
+        # https://github.com/ansible/ansibullbot/issues/935
+        ci_date = get_last_shippable_full_run_date(ci_status, shippable)
 
-    # https://github.com/ansible/ansibullbot/issues/458
-    if ci_date:
-        ci_date = datetime.datetime.strptime(ci_date, '%Y-%m-%dT%H:%M:%S.%fZ')
-        ci_delta = (datetime.datetime.now() - ci_date).days
-        if ci_delta > 7:
-            ci_stale = True
+        # https://github.com/ansible/ansibullbot/issues/458
+        if ci_date:
+            ci_date = datetime.datetime.strptime(ci_date, '%Y-%m-%dT%H:%M:%S.%fZ')
+            ci_delta = (datetime.datetime.now() - ci_date).days
+            if ci_delta > 7:
+                ci_stale = True
+            else:
+                ci_stale = False
         else:
             ci_stale = False
-    else:
-        ci_stale = False
 
     # clean/unstable/dirty/unknown
     mstate = iw.mergeable_state
@@ -292,15 +307,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
     # Count committers
     committer_count = len(sorted(set(iw.committer_emails)))
-
-    if ci_status:
-        for x in ci_status:
-            if 'travis-ci.org' in x['target_url']:
-                has_travis = True
-                continue
-            if 'shippable.com' in x['target_url']:
-                has_shippable = True
-                continue
 
     # we don't like @you in the commit messages
     # https://github.com/ansible/ansibullbot/issues/375
@@ -643,7 +649,10 @@ def get_last_shippable_full_run_date(ci_status, shippable):
     }
 
     # query the api for all data on this runid
-    rdata = shippable.get_run_data(str(runid), usecache=False)
+    try:
+        rdata = shippable.get_run_data(str(runid), usecache=False)
+    except ShippableNoData:
+        return None
 
     # whoops ...
     if rdata is None:
