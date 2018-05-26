@@ -41,6 +41,11 @@ def has_commentable_data(test_results):
     return commentable
 
 
+class ShippableNoData(Exception):
+    def __init__(self,*args,**kwargs):
+        Exception.__init__(self,*args,**kwargs)
+
+
 class ShippableRuns(object):
     '''An abstraction for the shippable API'''
 
@@ -165,7 +170,8 @@ class ShippableRuns(object):
                 logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception('no json data')
+                #raise Exception('no json data')
+                raise ShippableNoData()
 
         return jdata
 
