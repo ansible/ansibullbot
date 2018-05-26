@@ -821,7 +821,8 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('merge_commit')
 
         # BAD PR
-        if iw.is_pullrequest() and self.meta['is_bad_pr']:
+        #if iw.is_pullrequest() and self.meta['is_bad_pr']:
+        if iw.is_pullrequest() and self.meta.get('merge_commits'):
             actions.cancel_ci = True
 
         # @YOU IN COMMIT MSGS
