@@ -16,32 +16,29 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
 
     iw = issuewrapper
 
-    cmeta = {}
-    #cmeta['is_bad_pr'] = False
-    cmeta['is_module'] = False
-    cmeta['is_action_plugin'] = False
-    cmeta['is_new_module'] = False
-    cmeta['is_new_directory'] = False
-    cmeta['is_module_util'] = False
-    cmeta['is_plugin'] = False
-    cmeta['is_new_plugin'] = False
-    cmeta['is_core'] = False
-    cmeta['is_multi_module'] = False
-    cmeta['module_match'] = None
-    #cmeta['is_migrated'] = False
-
-    cmeta['component'] = None
-    cmeta['component_name'] = []
-    cmeta['component_match_strategy'] = None
-    cmeta['component_matches'] = []
-    cmeta['component_filenames'] = []
-    cmeta['component_labels'] = []
-    cmeta['component_maintainers'] = []
-    cmeta['component_namespace_maintainers'] = []
-    cmeta['component_notifiers'] = []
-    cmeta['component_support'] = []
-
-    cmeta['needs_component_message'] = False
+    cmeta = dict(
+        is_module=False,
+        is_action_plugin=False,
+        is_new_module=False,
+        is_new_directory=False,
+        is_module_util=False,
+        is_plugin=False,
+        is_new_plugin=False,
+        is_core=False,
+        is_multi_module=False,
+        module_match=None,
+        component=None,
+        component_name=[],
+        component_match_strategy=None,
+        component_matches=[],
+        component_filenames=[],
+        component_labels=[],
+        component_maintainers=[],
+        component_namespace_maintainers=[],
+        component_notifiers=[],
+        component_support=[],
+        needs_component_message=False,
+    )
 
     if iw.is_issue():
         t_component = iw.template_data.get('component name')

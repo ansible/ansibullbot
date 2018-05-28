@@ -214,7 +214,7 @@ class GithubGraphQLClient(object):
         pagecount = 0
         while True:
             logging.debug('%s/%s %s pagecount:%s nodecount: %s' %
-                          (owner,repo, otype, pagecount, len(nodes)))
+                          (owner, repo, otype, pagecount, len(nodes)))
 
             issueparams = ', '.join([x for x in [states, first, last, after] if x])
             query = templ.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS=issueparams, FIELDS=QUERY_FIELDS)

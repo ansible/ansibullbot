@@ -158,7 +158,7 @@ class FileIndexer(ModuleIndexer):
 
     def get_keywords_for_file(self, filename):
         keywords = []
-        for k,v in self.CMAP.items():
+        for k, v in self.CMAP.items():
             toadd = False
             for x in v:
                 if x == filename:
@@ -282,7 +282,7 @@ class FileIndexer(ModuleIndexer):
         blob = TextBlob(craws.lower())
         wordcount = len(blob.tokens) + 1
 
-        for ng_size in reversed(xrange(2,wordcount)):
+        for ng_size in reversed(xrange(2, wordcount)):
             ngrams = [' '.join(x) for x in blob.ngrams(ng_size)]
             for ng in ngrams:
 
@@ -313,7 +313,7 @@ class FileIndexer(ModuleIndexer):
                 cparts = craw.replace('-', ' ')
                 cparts = cparts.split()
 
-                for idx,x in enumerate(cparts):
+                for idx, x in enumerate(cparts):
                     for SC in STOPCHARS:
                         if SC in x:
                             x = x.replace(SC, '')
@@ -374,7 +374,7 @@ class FileIndexer(ModuleIndexer):
 
         self.FILEMAP = {}
         bfiles = self.botmeta.get('files', {})
-        for k,v in bfiles.items():
+        for k, v in bfiles.items():
             self.FILEMAP[k] = {}
             reg = k
             if reg.endswith('/'):
@@ -424,7 +424,7 @@ class FileIndexer(ModuleIndexer):
             if exclusive:
                 continue
 
-            for k,v in self.FILEMAP.iteritems():
+            for k, v in self.FILEMAP.iteritems():
                 if not v['inclusive'] and v['regex'].match(f):
                     labels = v['labels']
                     exclusive = True
@@ -455,7 +455,7 @@ class FileIndexer(ModuleIndexer):
             if exclusive:
                 continue
 
-            for k,v in self.FILEMAP.iteritems():
+            for k, v in self.FILEMAP.iteritems():
                 if not v['inclusive'] and v['regex'].match(f):
                     to_notify = v['notify']
                     to_assign = v['assign']
@@ -473,7 +473,7 @@ class FileIndexer(ModuleIndexer):
                         if user not in to_assign:
                             to_assign.append(user)
 
-        return (to_notify, to_assign)
+        return to_notify, to_assign
 
     def isnewdir(self, path):
         if path in self.files:

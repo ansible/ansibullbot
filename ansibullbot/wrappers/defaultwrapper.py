@@ -162,7 +162,7 @@ class DefaultWrapper(object):
         self.current_comments.reverse()
 
         # look for any comments made by the bot
-        for idx,x in enumerate(self.current_comments):
+        for idx, x in enumerate(self.current_comments):
             body = x.body
             lines = body.split('\n')
             lines = [y.strip() for y in lines if y.strip()]
@@ -413,8 +413,9 @@ class DefaultWrapper(object):
         if not self.current_reactions:
             baseurl = self.instance.url
             reactions_url = baseurl + '/reactions'
-            headers = {}
-            headers['Accept'] = 'application/vnd.github.squirrel-girl-preview'
+            headers = dict(
+                Accept='application/vnd.github.squirrel-girl-preview',
+            )
             jdata = []
             try:
                 resp = self.instance._requester.requestJson(
@@ -492,7 +493,7 @@ class DefaultWrapper(object):
                 )
 
                 if _template_data:
-                    for k,v in _template_data.items():
+                    for k, v in _template_data.items():
                         if not v:
                             continue
                         if v and (k not in template_data or not template_data.get(k)):
@@ -897,7 +898,7 @@ class DefaultWrapper(object):
             result = []
             groups = []
             thisgroup = []
-            for idx,x in enumerate(statuses):
+            for idx, x in enumerate(statuses):
                 if not thisgroup:
                     thisgroup.append(x)
                     if idx == len(statuses) - 1:
@@ -1059,8 +1060,8 @@ class DefaultWrapper(object):
 
         # https://github.com/ansible/ansibullbot/issues/881
         # https://github.com/ansible/ansibullbot/issues/883
-        for idx,x in enumerate(self._pr_reviews):
-            if not 'commit_id' in x:
+        for idx, x in enumerate(self._pr_reviews):
+            if 'commit_id' not in x:
                 self._pr_reviews[idx]['commit_id'] = None
 
         return self._pr_reviews
@@ -1072,8 +1073,9 @@ class DefaultWrapper(object):
         # https://developer.github.com/v3/
         #   pulls/reviews/#list-reviews-on-a-pull-request
         reviews_url = self.pullrequest.url + '/reviews'
-        headers = {}
-        headers['Accept'] = 'application/vnd.github.black-cat-preview+json'
+        headers = dict(
+            Accept='application/vnd.github.black-cat-preview+json',
+        )
 
         resp = self.instance._requester.requestJson(
             'GET',
@@ -1212,10 +1214,12 @@ class DefaultWrapper(object):
             # squash single committer PRs
 
             url = url = os.path.join(self.pullrequest.url, 'merge')
-            headers = {}
-            headers['Accept'] = 'application/vnd.github.polaris-preview+json'
-            params = {}
-            params['merge_method'] = 'squash'
+            headers = dict(
+                Accept='application/vnd.github.polaris-preview+json',
+            )
+            params = dict(
+                merge_method='squash',
+            )
             resp = self.pullrequest._requester.requestJson(
                 "PUT",
                 url,
@@ -1239,10 +1243,12 @@ class DefaultWrapper(object):
             # rebase multi-committer PRs
 
             url = url = os.path.join(self.pullrequest.url, 'merge')
-            headers = {}
-            headers['Accept'] = 'application/vnd.github.polaris-preview+json'
-            params = {}
-            params['merge_method'] = 'rebase'
+            headers = dict(
+                Accept='application/vnd.github.polaris-preview+json',
+            )
+            params = dict(
+                merge_method='rebase',
+            )
             resp = self.pullrequest._requester.requestJson(
                 "PUT",
                 url,

@@ -198,7 +198,7 @@ class HistoryWrapper(object):
                 ts = '%s-%s' % (created.year, created.month)
             elif groupby == 'y':
                 # year
-                ts = '%s' % (created.year)
+                ts = '%s' % created.year
 
             if ts:
                 if ts not in groups:
@@ -504,12 +504,12 @@ class HistoryWrapper(object):
         boilerplates = []
         if botnames:
             comments = self._find_events_by_actor('commented',
-                                                botnames,
-                                                maxcount=999)
+                                                  botnames,
+                                                  maxcount=999)
         else:
             comments = self._find_events_by_actor('commented',
-                                                botname,
-                                                maxcount=999)
+                                                  botname,
+                                                  maxcount=999)
         for comment in comments:
             if 'boilerplate:' in comment['body']:
                 lines = [x for x in comment['body'].split('\n')
@@ -582,7 +582,7 @@ class HistoryWrapper(object):
         reactions = self.issue.reactions
 
         processed_events = []
-        for ide,event in enumerate(events):
+        for ide, event in enumerate(events):
 
             cdict = self.get_event_from_cache(event.id, cache)
             if cdict:
@@ -609,13 +609,14 @@ class HistoryWrapper(object):
 
             processed_events.append(edict)
 
-        for idc,comment in enumerate(comments):
-            edict = {}
-            edict['id'] = comment.id
-            edict['event'] = 'commented'
-            edict['actor'] = comment.user.login
-            edict['created_at'] = comment.created_at
-            edict['body'] = comment.body
+        for idc, comment in enumerate(comments):
+            edict = dict(
+                id=comment.id,
+                event='commented',
+                actor=comment.user.login,
+                created_at=comment.created_at,
+                body=comment.body,
+            )
             processed_events.append(edict)
 
         for reaction in reactions:
@@ -624,12 +625,13 @@ class HistoryWrapper(object):
                 # FIXME - not sure what's happening here
                 pass
             else:
-                edict = {}
-                edict['id'] = reaction['id']
-                edict['event'] = 'reacted'
-                edict['created_at'] = reaction['created_at']
-                edict['actor'] = reaction['user']['login']
-                edict['content'] = reaction['content']
+                edict = dict(
+                    id=reaction['id'],
+                    event='reacted',
+                    created_at=reaction['created_at'],
+                    actor=reaction['user']['login'],
+                    content=reaction['content'],
+                )
 
                 # convert the timestamp the same way the lib does it
                 if type(edict['created_at']) in [unicode, str]:
@@ -651,7 +653,7 @@ class HistoryWrapper(object):
         return dt.value
 
     def merge_commits(self, commits):
-        for idx,xc in enumerate(commits):
+        for idx, xc in enumerate(commits):
 
             '''
             # 'Thu, 12 Jan 2017 15:06:46 GMT'
@@ -732,7 +734,7 @@ class HistoryWrapper(object):
 
     def fix_history_tz(self):
         '''History needs to be timezone aware!!!'''
-        for idx,x in enumerate(self.history):
+        for idx, x in enumerate(self.history):
             if not x['created_at'].tzinfo:
                 ats = pytz.utc.localize(x['created_at'])
                 self.history[idx]['created_at'] = ats
@@ -835,12 +837,12 @@ class ShippableHistory(object):
         # old run. =(
 
         verified_idx = None
-        for idx,x in enumerate(self.history):
+        for idx, x in enumerate(self.history):
             if x['event'] == 'labeled':
                 if x['label'] == 'ci_verified':
                     verified_idx = idx
         run_idx = None
-        for idx,x in enumerate(self.history):
+        for idx, x in enumerate(self.history):
             if x['event'] == 'ci_run':
                 if x['created_at'] <= self.history[verified_idx]['created_at']:
                     run_idx = idx

@@ -186,7 +186,7 @@ class AnsibleComponentMatcher(object):
                 }
 
         _modules = self.MODULES.copy()
-        for k,v in _modules.items():
+        for k, v in _modules.items():
             kparts = os.path.splitext(k)
             if kparts[-1] == '.ps1':
                 _k = kparts[0] + '.py'
@@ -251,7 +251,7 @@ class AnsibleComponentMatcher(object):
         self.BOTMETA = BotMetadataParser.parse_yaml(rdata)
 
     def cache_keywords(self):
-        for k,v in self.BOTMETA['files'].items():
+        for k, v in self.BOTMETA['files'].items():
             if not v.get('keywords'):
                 continue
             for kw in v['keywords']:
@@ -260,14 +260,14 @@ class AnsibleComponentMatcher(object):
 
     def _cache_keywords(self):
         """Make a map of keywords and module names"""
-        for k,v in self.file_indexer.botmeta['files'].items():
+        for k, v in self.file_indexer.botmeta['files'].items():
             if not v.get('keywords'):
                 continue
             for kw in v['keywords']:
                 if kw not in self.KEYWORDS:
                     self.KEYWORDS[kw] = k
 
-        for k,v in self.module_indexer.modules.items():
+        for k, v in self.module_indexer.modules.items():
             if not v.get('name'):
                 continue
             if v['name'] not in self.KEYWORDS:
@@ -277,7 +277,7 @@ class AnsibleComponentMatcher(object):
                 if vname not in self.KEYWORDS:
                     self.KEYWORDS[vname] = v['repo_filename']
 
-        for k,v in self.file_indexer.CMAP.items():
+        for k, v in self.file_indexer.CMAP.items():
             if k not in self.KEYWORDS:
                 self.KEYWORDS[k] = v
 
@@ -486,7 +486,7 @@ class AnsibleComponentMatcher(object):
         elif component in self.KEYWORDS:
             matches = [self.KEYWORDS[component]]
         elif not exact:
-            for k,v in self.KEYWORDS.items():
+            for k, v in self.KEYWORDS.items():
                 if ' ' + k + ' ' in component or ' ' + k + ' ' in component.lower():
                     logging.debug('keyword match: {}'.format(k))
                     matches.append(v)
@@ -628,7 +628,7 @@ class AnsibleComponentMatcher(object):
                 logging.debug('pattern {} matched on "{}"'.format(pattern, body))
                 #print('pattern {} matched on "{}"'.format(pattern, body))
 
-                for x in range(0,mobj.lastindex+1):
+                for x in range(0, mobj.lastindex+1):
                     try:
                         mname = mobj.group(x)
                         #print(mname)
@@ -1136,7 +1136,7 @@ class AnsibleComponentMatcher(object):
 
         # walk up the tree for more meta
         paths = filename.split('/')
-        for idx,x in enumerate(paths):
+        for idx, x in enumerate(paths):
             thispath = '/'.join(paths[:(0-idx)])
             if thispath in self.BOTMETA['files']:
                 fdata = self.BOTMETA['files'][thispath].copy()
@@ -1210,7 +1210,7 @@ class AnsibleComponentMatcher(object):
             mmatch = self._find_module_match(mname, exact=True)
             if mmatch:
                 mmeta = self.get_meta_for_file(mmatch[0]['repo_filename'])
-                for k,v in mmeta.items():
+                for k, v in mmeta.items():
                     if k in whitelist and v:
                         if isinstance(meta[k], list):
                             meta[k] = sorted(set(meta[k] + v))
@@ -1238,7 +1238,7 @@ class AnsibleComponentMatcher(object):
 
         # clean up the result
         _meta = meta.copy()
-        for k,v in _meta.items():
+        for k, v in _meta.items():
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
 
@@ -1263,7 +1263,7 @@ class AnsibleComponentMatcher(object):
 
         # process ignores AGAIN.
         if meta.get('ignore'):
-            for k,v in meta.items():
+            for k, v in meta.items():
                 if k == 'ignore':
                     continue
                 if not isinstance(v, list):
@@ -1354,7 +1354,7 @@ class AnsibleComponentMatcher(object):
         else:
             candidates = [pattern, '_' + pattern, noext, '_' + noext]
 
-        for k,v in self.MODULES.items():
+        for k, v in self.MODULES.items():
             if v['name'] in candidates:
                 logging.debug('match {} on name: {}'.format(k, v['name']))
                 matches = [v]
@@ -1362,7 +1362,7 @@ class AnsibleComponentMatcher(object):
 
         if not matches:
             # search by key ... aka the filepath
-            for k,v in self.MODULES.items():
+            for k, v in self.MODULES.items():
                 if k == pattern:
                     logging.debug('match {} on key: {}'.format(k, k))
                     matches = [v]
@@ -1374,7 +1374,7 @@ class AnsibleComponentMatcher(object):
             if not isinstance(_pattern, unicode):
                 _pattern = _pattern.decode('utf-8')
             candidates = []
-            for k,v in self.MODULES.items():
+            for k, v in self.MODULES.items():
                 vname = v['name']
                 if not isinstance(vname, unicode):
                     vname = vname.decode('utf-8')

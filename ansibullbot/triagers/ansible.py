@@ -547,7 +547,6 @@ class AnsibleTriage(DefaultTriager):
 
         return pr
 
-
     def update_issue_summaries(self, issuenums=None, repopath=None):
 
         if repopath:
@@ -620,7 +619,7 @@ class AnsibleTriage(DefaultTriager):
         dmeta['assignees'] = issuewrapper.assignees
         if issuewrapper.history:
             dmeta['history'] = issuewrapper.history.history
-            for idx,x in enumerate(dmeta['history']):
+            for idx, x in enumerate(dmeta['history']):
                 dmeta['history'][idx]['created_at'] = \
                     x['created_at'].isoformat()
         else:
@@ -1526,7 +1525,7 @@ class AnsibleTriage(DefaultTriager):
         stale = []
         reasons = {}
 
-        for number,summary in self.issue_summaries[reponame].items():
+        for number, summary in self.issue_summaries[reponame].items():
 
             if number in stale:
                 continue
@@ -1561,7 +1560,7 @@ class AnsibleTriage(DefaultTriager):
                 stale.append(number)
 
         stale = sorted(set([int(x) for x in stale]))
-        if len(stale) <= 10 and len(stale) > 0:
+        if 10 >= len(stale) > 0:
             logging.info('stale: %s' % ','.join([str(x) for x in stale]))
 
         return stale
@@ -1665,7 +1664,7 @@ class AnsibleTriage(DefaultTriager):
                     (len(numbers), since)
                 )
 
-                for k,v in self.issue_summaries[repo].items():
+                for k, v in self.issue_summaries[repo].items():
                     if v['created_at'] > self.repos[repo]['since']:
                         numbers.append(k)
 
@@ -1697,7 +1696,7 @@ class AnsibleTriage(DefaultTriager):
             numbers = [
                 x for x in numbers
                 if (str(x) in self.issue_summaries[repo] and
-                self.issue_summaries[repo][str(x)]['state'] == 'open' )
+                self.issue_summaries[repo][str(x)]['state'] == 'open')
             ]
             logging.info('%s numbers after checking state' % len(numbers))
 
@@ -1922,11 +1921,10 @@ class AnsibleTriage(DefaultTriager):
         # first time contributor?
         self.meta.update(get_contributor_facts(iw))
 
-
         # need these keys to always exist
         if 'merge_commits' not in self.meta:
             self.meta['merge_commits'] = []
-        if not 'is_bad_pr' in self.meta:
+        if 'is_bad_pr' not in self.meta:
             self.meta['is_bad_pr'] = False
 
         if iw.migrated:

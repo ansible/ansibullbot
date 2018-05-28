@@ -130,7 +130,7 @@ class IssueMigrator(object):
         # add the comments
         totalc = len(src_comment_data)
         new_comments_url = new_data['comments_url']
-        for idc,comment in enumerate(src_comment_data):
+        for idc, comment in enumerate(src_comment_data):
 
             if '<!-- boilerplate: repomerge -->' in comment['body']:
                 logging.info('skip comment {} of {} -- {}'.format(idc, totalc, new_html_issue))

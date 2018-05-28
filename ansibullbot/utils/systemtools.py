@@ -6,7 +6,8 @@ import subprocess
 def run_command(cmd):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (so, se) = p.communicate()
-    return (p.returncode, so, se)
+    return p.returncode, so, se
+
 
 def fglob(directory, pattern, depth=1):
     cmd = "find %s -maxdepth %s -type f -name '%s'" % (directory, depth, pattern)

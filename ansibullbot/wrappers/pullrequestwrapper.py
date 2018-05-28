@@ -2,5 +2,6 @@
 
 from defaultwrapper import DefaultWrapper
 
+
 class PullrequestWrapper(DefaultWrapper):
     pass

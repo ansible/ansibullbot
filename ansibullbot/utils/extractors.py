@@ -65,7 +65,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # what are the header(s) being used?
     headers = []
-    for k,v in match_map.items():
+    for k, v in match_map.items():
         try:
             before = upper_body[v-1]
             after = upper_body[v + len(k)]
@@ -135,7 +135,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # extract the sections based on their indexes
     total_indexes = len(match_map) - 1
-    for idx,x in enumerate(match_map):
+    for idx, x in enumerate(match_map):
 
         if x[1] > 0:
             start_index = x[1] + (len(x[0]))
@@ -152,7 +152,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # lowercase the keys
     ndict = {}
-    for k,v in tdict.iteritems():
+    for k, v in tdict.iteritems():
         ku = k.lower()
         if ku == 'plugin name':
             ku = 'component name'
@@ -172,12 +172,12 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
         tdict['component name'] = tdict['component name'].replace(' and ', '\n')
 
     # cleanup the sections
-    for k,v in tdict.iteritems():
+    for k, v in tdict.iteritems():
         # remove markdown comments from the sections
         v = remove_markdown_comments(v)
 
         # remove non-ascii chars
-        v = v.encode('ascii',errors='ignore')
+        v = v.encode('ascii', errors='ignore')
 
         # normalize newlines and return chars
         v = v.replace('\r', '\n')
@@ -340,7 +340,7 @@ def _remove_markdown_comments(rawtext):
     # <!--- ---> OR <!-- -->
     cleaned = []
     inphase = None
-    for idx,x in enumerate(rawtext):
+    for idx, x in enumerate(rawtext):
         if rawtext[idx:(idx+5)] == '<!---':
             inphase = True
         if inphase and idx <= 5:
@@ -469,7 +469,7 @@ class ModuleExtractor(object):
         author_lines = ''
         self._DOCUMENTATION_RAW = documentation
         doc_lines = documentation.split('\n')
-        for idx,x in enumerate(doc_lines):
+        for idx, x in enumerate(doc_lines):
             if x.startswith('author'):
                 #print("START ON %s" % x)
                 inphase = True
