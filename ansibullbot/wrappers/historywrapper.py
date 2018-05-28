@@ -668,7 +668,7 @@ class HistoryWrapper(object):
             if hasattr(xc.committer, 'login'):
                 event['actor'] = xc.committer.login
             else:
-                event['actor'] = xc.committer
+                event['actor'] = str(xc.committer)
             #event['created_at'] = dts
             event['created_at'] = adts
             event['event'] = 'committed'
