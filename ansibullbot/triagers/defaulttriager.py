@@ -443,7 +443,9 @@ class DefaultTriager(object):
         '''Check if a PR# has been merged or not'''
 
         if number is None:
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
             raise Exception('Can not check merge state on the number: None')
 
         merged = False
@@ -457,7 +459,9 @@ class DefaultTriager(object):
                 merged = pr.merged
             except Exception as e:
                 logging.debug(e)
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
         return merged
 
     def trigger_rate_limit(self):

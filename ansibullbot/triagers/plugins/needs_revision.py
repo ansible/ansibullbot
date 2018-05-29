@@ -276,9 +276,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                 needs_revision_msgs.append(
                     'outstanding reviews: %s' % ','.join(change_requested)
                 )
-        #import pprint; pprint.pprint(www_reviews)
-        #import pprint; pprint.pprint(change_requested)
-        #import epdb; epdb.st()
 
     # Merge commits are bad, force a rebase
     if iw.merge_commits:
@@ -459,9 +456,10 @@ def changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
 
             outstanding.add(actor)
         elif review['state'] not in ['APPROVED', 'COMMENTED']:
-            logging.error('breakpoint!')
-            print('%s unhandled' % review['state'])
-            import epdb; epdb.st()
+            logging.error('%s unhandled' % review['state'])
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
     return list(outstanding)
 
 
@@ -508,10 +506,10 @@ def get_review_state(reviews, submitter, number=None, store=False):
                 pass
 
             else:
-                logging.error('breakpoint!')
-                print('%s not handled yet' % state)
-                import epdb; epdb.st()
-                pass
+                logging.error('%s not handled yet' % state)
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
 
     return user_reviews
 
@@ -572,9 +570,9 @@ def get_shippable_run_facts(iw, meta, shippable=None):
             if last_run == vinfo['run_id']:
                 ci_verified = True
             else:
-                #logging.error('breakpoint!')
-                #import epdb; epdb.st()
-                pass
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
 
     # no results means no notification required
     if len(shippable_test_results) < 1:

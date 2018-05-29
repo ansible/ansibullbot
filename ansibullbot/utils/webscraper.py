@@ -382,7 +382,7 @@ class GithubWebScraper(object):
             tdata = ''
             with open(tfile, 'rb') as f:
                 tdata = f.read()
-            #import epdb; epdb.st()
+
             return tdata
 
         url = os.path.join(
@@ -406,7 +406,6 @@ class GithubWebScraper(object):
             with open(tfile, 'wb') as f:
                 f.write(rr.text.encode('ascii', 'ignore'))
 
-        #import epdb; epdb.st()
         return rr.text
 
     def scrape_pullrequest_summaries(self):
@@ -483,8 +482,6 @@ class GithubWebScraper(object):
             {'class': lambda L: L and 'discussion-item-review' in L}
         )
 
-        #import epdb; epdb.st()
-
         count = 0
         for rdiv in rdivs:
             count += 1
@@ -534,9 +531,6 @@ class GithubWebScraper(object):
                         'h3',
                         {'class': lambda L: L and L.startswith('discussion-item-header')}
                     )
-
-                    #if not adiv:
-                    #    import epdb; epdb.st()
 
             atxt = adiv.text
             atxt = atxt.lower()

@@ -110,7 +110,6 @@ class DescriptionFixer(object):
                     self.sections['summary'] = self.original
                 else:
                     self.sections['summary'] = self.issuewrapper.title
-                    #import epdb; epdb.st()
             else:
                 self.sections['summary'] = self.issuewrapper.title
 
@@ -134,7 +133,6 @@ class DescriptionFixer(object):
                     self.sections['component name'] = \
                         '\n'.join(self.issuewrapper.files)
                 else:
-                    #import epdb; epdb.st()
                     self.sections['component name'] = 'core'
             else:
                 self.sections['component name'] = \
@@ -152,14 +150,6 @@ class DescriptionFixer(object):
                 self.sections['ansible version'] = self.meta['ansible_version']
             else:
                 self.sections['ansible version'] = 'N/A'
-
-        '''
-        # cleanup remnant colons
-        for k,v in self.sections.iteritems():
-            if v.startswith(':\n'):
-                self.sections[k] = v[2:]
-                #import epdb; epdb.st()
-        '''
 
     def create_body(self):
 
@@ -213,9 +203,7 @@ class DescriptionFixer(object):
                         )
                 new_section.append('')
 
-                #import epdb; epdb.st()
                 for x in reversed(new_section):
                     dlines.insert(post_line, x)
 
-            #import epdb; epdb.st()
             self.new_description = '\n'.join(dlines)

@@ -26,7 +26,6 @@ def is_needsinfo(triager, issue):
         if triager.module_indexer.committers.get(rfn):
             maintainers += triager.module_indexer.committers.get(rfn).keys()
     '''
-    #import epdb; epdb.st()
 
     maintainers = sorted(
         set(
@@ -75,7 +74,6 @@ def is_needsinfo(triager, issue):
                 needs_info = True
                 continue
 
-    #import epdb; epdb.st()
     return needs_info
 
 

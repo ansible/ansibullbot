@@ -229,15 +229,14 @@ class ModuleIndexer(object):
                     res = Levenshtein.distance(pattern, mname)
                 except TypeError as e:
                     logging.error(e)
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
                 distance_map[mname] = [res, k]
             res = sorted(distance_map.items(), key=lambda x: x[1], reverse=True)
             if len(pattern) > 3 and res[-1][1] < 3:
                 logging.debug('levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
                 matches = [self.modules[res[-1][-1]]]
-
-            #if matches:
-            #    import epdb; epdb.st()
 
         return matches
 
@@ -559,7 +558,6 @@ class ModuleIndexer(object):
         cmd = 'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
             (self.checkoutdir, filepath)
         (rc, so, se) = run_command(cmd)
-        #import epdb; epdb.st()
         return so.strip()
 
     def get_module_blames(self):
@@ -647,7 +645,6 @@ class ModuleIndexer(object):
                     self.emails_cache[commit['email']] = login
                 if not login:
                     print('unknown: {}'.format(commit['email']))
-                    #import epdb; epdb.st()
                 self.commits[k][idc]['login'] = self.emails_cache.get(login)
 
     def get_emails_by_login(self, login):
@@ -685,7 +682,9 @@ class ModuleIndexer(object):
                 logging.debug('load {}'.format(pfile))
                 with open(pfile, 'rb') as f:
                     pdata = pickle.load(f)
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
                 if pdata[0] == ghash:
                     self.committers[k] = pdata[1]
                     if len(pdata) == 3:
@@ -970,7 +969,9 @@ class ModuleIndexer(object):
                 elif len(tm) == 1:
                     return tm[0]['name']
                 else:
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
 
         match = None
         known_modules = []

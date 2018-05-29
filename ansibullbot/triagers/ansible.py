@@ -590,7 +590,9 @@ class AnsibleTriage(DefaultTriager):
         number = issuewrapper.number
         rp = issuewrapper.repo_full_name
         if self.gqlc:
-            import epdb; epdb.st()
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
         else:
             self.issue_summaries[rp][str(number)] = \
                 self.gws.get_single_issue_summary(rp, number, force=True)
@@ -1805,11 +1807,6 @@ class AnsibleTriage(DefaultTriager):
                 self.valid_labels
             )
         )
-
-        #self.COMPONENTS = self.component_matcher.match(iw)
-        #if not self.COMPONENTS and (self.meta.get('module_match') or self.meta.get('guessed_components')):
-        #    import epdb; epdb.st()
-        #import epdb; epdb.st()
 
         # python3 ?
         self.meta.update(get_python3_facts(iw))
