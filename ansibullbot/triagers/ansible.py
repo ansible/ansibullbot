@@ -2254,6 +2254,7 @@ class AnsibleTriage(DefaultTriager):
         if actions.rebuild:
             runid = self.meta.get('ci_run_number')
             if runid:
+                logging.info('Rebuilding CI %s for #%s' % (runid, iw.number))
                 self.SR.rebuild(runid)
             else:
                 logging.error(
@@ -2263,6 +2264,7 @@ class AnsibleTriage(DefaultTriager):
         if actions.cancel_ci:
             runid = self.meta.get('ci_run_number')
             if runid:
+                logging.info('Cancelling CI %s for #%s' % (runid, iw.number))
                 self.SR.cancel(runid)
             else:
                 logging.error(
