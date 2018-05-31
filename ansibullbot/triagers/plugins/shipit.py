@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import itertools
 import logging
 from fnmatch import fnmatch
 from ansibullbot.utils.moduletools import ModuleIndexer
@@ -422,25 +423,21 @@ def get_submitter_facts(issuewrapper, meta, module_indexer, component_matcher):
     }
 
     login = issuewrapper.submitter
-    emails = set()
-    for k,v in component_matcher.email_cache.items():
-        if v == login:
-            emails.add(k)
-    for k,v in module_indexer.emails_cache.items():
-        if v == login:
-            emails.add(k)
+    all_emails = itertools.chain(
+        component_matcher.email_cache.items(),
+        module_indexer.emails_cache.items(),
+    )
+
+    emails = set(k for k, v in all_emails if v == login)
 
     email_map = \
         component_matcher.gitrepo.get_commits_by_email(emails)
 
-    for k,v in email_map.items():
-        sfacts['submitter_previous_commits'] += v['commit_count']
+    for value in list(email_map.values()):
+        sfacts['submitter_previous_commits'] += value['commit_count']
 
-    if meta.get('component_filenames'):
-        for filen in meta['component_filenames']:
-            for k,v in email_map.items():
-                if filen in v['commit_count_byfile']:
-                    sfacts['submitter_previous_commits_for_pr_files'] += \
-                        v['commit_count_byfile'][filen]
+    for filen in meta.get('component_filenames', ()):
+        for email_v in list(email_map.values()):
+            sfacts['submitter_previous_commits_for_pr_files'] += email_v['commit_count_byfile'].get(filen, 0)
 
     return sfacts
