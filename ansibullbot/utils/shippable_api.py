@@ -302,9 +302,7 @@ class ShippableRuns(object):
                     try:
                         td['contents'] = json.loads(td['contents'])
                     except ValueError as e:
-                        print(e)
-                        #import epdb; epdb.st()
-                        pass
+                        logging.error(e)
 
                     CVMAP[dkey]['test_data'].append(td)
                     results.append(td)

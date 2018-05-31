@@ -260,8 +260,9 @@ class FileIndexer(ModuleIndexer):
                             fn1 = 'lib/' + fn1
 
                         if fn1 not in self.files:
-                            #import epdb; epdb.st()
-                            pass
+                            if C.DEFAULT_BREAKPOINTS:
+                                logging.error('breakpoint!')
+                                import epdb; epdb.st()
             if matches:
                 return matches
 

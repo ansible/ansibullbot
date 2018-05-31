@@ -17,7 +17,9 @@ class BotMetadataParser(object):
             if isinstance(inlist, list):
                 inlist = str(inlist)
             if '&' in inlist:
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error('breakpoint!')
+                    import epdb; epdb.st()
             inlist = inlist.replace("[", '')
             inlist = inlist.replace("]", '')
             inlist = inlist.replace("'", '')

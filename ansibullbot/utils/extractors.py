@@ -109,7 +109,6 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                 match = upper_body.find(tofind)
                 if match != -1:
                     match_map[section] = match + 1
-                    #import epdb; epdb.st()
                     break
 
         if not match_map:
@@ -122,9 +121,9 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                  '*' not in headers[0]):
             return {}
         else:
-            #logging.error('breakpoint!')
-            #import epdb; epdb.st()
-            pass
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
 
     # sort mapping by element id
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
