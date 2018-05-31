@@ -329,7 +329,7 @@ class DefaultTriager(object):
                 if cont == 'T':
                     self.template_wizard(iw)
                     action_meta['REDO'] = True
-                if cont == 'r' or cont == 'R':
+                if cont in ('r', 'R'):
                     action_meta['REDO'] = True
                 if cont == 'DEBUG':
                     # put the user into a breakpoint to do live debug
@@ -343,7 +343,7 @@ class DefaultTriager(object):
             if cont == 'T':
                 self.template_wizard(iw)
                 action_meta['REDO'] = True
-            elif cont == 'REDO':
+            elif cont in ('r', 'R'):
                 action_meta['REDO'] = True
             elif cont == 'DEBUG':
                 # put the user into a breakpoint to do live debug
