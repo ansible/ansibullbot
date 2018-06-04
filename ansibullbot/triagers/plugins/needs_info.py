@@ -141,6 +141,7 @@ def needs_info_timeout_facts(iw, meta):
         return nif
 
     la = iw.history.label_last_applied('needs_info')
+    lr = iw.history.label_last_removed('needs_info')
     ni_bpd = iw.history.last_date_for_boilerplate('needs_info_base')
     md_bpd = iw.history.last_date_for_boilerplate('issue_missing_data')
 
@@ -157,6 +158,10 @@ def needs_info_timeout_facts(iw, meta):
             bpd = ni_bpd
         else:
             bpd = md_bpd
+
+    # last boilerplate was sent and after that needs_info was unlabeled, starting over...
+    if lr and bpd and bpd < lr:
+        bpd = None
 
     if bpd:
         # fix multiple warnings
