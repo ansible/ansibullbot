@@ -60,7 +60,7 @@ class DescriptionFixer(object):
 
     def process(self):
 
-        for k,v in self.issuewrapper.template_data.items():
+        for k, v in self.issuewrapper.template_data.items():
             if k in ['component raw', 'component_raw']:
                 continue
 
@@ -95,7 +95,7 @@ class DescriptionFixer(object):
             self.section_map = {}
             dlines = self.original.split('\n')
             for section in self.section_order:
-                for idx,x in enumerate(dlines):
+                for idx, x in enumerate(dlines):
                     if x.startswith('##### %s' % section.upper()):
                         self.section_map[section] = idx
             if self.section_map:
@@ -116,7 +116,7 @@ class DescriptionFixer(object):
         # set issue type
         if not self.sections.get('issue type'):
             labeled = False
-            for k,v in ISSUE_TYPES.iteritems():
+            for k, v in ISSUE_TYPES.iteritems():
                 if k in self.issuewrapper.labels:
                     self.sections['issue type'] = v
                     labeled = True
@@ -154,7 +154,7 @@ class DescriptionFixer(object):
     def create_body(self):
 
         # cleanup remnant colons
-        for k,v in self.sections.iteritems():
+        for k, v in self.sections.iteritems():
             if v.startswith(':\n'):
                 self.sections[k] = v[2:]
             elif v.startswith(': \n'):

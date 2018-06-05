@@ -19,7 +19,7 @@ def strip_time_safely(tstring):
         '%Y-%m-%dT%H:%M:%S.%f',
         '%Y-%m-%dT%H:%M:%S'
     ]
-    for idx,tsformat in enumerate(tsformats):
+    for idx, tsformat in enumerate(tsformats):
         try:
             res = datetime.datetime.strptime(tstring, tsformat)
             break

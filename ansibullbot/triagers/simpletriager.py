@@ -54,7 +54,7 @@ class SimpleTriager(DefaultTriager):
         parser.add_argument("--pr", "--id", type=str, dest="number",
                             help="Triage only the specified pr|issue (separated by commas)")
         parser.add_argument("--repo", "-r", type=str, required=True,
-                    help="Github repo to triage (defaults to all)")
+                            help="Github repo to triage (defaults to all)")
         return parser
 
     def run(self):

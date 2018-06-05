@@ -32,9 +32,9 @@ def status_to_date_and_runid(status, keepstate=False):
     ts = pytz.utc.localize(ts)
 
     if keepstate:
-        return(ts, target, status['state'])
+        return ts, target, status['state']
     else:
-        return (ts, target)
+        return ts, target
 
 
 def get_ci_facts(iw):

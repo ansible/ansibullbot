@@ -222,7 +222,7 @@ class AnsibleVersionIndexer(object):
                     return aversion
 
         # check for copy/paste from --version output
-        for idx,x in enumerate(rawlines):
+        for idx, x in enumerate(rawlines):
             if len(rawlines) < (idx+2):
                 continue
             if x.startswith('ansible') and \
@@ -288,7 +288,7 @@ class AnsibleVersionIndexer(object):
         lines = [x for x in lines if not x.startswith('<')]
         lines = [x for x in lines if not x.startswith('-')]
         lines = [x for x in lines if not x.startswith('lib')]
-        for idx,x in enumerate(lines):
+        for idx, x in enumerate(lines):
             #if x.startswith('ansible'):
             #    x = x.replace('ansible', '').strip()
             if "'" in x:

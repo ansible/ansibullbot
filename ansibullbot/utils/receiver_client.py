@@ -63,7 +63,7 @@ def get_receiver_summaries(username, reponame, state=None, number=None):
         receiverurl += 'summaries'
         logging.info('RECEIVER: GET %s' % receiverurl)
 
-        params={'user': username, 'repo': reponame}
+        params = {'user': username, 'repo': reponame}
         if state:
             params['state'] = state
 
@@ -108,7 +108,7 @@ def get_receiver_metadata(username, reponame, number=None):
         receiverurl += 'metadata'
         logging.info('RECEIVER: GET %s' % receiverurl)
 
-        params={'user': username, 'repo': reponame}
+        params = {'user': username, 'repo': reponame}
         if number:
             params['number'] = number
 

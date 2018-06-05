@@ -15,7 +15,7 @@ def get_python3_facts(issuewrapper):
             ispy3 = True
             break
 
-        for k,v in iw.template_data.iteritems():
+        for k, v in iw.template_data.iteritems():
             if not v:
                 continue
             if py3str in v.lower():

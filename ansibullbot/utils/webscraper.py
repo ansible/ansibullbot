@@ -32,11 +32,11 @@ class GithubWebScraper(object):
     def split_repo_url(self, repo_url):
         rparts = repo_url.split('/')
         rparts = [x.strip() for x in rparts if x.strip()]
-        return (rparts[-2], rparts[-1])
+        return rparts[-2], rparts[-1]
 
     def load_summaries(self, repo_url):
         issues = {}
-        ns,repo = self.split_repo_url(repo_url)
+        ns, repo = self.split_repo_url(repo_url)
         cachefile = os.path.join(self.cachedir, ns, repo, 'html_summaries.json')
         if os.path.isfile(cachefile):
             try:
@@ -85,7 +85,7 @@ class GithubWebScraper(object):
         lrwx------ 1 jtanner d 64 Jan 13 08:51 9 -> /tmp/tmp_Qcxrt (deleted)
         """
 
-        ns,repo = self.split_repo_url(repo_url)
+        ns, repo = self.split_repo_url(repo_url)
         cachefile = os.path.join(
             self.cachedir,
             ns,
@@ -169,7 +169,7 @@ class GithubWebScraper(object):
 
             changed = []
             changes = False
-            for k,v in data['issues'].iteritems():
+            for k, v in data['issues'].iteritems():
 
                 if not isinstance(k, unicode):
                     k = u'%s' % k
@@ -586,7 +586,7 @@ class GithubWebScraper(object):
 
         # force to ascii
         x = {}
-        for k,v in reviews['users'].iteritems():
+        for k, v in reviews['users'].iteritems():
             k = k.encode('ascii','ignore')
             v = v.encode('ascii', 'ignore')
             x[k] = v
@@ -613,7 +613,7 @@ class GithubWebScraper(object):
                         'too many www requests, sleeping %ss' % sleep
                     )
                     time.sleep(sleep)
-                    sleep = sleep * 2
+                    sleep *=  2
                 else:
                     failed = False
             except requests.exceptions.ConnectionError:
@@ -621,24 +621,24 @@ class GithubWebScraper(object):
                 # refused',))
                 logging.debug('connection refused')
                 time.sleep(sleep)
-                sleep = sleep * 2
+                sleep *= 2
             except requests.exceptions.ChunkedEncodingError as e:
                 logging.debug(e)
                 time.sleep(sleep)
-                sleep = sleep * 2
+                sleep *= 2
 
             if not rr:
                 failed = True
                 logging.warning('no response')
                 time.sleep(sleep)
-                sleep = sleep * 2
+                sleep *= 2
 
             # https://github.com/ansible/ansibullbot/issues/573
             if not rr or 'page is taking way too long to load' in rr.text.lower():
                 failed = True
                 logging.warning('github page took too long to load')
                 time.sleep(sleep)
-                sleep = sleep * 2
+                sleep *= 2
 
         return rr
 
@@ -819,7 +819,6 @@ class GithubWebScraper(object):
                     'type': itype,
                     'number': number,
                     'title': title,
-                    'state': state,
                     'ci_state': status_state,
                     'ci_message': status_txt,
                     'review_message': review_txt,
@@ -847,7 +846,6 @@ class GithubWebScraper(object):
             'type': None,
             'number': None,
             'title': None,
-            'state': None,
             'ci_state': None,
             'ci_message': None,
             'review_message': None,

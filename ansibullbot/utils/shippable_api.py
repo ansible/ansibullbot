@@ -26,6 +26,7 @@ ANSIBLE_RUNS_URL = '%s/runs?projectIds=%s&isPullRequest=True' % (
 
 TIMEOUT = 5  # seconds
 
+
 def has_commentable_data(test_results):
     # https://github.com/ansible/ansibullbot/issues/421
     commentable = False
@@ -82,8 +83,8 @@ class ShippableRuns(object):
     def _process_raw_data(self):
         '''Iterate through and fix data'''
         self.runs = [x for x in self._rawdata]
-        for idx,x in enumerate(self.runs):
-            for k,v in x.iteritems():
+        for idx, x in enumerate(self.runs):
+            for k, v in x.iteritems():
                 if k.endswith('At'):
                     # 2017-02-07T00:27:06.482Z
                     if v:
@@ -251,7 +252,7 @@ class ShippableRuns(object):
 
         # https://github.com/ansible/ansibullbot/issues/472
         if not run_data:
-            return (run_data, None, [], False)
+            return run_data, None, [], False
 
         # need this for ci_verified association
         commitSha = run_data['commitSha']
@@ -260,7 +261,7 @@ class ShippableRuns(object):
         url = 'https://api.shippable.com/jobs?runIds=%s' % run_id
         rdata = self._get_url(url, usecache=usecache)
 
-        for rix,rd in enumerate(rdata):
+        for rix, rd in enumerate(rdata):
 
             job_id = rd.get('id')
             #job_number = rd.get('jobNumber')
@@ -282,7 +283,7 @@ class ShippableRuns(object):
             if not jdata:
                 continue
 
-            for jid,td in enumerate(jdata):
+            for jid, td in enumerate(jdata):
 
                 if filter_paths:
                     matches = [x.match(td['path']) for x in fps]
@@ -310,7 +311,7 @@ class ShippableRuns(object):
         ci_verified = False
         if run_data['statusCode'] == 80:
             ci_verified = True
-            for k,v in CVMAP.items():
+            for k, v in CVMAP.items():
                 if v['statusCode'] == 30:
                     continue
                 if v['statusCode'] != 80:
@@ -330,7 +331,7 @@ class ShippableRuns(object):
                         ci_verified = False
                         break
 
-        return (run_data, commitSha, results, ci_verified)
+        return run_data, commitSha, results, ci_verified
 
     def get_run_id(self, run_number):
         """trigger a new run"""
@@ -348,7 +349,7 @@ class ShippableRuns(object):
 
         # always pass the runId in a dict() to requests
         run_id = self.get_run_id(run_number)
-        data = {'runId':run_id}
+        data = {'runId': run_id}
 
         newbuild_url = "%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
         response = self.fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)

@@ -28,11 +28,11 @@ class BotMetadataParser(object):
             return inlist
 
         def fix_lists(data):
-            for k,v in data['files'].items():
+            for k, v in data['files'].items():
                 if v is None:
                     continue
 
-                for k2,v2 in v.items():
+                for k2, v2 in v.items():
                     if isinstance(v2, str) and '$' in v2:
                         tmpl = Template(v2)
                         newv2 = tmpl.substitute(**data['macros'])
@@ -64,7 +64,7 @@ class BotMetadataParser(object):
             return data
 
         def extend_labels(data):
-            for k,v in data['files'].items():
+            for k, v in data['files'].items():
                 # labels from path(s)
                 if v is None:
                     continue
@@ -83,7 +83,7 @@ class BotMetadataParser(object):
             return data
 
         def fix_teams(data):
-            for k,v in data['macros'].items():
+            for k, v in data['macros'].items():
                 if v is None:
                     continue
                 if not k.startswith('team_') or isinstance(v, list):
@@ -124,7 +124,6 @@ class BotMetadataParser(object):
                     _propagate(files, top, child, 'maintainers')
                     _propagate(files, top, child, 'ignored')
 
-
         #################################
         #   PARSE
         #################################
@@ -137,7 +136,7 @@ class BotMetadataParser(object):
         # fix the macro'ized file keys
         ydata = fix_keys(ydata)
 
-        for k,v in ydata['files'].items():
+        for k, v in ydata['files'].items():
             if v is None:
                 # convert empty val in dict
                 ydata['files'][k] = {}

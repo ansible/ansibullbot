@@ -79,12 +79,11 @@ class ModuleIndexer(object):
         self.botmetafile = botmetafile
         self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
         self.modules = {}  # keys: paths of files belonging to the repository
-        self.checkoutdir = '~/.ansibullbot/cache/ansible.modules.checkout'
         self.maintainers = maintainers or {}
         self.checkoutdir = os.path.join(cachedir, 'ansible.modules.checkout')
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
         self.importmap = {}
-        self.scraper_cache = '~/.ansibullbot/cache/ansible.modules.scraper'
+        self.scraper_cache = os.path.join(cachedir, 'ansible.modules.scraper')
         self.scraper_cache = os.path.expanduser(self.scraper_cache)
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
         self.gqlc = gh_client
@@ -161,10 +160,9 @@ class ModuleIndexer(object):
             shutil.rmtree(self.checkoutdir)
 
         #cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
-        cmd = "git clone %s %s" \
-            % (self.REPO, self.checkoutdir)
+        cmd = "git clone %s %s" % (self.REPO, self.checkoutdir)
         (rc, so, se) = run_command(cmd)
-        print str(so) + str(se)
+        print(str(so) + str(se))
 
     def update_checkout(self):
         """rebase + pull + update the checkout"""
@@ -173,7 +171,7 @@ class ModuleIndexer(object):
 
         cmd = "cd %s ; git pull --rebase" % self.checkoutdir
         (rc, so, se) = run_command(cmd)
-        print str(so) + str(se)
+        print(str(so) + str(se))
 
         # If rebase failed, recreate the checkout
         if rc != 0:
@@ -194,7 +192,7 @@ class ModuleIndexer(object):
         if isinstance(pattern, unicode):
             pattern = pattern.encode('ascii', 'ignore')
 
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if v['name'] == pattern:
                 logging.debug('match {} on name: {}'.format(k, v['name']))
                 matches = [v]
@@ -202,7 +200,7 @@ class ModuleIndexer(object):
 
         if not matches:
             # search by key ... aka the filepath
-            for k,v in self.modules.iteritems():
+            for k, v in self.modules.iteritems():
                 if k == pattern:
                     logging.debug('match {} on key: {}'.format(k, k))
                     matches = [v]
@@ -210,7 +208,7 @@ class ModuleIndexer(object):
 
         if not matches and not exact:
             # search by properties
-            for k,v in self.modules.iteritems():
+            for k, v in self.modules.iteritems():
                 for subkey in v.keys():
                     if v[subkey] == pattern:
                         logging.debug('match {} on subkey: {}'.format(k, subkey))
@@ -219,7 +217,7 @@ class ModuleIndexer(object):
         if not matches and not exact:
             # Levenshtein distance should workaround most typos
             distance_map = {}
-            for k,v in self.modules.iteritems():
+            for k, v in self.modules.iteritems():
                 mname = v.get('name')
                 if not mname:
                     continue
@@ -234,7 +232,7 @@ class ModuleIndexer(object):
                         import epdb; epdb.st()
                 distance_map[mname] = [res, k]
             res = sorted(distance_map.items(), key=lambda x: x[1], reverse=True)
-            if len(pattern) > 3 and res[-1][1] < 3:
+            if len(pattern) > 3 > res[-1][1]:
                 logging.debug('levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
                 matches = [self.modules[res[-1][-1]]]
 
@@ -373,7 +371,7 @@ class ModuleIndexer(object):
 
         # custom fixes
         newitems = []
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
 
             # include* is almost always an ansible/ansible issue
             # https://github.com/ansible/ansibullbot/issues/214
@@ -564,7 +562,7 @@ class ModuleIndexer(object):
 
         logging.debug('build email cache')
         emails_cache = self.session.query(Email)
-        emails_cache = [(x.email,x.login) for x in emails_cache]
+        emails_cache = [(x.email, x.login) for x in emails_cache]
         self.emails_cache = dict(emails_cache)
 
         logging.debug('build blame cache')
@@ -630,13 +628,13 @@ class ModuleIndexer(object):
             self.session.commit()
             logging.debug('re-build email cache')
             emails_cache = self.session.query(Email)
-            emails_cache = [(x.email,x.login) for x in emails_cache]
+            emails_cache = [(x.email, x.login) for x in emails_cache]
             self.emails_cache = dict(emails_cache)
 
         # fill in what we can ...
         logging.debug('fill in commit logins')
         for k in keys:
-            for idc,commit in enumerate(self.commits[k][:]):
+            for idc, commit in enumerate(self.commits[k][:]):
                 if not commit.get('login'):
                     continue
                 login = self.emails_cache.get(commit['email'])
@@ -658,7 +656,7 @@ class ModuleIndexer(object):
         keys = sorted(self.modules.keys())
 
         # scrape the data
-        #for k,v in self.modules.iteritems():
+        #for k, v in self.modules.iteritems():
         for k in keys:
 
             #v = self.modules[k]
@@ -712,10 +710,10 @@ class ModuleIndexer(object):
                     self.emails_cache[email] = github_id
 
         # add scraped logins to the map
-        #for k,v in self.modules.iteritems():
+        #for k, v in self.modules.iteritems():
         for k in keys:
             #v = self.modules[k]
-            for idx,x in enumerate(self.commits[k]):
+            for idx, x in enumerate(self.commits[k]):
                 if x['email'] in ['@']:
                     continue
                 if x['email'] not in self.emails_cache:
@@ -725,16 +723,16 @@ class ModuleIndexer(object):
                     continue
 
                 xhash = x['hash']
-                for ck,cv in self.committers[k].iteritems():
+                for ck, cv in self.committers[k].iteritems():
                     if xhash in cv:
                         self.emails_cache[x['email']] = ck
                         break
 
         # fill in what we can ...
-        #for k,v in self.modules.iteritems():
+        #for k, v in self.modules.iteritems():
         for k in keys:
             #v = self.modules[k]
-            for idx,x in enumerate(self.commits[k]):
+            for idx, x in enumerate(self.commits[k]):
                 if not x['login']:
                     if x['email'] in ['@']:
                         continue
@@ -751,7 +749,7 @@ class ModuleIndexer(object):
         '''Define the maintainers for each module'''
 
         # grep the authors:
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if v['filepath'] is None:
                 continue
             mfile = os.path.join(self.checkoutdir, v['filepath'])
@@ -764,7 +762,7 @@ class ModuleIndexer(object):
                 sorted(set(self.modules[k]['maintainers']))
 
         metadata = self.botmeta['files'].keys()
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if k == 'meta':
                 continue
 
@@ -813,7 +811,7 @@ class ModuleIndexer(object):
                 [x for x in self.modules[k]['maintainers']]
 
         # set the namespace maintainers ...
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if 'namespace_maintainers' not in self.modules[k]:
                 self.modules[k]['namespace_maintainers'] = []
             if v.get('namespace'):
@@ -869,7 +867,7 @@ class ModuleIndexer(object):
         inphase = False
         author_lines = ''
         doc_lines = documentation.split('\n')
-        for idx,x in enumerate(doc_lines):
+        for idx, x in enumerate(doc_lines):
             if x.startswith('author'):
                 #print("START ON %s" % x)
                 inphase = True
@@ -976,7 +974,7 @@ class ModuleIndexer(object):
         match = None
         known_modules = []
 
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if v['name'] in ['include']:
                 continue
             known_modules.append(v['name'])
@@ -1082,7 +1080,7 @@ class ModuleIndexer(object):
         return matches
 
     def set_module_metadata(self):
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if not v['filepath']:
                 continue
             mfile = os.path.join(self.checkoutdir, v['filepath'])
@@ -1120,7 +1118,7 @@ class ModuleIndexer(object):
         return meta
 
     def set_module_imports(self):
-        for k,v in self.modules.iteritems():
+        for k, v in self.modules.iteritems():
             if not v['filepath']:
                 continue
             mfile = os.path.join(self.checkoutdir, v['filepath'])
@@ -1164,13 +1162,13 @@ class ModuleIndexer(object):
     @property
     def all_authors(self):
         authors = set()
-        for key,metadata in self.modules.items():
+        for key, metadata in self.modules.items():
             authors.update(metadata.get('authors', []))
         return authors
 
     def get_maintainers_for_namespace(self, namespace):
         maintainers = []
-        for k,v in self.modules.items():
+        for k, v in self.modules.items():
             if 'namespace' not in v or 'maintainers' not in v:
                 continue
             if v['namespace'] == namespace:
