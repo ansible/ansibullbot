@@ -6,11 +6,13 @@
 import ansibullbot.constants as C
 
 import datetime
+import gzip
 import json
 import logging
 import os
 import re
 import requests_cache
+import shutil
 import time
 
 import requests
@@ -126,6 +128,20 @@ class ShippableRuns(object):
         updated = sorted(set(updated))
         return updated
 
+    def _load_cache_file(self, cfile):
+        with gzip.open(cfile, 'r') as f:
+            jdata = json.loads(f.read())
+        return jdata
+
+    def _write_cache_file(self, cfile, data):
+        with gzip.open(cfile, 'w') as f:
+            f.write(json.dumps(data))
+
+    def _compress_cache_file(self, cfile, gzfile):
+        with open(cfile, 'r') as f_in, gzip.open(gzfile, 'w') as f_out:
+            shutil.copyfileobj(f_in, f_out)
+        os.remove(cfile)
+
     def _get_url(self, url, usecache=False, timeout=TIMEOUT):
         cdir = os.path.join(self.cachedir, '.raw')
         if not os.path.isdir(cdir):
@@ -133,13 +149,17 @@ class ShippableRuns(object):
         cfile = url.replace('https://api.shippable.com/', '')
         cfile = cfile.replace('/', '_')
         cfile = os.path.join(cdir, cfile + '.json')
+        gzfile = cfile + '.gz'
+
+        # transparently compress old logs
+        if os.path.isfile(cfile) and not os.path.isfile(gzfile):
+            self._compress_cache_file(cfile, gzfile)
 
         rc = None
         jdata = None
-        if os.path.isfile(cfile):
+        if os.path.isfile(gzfile):
             try:
-                with open(cfile, 'rb') as f:
-                    fdata = json.load(f)
+                fdata = self._load_cache_file(gzfile)
                 rc = fdata[0]
                 jdata = fdata[1]
             except ValueError:
@@ -149,7 +169,7 @@ class ShippableRuns(object):
                 return None
 
         resp = None
-        if not os.path.isfile(cfile) or not jdata or not usecache:
+        if not os.path.isfile(gzfile) or not jdata or not usecache:
 
             resp = self.fetch(url, timeout=timeout)
             if not resp:
@@ -157,11 +177,9 @@ class ShippableRuns(object):
 
             if resp.status_code != 400:
                 jdata = resp.json()
-                with open(cfile, 'wb') as f:
-                    json.dump([resp.status_code, jdata], f)
+                self._write_cache_file(gzfile, [resp.status_code, jdata])
             else:
-                with open(cfile, 'wb') as f:
-                    json.dump([resp.status_code, {}], f)
+                self._write_cache_file(gzfile, [resp.status_code, {}])
                 return None
 
         self.check_response(resp)
