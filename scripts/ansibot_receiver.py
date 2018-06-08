@@ -2,7 +2,9 @@
 
 # $ curl -v -X POST --header "Content-Type: application/json" -d@summaries.json 'http://localhost:5001/summaries?user=ansible&repo=ansible'
 
+import glob
 import json
+import subprocess
 
 from flask import Flask
 from flask import jsonify
@@ -260,6 +262,146 @@ def summaries():
         return jsonify(docs)
 
     return 'summaries\n'
+
+
+#####################################################
+#   LOGGING PAGE
+#####################################################
+
+def strip_line_json(line):
+    # 2018-06-07 15:52:51,831 DEBUG GET https://api.github.com/repos/ansible/ansible/issues/28061/events {'Authorization'
+    # null ==> 200 {DATA}
+
+    parts = line.split()
+
+    data = {
+        'date': parts[0],
+        'time': parts[1],
+        'loglevel': parts[2],
+        'action': parts[3],
+        'url': parts[4],
+    }
+
+    for k,v in data.items():
+        line = line.replace(v, '', 1)
+    line = line.lstrip()
+
+    header_index = line.index('}') + 1
+    header = line[:header_index]
+    line = line.replace(header, '', 1)
+    header = eval(header)
+    data['request_header'] = header
+
+    jdata_index = line.index('{')
+    jdata = line[jdata_index:]
+    header2 = jdata[:jdata.index('}')+1]
+    line = line.replace(header2, '', 1)
+    line = line.lstrip()
+    header2 = eval(header2)
+    data['response_header'] = header2
+
+    dict_index = line.index('{')
+    list_index = line.index('[')
+    if dict_index < list_index:
+        jdata = line[dict_index:]
+    else:
+        jdata = line[list_index:]
+
+    data['data'] = json.loads(jdata)
+    #import epdb; epdb.st()
+
+    return data
+
+
+@app.route('/logs', methods=['GET', 'POST'])
+@app.route('/logs/<path:issue>', methods=['GET', 'POST'])
+def logs(issue=None):
+    LOGDIR='/var/log'
+    logfiles = sorted(glob.glob('%s/ansibullbot*' % LOGDIR))
+    log_lines = []
+
+    for lf in logfiles:
+        if lf.endswith('.log'):
+            with open(lf, 'r') as f:
+                log_lines = log_lines + f.readlines()
+        # consume the compressed logs too if looking for a specific issue
+        elif issue and lf.endswith('.gz'):
+            cmd = 'zcat %s' % lf
+            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            so,se = p.communicate()
+            lines = so.split('\n')
+            log_lines = lines + log_lines
+
+    # if the caller doesn't want a specific issue, get the tail of the log and all tracebacks
+    if not issue:
+        # trim out and DEBUG lines
+        log_info = [x.rstrip() for x in log_lines if ' INFO ' in x]
+
+        # each time the bot starts, it's possibly because of a traceback
+        bot_starts = []
+        for idx,x in enumerate(log_lines):
+            if 'starting bot' in x:
+                bot_starts.append(idx)
+
+        tracebacks = []
+        for bs in bot_starts:
+            this_issue = None
+            this_traceback = None
+            for idx,x in enumerate(log_lines):
+                if 'starting triage' in x:
+                    this_issue = x
+                    continue
+                if this_issue and x.endswith('Traceback (most recent call last):'):
+                    this_traceback = [x]
+                    continue
+                if this_traceback:
+                    this_traceback.append(x)
+                if idx == bs:
+                    break
+
+            # only keep things that were actually tracebacks
+            if this_traceback is not None:
+                if 'Exception' in this_traceback[-2]:
+                    tracebacks.append((this_issue, this_traceback))
+
+        return jsonify((log_info[-100:], tracebacks))
+
+    # filter out lines relevant to the issue
+    number = issue.split('/')[-1]
+    issue_log = []
+    inphase = False
+    for ll in log_lines:
+        ll = ll.rstrip()
+        if not inphase and 'starting triage' in ll and ll.endswith('/' + number):
+            inphase = True
+            issue_log.append(ll)
+            continue
+        if inphase and 'finished triage' in ll and ll.endswith('/' + number):
+            inphase = False
+            continue
+
+        if inphase:
+            issue_log.append(ll)
+
+    # grep out each time the issue was triaged
+    sessions = [x for x in issue_log if 'starting triage' in x]
+
+    # assemble the datastructure for return
+    issue_data = {
+        'number': number,
+        'triage_count': len(sessions),
+        'triage_times': [' '.join(x.split()[0:2]) for x in sessions],
+        'log': issue_log,
+        'api': {}
+    }
+
+    # parse out any api data requested for this issue
+    for ll in issue_log:
+        if 'DEBUG GET' in ll:
+            data = strip_line_json(ll)
+            issue_data['api'][data['url']] = data
+
+    return jsonify(issue_data)
 
 
 if __name__ == "__main__":
