@@ -1,6 +1,8 @@
 #!/usr/bin/env python
+# Ansible managed. Any local changes will be overwritten.
 
 import cgi
+import glob
 import os
 import sys
 import subprocess
@@ -9,6 +11,7 @@ def run_command(args):
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     (so, se) = p.communicate()
     return (p.returncode, so, se)
+
 
 def get_process_data():
     # USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
@@ -19,6 +22,7 @@ def get_process_data():
         'pid': None,
         'cpu': None,
         'mem': None,
+        'disk': '0',
     }
     cmd = 'ps aux | fgrep -i triage_ansible.py | egrep ^ansibot'
     (rc, so, se) = run_command(cmd)
@@ -37,12 +41,55 @@ def get_process_data():
 
     return pdata
 
+
+def _get_log_data():
+
+    LOGDIR='/var/log'
+    logfiles = sorted(glob.glob('%s/ansibullbot*' % LOGDIR))
+    log_lines = []
+
+    for lf in logfiles:
+        if lf.endswith('.log'):
+            with open(lf, 'r') as f:
+                log_lines = log_lines + f.readlines()
+
+    # trim out and DEBUG lines
+    log_info = [x.rstrip() for x in log_lines if ' INFO ' in x]
+
+    # each time the bot starts, it's possibly because of a traceback
+    bot_starts = []
+    for idx,x in enumerate(log_lines):
+        if 'starting bot' in x:
+            bot_starts.append(idx)
+
+    # pull out the entire traceback(s) and the relevant issues(s)
+    tracebacks = []
+    for bs in bot_starts:
+        this_issue = None
+        this_traceback = []
+        if len(log_lines) > 1000:
+            lines = log_lines[bs-1000:bs]
+        else:
+            lines = log_lines[:bs]
+
+        for line in lines:
+            if 'DEBUG GET' in line:
+                continue
+            if 'starting triage' in line:
+                this_issue = line.rstrip()
+            if 'Traceback (most recent call last)' in line:
+                this_traceback.append(line.rstrip())
+                continue
+            if this_traceback:
+                this_traceback.append(line.rstrip())
+        if this_traceback:
+            tracebacks.append([this_issue] + this_traceback)
+
+    #import epdb; epdb.st()
+    return (log_info[-500:], tracebacks)
+
+
 def get_log_data():
-    cmd = 'tail -n 100 /var/log/ansibullbot.log | fgrep " INFO "'
-    (rc, so, se) = run_command(cmd)
-    lines = []
-    for line in so.split('\n'):
-        lines.append(line)
 
     ratelimit = {
         'total': None,
@@ -50,7 +97,7 @@ def get_log_data():
         'msg': None
     }
 
-    cmd = "tail -n 1000 /var/log/ansibullbot.log | fgrep 'x-ratelimit-limit' | tail -n1"
+    cmd = 'tail -n 1000 "/var/log/ansibullbot.log" | fgrep "x-ratelimit-limit" | tail -n1'
     (rc, so, se) = run_command(cmd)
     if so:
         parts = so.split()
@@ -66,10 +113,24 @@ def get_log_data():
             if ridx:
                 ratelimit['remaining'] = parts[ridx+1].replace("'", '').replace(',', '')
 
-    return (ratelimit, lines)
+    lines,tracebacks = _get_log_data()
+
+    return (ratelimit, lines, tracebacks)
+
+
+def get_version_data():
+    cmd = 'git -C "/home/ansibot/ansibullbot" log --format="%H" -1'
+
+    (rc, so, se) = run_command(cmd)
+    if rc == 0 and so:
+        commit_hash = so.strip()
+        return commit_hash
+
+    return "unknown"
 
 pdata = get_process_data()
-(ratelimit, loglines) = get_log_data()
+(ratelimit, loglines, tracebacks) = get_log_data()
+version = get_version_data()
 
 rdata = "Content-type: text/html\n"
 rdata += "\n"
@@ -81,8 +142,15 @@ rdata += "<br>\n"
 rdata += "ratelimit total: %s<br>\n" % ratelimit['total']
 rdata += "ratelimit remaining: %s<br>\n" % ratelimit['remaining']
 rdata += "<br>\n"
+rdata += "current version: %s\n" % version
+rdata += "<br>\n"
+rdata += "################################ INFO LOG ###########################<br>\n"
 rdata += '<br>\n'.join(loglines)
-rdata += "\n"
+rdata += "<br>\n"
+rdata += "################################ TRACEBACKS #########################<br>\n"
+for tb in tracebacks:
+    rdata += '<br>\n'.join(tb)
+rdata += "<br>\n"
 
 # force error on full disk
 if int(pdata['disk'].replace('%', '')) > 98:
