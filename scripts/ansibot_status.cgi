@@ -149,7 +149,7 @@ rdata += '<br>\n'.join(loglines)
 rdata += "<br>\n"
 rdata += "################################ TRACEBACKS #########################<br>\n"
 for tb in tracebacks:
-    rdata += '<br>\n'.join(tb)
+    rdata += '<br>\n'.join(tb) + '<br>'
 rdata += "<br>\n"
 
 # force error on full disk
