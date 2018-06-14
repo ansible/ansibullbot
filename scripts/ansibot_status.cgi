@@ -119,7 +119,7 @@ def get_log_data():
 
 
 def get_version_data():
-    cmd = 'git -C "/home/ansibot/ansibullbot" log --format="%H" -1'
+    cmd = 'cd /home/ansibot/ansibullbot; git log --format="%H" -1'
 
     (rc, so, se) = run_command(cmd)
     if rc == 0 and so:
@@ -149,6 +149,7 @@ rdata += '<pre>'
 rdata += '\n'.join(loglines[:200])
 rdata += "\n"
 rdata += '</pre>'
+rdata += '<br>'
 rdata += "################################ TRACEBACKS #########################<br>\n"
 for tb in tracebacks:
     rdata += '<pre>'
