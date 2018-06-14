@@ -126,7 +126,7 @@ def get_version_data():
         commit_hash = so.strip()
         return commit_hash
 
-    return "unknown"
+    return "unknown: %s" % se
 
 pdata = get_process_data()
 (ratelimit, loglines, tracebacks) = get_log_data()
@@ -145,11 +145,15 @@ rdata += "<br>\n"
 rdata += "current version: %s\n" % version
 rdata += "<br>\n"
 rdata += "################################ INFO LOG ###########################<br>\n"
-rdata += '<br>\n'.join(loglines)
-rdata += "<br>\n"
+rdata += '<pre>'
+rdata += '\n'.join(loglines[:200])
+rdata += "\n"
+rdata += '</pre>'
 rdata += "################################ TRACEBACKS #########################<br>\n"
 for tb in tracebacks:
-    rdata += '<br>\n'.join(tb) + '<br>'
+    rdata += '<pre>'
+    rdata += '\n'.join(tb)
+    rdata += '</pre>'
 rdata += "<br>\n"
 
 # force error on full disk
