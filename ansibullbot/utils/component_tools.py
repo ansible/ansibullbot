@@ -718,6 +718,7 @@ class AnsibleComponentMatcher(object):
             r'(\S+) modules',
             r'(\S+\*) modules',
             r'all cisco (\S+\*) modules',
+            r'ansible (\S+) modules',
         ]
 
         mobj = None
@@ -940,6 +941,9 @@ class AnsibleComponentMatcher(object):
         if 'plugin' in body_paths:
             ix = body_paths.index('plugin')
             body_paths[ix] = 'plugins'
+        if 'module' in body_paths:
+            ix = body_paths.index('module')
+            body_paths[ix] = 'modules'
 
         if not context or 'lib/ansible/modules' in context:
             mmatch = self.find_module_match(body)
@@ -974,7 +978,6 @@ class AnsibleComponentMatcher(object):
                         break
 
                 if partial:
-
                     # netapp_e_storagepool storage module
                     # lib/ansible/modules/storage/netapp/netapp_e_storagepool.py
 
@@ -990,13 +993,10 @@ class AnsibleComponentMatcher(object):
                     if bp_total == len(body_paths):
                         matches = [fn]
                         break
-
                     elif bp_total > 1:
-
-                        if (float(bp_total) / float(len(body_paths))) >= (2.0 / 3.0):
+                        if (float(bp_total) / float(len(body_paths))) > (2.0 / 3.0):
                             if fn not in matches:
                                 matches.append(fn)
-                                #break
 
         if matches:
             tr = []
