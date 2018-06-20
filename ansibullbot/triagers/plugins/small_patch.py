@@ -14,6 +14,9 @@ def get_small_patch_facts(iw):
         'is_small_patch': False
     }
 
+    if not iw.is_pullrequest():
+        return sfacts
+
     small_chunks_changed = 0
 
     for commit in iw.get_commits():
