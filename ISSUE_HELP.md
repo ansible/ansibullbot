@@ -178,7 +178,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-feature">feature</a>** | issues pull requests | no | Added to issues or pull requests requesting/adding new features.
 **<a name="label-bug">bug</a>** | issues pull requests | no | Added to issues or pull requests reporting/fixing bugs.
 **<a name="label-docs">docs</a>** | issues pull requests | no | Identify issues or pull requests related to documentation.
-**<a name="label-test_pull_request">test_pull_request</a>** | pull requests | no | Identify pull requests related to tests.
+**<a name="label-test">test</a>** | pull requests | no | Identify pull requests related to tests.
 **<a name="label-easyfix">easyfix</a>** | issue or pull requests | no | Identify easy entrance point for people who are looking to start contributing.
 **<a name="label-new_module">new_module</a>** | pull requests | yes | Identify pull requests adding new module.
 **<a name="label-module">module</a>** | pull requests | no | Identify pull requests updating existing modules.
