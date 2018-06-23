@@ -27,7 +27,10 @@ def get_small_patch_facts(iw):
             if not changed_file.raw_data['status'] == 'modified':
                 return sfacts
 
-            chunks_in_file_count = len(re.findall(RE_CHUNK, changed_file.raw_data['patch']))
+            try:
+                chunks_in_file_count = len(re.findall(RE_CHUNK, changed_file.raw_data['patch']))
+            except KeyError as e:
+                continue
 
             if changed_file.changes > FILE_MAX_CHANGED_LINES:
                 return sfacts
