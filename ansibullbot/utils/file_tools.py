@@ -12,6 +12,8 @@ from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.moduletools import ModuleIndexer
 
+import ansibullbot.constants as C
+
 
 class FileIndexer(ModuleIndexer):
 
