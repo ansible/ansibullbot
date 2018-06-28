@@ -2198,6 +2198,8 @@ class AnsibleTriage(DefaultTriager):
             tfacts['maintainer_triaged'] = True
         elif iw.is_pullrequest() and iw.history.has_reviewed(maintainers):
             tfacts['maintainer_triaged'] = True
+        elif iw.history.was_self_assigned():
+            tfacts['maintainer_triaged'] = True
 
         return tfacts
 
