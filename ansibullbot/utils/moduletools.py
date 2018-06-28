@@ -23,6 +23,8 @@ from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.webscraper import GithubWebScraper
 
+import ansibullbot.constants as C
+
 
 Base = declarative_base()
 

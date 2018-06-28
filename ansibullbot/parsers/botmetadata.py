@@ -7,6 +7,8 @@ from string import Template
 
 import yaml
 
+import ansibullbot.constants as C
+
 
 class BotMetadataParser(object):
 

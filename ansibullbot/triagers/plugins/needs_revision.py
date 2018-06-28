@@ -11,6 +11,8 @@ from ansibullbot.utils.shippable_api import ShippableRuns
 from ansibullbot.wrappers.historywrapper import ShippableHistory
 from ansibullbot.utils.shippable_api import ShippableNoData
 
+import ansibullbot.constants as C
+
 
 def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     # Thanks @adityacs for this PR. This PR requires revisions, either
