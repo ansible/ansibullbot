@@ -235,11 +235,11 @@ Some labels are used to categorize issues and pull requests:
 
 The `+label` and `-label` commands are restricted to a subset of available labels and are not meant to replace the other bot commands:
 
-* `needs_triage` - a human being still needs to validate the issue is properly labeled and has all the information required.
-* `module` - classifies the issue as a module related issue.
 * `affects_X.Y` - indicates that the issue is relevant to a particular ansible *major.minor* version.
 * `c:...` - these labels categorize issues or pull requests by their relevant source code files.
 * `easyfix` - indicates that the issue an easy entrance point for people who are looking to start contributing.
+* `module` - classifies the issue as a module related issue.
+* `needs_triage` - a human being still needs to validate the issue is properly labeled and has all the information required.
 * `test` and namespace labels
 
 ### How to use label commands
