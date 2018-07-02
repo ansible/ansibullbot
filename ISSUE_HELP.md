@@ -205,15 +205,30 @@ Some labels are used to categorize issues and pull requests:
   * `test`
 
 * Namespace labels:
-  * `azure`
+  * `aci`
+  * `avi`
   * `aws`
+  * `aws`
+  * `azure`
   * `cloud`
+  * `cloudstack`
   * `digital_ocean`
   * `docker`
+  * `f5`
   * `gce`
+  * `infoblox`
+  * `jboss`
+  * `meraki`
+  * `netapp`
   * `networking`
+  * `nxos`
   * `openstack`
+  * `ovirt`
+  * `ucs`
+  * `unarchive`
   * `vmware`
+  * `windows`
+  * `xml`
 
 ### When to use label commands
 
