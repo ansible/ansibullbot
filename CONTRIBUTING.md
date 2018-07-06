@@ -9,6 +9,7 @@
 5. Create the config file
 6. sudo touch /var/log/ansibullbot.log
 7. sudo chmod 777 /var/log/ansibullbot.log
+8. Copy examples/ansibullbot.cfg to ~/.ansibullbot.cfg and fill in the credentials
 
 ## Testing your changes
 
@@ -25,6 +26,14 @@ Run with `verbose`, `debug` and `dry-run` ...
 3. Run `triage_ansible.py` with `--botmetafile=<PATHTOFILE>`.
 
 If you have a specific issue to test against, use the `--id` parameter to speed up testing.
+
+## Testing changes related to a single label
+
+The `--id` parameter can take a path to a script. The `scripts` directory is full of scripts that will return json'ified lists of issue numbers. One example is the `scripts/list_open_issues_with_needs_info.sh` script which scrapes the github UI for any issues with the needs_info label. Here's how you might use that to test your changes to ansibullbot against all issues with needs_info ...
+
+```
+./triage_ansible.py --debug --verbose --dry-run --id=scripts/list_open_issues_with_needs_info.sh
+```
 
 
 ## Updating Ansible Playbooks and Roles used by Ansibullbot ##
