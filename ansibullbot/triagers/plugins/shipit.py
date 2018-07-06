@@ -240,7 +240,6 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
                     module_utils_files_owned += 1
         if module_utils_files_owned == len(iw.files):
             nmeta['owner_pr'] = True
-            return nmeta
 
     #if not meta['module_match']:
     #    return nmeta
