@@ -27,12 +27,10 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
         'openstack',
         'ovirt',
         'ucs',
-        'unarchive',
         'vmware',
         'windows',
-        'xml',
     ]
-    
+
     whitelist = [
         'docksite_pr',
         'easyfix',
@@ -44,6 +42,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
     whitelist += namespace_labels
     whitelist += [x for x in valid_labels if x.startswith('affects_')]
     whitelist += [x for x in valid_labels if x.startswith('c:')]
+    whitelist += [x for x in valid_labels if x.startswith('m:')]
 
     iw = issuewrapper
     maintainers = [x for x in core_team]
