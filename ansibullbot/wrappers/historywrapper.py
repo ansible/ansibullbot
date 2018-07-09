@@ -355,6 +355,15 @@ class HistoryWrapper(object):
         else:
             return False
 
+    def was_self_assigned(self):
+        """Has anyone ever assigned self to this issue?"""
+        matching_events = self._find_events_by_actor('assigned', None)
+        for event in matching_events:
+            if event['assignee'] == event['assigner']:
+                return True
+
+        return False
+
     def was_assigned(self, username):
         """Has person X ever been assigned to this issue?"""
         matching_events = self._find_events_by_actor('assigned', username)
@@ -606,6 +615,9 @@ class HistoryWrapper(object):
                     pass
                 elif edict['event'] == 'referenced':
                     edict['commit_id'] = event.commit_id
+                elif edict['event'] == 'assigned':
+                    edict['assignee'] = event.raw_data['assignee']['login']
+                    edict['assigner'] = event.raw_data['assigner']['login']
 
             processed_events.append(edict)
 
