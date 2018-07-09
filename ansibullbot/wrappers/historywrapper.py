@@ -359,8 +359,11 @@ class HistoryWrapper(object):
         """Has anyone ever assigned self to this issue?"""
         matching_events = self._find_events_by_actor('assigned', None)
         for event in matching_events:
-            if event['assignee'] == event['assigner']:
-                return True
+            try:
+                if event['assignee'] == event['assigner']:
+                    return True
+            except KeyError:
+                continue
 
         return False
 
