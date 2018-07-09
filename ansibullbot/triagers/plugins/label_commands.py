@@ -7,24 +7,42 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
     add_labels = []
     del_labels = []
 
-    wl = [
-        'needs_triage',
-        'test',
-        'module',
-        'cloud',
+    namespace_labels = [
+        'aci',
+        'avi',
         'aws',
         'azure',
+        'cloud',
+        'cloudstack',
         'digital_ocean',
         'docker',
+        'f5',
         'gce',
-        'openstack',
-        'vmware',
+        'infoblox',
+        'jboss',
+        'meraki',
+        'netapp',
         'networking',
+        'nxos',
+        'openstack',
+        'ovirt',
+        'ucs',
+        'vmware',
         'windows',
-        'easyfix'
     ]
-    wl += [x for x in valid_labels if x.startswith('affects_')]
-    wl += [x for x in valid_labels if x.startswith('c:')]
+
+    whitelist = [
+        'docksite_pr',
+        'easyfix',
+        'module',
+        'needs_triage',
+        'test',
+    ]
+
+    whitelist += namespace_labels
+    whitelist += [x for x in valid_labels if x.startswith('affects_')]
+    whitelist += [x for x in valid_labels if x.startswith('c:')]
+    whitelist += [x for x in valid_labels if x.startswith('m:')]
 
     iw = issuewrapper
     maintainers = [x for x in core_team]
@@ -40,7 +58,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
                     words = line.split()
 
                     label = words[1]
-                    if label not in wl:
+                    if label not in whitelist:
                         continue
                     action = words[0]
                     if action == '+label':
