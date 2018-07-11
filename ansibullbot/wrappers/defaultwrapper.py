@@ -946,7 +946,7 @@ class DefaultWrapper(object):
         if pdata:
             # is the data stale?
             if pdata[0] < self.pullrequest.updated_at or force_fetch:
-                logging.info('fetching pr status: <date')
+                logging.info('fetching pr status: stale, previous from %s' % pdata[0])
                 jdata = self._fetch_api_url(surl)
                 self.log_ci_status(jdata)
                 fetched = True
