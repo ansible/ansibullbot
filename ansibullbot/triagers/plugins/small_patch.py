@@ -20,6 +20,10 @@ def get_small_patch_facts(iw):
     small_chunks_changed = 0
 
     for commit in iw.get_commits():
+        if commit.files is None:
+            # "Sorry, this diff is temporarily unavailable due to heavy server load."
+            return sfacts
+
         for changed_file in commit.files:
             if changed_file.filename.startswith('test/'):
                 continue
