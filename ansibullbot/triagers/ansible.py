@@ -63,6 +63,7 @@ from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_ci_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
+from ansibullbot.triagers.plugins.community_workgroups import get_community_workgroup_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
@@ -1404,6 +1405,15 @@ class AnsibleTriage(DefaultTriager):
             actions = AnsibleActions()
             actions.close = True
 
+        # https://github.com/ansible/ansibullbot/issues/820
+        if self.meta.get('wg', {}).get('needs_notification'):
+            comment = self.render_boilerplate(
+                self.meta,
+                boilerplate='community_workgroups'
+            )
+            if comment not in actions.comments:
+                actions.comments.append(comment)
+
         actions.newlabel = sorted(set([x.encode('ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([x.encode('ascii') for x in actions.unlabel]))
 
@@ -1957,6 +1967,9 @@ class AnsibleTriage(DefaultTriager):
 
         # automerge
         self.meta.update(get_automerge_facts(iw, self.meta))
+
+        # community working groups
+        self.meta.update(get_community_workgroup_facts(iw, self.meta))
 
     def build_history(self, issuewrapper):
         '''Set the history and merge other event sources'''
