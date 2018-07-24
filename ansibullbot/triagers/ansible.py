@@ -2279,7 +2279,7 @@ class AnsibleTriage(DefaultTriager):
             runid = self.meta.get('ci_run_number')
             if runid:
                 logging.info('Rebuilding CI %s for #%s' % (runid, iw.number))
-                self.SR.rebuild(runid)
+                self.SR.rebuild(runid, issueurl=iw.html_url)
             else:
                 logging.error(
                     'rebuild: no shippable runid for {}'.format(iw.number)
