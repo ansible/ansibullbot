@@ -659,7 +659,7 @@ def get_last_shippable_full_run_date(ci_status, shippable):
         return None
 
     # get the referenced run for the last runid if it exists
-    rundata['rerun_batch_id'] = rdata.get('reRunBatchId')
+    rundata['rerun_batch_id'] = rdata.get('propertyBag', {}).get('originalRunId')
 
     # keep the timestamp too
     rundata['created_at'] = rdata.get('createdAt')
@@ -674,7 +674,7 @@ def get_last_shippable_full_run_date(ci_status, shippable):
         # get the old timestamp
         rundata['created_at'] = rjdata.get('createdAt')
         # get the new batchid
-        rundata['rerun_batch_id'] = rjdata.get('reRunBatchId')
+        rundata['rerun_batch_id'] = rjdata.get('propertyBag', {}).get('originalRunId')
 
     # return only the timestamp from the last full run
     return rundata['created_at']
