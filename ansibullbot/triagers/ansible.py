@@ -2289,7 +2289,7 @@ class AnsibleTriage(DefaultTriager):
             runid = self.meta.get('ci_run_number')
             if runid:
                 logging.info('Cancelling CI %s for #%s' % (runid, iw.number))
-                self.SR.cancel(runid)
+                self.SR.cancel(runid, issueurl=iw.html_url)
             else:
                 logging.error(
                     'cancel: no shippable runid for {}'.format(iw.number)

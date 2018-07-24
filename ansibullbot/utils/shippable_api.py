@@ -376,7 +376,7 @@ class ShippableRuns(object):
         self.check_response(response)
         return response
 
-    def cancel(self, run_number):
+    def cancel(self, run_number, issueurl=None):
         """cancel existing run"""
 
         # always pass the runId in a dict() to requests
@@ -386,7 +386,7 @@ class ShippableRuns(object):
         cancel_url = "%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
         response = self.fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
-            raise Exception("Unable to POST to %r" % cancel_url)
+            raise Exception("Unable to POST to %r (%r)" % (cancel_url, issueurl))
         self.check_response(response)
         return response
 
