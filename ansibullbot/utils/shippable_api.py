@@ -362,7 +362,7 @@ class ShippableRuns(object):
         logging.debug(run_id)
         return run_id
 
-    def rebuild(self, run_number):
+    def rebuild(self, run_number, issueurl=None):
         """trigger a new run"""
 
         # always pass the runId in a dict() to requests
@@ -372,7 +372,7 @@ class ShippableRuns(object):
         newbuild_url = "%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
         response = self.fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
-            raise Exception("Unable to POST to %r" % newbuild_url)
+            raise Exception("Unable to POST to %r (%r)" % (newbuild_url, issueurl))
         self.check_response(response)
         return response
 
