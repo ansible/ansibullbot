@@ -372,7 +372,7 @@ class ShippableRuns(object):
         newbuild_url = "%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
         response = self.fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
-            raise Exception("Unable to POST to %r (%r)" % (newbuild_url, issueurl))
+            raise Exception("Unable to POST %r to %r (%r)" % (data, newbuild_url, issueurl))
         self.check_response(response)
         return response
 
@@ -386,7 +386,7 @@ class ShippableRuns(object):
         cancel_url = "%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
         response = self.fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
-            raise Exception("Unable to POST to %r (%r)" % (cancel_url, issueurl))
+            raise Exception("Unable to POST %r to %r (%r)" % (data, cancel_url, issueurl))
         self.check_response(response)
         return response
 
