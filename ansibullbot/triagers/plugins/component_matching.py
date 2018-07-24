@@ -164,8 +164,9 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
                 for line in lbpc.split('\n'):
                     if line.startswith('*'):
                         parts = line.split()
-                        fn = re.match('\[(\S+)\].*', parts[1]).group(1)
-                        _filenames.append(fn)
+                        m = re.match('\[(\S+)\].*', parts[1])
+                        if m:
+                            _filenames.append(m.group(1))
                 _filenames = sorted(set(_filenames))
                 expected = sorted(set([x['repo_filename'] for x in CM_MATCHES]))
                 if _filenames != expected:
