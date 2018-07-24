@@ -196,12 +196,15 @@ class ShippableRuns(object):
 
     def get_run_data(self, run_id, usecache=False):
 
+        # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
+
         if len(run_id) == 24:
             # https://api.shippable.com/runs/58caf30337380a0800e31219
             run_url = 'https://api.shippable.com/runs/' + run_id
             logging.info('shippable: %s' % run_url)
             run_data = self._get_url(run_url, usecache=usecache)
         else:
+            '''
             # https://github.com/ansible/ansibullbot/issues/513
             run_url = 'https://api.shippable.com/runs'
             run_url += '?'
@@ -210,6 +213,14 @@ class ShippableRuns(object):
             run_url += 'subscriptionOrgNames=%s' % self.subscription_org_name
             run_url += '&'
             run_url += 'projectNames=%s' % self.project_name
+            run_url += '&'
+            run_url += 'runNumbers=%s' % run_id
+            '''
+
+            # https://github.com/ansible/ansibullbot/issues/982
+            run_url = 'https://api.shippable.com/runs'
+            run_url += '?'
+            run_url += 'projectIds=%s' % ANSIBLE_PROJECT_ID
             run_url += '&'
             run_url += 'runNumbers=%s' % run_id
 
