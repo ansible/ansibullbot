@@ -2179,8 +2179,9 @@ class AnsibleTriage(DefaultTriager):
         return {'waiting_on': wo}
 
     def get_triage_facts(self, issuewrapper, meta):
+        iw = issuewrapper
         tfacts = {
-            'maintainer_triaged': False
+            'maintainer_triaged': iw.issue.user.login in self.ansible_core_team,
         }
 
         '''
@@ -2197,22 +2198,22 @@ class AnsibleTriage(DefaultTriager):
         if not meta.get('component_maintainers'):
             return tfacts
 
-        iw = issuewrapper
         #maintainers = [x for x in meta['module_match']['maintainers']]
         maintainers = meta['component_maintainers'][:]
         maintainers += [x for x in self.ansible_core_team]
         maintainers = [x for x in maintainers if x != iw.submitter]
         maintainers = sorted(set(maintainers))
-        if iw.history.has_commented(maintainers):
-            tfacts['maintainer_triaged'] = True
-        elif iw.history.has_labeled(maintainers):
-            tfacts['maintainer_triaged'] = True
-        elif iw.history.has_unlabeled(maintainers):
-            tfacts['maintainer_triaged'] = True
-        elif iw.is_pullrequest() and iw.history.has_reviewed(maintainers):
-            tfacts['maintainer_triaged'] = True
-        elif iw.history.was_self_assigned():
-            tfacts['maintainer_triaged'] = True
+
+        tfacts['maintainer_triaged'] |= (
+            iw.history.has_commented(maintainers) or
+            iw.history.has_labeled(maintainers) or
+            iw.history.has_unlabeled(maintainers) or
+            (
+                iw.is_pullrequest() and
+                iw.history.has_reviewed(maintainers)
+            ) or
+            iw.history.was_self_assigned()
+        )
 
         return tfacts
 
