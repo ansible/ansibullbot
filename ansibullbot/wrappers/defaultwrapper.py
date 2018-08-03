@@ -989,7 +989,15 @@ class DefaultWrapper(object):
         # the "target_url" field varies between CI providers
 
         for sd in status_data:
-            turl = sd['target_url']
+            try:
+                turl = sd['target_url']
+            except TypeError:
+                # https://github.com/ansible/ansibullbot/issues/959
+                # the above traceback sometimes occurs and cannot be reproduced
+                # log the following info to have better idea how to handle this
+                logging.error('sd = %s, type = %s' % (sd, type(sd)))
+                raise
+
             if turl not in jdata:
                 jdata[turl] = {
                     'meta': sd.copy(),
