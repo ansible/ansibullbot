@@ -2181,7 +2181,7 @@ class AnsibleTriage(DefaultTriager):
     def get_triage_facts(self, issuewrapper, meta):
         iw = issuewrapper
         tfacts = {
-            'maintainer_triaged': iw.issue.user.login in self.ansible_core_team,
+            'maintainer_triaged': iw.submitter in self.ansible_core_team,
         }
 
         '''
