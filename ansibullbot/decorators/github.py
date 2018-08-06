@@ -131,7 +131,7 @@ def RateLimited(fn):
                         raise Exception('unhandled message type')
             except Exception as e:
                 logging.error(e)
-                if hasattr(e, 'data') and e.data.get('message'):
+                if hasattr(e, 'data') and e.data is not None and e.data.get('message'):
                     msg = e.data.get('message')
                     if 'blocked from content creation' in msg:
                         logging.warning('content creation rate limit exceeded')
