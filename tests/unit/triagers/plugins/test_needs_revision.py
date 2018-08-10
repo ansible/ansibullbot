@@ -84,6 +84,60 @@ class TestNeedsRevisionFacts(TestCase):
                 self.assertFalse(facts['is_needs_revision'])
                 self.assertFalse(facts['stale_reviews'])
 
+    def test_shipit_removes_needs_revision(self):
+        """
+        Ansibot should remove needs_revision if the same user that set it gave shipit afterwards.
+        https://github.com/ansible/ansibullbot/issues/994
+        """
+        datafile = 'tests/fixtures/needs_revision/1_issue.yml'
+        statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
+        with mock.patch.multiple(IssueWrapper,
+                               mergeable_state=mock.PropertyMock(return_value='clean'),
+                               pullrequest_filepath_exists=mock.Mock(return_value=True)):
+            with get_issue(datafile, statusfile) as iw:
+                iw._merge_commits = []
+                iw._committer_emails = ['tsdmgz@domain.example']
+
+                pullrequest = mock.Mock(spec_set=github.PullRequest.PullRequest)
+                pullrequest.head.repo.__return_value__ = True
+                iw._pr = pullrequest
+
+                with open('tests/fixtures/needs_revision/1_reviews.json') as reviews:
+                    iw._pr_reviews = json.load(reviews)
+                    iw._history.merge_reviews(iw.reviews)
+
+                self.meta['component_maintainers'] = ['mkrizek']
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta)
+
+                self.assertFalse(facts['is_needs_revision'])
+
+    def test_shipit_removes_needs_revision_multiple_users(self):
+        """
+        Ansibot should remove needs_revision if the same user that set it gave shipit afterwards.
+        https://github.com/ansible/ansibullbot/issues/994
+        """
+        datafile = 'tests/fixtures/needs_revision/2_issue.yml'
+        statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
+        with mock.patch.multiple(IssueWrapper,
+                               mergeable_state=mock.PropertyMock(return_value='clean'),
+                               pullrequest_filepath_exists=mock.Mock(return_value=True)):
+            with get_issue(datafile, statusfile) as iw:
+                iw._merge_commits = []
+                iw._committer_emails = ['tsdmgz@domain.example']
+
+                pullrequest = mock.Mock(spec_set=github.PullRequest.PullRequest)
+                pullrequest.head.repo.__return_value__ = True
+                iw._pr = pullrequest
+
+                with open('tests/fixtures/needs_revision/1_reviews.json') as reviews:
+                    iw._pr_reviews = json.load(reviews)
+                    iw._history.merge_reviews(iw.reviews)
+
+                self.meta['component_maintainers'] = ['mkrizek', 'jctanner']
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta)
+
+                self.assertTrue(facts['is_needs_revision'])
+
 
 class TestReviewMethods(TestCase):
     def test_reviews(self):
