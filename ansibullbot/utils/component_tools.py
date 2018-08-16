@@ -258,32 +258,6 @@ class AnsibleComponentMatcher(object):
                 if kw not in self.KEYWORDS:
                     self.KEYWORDS[kw] = k
 
-    def _cache_keywords(self):
-        """Make a map of keywords and module names"""
-        for k, v in self.file_indexer.botmeta['files'].items():
-            if not v.get('keywords'):
-                continue
-            for kw in v['keywords']:
-                if kw not in self.KEYWORDS:
-                    self.KEYWORDS[kw] = k
-
-        for k, v in self.module_indexer.modules.items():
-            if not v.get('name'):
-                continue
-            if v['name'] not in self.KEYWORDS:
-                self.KEYWORDS[v['name']] = v['repo_filename']
-            if v['name'].startswith('_'):
-                vname = v['name'].replace('_', '', 1)
-                if vname not in self.KEYWORDS:
-                    self.KEYWORDS[vname] = v['repo_filename']
-
-        for k, v in self.file_indexer.CMAP.items():
-            if k not in self.KEYWORDS:
-                self.KEYWORDS[k] = v
-
-        for kw in self.BLACKLIST:
-            self.KEYWORDS[kw] = None
-
     def clean_body(self, body, internal=False):
         body = body.lower()
         body = body.strip()
