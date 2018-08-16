@@ -159,9 +159,9 @@ class AnsibleComponentMatcher(object):
         # make a list of names by calling ansible-doc
         checkoutdir = self.gitrepo.checkoutdir
         checkoutdir = os.path.abspath(checkoutdir)
-        cmd = 'source {}/hacking/env-setup; ansible-doc -t module -F'.format(checkoutdir)
+        cmd = '. {}/hacking/env-setup; ansible-doc -t module -F'.format(checkoutdir)
         logging.debug(cmd)
-        (rc, so, se) = run_command(cmd)
+        (rc, so, se) = run_command(cmd, cwd=checkoutdir)
         lines = so.split('\n')
         for line in lines:
 
