@@ -198,6 +198,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         user_reviews = {}
         shipits = {}  # key: actor, value: created_at
 
+        has_set_needs_revision = set()
+
         for event in iw.history.history:
 
             if event['actor'] in triager.BOTNAMES:
@@ -212,6 +214,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         needs_revision_msgs.append(
                             '[%s] labeled' % event['actor']
                         )
+                        has_set_needs_revision.add(event['actor'])
                         continue
 
                 if event['event'] == 'unlabeled':
@@ -240,7 +243,15 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         needs_revision_msgs.append(
                             '[%s] needs_revision' % event['actor']
                         )
+                        has_set_needs_revision.add(event['actor'])
                         continue
+
+                    if 'shipit' in event['body'].lower():
+                        if event['actor'] in has_set_needs_revision:
+                            has_set_needs_revision.remove(event['actor'])
+                            if not has_set_needs_revision:
+                                needs_revision = False
+                                continue
 
             if event['actor'] == iw.submitter:
                 if event['event'] == 'commented':

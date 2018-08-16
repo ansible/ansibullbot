@@ -1,0 +1,35 @@
+# https://api.github.com/repos/ansible/ansible/pull/21313/events
+html_url: https://github.com/ansible/ansible/pull/21313
+number: 21313
+github_repo: ansible
+submitter: tsdmgz
+created_at: 2016-02-18T17:37:01Z
+_now: 2017-08-19T00:24:02Z
+title: Add dist-upgrade and extra_args to zypper module
+body: |
+    issue type
+    feature pullrequest
+    component name
+    zypper
+    ansible version
+    2.3
+    summary
+    Adds support for `zypper dist-upgrade` and `--no-allow-vendor-change`. This combination is a recommended method of keeping an openSUSE Tumbleweed system with additional repositories updated.
+events:
+    - event: commented
+      body: needs_revision
+      created_at: 2017-02-18T19:03:01Z
+      id: 1
+      actor:
+        login: mkrizek
+    - event: committed
+      created_at: 2017-05-17T07:17:18Z
+      actor:
+        login: tsdmgz
+      #id: 86df5ab148b8d68d1960c6ca0c5313950b43ccf5
+    - event: commented
+      body: shipit
+      created_at: 2017-02-18T19:03:01Z
+      id: 3
+      actor:
+        login: mkrizek
