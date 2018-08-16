@@ -14,3 +14,5 @@ sqlalchemy
 tenacity
 textblob
 mock ; python_version < '3.3'
+
+-r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
