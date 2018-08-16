@@ -6,6 +6,7 @@ build:
    - mkdir -p shippable/testresults
    - mkdir -p shippable/codecoverage
 
+   - shippable_retry pip install --upgrade 'pip>=9.0'
    - shippable_retry pip install -r requirements.txt
    - shippable_retry pip install nose coverage
    - nosetests --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=ansibullbot --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml
