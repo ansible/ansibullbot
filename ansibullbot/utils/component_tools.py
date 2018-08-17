@@ -157,6 +157,8 @@ class AnsibleComponentMatcher(object):
         cmd = '. {}/hacking/env-setup; ansible-doc -t module -F'.format(checkoutdir)
         logging.debug(cmd)
         (rc, so, se) = run_command(cmd, cwd=checkoutdir)
+        if rc:
+            raise Exception("'ansible-doc' command failed (%s, %s %s)" % (rc, so, se))
         lines = so.split('\n')
         for line in lines:
 
