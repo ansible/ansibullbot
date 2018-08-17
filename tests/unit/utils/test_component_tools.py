@@ -45,7 +45,6 @@ class FakeGitRepo(object):
 def get_component_matcher():
 
     # Make indexers
-    MI = FakeIndexer()
     GR = FakeGitRepo()
 
     GR.checkoutdir = tempfile.mkdtemp()
@@ -88,14 +87,12 @@ def get_component_matcher():
         mname = mname.replace('.py', '')
         mname = mname.replace('.ps1', '')
         mnames.append(mname)
-        MI.modules[mfile] = {'name': mname, 'repo_filename': mfile}
 
     # Init the matcher
     CM = ComponentMatcher(
         botmetafile=botmetafile,
         email_cache={},
-        gitrepo=GR,
-        module_indexer=MI
+        gitrepo=GR
     )
 
     return CM

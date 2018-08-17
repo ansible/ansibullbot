@@ -89,7 +89,7 @@ class AnsibleComponentMatcher(object):
         'winrm': 'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, module_indexer=None, email_cache=None):
+    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, email_cache=None):
         self.cachedir = cachedir
         self.botmetafile = botmetafile
         self.email_cache = email_cache
