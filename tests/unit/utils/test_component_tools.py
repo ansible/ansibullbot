@@ -74,12 +74,9 @@ def get_component_matcher():
         _files = json.loads(f.read())
     _files = sorted(set(_files))
 
-    #with open('tests/fixtures/botmeta/BOTMETA-2017-11-01.yml', 'rb') as f:
-    #    botmeta = f.read()
     botmetafile = 'tests/fixtures/botmeta/BOTMETA-2017-11-01.yml'
 
     GR.files = _files
-    #GR.module_files = [x for x in _files if x.startswith('lib/ansible/modules')]
 
     # Load the modules
     mfiles = [x for x in GR.files if 'lib/ansible/modules' in x]
@@ -94,8 +91,6 @@ def get_component_matcher():
         MI.modules[mfile] = {'name': mname, 'repo_filename': mfile}
 
     # Init the matcher
-    #CM = ComponentMatcher(None, FI, MI)
-
     CM = ComponentMatcher(
         botmetafile=botmetafile,
         email_cache={},
@@ -220,19 +215,13 @@ class TestComponentMatcher(TestCase):
             COMPONENT = k
             EXPECTED = v
 
-            #print('---------------------------------------------------')
-            #print('| {}'.format(COMPONENT))
-            #print('---------------------------------------------------')
-
             res = CM.search_by_filepath(COMPONENT)
-            #print('!partial: {}'.format(res))
             if EXPECTED[0] is None and not res:
                 pass
             else:
                 self.assertEqual([EXPECTED[0]], res)
 
             res = CM.search_by_filepath(COMPONENT, partial=True)
-            #print('partial: {}'.format(res))
             if EXPECTED[1] is None and not res:
                 pass
             else:
@@ -284,10 +273,7 @@ class TestComponentMatcher(TestCase):
                 CONTEXT = v2.get('context')
                 PARTIAL = v2.get('partial')
                 EXPECTED = v2.get('expected')
-                #print('')
-                #print(v2)
                 res = CM.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
-                #import epdb; epdb.st()
                 self.assertEqual(EXPECTED, res)
 
     def test_search_by_regex_module_globs(self):
