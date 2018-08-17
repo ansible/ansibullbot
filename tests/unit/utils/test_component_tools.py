@@ -10,20 +10,6 @@ from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
 
 
-class FakeIndexer(object):
-    CMAP = {}
-    botmeta = {'files': {}}
-    modules = {}
-    files = []
-
-    def find_match(self, name, exact=True):
-        '''Adapter for moduleindexer's function'''
-        for k,v in self.modules.items():
-            if v['name'] == name:
-                return v
-        return None
-
-
 class FakeGitRepo(object):
     files = []
     module_files = []
@@ -76,17 +62,6 @@ def get_component_matcher():
     botmetafile = 'tests/fixtures/botmeta/BOTMETA-2017-11-01.yml'
 
     GR.files = _files
-
-    # Load the modules
-    mfiles = [x for x in GR.files if 'lib/ansible/modules' in x]
-    mfiles = [x for x in mfiles if x.endswith('.py') or x.endswith('.ps1')]
-    mfiles = [x for x in mfiles if x != '__init__.py']
-    mnames = []
-    for mfile in mfiles:
-        mname = os.path.basename(mfile)
-        mname = mname.replace('.py', '')
-        mname = mname.replace('.ps1', '')
-        mnames.append(mname)
 
     # Init the matcher
     CM = ComponentMatcher(
