@@ -1,92 +1,47 @@
 #!/usr/bin/env python
 
-import json
-import os
+import shutil
 import tempfile
-import unittest
 from unittest import TestCase
 
-from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
+from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.utils.systemtools import run_command
 
 
-class FakeGitRepo(object):
-    files = []
-    module_files = []
-    checkoutdir = None
+class GitShallowRepo(GitRepoWrapper):
+    """Perform a shallow copy"""
 
-    @property
-    def module_files(self):
-        return [x for x in self.files if x.startswith('lib/ansible/modules')]
-
-    def update(self):
-        pass
-
-
-def get_component_matcher():
-
-    # Make indexers
-    GR = FakeGitRepo()
-
-    GR.checkoutdir = tempfile.mkdtemp()
-
-    if not os.path.isdir(GR.checkoutdir):
-        os.makedirs(GR.checkoutdir)
-
-    tarname = 'devel.tar.gz'
-    tarurl = 'https://github.com/ansible/ansible/archive/{}'.format(tarname)
-    tarfile = 'tests/fixtures/{}'.format(tarname)
-    tarfile = os.path.abspath(tarfile)
-
-    if not os.path.isfile(tarfile):
-        cmd = 'cd {}; wget -nv {}'.format(os.path.dirname(tarfile), tarurl)
+    def create_checkout(self):
+        """checkout ansible"""
+        cmd = "git clone --depth=1 --single-branch %s %s" % (self.repo, self.checkoutdir)
         (rc, so, se) = run_command(cmd)
         if rc:
             raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
 
-    cmd = 'cd {} ; tar --one-top-level=ansible --strip-components=1 -xzvf {}'.format(GR.checkoutdir, tarfile)
-    (rc, so, se) = run_command(cmd)
-    if rc:
-        raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
-
-    GR.checkoutdir = GR.checkoutdir + '/ansible'
-
-    hacking_dir = os.path.join(GR.checkoutdir, 'hacking')
-    os.mkdir(hacking_dir)
-    cmd = 'wget -nv https://raw.githubusercontent.com/ansible/ansible/devel/hacking/env-setup'
-    (rc, so, se) = run_command(cmd, cwd=hacking_dir)
-    if rc:
-        raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
-
-    github_dir = os.path.join(GR.checkoutdir, '.github')
-    os.mkdir(github_dir)
-
-    cmd = 'wget -nv https://raw.githubusercontent.com/ansible/ansible/devel/.github/BOTMETA.yml'
-    (rc, so, se) = run_command(cmd, cwd=github_dir)
-    if rc:
-        raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
-
-    # Load the files
-    GR.files = [os.path.join(dp, f)[len(GR.checkoutdir)+1:]  # remove front slash
-                for dp, _, filenames in os.walk(GR.checkoutdir) for f in filenames]
-
-    # Init the matcher
-    CM = ComponentMatcher(
-        botmetafile=os.path.join(github_dir, 'BOTMETA.yml'),
-        email_cache={},
-        gitrepo=GR
-    )
-
-    return CM
+    def update_checkout(self):
+        """Ensure update_checkout is never called"""
+        raise Exception("should not be called")
 
 
 class TestComponentMatcher(TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        """Init the matcher"""
+        checkoutdir = tempfile.mkdtemp()
+        gitrepo = GitShallowRepo(cachedir=checkoutdir, repo=ComponentMatcher.REPO)
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo)
+
+    @classmethod
+    def tearDownClass(cls):
+        """suppress temp dir"""
+        shutil.rmtree(cls.component_matcher.gitrepo.checkoutdir)
+
     def test_reduce_filepaths(self):
 
-        CM = get_component_matcher()
         filepaths = ['commands/command.py', 'lib/ansible/modules/commands/command.py']
-        reduced = CM.reduce_filepaths(filepaths)
+        reduced = self.component_matcher.reduce_filepaths(filepaths)
         self.assertEqual(reduced, ['lib/ansible/modules/commands/command.py'])
 
     def test_search_by_filepath(self):
@@ -191,27 +146,23 @@ class TestComponentMatcher(TestCase):
             ],
         }
 
-        CM = get_component_matcher()
-
         for k,v in COMPONENTS.items():
             COMPONENT = k
             EXPECTED = v
 
-            res = CM.search_by_filepath(COMPONENT)
+            res = self.component_matcher.search_by_filepath(COMPONENT)
             if EXPECTED[0] is None and not res:
                 pass
             else:
                 self.assertEqual([EXPECTED[0]], res)
 
-            res = CM.search_by_filepath(COMPONENT, partial=True)
+            res = self.component_matcher.search_by_filepath(COMPONENT, partial=True)
             if EXPECTED[1] is None and not res:
                 pass
             else:
                 self.assertEqual([EXPECTED[1]], res)
 
     def test_search_by_filepath_with_context(self):
-
-        CM = get_component_matcher()
 
         COMPONENTS = {
             'ec2.py': [
@@ -256,12 +207,10 @@ class TestComponentMatcher(TestCase):
                 CONTEXT = v2.get('context')
                 PARTIAL = v2.get('partial')
                 EXPECTED = v2.get('expected')
-                res = CM.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
+                res = self.component_matcher.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
                 self.assertEqual(EXPECTED, res)
 
     def test_search_by_regex_module_globs(self):
-
-        CM = get_component_matcher()
 
         COMPONENTS = {
             'All AWS modules': 'lib/ansible/modules/cloud/amazon',
@@ -288,13 +237,11 @@ class TestComponentMatcher(TestCase):
         for COMPONENT,EXPECTED in COMPONENTS.items():
             if not isinstance(EXPECTED, list):
                 EXPECTED = [EXPECTED]
-            res = CM.search_by_regex_module_globs(COMPONENT)
+            res = self.component_matcher.search_by_regex_module_globs(COMPONENT)
 
             self.assertEqual(EXPECTED, res)
 
     def test_search_by_keywords(self):
-
-        CM = get_component_matcher()
 
         COMPONENTS = {
             #'inventory script': ['lib/ansible/plugins/inventory/script.py'] #ix2390 https://github.com/ansible/ansible/issues/24545
@@ -304,12 +251,10 @@ class TestComponentMatcher(TestCase):
         for k,v in COMPONENTS.items():
             COMPONENT = k
             EXPECTED = v
-            res = CM.search_by_keywords(COMPONENT)
+            res = self.component_matcher.search_by_keywords(COMPONENT)
             self.assertEqual(EXPECTED, res)
 
     def test_search_by_regex_modules(self):
-
-        CM = get_component_matcher()
 
         COMPONENTS = {
             'Module: include_role': ['lib/ansible/modules/utilities/logic/include_role.py'],
@@ -374,7 +319,7 @@ class TestComponentMatcher(TestCase):
         #}
 
         for COMPONENT,EXPECTED in COMPONENTS.items():
-            res = CM.search_by_regex_modules(COMPONENT)
+            res = self.component_matcher.search_by_regex_modules(COMPONENT)
             self.assertEqual(EXPECTED, res)
 
     # FIXME
