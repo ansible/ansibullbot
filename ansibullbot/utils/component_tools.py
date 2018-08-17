@@ -5,10 +5,7 @@ import logging
 import os
 import re
 
-#from Levenshtein import distance
-#from Levenshtein import jaro
 from Levenshtein import jaro_winkler
-#from Levenshtein import ratio
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.extractors import ModuleExtractor
@@ -74,8 +71,6 @@ class AnsibleComponentMatcher(object):
         'network_cli': 'lib/ansible/plugins/connection/network_cli.py',
         'network_cli.py': 'lib/ansible/plugins/connection/network_cli.py',
         'network modules': 'lib/ansible/modules/network',
-        #'playbook role': 'lib/ansible/playbook/role',
-        #'playbook roles': 'lib/ansible/playbook/role',
         'paramiko': 'lib/ansible/plugins/connection/paramiko_ssh.py',
         'role': 'lib/ansible/playbook/role',
         'roles': 'lib/ansible/playbook/role',
@@ -360,17 +355,6 @@ class AnsibleComponentMatcher(object):
         else:
             context = None
 
-        #component = component.strip()
-        #for SC in self.STOPCHARS:
-        #    if component.startswith(SC):
-        #        component = component.lstrip(SC)
-        #        component = component.strip()
-        #    if component.endswith(SC):
-        #        component = component.rstrip(SC)
-        #        component = component.strip()
-
-        #component = self.clean_body(component)
-
         if not component:
             return []
 
@@ -507,7 +491,6 @@ class AnsibleComponentMatcher(object):
                     choices = [x for x in choices if 'lib/ansible/modules' in x]
 
                     if len(choices) > 1:
-                        #choices = [x for x in choices if fn + '.py' in x or fn + '.ps1' in x]
                         choices = [x for x in choices if '/' + fn + '.py' in x or '/' + fn + '.ps1' in x or '/_' + fn + '.py' in x]
 
                     if not choices:
@@ -549,8 +532,6 @@ class AnsibleComponentMatcher(object):
             r'module (\S+)',
             r'module `(\S+)`',
             r'module: (\S+)',
-            #r'Module (\S+)',
-            #r'Module: (\S+)',
             r'new (\S+) module',
             r'the (\S+) module',
             r'the \"(\S+)\" module',
@@ -577,9 +558,6 @@ class AnsibleComponentMatcher(object):
             r'ansible_modules_(\S+)',
             r'(\S+) task',
             r'(\s+)\((\S+)\)',
-            #r'(.*)(\s+)\((\S+)\)',
-            #r'(\S+) (\S+)',
-            #r'(\S+) .*',
             r'(\S+)(\s+)(\S+)(\s+)modules',
             r'(\S+)(\s+)module\:(\s+)(\S+)',
             r'\-(\s+)(\S+)(\s+)module',
@@ -593,61 +571,38 @@ class AnsibleComponentMatcher(object):
         logging.debug('check patterns against: {}'.format(body))
 
         for pattern in patterns:
-            #logging.debug('test pattern: {}'.format(pattern))
             mobj = re.match(pattern, body, re.M | re.I)
-            #if not mobj:
-            #    logging.debug('pattern {} !matched on "{}"'.format(pattern, body))
 
             if mobj:
                 logging.debug('pattern {} matched on "{}"'.format(pattern, body))
-                #print('pattern {} matched on "{}"'.format(pattern, body))
 
                 for x in range(0, mobj.lastindex+1):
                     try:
                         mname = mobj.group(x)
-                        #print(mname)
                         logging.debug('mname: {}'.format(mname))
                         if mname == body:
                             continue
                         mname = self.clean_body(mname)
-                        #print(mname)
                         if not mname.strip():
                             continue
                         mname = mname.strip().lower()
-                        #print(mname)
                         if ' ' in mname:
                             continue
                         if '/' in mname:
                             continue
 
-                        '''
-                        # skip over things like core/cisco
-                        bad = False
-                        for sw in self.STOPWORDS:
-                            if sw in mname:
-                                print('{} in {} ... bad'.format(sw, mname))
-                                bad =True
-                        if bad:
-                            continue
-                        '''
-
                         mname = mname.replace('.py', '').replace('.ps1', '')
                         logging.debug('--> {}'.format(mname))
-                        #print('--> {}'.format(mname))
 
                         # attempt to match a module
                         module_match = self.find_module_match(mname)
-                        #print('--> {}'.format(module_match))
-                        #print(type(module_match))
 
                         if not module_match:
                             pass
                         elif isinstance(module_match, list):
                             for m in module_match:
-                                #logging.debug('matched {}'.format(m['name']))
                                 matches.append(m['repo_filename'])
                         elif isinstance(module_match, dict):
-                            #logging.debug('matched {}'.format(module['name']))
                             matches.append(module_match['repo_filename'])
                     except Exception as e:
                         logging.error(e)
@@ -775,17 +730,11 @@ class AnsibleComponentMatcher(object):
             [r'(\S+) documentation fragment', 'lib/ansible/utils/module_docs_fragments'],
         ]
 
-        #_body = body
-        #for SC in self.STOPCHARS:
-        #    if SC in body:
-        #        body = body.replace(SC, '')
-        #body = body.strip()
         body = self.clean_body(body)
 
         matches = []
 
         for pattern in patterns:
-            #logging.debug('test pattern: {}'.format(pattern))
             mobj = re.match(pattern[0], body, re.M | re.I)
 
             if mobj:
@@ -795,10 +744,8 @@ class AnsibleComponentMatcher(object):
 
                 fpath = os.path.join(pattern[1], fname)
 
-                #if fpath in self.file_indexer.files:
                 if fpath in self.gitrepo.files:
                     matches.append(fpath)
-                #elif os.path.join(pattern[1], fname + '.py') in self.file_indexer.files:
                 elif os.path.join(pattern[1], fname + '.py') in self.gitrepo.files:
                     fname = os.path.join(pattern[1], fname + '.py')
                     matches.append(fname)
@@ -863,7 +810,6 @@ class AnsibleComponentMatcher(object):
 
         matches = []
         body = self.clean_body(body)
-        #logging.debug('search filepath [{}]: {}'.format(context, body))
 
         if not body:
             return []
@@ -895,7 +841,6 @@ class AnsibleComponentMatcher(object):
             body = body.replace('module/', 'modules/')
 
         logging.debug('search filepath [{}] [{}]: {}'.format(context, partial, body))
-        #print('search filepath [{}] [{}]: {}'.format(context, partial, body))
 
         if len(body) < 2:
             return []
@@ -932,7 +877,6 @@ class AnsibleComponentMatcher(object):
         if body in self.gitrepo.files:
             matches = [body]
         else:
-            #for fn in self.FILE_NAMES:
             for fn in self.gitrepo.files:
 
                 # limit the search set if a context is given
@@ -970,7 +914,6 @@ class AnsibleComponentMatcher(object):
                         if (float(bp_total) / float(len(body_paths))) >= (2.0 / 3.0):
                             if fn not in matches:
                                 matches.append(fn)
-                                #break
 
         if matches:
             tr = []
@@ -1049,7 +992,6 @@ class AnsibleComponentMatcher(object):
             'maintainers': [],
             'labels': [],
             'ignore': [],
-            #'keywords': [],
             'support': None,
             'supported_by': None,
             'deprecated': False,
@@ -1090,8 +1032,6 @@ class AnsibleComponentMatcher(object):
                 meta['ignore'] += fdata['ignore']
             if 'ignored' in fdata:
                 meta['ignore'] += fdata['ignored']
-            #if 'keywords' in fdata:
-            #    meta['keywords'] += fdata['keywords']
             if 'support' in fdata:
                 if isinstance(fdata['support'], list):
                     meta['support'] = fdata['support'][0]
@@ -1119,8 +1059,6 @@ class AnsibleComponentMatcher(object):
                         meta['support'] = fdata['support'][0]
                     else:
                         meta['support'] = fdata['support']
-                #if 'keywords' in fdata:
-                #    meta['keywords'] += fdata['keywords']
                 if 'labels' in fdata:
                     meta['labels'] += fdata['labels']
                 if 'maintainers' in fdata:
