@@ -17,12 +17,7 @@ class FakeGitRepo(object):
 
     @property
     def module_files(self):
-        mfiles = [x for x in self.files if x.startswith('lib/ansible/modules')]
-        mfiles = [
-            x for x in mfiles if
-            not os.path.isdir(os.path.join(self.checkoutdir, x))
-        ]
-        return mfiles
+        return [x for x in self.files if x.startswith('lib/ansible/modules')]
 
     def update(self):
         pass
@@ -38,34 +33,46 @@ def get_component_matcher():
     if not os.path.isdir(GR.checkoutdir):
         os.makedirs(GR.checkoutdir)
 
-    tarname = 'ansible-2017-10-24.tar.gz'
-    tarurl = 'http://tannerjc.net/ansible/{}'.format(tarname)
+    tarname = 'devel.tar.gz'
+    tarurl = 'https://github.com/ansible/ansible/archive/{}'.format(tarname)
     tarfile = 'tests/fixtures/{}'.format(tarname)
     tarfile = os.path.abspath(tarfile)
 
     if not os.path.isfile(tarfile):
-        cmd = 'cd {}; wget {}'.format(os.path.dirname(tarfile), tarurl)
+        cmd = 'cd {}; wget -nv {}'.format(os.path.dirname(tarfile), tarurl)
         (rc, so, se) = run_command(cmd)
-        print(so)
-        print(se)
-        assert rc == 0
+        if rc:
+            raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
 
-    cmd = 'cd {} ; tar xzvf {}'.format(GR.checkoutdir, tarfile)
+    cmd = 'cd {} ; tar --one-top-level=ansible --strip-components=1 -xzvf {}'.format(GR.checkoutdir, tarfile)
     (rc, so, se) = run_command(cmd)
+    if rc:
+        raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
+
     GR.checkoutdir = GR.checkoutdir + '/ansible'
 
+    hacking_dir = os.path.join(GR.checkoutdir, 'hacking')
+    os.mkdir(hacking_dir)
+    cmd = 'wget -nv https://raw.githubusercontent.com/ansible/ansible/devel/hacking/env-setup'
+    (rc, so, se) = run_command(cmd, cwd=hacking_dir)
+    if rc:
+        raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
+
+    github_dir = os.path.join(GR.checkoutdir, '.github')
+    os.mkdir(github_dir)
+
+    cmd = 'wget -nv https://raw.githubusercontent.com/ansible/ansible/devel/.github/BOTMETA.yml'
+    (rc, so, se) = run_command(cmd, cwd=github_dir)
+    if rc:
+        raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
+
     # Load the files
-    with open('tests/fixtures/filenames/2017-10-24.json', 'rb') as f:
-        _files = json.loads(f.read())
-    _files = sorted(set(_files))
-
-    botmetafile = 'tests/fixtures/botmeta/BOTMETA-2017-11-01.yml'
-
-    GR.files = _files
+    GR.files = [os.path.join(dp, f)[len(GR.checkoutdir)+1:]  # remove front slash
+                for dp, _, filenames in os.walk(GR.checkoutdir) for f in filenames]
 
     # Init the matcher
     CM = ComponentMatcher(
-        botmetafile=botmetafile,
+        botmetafile=os.path.join(github_dir, 'BOTMETA.yml'),
         email_cache={},
         gitrepo=GR
     )
