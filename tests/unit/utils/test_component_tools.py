@@ -169,10 +169,8 @@ class TestComponentMatcher(TestCase):
                 'bin/ansible-connection'
             ],
             '`validate-modules`': [
-                #'test/sanity/validate-modules/validate-modules',
-                #'test/sanity/validate-modules/validate-modules'
-                'test/sanity/validate-modules',
-                'test/sanity/validate-modules',
+                'test/sanity/validate-modules/validate-modules',
+                'test/sanity/validate-modules/validate-modules'
             ],
             '`modules/cloud/docker/docker_container.py`': [
                 'lib/ansible/modules/cloud/docker/docker_container.py',
@@ -270,6 +268,7 @@ class TestComponentMatcher(TestCase):
             'dellos*_* network modules': [],
             'elasticache modules': [
                 'lib/ansible/modules/cloud/amazon/elasticache.py',
+                'lib/ansible/modules/cloud/amazon/elasticache_facts.py',
                 'lib/ansible/modules/cloud/amazon/elasticache_parameter_group.py',
                 'lib/ansible/modules/cloud/amazon/elasticache_snapshot.py',
                 'lib/ansible/modules/cloud/amazon/elasticache_subnet_group.py',
@@ -315,7 +314,7 @@ class TestComponentMatcher(TestCase):
             'tower_job_list module but I believe that also the other tower_* module have the same error':
                 ['lib/ansible/modules/web_infrastructure/ansible_tower/tower_job_list.py'],
             #'F5 bigip (bigip_selfip)': ['lib/ansible/modules/network/f5/bigip_selfip.py'],
-            'ansible_modules_vsphere_guest': ['lib/ansible/modules/cloud/vmware/vsphere_guest.py'],
+            'ansible_modules_vsphere_guest': ['lib/ansible/modules/cloud/vmware/_vsphere_guest.py'],
             'shell-module': ['lib/ansible/modules/commands/shell.py'],
             'the docker_volume command': ['lib/ansible/modules/cloud/docker/docker_volume.py'],
             'Azure Inventory Script - azure_rm.py': [],
@@ -334,7 +333,7 @@ class TestComponentMatcher(TestCase):
             'module: `include_vars `': ['lib/ansible/modules/utilities/logic/include_vars.py'],
             'rabbitmq_plugin  module': ['lib/ansible/modules/messaging/rabbitmq_plugin.py'],
             #'F5 bigip (bigip_selfip)': ['lib/ansible/modules/network/f5/bigip_selfip.py'],
-            'module: `vsphere_guest`': ['lib/ansible/modules/cloud/vmware/vsphere_guest.py'],
+            'module: `vsphere_guest`': ['lib/ansible/modules/cloud/vmware/_vsphere_guest.py'],
             'Add to vmware_guest module, Clone to Virtual Machine task': [
                 'lib/ansible/modules/cloud/vmware/vmware_guest.py'
             ],
