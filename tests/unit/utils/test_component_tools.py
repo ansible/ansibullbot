@@ -46,7 +46,6 @@ def get_component_matcher():
 
     # Make indexers
     MI = FakeIndexer()
-    FI = FakeIndexer()
     GR = FakeGitRepo()
 
     GR.checkoutdir = tempfile.mkdtemp()
@@ -79,12 +78,11 @@ def get_component_matcher():
     #    botmeta = f.read()
     botmetafile = 'tests/fixtures/botmeta/BOTMETA-2017-11-01.yml'
 
-    FI.files = _files
     GR.files = _files
     #GR.module_files = [x for x in _files if x.startswith('lib/ansible/modules')]
 
     # Load the modules
-    mfiles = [x for x in FI.files if 'lib/ansible/modules' in x]
+    mfiles = [x for x in GR.files if 'lib/ansible/modules' in x]
     mfiles = [x for x in mfiles if x.endswith('.py') or x.endswith('.ps1')]
     mfiles = [x for x in mfiles if x != '__init__.py']
     mnames = []
@@ -102,7 +100,6 @@ def get_component_matcher():
         botmetafile=botmetafile,
         email_cache={},
         gitrepo=GR,
-        file_indexer=FI,
         module_indexer=MI
     )
 
