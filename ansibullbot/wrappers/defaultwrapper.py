@@ -1218,66 +1218,39 @@ class DefaultWrapper(object):
         emails = sorted(set(self.committer_emails))
 
         if len(self.commits) == 1 or len(emails) == 1:
-
             # squash single committer PRs
-
-            url = url = os.path.join(self.pullrequest.url, 'merge')
-            headers = dict(
-                Accept='application/vnd.github.polaris-preview+json',
-            )
-            params = dict(
-                merge_method='squash',
-            )
-            resp = self.pullrequest._requester.requestJson(
-                "PUT",
-                url,
-                headers=headers,
-                input=params
-            )
-
-            if resp[0] != 200 or 'successfully merged' not in resp[2]:
-                logging.error('merge failed on %s' % self.number)
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('merge failed')
-                sys.exit(1)
-            else:
-                logging.error('merge successful for %s' % self.number)
-
+            merge_method = 'squash'
         elif (len(self.commits) == len(emails)) and len(self.commits) <= 10:
-
             # rebase multi-committer PRs
-
-            url = url = os.path.join(self.pullrequest.url, 'merge')
-            headers = dict(
-                Accept='application/vnd.github.polaris-preview+json',
-            )
-            params = dict(
-                merge_method='rebase',
-            )
-            resp = self.pullrequest._requester.requestJson(
-                "PUT",
-                url,
-                headers=headers,
-                input=params
-            )
-
-            if resp[0] != 200 or 'successfully merged' not in resp[2]:
-                logging.error('merge failed on %s' % self.number)
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('merge failed')
-                sys.exit(1)
-            else:
-                logging.info('merge successful for %s' % self.number)
-
+            merge_method = 'rebase'
         else:
             logging.error('merge skipped for %s' % self.number)
-            pass
+            return
+
+        url = os.path.join(self.pullrequest.url, 'merge')
+        headers = dict(
+            Accept='application/vnd.github.polaris-preview+json',
+        )
+        params = dict(
+            merge_method=merge_method,
+        )
+        resp = self.pullrequest._requester.requestJson(
+            "PUT",
+            url,
+            headers=headers,
+            input=params
+        )
+
+        if resp[0] != 200 or 'successfully merged' not in resp[2]:
+            logging.error('merge failed on %s' % self.number)
+            logging.error(resp)
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('merge failed')
+        else:
+            logging.info('merge successful for %s' % self.number)
 
     @property
     def migrated_from(self):
