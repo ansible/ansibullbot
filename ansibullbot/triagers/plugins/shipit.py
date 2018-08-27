@@ -31,6 +31,9 @@ def get_automerge_facts(issuewrapper, meta):
 
     issue = issuewrapper
 
+    if meta['is_bad_pr']:
+        return create_ameta(False, 'automerge is_bad_pr test failed')
+
     if not meta['shipit']:
         return create_ameta(False, 'automerge shipit test failed')
 
