@@ -98,9 +98,6 @@ def get_automerge_facts(issuewrapper, meta):
         if meta[u'is_new_directory']:
             return create_ameta(False, u'automerge is_new_directory test failed')
 
-        if not meta[u'is_module']:
-            return create_ameta(False, u'automerge is_module test failed')
-
         if not meta[u'module_match']:
             return create_ameta(False, u'automerge module_match test failed')
 
