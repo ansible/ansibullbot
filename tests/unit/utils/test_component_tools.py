@@ -247,7 +247,6 @@ class TestComponentMatcher(TestCase):
 
         COMPONENTS = {
             'ec2.py': [
-                #{'context': None, 'expected': ['contrib/inventory/ec2.py']},
                 {'context': 'contrib/inventory', 'expected': ['contrib/inventory/ec2.py']},
                 {'context': 'lib/ansible/modules', 'expected': ['lib/ansible/modules/cloud/amazon/ec2.py']},
             ],
@@ -272,26 +271,29 @@ class TestComponentMatcher(TestCase):
             ]
         }
 
-        '''
-        COMPONENTS = {
-            'netapp_e_storagepool storage module': [
-                {'context': 'lib/ansible/modules', 'partial': False, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
-                {'context': 'lib/ansible/modules', 'partial': True, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
-            ],
-        }
-        '''
-
         for k,v in COMPONENTS.items():
             COMPONENT = k
             for v2 in v:
                 CONTEXT = v2.get('context')
                 PARTIAL = v2.get('partial')
                 EXPECTED = v2.get('expected')
-                #print('')
-                #print(v2)
                 res = CM.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
-                #import epdb; epdb.st()
                 self.assertEqual(EXPECTED, res)
+
+    def test_search_by_filepath_partial(self):
+        CM = get_component_matcher()
+
+        COMPONENTS = {
+            'modules/cloud/openstack/*': 'modules/cloud/openstack/',
+            'lib/ansible/modules/cloud/*': 'lib/ansible/modules/cloud/',
+            'lib/ansible/modules/cloud/openstack/*': 'lib/ansible/modules/cloud/openstack/',
+            'netapp_e_storagepool storage module': 'lib/ansible/modules/storage/netapp/netapp_e_storagepool.py',
+        }
+
+        for component, expected in COMPONENTS.items():
+            res = CM.search_by_filepath(component, partial=True)
+            for r in res:
+                self.assertTrue(expected in r)
 
     def test_search_by_regex_module_globs(self):
 
@@ -316,6 +318,7 @@ class TestComponentMatcher(TestCase):
             'All modules': [],
             'All Cisco IOS Modules': [],
             'All EC2 based modules, possibly more.': 'lib/ansible/modules/cloud/amazon',
+            'Ansible OpenStack modules': 'lib/ansible/modules/cloud/openstack',
         }
 
         for COMPONENT,EXPECTED in COMPONENTS.items():
