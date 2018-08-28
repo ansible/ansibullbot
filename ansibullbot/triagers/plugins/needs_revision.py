@@ -558,7 +558,7 @@ def get_shippable_run_facts(iw, meta, shippable=None):
     # find the last chronological run id
     #   https://app.shippable.com/github/ansible/ansible/runs/21001/summary
     #   https://app.shippable.com/github/ansible/ansible/runs/21001
-    last_run = [x['target_url'] for x in ci_status][0]
+    last_run = [x['target_url'] for x in ci_status if x.get('context', '') == 'Shippable'][0]
     last_run = last_run.split('/')
     if last_run[-1] == 'summary':
         last_run = last_run[-2]
