@@ -1168,6 +1168,10 @@ class DefaultWrapper(object):
             return True
         return False
 
+    @property
+    def from_fork(self):
+        return self.pullrequest.head.repo != 'ansible/ansible'
+
     @RateLimited
     def get_commit_parents(self, commit):
         # https://github.com/ansible/ansibullbot/issues/391

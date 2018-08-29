@@ -401,6 +401,23 @@ class ShippableRuns(object):
         self.check_response(response)
         return response
 
+    def cancel_branch_runs(self, branch):
+        """Cancel all Shippable runs on a given branch"""
+        run_url = 'https://api.shippable.com/runs?projectIds=%s&branch=%s&' \
+                  'status=waiting,queued,processing,started' \
+                  % (ANSIBLE_PROJECT_ID, branch)
+
+        logging.info('shippable: %s' % run_url)
+        try:
+            run_data = self._get_url(run_url)
+        except ShippableNoData:
+            return
+
+        for r in run_data:
+            run_number = r.get('runNumber', None)
+            if run_number:
+                self.cancel(run_number)
+
     def fetch(self, url, verb='get', **kwargs):
         """return response or None in case of failure, try twice"""
         @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
