@@ -94,21 +94,33 @@ class BotMetadataParser(object):
                 data['macros'][k] = names
             return data
 
-        def _propagate(files, top, child, field):
-            '''Copy key named 'field' from top to child'''
+        def _propagate(files, top, child, field, multivalued=True):
+            '''Copy key named 'field' from top to child
+            - with multivalued, child inherits from all ancestors
+            - else child inherits from the nearest ancestor and only if field is
+              not already set at child level
+            '''
             top_entries = files[top].get(field, [])
             if top_entries:
                 if field not in files[child]:
                     files[child][field] = []
 
+                # track the origin of the data
                 field_keys = '%s_keys' % field
                 if field_keys not in files[child]:
                     files[child][field_keys] = []
-                files[child][field_keys].append(top)
 
-                for entry in top_entries:
-                    if entry not in files[child][field]:
-                        files[child][field].append(entry)
+                if multivalued:
+                    files[child][field_keys].append(top)
+                    for entry in top_entries:
+                        if entry not in files[child][field]:
+                            files[child][field].append(entry)
+                elif not files[child][field] or (files[child][field_keys] and len(files[child][field_keys][0]) < len(top)):
+                    # use parent keyword only if:
+                    # 1. either keyword is not set
+                    # 2. or keyword has been already inherited from a less specific path
+                    files[child][field_keys] = [top]
+                    files[child][field] = top_entries[:]
 
         def propagate_keys(data):
             files = data['files']
@@ -125,6 +137,9 @@ class BotMetadataParser(object):
                 if common == top and top_components == child_components[:len(top_components)]:
                     _propagate(files, top, child, 'maintainers')
                     _propagate(files, top, child, 'ignored')
+                    _propagate(files, top, child, 'labels')
+                    _propagate(files, top, child, 'support', multivalued=False)
+                    _propagate(files, top, child, 'supported_by', multivalued=False)
 
         #################################
         #   PARSE
