@@ -1,6 +1,6 @@
 - name: Update Ansibullbot
   hosts: ansibullbot
-  become: yes
+  become: True
 
   roles:
     - role: ansibullbot
