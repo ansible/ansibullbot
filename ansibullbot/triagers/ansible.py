@@ -113,6 +113,7 @@ class AnsibleActions(DefaultActions):
         self.close_migrated = False
         self.rebuild = False
         self.cancel_ci = False
+        self.cancel_ci_branch = False
 
 
 class AnsibleTriage(DefaultTriager):
@@ -739,6 +740,16 @@ class AnsibleTriage(DefaultTriager):
 
             elif 'bot_skip' in self.meta['maintainer_commands'] or \
                     'bot_skip' in self.meta['submitter_commands']:
+                return
+
+        if iw.is_pullrequest():
+            if not iw.from_fork:
+                tvars = {'submitter': iw.submitter}
+                comment = self.render_boilerplate(tvars, boilerplate='fork')
+                actions.comments.append(comment)
+                actions.close = True
+                actions.cancel_ci = True
+                actions.cancel_ci_branch = True
                 return
 
         # indicate what components were matched
@@ -2294,6 +2305,10 @@ class AnsibleTriage(DefaultTriager):
                 logging.error(
                     'cancel: no shippable runid for {}'.format(iw.number)
                 )
+
+        if actions.cancel_ci_branch:
+            branch = iw.pullrequest.head.repo
+            self.SR.cancel_branch_runs(branch)
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""
