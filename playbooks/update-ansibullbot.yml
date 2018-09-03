@@ -3,5 +3,7 @@
   become: True
 
   roles:
-    - role: ansibullbot
+    - roles: ansibullbot
       ansibullbot_action: update
+    - yum-cron  
+ 
