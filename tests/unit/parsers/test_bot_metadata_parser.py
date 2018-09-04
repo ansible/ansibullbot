@@ -7,6 +7,12 @@ import unittest
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 
+import ruamel.yaml
+import six
+
+six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
+from six.moves import mock
+
 EXAMPLE1 = """
 ---
 macros:
@@ -113,3 +119,214 @@ class TestBotMetadataParserFileExample1(TestBotMetaIndexerBase):
             data = f.read()
 
         pdata = BotMetadataParser.parse_yaml(data)
+
+
+class TestBotMetadataPropagation(TestBotMetaIndexerBase):
+    """Check that:
+    - labels are inherited
+    - support keyword is inherited when not set
+    """
+    def test_keywords(self):
+        LABELS_SUPPORT_PROPAGATION = """
+        macros:
+          module_utils: lib/ansible/module_utils
+        files:
+          $module_utils/network/:
+              support: network
+              labels: networking
+          $module_utils/network/fw:
+              labels: firewall
+          $module_utils/network/fw/sub:
+              support: core
+              labels: [fwsub]
+          $module_utils/network/fw/sub/childA:
+          $module_utils/network/fw/sub/childB:
+              support: another_level
+              labels: labelB
+          $module_utils/network/iwfu.py:
+              support: community
+              labels: firewall
+          $module_utils/other:
+              labels: thing
+        """
+
+        data = BotMetadataParser.parse_yaml(LABELS_SUPPORT_PROPAGATION)
+        self._test(data)
+
+    @mock.patch('yaml.load', ruamel.yaml.YAML().load)
+    def test_keywords_order(self):
+        """Check that:
+        - labels are inherited
+        - support keyword is inherited when not set
+        Use ruamel in order to check that order does't count
+        """
+        LABELS_SUPPORT_PROPAGATION = """
+        macros:
+          module_utils: lib/ansible/module_utils
+        files:
+          $module_utils/network/fw/sub/childA:
+          $module_utils/network/fw/sub/childB:
+              support: another_level
+              labels: labelB
+          $module_utils/network/fw/sub:
+              support: core
+              labels: [fwsub]
+          $module_utils/other:
+              labels: thing
+          $module_utils/network/iwfu.py:
+              support: community
+              labels: firewall
+          $module_utils/network/:
+              support: network
+              labels: networking
+          $module_utils/network/fw:
+              labels: firewall
+        """
+
+        data = BotMetadataParser.parse_yaml(LABELS_SUPPORT_PROPAGATION)
+        self.assertIsInstance(data, ruamel.yaml.comments.CommentedMap)  # ensure mock is effective
+
+        self._test(data)
+
+    def _test(self, data):
+
+        self.assertIn('macros', data)
+        self.assertIn('files', data)
+
+        self.assertEqual(set(['lib/ansible/module_utils/network',
+                              'lib/ansible/module_utils/network/fw',
+                              'lib/ansible/module_utils/network/fw/sub',
+                              'lib/ansible/module_utils/network/fw/sub/childA',
+                              'lib/ansible/module_utils/network/fw/sub/childB',
+                              'lib/ansible/module_utils/network/iwfu.py',
+                              'lib/ansible/module_utils/other']),
+                         set(data['files'].keys()))
+
+        #### 'labels' key
+        self.assertEqual(
+            set(data['files']['lib/ansible/module_utils/network']['labels']),
+            set(['lib', 'ansible', 'module_utils', 'network', 'networking'])
+        )
+
+        self.assertEqual(
+            set(data['files']['lib/ansible/module_utils/network/fw']['labels']),
+            set(['lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall'])
+        )
+
+        self.assertEqual(
+            set(data['files']['lib/ansible/module_utils/network/fw/sub']['labels']),
+            set(['lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall', 'sub', 'fwsub'])
+        )
+
+        self.assertEqual(
+            set(data['files']['lib/ansible/module_utils/network/fw/sub/childA']['labels']),
+            set(['lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall', 'sub', 'fwsub', 'childA'])
+        )
+
+        self.assertEqual(
+            set(data['files']['lib/ansible/module_utils/network/fw/sub/childB']['labels']),
+            set(['lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall', 'sub', 'fwsub', 'childB', 'labelB'])
+        )
+
+        self.assertEqual(
+            set(data['files']['lib/ansible/module_utils/network/iwfu.py']['labels']),
+            set(['lib', 'ansible', 'module_utils', 'network', 'networking', 'iwfu', 'firewall'])
+        )
+
+        #### 'support' key
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network']['support'], ['network']
+        )
+
+        # subpath: support key is inherited
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw']['support'], ['network']
+        )
+
+        # subpath: support key is overridden
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/iwfu.py']['support'], ['community']
+        )
+
+        # subpath: support key is overridden
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw/sub']['support'], ['core']
+        )
+
+        # subpath: support key is inherited
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw/sub/childA']['support'], ['core']
+        )
+
+        # subpath: support key is overridden
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw/sub/childB']['support'], ['another_level']
+        )
+
+        # default value for support isn't set by botmeta
+        self.assertNotIn('support', data['files']['lib/ansible/module_utils/other'])
+
+    @mock.patch('yaml.load', ruamel.yaml.YAML().load)
+    def test_supported_by_order(self):
+        """Check that:
+        - supported_by keyword is inherited when not set
+        Use ruamel in order to check that order does't count
+        """
+        LABELS_SUPPORTED_BY_PROPAGATION = """
+        macros:
+          module_utils: lib/ansible/module_utils
+        files:
+          $module_utils/network/fw/sub/childA:
+          $module_utils/network/fw/sub/childB:
+              supported_by: another_level
+              labels: labelB
+          $module_utils/network/fw/sub:
+              supported_by: core
+              labels: [fwsub]
+          $module_utils/other:
+              labels: thing
+          $module_utils/network/iwfu.py:
+              supported_by: community
+              labels: firewall
+          $module_utils/network/:
+              supported_by: network
+              labels: networking
+          $module_utils/network/fw:
+              labels: firewall
+        """
+
+        data = BotMetadataParser.parse_yaml(LABELS_SUPPORTED_BY_PROPAGATION)
+        self.assertIsInstance(data, ruamel.yaml.comments.CommentedMap)  # ensure mock is effective
+
+        #### 'supported_by' key
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network']['supported_by'], ['network']
+        )
+
+        # subpath: supported_by key is inherited
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw']['supported_by'], ['network']
+        )
+
+        # subpath: supported_by key is overridden
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/iwfu.py']['supported_by'], ['community']
+        )
+
+        # subpath: supported_by key is overridden
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw/sub']['supported_by'], ['core']
+        )
+
+        # subpath: supported_by key is inherited
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw/sub/childA']['supported_by'], ['core']
+        )
+
+        # subpath: supported_by key is overridden
+        self.assertEqual(
+            data['files']['lib/ansible/module_utils/network/fw/sub/childB']['supported_by'], ['another_level']
+        )
+
+        # default value for supported_by isn't set by botmeta
+        self.assertNotIn('supported_by', data['files']['lib/ansible/module_utils/other'])
