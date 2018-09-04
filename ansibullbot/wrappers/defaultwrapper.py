@@ -1252,7 +1252,7 @@ class DefaultWrapper(object):
                 logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception('merge failed')
+                raise Exception('merge failed - %d - %s' % (resp[0], resp[1]['status']))
         else:
             logging.info('merge successful for %s' % self.number)
 
