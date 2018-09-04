@@ -10,20 +10,6 @@ from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
 
 
-class FakeIndexer(object):
-    CMAP = {}
-    botmeta = {'files': {}}
-    modules = {}
-    files = []
-
-    def find_match(self, name, exact=True):
-        '''Adapter for moduleindexer's function'''
-        for k,v in self.modules.items():
-            if v['name'] == name:
-                return v
-        return None
-
-
 class FakeGitRepo(object):
     files = []
     module_files = []
@@ -45,8 +31,6 @@ class FakeGitRepo(object):
 def get_component_matcher():
 
     # Make indexers
-    MI = FakeIndexer()
-    FI = FakeIndexer()
     GR = FakeGitRepo()
 
     GR.checkoutdir = tempfile.mkdtemp()
@@ -75,35 +59,15 @@ def get_component_matcher():
         _files = json.loads(f.read())
     _files = sorted(set(_files))
 
-    #with open('tests/fixtures/botmeta/BOTMETA-2017-11-01.yml', 'rb') as f:
-    #    botmeta = f.read()
     botmetafile = 'tests/fixtures/botmeta/BOTMETA-2017-11-01.yml'
 
-    FI.files = _files
     GR.files = _files
-    #GR.module_files = [x for x in _files if x.startswith('lib/ansible/modules')]
-
-    # Load the modules
-    mfiles = [x for x in FI.files if 'lib/ansible/modules' in x]
-    mfiles = [x for x in mfiles if x.endswith('.py') or x.endswith('.ps1')]
-    mfiles = [x for x in mfiles if x != '__init__.py']
-    mnames = []
-    for mfile in mfiles:
-        mname = os.path.basename(mfile)
-        mname = mname.replace('.py', '')
-        mname = mname.replace('.ps1', '')
-        mnames.append(mname)
-        MI.modules[mfile] = {'name': mname, 'repo_filename': mfile}
 
     # Init the matcher
-    #CM = ComponentMatcher(None, FI, MI)
-
     CM = ComponentMatcher(
         botmetafile=botmetafile,
         email_cache={},
-        gitrepo=GR,
-        file_indexer=FI,
-        module_indexer=MI
+        gitrepo=GR
     )
 
     return CM
@@ -223,19 +187,13 @@ class TestComponentMatcher(TestCase):
             COMPONENT = k
             EXPECTED = v
 
-            #print('---------------------------------------------------')
-            #print('| {}'.format(COMPONENT))
-            #print('---------------------------------------------------')
-
             res = CM.search_by_filepath(COMPONENT)
-            #print('!partial: {}'.format(res))
             if EXPECTED[0] is None and not res:
                 pass
             else:
                 self.assertEqual([EXPECTED[0]], res)
 
             res = CM.search_by_filepath(COMPONENT, partial=True)
-            #print('partial: {}'.format(res))
             if EXPECTED[1] is None and not res:
                 pass
             else:
@@ -287,10 +245,7 @@ class TestComponentMatcher(TestCase):
                 CONTEXT = v2.get('context')
                 PARTIAL = v2.get('partial')
                 EXPECTED = v2.get('expected')
-                #print('')
-                #print(v2)
                 res = CM.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
-                #import epdb; epdb.st()
                 self.assertEqual(EXPECTED, res)
 
     def test_search_by_regex_module_globs(self):
