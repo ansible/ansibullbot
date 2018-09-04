@@ -3,8 +3,8 @@
 import subprocess
 
 
-def run_command(cmd):
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def run_command(cmd, cwd=None):
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=cwd)
     (so, se) = p.communicate()
     return p.returncode, so, se
 
