@@ -1170,7 +1170,7 @@ class DefaultWrapper(object):
 
     @property
     def from_fork(self):
-        return self.pullrequest.head.repo != 'ansible/ansible'
+        return self.pullrequest.head.repo.full_name != 'ansible/ansible'
 
     @RateLimited
     def get_commit_parents(self, commit):
