@@ -1170,6 +1170,9 @@ class DefaultWrapper(object):
 
     @property
     def from_fork(self):
+        if self.pullrequest.head.repo is None:
+            return True
+
         return self.pullrequest.head.repo.full_name != 'ansible/ansible'
 
     @RateLimited
