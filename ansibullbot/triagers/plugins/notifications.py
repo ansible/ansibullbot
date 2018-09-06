@@ -18,9 +18,6 @@ def get_notification_facts(issuewrapper, meta, file_indexer):
     # who is assigned?
     current_assignees = iw.assignees
 
-    # who can be assigned?
-    valid_assignees = [x.login for x in iw.repo.assignees]
-
     # add people from files and from matches
     if iw.is_pullrequest() or meta.get('guessed_components') or meta.get('component_matches') or meta.get('module_match'):
 
@@ -101,7 +98,7 @@ def get_notification_facts(issuewrapper, meta, file_indexer):
                 continue
             if user in nfacts['to_assign']:
                 continue
-            if user not in current_assignees and user in valid_assignees:
+            if user not in current_assignees and iw.repo.repo.has_in_assignees(user):
                 nfacts['to_assign'].append(user)
 
     # prevent duplication
