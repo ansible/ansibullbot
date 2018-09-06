@@ -1,7 +1,9 @@
 - name: Update Ansibullbot
   hosts: ansibullbot
-  become: yes
+  become: True
 
   roles:
-    - role: ansibullbot
+    - roles: ansibullbot
       ansibullbot_action: update
+    - yum-cron  
+ 
