@@ -1,7 +1,12 @@
-[![Stories in Ready](https://badge.waffle.io/ansibull/ansibullbot.png?label=ready&title=Ready)](https://waffle.io/ansibull/ansibullbot)
-# Ansibull Github Issue/Pullrequest Bot
+See the Ansibullbot Project Board for what is being worked on:  [![Project Board](https://img.shields.io/github/issues/ansible/ansibullbot.svg)](https://github.com/ansible/ansibullbot/projects/1)
 
-https://galaxy.ansible.com/samdoran/ansibullbot/
+# User Guide
+
+
+If you are looking for help, please see the [ISSUE HELP](ISSUE_HELP.md)
+
+
+# Ansibull Github Issue/Pullrequest Bot
 
 ```
 $ ./triage.py --help
@@ -54,4 +59,3 @@ optional arguments:
   --no_since            Do not use the since keyword to fetch issues
 ```
 
-If you are looking for help, please see the [ISSUE HELP](ISSUE_HELP.md)
