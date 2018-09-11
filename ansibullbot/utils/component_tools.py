@@ -9,6 +9,7 @@ from Levenshtein import jaro_winkler
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.extractors import ModuleExtractor
+from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 
@@ -89,10 +90,18 @@ class AnsibleComponentMatcher(object):
         'winrm': 'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, email_cache=None):
+    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, email_cache=None, file_indexer=None):
         self.cachedir = cachedir
         self.botmetafile = botmetafile
         self.email_cache = email_cache
+
+        if file_indexer:
+            self.file_indexer = file_indexer
+        else:
+            self.file_indexer = FileIndexer(
+                botmetafile=self.botmetafile,
+                checkoutdir=self.cachedir
+            )
 
         if gitrepo:
             self.gitrepo = gitrepo
@@ -1004,21 +1013,18 @@ class AnsibleComponentMatcher(object):
         }
 
         populated = False
-        _filename = filename
-        _filename = os.path.splitext(filename)[0]
+        filenames = [filename, os.path.splitext(filename)[0]]
 
-        if filename in self.BOTMETA['files'] or _filename in self.BOTMETA['files']:
+        # powershell meta is in the python file
+        if filename.endswith('.ps1'):
+            pyfile = filename.replace('.ps1', '.py')
+            if pyfile in self.BOTMETA['files']:
+                filenames.append(pyfile)
 
-            if filename in self.BOTMETA['files']:
-                fdata = self.BOTMETA['files'][filename].copy()
-            elif _filename in self.BOTMETA['files']:
-                fdata = self.BOTMETA['files'][_filename].copy()
+        botmeta_entries = self.file_indexer._filenames_to_keys(filenames)
 
-            # powershell meta is in the python file
-            if filename.endswith('.ps1'):
-                pyfile = filename.replace('.ps1', '.py')
-                if pyfile in self.BOTMETA['files']:
-                    fdata.update(self.BOTMETA['files'][pyfile])
+        for entry in botmeta_entries:
+            fdata = self.BOTMETA['files'][entry].copy()
 
             if 'authors' in fdata:
                 meta['authors'] = fdata['authors']
@@ -1040,10 +1046,10 @@ class AnsibleComponentMatcher(object):
                 else:
                     meta['support'] = fdata['support']
             elif 'supported_by' in fdata:
-                    if isinstance(fdata['supported_by'], list):
-                        meta['support'] = fdata['supported_by'][0]
-                    else:
-                        meta['support'] = fdata['supported_by']
+                if isinstance(fdata['supported_by'], list):
+                    meta['support'] = fdata['supported_by'][0]
+                else:
+                    meta['support'] = fdata['supported_by']
 
             if 'deprecated' in fdata:
                 meta['deprecated'] = fdata['deprecated']

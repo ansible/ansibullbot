@@ -38,6 +38,19 @@ class TestComponentMatcher(TestCase):
         """suppress temp dir"""
         shutil.rmtree(cls.component_matcher.gitrepo.checkoutdir)
 
+    def test_get_meta_for_file(self):
+        self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/plugins/action/junos': {
+                    'maintainers': ['gundalow'],
+                    'labels': ['networking'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/action/junos_config.py')
+        self.assertEqual(result['labels'], ['networking'])
+        self.assertEqual(result['maintainers'], ['gundalow'])
+
     def test_reduce_filepaths(self):
 
         filepaths = ['commands/command.py', 'lib/ansible/modules/commands/command.py']
