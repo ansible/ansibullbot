@@ -233,7 +233,7 @@ class TestOwnerPR(unittest.TestCase):
 
         meta = self.meta.copy()
         iw._commits = []
-        meta.update(get_component_match_facts(iw, meta, CM, FileIndexerMock(), module_indexer, []))
+        meta.update(get_component_match_facts(iw, CM, []))
         facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'ElsA')
@@ -280,7 +280,7 @@ class TestOwnerPR(unittest.TestCase):
             iw.file_indexer = FileIndexerMock()
             iw.file_indexer.files.append('lib/ansible/modules/foo/bar.py')
 
-            meta.update(get_component_match_facts(iw, {}, CM, iw.file_indexer, module_indexer, []))
+            meta.update(get_component_match_facts(iw, CM, []))
             facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')
@@ -326,9 +326,8 @@ class TestOwnerPR(unittest.TestCase):
         with get_issue(datafile, statusfile) as iw:
             iw.pr_files = [MockFile('lib/ansible/modules/foo/bar.py')]
             iw.file_indexer = FileIndexerMock()
-            #iw.file_indexer.files.append('lib/ansible/modules/foo/bar.py')
 
-            meta.update(get_component_match_facts(iw, {}, CM, iw.file_indexer, module_indexer, []))
+            meta.update(get_component_match_facts(iw, CM, []))
             facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')
@@ -390,7 +389,7 @@ class TestOwnerPR(unittest.TestCase):
 
         meta = self.meta.copy()
         iw._commits = []
-        meta.update(get_component_match_facts(iw, {}, CM, FileIndexerMock(), module_indexer, []))
+        meta.update(get_component_match_facts(iw, CM, []))
         facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'ElsA')
@@ -451,11 +450,9 @@ class TestOwnerPR(unittest.TestCase):
                 MockFile('lib/ansible/module_utils/baz/bar.py')
             ]
             iw.file_indexer = FileIndexerMock()
-            #iw.file_indexer.files.append('lib/ansible/modules/foo/bar.py'),
-            #iw.file_indexer.files.append('lib/ansible/module_utils/baz/bar.py')
 
             iw._commits = []
-            meta.update(get_component_match_facts(iw, {}, CM, iw.file_indexer, module_indexer, []))
+            meta.update(get_component_match_facts(iw, CM, []))
             facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')
@@ -516,7 +513,7 @@ class TestOwnerPR(unittest.TestCase):
                 MockFile('lib/ansible/module_utils/baz/bar.py')
             ]
             iw.file_indexer = FileIndexerMock()
-            meta.update(get_component_match_facts(iw, {}, CM, iw.file_indexer, module_indexer, []))
+            meta.update(get_component_match_facts(iw, CM, []))
             facts = get_shipit_facts(iw, meta, module_indexer, core_team=['bcoca'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')

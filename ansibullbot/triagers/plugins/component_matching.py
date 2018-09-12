@@ -1,20 +1,16 @@
 #!/usr/bin/env python
 
-#import copy
 import logging
-#import os
 import re
 
 
-def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexer, module_indexer, valid_labels):
+def get_component_match_facts(iw, component_matcher, valid_labels):
     '''High level abstraction for matching components to repo files'''
 
     # These should never return a match
     BLACKLIST_COMPONENTS = [
         'core', 'ansible'
     ]
-
-    iw = issuewrapper
 
     cmeta = dict(
         is_module=False,
@@ -131,10 +127,6 @@ def get_component_match_facts(issuewrapper, meta, component_matcher, file_indexe
         cmeta['is_module_util'] = True
 
     if iw.is_pullrequest():
-        #cmeta['is_new_module'] = False
-        #cmeta['is_new_directory'] = False
-        #cmeta['is_new_plugin'] = False
-
         if iw.new_modules:
             cmeta['is_new_module'] = True
             cmeta['is_new_plugin'] = True
