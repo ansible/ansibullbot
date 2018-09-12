@@ -200,7 +200,7 @@ class AnsibleComponentMatcher(object):
                     'authors': ME.authors,
                     'maintainers': ME.authors,
                     'maintainers_keys': [],
-                    'notify': ME.authors,
+                    'notified': ME.authors,
                     'ignored': [],
                     'support': ME.metadata.get('supported_by', 'community'),
                     'metadata': ME.metadata.copy()
@@ -208,8 +208,8 @@ class AnsibleComponentMatcher(object):
             else:
                 bmeta = self.BOTMETA['files'][k].copy()
                 bmeta['metadata'] = ME.metadata.copy()
-                if 'notify' not in bmeta:
-                    bmeta['notify'] = []
+                if 'notified' not in bmeta:
+                    bmeta['notified'] = []
                 if 'maintainers' not in bmeta:
                     bmeta['maintainers'] = []
                 if not bmeta.get('supported_by'):
@@ -221,8 +221,8 @@ class AnsibleComponentMatcher(object):
                         bmeta['authors'].append(x)
                     if x not in bmeta['maintainers']:
                         bmeta['maintainers'].append(x)
-                    if x not in bmeta['notify']:
-                        bmeta['notify'].append(x)
+                    if x not in bmeta['notified']:
+                        bmeta['notified'].append(x)
                 if not bmeta.get('labels'):
                     bmeta['labels'] = os.path.dirname(k).split('/')
                 bmeta['deprecated'] = os.path.basename(k).startswith('_')
@@ -231,7 +231,7 @@ class AnsibleComponentMatcher(object):
             # clean out the ignorees
             if 'ignored' in self.BOTMETA['files'][k]:
                 for ignoree in self.BOTMETA['files'][k]['ignored']:
-                    for thiskey in ['maintainers', 'notify']:
+                    for thiskey in ['maintainers', 'notified']:
                         while ignoree in self.BOTMETA['files'][k][thiskey]:
                             self.BOTMETA['files'][k][thiskey].remove(ignoree)
 
@@ -1026,8 +1026,8 @@ class AnsibleComponentMatcher(object):
                 meta['notify'] += fdata['maintainers']
                 meta['assign'] += fdata['maintainers']
                 meta['maintainers'] += fdata['maintainers']
-            if 'notify' in fdata:
-                meta['notify'] += fdata['notify']
+            if 'notified' in fdata:
+                meta['notify'] += fdata['notified']
             if 'labels' in fdata:
                 meta['labels'] += fdata['labels']
             if 'ignore' in fdata:
@@ -1069,8 +1069,8 @@ class AnsibleComponentMatcher(object):
                     meta['maintainers'] += fdata['maintainers']
                 if 'ignore' in fdata:
                     meta['ignore'] += fdata['ignore']
-                if 'notify' in fdata:
-                    meta['notify'] += fdata['notify']
+                if 'notified' in fdata:
+                    meta['notify'] += fdata['notified']
 
         if 'lib/ansible/modules' in filename:
             topics = [x for x in paths if x not in ['lib', 'ansible', 'modules']]
