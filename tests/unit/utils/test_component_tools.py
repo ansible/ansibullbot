@@ -38,8 +38,8 @@ class TestComponentMatcher(TestCase):
         """suppress temp dir"""
         shutil.rmtree(cls.component_matcher.gitrepo.checkoutdir)
 
-    def test_get_meta_for_file(self):
-        self.component_matcher.BOTMETA = {
+    def test_get_meta_for_file_wildcard(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
             'files': {
                 'lib/ansible/plugins/action/junos': {
                     'maintainers': ['gundalow'],
@@ -50,6 +50,51 @@ class TestComponentMatcher(TestCase):
         result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/action/junos_config.py')
         self.assertEqual(result['labels'], ['networking'])
         self.assertEqual(result['maintainers'], ['gundalow'])
+
+    def test_get_meta_for_file_wildcard_multiple(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/plugins/action/junos_config.py': {
+                    'maintainers': ['privateip'],
+                    'labels': ['config'],
+                    'notified': ['jctanner'],
+                },
+                'lib/ansible/plugins/action/junos': {
+                    'maintainers': ['gundalow'],
+                    'labels': ['networking'],
+                    'notified': ['mkrizek'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/action/junos_config.py')
+
+        self.assertItemsEqual(result['notify'], ['gundalow', 'mkrizek', 'jctanner', 'privateip'])
+        self.assertItemsEqual(result['labels'], ['networking', 'config'])
+        self.assertItemsEqual(result['maintainers'], ['gundalow', 'privateip'])
+
+    def test_get_meta_for_file_pyfile(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/modules/packaging/os/yum.py': {
+                    'maintainers': ['maxamillion'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/modules/packaging/os/yum.py')
+        self.assertEqual(result['maintainers'], ['maxamillion'])
+
+    def test_get_meta_for_file_powershell(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/modules/windows/win_ping.py': {
+                    'maintainers': ['jborean93'],
+                    'labels': ['windoez'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/modules/windows/win_ping.ps1')
+        self.assertEqual(result['labels'], ['windoez'])
+        self.assertEqual(result['maintainers'], ['jborean93'])
 
     def test_reduce_filepaths(self):
 
