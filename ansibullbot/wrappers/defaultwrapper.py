@@ -300,6 +300,7 @@ class DefaultWrapper(object):
             '%s.pickle' % property_name
         )
         pdir = os.path.dirname(pfile)
+        logging.debug(pfile)
 
         if not os.path.isdir(pdir):
             os.makedirs(pdir)
