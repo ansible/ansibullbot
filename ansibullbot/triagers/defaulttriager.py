@@ -87,6 +87,7 @@ class DefaultTriager(object):
 
         self.last_run = None
 
+        self.github_url = C.DEFAULT_GITHUB_URL
         self.github_user = C.DEFAULT_GITHUB_USERNAME
         self.github_pass = C.DEFAULT_GITHUB_PASSWORD
         self.github_token = C.DEFAULT_GITHUB_TOKEN
@@ -187,9 +188,10 @@ class DefaultTriager(object):
     def _connect(self):
         """Connects to GitHub's API"""
         if self.github_token:
-            return Github(login_or_token=self.github_token)
+            return Github(base_url=self.github_url, login_or_token=self.github_token)
         else:
             return Github(
+                base_url=self.github_url,
                 login_or_token=self.github_user,
                 password=self.github_pass
             )

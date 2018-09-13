@@ -217,6 +217,15 @@ DEFAULT_BREAKPOINTS = get_config(
     value_type='boolean'
 )
 
+DEFAULT_GITHUB_URL = get_config(
+    p,
+    DEFAULTS,
+    'github_url',
+    '%s_GITHUB_URL' % PROG_NAME.upper(),
+    'https://api.github.com',
+    value_type='string'
+)
+
 DEFAULT_GITHUB_USERNAME = get_config(
     p,
     DEFAULTS,

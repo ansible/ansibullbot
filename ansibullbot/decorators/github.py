@@ -19,6 +19,11 @@ import ansibullbot.constants as C
 
 
 def get_rate_limit():
+    url = C.DEFAULT_GITHUB_URL
+    if not url:
+        url = 'https://api.github.com/rate_limit'
+    else:
+        url += '/rate_limit'
     username = C.DEFAULT_GITHUB_USERNAME
     password = C.DEFAULT_GITHUB_PASSWORD
     token = C.DEFAULT_GITHUB_TOKEN
@@ -26,9 +31,10 @@ def get_rate_limit():
     if token:
         success = False
         while not success:
+            logging.debug(url)
             try:
                 rr = requests.get(
-                    'https://api.github.com/rate_limit',
+                    url,
                     headers={'Authorization': 'token %s' % token}
                 )
                 response = rr.json()
@@ -39,9 +45,10 @@ def get_rate_limit():
     else:
         success = False
         while not success:
+            logging.debug(url)
             try:
                 rr = requests.get(
-                    'https://api.github.com/rate_limit',
+                    url,
                     auth=(username, password)
                 )
                 response = rr.json()
@@ -171,10 +178,13 @@ def RateLimited(fn):
                             raise Exception('unhandled message type')
                 elif isinstance(e, httplib.IncompleteRead):
                     # https://github.com/ansible/ansibullbot/issues/593
-                    stime = 5
+                    stime = 2*60
                 elif isinstance(e, httplib.BadStatusLine):
                     # https://github.com/ansible/ansibullbot/issues/602
-                    stime = 5
+                    stime = 2*60
+                elif hasattr(e, 'status') and e.status == 500:
+                    # https://github.com/ansible/ansibullbot/issues/1025
+                    stime = 2*60
                 else:
                     if C.DEFAULT_BREAKPOINTS:
                         logging.error('breakpoint!')
