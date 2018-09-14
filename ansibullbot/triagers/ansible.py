@@ -1831,10 +1831,7 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(
             get_component_match_facts(
                 iw,
-                self.meta,
                 self.component_matcher,
-                self.file_indexer,
-                self.module_indexer,
                 self.valid_labels
             )
         )
