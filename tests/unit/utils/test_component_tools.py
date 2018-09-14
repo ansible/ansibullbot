@@ -4,8 +4,13 @@ import shutil
 import tempfile
 from unittest import TestCase
 
+import six
+six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
+from six.moves import mock
+
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
 from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.systemtools import run_command
 
 
@@ -20,8 +25,7 @@ class GitShallowRepo(GitRepoWrapper):
             raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
 
     def update_checkout(self):
-        """Ensure update_checkout is never called"""
-        raise Exception("should not be called")
+        return False
 
 
 class TestComponentMatcher(TestCase):
@@ -29,14 +33,82 @@ class TestComponentMatcher(TestCase):
     @classmethod
     def setUpClass(cls):
         """Init the matcher"""
-        checkoutdir = tempfile.mkdtemp()
-        gitrepo = GitShallowRepo(cachedir=checkoutdir, repo=ComponentMatcher.REPO)
-        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo)
+        cachedir = tempfile.mkdtemp()
+        gitrepo = GitShallowRepo(cachedir=cachedir, repo=ComponentMatcher.REPO)
+        gitrepo.update()
+
+        @mock.patch.object(FileIndexer, 'manage_checkout')
+        @mock.patch.object(FileIndexer, 'checkoutdir', create=True, side_effect=gitrepo.checkoutdir)
+        def get_file_indexer(m_manage_checkout, m_checkoutdir):
+            indexer = FileIndexer()
+            indexer.get_files()
+            indexer.parse_metadata()
+            return indexer
+
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=get_file_indexer())
 
     @classmethod
     def tearDownClass(cls):
         """suppress temp dir"""
         shutil.rmtree(cls.component_matcher.gitrepo.checkoutdir)
+
+    def test_get_meta_for_file_wildcard(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/plugins/action/junos': {
+                    'maintainers': ['gundalow'],
+                    'labels': ['networking'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/action/junos_config.py')
+        self.assertEqual(result['labels'], ['networking'])
+        self.assertEqual(result['maintainers'], ['gundalow'])
+
+    def test_get_meta_for_file_wildcard_multiple(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/plugins/action/junos_config.py': {
+                    'maintainers': ['privateip'],
+                    'labels': ['config'],
+                    'notified': ['jctanner'],
+                },
+                'lib/ansible/plugins/action/junos': {
+                    'maintainers': ['gundalow'],
+                    'labels': ['networking'],
+                    'notified': ['mkrizek'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/action/junos_config.py')
+
+        self.assertItemsEqual(result['notify'], ['gundalow', 'mkrizek', 'jctanner', 'privateip'])
+        self.assertItemsEqual(result['labels'], ['networking', 'config'])
+        self.assertItemsEqual(result['maintainers'], ['gundalow', 'privateip'])
+
+    def test_get_meta_for_file_pyfile(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/modules/packaging/os/yum.py': {
+                    'maintainers': ['maxamillion'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/modules/packaging/os/yum.py')
+        self.assertEqual(result['maintainers'], ['maxamillion'])
+
+    def test_get_meta_for_file_powershell(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            'files': {
+                'lib/ansible/modules/windows/win_ping.py': {
+                    'maintainers': ['jborean93'],
+                    'labels': ['windoez'],
+                }
+            }
+        }
+        result = self.component_matcher.get_meta_for_file('lib/ansible/modules/windows/win_ping.ps1')
+        self.assertEqual(result['labels'], ['windoez'])
+        self.assertEqual(result['maintainers'], ['jborean93'])
 
     def test_reduce_filepaths(self):
 

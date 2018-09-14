@@ -130,17 +130,14 @@ class FileIndexer(ModuleIndexer):
 
     def _filenames_to_keys(self, filenames):
         '''Match filenames to the keys in botmeta'''
-        ckeys = []
+        ckeys = set()
         for filen in filenames:
-            # Use botmeta
             if filen in self.botmeta['files']:
-                if filen not in ckeys:
-                    ckeys.append(filen)
-            else:
-                for key in self.botmeta['files'].keys():
-                    if filen.startswith(key):
-                        ckeys.append(key)
-        return ckeys
+                ckeys.add(filen)
+            for key in self.botmeta['files'].keys():
+                if filen.startswith(key):
+                    ckeys.add(key)
+        return list(ckeys)
 
     def _string_to_cmap_key(self, text):
         text = text.lower()
