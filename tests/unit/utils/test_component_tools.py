@@ -4,8 +4,13 @@ import shutil
 import tempfile
 from unittest import TestCase
 
+import six
+six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
+from six.moves import mock
+
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
 from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.systemtools import run_command
 
 
@@ -20,8 +25,7 @@ class GitShallowRepo(GitRepoWrapper):
             raise Exception("Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
 
     def update_checkout(self):
-        """Ensure update_checkout is never called"""
-        raise Exception("should not be called")
+        return False
 
 
 class TestComponentMatcher(TestCase):
@@ -29,9 +33,19 @@ class TestComponentMatcher(TestCase):
     @classmethod
     def setUpClass(cls):
         """Init the matcher"""
-        checkoutdir = tempfile.mkdtemp()
-        gitrepo = GitShallowRepo(cachedir=checkoutdir, repo=ComponentMatcher.REPO)
-        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo)
+        cachedir = tempfile.mkdtemp()
+        gitrepo = GitShallowRepo(cachedir=cachedir, repo=ComponentMatcher.REPO)
+        gitrepo.update()
+
+        @mock.patch.object(FileIndexer, 'manage_checkout')
+        @mock.patch.object(FileIndexer, 'checkoutdir', create=True, side_effect=gitrepo.checkoutdir)
+        def get_file_indexer(m_manage_checkout, m_checkoutdir):
+            indexer = FileIndexer()
+            indexer.get_files()
+            indexer.parse_metadata()
+            return indexer
+
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=get_file_indexer())
 
     @classmethod
     def tearDownClass(cls):
