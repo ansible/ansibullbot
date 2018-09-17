@@ -227,6 +227,7 @@ def get_pr_quality_facts(issuewrapper):
 
     qmeta = {
         'is_bad_pr': False,
+        'is_bad_pr_reason': list(),
         'is_empty_pr': False
     }
 
@@ -249,9 +250,11 @@ def get_pr_quality_facts(issuewrapper):
     try:
         if len(iw.files) > 50:
             qmeta['is_bad_pr'] = True
+            qmeta['is_bad_pr_reason'].append('More than 50 changed files.')
 
         if len(iw.commits) > 50:
             qmeta['is_bad_pr'] = True
+            qmeta['is_bad_pr_reason'].append('More than 50 commits.')
     except:
         # bypass exceptions for unit tests
         pass

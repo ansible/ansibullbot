@@ -890,6 +890,16 @@ class AnsibleTriage(DefaultTriager):
                 if comment and comment not in actions.comments:
                     actions.comments.append(comment)
 
+        if iw.is_pullrequest() and self.meta['is_bad_pr']:
+            if self.meta['is_bad_pr_reason']:
+                comment = self.render_boilerplate(
+                    tvars={'submitter': iw.submitter, 'is_bad_pr_reason': self.meta['is_bad_pr_reason']},
+                    boilerplate='bad_pr'
+                )
+
+                if comment and comment not in actions.comments:
+                    actions.comments.append(comment)
+
         # NEEDS REVISION
         if iw.is_pullrequest():
             if not iw.wip:
