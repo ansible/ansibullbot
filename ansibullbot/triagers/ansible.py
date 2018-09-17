@@ -892,13 +892,18 @@ class AnsibleTriage(DefaultTriager):
 
         if iw.is_pullrequest() and self.meta['is_bad_pr']:
             if self.meta['is_bad_pr_reason']:
-                comment = self.render_boilerplate(
-                    tvars={'submitter': iw.submitter, 'is_bad_pr_reason': self.meta['is_bad_pr_reason']},
-                    boilerplate='bad_pr'
-                )
+                last_comment_date = iw.history.last_date_for_boilerplate('bad_pr')
 
-                if comment and comment not in actions.comments:
-                    actions.comments.append(comment)
+                commits = (x for x in iw.history.history if x['event'] == 'committed')
+
+                if not last_comment_date or last_comment_date < list(commits)[-1]['created_at']:
+                    comment = self.render_boilerplate(
+                        tvars={'submitter': iw.submitter, 'is_bad_pr_reason': self.meta['is_bad_pr_reason']},
+                        boilerplate='bad_pr'
+                    )
+
+                    if comment and comment not in actions.comments:
+                        actions.comments.append(comment)
 
         # NEEDS REVISION
         if iw.is_pullrequest():
