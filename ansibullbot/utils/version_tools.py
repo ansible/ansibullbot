@@ -34,35 +34,14 @@ def list_to_version(inlist, cast_string=True, reverse=True, binary=False):
 
 class AnsibleVersionIndexer(object):
 
-    def __init__(self):
+    def __init__(self, checkoutdir):
         self.modules = {}
-        self.checkoutdir = '~/.ansibullbot/cache/ansible.version.checkout'
-        self.checkoutdir = os.path.expanduser(self.checkoutdir)
+        self.checkoutdir = checkoutdir
         self.VALIDVERSIONS = None
         self.COMMITVERSIONS = None
         self.DATEVERSIONS = None
 
-        if not os.path.isdir(self.checkoutdir):
-            self.create_checkout()
-        else:
-            self.update_checkout()
         self._get_versions()
-
-    def create_checkout(self):
-        """checkout ansible"""
-        cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
-            % self.checkoutdir
-        (rc, so, se) = run_command(cmd)
-        print(str(so) + str(se))
-
-    def update_checkout(self):
-        """rebase + pull + update the checkout"""
-        cmd = "cd %s ; git pull --rebase" % self.checkoutdir
-        (rc, so, se) = run_command(cmd)
-        print(str(so) + str(se))
-        cmd = "cd %s ; git submodule update --recursive" % self.checkoutdir
-        (rc, so, se) = run_command(cmd)
-        print(str(so) + str(se))
 
     def _get_devel_version(self):
         # get devel's version
@@ -233,7 +212,6 @@ class AnsibleVersionIndexer(object):
 
                 # is this a checkout with a hash? ...
                 if len(parts) > 3:
-                    #ahash = parts[3]
                     pass
                 elif len(parts) > 2:
                     # ['ansible', '2.2.0.0', 'rc1']
@@ -282,15 +260,12 @@ class AnsibleVersionIndexer(object):
                     return fver
 
         lines = rawtext.split('\n')
-        #orig_lines = lines
         lines = [x.strip() for x in lines if x.strip()]
         lines = [x for x in lines if not x.startswith('config')]
         lines = [x for x in lines if not x.startswith('<')]
         lines = [x for x in lines if not x.startswith('-')]
         lines = [x for x in lines if not x.startswith('lib')]
         for idx, x in enumerate(lines):
-            #if x.startswith('ansible'):
-            #    x = x.replace('ansible', '').strip()
             if "'" in x:
                 x = x.replace("'", '').strip()
             if '"' in x:
@@ -303,8 +278,6 @@ class AnsibleVersionIndexer(object):
                 x = x.replace('*', '').strip()
             if ')' in x:
                 x = x.replace(')', '').strip()
-            #if 'v' in x:
-            #    x = x.replace('v', '', 1).strip()
             lines[idx] = x
         lines = [x.strip() for x in lines if x.strip()]
         lines = [x for x in lines if x.startswith('ansible') or x[0].isdigit() or x[0] == 'v']
@@ -484,7 +457,6 @@ class AnsibleVersionIndexer(object):
             datestr = str(dateobj).split()[0]
             for dv in reversed(self.DATEVERSIONS):
                 if dv[0] == datestr:
-                    #accommit = dv[1]
                     break
             if not acommit:
                 datestr = '-'.join(datestr.split('-')[0:2])

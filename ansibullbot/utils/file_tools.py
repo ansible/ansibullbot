@@ -17,8 +17,6 @@ import ansibullbot.constants as C
 
 class FileIndexer(ModuleIndexer):
 
-    REPO = 'https://github.com/ansible/ansible'
-
     DEFAULT_COMPONENT_MATCH = {
         'supported_by': 'core',
         'filename': None,
@@ -29,23 +27,14 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, botmetafile=None, checkoutdir=None, repo=None):
-
-        if checkoutdir is None:
-            self.checkoutdir = '~/.ansibullbot/cache/ansible.files.checkout'
-        else:
-            self.checkoutdir = os.path.join(checkoutdir, 'ansible.files.checkout')
-        self.checkoutdir = os.path.expanduser(self.checkoutdir)
-
-        if repo:
-            self.REPO = 'https://github.com/{}'.format(repo)
-
+    def __init__(self, botmetafile=None, gitrepo=None):
         self.botmetafile = botmetafile
         self.botmeta = {}
         self.CMAP = {}
         self.FILEMAP = {}
         self.match_cache = {}
-        self.update(force=True)
+        self.gitrepo = gitrepo
+        self.gitrepo.update(force=True)
         self.email_commits = {}
 
     def parse_metadata(self):
@@ -63,7 +52,7 @@ class FileIndexer(ModuleIndexer):
 
         # reshape meta into old format
         self.CMAP = {}
-        for k,v in self.botmeta.get('files', {}).items():
+        for k, v in self.botmeta.get('files', {}).items():
             if not v:
                 continue
             if 'keywords' not in v:
@@ -80,11 +69,11 @@ class FileIndexer(ModuleIndexer):
 
     def get_files(self):
 
-        cmd = 'find %s' % self.checkoutdir
+        cmd = 'find %s' % self.gitrepo.checkoutdir
         (rc, so, se) = run_command(cmd)
         files = so.split('\n')
         files = [x.strip() for x in files if x.strip()]
-        files = [x.replace(self.checkoutdir + '/', '') for x in files]
+        files = [x.replace(self.gitrepo.checkoutdir + '/', '') for x in files]
         files = [x for x in files if not x.startswith('.git')]
         self.files = files
 
@@ -380,7 +369,6 @@ class FileIndexer(ModuleIndexer):
             if reg.endswith('/'):
                 reg += '*'
             self.FILEMAP[k] = {
-                #'inclusive': False,
                 'inclusive': True,
                 'exclusive': False,
                 'assign': [],
@@ -486,7 +474,7 @@ class FileIndexer(ModuleIndexer):
             email = [email]
 
         if not self.email_commits:
-            cmd = 'cd {}; git log --format="%H %ae"'.format(self.checkoutdir)
+            cmd = 'cd {}; git log --format="%H %ae"'.format(self.gitrepo.checkoutdir)
             (rc, so, se) = run_command(cmd)
             commits = [x.split(None, 1)[::-1] for x in so.split('\n') if x]
             for x in commits:

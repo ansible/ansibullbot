@@ -43,6 +43,7 @@ from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
+from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.timetools import strip_time_safely
@@ -201,26 +202,34 @@ class AnsibleTriage(DefaultTriager):
         else:
             self.gqlc = None
 
+        # clone ansible/ansible
+        repo = 'https://github.com/ansible/ansible'
+        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo)
+
         # set the indexers
         logging.info('creating version indexer')
-        self.version_indexer = AnsibleVersionIndexer()
+        self.version_indexer = AnsibleVersionIndexer(
+            checkoutdir=gitrepo.checkoutdir
+        )
+
         logging.info('creating file indexer')
         self.file_indexer = FileIndexer(
             botmetafile=self.botmetafile,
-            checkoutdir=self.cachedir_base
+            gitrepo=gitrepo
         )
 
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer(
             botmetafile=self.botmetafile,
             gh_client=self.gqlc,
-            cachedir=self.cachedir_base
+            cachedir=self.cachedir_base,
+            gitrepo=gitrepo
         )
 
         logging.info('creating component matcher')
         self.component_matcher = AnsibleComponentMatcher(
+            gitrepo=gitrepo,
             botmetafile=self.botmetafile,
-            cachedir=self.cachedir_base,
             email_cache=self.module_indexer.emails_cache
         )
 

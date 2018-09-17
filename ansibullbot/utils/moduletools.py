@@ -69,9 +69,7 @@ class ModuleIndexer(object):
         'imports': []
     }
 
-    REPO = "http://github.com/ansible/ansible"
-
-    def __init__(self, commits=True, blames=True, botmetafile=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache'):
+    def __init__(self, commits=True, blames=True, botmetafile=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache', gitrepo=None):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
@@ -82,9 +80,8 @@ class ModuleIndexer(object):
         self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
         self.modules = {}  # keys: paths of files belonging to the repository
         self.maintainers = maintainers or {}
-        self.checkoutdir = os.path.join(cachedir, 'ansible.modules.checkout')
-        self.checkoutdir = os.path.expanduser(self.checkoutdir)
         self.importmap = {}
+        self.gitrepo = gitrepo
         self.scraper_cache = os.path.join(cachedir, 'ansible.modules.scraper')
         self.scraper_cache = os.path.expanduser(self.scraper_cache)
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
@@ -115,24 +112,14 @@ class ModuleIndexer(object):
 
     def update(self, force=False):
         '''Reload everything if there are new commits'''
-        changed = self.manage_checkout()
+        changed = self.gitrepo.manage_checkout()
         if changed or force:
             self.get_files()
             self.parse_metadata()
 
-    def manage_checkout(self):
-        '''Check if there are any changes to the repo'''
-        changed = False
-        if not os.path.isdir(self.checkoutdir):
-            self.create_checkout()
-            changed = True
-        else:
-            changed = self.update_checkout()
-        return changed
-
     def get_files(self):
         '''Cache a list of filenames in the checkout'''
-        cmd = 'cd {}; git ls-files'.format(self.checkoutdir)
+        cmd = 'cd {}; git ls-files'.format(self.gitrepo.checkoutdir)
         (rc, so, se) = run_command(cmd)
         files = so.split('\n')
         files = [x.strip() for x in files if x.strip()]
@@ -151,39 +138,6 @@ class ModuleIndexer(object):
         # load the modules
         logging.info('loading modules')
         self.get_ansible_modules()
-
-    def create_checkout(self):
-        """checkout ansible"""
-
-        print('# creating {} for {}'.format(self.checkoutdir, type(self).__name__))
-
-        # cleanup
-        if os.path.isdir(self.checkoutdir):
-            shutil.rmtree(self.checkoutdir)
-
-        #cmd = "git clone http://github.com/ansible/ansible --recursive %s" \
-        cmd = "git clone %s %s" % (self.REPO, self.checkoutdir)
-        (rc, so, se) = run_command(cmd)
-        print(str(so) + str(se))
-
-    def update_checkout(self):
-        """rebase + pull + update the checkout"""
-
-        changed = False
-
-        cmd = "cd %s ; git pull --rebase" % self.checkoutdir
-        (rc, so, se) = run_command(cmd)
-        print(str(so) + str(se))
-
-        # If rebase failed, recreate the checkout
-        if rc != 0:
-            self.create_checkout()
-            return True
-        else:
-            if 'current branch devel is up to date.' not in so.lower():
-                changed = True
-
-        return changed
 
     def _find_match(self, pattern, exact=False):
 
@@ -360,7 +314,7 @@ class ModuleIndexer(object):
         """Make a list of known modules"""
 
         matches = []
-        module_dir = os.path.join(self.checkoutdir, 'lib/ansible/modules')
+        module_dir = os.path.join(self.gitrepo.checkoutdir, 'lib/ansible/modules')
         module_dir = os.path.expanduser(module_dir)
         for root, _, filenames in os.walk(module_dir):
             for filename in filenames:
@@ -434,10 +388,10 @@ class ModuleIndexer(object):
             mdict['filename'] = os.path.basename(match)
 
             dirpath = os.path.dirname(match)
-            dirpath = dirpath.replace(self.checkoutdir + '/', '')
+            dirpath = dirpath.replace(self.gitrepo.checkoutdir + '/', '')
             mdict['dirpath'] = dirpath
 
-            filepath = match.replace(self.checkoutdir + '/', '')
+            filepath = match.replace(self.gitrepo.checkoutdir + '/', '')
             mdict['filepath'] = filepath
 
             mdict.update(
@@ -481,9 +435,8 @@ class ModuleIndexer(object):
         keys = self.modules.keys()
         keys = sorted(keys)
         for k in keys:
-            #v = self.modules[k]
             self.commits[k] = []
-            cpath = os.path.join(self.checkoutdir, k)
+            cpath = os.path.join(self.gitrepo.checkoutdir, k)
             if not os.path.isfile(cpath):
                 continue
 
@@ -506,7 +459,7 @@ class ModuleIndexer(object):
 
             if refresh:
                 logging.info('refresh commit cache for %s' % k)
-                cmd = 'cd %s; git log --follow %s' % (self.checkoutdir, k)
+                cmd = 'cd %s; git log --follow %s' % (self.gitrepo.checkoutdir, k)
                 (rc, so, se) = run_command(cmd)
                 for line in so.split('\n'):
                     if line.startswith('commit '):
@@ -556,7 +509,7 @@ class ModuleIndexer(object):
         # git log --pretty=format:'%H' -1
         # lib/ansible/modules/cloud/amazon/ec2_metric_alarm.py
         cmd = 'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
-            (self.checkoutdir, filepath)
+            (self.gitrepo.checkoutdir, filepath)
         (rc, so, se) = run_command(cmd)
         return so.strip()
 
@@ -576,13 +529,10 @@ class ModuleIndexer(object):
         changed = False
         keys = sorted(self.modules.keys())
         for k in keys:
-            #logging.debug('eval {}'.format(k))
-
             if k not in self.files:
                 self.committers[k] = {}
                 continue
 
-            #logging.debug('last commit {}'.format(k))
             ghash = self.last_commit_for_file(k)
 
             if ghash in blame_cache:
@@ -658,16 +608,13 @@ class ModuleIndexer(object):
         keys = sorted(self.modules.keys())
 
         # scrape the data
-        #for k, v in self.modules.iteritems():
         for k in keys:
 
-            #v = self.modules[k]
-            cpath = os.path.join(self.checkoutdir, k)
+            cpath = os.path.join(self.gitrepo.checkoutdir, k)
             if not os.path.isfile(cpath):
                 self.committers[k] = {}
                 continue
 
-            #mtime = os.path.getmtime(cpath)
             ghash = self.last_commit_for_file(k)
             pfile = os.path.join(
                 self.scraper_cache,
@@ -712,9 +659,7 @@ class ModuleIndexer(object):
                     self.emails_cache[email] = github_id
 
         # add scraped logins to the map
-        #for k, v in self.modules.iteritems():
         for k in keys:
-            #v = self.modules[k]
             for idx, x in enumerate(self.commits[k]):
                 if x['email'] in ['@']:
                     continue
@@ -731,9 +676,7 @@ class ModuleIndexer(object):
                         break
 
         # fill in what we can ...
-        #for k, v in self.modules.iteritems():
         for k in keys:
-            #v = self.modules[k]
             for idx, x in enumerate(self.commits[k]):
                 if not x['login']:
                     if x['email'] in ['@']:
@@ -754,7 +697,7 @@ class ModuleIndexer(object):
         for k, v in self.modules.iteritems():
             if v['filepath'] is None:
                 continue
-            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
             authors = self.get_module_authors(mfile)
             self.modules[k]['authors'] = authors
 
@@ -857,7 +800,6 @@ class ModuleIndexer(object):
                     inphase = True
                     continue
                 if line.strip().endswith("'''") or line.strip().endswith('"""'):
-                    #phase = None
                     break
                 if inphase:
                     documentation += line
@@ -871,12 +813,9 @@ class ModuleIndexer(object):
         doc_lines = documentation.split('\n')
         for idx, x in enumerate(doc_lines):
             if x.startswith('author'):
-                #print("START ON %s" % x)
                 inphase = True
-                #continue
             if inphase and not x.strip().startswith('-') and \
                     not x.strip().startswith('author'):
-                #print("BREAK ON %s" % x)
                 inphase = False
                 break
             if inphase:
@@ -1007,7 +946,6 @@ class ModuleIndexer(object):
             if fmatches:
                 cmatches = fmatches[:]
 
-        #if not component and title_matches:
         if title_matches:
             # use title ... ?
             cmatches = [x for x in cmatches if x in title_matches and x not in ['at']]
@@ -1085,7 +1023,7 @@ class ModuleIndexer(object):
         for k, v in self.modules.iteritems():
             if not v['filepath']:
                 continue
-            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
             if not mfile.endswith('.py'):
                 # metadata is only the .py files ...
                 ext = mfile.split('.')[-1]
@@ -1105,7 +1043,6 @@ class ModuleIndexer(object):
             for line in f:
                 if line.startswith('ANSIBLE_METADATA'):
                     inphase = True
-                    #continue
                 if line.startswith('DOCUMENTATION'):
                     break
                 if inphase:
@@ -1123,15 +1060,10 @@ class ModuleIndexer(object):
         for k, v in self.modules.iteritems():
             if not v['filepath']:
                 continue
-            mfile = os.path.join(self.checkoutdir, v['filepath'])
+            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
             self.modules[k]['imports'] = self.get_module_imports(mfile)
 
     def get_module_imports(self, module_file):
-
-        #import ansible.module_utils.nxos
-        #from ansible.module_utils.netcfg import NetworkConfig, dumps
-        #from ansible.module_utils.network import NetworkModule
-
         mimports = []
 
         if not os.path.isfile(module_file):
@@ -1194,7 +1126,7 @@ class ModuleIndexer(object):
         return newlist
 
     def get_file_content(self, filepath):
-        fpath = os.path.join(self.checkoutdir, filepath)
+        fpath = os.path.join(self.gitrepo.checkoutdir, filepath)
         if not os.path.isfile(fpath):
             return None
         with open(fpath, 'rb') as f:
