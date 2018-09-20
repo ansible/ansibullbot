@@ -248,7 +248,7 @@ The `+label` and `-label` commands are restricted to a subset of available label
 
 ### How to use label commands
 
-To use the commands, please type the the command and label on one line each in a comment.
+To use the commands, please type the command and label on one line each in a comment.
 Example:
 ```
 -label needs_triage
