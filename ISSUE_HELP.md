@@ -29,7 +29,7 @@ If at any time you think this bot is misbehaving (not for test failures), please
 The Ansibull Triage Bot serves many functions:
 
 * Responds quickly to issue and pull request submitters to thank them;
-* Identifies the maintainers responsible for reviewing pull requests for any files affected;
+* [Identifies the maintainers](https://github.com/ansible/ansibullbot/issues/1039) responsible for reviewing pull requests for any files affected;
 * Tracks the current status of pull requests;
 * Pings responsible parties to remind them of any actions that they may be responsible for;
 * Provides maintainers with the ability to move pull requests through our [workflow](#when-will-your-pull-request-be-merged);
