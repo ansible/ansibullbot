@@ -9,7 +9,6 @@ import logging
 import os
 import pickle
 import re
-import shutil
 import yaml
 
 from sqlalchemy import create_engine
@@ -20,6 +19,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
+from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.webscraper import GithubWebScraper
 
@@ -81,12 +81,16 @@ class ModuleIndexer(object):
         self.modules = {}  # keys: paths of files belonging to the repository
         self.maintainers = maintainers or {}
         self.importmap = {}
-        self.gitrepo = gitrepo
         self.scraper_cache = os.path.join(cachedir, 'ansible.modules.scraper')
         self.scraper_cache = os.path.expanduser(self.scraper_cache)
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
         self.gqlc = gh_client
         self.files = []
+
+        if gitrepo:
+            self.gitrepo = gitrepo
+        else:
+            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo='https://github.com/ansible/ansible')
 
         # sqlalchemy
         unc = os.path.join(cachedir, 'ansible_module_indexer.db')

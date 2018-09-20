@@ -37,15 +37,11 @@ class TestComponentMatcher(TestCase):
         gitrepo = GitShallowRepo(cachedir=cachedir, repo=ComponentMatcher.REPO)
         gitrepo.update()
 
-        @mock.patch.object(FileIndexer, 'manage_checkout')
-        @mock.patch.object(FileIndexer, 'checkoutdir', create=True, side_effect=gitrepo.checkoutdir)
-        def get_file_indexer(m_manage_checkout, m_checkoutdir):
-            indexer = FileIndexer()
-            indexer.get_files()
-            indexer.parse_metadata()
-            return indexer
+        file_indexer = FileIndexer(gitrepo=gitrepo)
+        file_indexer.get_files()
+        file_indexer.parse_metadata()
 
-        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=get_file_indexer())
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=file_indexer)
 
     @classmethod
     def tearDownClass(cls):

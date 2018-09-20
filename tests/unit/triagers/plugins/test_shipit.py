@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
 import copy
-import json
-import logging
-import os
-import shutil
-import tempfile
 import textwrap
 import unittest
 

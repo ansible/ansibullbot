@@ -9,6 +9,7 @@ from fuzzywuzzy import fuzz as fw_fuzz
 from textblob import TextBlob
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
+from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.moduletools import ModuleIndexer
 
