@@ -184,8 +184,6 @@ def get_review_facts(issuewrapper, meta):
         return rfacts
     if meta[u'is_needs_rebase']:
         return rfacts
-    if not meta[u'is_module']:
-        return rfacts
 
     supported_by = get_supported_by(iw, meta)
 
@@ -238,9 +236,6 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
                 maintainers = module_indexer.botmeta[u'files'][f].get(u'maintainers', [])
                 if maintainers and (iw.submitter in maintainers):
                     module_utils_files_owned += 1
-        if module_utils_files_owned == len(iw.files):
-            nmeta[u'owner_pr'] = True
-            return nmeta
 
     modules_files_owned = 0
     if not meta[u'is_new_module']:
