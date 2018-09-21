@@ -35,7 +35,7 @@ class FileIndexer(ModuleIndexer):
         self.FILEMAP = {}
         self.match_cache = {}
         self.gitrepo = gitrepo
-        self.gitrepo.update(force=True)
+        self.update(force=True)
         self.email_commits = {}
 
     def parse_metadata(self):
