@@ -204,35 +204,35 @@ class TestOwnerPR(unittest.TestCase):
         self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
         self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/foo/bar.py'][u'maintainers']), [u'ElsA', u'Oliver'])
 
-        issue = IssueMock(u'/dev/null')
-        issue.user.login = u'ElsA'
-        issue.html_url = u'https://github.com/ansible/ansible/pull/123'
-        iw = IssueWrapper(cachedir="", issue=issue)
-        iw.pr_files = [MockFile(u'lib/ansible/module_utils/foo/bar.py')]
 
-        # need to give the wrapper a list of known files to compare against
-        iw.file_indexer = FileIndexerMock()
+        datafile = u'tests/fixtures/shipit/2_issue.yml'
+        statusfile = u'tests/fixtures/shipit/2_prstatus.json'
+        with get_issue(datafile, statusfile) as iw:
+            iw.pr_files = [MockFile(u'lib/ansible/module_utils/foo/bar.py')]
+            # need to give the wrapper a list of known files to compare against
+            iw.file_indexer = FileIndexerMock()
+            iw.file_indexer.files.append(u'lib/ansible/modules/foo/bar.py')
 
-        # predefine what the matcher is going to return
-        CM = ComponentMatcherMock()
-        CM.expected_results = [
-            {
-                u'repo_filename': u'lib/ansible/module_utils/foo/bar.py',
-                u'labels': [],
-                u'support': None,
-                u'maintainers': [u'ElsA', u'Oliver'],
-                u'notify': [u'ElsA', u'Oliver'],
-                u'ignore': [],
-            }
-        ]
+            # predefine what the matcher is going to return
+            CM = ComponentMatcherMock()
+            CM.expected_results = [
+                {
+                    u'repo_filename': u'lib/ansible/module_utils/foo/bar.py',
+                    u'labels': [],
+                    u'support': None,
+                    u'maintainers': [u'ElsA', u'Oliver'],
+                    u'notify': [u'ElsA', u'Oliver'],
+                    u'ignore': [],
+                }
+            ]
 
-        meta = self.meta.copy()
-        iw._commits = []
-        meta.update(get_component_match_facts(iw, CM, []))
-        facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+            meta = self.meta.copy()
+            iw._commits = []
+            meta.update(get_component_match_facts(iw, CM, []))
+            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
 
-        self.assertEqual(iw.submitter, u'ElsA')
-        self.assertTrue(facts[u'owner_pr'])
+            self.assertEqual(iw.submitter, u'ElsA')
+            self.assertTrue(facts[u'owner_pr'])
 
     def test_owner_pr_submitter_is_maintainer_one_modules_file_updated(self):
         """

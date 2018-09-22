@@ -1,0 +1,17 @@
+html_url: https://github.com/ansible/ansible/pull/123
+number: 123
+github_repo: ansible
+submitter: ElsA
+created_at: 2016-02-18T17:37:01Z
+_now: 2017-08-19T00:24:02Z
+title: a great PR
+body: |
+    issue type
+    feature pullrequest
+    component name
+    foo
+    ansible version
+    2.7
+    summary
+    a great summary
+events: []
