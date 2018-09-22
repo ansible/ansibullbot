@@ -12,7 +12,7 @@ from tests.utils.issue_mock import IssueMock
 from tests.utils.helpers import get_issue
 from tests.utils.module_indexer_mock import create_indexer
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
-from ansibullbot.triagers.plugins.shipit import get_shipit_facts, is_approval
+from ansibullbot.triagers.plugins.shipit import get_review_facts, get_shipit_facts, is_approval
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 
@@ -513,3 +513,66 @@ class TestOwnerPR(unittest.TestCase):
 
         self.assertEqual(iw.submitter, u'mscherer')
         self.assertFalse(facts[u'owner_pr'])
+
+
+class TestReviewFacts(unittest.TestCase):
+
+    def setUp(self):
+        self.meta = {
+            u'is_needs_revision': False,  # always set by needs_revision plugin (get_needs_revision_facts)
+            u'is_needs_rebase': False,
+            u'is_needs_info': False,  # set by needs_info_template_facts
+        }
+
+    def test_review_facts_are_defined_module_utils(self):
+        BOTMETA = u"""
+        ---
+        macros:
+            modules: lib/ansible/modules
+            module_utils: lib/ansible/module_utils
+        files:
+            $module_utils:
+              support: community
+            $modules/foo/bar.py:
+                maintainers: ElsA ZaZa
+            $module_utils/baz/bar.py:
+                maintainers: TiTi mscherer
+        """
+
+        modules = {u'lib/ansible/modules/foo/bar.py': None}
+        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
+
+        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
+        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']),[u'ElsA', u'ZaZa'])
+        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/baz/bar.py'][u'maintainers']),[u'TiTi', u'mscherer'])
+
+        datafile = u'tests/fixtures/shipit/2_issue.yml'
+        statusfile = u'tests/fixtures/shipit/2_prstatus.json'
+        with get_issue(datafile, statusfile) as iw:
+            iw.pr_files = [MockFile(u'lib/ansible/module_utils/foo/bar.py')]
+            # need to give the wrapper a list of known files to compare against
+            iw.file_indexer = FileIndexerMock()
+            iw.file_indexer.files.append(u'lib/ansible/modules/foo/bar.py')
+
+            # predefine what the matcher is going to return
+            CM = ComponentMatcherMock()
+            CM.expected_results = [
+                {
+                    u'repo_filename': u'lib/ansible/module_utils/foo/bar.py',
+                    u'labels': [],
+                    u'support': None,
+                    u'maintainers': [u'ElsA', u'Oliver'],
+                    u'notify': [u'ElsA', u'Oliver'],
+                    u'ignore': [],
+                }
+            ]
+
+            meta = self.meta.copy()
+            iw._commits = []
+            meta.update(get_component_match_facts(iw, CM, []))
+            meta.update(get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca'], botnames=[u'ansibot']))
+            facts = get_review_facts(iw, meta)
+
+        self.assertTrue(facts[u'community_review'])
+        self.assertFalse(facts[u'core_review'])
+        self.assertFalse(facts[u'committer_review'])
