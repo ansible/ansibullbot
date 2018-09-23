@@ -1,11 +1,15 @@
-### Components
+<details><summary><b>Components</b></summary>
+
 {% for component in component_matches %}
 {{ '[' + component['repo_filename'] + '](' + 'https://github.com/ansible/ansible/blob/devel/' + component['repo_filename'] + ')'}}
 support: {{ component['support'] }}
 maintainers: {{ component['maintainers']|join(' ') }}
 
 {% endfor %}
-### Metadata
+</details>
+
+<details><summary><b>Metadata</b></summary>
+
 **waiting_on**: {{ waiting_on }}
 {% if is_issue %}
 [needs_info](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
@@ -37,6 +41,7 @@ shipit_actors_other: {{ shipit_actors_other }}
 {% endif %}
 automerge: {{ automerge_status }}
 {% endif %}
+</details>
 
 [click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
 <!--- boilerplate: bot_status --->
