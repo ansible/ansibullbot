@@ -894,9 +894,7 @@ class AnsibleTriage(DefaultTriager):
             if self.meta['is_bad_pr_reason']:
                 last_comment_date = iw.history.last_date_for_boilerplate('bad_pr')
 
-                commits = (x for x in iw.history.history if x['event'] == 'committed')
-
-                if not last_comment_date or last_comment_date < list(commits)[-1]['created_at']:
+                if not last_comment_date:
                     comment = self.render_boilerplate(
                         tvars={'submitter': iw.submitter, 'is_bad_pr_reason': self.meta['is_bad_pr_reason']},
                         boilerplate='bad_pr'
