@@ -501,10 +501,6 @@ class ModuleExtractor(object):
         if not ydata:
             return []
 
-        # sometimes the field is 'author', sometimes it is 'authors'
-        if u'authors' in ydata:
-            ydata[u'author'] = ydata[u'authors']
-
         # quit if the key was not found
         if u'author' not in ydata:
             return []
