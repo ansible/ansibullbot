@@ -91,22 +91,21 @@ class AnsibleComponentMatcher(object):
     }
 
     def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, email_cache=None, file_indexer=None):
-        self.cachedir = cachedir
         self.botmetafile = botmetafile
         self.email_cache = email_cache
+
+        if gitrepo:
+            self.gitrepo = gitrepo
+        else:
+            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=self.REPO)
 
         if file_indexer:
             self.file_indexer = file_indexer
         else:
             self.file_indexer = FileIndexer(
                 botmetafile=self.botmetafile,
-                checkoutdir=self.cachedir
+                gitrepo=self.gitrepo
             )
-
-        if gitrepo:
-            self.gitrepo = gitrepo
-        else:
-            self.gitrepo = GitRepoWrapper(cachedir=self.cachedir, repo=self.REPO)
 
         self.strategy = None
         self.strategies = []

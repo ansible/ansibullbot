@@ -3,6 +3,7 @@
 import logging
 import os
 import shutil
+
 from ansibullbot.utils.systemtools import run_command
 
 
@@ -13,10 +14,11 @@ class GitRepoWrapper(object):
     def __init__(self, cachedir, repo):
         self.repo = repo
         self.checkoutdir = cachedir or '~/.ansibullbot/cache'
-        self.checkoutdir = os.path.join(cachedir, 'ansible.git.checkout')
+        self.checkoutdir = os.path.join(cachedir, 'ansible.checkout')
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
         self.commits_by_email = None
         self.files_by_commit = {}
+        self.update(force=True)
 
     @property
     def files(self):
