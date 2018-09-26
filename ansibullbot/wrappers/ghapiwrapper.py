@@ -58,6 +58,7 @@ class RepoWrapper(object):
 
     @RateLimited
     def get_repo(self, repo_path):
+        logging.getLogger('github.Requester').setLevel(logging.INFO)
         repo = self.gh.get_repo(repo_path)
         return repo
 
