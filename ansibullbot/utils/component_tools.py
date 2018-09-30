@@ -1008,7 +1008,8 @@ class AnsibleComponentMatcher(object):
             'topic': None,
             'subtopic': None,
             'namespace': None,
-            'namespace_maintainers': []
+            'namespace_maintainers': [],
+            'metadata': {}
         }
 
         populated = False
@@ -1028,8 +1029,8 @@ class AnsibleComponentMatcher(object):
         #   https://github.com/ansible/ansibullbot/issues/1053
         if 'lib/ansible/modules' in filename:
             mmatch = self.find_module_match(filename)
-            if len(mmatch) == 1:
-                meta.update(mmatch[0])
+            if len(mmatch) == 1 and mmatch[0]['filename'] == filename:
+                meta['metadata'].update(mmatch[0]['metadata'])
 
         for entry in botmeta_entries:
             fdata = self.BOTMETA['files'][entry].copy()
