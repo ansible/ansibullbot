@@ -1022,6 +1022,15 @@ class AnsibleComponentMatcher(object):
 
         botmeta_entries = self.file_indexer._filenames_to_keys(filenames)
 
+        # Modules contain metadata in docstrings and that should
+        # be factored in ...
+        #   https://github.com/ansible/ansibullbot/issues/1042
+        #   https://github.com/ansible/ansibullbot/issues/1053
+        if 'lib/ansible/modules' in filename:
+            mmatch = self.find_module_match(filename)
+            if len(mmatch) == 1:
+                meta.update(mmatch[0])
+
         for entry in botmeta_entries:
             fdata = self.BOTMETA['files'][entry].copy()
 
