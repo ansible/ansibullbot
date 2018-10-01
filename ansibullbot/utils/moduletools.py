@@ -374,7 +374,7 @@ class ModuleIndexer(object):
             self.get_module_commits()
 
         # parse blame
-        if self.get_blames:
+        if self.get_blames and self.get_commits:
             logging.debug('set module blames')
             self.get_module_blames()
 
@@ -461,6 +461,7 @@ class ModuleIndexer(object):
                 else:
                     refresh = True
 
+            import epdb; epdb.st()
             if refresh:
                 logging.info('refresh commit cache for %s' % k)
                 cmd = 'cd %s; git log --follow %s' % (self.gitrepo.checkoutdir, k)
