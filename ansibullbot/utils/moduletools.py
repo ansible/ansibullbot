@@ -461,7 +461,6 @@ class ModuleIndexer(object):
                 else:
                     refresh = True
 
-            import epdb; epdb.st()
             if refresh:
                 logging.info('refresh commit cache for %s' % k)
                 cmd = 'cd %s; git log --follow %s' % (self.gitrepo.checkoutdir, k)
