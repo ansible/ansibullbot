@@ -1032,7 +1032,9 @@ class AnsibleComponentMatcher(object):
             if len(mmatch) == 1 and mmatch[0]['filename'] == filename:
                 meta['metadata'].update(mmatch[0]['metadata'])
 
-            meta['support'] = meta['metadata']['supported_by']
+            if meta['metadata']:
+                if meta['metadata']['supported_by']:
+                    meta['support'] = meta['metadata']['supported_by']
 
         for entry in botmeta_entries:
             fdata = self.BOTMETA['files'][entry].copy()
