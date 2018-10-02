@@ -41,7 +41,17 @@ class BotMetadataParser:
             inlist = inlist.split()
             return inlist
 
+        def join_if_list(list_or_str):
+            if not isinstance(list_or_str, list):
+                return list_or_str
+
+            return u' '.join(list_or_str)
+
         def fix_lists(data):
+            string_macros = {
+                k: join_if_list(v)
+                for k, v in data[u'macros'].items()
+            }
             for k, v in data[u'files'].items():
                 if v is None:
                     continue
@@ -49,7 +59,7 @@ class BotMetadataParser:
                 for k2, v2 in v.items():
                     if isinstance(v2, six.text_type) and u'$' in v2:
                         tmpl = Template(v2)
-                        newv2 = tmpl.substitute(**data[u'macros'])
+                        newv2 = tmpl.substitute(**string_macros)
                         newv2 = clean_list_items(newv2)
                         data[u'files'][k][k2] = newv2
                         v2 = newv2
