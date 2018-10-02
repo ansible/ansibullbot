@@ -374,7 +374,7 @@ class ModuleIndexer(object):
             self.get_module_commits()
 
         # parse blame
-        if self.get_blames:
+        if self.get_blames and self.get_commits:
             logging.debug('set module blames')
             self.get_module_blames()
 

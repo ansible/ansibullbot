@@ -223,7 +223,8 @@ class AnsibleTriage(DefaultTriager):
             botmetafile=self.botmetafile,
             gh_client=self.gqlc,
             cachedir=self.cachedir_base,
-            gitrepo=gitrepo
+            gitrepo=gitrepo,
+            commits=not self.ignore_module_commits
         )
 
         logging.info('creating component matcher')
@@ -2384,6 +2385,9 @@ class AnsibleTriage(DefaultTriager):
                             help="Do not skip processing closed issues")
         parser.add_argument("--ignore_bot_broken", action="store_true",
                             help="Do not skip processing bot_broken|bot_skip issues")
+
+        parser.add_argument("--ignore_module_commits", action="store_true",
+                            help="Do not enumerate module commit logs")
 
         # ALWAYS ON NOW
         #parser.add_argument("--issue_component_matching", action="store_true",
