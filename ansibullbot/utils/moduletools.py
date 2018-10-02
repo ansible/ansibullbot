@@ -836,7 +836,7 @@ class ModuleIndexer(object):
 
         ydata = {}
         try:
-            ydata = yaml.load(author_lines, Loader=BotYAMLLoader)
+            ydata = yaml.load(author_lines, BotYAMLLoader)
         except Exception as e:
             print(e)
             return []
