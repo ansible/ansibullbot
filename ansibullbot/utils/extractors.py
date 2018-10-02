@@ -491,7 +491,7 @@ class ModuleExtractor(object):
         self._AUTHORS_RAW = author_lines
         ydata = {}
         try:
-            ydata = yaml.load(author_lines, Loader=BotYAMLLoader)
+            ydata = yaml.load(author_lines, BotYAMLLoader)
             self._AUTHORS_DATA = ydata
         except Exception as e:
             print(e)
