@@ -10,4 +10,5 @@ build:
     options: --privileged=false --net=bridge
   ci:
    - shippable_retry pip install -Ur test-requirements.txt
-   - nosetests --with-xunit --xunit-file=shippable/testresults/nosetests.xml --with-coverage --cover-package=ansibullbot --cover-xml --cover-xml-file=shippable/codecoverage/coverage.xml
+
+   - pytest

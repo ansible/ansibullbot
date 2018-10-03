@@ -1,4 +1,10 @@
+# Prerequisites:
 pip>=9.0
+
+# Prod deps:
 -r requirements.txt
-nose
-coverage
+
+# Test runner:
+pytest>=3.0
+pytest-cov>=2.6.0
+pytest-sugar>=0.9.1
