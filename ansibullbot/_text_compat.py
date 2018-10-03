@@ -34,7 +34,7 @@
 """
 import codecs
 
-from ansible.module_utils.six import PY3, text_type, binary_type
+from six import PY3, text_type, binary_type
 
 
 try:
