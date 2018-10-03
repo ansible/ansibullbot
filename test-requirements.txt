@@ -1,0 +1,4 @@
+pip>=9.0
+-r requirements.txt
+nose
+coverage
