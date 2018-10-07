@@ -3,7 +3,6 @@
 import datetime
 import logging
 import os
-import pickle
 import pytz
 from operator import itemgetter
 
@@ -13,6 +12,7 @@ from github import GithubObject
 from ansibullbot.decorators.github import RateLimited
 
 import ansibullbot.constants as C
+from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 
 # historywrapper.py
@@ -117,7 +117,7 @@ class HistoryWrapper(object):
             return None
         try:
             with open(self.cachefile, 'rb') as f:
-                cachedata = pickle.load(f)
+                cachedata = pickle_load(f)
         except Exception as e:
             logging.debug(e)
             logging.info(u'%s failed to load' % self.cachefile)
@@ -134,7 +134,7 @@ class HistoryWrapper(object):
 
         try:
             with open(self.cachefile, 'wb') as f:
-                pickle.dump(cachedata, f)
+                pickle_dump(cachedata, f)
         except Exception as e:
             logging.error(e)
             if C.DEFAULT_BREAKPOINTS:

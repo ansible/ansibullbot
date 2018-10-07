@@ -2,7 +2,6 @@
 
 import json
 import os
-import pickle
 import string
 import subprocess
 import sys
@@ -13,6 +12,7 @@ import tempfile
 from collections import OrderedDict
 from pprint import pprint
 
+from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot.triagers.ansible import AnsibleTriage
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.moduletools import ModuleIndexer
@@ -195,7 +195,7 @@ def main():
     # /home/jtanner/.ansibullbot/cache/ansible/ansible/labels.pickle
 
     with open(os.path.expanduser('~/.ansibullbot/cache/ansible/ansible/labels.pickle'), 'rb') as f:
-        labels = pickle.load(f)
+        labels = pickle_load(f)
     valid_labels = [x.name for x in labels[1]]
 
     FILEMAP_FILENAME = 'FILEMAP.json'

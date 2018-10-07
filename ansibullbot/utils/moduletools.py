@@ -8,7 +8,6 @@ import fnmatch
 import io
 import logging
 import os
-import pickle
 import re
 import yaml
 
@@ -21,6 +20,7 @@ from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
+from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser, BotYAMLLoader
 from ansibullbot.utils.git_tools import GitRepoWrapper
@@ -461,7 +461,7 @@ class ModuleIndexer(object):
                 pickle_kwargs = {'encoding': 'bytes'} if six.PY3 else {}
                 print(pfile)
                 with open(pfile, 'rb') as f:
-                    pdata = pickle.load(f, **pickle_kwargs)
+                    pdata = pickle_load(f, **pickle_kwargs)
                 if pdata[0] == mtime:
                     self.commits[k] = pdata[1]
                 else:
@@ -510,7 +510,7 @@ class ModuleIndexer(object):
                         self.commits[k].append(commit)
 
                 with open(pfile, 'wb') as f:
-                    pickle.dump((mtime, self.commits[k]), f, protocol=0)
+                    pickle_dump((mtime, self.commits[k]), f)
 
     def last_commit_for_file(self, filepath):
         if filepath in self.commits:
@@ -638,7 +638,7 @@ class ModuleIndexer(object):
             else:
                 logging.debug(u'load {}'.format(pfile))
                 with open(pfile, 'rb') as f:
-                    pdata = pickle.load(f)
+                    pdata = pickle_load(f)
                 if C.DEFAULT_BREAKPOINTS:
                     logging.error(u'breakpoint!')
                     import epdb; epdb.st()
@@ -662,7 +662,7 @@ class ModuleIndexer(object):
                     uns = self.gws.get_usernames_from_filename_blame(*sargs)
                 self.committers[k] = uns
                 with open(pfile, 'wb') as f:
-                    pickle.dump((ghash, uns, emailmap), f)
+                    pickle_dump((ghash, uns, emailmap), f)
 
             for email, github_id in emailmap.items():
                 if email not in self.emails_cache:

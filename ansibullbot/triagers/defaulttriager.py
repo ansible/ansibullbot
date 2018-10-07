@@ -24,7 +24,6 @@ import logging
 import os
 import sys
 import time
-import pickle
 from datetime import datetime
 from logging.handlers import WatchedFileHandler
 from pprint import pprint
@@ -37,6 +36,7 @@ from github import Github
 from jinja2 import Environment, FileSystemLoader
 
 import ansibullbot.constants as C
+from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
@@ -232,7 +232,7 @@ class DefaultTriager(object):
 
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
-                mdata = pickle.load(f)
+                mdata = pickle_load(f)
             members = mdata[1]
             if mdata[0] < gh_org.updated_at:
                 update = True
@@ -248,7 +248,7 @@ class DefaultTriager(object):
         if write_cache:
             mdata = [now, members]
             with open(cachefile, 'wb') as f:
-                pickle.dump(mdata, f)
+                pickle_dump(mdata, f)
 
         return members
 
