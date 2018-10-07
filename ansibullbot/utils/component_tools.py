@@ -1035,6 +1035,8 @@ class AnsibleComponentMatcher(object):
             mmatch = self.find_module_match(filename)
             if len(mmatch) == 1 and mmatch[0][u'filename'] == filename:
                 meta[u'metadata'].update(mmatch[0]['metadata'])
+                for k in u'authors', u'maintainers':
+                    meta[k] += mmatch[0][k]
 
             if meta[u'metadata']:
                 if meta[u'metadata'][u'supported_by']:
