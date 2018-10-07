@@ -22,7 +22,6 @@ import json
 import logging
 import operator
 import os
-import pickle
 import re
 import shutil
 import sys
@@ -34,6 +33,7 @@ import six
 # remember to pip install PyGithub, kids!
 import github
 
+from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.utils.extractors import extract_template_sections
 from ansibullbot.utils.extractors import extract_template_data
@@ -153,7 +153,7 @@ class DefaultWrapper(object):
 
         logging.debug(u'dump %s' % pfile)
         with open(pfile, 'wb') as f:
-            pickle.dump(self.instance, f)
+            pickle_dump(self.instance, f)
 
     @RateLimited
     def get_comments(self):
@@ -311,7 +311,7 @@ class DefaultWrapper(object):
         if os.path.isfile(pfile):
             try:
                 with open(pfile, 'rb') as f:
-                    edata = pickle.load(f)
+                    edata = pickle_load(f)
             except Exception as e:
                 update = True
                 write_cache = True
@@ -384,7 +384,7 @@ class DefaultWrapper(object):
             # need to dump the pickle back to disk
             edata = [updated, events]
             with open(pfile, 'wb') as f:
-                pickle.dump(edata, f)
+                pickle_dump(edata, f)
 
         return events
 
@@ -945,7 +945,7 @@ class DefaultWrapper(object):
         if os.path.isfile(pfile):
             logging.info(u'pullrequest_status load pfile')
             with open(pfile, 'rb') as f:
-                pdata = pickle.load(f)
+                pdata = pickle_load(f)
 
         if pdata:
             # is the data stale?
@@ -967,7 +967,7 @@ class DefaultWrapper(object):
             logging.info(u'writing %s' % pfile)
             pdata = (self.pullrequest.updated_at, jdata)
             with open(pfile, 'wb') as f:
-                pickle.dump(pdata, f, protocol=2)
+                pickle_dump(pdata, f)
 
         # remove intermediate duplicates
         #jdata = sort_unique_statuses(jdata)
@@ -1324,7 +1324,7 @@ class DefaultWrapper(object):
         try:
             if os.path.isfile(cachefile):
                 with open(cachefile, 'rb') as f:
-                    pdata = pickle.load(f)
+                    pdata = pickle_load(f)
         except Exception as e:
             logging.error(u'failed to unpickle %s %s' % (cachefile, to_text(e)))
 
@@ -1350,7 +1350,7 @@ class DefaultWrapper(object):
 
             pdata = [sha, resp]
             with open(cachefile, 'wb') as f:
-                pickle.dump(pdata, f, protocol=2)
+                pickle_dump(pdata, f)
 
         else:
             resp = pdata[1]

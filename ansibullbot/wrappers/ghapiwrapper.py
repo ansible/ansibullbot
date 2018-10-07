@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import glob
-import pickle
 import logging
 import os
 import re
@@ -17,6 +16,7 @@ import ansibullbot.constants as C
 
 from bs4 import BeautifulSoup
 
+from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 
@@ -74,7 +74,7 @@ class RepoWrapper(object):
 
     def save_repo(self):
         with open(self.cachefile, 'wb') as f:
-            pickle.dump(self.repo, f)
+            pickle_dump(self.repo, f)
 
     def get_last_issue_number(self):
         '''Scrape the newest issue/pr number'''
@@ -222,7 +222,7 @@ class RepoWrapper(object):
             issue = None
             try:
                 with open(gf, 'rb') as f:
-                    issue = pickle.load(f)
+                    issue = pickle_load(f)
             except EOFError as e:
                 # this is bad, get rid of it
                 logging.error(e)
@@ -240,7 +240,7 @@ class RepoWrapper(object):
         )
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
-                issue = pickle.load(f)
+                issue = pickle_load(f)
             return issue
         else:
             return False
@@ -257,7 +257,7 @@ class RepoWrapper(object):
             os.makedirs(pdir)
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
-                issue = pickle.load(f)
+                issue = pickle_load(f)
             return issue
         else:
             return False
@@ -278,7 +278,7 @@ class RepoWrapper(object):
             os.makedirs(cdir)
         logging.debug(u'dump %s' % cfile)
         with open(cfile, 'wb') as f:
-            pickle.dump(issue, f)
+            pickle_dump(issue, f)
 
     def save_pullrequest(self, issue):
         cfile = os.path.join(
@@ -291,7 +291,7 @@ class RepoWrapper(object):
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
         with open(cfile, 'wb') as f:
-            pickle.dump(issue, f)
+            pickle_dump(issue, f)
 
     @RateLimited
     def load_update_fetch(self, property_name):
@@ -313,7 +313,7 @@ class RepoWrapper(object):
         if os.path.isfile(pfile):
             try:
                 with open(pfile, 'rb') as f:
-                    edata = pickle.load(f)
+                    edata = pickle_load(f)
             except Exception as e:
                 update = True
                 write_cache = True
@@ -345,7 +345,7 @@ class RepoWrapper(object):
             # need to dump the pickle back to disk
             edata = [updated, events]
             with open(pfile, 'wb') as f:
-                pickle.dump(edata, f)
+                pickle_dump(edata, f)
 
         return events
 
