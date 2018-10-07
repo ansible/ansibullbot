@@ -17,3 +17,5 @@ ansible/
 *.bak
 testrl.py
 tests/fixtures/ansible-*.tar.gz
+.vagrant
+*.retry
