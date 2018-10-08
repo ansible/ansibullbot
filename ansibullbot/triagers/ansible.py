@@ -1740,6 +1740,8 @@ class AnsibleTriage(DefaultTriager):
                     (len(numbers), since)
                 )
 
+                # FIXME - disabled after py3 patches
+                '''
                 for k, v in self.issue_summaries[repo].items():
                     if v[u'created_at'] > self.repos[repo][u'since']:
                         numbers.append(k)
@@ -1749,6 +1751,7 @@ class AnsibleTriage(DefaultTriager):
                     u'%s numbers after [www] since == %s' %
                     (len(numbers), since)
                 )
+                '''
 
         if self.start_at and self.repos[repo][u'loopcount'] == 0:
             numbers = [x for x in numbers if x <= self.start_at]
