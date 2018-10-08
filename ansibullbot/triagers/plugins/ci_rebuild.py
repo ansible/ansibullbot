@@ -8,38 +8,38 @@ def status_to_date_and_runid(status, keepstate=False):
     """convert pr status to a tuple of date and runid"""
 
     # https://github.com/ansible/ansibullbot/issues/934
-    if not status.get('context', '') == 'Shippable':
+    if not status.get(u'context', u'') == u'Shippable':
         return None
 
-    created_at = status.get('created_at')
-    target = status.get('target_url')
-    if target.endswith('/summary'):
-        target = target.split('/')[-2]
+    created_at = status.get(u'created_at')
+    target = status.get(u'target_url')
+    if target.endswith(u'/summary'):
+        target = target.split(u'/')[-2]
     else:
-        target = target.split('/')[-1]
+        target = target.split(u'/')[-1]
 
     try:
         int(target)
     except ValueError:
         # strip new id out of the description
-        runid = status['description']
+        runid = status[u'description']
         runid = runid.split()[1]
         if runid.isdigit():
             target = runid
 
     # pytz.utc.localize(dts)
-    ts = datetime.datetime.strptime(created_at, '%Y-%m-%dT%H:%M:%SZ')
+    ts = datetime.datetime.strptime(created_at, u'%Y-%m-%dT%H:%M:%SZ')
     ts = pytz.utc.localize(ts)
 
     if keepstate:
-        return ts, target, status['state']
+        return ts, target, status[u'state']
     else:
         return ts, target
 
 
 def get_ci_facts(iw):
     cifacts = {
-        'ci_run_number': None
+        u'ci_run_number': None
     }
 
     if not iw.is_pullrequest():
@@ -64,32 +64,32 @@ def get_ci_facts(iw):
 def get_rebuild_facts(iw, meta, force=False):
 
     rbmeta = {
-        'needs_rebuild': False,
+        u'needs_rebuild': False,
     }
 
     if not iw.is_pullrequest():
         return rbmeta
 
     if not force:
-        if not meta['ci_stale']:
+        if not meta[u'ci_stale']:
             return rbmeta
 
-        if meta['is_needs_revision']:
+        if meta[u'is_needs_revision']:
             return rbmeta
 
-        if meta['is_needs_rebase']:
+        if meta[u'is_needs_rebase']:
             return rbmeta
 
-        if meta['has_travis']:
+        if meta[u'has_travis']:
             return rbmeta
 
-        if not meta['has_shippable']:
+        if not meta[u'has_shippable']:
             return rbmeta
 
-        if not meta['shipit']:
+        if not meta[u'shipit']:
             return rbmeta
 
-    rbmeta['needs_rebuild'] = True
+    rbmeta[u'needs_rebuild'] = True
 
     return rbmeta
 
@@ -97,23 +97,23 @@ def get_rebuild_facts(iw, meta, force=False):
 # https://github.com/ansible/ansibullbot/issues/640
 def get_rebuild_merge_facts(iw, meta, core_team):
 
-    rbcommand = 'rebuild_merge'
+    rbcommand = u'rebuild_merge'
 
     rbmerge_meta = {
-        'needs_rebuild': meta.get('needs_rebuild', False),
-        'admin_merge': False
+        u'needs_rebuild': meta.get(u'needs_rebuild', False),
+        u'admin_merge': False
     }
 
     if not iw.is_pullrequest():
         return rbmerge_meta
 
-    if meta['needs_rebuild']:
+    if meta[u'needs_rebuild']:
         return rbmerge_meta
 
-    if meta['is_needs_revision']:
+    if meta[u'is_needs_revision']:
         return rbmerge_meta
 
-    if meta['is_needs_rebase']:
+    if meta[u'is_needs_rebase']:
         return rbmerge_meta
 
     rbmerge_commands = iw.history.get_commands(core_team, [rbcommand], timestamps=True)
@@ -142,10 +142,10 @@ def get_rebuild_merge_facts(iw, meta, core_team):
 
     pr_status.sort(key=lambda x: x[0])
 
-    if pr_status[-1][-1] != 'pending' and pr_status[-1][0] < last_command:
-        rbmerge_meta['needs_rebuild'] = True
+    if pr_status[-1][-1] != u'pending' and pr_status[-1][0] < last_command:
+        rbmerge_meta[u'needs_rebuild'] = True
 
-    if pr_status[-1][-1] == 'success' and pr_status[-1][0] > last_command:
-        rbmerge_meta['admin_merge'] = True
+    if pr_status[-1][-1] == u'success' and pr_status[-1][0] > last_command:
+        rbmerge_meta[u'admin_merge'] = True
 
     return rbmerge_meta

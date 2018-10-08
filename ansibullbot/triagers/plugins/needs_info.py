@@ -30,7 +30,7 @@ def is_needsinfo(triager, issue):
     maintainers = sorted(
         set(
             [x for x in maintainers
-                if x != 'DEPRECATED' and
+                if x != u'DEPRECATED' and
                 x != issue.submitter and
                 x not in triager.BOTNAMES]
         )
@@ -39,8 +39,8 @@ def is_needsinfo(triager, issue):
     for event in issue.history.history:
 
         if needs_info and \
-                event['actor'] == issue.submitter and \
-                event['event'] == 'commented':
+                event[u'actor'] == issue.submitter and \
+                event[u'event'] == u'commented':
 
             #print('%s set false' % event['actor'])
             needs_info = False
@@ -51,25 +51,25 @@ def is_needsinfo(triager, issue):
         #    continue
 
         # allow anyone to trigger needs_info
-        if event['actor'] in triager.BOTNAMES:
+        if event[u'actor'] in triager.BOTNAMES:
             continue
 
-        if event['event'] == 'labeled':
-            if event['label'] == 'needs_info':
+        if event[u'event'] == u'labeled':
+            if event[u'label'] == u'needs_info':
                 #print('%s set true' % event['actor'])
                 needs_info = True
                 continue
-        if event['event'] == 'unlabeled':
-            if event['label'] == 'needs_info':
+        if event[u'event'] == u'unlabeled':
+            if event[u'label'] == u'needs_info':
                 #print('%s set false' % event['actor'])
                 needs_info = False
                 continue
-        if event['event'] == 'commented':
-            if '!needs_info' in event['body']:
+        if event[u'event'] == u'commented':
+            if u'!needs_info' in event[u'body']:
                 #print('%s set false' % event['actor'])
                 needs_info = False
                 continue
-            elif 'needs_info' in event['body']:
+            elif u'needs_info' in event[u'body']:
                 #print('%s set true' % event['actor'])
                 needs_info = True
                 continue
@@ -80,45 +80,45 @@ def is_needsinfo(triager, issue):
 def needs_info_template_facts(iw, meta):
 
     nifacts = {
-        'template_missing': False,
-        'template_missing_sections': [],
-        'template_warning_required': False,
-        'is_needs_info': meta.get('is_needs_info')
+        u'template_missing': False,
+        u'template_missing_sections': [],
+        u'template_warning_required': False,
+        u'is_needs_info': meta.get(u'is_needs_info')
     }
 
     if not iw.template_data:
-        nifacts['template_missing'] = True
+        nifacts[u'template_missing'] = True
 
-    itype = iw.template_data.get('issue type')
+    itype = iw.template_data.get(u'issue type')
     missing = []
 
     # theoretically we only need to know the issue type for a PR
     if iw.is_pullrequest():
-        expected = ['issue type']
+        expected = [u'issue type']
     else:
-        expected = ['issue type', 'ansible version', 'component name']
+        expected = [u'issue type', u'ansible version', u'component name']
 
     for exp in expected:
         if exp not in iw.template_data:
-            if itype == 'feature idea' and exp == 'ansible version':
+            if itype == u'feature idea' and exp == u'ansible version':
                 pass
             else:
                 missing.append(exp)
 
     if missing:
-        nifacts['template_missing_sections'] = missing
+        nifacts[u'template_missing_sections'] = missing
 
-    if nifacts['template_missing'] or nifacts['template_missing_sections']:
+    if nifacts[u'template_missing'] or nifacts[u'template_missing_sections']:
 
         # force needs_info
         if iw.is_issue:
-            nifacts['is_needs_info'] = True
+            nifacts[u'is_needs_info'] = True
 
         # trigger the warning comment
         bpcs = iw.history.get_boilerplate_comments()
         bpcs = [x[0] for x in bpcs]
-        if 'issue_missing_data' not in bpcs:
-            nifacts['template_warning_required'] = True
+        if u'issue_missing_data' not in bpcs:
+            nifacts[u'template_warning_required'] = True
 
     return nifacts
 
@@ -131,19 +131,19 @@ def needs_info_timeout_facts(iw, meta):
     NI_EXPIRE = int(C.DEFAULT_NEEDS_INFO_EXPIRE - C.DEFAULT_NEEDS_INFO_WARN)
 
     nif = {
-        'needs_info_action': None
+        u'needs_info_action': None
     }
 
-    if not meta['is_needs_info']:
+    if not meta[u'is_needs_info']:
         return nif
 
-    if 'needs_info' not in iw.labels:
+    if u'needs_info' not in iw.labels:
         return nif
 
-    la = iw.history.label_last_applied('needs_info')
-    lr = iw.history.label_last_removed('needs_info')
-    ni_bpd = iw.history.last_date_for_boilerplate('needs_info_base')
-    md_bpd = iw.history.last_date_for_boilerplate('issue_missing_data')
+    la = iw.history.label_last_applied(u'needs_info')
+    lr = iw.history.label_last_removed(u'needs_info')
+    ni_bpd = iw.history.last_date_for_boilerplate(u'needs_info_base')
+    md_bpd = iw.history.last_date_for_boilerplate(u'issue_missing_data')
 
     now = pytz.utc.localize(datetime.datetime.now())
 
@@ -166,15 +166,15 @@ def needs_info_timeout_facts(iw, meta):
     if bpd:
         # fix multiple warnings
         bp_comments = iw.history.get_boilerplate_comments()
-        bp_comments_found = [c for c in bp_comments if c[0] == 'needs_info_base']
+        bp_comments_found = [c for c in bp_comments if c[0] == u'needs_info_base']
 
         delta = (now - bpd).days
         if delta >= NI_EXPIRE:
             if len(bp_comments_found) >= 1:
-                nif['needs_info_action'] = 'close'
+                nif[u'needs_info_action'] = u'close'
     else:
         delta = (now - la).days
         if delta > NI_WARN:
-            nif['needs_info_action'] = 'warn'
+            nif[u'needs_info_action'] = u'warn'
 
     return nif

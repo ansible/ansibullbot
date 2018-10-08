@@ -5,11 +5,14 @@ import ast
 import copy
 import datetime
 import fnmatch
+import io
 import logging
 import os
 import pickle
 import re
 import yaml
+
+import six
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column
@@ -18,7 +21,8 @@ from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from ansibullbot.parsers.botmetadata import BotMetadataParser
+from ansibullbot._text_compat import to_bytes, to_text
+from ansibullbot.parsers.botmetadata import BotMetadataParser, BotYAMLLoader
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.webscraper import GithubWebScraper
@@ -30,7 +34,7 @@ Base = declarative_base()
 
 
 class Blame(Base):
-    __tablename__ = 'blames'
+    __tablename__ = u'blames'
     id = Column(Integer(), primary_key=True)
     file_name = Column(String())
     file_commit = Column(String())
@@ -39,7 +43,7 @@ class Blame(Base):
 
 
 class Email(Base):
-    __tablename__ = 'email'
+    __tablename__ = u'email'
     id = Column(Integer())
     login = Column(String())
     email = Column(String(), primary_key=True)
@@ -48,28 +52,28 @@ class Email(Base):
 class ModuleIndexer(object):
 
     EMPTY_MODULE = {
-        'authors': [],
-        'name': None,
-        'namespaced_module': None,
-        'namespace_maintainers': [],
-        'deprecated': False,
-        'deprecated_filename': None,
-        'dirpath': None,
-        'filename': None,
-        'filepath': None,
-        'fulltopic': None,
-        'maintainers': [],
-        '_maintainers': [],
-        'maintainers_keys': None,
-        'metadata': {},
-        'repo_filename': None,
-        'repository': 'ansible',
-        'subtopic': None,
-        'topic': None,
-        'imports': []
+        u'authors': [],
+        u'name': None,
+        u'namespaced_module': None,
+        u'namespace_maintainers': [],
+        u'deprecated': False,
+        u'deprecated_filename': None,
+        u'dirpath': None,
+        u'filename': None,
+        u'filepath': None,
+        u'fulltopic': None,
+        u'maintainers': [],
+        u'_maintainers': [],
+        u'maintainers_keys': None,
+        u'metadata': {},
+        u'repo_filename': None,
+        u'repository': u'ansible',
+        u'subtopic': None,
+        u'topic': None,
+        u'imports': []
     }
 
-    def __init__(self, commits=True, blames=True, botmetafile=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache', gitrepo=None):
+    def __init__(self, commits=True, blames=True, botmetafile=None, maintainers=None, gh_client=None, cachedir=u'~/.ansibullbot/cache', gitrepo=None):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
@@ -81,7 +85,7 @@ class ModuleIndexer(object):
         self.modules = {}  # keys: paths of files belonging to the repository
         self.maintainers = maintainers or {}
         self.importmap = {}
-        self.scraper_cache = os.path.join(cachedir, 'ansible.modules.scraper')
+        self.scraper_cache = os.path.join(cachedir, u'ansible.modules.scraper')
         self.scraper_cache = os.path.expanduser(self.scraper_cache)
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
         self.gqlc = gh_client
@@ -90,12 +94,12 @@ class ModuleIndexer(object):
         if gitrepo:
             self.gitrepo = gitrepo
         else:
-            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo='https://github.com/ansible/ansible')
+            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=u'https://github.com/ansible/ansible')
 
         # sqlalchemy
-        unc = os.path.join(cachedir, 'ansible_module_indexer.db')
+        unc = os.path.join(cachedir, u'ansible_module_indexer.db')
         unc = os.path.expanduser(unc)
-        unc = 'sqlite:///' + unc
+        unc = u'sqlite:///' + unc
 
         self.engine = create_engine(unc)
         self.Session = sessionmaker(bind=self.engine)
@@ -123,9 +127,9 @@ class ModuleIndexer(object):
 
     def get_files(self):
         '''Cache a list of filenames in the checkout'''
-        cmd = 'cd {}; git ls-files'.format(self.gitrepo.checkoutdir)
+        cmd = u'cd {}; git ls-files'.format(self.gitrepo.checkoutdir)
         (rc, so, se) = run_command(cmd)
-        files = so.split('\n')
+        files = to_text(so).split(u'\n')
         files = [x.strip() for x in files if x.strip()]
         self.files = files
 
@@ -135,65 +139,65 @@ class ModuleIndexer(object):
             with open(self.botmetafile, 'rb') as f:
                 rdata = f.read()
         else:
-            fp = '.github/BOTMETA.yml'
+            fp = u'.github/BOTMETA.yml'
             rdata = self.get_file_content(fp)
         self.botmeta = BotMetadataParser.parse_yaml(rdata)
 
         # load the modules
-        logging.info('loading modules')
+        logging.info(u'loading modules')
         self.get_ansible_modules()
 
     def _find_match(self, pattern, exact=False):
 
-        logging.debug('exact:{} matching on {}'.format(exact, pattern))
+        logging.debug(u'exact:{} matching on {}'.format(exact, pattern))
 
         matches = []
 
-        if isinstance(pattern, unicode):
-            pattern = pattern.encode('ascii', 'ignore')
+        if isinstance(pattern, six.text_type):
+            pattern = to_text(to_bytes(pattern,'ascii', 'ignore'), 'ascii')
 
-        for k, v in self.modules.iteritems():
-            if v['name'] == pattern:
-                logging.debug('match {} on name: {}'.format(k, v['name']))
+        for k, v in six.iteritems(self.modules):
+            if v[u'name'] == pattern:
+                logging.debug(u'match {} on name: {}'.format(k, v[u'name']))
                 matches = [v]
                 break
 
         if not matches:
             # search by key ... aka the filepath
-            for k, v in self.modules.iteritems():
+            for k, v in six.iteritems(self.modules):
                 if k == pattern:
-                    logging.debug('match {} on key: {}'.format(k, k))
+                    logging.debug(u'match {} on key: {}'.format(k, k))
                     matches = [v]
                     break
 
         if not matches and not exact:
             # search by properties
-            for k, v in self.modules.iteritems():
+            for k, v in six.iteritems(self.modules):
                 for subkey in v.keys():
                     if v[subkey] == pattern:
-                        logging.debug('match {} on subkey: {}'.format(k, subkey))
+                        logging.debug(u'match {} on subkey: {}'.format(k, subkey))
                         matches.append(v)
 
         if not matches and not exact:
             # Levenshtein distance should workaround most typos
             distance_map = {}
-            for k, v in self.modules.iteritems():
-                mname = v.get('name')
+            for k, v in six.iteritems(self.modules):
+                mname = v.get(u'name')
                 if not mname:
                     continue
-                if isinstance(mname, unicode):
-                    mname = mname.encode('ascii', 'ignore')
+                if isinstance(mname, six.text_type):
+                    mname = to_text(to_bytes(mname, 'ascii', 'ignore'), 'ascii')
                 try:
                     res = Levenshtein.distance(pattern, mname)
                 except TypeError as e:
                     logging.error(e)
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
+                        logging.error(u'breakpoint!')
                         import epdb; epdb.st()
                 distance_map[mname] = [res, k]
             res = sorted(distance_map.items(), key=lambda x: x[1], reverse=True)
             if len(pattern) > 3 > res[-1][1]:
-                logging.debug('levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
+                logging.debug(u'levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
                 matches = [self.modules[res[-1][-1]]]
 
         return matches
@@ -201,20 +205,20 @@ class ModuleIndexer(object):
     def find_match(self, pattern, exact=False):
         '''Exact module name matching'''
 
-        logging.debug('find_match for "{}"'.format(pattern))
+        logging.debug(u'find_match for "{}"'.format(pattern))
 
         BLACKLIST = [
-            'module_utils',
-            'callback',
-            'network modules',
-            'networking modules'
-            'windows modules'
+            u'module_utils',
+            u'callback',
+            u'network modules',
+            u'networking modules'
+            u'windows modules'
         ]
 
         if not pattern or pattern is None:
             return None
 
-        if pattern.lower() == 'core':
+        if pattern.lower() == u'core':
             return None
 
         '''
@@ -236,38 +240,38 @@ class ModuleIndexer(object):
         '''
 
         # https://github.com/ansible/ansible/issues/19755
-        if pattern == 'setup':
-            pattern = 'system/setup.py'
+        if pattern == u'setup':
+            pattern = u'system/setup.py'
 
-        if '/facts.py' in pattern or ' facts.py' in pattern:
-            pattern = 'system/setup.py'
+        if u'/facts.py' in pattern or u' facts.py' in pattern:
+            pattern = u'system/setup.py'
 
         # https://github.com/ansible/ansible/issues/18527
         #   docker-container -> docker_container
-        if '-' in pattern:
-            pattern = pattern.replace('-', '_')
+        if u'-' in pattern:
+            pattern = pattern.replace(u'-', u'_')
 
-        if 'module_utils' in pattern:
+        if u'module_utils' in pattern:
             # https://github.com/ansible/ansible/issues/20368
             return None
-        elif 'callback' in pattern:
+        elif u'callback' in pattern:
             return None
-        elif 'lookup' in pattern:
+        elif u'lookup' in pattern:
             return None
-        elif 'contrib' in pattern and 'inventory' in pattern:
+        elif u'contrib' in pattern and u'inventory' in pattern:
             return None
         elif pattern.lower() in BLACKLIST:
             return None
-        elif '/' in pattern and not self._find_match(pattern, exact=True):
+        elif u'/' in pattern and not self._find_match(pattern, exact=True):
             # https://github.com/ansible/ansible/issues/20520
-            if not pattern.startswith('lib/'):
+            if not pattern.startswith(u'lib/'):
                 keys = self.modules.keys()
                 for k in keys:
                     if pattern in k:
-                        ppy = pattern + '.py'
+                        ppy = pattern + u'.py'
                         if k.endswith(pattern) or k.endswith(ppy):
                             return self.modules[k]
-        elif pattern.endswith('.py') and self._find_match(pattern, exact=False):
+        elif pattern.endswith(u'.py') and self._find_match(pattern, exact=False):
             # https://github.com/ansible/ansible/issues/19889
             candidate = self._find_match(pattern, exact=False)
 
@@ -275,7 +279,7 @@ class ModuleIndexer(object):
                 if len(candidate) == 1:
                     candidate = candidate[0]
 
-            if candidate['filename'] == pattern:
+            if candidate[u'filename'] == pattern:
                 return candidate
 
         match = self._find_match(pattern, exact=exact)
@@ -288,7 +292,7 @@ class ModuleIndexer(object):
             if not match:
                 # check for deprecated name
                 #   _fireball -> fireball
-                match = self._find_match('_' + bname)
+                match = self._find_match(u'_' + bname)
 
         # unique the results
         if isinstance(match, list) and len(match) > 1:
@@ -310,7 +314,7 @@ class ModuleIndexer(object):
     def get_repository_for_module(self, mname):
         match = self.find_match(mname, exact=True)
         if match:
-            return match['repository']
+            return match[u'repository']
         else:
             return None
 
@@ -318,11 +322,11 @@ class ModuleIndexer(object):
         """Make a list of known modules"""
 
         matches = []
-        module_dir = os.path.join(self.gitrepo.checkoutdir, 'lib/ansible/modules')
+        module_dir = os.path.join(self.gitrepo.checkoutdir, u'lib/ansible/modules')
         module_dir = os.path.expanduser(module_dir)
         for root, _, filenames in os.walk(module_dir):
             for filename in filenames:
-                if 'lib/ansible/modules' in root and not filename == '__init__.py':
+                if u'lib/ansible/modules' in root and not filename == u'__init__.py':
                     matches.append(os.path.join(root, filename))
 
         matches = sorted(set(matches))
@@ -331,55 +335,55 @@ class ModuleIndexer(object):
 
         # custom fixes
         newitems = []
-        for k, v in self.modules.iteritems():
+        for k, v in six.iteritems(self.modules):
 
             # include* is almost always an ansible/ansible issue
             # https://github.com/ansible/ansibullbot/issues/214
-            if k.endswith('/include.py'):
-                self.modules[k]['repository'] = 'ansible'
+            if k.endswith(u'/include.py'):
+                self.modules[k][u'repository'] = u'ansible'
             # https://github.com/ansible/ansibullbot/issues/214
-            if k.endswith('/include_vars.py'):
-                self.modules[k]['repository'] = 'ansible'
-            if k.endswith('/include_role.py'):
-                self.modules[k]['repository'] = 'ansible'
+            if k.endswith(u'/include_vars.py'):
+                self.modules[k][u'repository'] = u'ansible'
+            if k.endswith(u'/include_role.py'):
+                self.modules[k][u'repository'] = u'ansible'
 
             # ansible maintains these
-            if 'include' in k:
-                self.modules[k]['maintainers'] = ['ansible']
+            if u'include' in k:
+                self.modules[k][u'maintainers'] = [u'ansible']
 
             # deprecated modules are annoying
-            if v['name'].startswith('_'):
+            if v[u'name'].startswith(u'_'):
 
-                dkey = os.path.dirname(v['filepath'])
-                dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
+                dkey = os.path.dirname(v[u'filepath'])
+                dkey = os.path.join(dkey, v[u'filename'].replace(u'_', u'', 1))
                 if dkey not in self.modules:
                     nd = v.copy()
-                    nd['name'] = nd['name'].replace('_', '', 1)
+                    nd[u'name'] = nd[u'name'].replace(u'_', u'', 1)
                     newitems.append((dkey, nd))
 
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
 
         # parse metadata
-        logging.debug('set module metadata')
+        logging.debug(u'set module metadata')
         self.set_module_metadata()
 
         # parse imports
-        logging.debug('set module imports')
+        logging.debug(u'set module imports')
         self.set_module_imports()
 
         # last modified
         if self.get_commits:
-            logging.debug('set module commits')
+            logging.debug(u'set module commits')
             self.get_module_commits()
 
         # parse blame
         if self.get_blames and self.get_commits:
-            logging.debug('set module blames')
+            logging.debug(u'set module blames')
             self.get_module_blames()
 
         # depends on metadata now ...
-        logging.debug('set module maintainers')
+        logging.debug(u'set module maintainers')
         self.set_maintainers()
 
         return self.modules
@@ -389,51 +393,51 @@ class ModuleIndexer(object):
         for match in matches:
             mdict = copy.deepcopy(self.EMPTY_MODULE)
 
-            mdict['filename'] = os.path.basename(match)
+            mdict[u'filename'] = os.path.basename(match)
 
             dirpath = os.path.dirname(match)
-            dirpath = dirpath.replace(self.gitrepo.checkoutdir + '/', '')
-            mdict['dirpath'] = dirpath
+            dirpath = dirpath.replace(self.gitrepo.checkoutdir + u'/', u'')
+            mdict[u'dirpath'] = dirpath
 
-            filepath = match.replace(self.gitrepo.checkoutdir + '/', '')
-            mdict['filepath'] = filepath
+            filepath = match.replace(self.gitrepo.checkoutdir + u'/', u'')
+            mdict[u'filepath'] = filepath
 
             mdict.update(
                 self.split_topics_from_path(filepath)
             )
 
-            mdict['repo_filename'] = mdict['filepath']\
-                .replace('lib/ansible/modules/%s/' % mdict['repository'], '')
+            mdict[u'repo_filename'] = mdict[u'filepath']\
+                .replace(u'lib/ansible/modules/%s/' % mdict[u'repository'], u'')
 
             # clustering/consul
-            mdict['namespaced_module'] = mdict['repo_filename']
-            mdict['namespaced_module'] = \
-                mdict['namespaced_module'].replace('.py', '')
-            mdict['namespaced_module'] = \
-                mdict['namespaced_module'].replace('.ps1', '')
+            mdict[u'namespaced_module'] = mdict[u'repo_filename']
+            mdict[u'namespaced_module'] = \
+                mdict[u'namespaced_module'].replace(u'.py', u'')
+            mdict[u'namespaced_module'] = \
+                mdict[u'namespaced_module'].replace(u'.ps1', u'')
 
             mname = os.path.basename(match)
-            mname = mname.replace('.py', '')
-            mname = mname.replace('.ps1', '')
-            mdict['name'] = mname
+            mname = mname.replace(u'.py', u'')
+            mname = mname.replace(u'.ps1', u'')
+            mdict[u'name'] = mname
 
             # deprecated modules
-            if mname.startswith('_'):
-                mdict['deprecated'] = True
+            if mname.startswith(u'_'):
+                mdict[u'deprecated'] = True
                 deprecated_filename = \
-                    os.path.dirname(mdict['namespaced_module'])
+                    os.path.dirname(mdict[u'namespaced_module'])
                 deprecated_filename = \
-                    os.path.join(deprecated_filename, mname[1:] + '.py')
-                mdict['deprecated_filename'] = deprecated_filename
+                    os.path.join(deprecated_filename, mname[1:] + u'.py')
+                mdict[u'deprecated_filename'] = deprecated_filename
             else:
-                mdict['deprecated_filename'] = mdict['repo_filename']
+                mdict[u'deprecated_filename'] = mdict[u'repo_filename']
 
             self.modules[filepath] = mdict
 
         # meta is a special module
-        self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
-        self.modules['meta']['name'] = 'meta'
-        self.modules['meta']['repo_filename'] = 'meta'
+        self.modules[u'meta'] = copy.deepcopy(self.EMPTY_MODULE)
+        self.modules[u'meta'][u'name'] = u'meta'
+        self.modules[u'meta'][u'repo_filename'] = u'meta'
 
     def get_module_commits(self):
         keys = self.modules.keys()
@@ -448,88 +452,90 @@ class ModuleIndexer(object):
             refresh = False
             pfile = os.path.join(
                 self.scraper_cache,
-                k.replace('/', '_') + '.commits.pickle'
+                k.replace(u'/', u'_') + u'.commits.pickle'
             )
 
             if not os.path.isfile(pfile):
                 refresh = True
             else:
+                pickle_kwargs = {'encoding': 'bytes'} if six.PY3 else {}
+                print(pfile)
                 with open(pfile, 'rb') as f:
-                    pdata = pickle.load(f)
+                    pdata = pickle.load(f, **pickle_kwargs)
                 if pdata[0] == mtime:
                     self.commits[k] = pdata[1]
                 else:
                     refresh = True
 
             if refresh:
-                logging.info('refresh commit cache for %s' % k)
-                cmd = 'cd %s; git log --follow %s' % (self.gitrepo.checkoutdir, k)
+                logging.info(u'refresh commit cache for %s' % k)
+                cmd = u'cd %s; git log --follow %s' % (self.gitrepo.checkoutdir, k)
                 (rc, so, se) = run_command(cmd)
-                for line in so.split('\n'):
-                    if line.startswith('commit '):
+                for line in to_text(so).split(u'\n'):
+                    if line.startswith(u'commit '):
                         commit = {
-                            'name': None,
-                            'email': None,
-                            'login': None,
-                            'hash': line.split()[-1],
-                            'date': None
+                            u'name': None,
+                            u'email': None,
+                            u'login': None,
+                            u'hash': line.split()[-1],
+                            u'date': None
                         }
 
                     # Author: Matt Clay <matt@mystile.com>
-                    if line.startswith('Author: '):
-                        line = line.replace('Author: ', '')
-                        line = line.replace('<', '')
-                        line = line.replace('>', '')
+                    if line.startswith(u'Author: '):
+                        line = line.replace(u'Author: ', u'')
+                        line = line.replace(u'<', u'')
+                        line = line.replace(u'>', u'')
                         lparts = line.split()
 
-                        if '@' in lparts[-1]:
-                            commit['email'] = lparts[-1]
-                            commit['name'] = ' '.join(lparts[:-1])
+                        if u'@' in lparts[-1]:
+                            commit[u'email'] = lparts[-1]
+                            commit[u'name'] = u' '.join(lparts[:-1])
                         else:
                             pass
 
-                        if commit['email'] and \
-                                'noreply.github.com' in commit['email']:
-                            commit['login'] = commit['email'].split('@')[0]
+                        if commit[u'email'] and \
+                                u'noreply.github.com' in commit[u'email']:
+                            commit[u'login'] = commit[u'email'].split(u'@')[0]
 
                     # Date:   Sat Jan 28 23:28:53 2017 -0800
-                    if line.startswith('Date:'):
-                        dstr = line.split(':', 1)[1].strip()
-                        dstr = ' '.join(dstr.split(' ')[:-1])
+                    if line.startswith(u'Date:'):
+                        dstr = line.split(u':', 1)[1].strip()
+                        dstr = u' '.join(dstr.split(u' ')[:-1])
                         ds = datetime.datetime.strptime(
-                            dstr,
-                            '%a %b %d %H:%M:%S %Y'
+                            to_text(dstr),
+                            u'%a %b %d %H:%M:%S %Y'
                         )
-                        commit['date'] = ds
+                        commit[u'date'] = ds
                         self.commits[k].append(commit)
 
                 with open(pfile, 'wb') as f:
-                    pickle.dump((mtime, self.commits[k]), f)
+                    pickle.dump((mtime, self.commits[k]), f, protocol=0)
 
     def last_commit_for_file(self, filepath):
         if filepath in self.commits:
-            return self.commits[filepath][0]['hash']
+            return self.commits[filepath][0][u'hash']
 
         # git log --pretty=format:'%H' -1
         # lib/ansible/modules/cloud/amazon/ec2_metric_alarm.py
-        cmd = 'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
+        cmd = u'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
             (self.gitrepo.checkoutdir, filepath)
         (rc, so, se) = run_command(cmd)
-        return so.strip()
+        return to_text(so).strip()
 
     def get_module_blames(self):
 
-        logging.debug('build email cache')
+        logging.debug(u'build email cache')
         emails_cache = self.session.query(Email)
         emails_cache = [(x.email, x.login) for x in emails_cache]
         self.emails_cache = dict(emails_cache)
 
-        logging.debug('build blame cache')
+        logging.debug(u'build blame cache')
         blame_cache = self.session.query(Blame).all()
         blame_cache = [x.file_commit for x in blame_cache]
         blame_cache = sorted(set(blame_cache))
 
-        logging.debug('eval module hashes')
+        logging.debug(u'eval module hashes')
         changed = False
         keys = sorted(self.modules.keys())
         for k in keys:
@@ -542,15 +548,15 @@ class ModuleIndexer(object):
             if ghash in blame_cache:
                 continue
 
-            logging.debug('checking hash for {}'.format(k))
+            logging.debug(u'checking hash for {}'.format(k))
             res = self.session.query(Blame).filter_by(file_name=k, file_commit=ghash).all()
             hashes = [x.file_commit for x in res]
 
             if ghash not in hashes:
 
-                logging.debug('hash {} not found for {}, updating blames'.format(ghash, k))
+                logging.debug(u'hash {} not found for {}, updating blames'.format(ghash, k))
 
-                scraper_args = ['ansible', 'ansible', 'devel', k]
+                scraper_args = [u'ansible', u'ansible', u'devel', k]
                 uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*scraper_args)
 
                 # check the emails
@@ -559,7 +565,7 @@ class ModuleIndexer(object):
                         continue
                     exists = self.session.query(Email).filter_by(email=email).first()
                     if not exists:
-                        logging.debug('insert {}:{}'.format(login, email))
+                        logging.debug(u'insert {}:{}'.format(login, email))
                         _email = Email(email=email, login=login)
                         self.session.add(_email)
                         changed = True
@@ -568,38 +574,38 @@ class ModuleIndexer(object):
                 for login, commits in uns.items():
                     for commit in commits:
                         kwargs = {
-                            'file_name': k,
-                            'file_commit': ghash,
-                            'author_commit': commit,
-                            'author_login': login
+                            u'file_name': k,
+                            u'file_commit': ghash,
+                            u'author_commit': commit,
+                            u'author_login': login
                         }
                         exists = self.session.query(Blame).filter_by(**kwargs).first()
                         if not exists:
-                            logging.debug('insert {}:{}:{}'.format(k, commit, login))
+                            logging.debug(u'insert {}:{}:{}'.format(k, commit, login))
                             _blame = Blame(**kwargs)
                             self.session.add(_blame)
                             changed = True
 
         if changed:
             self.session.commit()
-            logging.debug('re-build email cache')
+            logging.debug(u're-build email cache')
             emails_cache = self.session.query(Email)
             emails_cache = [(x.email, x.login) for x in emails_cache]
             self.emails_cache = dict(emails_cache)
 
         # fill in what we can ...
-        logging.debug('fill in commit logins')
+        logging.debug(u'fill in commit logins')
         for k in keys:
             for idc, commit in enumerate(self.commits[k][:]):
-                if not commit.get('login'):
+                if not commit.get(u'login'):
                     continue
-                login = self.emails_cache.get(commit['email'])
-                if not login and '@users.noreply.github.com' in commit['email']:
-                    login = commit['email'].split('@')[0]
-                    self.emails_cache[commit['email']] = login
+                login = self.emails_cache.get(commit[u'email'])
+                if not login and u'@users.noreply.github.com' in commit[u'email']:
+                    login = commit[u'email'].split(u'@')[0]
+                    self.emails_cache[commit[u'email']] = login
                 if not login:
-                    print('unknown: {}'.format(commit['email']))
-                self.commits[k][idc]['login'] = self.emails_cache.get(login)
+                    print(u'unknown: {}'.format(commit[u'email']))
+                self.commits[k][idc][u'login'] = self.emails_cache.get(login)
 
     def get_emails_by_login(self, login):
         res = self.session.query(Email).filter_by(login=login)
@@ -622,19 +628,19 @@ class ModuleIndexer(object):
             ghash = self.last_commit_for_file(k)
             pfile = os.path.join(
                 self.scraper_cache,
-                k.replace('/', '_') + '.blame.pickle'
+                k.replace(u'/', u'_') + u'.blame.pickle'
             )
-            sargs = ['ansible', 'ansible', 'devel', k]
+            sargs = [u'ansible', u'ansible', u'devel', k]
 
             refresh = False
             if not os.path.isfile(pfile):
                 refresh = True
             else:
-                logging.debug('load {}'.format(pfile))
+                logging.debug(u'load {}'.format(pfile))
                 with open(pfile, 'rb') as f:
                     pdata = pickle.load(f)
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
+                    logging.error(u'breakpoint!')
                     import epdb; epdb.st()
                 if pdata[0] == ghash:
                     self.committers[k] = pdata[1]
@@ -648,11 +654,11 @@ class ModuleIndexer(object):
 
             if refresh:
                 if self.gqlc:
-                    logging.debug('graphql blame usernames {}'.format(pfile))
+                    logging.debug(u'graphql blame usernames {}'.format(pfile))
                     uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*sargs)
                 else:
                     emailmap = {}  # scrapping: emails not available
-                    logging.debug('www blame usernames {}'.format(pfile))
+                    logging.debug(u'www blame usernames {}'.format(pfile))
                     uns = self.gws.get_usernames_from_filename_blame(*sargs)
                 self.committers[k] = uns
                 with open(pfile, 'wb') as f:
@@ -665,30 +671,30 @@ class ModuleIndexer(object):
         # add scraped logins to the map
         for k in keys:
             for idx, x in enumerate(self.commits[k]):
-                if x['email'] in ['@']:
+                if x[u'email'] in [u'@']:
                     continue
-                if x['email'] not in self.emails_cache:
-                    self.emails_cache[x['email']] = None
-                if x['login']:
-                    self.emails_cache[x['email']] = x['login']
+                if x[u'email'] not in self.emails_cache:
+                    self.emails_cache[x[u'email']] = None
+                if x[u'login']:
+                    self.emails_cache[x[u'email']] = x[u'login']
                     continue
 
-                xhash = x['hash']
-                for ck, cv in self.committers[k].iteritems():
+                xhash = x[u'hash']
+                for ck, cv in six.iteritems(self.committers[k]):
                     if xhash in cv:
-                        self.emails_cache[x['email']] = ck
+                        self.emails_cache[x[u'email']] = ck
                         break
 
         # fill in what we can ...
         for k in keys:
             for idx, x in enumerate(self.commits[k]):
-                if not x['login']:
-                    if x['email'] in ['@']:
+                if not x[u'login']:
+                    if x[u'email'] in [u'@']:
                         continue
-                    if self.emails_cache[x['email']]:
-                        login = self.emails_cache[x['email']]
-                        xhash = x['hash']
-                        self.commits[k][idx]['login'] = login
+                    if self.emails_cache[x[u'email']]:
+                        login = self.emails_cache[x[u'email']]
+                        xhash = x[u'hash']
+                        self.commits[k][idx][u'login'] = login
                         if login not in self.committers[k]:
                             self.committers[k][login] = []
                         if xhash not in self.committers[k][login]:
@@ -698,93 +704,94 @@ class ModuleIndexer(object):
         '''Define the maintainers for each module'''
 
         # grep the authors:
-        for k, v in self.modules.iteritems():
-            if v['filepath'] is None:
+        for k, v in six.iteritems(self.modules):
+            if v[u'filepath'] is None:
                 continue
-            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
+            mfile = os.path.join(self.gitrepo.checkoutdir, v[u'filepath'])
             authors = self.get_module_authors(mfile)
-            self.modules[k]['authors'] = authors
+            self.modules[k][u'authors'] = authors
 
             # authors are maintainers by -default-
-            self.modules[k]['maintainers'] += authors
-            self.modules[k]['maintainers'] = \
-                sorted(set(self.modules[k]['maintainers']))
+            self.modules[k][u'maintainers'] += authors
+            self.modules[k][u'maintainers'] = \
+                sorted(set(self.modules[k][u'maintainers']))
 
-        metadata = self.botmeta['files'].keys()
-        for k, v in self.modules.iteritems():
-            if k == 'meta':
+        metadata = self.botmeta[u'files'].keys()
+        for k, v in six.iteritems(self.modules):
+            if k == u'meta':
                 continue
 
-            if k in self.botmeta['files']:
+            if k in self.botmeta[u'files']:
                 # There are metadata in .github/BOTMETA.yml for this file
                 # copy maintainers_keys
-                self.modules[k]['maintainers_keys'] = self.botmeta['files'][k]['maintainers_keys'][:]
+                self.modules[k][u'maintainers_keys'] = self.botmeta[u'files'][k][u'maintainers_keys'][:]
 
-                if self.botmeta['files'][k]:
-                    maintainers = self.botmeta['files'][k].get('maintainers', [])
+                if self.botmeta[u'files'][k]:
+                    maintainers = self.botmeta[u'files'][k].get(u'maintainers', [])
+
                     for maintainer in maintainers:
-                        if maintainer not in self.modules[k]['maintainers']:
-                            self.modules[k]['maintainers'].append(maintainer)
+                        if maintainer not in self.modules[k][u'maintainers']:
+                            self.modules[k][u'maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
-                    if 'ignored' in self.botmeta['files'][k]:
-                        ignored = self.botmeta['files'][k]['ignored']
+                    if u'ignored' in self.botmeta[u'files'][k]:
+                        ignored = self.botmeta[u'files'][k][u'ignored']
                         for x in ignored:
-                            if x in self.modules[k]['maintainers']:
-                                self.modules[k]['maintainers'].remove(x)
+                            if x in self.modules[k][u'maintainers']:
+                                self.modules[k][u'maintainers'].remove(x)
 
             else:
                 # There isn't metadata in .github/BOTMETA.yml for this file
                 best_match = None
                 for mkey in metadata:
-                    if v['filepath'].startswith(mkey):
+                    if v[u'filepath'].startswith(mkey):
                         if not best_match:
                             best_match = mkey
                             continue
                         if len(mkey) > len(best_match):
                             best_match = mkey
                 if best_match:
-                    self.modules[k]['maintainers_keys'] = [best_match]
-                    for maintainer in self.botmeta['files'][best_match].get('maintainers', []):
-                        if maintainer not in self.modules[k]['maintainers']:
-                            self.modules[k]['maintainers'].append(maintainer)
+                    self.modules[k][u'maintainers_keys'] = [best_match]
+                    for maintainer in self.botmeta[u'files'][best_match].get(u'maintainers', []):
+                        if maintainer not in self.modules[k][u'maintainers']:
+                            self.modules[k][u'maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
-                    for ignored in self.botmeta['files'][best_match].get('ignored', []):
-                        if ignored in self.modules[k]['maintainers']:
-                            self.modules[k]['maintainers'].remove(ignored)
+                    for ignored in self.botmeta[u'files'][best_match].get(u'ignored', []):
+                        if ignored in self.modules[k][u'maintainers']:
+                            self.modules[k][u'maintainers'].remove(ignored)
 
             # save a pristine copy so that higher level code can still use it
-            self.modules[k]['maintainers'] = sorted(set(self.modules[k]['maintainers']))
-            self.modules[k]['_maintainers'] = \
-                [x for x in self.modules[k]['maintainers']]
+            self.modules[k][u'maintainers'] = sorted(set(self.modules[k][u'maintainers']))
+            self.modules[k][u'_maintainers'] = \
+                [x for x in self.modules[k][u'maintainers']]
 
         # set the namespace maintainers ...
-        for k, v in self.modules.iteritems():
-            if 'namespace_maintainers' not in self.modules[k]:
-                self.modules[k]['namespace_maintainers'] = []
-            if v.get('namespace'):
-                ns = v.get('namespace')
+        for k, v in six.iteritems(self.modules):
+            if u'namespace_maintainers' not in self.modules[k]:
+                self.modules[k][u'namespace_maintainers'] = []
+            if v.get(u'namespace'):
+                ns = v.get(u'namespace')
                 nms = self.get_maintainers_for_namespace(ns)
-                self.modules[k]['namespace_maintainers'] = nms
+                self.modules[k][u'namespace_maintainers'] = nms
 
     def split_topics_from_path(self, module_file):
-        subpath = module_file.replace('lib/ansible/modules/', '')
-        path_parts = subpath.split('/')
+        subpath = module_file.replace(u'lib/ansible/modules/', u'')
+        path_parts = subpath.split(u'/')
         topic = path_parts[0]
 
         if len(path_parts) > 2:
             subtopic = path_parts[1]
-            fulltopic = '/'.join(path_parts[0:2])
+            fulltopic = u'/'.join(path_parts[0:2])
         else:
             subtopic = None
             fulltopic = path_parts[0]
 
         tdata = {
-            'fulltopic': fulltopic,
-            'namespace': fulltopic,
-            'topic': topic,
-            'subtopic': subtopic
+            u'fulltopic': fulltopic,
+            u'namespace': fulltopic,
+            u'topic': topic,
+            u'subtopic': subtopic
         }
 
         return tdata
@@ -795,15 +802,15 @@ class ModuleIndexer(object):
         if not os.path.exists(module_file):
             return []
 
-        documentation = ''
+        documentation = b''
         inphase = False
 
-        with open(module_file, 'rb') as f:
+        with io.open(module_file, 'rb') as f:
             for line in f:
-                if 'DOCUMENTATION' in line:
+                if b'DOCUMENTATION' in line:
                     inphase = True
                     continue
-                if line.strip().endswith("'''") or line.strip().endswith('"""'):
+                if line.strip().endswith((b"'''", b'"""')):
                     break
                 if inphase:
                     documentation += line
@@ -813,26 +820,25 @@ class ModuleIndexer(object):
 
         # clean out any other yaml besides author to save time
         inphase = False
-        author_lines = ''
-        doc_lines = documentation.split('\n')
+        author_lines = u''
+        doc_lines = to_text(documentation).split(u'\n')
         for idx, x in enumerate(doc_lines):
-            if x.startswith('author'):
+            if x.startswith(u'author'):
                 inphase = True
-            if inphase and not x.strip().startswith('-') and \
-                    not x.strip().startswith('author'):
+            if inphase and not x.strip().startswith((u'-', u'author')):
                 inphase = False
                 break
             if inphase:
-                author_lines += x + '\n'
+                author_lines += x + u'\n'
 
         if not author_lines:
             return []
 
         ydata = {}
         try:
-            ydata = yaml.load(author_lines)
+            ydata = yaml.load(author_lines, Loader=BotYAMLLoader)
         except Exception as e:
-            print e
+            print(e)
             return []
 
         # quit early if the yaml was not valid
@@ -840,18 +846,18 @@ class ModuleIndexer(object):
             return []
 
         # sometimes the field is 'author', sometimes it is 'authors'
-        if 'authors' in ydata:
-            ydata['author'] = ydata['authors']
+        if u'authors' in ydata:
+            ydata[u'author'] = ydata[u'authors']
 
         # quit if the key was not found
-        if 'author' not in ydata:
+        if u'author' not in ydata:
             return []
 
-        if type(ydata['author']) != list:
-            ydata['author'] = [ydata['author']]
+        if not isinstance(ydata[u'author'], list):
+            ydata[u'author'] = [ydata[u'author']]
 
         authors = []
-        for author in ydata['author']:
+        for author in ydata[u'author']:
             github_ids = self.extract_github_id(author)
             if github_ids:
                 authors.extend(github_ids)
@@ -860,21 +866,21 @@ class ModuleIndexer(object):
     def extract_github_id(self, author):
         authors = set()
 
-        if 'ansible core team' in author.lower():
-            authors.add('ansible')
-        elif '@' in author:
+        if u'ansible core team' in author.lower():
+            authors.add(u'ansible')
+        elif u'@' in author:
             # match github ids but not emails
             authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
-        elif 'github.com/' in author:
+        elif u'github.com/' in author:
             # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
-            idx = author.find('github.com/')
+            idx = author.find(u'github.com/')
             author = author[idx+11:]
-            authors.add(author.replace(')', ''))
-        elif '(' in author and len(author.split()) == 3:
+            authors.add(author.replace(u')', u''))
+        elif u'(' in author and len(author.split()) == 3:
             # Mathieu Bultel (matbu)
-            idx = author.find('(')
+            idx = author.find(u'(')
             author = author[idx+1:]
-            authors.add(author.replace(')', ''))
+            authors.add(author.replace(u')', u''))
 
         # search for emails
         for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
@@ -887,80 +893,82 @@ class ModuleIndexer(object):
     def fuzzy_match(self, repo=None, title=None, component=None):
         '''Fuzzy matching for modules'''
 
-        logging.debug('fuzzy match {}'.format(component.encode('ascii', 'ignore')))
+        logging.debug(u'fuzzy match {}'.format(
+            to_text(to_bytes(component, 'ascii', 'ignore'), 'ascii'))
+        )
 
-        if component.lower() == 'core':
+        if component.lower() == u'core':
             return None
 
         # https://github.com/ansible/ansible/issues/18179
-        if 'validate-modules' in component:
+        if u'validate-modules' in component:
             return None
 
         # https://github.com/ansible/ansible/issues/20368
-        if 'module_utils' in component:
+        if u'module_utils' in component:
             return None
 
-        if 'new module' in component:
+        if u'new module' in component:
             return None
 
         # authorized_keys vs. authorized_key
-        if component and component.endswith('s'):
+        if component and component.endswith(u's'):
             tm = self.find_match(component[:-1])
             if tm:
                 if not isinstance(tm, list):
-                    return tm['name']
+                    return tm[u'name']
                 elif len(tm) == 1:
-                    return tm[0]['name']
+                    return tm[0][u'name']
                 else:
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
+                        logging.error(u'breakpoint!')
                         import epdb; epdb.st()
 
         match = None
         known_modules = []
 
-        for k, v in self.modules.iteritems():
-            if v['name'] in ['include']:
+        for k, v in six.iteritems(self.modules):
+            if v[u'name'] in [u'include']:
                 continue
-            known_modules.append(v['name'])
+            known_modules.append(v[u'name'])
 
         title = title.lower()
-        title = title.replace(':', '')
-        title_matches = [x for x in known_modules if x + ' module' in title]
+        title = title.replace(u':', u'')
+        title_matches = [x for x in known_modules if x + u' module' in title]
 
         if not title_matches:
             title_matches = [x for x in known_modules
-                             if title.startswith(x + ' ')]
+                             if title.startswith(x + u' ')]
             if not title_matches:
                 title_matches = \
-                    [x for x in known_modules if ' ' + x + ' ' in title]
+                    [x for x in known_modules if u' ' + x + u' ' in title]
 
             if title_matches:
-                title_matches = [x for x in title_matches if x != 'at']
+                title_matches = [x for x in title_matches if x != u'at']
 
         # don't do singular word matching in title for ansible/ansible
         cmatches = None
         if component:
             cmatches = [x for x in known_modules if x in component]
-            cmatches = [x for x in cmatches if not '_' + x in component]
+            cmatches = [x for x in cmatches if not u'_' + x in component]
 
         # globs
-        if not cmatches and '*' in component:
+        if not cmatches and u'*' in component:
             fmatches = [x for x in known_modules if fnmatch.fnmatch(x, component)]
             if fmatches:
                 cmatches = fmatches[:]
 
         if title_matches:
             # use title ... ?
-            cmatches = [x for x in cmatches if x in title_matches and x not in ['at']]
+            cmatches = [x for x in cmatches if x in title_matches and x not in [u'at']]
 
         if cmatches:
-            if len(cmatches) >= 1 and ('*' not in component and 'modules' not in component):
+            if len(cmatches) >= 1 and (u'*' not in component and u'modules' not in component):
                 match = cmatches[0]
             else:
                 match = cmatches[:]
             if not match:
-                if 'docs.ansible.com' in component:
+                if u'docs.ansible.com' in component:
                     pass
                 else:
                     pass
@@ -977,7 +985,7 @@ class ModuleIndexer(object):
     def is_multi(self, rawtext):
         '''Is the string a list or a glob of modules?'''
         if rawtext:
-            lines = rawtext.split('\n')
+            lines = rawtext.split(u'\n')
 
             # clean up lines
             lines = [x.strip() for x in lines if x.strip()]
@@ -987,7 +995,7 @@ class ModuleIndexer(object):
                 return True
 
             if lines:
-                if lines[0].strip().endswith('*'):
+                if lines[0].strip().endswith(u'*'):
                     return True
 
         return False
@@ -996,12 +1004,12 @@ class ModuleIndexer(object):
     def multi_match(self, rawtext):
         '''Return a list of matches for a given glob or list of names'''
         matches = []
-        lines = rawtext.split('\n')
+        lines = rawtext.split(u'\n')
         lines = [x.strip() for x in lines if x.strip()]
         for line in lines:
             # is it an exact name, a path, a globbed name, a globbed path?
-            if line.endswith('*'):
-                thiskey = line.replace('*', '')
+            if line.endswith(u'*'):
+                thiskey = line.replace(u'*', u'')
                 keymatches = []
                 for k in self.modules.keys():
                     if thiskey in k:
@@ -1024,16 +1032,16 @@ class ModuleIndexer(object):
         return matches
 
     def set_module_metadata(self):
-        for k, v in self.modules.iteritems():
-            if not v['filepath']:
+        for k, v in six.iteritems(self.modules):
+            if not v[u'filepath']:
                 continue
-            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
-            if not mfile.endswith('.py'):
+            mfile = os.path.join(self.gitrepo.checkoutdir, v[u'filepath'])
+            if not mfile.endswith(u'.py'):
                 # metadata is only the .py files ...
-                ext = mfile.split('.')[-1]
-                mfile = mfile.replace('.' + ext, '.py', 1)
+                ext = mfile.split(u'.')[-1]
+                mfile = mfile.replace(u'.' + ext, u'.py', 1)
 
-            self.modules[k]['metadata'].update(self.get_module_metadata(mfile))
+            self.modules[k][u'metadata'].update(self.get_module_metadata(mfile))
 
     def get_module_metadata(self, module_file):
         meta = {}
@@ -1041,31 +1049,48 @@ class ModuleIndexer(object):
         if not os.path.isfile(module_file):
             return meta
 
-        rawmeta = ''
+        rawmeta = u''
         inphase = False
-        with open(module_file, 'rb') as f:
+        with io.open(module_file, 'r', encoding='utf-8') as f:
             for line in f:
-                if line.startswith('ANSIBLE_METADATA'):
+                if line.startswith(u'ANSIBLE_METADATA'):
                     inphase = True
-                if line.startswith('DOCUMENTATION'):
+                if line.startswith(u'DOCUMENTATION'):
                     break
                 if inphase:
                     rawmeta += line
-        rawmeta = rawmeta.replace('ANSIBLE_METADATA =', '', 1)
+        rawmeta = rawmeta.replace(u'ANSIBLE_METADATA =', u'', 1)
         rawmeta = rawmeta.strip()
         try:
             meta = ast.literal_eval(rawmeta)
+            tmp_meta = {}
+            for k, v in meta.items():
+                if isinstance(k, six.binary_type):
+                    k = to_text(k)
+                if isinstance(v, six.binary_type):
+                    v = to_text(v)
+                if isinstance(v, list):
+                    tmp_list = []
+                    for i in v:
+                        if isinstance(i, six.binary_type):
+                            i = to_text(i)
+                        tmp_list.append(i)
+                    v = tmp_list
+                    del tmp_list
+                tmp_meta[k] = v
+            meta = tmp_meta
+            del tmp_meta
         except SyntaxError:
             pass
 
         return meta
 
     def set_module_imports(self):
-        for k, v in self.modules.iteritems():
-            if not v['filepath']:
+        for k, v in six.iteritems(self.modules):
+            if not v[u'filepath']:
                 continue
-            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
-            self.modules[k]['imports'] = self.get_module_imports(mfile)
+            mfile = os.path.join(self.gitrepo.checkoutdir, v[u'filepath'])
+            self.modules[k][u'imports'] = self.get_module_imports(mfile)
 
     def get_module_imports(self, module_file):
         mimports = []
@@ -1077,40 +1102,40 @@ class ModuleIndexer(object):
             with open(module_file, 'rb') as f:
                 for line in f:
                     line = line.strip()
-                    line = line.replace(',', '')
-                    if line.startswith('import') or \
-                            ('import' in line and 'from' in line):
+                    line = line.replace(b',', b'')
+                    if line.startswith(b'import') or \
+                            (b'import' in line and b'from' in line):
                         lparts = line.split()
-                        if line.startswith('import '):
+                        if line.startswith(b'import '):
                             mimports.append(lparts[1])
-                        elif line.startswith('from '):
-                            mpath = lparts[1] + '.'
+                        elif line.startswith(b'from '):
+                            mpath = lparts[1] + b'.'
                             for spath in lparts[3:]:
                                 mimports.append(mpath + spath)
 
-            return mimports
+            return [to_text(m) for m in mimports]
 
     @property
     def all_maintainers(self):
         maintainers = set()
-        for path, metadata in self.botmeta['files'].items():
-            maintainers.update(metadata.get('maintainers', []))
+        for path, metadata in self.botmeta[u'files'].items():
+            maintainers.update(metadata.get(u'maintainers', []))
         return maintainers
 
     @property
     def all_authors(self):
         authors = set()
         for key, metadata in self.modules.items():
-            authors.update(metadata.get('authors', []))
+            authors.update(metadata.get(u'authors', []))
         return authors
 
     def get_maintainers_for_namespace(self, namespace):
         maintainers = []
         for k, v in self.modules.items():
-            if 'namespace' not in v or 'maintainers' not in v:
+            if u'namespace' not in v or u'maintainers' not in v:
                 continue
-            if v['namespace'] == namespace:
-                for m in v['maintainers']:
+            if v[u'namespace'] == namespace:
+                for m in v[u'maintainers']:
                     if m not in maintainers:
                         maintainers.append(m)
         maintainers = [x for x in maintainers if x.strip()]
@@ -1121,7 +1146,7 @@ class ModuleIndexer(object):
         '''Replace -ansible- with the -humans- in the org'''
         newlist = []
         for m in maintainers:
-            if m != 'ansible':
+            if m != u'ansible':
                 newlist.append(m)
             else:
                 newlist += ansible_members
@@ -1133,6 +1158,6 @@ class ModuleIndexer(object):
         fpath = os.path.join(self.gitrepo.checkoutdir, filepath)
         if not os.path.isfile(fpath):
             return None
-        with open(fpath, 'rb') as f:
+        with io.open(fpath, 'r', encoding='utf-8') as f:
             data = f.read()
         return data

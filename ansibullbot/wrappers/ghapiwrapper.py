@@ -16,14 +16,16 @@ from datetime import datetime
 import ansibullbot.constants as C
 
 from bs4 import BeautifulSoup
+
+from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 
 
 class GithubWrapper(object):
-    def __init__(self, gh, cachedir='~/.ansibullbot/cache'):
+    def __init__(self, gh, cachedir=u'~/.ansibullbot/cache'):
         self.gh = gh
         self.cachedir = os.path.expanduser(cachedir)
-        self.cachefile = os.path.join(self.cachedir, 'github.pickle')
+        self.cachefile = os.path.join(self.cachedir, u'github.pickle')
 
     @RateLimited
     def get_repo(self, repo_path, verbose=True):
@@ -38,14 +40,14 @@ class GithubWrapper(object):
 
 
 class RepoWrapper(object):
-    def __init__(self, gh, repo_path, verbose=True, cachedir='~/.ansibullbot/cache'):
+    def __init__(self, gh, repo_path, verbose=True, cachedir=u'~/.ansibullbot/cache'):
 
         self.gh = gh
         self.repo_path = repo_path
 
         self.cachedir = os.path.expanduser(cachedir)
         self.cachedir = os.path.join(self.cachedir, repo_path)
-        self.cachefile = os.path.join(self.cachedir, 'repo.pickle')
+        self.cachefile = os.path.join(self.cachedir, u'repo.pickle')
 
         self.updated_at_previous = None
         self.updated = False
@@ -58,7 +60,7 @@ class RepoWrapper(object):
 
     @RateLimited
     def get_repo(self, repo_path):
-        logging.getLogger('github.Requester').setLevel(logging.INFO)
+        logging.getLogger(u'github.Requester').setLevel(logging.INFO)
         repo = self.gh.get_repo(repo_path)
         return repo
 
@@ -77,33 +79,33 @@ class RepoWrapper(object):
     def get_last_issue_number(self):
         '''Scrape the newest issue/pr number'''
 
-        logging.info('scraping last issue number')
+        logging.info(u'scraping last issue number')
 
-        url = 'https://github.com/'
+        url = u'https://github.com/'
         url += self.repo_path
-        url += '/issues?q='
+        url += u'/issues?q='
 
         rr = requests.get(url)
-        soup = BeautifulSoup(rr.text, 'html.parser')
-        refs = soup.findAll('a')
+        soup = BeautifulSoup(rr.text, u'html.parser')
+        refs = soup.findAll(u'a')
         urls = []
         for ref in refs:
-            if 'href' in ref.attrs:
+            if u'href' in ref.attrs:
                 #print(ref.attrs['href'])
-                urls.append(ref.attrs['href'])
-        checkpath = '/' + self.repo_path
-        m = re.compile('^%s/(pull|issues)/[0-9]+$' % checkpath)
+                urls.append(ref.attrs[u'href'])
+        checkpath = u'/' + self.repo_path
+        m = re.compile(u'^%s/(pull|issues)/[0-9]+$' % checkpath)
         urls = [x for x in urls if m.match(x)]
 
         if not urls:
-            logging.error('no urls found in %s' % url)
+            logging.error(u'no urls found in %s' % url)
             if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
+                logging.error(u'breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception('no urls')
+                raise Exception(u'no urls')
 
-        numbers = [x.split('/')[-1] for x in urls]
+        numbers = [x.split(u'/')[-1] for x in urls]
         numbers = [int(x) for x in numbers]
         numbers = sorted(set(numbers))
         if numbers:
@@ -126,7 +128,7 @@ class RepoWrapper(object):
                 break
             except UnicodeDecodeError:
                 # https://github.com/ansible/ansibullbot/issues/610
-                logging.warning('cleaning cache for %s' % number)
+                logging.warning(u'cleaning cache for %s' % number)
                 self.clean_issue_cache(number)
 
         return issue
@@ -153,18 +155,18 @@ class RepoWrapper(object):
     @property
     def assignees(self):
         if self._assignees is False:
-            self._assignees = self.load_update_fetch('assignees')
+            self._assignees = self.load_update_fetch(u'assignees')
         return self._assignees
 
     '''
     @RateLimited
     def get_assignees(self):
         if self._assignees is False:
-            self._assignees = self.load_update_fetch('assignees')
+            self._assignees = self.load_update_fetch(u'assignees')
         return self._assignees
     '''
 
-    def get_issues(self, since=None, state='open', itype='issue'):
+    def get_issues(self, since=None, state=u'open', itype=u'issue'):
 
         if since:
             return self.repo.get_issues(since=since)
@@ -179,44 +181,44 @@ class RepoWrapper(object):
     @RateLimited
     def update_issue(self, issue):
         if issue.update():
-            logging.debug('%s updated' % issue.number)
+            logging.debug(u'%s updated' % issue.number)
             self.save_issue(issue)
         return issue
 
     @RateLimited
-    def get_pullrequests(self, since=None, state='open', itype='pullrequest'):
+    def get_pullrequests(self, since=None, state=u'open', itype=u'pullrequest'):
         # there is no 'since' for pullrequests
         prs = [x for x in self.repo.get_pulls()]
         return prs
 
     def is_missing(self, number):
-        mfile = os.path.join(self.cachedir, 'issues', str(number), 'missing')
+        mfile = os.path.join(self.cachedir, u'issues', to_text(number), u'missing')
         if os.path.isfile(mfile):
             return True
         else:
             return False
 
     def set_missing(self, number):
-        mfile = os.path.join(self.cachedir, 'issues', str(number), 'missing')
+        mfile = os.path.join(self.cachedir, u'issues', to_text(number), u'missing')
         mdir = os.path.dirname(mfile)
         if not os.path.isdir(mdir):
             os.makedirs(mdir)
         with open(mfile, 'wb') as f:
             f.write('\n')
 
-    def load_issues(self, state='open', filter=None):
+    def load_issues(self, state=u'open', filter=None):
         issues = []
-        gfiles = glob.glob('%s/issues/*/issue.pickle' % self.cachedir)
+        gfiles = glob.glob(u'%s/issues/*/issue.pickle' % self.cachedir)
         for gf in gfiles:
 
             if filter:
-                gf_parts = gf.split('/')
+                gf_parts = gf.split(u'/')
                 this_number = gf_parts[-2]
                 this_number = int(this_number)
                 if this_number not in filter:
                     continue
 
-            logging.debug('load %s' % gf)
+            logging.debug(u'load %s' % gf)
             issue = None
             try:
                 with open(gf, 'rb') as f:
@@ -232,9 +234,9 @@ class RepoWrapper(object):
     def load_issue(self, number):
         pfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(number),
-            'issue.pickle'
+            u'issues',
+            to_text(number),
+            u'issue.pickle'
         )
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
@@ -246,9 +248,9 @@ class RepoWrapper(object):
     def load_pullrequest(self, number):
         pfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(number),
-            'pullrequest.pickle'
+            u'issues',
+            to_text(number),
+            u'pullrequest.pickle'
         )
         pdir = os.path.dirname(pfile)
         if not os.path.isdir(pdir):
@@ -267,23 +269,23 @@ class RepoWrapper(object):
     def save_issue(self, issue):
         cfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(issue.number),
-            'issue.pickle'
+            u'issues',
+            to_text(issue.number),
+            u'issue.pickle'
         )
         cdir = os.path.dirname(cfile)
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
-        logging.debug('dump %s' % cfile)
+        logging.debug(u'dump %s' % cfile)
         with open(cfile, 'wb') as f:
             pickle.dump(issue, f)
 
     def save_pullrequest(self, issue):
         cfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(issue.number),
-            'pullrequest.pickle'
+            u'issues',
+            to_text(issue.number),
+            u'pullrequest.pickle'
         )
         cdir = os.path.dirname(cfile)
         if not os.path.isdir(cdir):
@@ -302,7 +304,7 @@ class RepoWrapper(object):
         write_cache = False
         self.repo.update()
 
-        pfile = os.path.join(self.cachedir, '%s.pickle' % property_name)
+        pfile = os.path.join(self.cachedir, u'%s.pickle' % property_name)
         pdir = os.path.dirname(pfile)
 
         if not os.path.isdir(pdir):
@@ -329,14 +331,14 @@ class RepoWrapper(object):
             write_cache = True
             updated = self.get_current_time()
             try:
-                methodToCall = getattr(self.repo, 'get_' + property_name)
+                methodToCall = getattr(self.repo, u'get_' + property_name)
             except Exception as e:
                 logging.error(e)
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
+                    logging.error(u'breakpoint!')
                     import epdb; epdb.st()
                 else:
-                    raise Exception('unable to get %s' % property_name)
+                    raise Exception(u'unable to get %s' % property_name)
             events = [x for x in methodToCall()]
 
         if write_cache or not os.path.isfile(pfile):
@@ -367,15 +369,15 @@ class RepoWrapper(object):
 
         label_map = {}
 
-        lm = self.repo.get_file_contents('.github/LABEL_MAP.md')
+        lm = self.repo.get_file_contents(u'.github/LABEL_MAP.md')
         lm_content = lm.decoded_content
 
-        lines = lm_content.split('\n')
+        lines = lm_content.split(u'\n')
         for line in lines:
             line = line.strip()
             if line:
-                parts = [x.strip() for x in line.split(':', 1) if x.strip()]
-                label_map[parts[0].lower()] = parts[1].replace('"', '').replace("'", '')
+                parts = [x.strip() for x in line.split(u':', 1) if x.strip()]
+                label_map[parts[0].lower()] = parts[1].replace(u'"', u'').replace(u"'", u'')
 
         return label_map
 
@@ -383,7 +385,7 @@ class RepoWrapper(object):
         # https://github.com/ansible/ansibullbot/issues/610
         cdir = os.path.join(
             self.cachedir,
-            'issues',
-            str(number)
+            u'issues',
+            to_text(number)
         )
         shutil.rmtree(cdir)

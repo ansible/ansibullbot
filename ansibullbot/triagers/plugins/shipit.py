@@ -12,7 +12,7 @@ def is_approval(body):
     if not body:
         return False
     lines = [x.strip() for x in body.split()]
-    return 'shipit' in lines or '+1' in lines or 'LGTM' in lines
+    return u'shipit' in lines or u'+1' in lines or u'LGTM' in lines
 
 
 def get_automerge_facts(issuewrapper, meta):
@@ -27,131 +27,131 @@ def get_automerge_facts(issuewrapper, meta):
     # * And all new modules, of course, go in as "preview" mode.
 
     def create_ameta(automerge, automerge_status):
-        return {'automerge': automerge, 'automerge_status': automerge_status}
+        return {u'automerge': automerge, u'automerge_status': automerge_status}
 
     issue = issuewrapper
 
-    if not meta['shipit']:
-        return create_ameta(False, 'automerge shipit test failed')
+    if not meta[u'shipit']:
+        return create_ameta(False, u'automerge shipit test failed')
 
     # https://github.com/ansible/ansibullbot/issues/430
-    if meta['is_backport']:
-        return create_ameta(False, 'automerge backport test failed')
+    if meta[u'is_backport']:
+        return create_ameta(False, u'automerge backport test failed')
 
     if issue.wip:
-        return create_ameta(False, 'automerge WIP test failed')
+        return create_ameta(False, u'automerge WIP test failed')
 
     if not issue.is_pullrequest():
-        return create_ameta(False, 'automerge is_pullrequest test failed')
+        return create_ameta(False, u'automerge is_pullrequest test failed')
 
-    if meta['is_new_directory']:
-        return create_ameta(False, 'automerge is_new_directory test failed')
+    if meta[u'is_new_directory']:
+        return create_ameta(False, u'automerge is_new_directory test failed')
 
-    if meta['merge_commits']:
-        return create_ameta(False, 'automerge merge_commits test failed')
+    if meta[u'merge_commits']:
+        return create_ameta(False, u'automerge merge_commits test failed')
 
-    if meta['has_commit_mention']:
-        return create_ameta(False, 'automerge commit @mention test failed')
+    if meta[u'has_commit_mention']:
+        return create_ameta(False, u'automerge commit @mention test failed')
 
-    if meta['is_needs_revision']:
-        return create_ameta(False, 'automerge needs_revision test failed')
+    if meta[u'is_needs_revision']:
+        return create_ameta(False, u'automerge needs_revision test failed')
 
-    if meta['is_needs_rebase']:
-        return create_ameta(False, 'automerge needs_rebase test failed')
+    if meta[u'is_needs_rebase']:
+        return create_ameta(False, u'automerge needs_rebase test failed')
 
-    if meta['is_needs_info']:
-        return create_ameta(False, 'automerge needs_info test failed')
+    if meta[u'is_needs_info']:
+        return create_ameta(False, u'automerge needs_info test failed')
 
-    if not meta['has_shippable']:
-        return create_ameta(False, 'automerge has_shippable test failed')
+    if not meta[u'has_shippable']:
+        return create_ameta(False, u'automerge has_shippable test failed')
 
-    if meta['has_travis']:
-        return create_ameta(False, 'automerge has_travis test failed')
+    if meta[u'has_travis']:
+        return create_ameta(False, u'automerge has_travis test failed')
 
-    if not meta['mergeable']:
-        return create_ameta(False, 'automerge mergeable test failed')
+    if not meta[u'mergeable']:
+        return create_ameta(False, u'automerge mergeable test failed')
 
-    if meta['is_new_module']:
-        return create_ameta(False, 'automerge new_module test failed')
+    if meta[u'is_new_module']:
+        return create_ameta(False, u'automerge new_module test failed')
 
-    if not meta['is_module']:
-        return create_ameta(False, 'automerge is_module test failed')
+    if not meta[u'is_module']:
+        return create_ameta(False, u'automerge is_module test failed')
 
-    if not meta['module_match']:
-        return create_ameta(False, 'automerge module_match test failed')
+    if not meta[u'module_match']:
+        return create_ameta(False, u'automerge module_match test failed')
 
-    if meta['ci_stale']:
-        return create_ameta(False, 'automerge ci_stale test failed')
+    if meta[u'ci_stale']:
+        return create_ameta(False, u'automerge ci_stale test failed')
 
     # https://github.com/ansible/ansibullbot/issues/904
-    if meta['ci_state'] != 'success':
-        return create_ameta(False, 'automerge ci_state test failed')
+    if meta[u'ci_state'] != u'success':
+        return create_ameta(False, u'automerge ci_state test failed')
 
     for pr_file in issue.pr_files:
 
         thisfn = pr_file.filename
-        if thisfn.startswith('lib/ansible/modules'):
+        if thisfn.startswith(u'lib/ansible/modules'):
             continue
 
-        elif fnmatch(thisfn, 'test/sanity/*/*.txt'):
-            if pr_file.additions or pr_file.status == 'added':
+        elif fnmatch(thisfn, u'test/sanity/*/*.txt'):
+            if pr_file.additions or pr_file.status == u'added':
                 # new exception added, addition must be checked by an human
-                return create_ameta(False, 'automerge new file(s) test failed')
+                return create_ameta(False, u'automerge new file(s) test failed')
             if pr_file.deletions:
                 # new exception delete
                 continue
         else:
             # other file modified, pull-request must be checked by an human
-            return create_ameta(False, 'automerge !module file(s) test failed')
+            return create_ameta(False, u'automerge !module file(s) test failed')
 
-    if meta.get('component_support') != ['community']:
-        return create_ameta(False, 'automerge community support test failed')
+    if meta.get(u'component_support') != [u'community']:
+        return create_ameta(False, u'automerge community support test failed')
 
-    return create_ameta(True, 'automerge tests passed')
+    return create_ameta(True, u'automerge tests passed')
 
 
 def needs_community_review(meta, issue):
     '''Notify community for more shipits?'''
 
-    if not meta['is_new_module']:
+    if not meta[u'is_new_module']:
         return False
 
-    if meta['shipit']:
+    if meta[u'shipit']:
         return False
 
-    if meta['is_needs_revision']:
+    if meta[u'is_needs_revision']:
         return False
 
-    if meta['is_needs_rebase']:
+    if meta[u'is_needs_rebase']:
         return False
 
-    if meta['is_needs_info']:
+    if meta[u'is_needs_info']:
         return False
 
-    if meta['ci_state'] == 'pending':
+    if meta[u'ci_state'] == u'pending':
         return False
 
-    if not meta['has_shippable']:
+    if not meta[u'has_shippable']:
         return False
 
-    if meta['has_travis']:
+    if meta[u'has_travis']:
         return False
 
-    if not meta['mergeable']:
+    if not meta[u'mergeable']:
         return False
 
-    mm = meta.get('module_match', {})
+    mm = meta.get(u'module_match', {})
     if not mm:
         return False
 
     #metadata = mm.get('metadata') or {}
     #supported_by = metadata.get('supported_by')
     #if supported_by != 'community':
-    if meta['component_support'] != ['community']:
+    if meta[u'component_support'] != [u'community']:
         return False
 
     # expensive call done earlier in processing
-    if not meta['notify_community_shipit']:
+    if not meta[u'notify_community_shipit']:
         return False
 
     return True
@@ -168,39 +168,39 @@ def get_review_facts(issuewrapper, meta):
     # pr owned by ansible
 
     rfacts = {
-        'core_review': False,
-        'community_review': False,
-        'committer_review': False,
+        u'core_review': False,
+        u'community_review': False,
+        u'committer_review': False,
     }
 
     iw = issuewrapper
     if not iw.is_pullrequest():
         return rfacts
-    if meta['shipit']:
+    if meta[u'shipit']:
         return rfacts
-    if meta['is_needs_info']:
+    if meta[u'is_needs_info']:
         return rfacts
-    if meta['is_needs_revision']:
+    if meta[u'is_needs_revision']:
         return rfacts
-    if meta['is_needs_rebase']:
+    if meta[u'is_needs_rebase']:
         return rfacts
-    if not meta['is_module']:
+    if not meta[u'is_module']:
         return rfacts
 
     supported_by = get_supported_by(iw, meta)
 
-    if supported_by == 'community':
-        rfacts['community_review'] = True
-    elif supported_by in ['core', 'network']:
-        rfacts['core_review'] = True
-    elif supported_by in ['curated', 'certified']:
-        rfacts['committer_review'] = True
+    if supported_by == u'community':
+        rfacts[u'community_review'] = True
+    elif supported_by in [u'core', u'network']:
+        rfacts[u'core_review'] = True
+    elif supported_by in [u'curated', u'certified']:
+        rfacts[u'committer_review'] = True
     else:
         if C.DEFAULT_BREAKPOINTS:
-            logging.error('breakpoint!')
+            logging.error(u'breakpoint!')
             import epdb; epdb.st()
         else:
-            raise Exception('unknown supported_by type: {}'.format(supported_by))
+            raise Exception(u'unknown supported_by type: {}'.format(supported_by))
 
     return rfacts
 
@@ -214,54 +214,54 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
     iw = issuewrapper
     nmeta = {
-        'shipit': False,
-        'owner_pr': False,
-        'shipit_ansible': False,
-        'shipit_community': False,
-        'shipit_count_other': False,
-        'shipit_count_community': False,
-        'shipit_count_maintainer': False,
-        'shipit_count_ansible': False,
-        'shipit_count_vtotal': False,
-        'shipit_actors': None,
-        'community_usernames': [],
-        'notify_community_shipit': False,
+        u'shipit': False,
+        u'owner_pr': False,
+        u'shipit_ansible': False,
+        u'shipit_community': False,
+        u'shipit_count_other': False,
+        u'shipit_count_community': False,
+        u'shipit_count_maintainer': False,
+        u'shipit_count_ansible': False,
+        u'shipit_count_vtotal': False,
+        u'shipit_actors': None,
+        u'community_usernames': [],
+        u'notify_community_shipit': False,
     }
 
     if not iw.is_pullrequest():
         return nmeta
 
     module_utils_files_owned = 0  # module_utils files for which submitter is maintainer
-    if meta['is_module_util']:
+    if meta[u'is_module_util']:
         for f in iw.files:
-            if f.startswith('lib/ansible/module_utils') and f in module_indexer.botmeta['files']:
-                maintainers = module_indexer.botmeta['files'][f].get('maintainers', [])
+            if f.startswith(u'lib/ansible/module_utils') and f in module_indexer.botmeta[u'files']:
+                maintainers = module_indexer.botmeta[u'files'][f].get(u'maintainers', [])
                 if maintainers and (iw.submitter in maintainers):
                     module_utils_files_owned += 1
         if module_utils_files_owned == len(iw.files):
-            nmeta['owner_pr'] = True
+            nmeta[u'owner_pr'] = True
             return nmeta
 
     modules_files_owned = 0
-    if not meta['is_new_module']:
+    if not meta[u'is_new_module']:
         for f in iw.files:
-            if f.startswith('lib/ansible/modules') and iw.submitter in meta['component_maintainers']:
+            if f.startswith(u'lib/ansible/modules') and iw.submitter in meta[u'component_maintainers']:
                 modules_files_owned += 1
-    nmeta['owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
+    nmeta[u'owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
 
     #if not meta['module_match']:
     #    return nmeta
 
     # https://github.com/ansible/ansibullbot/issues/722
     if iw.wip:
-        logging.debug('WIP PRs do not get shipits')
+        logging.debug(u'WIP PRs do not get shipits')
         return nmeta
 
-    if meta['is_needs_revision'] or meta['is_needs_rebase']:
-        logging.debug('PRs with needs_revision or needs_rebase label do not get shipits')
+    if meta[u'is_needs_revision'] or meta[u'is_needs_rebase']:
+        logging.debug(u'PRs with needs_revision or needs_rebase label do not get shipits')
         return nmeta
 
-    maintainers = meta.get('component_maintainers', [])
+    maintainers = meta.get(u'component_maintainers', [])
     maintainers = \
         ModuleIndexer.replace_ansible(
             maintainers,
@@ -270,10 +270,10 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         )
 
     # community is the other maintainers in the same namespace
-    community = meta.get('component_namespace_maintainers', [])
-    community = [x for x in community if x != 'ansible' and
+    community = meta.get(u'component_namespace_maintainers', [])
+    community = [x for x in community if x != u'ansible' and
                  x not in core_team and
-                 x != 'DEPRECATED']
+                 x != u'DEPRECATED']
 
     # shipit tallies
     ansible_shipits = 0
@@ -285,13 +285,13 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
     for event in iw.history.history:
 
-        if event['event'] not in ['commented', 'committed', 'review_approved', 'review_comment']:
+        if event[u'event'] not in [u'commented', u'committed', u'review_approved', u'review_comment']:
             continue
-        if event['actor'] in botnames:
+        if event[u'actor'] in botnames:
             continue
 
         # commits reset the counters
-        if event['event'] == 'committed':
+        if event[u'event'] == u'committed':
             ansible_shipits = 0
             maintainer_shipits = 0
             community_shipits = 0
@@ -300,12 +300,12 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             shipit_actors_other = []
             continue
 
-        actor = event['actor']
-        body = event.get('body', '')
+        actor = event[u'actor']
+        body = event.get(u'body', u'')
         body = body.strip()
         if not is_approval(body):
             continue
-        logging.info('%s shipit' % actor)
+        logging.info(u'%s shipit' % actor)
 
         # ansible shipits
         if actor in core_team:
@@ -348,33 +348,33 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             community_shipits += 1
             shipit_actors.append(iw.submitter)
 
-    nmeta['shipit_count_other'] = other_shipits
-    nmeta['shipit_count_community'] = community_shipits
-    nmeta['shipit_count_maintainer'] = maintainer_shipits
-    nmeta['shipit_count_ansible'] = ansible_shipits
-    nmeta['shipit_actors'] = shipit_actors
-    nmeta['shipit_actors_other'] = shipit_actors_other
-    nmeta['community_usernames'] = sorted(community)
+    nmeta[u'shipit_count_other'] = other_shipits
+    nmeta[u'shipit_count_community'] = community_shipits
+    nmeta[u'shipit_count_maintainer'] = maintainer_shipits
+    nmeta[u'shipit_count_ansible'] = ansible_shipits
+    nmeta[u'shipit_actors'] = shipit_actors
+    nmeta[u'shipit_actors_other'] = shipit_actors_other
+    nmeta[u'community_usernames'] = sorted(community)
 
     total = community_shipits + maintainer_shipits + ansible_shipits
-    nmeta['shipit_count_vtotal'] = total + other_shipits
+    nmeta[u'shipit_count_vtotal'] = total + other_shipits
 
     # include shipits from other people to push over the edge
     if total == 1 and other_shipits > 2:
         total += other_shipits
 
     if total > 1:
-        nmeta['shipit'] = True
-    elif meta['is_new_module'] or \
+        nmeta[u'shipit'] = True
+    elif meta[u'is_new_module'] or \
             (len(maintainers) == 1 and maintainer_shipits == 1):
         # don't notify if there is no maintainer or if submitter is the only namespace maintainer
         if set(community) - {iw.submitter}:
             bpc = iw.history.get_boilerplate_comments()
             bpc = [x[0] for x in bpc]
-            if 'community_shipit_notify' not in bpc:
-                nmeta['notify_community_shipit'] = True
+            if u'community_shipit_notify' not in bpc:
+                nmeta[u'notify_community_shipit'] = True
 
-    logging.info('total shipits: %s' % total)
+    logging.info(u'total shipits: %s' % total)
 
     return nmeta
 
@@ -398,19 +398,19 @@ def get_supported_by(issuewrapper, meta):
         supported_by = 'community'
     '''
 
-    supported_by = 'core'
-    if not meta.get('component_support'):
+    supported_by = u'core'
+    if not meta.get(u'component_support'):
         return supported_by
-    if len(meta.get('component_support', [])) == 1 and meta['component_support'][0]:
-        return meta['component_support'][0]
-    elif None in meta.get('component_support', []):
-        supported_by = 'community'
-    elif 'core' in meta.get('component_support', []):
-        supported_by = 'core'
-    elif 'network' in meta.get('component_support', []):
-        supported_by = 'network'
-    elif 'certified' in meta.get('component_support', []):
-        supported_by = 'certified'
+    if len(meta.get(u'component_support', [])) == 1 and meta[u'component_support'][0]:
+        return meta[u'component_support'][0]
+    elif None in meta.get(u'component_support', []):
+        supported_by = u'community'
+    elif u'core' in meta.get(u'component_support', []):
+        supported_by = u'core'
+    elif u'network' in meta.get(u'component_support', []):
+        supported_by = u'network'
+    elif u'certified' in meta.get(u'component_support', []):
+        supported_by = u'certified'
 
     return supported_by
 
@@ -418,8 +418,8 @@ def get_supported_by(issuewrapper, meta):
 def get_submitter_facts(issuewrapper, meta, module_indexer, component_matcher):
     '''Summary stats of submitter's commit history'''
     sfacts = {
-        'submitter_previous_commits': 0,
-        'submitter_previous_commits_for_pr_files': 0,
+        u'submitter_previous_commits': 0,
+        u'submitter_previous_commits_for_pr_files': 0,
     }
 
     login = issuewrapper.submitter
@@ -434,10 +434,10 @@ def get_submitter_facts(issuewrapper, meta, module_indexer, component_matcher):
         component_matcher.gitrepo.get_commits_by_email(emails)
 
     for value in list(email_map.values()):
-        sfacts['submitter_previous_commits'] += value['commit_count']
+        sfacts[u'submitter_previous_commits'] += value[u'commit_count']
 
-    for filen in meta.get('component_filenames', ()):
+    for filen in meta.get(u'component_filenames', ()):
         for email_v in list(email_map.values()):
-            sfacts['submitter_previous_commits_for_pr_files'] += email_v['commit_count_byfile'].get(filen, 0)
+            sfacts[u'submitter_previous_commits_for_pr_files'] += email_v[u'commit_count_byfile'].get(filen, 0)
 
     return sfacts

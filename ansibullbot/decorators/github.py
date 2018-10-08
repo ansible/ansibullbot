@@ -5,7 +5,6 @@
 # FIXME
 #   - [Errno -5] No address associated with hostname
 
-import httplib
 import logging
 import requests
 import socket
@@ -13,6 +12,11 @@ import ssl
 import sys
 import time
 import traceback
+
+import six
+from six.moves import http_client as httplib
+
+from ansibullbot._text_compat import to_text
 from ansibullbot.errors import RateLimitError
 
 import ansibullbot.constants as C
@@ -76,7 +80,7 @@ def get_reset_time(fn, args):
     if rl:
         # The time at which the current rate limit window resets
         # in UTC epoch seconds. [ex. 1483405983]
-        logging.debug('rate_limit: %s' % str(rl))
+        logging.debug('rate_limit: %s' % to_text(six))
         reset_time = rl['resources']['core']['reset'] - time.time()
         reset_time = int(reset_time)
         if reset_time < 1:
@@ -100,10 +104,11 @@ def RateLimited(fn):
             rl = get_rate_limit()
 
             if rl:
+                func_name = fn.__name__ if six.PY3 else fn.func_name
                 logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
                               (count,
                                type(args[0]),
-                               fn.func_name,
+                               func_name,
                                rl['resources']['core']['remaining']))
 
             if count > 10:

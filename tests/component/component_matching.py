@@ -3,6 +3,7 @@
 import json
 import unittest
 
+from ansibullbot._text_compat import to_text
 from ansibullbot.triagers.ansible import AnsibleTriage
 from ansibullbot.utils.extractors import extract_template_data
 
@@ -24,7 +25,7 @@ class TestComponentMatching(unittest.TestCase):
 
         for key in keys:
 
-            k = str(key)
+            k = to_text(key)
             v = jdata[k]
 
             if '/pull/' in v['html_url']:
@@ -59,5 +60,5 @@ class TestComponentMatching(unittest.TestCase):
                     AT.valid_labels,
                     components
                 )
-                print('\t' + str(comp_labels))
+                print('\t' + to_text(comp_labels))
                 #import epdb; epdb.st()

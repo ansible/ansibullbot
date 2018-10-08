@@ -19,6 +19,8 @@
 # which is licensed GPLv3. This code therefore is also licensed under the terms
 # of the GNU Public License, version 3.
 
+from __future__ import absolute_import, division, print_function
+
 import sys
 import tempfile
 import os
@@ -26,8 +28,10 @@ import os
 from six import string_types
 from six.moves import configparser
 
-PROG_NAME = 'ansibullbot'
-BOOL_TRUE = frozenset(["true", "t", "y", "1", "yes", "on"])
+from ._text_compat import to_text
+
+PROG_NAME = u'ansibullbot'
+BOOL_TRUE = frozenset([u"true", u"t", u"y", u"1", u"yes", u"on"])
 
 
 def mk_boolean(value):
@@ -35,16 +39,12 @@ def mk_boolean(value):
     if not isinstance(value, bool):
         if value is None:
             ret = False
-        ret = (str(value).lower() in BOOL_TRUE)
+        ret = (to_text(value).lower() in BOOL_TRUE)
     return ret
 
 
-def to_text(value, errors=None, nonstring=None):
-    return str(value)
-
-
 def unquote(value):
-    return value.replace('"', '').replace("'", '')
+    return value.replace(u'"', u'').replace(u"'", u'')
 
 
 def shell_expand(path, expand_relative_paths=False):

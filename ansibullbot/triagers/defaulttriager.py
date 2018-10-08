@@ -29,12 +29,15 @@ from datetime import datetime
 from logging.handlers import WatchedFileHandler
 from pprint import pprint
 
+from six.moves import input
+
 # remember to pip install PyGithub, kids!
 from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
 import ansibullbot.constants as C
+from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
@@ -323,7 +326,7 @@ class DefaultTriager(object):
                     print("Running actions non-interactive as you forced.")
                     self.execute_actions(iw, actions)
                     return action_meta
-                cont = raw_input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
+                cont = input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
                 if cont in ('Y', 'y'):
@@ -339,7 +342,7 @@ class DefaultTriager(object):
                     import epdb; epdb.st()
         elif self.always_pause:
             print("Skipping, but pause.")
-            cont = raw_input("Continue (Y/n/a/R/T/DEBUG)? ")
+            cont = input("Continue (Y/n/a/R/T/DEBUG)? ")
             if cont in ('a', 'A', 'n', 'N'):
                 sys.exit(0)
             if cont == 'T':
@@ -403,7 +406,7 @@ class DefaultTriager(object):
         print("%s|%s" % (line.rstrip().ljust(padding), line))
 
         print('# ' + iw.html_url)
-        cont = raw_input("Apply this new description? (Y/N) ")
+        cont = input("Apply this new description? (Y/N) ")
         if cont == 'Y':
             iw.set_description(DF.new_description)
             return True
@@ -492,7 +495,7 @@ class DefaultTriager(object):
 
     def dump_action_dict(self, issue, actions):
         '''Serialize the action dict to disk for quick(er) debugging'''
-        fn = os.path.join('/tmp', 'actions', issue.repo_full_name, str(issue.number) + '.json')
+        fn = os.path.join(u'/tmp', u'actions', issue.repo_full_name, to_text(issue.number) + u'.json')
         dn = os.path.dirname(fn)
         if not os.path.isdir(dn):
             os.makedirs(dn)

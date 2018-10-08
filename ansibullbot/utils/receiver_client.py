@@ -2,6 +2,8 @@
 
 import logging
 import ansibullbot.constants as C
+from ansibullbot._text_compat import to_text
+
 import requests
 
 
@@ -10,18 +12,18 @@ def post_to_receiver(path, params, data):
     if not data:
         return
 
-    if not C.DEFAULT_RECEIVER_HOST or 'none' in C.DEFAULT_RECEIVER_HOST.lower():
+    if not C.DEFAULT_RECEIVER_HOST or u'none' in C.DEFAULT_RECEIVER_HOST.lower():
         return
 
     rr = None
     if C.DEFAULT_RECEIVER_HOST and data:
-        receiverurl = 'http://'
+        receiverurl = u'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
-        receiverurl += ':'
-        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
-        receiverurl += '/'
+        receiverurl += u':'
+        receiverurl += to_text(C.DEFAULT_RECEIVER_PORT)
+        receiverurl += u'/'
         receiverurl += path
-        logging.info('RECEIVER: POST to %s' % receiverurl)
+        logging.info(u'RECEIVER: POST to %s' % receiverurl)
         try:
             rr = requests.post(receiverurl, params=params, json=data)
         except Exception as e:
@@ -30,9 +32,9 @@ def post_to_receiver(path, params, data):
     try:
         if rr is not None:
             for k, v in rr.json().items():
-                logging.info('RECEIVER: %s %s' % (v, k))
+                logging.info(u'RECEIVER: %s %s' % (v, k))
     except ValueError as e:
-        logging.debug('RECEIVER: status_code = %s' % rr.status_code)
+        logging.debug(u'RECEIVER: status_code = %s' % rr.status_code)
         logging.warning(e)
 
 
@@ -51,21 +53,21 @@ def get_receiver_summaries(username, reponame, state=None, number=None):
     if not username or not reponame:
         return
 
-    if not C.DEFAULT_RECEIVER_HOST or 'none' in C.DEFAULT_RECEIVER_HOST.lower():
+    if not C.DEFAULT_RECEIVER_HOST or u'none' in C.DEFAULT_RECEIVER_HOST.lower():
         return
 
     if C.DEFAULT_RECEIVER_HOST:
-        receiverurl = 'http://'
+        receiverurl = u'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
-        receiverurl += ':'
-        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
-        receiverurl += '/'
-        receiverurl += 'summaries'
-        logging.info('RECEIVER: GET %s' % receiverurl)
+        receiverurl += u':'
+        receiverurl += to_text(C.DEFAULT_RECEIVER_PORT)
+        receiverurl += u'/'
+        receiverurl += u'summaries'
+        logging.info(u'RECEIVER: GET %s' % receiverurl)
 
-        params = {'user': username, 'repo': reponame}
+        params = {u'user': username, u'repo': reponame}
         if state:
-            params['state'] = state
+            params[u'state'] = state
 
         rr = None
         try:
@@ -96,21 +98,21 @@ def get_receiver_metadata(username, reponame, number=None):
     if not username or not reponame:
         return
 
-    if not C.DEFAULT_RECEIVER_HOST or 'none' in C.DEFAULT_RECEIVER_HOST.lower():
+    if not C.DEFAULT_RECEIVER_HOST or u'none' in C.DEFAULT_RECEIVER_HOST.lower():
         return
 
     if C.DEFAULT_RECEIVER_HOST:
-        receiverurl = 'http://'
+        receiverurl = u'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
-        receiverurl += ':'
-        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
-        receiverurl += '/'
-        receiverurl += 'metadata'
-        logging.info('RECEIVER: GET %s' % receiverurl)
+        receiverurl += u':'
+        receiverurl += to_text(C.DEFAULT_RECEIVER_PORT)
+        receiverurl += u'/'
+        receiverurl += u'metadata'
+        logging.info(u'RECEIVER: GET %s' % receiverurl)
 
-        params = {'user': username, 'repo': reponame}
+        params = {u'user': username, u'repo': reponame}
         if number:
-            params['number'] = number
+            params[u'number'] = number
 
         rr = None
         try:

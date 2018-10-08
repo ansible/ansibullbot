@@ -25,6 +25,9 @@ import time
 from datetime import datetime
 from operator import itemgetter
 from pprint import pprint
+
+import six
+
 from github import Github
 
 from pulltriager import TriagePullRequests
@@ -163,7 +166,7 @@ class AnsibleAnsibleTriagePullRequests(TriagePullRequests):
 
     def build_filemap_regexes(self):
         '''Create regex matchers for each key in the map'''
-        for k,v in self.FILEMAP.iteritems():
+        for k,v in six.iteritems(self.FILEMAP):
             if not 'regex' in self.FILEMAP:
                 reg = k
                 if reg.endswith('/'):

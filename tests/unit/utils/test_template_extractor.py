@@ -7,156 +7,156 @@ from ansibullbot.utils.extractors import extract_template_data
 class TestTemplateExtraction(unittest.TestCase):
     def test_0(self):
         body = [
-            '#### ONE',
-            'section one',
-            '#### TWO',
-            'section two',
-            '#### THREE',
-            'section three'
+            u'#### ONE',
+            u'section one',
+            u'#### TWO',
+            u'section two',
+            u'#### THREE',
+            u'section three'
         ]
-        body = '\r\n'.join(body)
+        body = u'\r\n'.join(body)
         issue_number = 0
-        issue_class = 'issue'
-        sections = ['ONE', 'TWO', 'THREE']
+        issue_class = u'issue'
+        sections = [u'ONE', u'TWO', u'THREE']
         tdata = extract_template_data(
             body, issue_number=issue_number,
             issue_class=issue_class, sections=sections
         )
-        assert tdata.get('one') == 'section one'
-        assert tdata.get('two') == 'section two'
-        assert tdata.get('three') == 'section three'
+        assert tdata.get(u'one') == u'section one'
+        assert tdata.get(u'two') == u'section two'
+        assert tdata.get(u'three') == u'section three'
 
     def test_1(self):
         body = [
-            '#### ISSUE TYPE',
-            '- Bug Report',
-            '#### COMPONENT NAME',
-            'widget module',
-            '#### ANSIBLE VERSION',
-            '1.9.x'
-            '#### SUMMARY',
-            'the widget module does not work for me!!!'
+            u'#### ISSUE TYPE',
+            u'- Bug Report',
+            u'#### COMPONENT NAME',
+            u'widget module',
+            u'#### ANSIBLE VERSION',
+            u'1.9.x'
+            u'#### SUMMARY',
+            u'the widget module does not work for me!!!'
         ]
-        body = '\r\n'.join(body)
+        body = u'\r\n'.join(body)
         issue_number = 0
-        issue_class = 'issue'
-        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        issue_class = u'issue'
+        sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
             issue_class=issue_class, sections=sections
         )
-        assert tdata.get('ansible version') == '1.9.x'
-        assert tdata.get('issue type') == 'bug report'
-        assert tdata.get('component name') == 'widget'
-        assert tdata.get('component_raw') == 'widget module'
-        assert tdata.get('summary') == 'the widget module does not work for me!!!'
+        assert tdata.get(u'ansible version') == u'1.9.x'
+        assert tdata.get(u'issue type') == u'bug report'
+        assert tdata.get(u'component name') == u'widget'
+        assert tdata.get(u'component_raw') == u'widget module'
+        assert tdata.get(u'summary') == u'the widget module does not work for me!!!'
 
     def test_2(self):
         body = [
-            '*** issue type ***:',
-            '- Bug Report',
-            '*** component name ***:',
-            'widget module',
-            '*** ansible version ***:',
-            '1.9.x'
-            '*** summary ***:',
-            'the widget module does not work for me!!!'
+            u'*** issue type ***:',
+            u'- Bug Report',
+            u'*** component name ***:',
+            u'widget module',
+            u'*** ansible version ***:',
+            u'1.9.x'
+            u'*** summary ***:',
+            u'the widget module does not work for me!!!'
         ]
-        body = '\r\n'.join(body)
+        body = u'\r\n'.join(body)
         issue_number = 0
-        issue_class = 'issue'
-        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        issue_class = u'issue'
+        sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
             issue_class=issue_class, sections=sections
         )
-        assert tdata.get('ansible version') == '1.9.x'
-        assert tdata.get('issue type') == 'bug report'
-        assert tdata.get('component name') == 'widget'
-        assert tdata.get('component_raw') == 'widget module'
-        assert tdata.get('summary') == 'the widget module does not work for me!!!'
+        assert tdata.get(u'ansible version') == u'1.9.x'
+        assert tdata.get(u'issue type') == u'bug report'
+        assert tdata.get(u'component name') == u'widget'
+        assert tdata.get(u'component_raw') == u'widget module'
+        assert tdata.get(u'summary') == u'the widget module does not work for me!!!'
 
     # https://github.com/ansible/ansibullbot/issues/359
     def test_3(self):
         body = [
-            '#### ISSUE TYPE',
-            '- Bug Report',
-            '#### COMPONENT NAME',
-            'widget, thingamajig',
-            '#### ANSIBLE VERSION',
-            '1.9.x'
-            '#### SUMMARY',
-            'the widget AND thingamig modules are broken!!!'
+            u'#### ISSUE TYPE',
+            u'- Bug Report',
+            u'#### COMPONENT NAME',
+            u'widget, thingamajig',
+            u'#### ANSIBLE VERSION',
+            u'1.9.x'
+            u'#### SUMMARY',
+            u'the widget AND thingamig modules are broken!!!'
         ]
-        body = '\r\n'.join(body)
+        body = u'\r\n'.join(body)
         issue_number = 0
-        issue_class = 'issue'
-        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        issue_class = u'issue'
+        sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
             issue_class=issue_class, sections=sections
         )
-        assert tdata.get('ansible version') == '1.9.x'
-        assert tdata.get('issue type') == 'bug report'
-        assert tdata.get('component name') == 'widget'
-        assert tdata.get('component_raw') == 'widget, thingamajig'
-        assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'
+        assert tdata.get(u'ansible version') == u'1.9.x'
+        assert tdata.get(u'issue type') == u'bug report'
+        assert tdata.get(u'component name') == u'widget'
+        assert tdata.get(u'component_raw') == u'widget, thingamajig'
+        assert tdata.get(u'summary') == u'the widget AND thingamig modules are broken!!!'
 
     # https://github.com/ansible/ansibullbot/issues/385
     def test_4(self):
         body = [
-            '#### ISSUE TYPE',
-            '- Feature Idea',
-            '#### COMPONENT NAME',
-            'Modules openssl_privatekey and openssl_publickey',
-            '#### ANSIBLE VERSION',
-            '```',
-            'ansible 2.2.1.0',
-            '  config file = /home/kellerfuchs/hashbang/admin-tools/ansible.cfg',
-            '  configured module search path = Default w/o overrides',
-            '```',
-            '#### SUMMARY',
-            'the widget AND thingamig modules are broken!!!'
+            u'#### ISSUE TYPE',
+            u'- Feature Idea',
+            u'#### COMPONENT NAME',
+            u'Modules openssl_privatekey and openssl_publickey',
+            u'#### ANSIBLE VERSION',
+            u'```',
+            u'ansible 2.2.1.0',
+            u'  config file = /home/kellerfuchs/hashbang/admin-tools/ansible.cfg',
+            u'  configured module search path = Default w/o overrides',
+            u'```',
+            u'#### SUMMARY',
+            u'the widget AND thingamig modules are broken!!!'
         ]
-        body = '\r\n'.join(body)
+        body = u'\r\n'.join(body)
         issue_number = 0
-        issue_class = 'issue'
-        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        issue_class = u'issue'
+        sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
             issue_class=issue_class, sections=sections
         )
 
         #import epdb; epdb.st()
-        assert tdata.get('ansible version').split('\n')[0] == 'ansible 2.2.1.0'
-        assert tdata.get('issue type') == 'feature idea'
-        assert tdata.get('component name') == 'openssl_privatekey'
-        assert tdata.get('component_raw') == 'Modules openssl_privatekey and openssl_publickey'
-        assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'
+        assert tdata.get(u'ansible version').split(u'\n')[0] == u'ansible 2.2.1.0'
+        assert tdata.get(u'issue type') == u'feature idea'
+        assert tdata.get(u'component name') == u'openssl_privatekey'
+        assert tdata.get(u'component_raw') == u'Modules openssl_privatekey and openssl_publickey'
+        assert tdata.get(u'summary') == u'the widget AND thingamig modules are broken!!!'
 
 
     # Test optional Markdown header syntax
     def test_5(self):
         body = [
-            '#### ISSUE TYPE ####',
-            '- Bug Report',
-            '#### COMPONENT NAME ####',
-            'widget, thingamajig',
-            '#### ANSIBLE VERSION ####',
-            '1.9.x'
-            '#### SUMMARY ####',
-            'the widget AND thingamig modules are broken!!!'
+            u'#### ISSUE TYPE ####',
+            u'- Bug Report',
+            u'#### COMPONENT NAME ####',
+            u'widget, thingamajig',
+            u'#### ANSIBLE VERSION ####',
+            u'1.9.x'
+            u'#### SUMMARY ####',
+            u'the widget AND thingamig modules are broken!!!'
         ]
-        body = '\r\n'.join(body)
+        body = u'\r\n'.join(body)
         issue_number = 0
-        issue_class = 'issue'
-        sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
+        issue_class = u'issue'
+        sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
             body, issue_number=issue_number,
             issue_class=issue_class, sections=sections
         )
-        assert tdata.get('ansible version') == '1.9.x'
-        assert tdata.get('issue type') == 'bug report'
-        assert tdata.get('component name') == 'widget'
-        assert tdata.get('component_raw') == 'widget, thingamajig'
-        assert tdata.get('summary') == 'the widget AND thingamig modules are broken!!!'
+        assert tdata.get(u'ansible version') == u'1.9.x'
+        assert tdata.get(u'issue type') == u'bug report'
+        assert tdata.get(u'component name') == u'widget'
+        assert tdata.get(u'component_raw') == u'widget, thingamajig'
+        assert tdata.get(u'summary') == u'the widget AND thingamig modules are broken!!!'

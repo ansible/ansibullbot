@@ -10,9 +10,9 @@ def get_filament_facts(issuewrapper, meta):
     if iw.is_pullrequest():
         if iw.files:
             for fn in iw.files:
-                if fn.endswith('filament.py') or fn.endswith('lightbulb.py'):
+                if fn.endswith(u'filament.py') or fn.endswith(u'lightbulb.py'):
                     isfilament = True
                     break
 
-    meta['is_filament'] = isfilament
+    meta[u'is_filament'] = isfilament
     return meta

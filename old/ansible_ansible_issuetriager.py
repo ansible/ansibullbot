@@ -24,6 +24,8 @@ import time
 from datetime import datetime
 from operator import itemgetter
 
+import six
+
 # remember to pip install PyGithub, kids!
 from github import Github
 
@@ -126,7 +128,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             self.debug(msg='broken bot stanza')
 
             # clear out all actions and do nothing
-            for k,v in self.actions.iteritems():
+            for k,v in six.iteritems(self.actions):
                 if type(v) == list:
                     self.actions[k] = []
             self.actions['close'] = False
@@ -137,7 +139,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             self.debug(msg='bot skip stanza')
 
             # clear out all actions and do nothing
-            for k,v in self.actions.iteritems():
+            for k,v in six.iteritems(self.actions):
                 if type(v) == list:
                     self.actions[k] = []
             self.actions['close'] = False
@@ -147,7 +149,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             self.debug(msg='bot spam stanza')
 
             # clear out all actions and do nothing
-            for k,v in self.actions.iteritems():
+            for k,v in six.iteritems(self.actions):
                 if type(v) == list:
                     self.actions[k] = []
             self.actions['close'] = False
@@ -165,7 +167,7 @@ class AnsibleAnsibleTriageIssues(TriageIssues):
             self.debug(msg='needs contributor stanza')
 
             # clear out all actions and do nothing
-            for k,v in self.actions.iteritems():
+            for k,v in six.iteritems(self.actions):
                 if type(v) == list:
                     self.actions[k] = []
             self.actions['close'] = False

@@ -5,9 +5,12 @@ import logging
 import os
 import re
 
+import six
+
 from fuzzywuzzy import fuzz as fw_fuzz
 from textblob import TextBlob
 
+from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
@@ -19,11 +22,11 @@ import ansibullbot.constants as C
 class FileIndexer(ModuleIndexer):
 
     DEFAULT_COMPONENT_MATCH = {
-        'supported_by': 'core',
-        'filename': None,
-        'labels': [],
-        'owners': [],
-        'notify': []
+        u'supported_by': u'core',
+        u'filename': None,
+        u'labels': [],
+        u'owners': [],
+        u'notify': []
     }
 
     files = []
@@ -44,7 +47,7 @@ class FileIndexer(ModuleIndexer):
             with open(self.botmetafile, 'rb') as f:
                 rdata = f.read()
         else:
-            fp = '.github/BOTMETA.yml'
+            fp = u'.github/BOTMETA.yml'
             rdata = self.get_file_content(fp)
         if rdata:
             self.botmeta = BotMetadataParser.parse_yaml(rdata)
@@ -53,12 +56,12 @@ class FileIndexer(ModuleIndexer):
 
         # reshape meta into old format
         self.CMAP = {}
-        for k, v in self.botmeta.get('files', {}).items():
+        for k, v in self.botmeta.get(u'files', {}).items():
             if not v:
                 continue
-            if 'keywords' not in v:
+            if u'keywords' not in v:
                 continue
-            for keyword in v['keywords']:
+            for keyword in v[u'keywords']:
                 if keyword not in self.CMAP:
                     self.CMAP[keyword] = []
                 if k not in self.CMAP[keyword]:
@@ -70,24 +73,24 @@ class FileIndexer(ModuleIndexer):
 
     def get_files(self):
 
-        cmd = 'find %s' % self.gitrepo.checkoutdir
+        cmd = u'find %s' % self.gitrepo.checkoutdir
         (rc, so, se) = run_command(cmd)
-        files = so.split('\n')
+        files = to_text(so).split(u'\n')
         files = [x.strip() for x in files if x.strip()]
-        files = [x.replace(self.gitrepo.checkoutdir + '/', '') for x in files]
-        files = [x for x in files if not x.startswith('.git')]
+        files = [x.replace(self.gitrepo.checkoutdir + u'/', u'') for x in files]
+        files = [x for x in files if not x.startswith(u'.git')]
         self.files = files
 
     def get_component_labels(self, files, valid_labels=[]):
         '''Matches a filepath to the relevant c: labels'''
-        labels = [x for x in valid_labels if x.startswith('c:')]
+        labels = [x for x in valid_labels if x.startswith(u'c:')]
 
         clabels = []
         for cl in labels:
-            cl = cl.replace('c:', '', 1)
-            al = os.path.join('lib/ansible', cl)
-            if al.endswith('/'):
-                al = al.rstrip('/')
+            cl = cl.replace(u'c:', u'', 1)
+            al = os.path.join(u'lib/ansible', cl)
+            if al.endswith(u'/'):
+                al = al.rstrip(u'/')
             for f in files:
                 if not f:
                     continue
@@ -109,9 +112,9 @@ class FileIndexer(ModuleIndexer):
         # Use botmeta
         ckeys = self._filenames_to_keys(files)
         for ckey in ckeys:
-            if not self.botmeta['files'].get(ckey):
+            if not self.botmeta[u'files'].get(ckey):
                 continue
-            ckey_labels = self.botmeta['files'][ckey].get('labels', [])
+            ckey_labels = self.botmeta[u'files'][ckey].get(u'labels', [])
             for cklabel in ckey_labels:
                 if cklabel in valid_labels and cklabel not in clabels:
                     clabels.append(cklabel)
@@ -122,9 +125,9 @@ class FileIndexer(ModuleIndexer):
         '''Match filenames to the keys in botmeta'''
         ckeys = set()
         for filen in filenames:
-            if filen in self.botmeta['files']:
+            if filen in self.botmeta[u'files']:
                 ckeys.add(filen)
-            for key in self.botmeta['files'].keys():
+            for key in self.botmeta[u'files'].keys():
                 if filen.startswith(key):
                     ckeys.add(key)
         return list(ckeys)
@@ -132,16 +135,16 @@ class FileIndexer(ModuleIndexer):
     def _string_to_cmap_key(self, text):
         text = text.lower()
         matches = []
-        if text.endswith('.'):
-            text = text.rstrip('.')
+        if text.endswith(u'.'):
+            text = text.rstrip(u'.')
         if text in self.CMAP:
             matches += self.CMAP[text]
             return matches
-        elif (text + 's') in self.CMAP:
-            matches += self.CMAP[text + 's']
+        elif (text + u's') in self.CMAP:
+            matches += self.CMAP[text + u's']
             return matches
-        elif text.rstrip('s') in self.CMAP:
-            matches += self.CMAP[text.rstrip('s')]
+        elif text.rstrip(u's') in self.CMAP:
+            matches += self.CMAP[text.rstrip(u's')]
             return matches
         return matches
 
@@ -162,33 +165,33 @@ class FileIndexer(ModuleIndexer):
         matches = []
         for filen in filenames:
             match = copy.deepcopy(self.DEFAULT_COMPONENT_MATCH)
-            match['filename'] = filen
+            match[u'filename'] = filen
 
             ckeys = self._filenames_to_keys([filen])
             ckeys = sorted(set(ckeys))
 
             for ckey in ckeys:
-                cdata = self.botmeta['files'].get(ckey)
+                cdata = self.botmeta[u'files'].get(ckey)
                 if not cdata:
                     continue
 
-                if 'labels' in cdata:
-                    for label in cdata['labels']:
-                        if label not in match['labels']:
-                            match['labels'].append(label)
+                if u'labels' in cdata:
+                    for label in cdata[u'labels']:
+                        if label not in match[u'labels']:
+                            match[u'labels'].append(label)
 
-                if 'support' in cdata:
-                    match['supported_by'] = cdata['support'][0]
+                if u'support' in cdata:
+                    match[u'supported_by'] = cdata[u'support'][0]
 
-                if 'maintainers' in cdata:
-                    for user in cdata['maintainers']:
-                        if user not in match['owners']:
-                            match['owners'].append(user)
+                if u'maintainers' in cdata:
+                    for user in cdata[u'maintainers']:
+                        if user not in match[u'owners']:
+                            match[u'owners'].append(user)
 
-                if 'notify' in cdata:
-                    for user in cdata['notify']:
-                        if user not in match['notify']:
-                            match['notify'].append(user)
+                if u'notify' in cdata:
+                    for user in cdata[u'notify']:
+                        if user not in match[u'notify']:
+                            match[u'notify'].append(user)
 
             matches.append(match)
 
@@ -203,59 +206,59 @@ class FileIndexer(ModuleIndexer):
         # "/usr/lib/python2.7/site-packages/ansible/plugins/callback/foreman.py",
         #   line 30, in <module>
 
-        STOPWORDS = ['ansible', 'core', 'plugin']
-        STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',']
+        STOPWORDS = [u'ansible', u'core', u'plugin']
+        STOPCHARS = [u'"', u"'", u'(', u')', u'?', u'*', u'`', u',']
         matches = []
 
-        if 'Traceback (most recent call last)' in body:
-            lines = body.split('\n')
+        if u'Traceback (most recent call last)' in body:
+            lines = body.split(u'\n')
             for line in lines:
                 line = line.strip()
-                if line.startswith('DistributionNotFound'):
-                    matches = ['setup.py']
+                if line.startswith(u'DistributionNotFound'):
+                    matches = [u'setup.py']
                     break
-                elif line.startswith('File'):
+                elif line.startswith(u'File'):
                     fn = line.split()[1]
                     for SC in STOPCHARS:
-                        fn = fn.replace(SC, '')
-                    if 'ansible_module_' in fn:
+                        fn = fn.replace(SC, u'')
+                    if u'ansible_module_' in fn:
                         fn = os.path.basename(fn)
-                        fn = fn.replace('ansible_module_', '')
+                        fn = fn.replace(u'ansible_module_', u'')
                         matches = [fn]
-                    elif 'cli/playbook.py' in fn:
-                        fn = 'lib/ansible/cli/playbook.py'
-                    elif 'module_utils' in fn:
-                        idx = fn.find('module_utils/')
-                        fn = 'lib/ansible/' + fn[idx:]
-                    elif 'ansible/' in fn:
-                        idx = fn.find('ansible/')
+                    elif u'cli/playbook.py' in fn:
+                        fn = u'lib/ansible/cli/playbook.py'
+                    elif u'module_utils' in fn:
+                        idx = fn.find(u'module_utils/')
+                        fn = u'lib/ansible/' + fn[idx:]
+                    elif u'ansible/' in fn:
+                        idx = fn.find(u'ansible/')
                         fn1 = fn[idx:]
 
-                        if 'bin/' in fn1:
-                            if not fn1.startswith('bin'):
+                        if u'bin/' in fn1:
+                            if not fn1.startswith(u'bin'):
 
-                                idx = fn1.find('bin/')
+                                idx = fn1.find(u'bin/')
                                 fn1 = fn1[idx:]
 
-                                if fn1.endswith('.py'):
-                                    fn1 = fn1.rstrip('.py')
+                                if fn1.endswith(u'.py'):
+                                    fn1 = fn1.rstrip(u'.py')
 
-                        elif 'cli/' in fn1:
-                            idx = fn1.find('cli/')
+                        elif u'cli/' in fn1:
+                            idx = fn1.find(u'cli/')
                             fn1 = fn1[idx:]
-                            fn1 = 'lib/ansible/' + fn1
+                            fn1 = u'lib/ansible/' + fn1
 
-                        elif 'lib' not in fn1:
-                            fn1 = 'lib/' + fn1
+                        elif u'lib' not in fn1:
+                            fn1 = u'lib/' + fn1
 
                         if fn1 not in self.files:
                             if C.DEFAULT_BREAKPOINTS:
-                                logging.error('breakpoint!')
+                                logging.error(u'breakpoint!')
                                 import epdb; epdb.st()
             if matches:
                 return matches
 
-        craws = template_data.get('component_raw')
+        craws = template_data.get(u'component_raw')
         if craws is None:
             return matches
 
@@ -273,7 +276,7 @@ class FileIndexer(ModuleIndexer):
         wordcount = len(blob.tokens) + 1
 
         for ng_size in reversed(xrange(2, wordcount)):
-            ngrams = [' '.join(x) for x in blob.ngrams(ng_size)]
+            ngrams = [u' '.join(x) for x in blob.ngrams(ng_size)]
             for ng in ngrams:
 
                 matches = self._string_to_cmap_key(ng)
@@ -283,7 +286,7 @@ class FileIndexer(ModuleIndexer):
 
         # https://pypi.python.org/pypi/fuzzywuzzy
         matches = []
-        for cr in craws.lower().split('\n'):
+        for cr in craws.lower().split(u'\n'):
             ratios = []
             for k in self.CMAP.keys():
                 ratio = fw_fuzz.ratio(cr, k)
@@ -298,37 +301,37 @@ class FileIndexer(ModuleIndexer):
 
         # try to match to repo files
         if craws:
-            clines = craws.split('\n')
+            clines = craws.split(u'\n')
             for craw in clines:
-                cparts = craw.replace('-', ' ')
+                cparts = craw.replace(u'-', u' ')
                 cparts = cparts.split()
 
                 for idx, x in enumerate(cparts):
                     for SC in STOPCHARS:
                         if SC in x:
-                            x = x.replace(SC, '')
+                            x = x.replace(SC, u'')
                     for SW in STOPWORDS:
                         if x == SW:
-                            x = ''
-                    if x and '/' not in x:
-                        x = '/' + x
+                            x = u''
+                    if x and u'/' not in x:
+                        x = u'/' + x
                     cparts[idx] = x
 
                 cparts = [x.strip() for x in cparts if x.strip()]
 
                 for x in cparts:
                     for f in self.files:
-                        if '/modules/' in f:
+                        if u'/modules/' in f:
                             continue
-                        if 'test/' in f and 'test' not in craw:
+                        if u'test/' in f and u'test' not in craw:
                             continue
-                        if 'galaxy' in f and 'galaxy' not in body:
+                        if u'galaxy' in f and u'galaxy' not in body:
                             continue
-                        if 'dynamic inv' in body.lower() and 'contrib' not in f:
+                        if u'dynamic inv' in body.lower() and u'contrib' not in f:
                             continue
-                        if 'inventory' in f and 'inventory' not in body.lower():
+                        if u'inventory' in f and u'inventory' not in body.lower():
                             continue
-                        if 'contrib' in f and 'inventory' not in body.lower():
+                        if u'contrib' in f and u'inventory' not in body.lower():
                             continue
 
                         try:
@@ -336,17 +339,17 @@ class FileIndexer(ModuleIndexer):
                         except UnicodeDecodeError:
                             continue
 
-                        fname = os.path.basename(f).split('.')[0]
+                        fname = os.path.basename(f).split(u'.')[0]
 
                         if f.endswith(x):
                             if fname.lower() in body.lower():
                                 matches.append(f)
                                 break
-                        if f.endswith(x + '.py'):
+                        if f.endswith(x + u'.py'):
                             if fname.lower() in body.lower():
                                 matches.append(f)
                                 break
-                        if f.endswith(x + '.ps1'):
+                        if f.endswith(x + u'.ps1'):
                             if fname.lower() in body.lower():
                                 matches.append(f)
                                 break
@@ -355,7 +358,7 @@ class FileIndexer(ModuleIndexer):
                                 matches.append(f)
                                 break
 
-        logging.info('%s --> %s' % (craws, sorted(set(matches))))
+        logging.info(u'%s --> %s' % (craws, sorted(set(matches))))
         self.match_cache[craws.lower()] = matches
         return matches
 
@@ -363,41 +366,41 @@ class FileIndexer(ModuleIndexer):
         '''Read filemap and make re matchers'''
 
         self.FILEMAP = {}
-        bfiles = self.botmeta.get('files', {})
+        bfiles = self.botmeta.get(u'files', {})
         for k, v in bfiles.items():
             self.FILEMAP[k] = {}
             reg = k
-            if reg.endswith('/'):
-                reg += '*'
+            if reg.endswith(u'/'):
+                reg += u'*'
             self.FILEMAP[k] = {
-                'inclusive': True,
-                'exclusive': False,
-                'assign': [],
-                'notify': [],
-                'labels': []
+                u'inclusive': True,
+                u'exclusive': False,
+                u'assign': [],
+                u'notify': [],
+                u'labels': []
             }
-            self.FILEMAP[k]['regex'] = re.compile(reg)
+            self.FILEMAP[k][u'regex'] = re.compile(reg)
             if not v:
                 continue
 
-            if 'maintainers' in v:
-                self.FILEMAP[k]['maintainers'] = v['maintainers']
-            if 'assign' in v or 'maintainers' in v:
-                if 'assign' in v:
-                    self.FILEMAP[k]['assign'] = v['assign']
-                if 'maintainers' in v:
-                    self.FILEMAP[k]['assign'] += v['maintainers']
-                    self.FILEMAP[k]['assign'] = sorted(set(self.FILEMAP[k]['assign']))
-            if 'notify' in v or 'maintainers' in v:
-                if 'notify' in v:
-                    self.FILEMAP[k]['notify'] = v['notify']
-                if 'maintainers' in v:
-                    self.FILEMAP[k]['notify'] += v['maintainers']
-                    self.FILEMAP[k]['notify'] = sorted(set(self.FILEMAP[k]['notify']))
-            if 'labels' in v:
-                labels = v['labels']
-                labels = [x for x in labels if x not in ['lib', 'ansible']]
-                self.FILEMAP[k]['labels'] = labels
+            if u'maintainers' in v:
+                self.FILEMAP[k][u'maintainers'] = v[u'maintainers']
+            if u'assign' in v or u'maintainers' in v:
+                if u'assign' in v:
+                    self.FILEMAP[k][u'assign'] = v[u'assign']
+                if u'maintainers' in v:
+                    self.FILEMAP[k][u'assign'] += v[u'maintainers']
+                    self.FILEMAP[k][u'assign'] = sorted(set(self.FILEMAP[k][u'assign']))
+            if u'notify' in v or u'maintainers' in v:
+                if u'notify' in v:
+                    self.FILEMAP[k][u'notify'] = v[u'notify']
+                if u'maintainers' in v:
+                    self.FILEMAP[k][u'notify'] += v[u'maintainers']
+                    self.FILEMAP[k][u'notify'] = sorted(set(self.FILEMAP[k][u'notify']))
+            if u'labels' in v:
+                labels = v[u'labels']
+                labels = [x for x in labels if x not in [u'lib', u'ansible']]
+                self.FILEMAP[k][u'labels'] = labels
 
     def get_filemap_labels_for_files(self, files):
         '''Get expected labels from the filemap'''
@@ -413,17 +416,17 @@ class FileIndexer(ModuleIndexer):
             if exclusive:
                 continue
 
-            for k, v in self.FILEMAP.iteritems():
-                if not v['inclusive'] and v['regex'].match(f):
-                    labels = v['labels']
+            for k, v in six.iteritems(self.FILEMAP):
+                if not v[u'inclusive'] and v[u'regex'].match(f):
+                    labels = v[u'labels']
                     exclusive = True
                     break
 
-                if 'labels' not in v:
+                if u'labels' not in v:
                     continue
 
-                if v['regex'].match(f):
-                    for label in v['labels']:
+                if v[u'regex'].match(f):
+                    for label in v[u'labels']:
                         if label not in labels:
                             labels.append(label)
 
@@ -444,21 +447,21 @@ class FileIndexer(ModuleIndexer):
             if exclusive:
                 continue
 
-            for k, v in self.FILEMAP.iteritems():
-                if not v['inclusive'] and v['regex'].match(f):
-                    to_notify = v['notify']
-                    to_assign = v['assign']
+            for k, v in six.iteritems(self.FILEMAP):
+                if not v[u'inclusive'] and v[u'regex'].match(f):
+                    to_notify = v[u'notify']
+                    to_assign = v[u'assign']
                     exclusive = True
                     break
 
-                if 'notify' not in v and 'assign' not in v:
+                if u'notify' not in v and u'assign' not in v:
                     continue
 
-                if v['regex'].match(f):
-                    for user in v['notify']:
+                if v[u'regex'].match(f):
+                    for user in v[u'notify']:
                         if user not in to_notify:
                             to_notify.append(user)
-                    for user in v['assign']:
+                    for user in v[u'assign']:
                         if user not in to_assign:
                             to_assign.append(user)
 
@@ -475,9 +478,9 @@ class FileIndexer(ModuleIndexer):
             email = [email]
 
         if not self.email_commits:
-            cmd = 'cd {}; git log --format="%H %ae"'.format(self.gitrepo.checkoutdir)
+            cmd = u'cd {}; git log --format="%H %ae"'.format(self.gitrepo.checkoutdir)
             (rc, so, se) = run_command(cmd)
-            commits = [x.split(None, 1)[::-1] for x in so.split('\n') if x]
+            commits = [x.split(None, 1)[::-1] for x in to_text(so).split(u'\n') if x]
             for x in commits:
                 if x[0] not in self.email_commits:
                     self.email_commits[x[0]] = []

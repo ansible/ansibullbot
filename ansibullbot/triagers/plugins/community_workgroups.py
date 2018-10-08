@@ -7,25 +7,25 @@ def get_community_workgroup_facts(issuewrapper, meta):
 
     # https://github.com/ansible/community#groups-we-help
     WORKING_GROUPS = {
-        'cloud/amazon': 'aws',
-        'cloud/azure': 'azure',
-        'cloud/vmware': 'vmware',
-        'network/': 'network',
-        'windows/': 'windows'
+        u'cloud/amazon': u'aws',
+        u'cloud/azure': u'azure',
+        u'cloud/vmware': u'vmware',
+        u'network/': u'network',
+        u'windows/': u'windows'
 
     }
 
     iw = issuewrapper
     facts = {
-        'workgroup': None,
-        'is_maintainer': False,
-        'has_notification': False,
-        'needs_notification': False
+        u'workgroup': None,
+        u'is_maintainer': False,
+        u'has_notification': False,
+        u'needs_notification': False
     }
 
     wgroups = set()
-    for cm in meta.get('component_matches', []):
-        ns = cm.get('namespace')
+    for cm in meta.get(u'component_matches', []):
+        ns = cm.get(u'namespace')
         if ns:
             for k,v in WORKING_GROUPS.items():
                 if ns.startswith(k):
@@ -33,17 +33,17 @@ def get_community_workgroup_facts(issuewrapper, meta):
                     break
     wgroups = list(wgroups)
     if len(wgroups) == 1:
-        facts['workgroup'] = wgroups[0]
+        facts[u'workgroup'] = wgroups[0]
 
-    maintainer = iw.submitter in meta['component_maintainers']
+    maintainer = iw.submitter in meta[u'component_maintainers']
     if maintainer:
-        facts['is_maintainer'] = True
+        facts[u'is_maintainer'] = True
 
-    bpc = iw.history.last_date_for_boilerplate('community_workgroups')
+    bpc = iw.history.last_date_for_boilerplate(u'community_workgroups')
     if bpc:
-        facts['has_notification'] = True
+        facts[u'has_notification'] = True
 
     if not bpc and len(wgroups) == 1 and not maintainer and len(iw.comments) == 0:
-        facts['needs_notification'] = True
+        facts[u'needs_notification'] = True
 
-    return {'wg': facts}
+    return {u'wg': facts}
