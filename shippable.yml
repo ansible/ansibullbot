@@ -1,7 +1,13 @@
 language: python
 python:
   - 2.7
+  - 3.7
 build:
+  pre_ci_boot:
+    image_name: drydock/u16pytall
+    image_tag: master
+    pull: false
+    options: --privileged=false --net=bridge
   ci:
    - mkdir -p shippable/testresults
    - mkdir -p shippable/codecoverage
