@@ -1623,8 +1623,15 @@ class AnsibleTriage(DefaultTriager):
                 stale.append(number)
                 continue
 
-            with open(mfile, 'rb') as f:
-                meta = json.load(f)
+            try:
+                with open(mfile, 'rb') as f:
+                    meta = json.load(f)
+            except ValueError as e:
+                logging.error('failed to parse %s: %s' % (to_text(mfile), to_text(e)))
+                os.remove(mfile)
+                reasons[number] = u'%s missing' % mfile
+                stale.append(number)
+                continue
 
             ts = meta[u'time']
             ts = strip_time_safely(ts)
