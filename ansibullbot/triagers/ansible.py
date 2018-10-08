@@ -1740,8 +1740,6 @@ class AnsibleTriage(DefaultTriager):
                     (len(numbers), since)
                 )
 
-                # FIXME - disabled after py3 patches
-                '''
                 for k, v in self.issue_summaries[repo].items():
                     if v[u'created_at'] > self.repos[repo][u'since']:
                         numbers.append(k)
@@ -1751,7 +1749,6 @@ class AnsibleTriage(DefaultTriager):
                     u'%s numbers after [www] since == %s' %
                     (len(numbers), since)
                 )
-                '''
 
         if self.start_at and self.repos[repo][u'loopcount'] == 0:
             numbers = [x for x in numbers if x <= self.start_at]
@@ -1760,6 +1757,7 @@ class AnsibleTriage(DefaultTriager):
         # Get stale numbers if not targeting
         if repo not in MREPOS:
             if self.daemonize and self.repos[repo][u'loopcount'] > 0:
+                logging.info('checking for stale numbers')
                 stale = self.get_stale_numbers(repo)
                 self.repos[repo][u'stale'] = [int(x) for x in stale]
                 numbers += [int(x) for x in stale]
