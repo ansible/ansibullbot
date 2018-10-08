@@ -1172,7 +1172,10 @@ class AnsibleTriage(DefaultTriager):
         # notify?
         if not self.meta['is_bad_pr']:
             if self.meta['to_notify']:
-                tvars = {'notify': self.meta['to_notify']}
+                tvars = {
+                    'notify': self.meta['to_notify'],
+                    'submitter': iw.submitter,
+                }
                 comment = self.render_boilerplate(tvars, boilerplate='notify')
                 if comment not in actions.comments:
                     actions.comments.append(comment)
