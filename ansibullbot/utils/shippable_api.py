@@ -4,7 +4,7 @@
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
 import ansibullbot.constants as C
-import ansibullbot._text_compat as to_text
+from ansibullbot._text_compat import to_text
 
 import datetime
 import gzip
