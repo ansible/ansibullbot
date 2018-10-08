@@ -11,7 +11,7 @@
 #  * In loop: Pick out oldest unreviewed PRs by issue['created_at'] (in community review)
 #  * Be sure to include individual URLs ['pull_request']['html_url']
 
-import os, requests, json, sys, argparse, time
+import os, requests, json, sys, argparse, time, six
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -24,7 +24,7 @@ args = {'state':'open', 'page':1}
 # Get number of pages 
 r = requests.get(repo_url, params=args)
 try:
-    lastpage = int(str(r.links['last']['url']).split('=')[-1])
+    lastpage = int(six.text_type(r.links['last']['url']).split('=')[-1])
 except:
     lastpage = 1
 
@@ -46,7 +46,7 @@ for page in range(1,lastpage):
             latest_module_string += issue['html_url'] + "\n\n"
         if issue_time < oldest_module_time:
             oldest_module_time = issue_time
-            oldest_module_string = issue['title'] + " (" + str(issue_age) + " days old)\n" + issue['html_url']+ "\n\n"
+            oldest_module_string = issue['title'] + " (" + six.text_type(issue_age) + " days old)\n" + issue['html_url']+ "\n\n"
             
 
 # Final report

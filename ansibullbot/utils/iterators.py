@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+import six
 
-class RepoIssuesIterator(object):
+
+class RepoIssuesIterator(six.Iterator):
 
     def __init__(self, repo, numbers, issuecache={}):
         self.repo = repo
@@ -12,7 +14,7 @@ class RepoIssuesIterator(object):
     def __iter__(self):
         return self
 
-    def next(self):
+    def __next__(self):
 
         if self.i > (len(self.numbers) - 1):
             raise StopIteration()

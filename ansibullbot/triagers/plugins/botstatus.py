@@ -2,19 +2,19 @@ def get_bot_status_facts(issuewrapper, module_indexer, core_team=[], bot_names=[
     iw = issuewrapper
     bs = False
     for ev in iw.history.history:
-        if ev['event'] != 'commented':
+        if ev[u'event'] != u'commented':
             continue
-        if 'bot_status' in ev['body']:
-            if ev['actor'] not in bot_names:
-                if ev['actor'] in core_team or \
-                        ev['actor'] == iw.submitter or \
-                        ev['actor'] in module_indexer.all_maintainers:
+        if u'bot_status' in ev[u'body']:
+            if ev[u'actor'] not in bot_names:
+                if ev[u'actor'] in core_team or \
+                        ev[u'actor'] == iw.submitter or \
+                        ev[u'actor'] in module_indexer.all_maintainers:
                     bs = True
                     continue
         # <!--- boilerplate: bot_status --->
         if bs:
-            if ev['actor'] in bot_names:
-                if 'boilerplate: bot_status' in ev['body']:
+            if ev[u'actor'] in bot_names:
+                if u'boilerplate: bot_status' in ev[u'body']:
                     bs = False
                     continue
-    return {'needs_bot_status': bs}
+    return {u'needs_bot_status': bs}

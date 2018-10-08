@@ -11,7 +11,7 @@ RE_CHUNK = r'@@ -\d+,\d+ \+\d+,\d+ @@'
 
 def get_small_patch_facts(iw):
     sfacts = {
-        'is_small_patch': False
+        u'is_small_patch': False
     }
 
     if not iw.is_pullrequest():
@@ -25,14 +25,14 @@ def get_small_patch_facts(iw):
             return sfacts
 
         for changed_file in commit.files:
-            if changed_file.filename.startswith('test/'):
+            if changed_file.filename.startswith(u'test/'):
                 continue
 
-            if not changed_file.raw_data['status'] == 'modified':
+            if not changed_file.raw_data[u'status'] == u'modified':
                 return sfacts
 
             try:
-                chunks_in_file_count = len(re.findall(RE_CHUNK, changed_file.raw_data['patch']))
+                chunks_in_file_count = len(re.findall(RE_CHUNK, changed_file.raw_data[u'patch']))
             except KeyError as e:
                 continue
 
@@ -46,6 +46,6 @@ def get_small_patch_facts(iw):
 
 
     if small_chunks_changed:
-        sfacts['is_small_patch'] = True
+        sfacts[u'is_small_patch'] = True
 
     return sfacts

@@ -17,16 +17,19 @@
 
 from __future__ import print_function
 
-from defaultwrapper import DefaultWrapper
+import six
+
+from .defaultwrapper import DefaultWrapper
 
 
+@six.python_2_unicode_compatible
 class IssueWrapper(DefaultWrapper):
 
     REQUIRED_SECTIONS = [
-        'issue type',
-        'component name',
-        'ansible version',
-        'summary'
+        u'issue type',
+        u'component name',
+        u'ansible version',
+        u'summary'
     ]
 
     def noop(self):

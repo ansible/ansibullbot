@@ -7,91 +7,98 @@ from string import Template
 
 import yaml
 
+import six
+
 import ansibullbot.constants as C
+from ansibullbot._text_compat import to_text
 
 
-class BotMetadataParser(object):
+__metaclass__ = type  # Turn all classes into new-style by default
+
+
+class BotMetadataParser:
 
     @staticmethod
     def parse_yaml(data):
 
         def clean_list_items(inlist):
             if isinstance(inlist, list):
-                inlist = str(inlist)
-            if '&' in inlist:
+                inlist = to_text(inlist)
+            if u'&' in inlist:
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
+                    logging.error(u'breakpoint!')
                     import epdb; epdb.st()
-            inlist = inlist.replace("[", '')
-            inlist = inlist.replace("]", '')
-            inlist = inlist.replace("'", '')
-            inlist = inlist.replace(",", '')
+            inlist = inlist.replace(u"[", u'')
+            inlist = inlist.replace(u"]", u'')
+            inlist = inlist.replace(u"'", u'')
+            inlist = inlist.replace(u",", u'')
             inlist = inlist.split()
             return inlist
 
         def fix_lists(data):
-            for k, v in data['files'].items():
+            for k, v in data[u'files'].items():
                 if v is None:
                     continue
 
                 for k2, v2 in v.items():
-                    if isinstance(v2, str) and '$' in v2:
+                    if isinstance(v2, six.text_type) and u'$' in v2:
                         tmpl = Template(v2)
-                        newv2 = tmpl.substitute(**data['macros'])
+                        newv2 = tmpl.substitute(**data[u'macros'])
                         newv2 = clean_list_items(newv2)
-                        data['files'][k][k2] = newv2
+                        data[u'files'][k][k2] = newv2
                         v2 = newv2
-                    if isinstance(v2, (str, unicode)):
-                        data['files'][k][k2] = v2.split()
+
+                    if isinstance(v2, six.text_type):
+                        data[u'files'][k][k2] = v2.split()
 
             return data
 
         def fix_keys(data):
             replace = []
-            for k in data['files'].keys():
-                if '$' in k:
+            for k in data[u'files'].keys():
+                if u'$' in k:
                     replace.append(k)
             for x in replace:
                 tmpl = Template(x)
-                newkey = tmpl.substitute(**data['macros'])
-                data['files'][newkey] = data['files'][x]
-                data['files'].pop(x, None)
+                newkey = tmpl.substitute(**data[u'macros'])
+                data[u'files'][newkey] = data[u'files'][x]
+                data[u'files'].pop(x, None)
 
-            paths = data['files'].keys()
+            paths = list(data[u'files'].keys())
             for p in paths:
                 normpath = os.path.normpath(p)
                 if p != normpath:
-                    metadata = data['files'].pop(p)
-                    data['files'][normpath] = metadata
+                    metadata = data[u'files'].pop(p)
+                    data[u'files'][normpath] = metadata
             return data
 
         def extend_labels(data):
-            for k, v in data['files'].items():
+            for k, v in data[u'files'].items():
                 # labels from path(s)
                 if v is None:
                     continue
-                labels = v.get('labels', [])
-                if isinstance(labels, str):
+                labels = v.get(u'labels', [])
+                if isinstance(labels, six.text_type):
                     labels = labels.split()
                     labels = [x.strip() for x in labels if x.strip()]
-                path_labels = [x.strip() for x in k.split('/') if x.strip()]
+                path_labels = [x.strip() for x in k.split(u'/') if x.strip()]
                 for x in path_labels:
-                    x = x.replace('.py', '')
-                    x = x.replace('.ps1', '')
+                    x = x.replace(u'.py', u'')
+                    x = x.replace(u'.ps1', u'')
                     if x not in labels:
                         labels.append(x)
-                data['files'][k]['labels'] = sorted(set(labels))
+                data[u'files'][k][u'labels'] = sorted(set(labels))
 
             return data
 
         def fix_teams(data):
-            for k, v in data['macros'].items():
+            for k, v in data[u'macros'].items():
                 if v is None:
                     continue
-                if not k.startswith('team_') or isinstance(v, list):
+                if not k.startswith(u'team_') or isinstance(v, list):
                     continue
                 names = v.split()
-                data['macros'][k] = names
+                data[u'macros'][k] = names
             return data
 
         def _propagate(files, top, child, field, multivalued=True):
@@ -106,7 +113,7 @@ class BotMetadataParser(object):
                     files[child][field] = []
 
                 # track the origin of the data
-                field_keys = '%s_keys' % field
+                field_keys = u'%s_keys' % field
                 if field_keys not in files[child]:
                     files[child][field_keys] = []
 
@@ -123,7 +130,7 @@ class BotMetadataParser(object):
                     files[child][field] = top_entries[:]
 
         def propagate_keys(data):
-            files = data['files']
+            files = data[u'files']
             '''maintainers and ignored keys defined at a directory level are copied to subpath'''
             for file1, file2 in itertools.combinations(files.keys(), 2):
                 # Python 2.7 doesn't provide os.path.commonpath
@@ -131,21 +138,21 @@ class BotMetadataParser(object):
                 top = min(file1, file2)
                 child = max(file1, file2)
 
-                top_components = top.split('/')
-                child_components = child.split('/')
+                top_components = top.split(u'/')
+                child_components = child.split(u'/')
 
                 if common == top and top_components == child_components[:len(top_components)]:
-                    _propagate(files, top, child, 'maintainers')
-                    _propagate(files, top, child, 'ignored')
-                    _propagate(files, top, child, 'labels')
-                    _propagate(files, top, child, 'support', multivalued=False)
-                    _propagate(files, top, child, 'supported_by', multivalued=False)
+                    _propagate(files, top, child, u'maintainers')
+                    _propagate(files, top, child, u'ignored')
+                    _propagate(files, top, child, u'labels')
+                    _propagate(files, top, child, u'support', multivalued=False)
+                    _propagate(files, top, child, u'supported_by', multivalued=False)
 
         #################################
         #   PARSE
         #################################
 
-        ydata = yaml.load(data)
+        ydata = yaml.load(data, Loader=BotYAMLLoader)
 
         # fix the team macros
         ydata = fix_teams(ydata)
@@ -153,17 +160,22 @@ class BotMetadataParser(object):
         # fix the macro'ized file keys
         ydata = fix_keys(ydata)
 
-        for k, v in ydata['files'].items():
+        for k, v in ydata[u'files'].items():
             if v is None:
                 # convert empty val in dict
-                ydata['files'][k] = {}
-            elif isinstance(v, (str, unicode)):
+                ydata[u'files'][k] = {}
+                continue
+
+            if isinstance(v, six.binary_type):
+                v = to_text(v)
+
+            if isinstance(v, six.text_type):
                 # convert string vals to a maintainers key in a dict
-                ydata['files'][k] = {
-                    'maintainers': v
+                ydata[u'files'][k] = {
+                    u'maintainers': v
                 }
 
-            ydata['files'][k]['maintainers_keys'] = [k]
+            ydata[u'files'][k][u'maintainers_keys'] = [k]
 
         # replace macros in files section
         ydata = fix_lists(ydata)
@@ -174,3 +186,26 @@ class BotMetadataParser(object):
         propagate_keys(ydata)
 
         return ydata
+
+
+def construct_yaml_str(self, node):
+    # Override the default string handling function
+    # to always return unicode objects
+
+    # Taken from https://stackoverflow.com/a/2967461/595220
+    return self.construct_scalar(node)
+
+
+def default_to_unicode_strings(cls):
+    cls.add_constructor(u'tag:yaml.org,2002:str', construct_yaml_str)
+    return cls
+
+
+@default_to_unicode_strings
+class BotYAMLLoader(yaml.Loader):
+    pass
+
+
+@default_to_unicode_strings
+class BotSafeYAMLLoader(yaml.SafeLoader):
+    pass

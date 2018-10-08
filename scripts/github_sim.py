@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import six
+
 from flask import Flask
 from flask import jsonify
 from flask import request
@@ -72,7 +74,7 @@ def rate_limit():
 @app.route('/orgs/<path:path>')
 def orgs(path):
     path_parts = path.split('/')
-    print(str((len(path_parts),path_parts)))
+    print(six.text_type((len(path_parts),path_parts)))
 
     if error_time():
         raise InternalServerError(None, status_code=500)
@@ -94,7 +96,7 @@ def orgs(path):
 def repos(path):
     # http://localhost/repos/ansible/ansible/labels
     path_parts = path.split('/')
-    print(str((len(path_parts),path_parts)))
+    print(six.text_type((len(path_parts),path_parts)))
 
     if error_time():
         raise InternalServerError(None, status_code=500)
@@ -182,7 +184,7 @@ def repos(path):
     elif len(path_parts) == 2:
         return jsonify({})
 
-    print(str((len(path_parts),path_parts)))
+    print(six.text_type((len(path_parts),path_parts)))
 
 
 

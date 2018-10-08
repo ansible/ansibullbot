@@ -10,7 +10,10 @@ import requests
 from collections import defaultdict
 from operator import itemgetter
 
+import six
+
 from tenacity import retry, wait_random, stop_after_attempt
+from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 
 
@@ -86,13 +89,13 @@ query {
 
 
 class GithubGraphQLClient(object):
-    baseurl = 'https://api.github.com/graphql'
+    baseurl = u'https://api.github.com/graphql'
 
     def __init__(self, token):
         self.token = token
         self.headers = {
-            'Accept': 'application/json',
-            'Authorization': 'Bearer %s' % self.token,
+            u'Accept': u'application/json',
+            u'Authorization': u'Bearer %s' % self.token,
         }
         self.environment = jinja2.Environment()
 
@@ -106,20 +109,20 @@ class GithubGraphQLClient(object):
             baseurl   (str): not used
             cachefile (str): not used
         """
-        owner = repo_url.split('/', 1)[0]
-        repo = repo_url.split('/', 1)[1]
+        owner = repo_url.split(u'/', 1)[0]
+        repo = repo_url.split(u'/', 1)[1]
         summaries = self.get_all_summaries(owner, repo)
 
         issues = {}
         for x in summaries:
-            issues[str(x['number'])] = x
+            issues[to_text(x[u'number'])] = x
 
         # keep the summaries for out of band analysis
         repodata = {
-            'user': repo_url.split('/', 1)[0],
-            'repo': repo_url.split('/', 1)[1],
+            u'user': repo_url.split(u'/', 1)[0],
+            u'repo': repo_url.split(u'/', 1)[1],
         }
-        post_to_receiver('summaries', repodata, issues)
+        post_to_receiver(u'summaries', repodata, issues)
 
         return issues
 
@@ -130,8 +133,8 @@ class GithubGraphQLClient(object):
             owner (str): the github namespace
             repo  (str): the github repository
         """
-        owner = repo_path.split('/', 1)[0]
-        repo = repo_path.split('/', 1)[1]
+        owner = repo_path.split(u'/', 1)[0]
+        repo = repo_path.split(u'/', 1)[1]
 
         isummaries = self.get_summaries(owner, repo, otype='issues',
                                         last='last: 1', first=None, states=None,
@@ -140,10 +143,10 @@ class GithubGraphQLClient(object):
                                         last='last: 1', first=None, states=None,
                                         paginate=False)
 
-        if isummaries[-1]['number'] > psummaries[-1]['number']:
-            return isummaries[-1]['number']
+        if isummaries[-1][u'number'] > psummaries[-1][u'number']:
+            return isummaries[-1][u'number']
         else:
-            return psummaries[-1]['number']
+            return psummaries[-1][u'number']
 
     def get_all_summaries(self, owner, repo):
         """Collect all the summary data for issues and pullreuests
@@ -163,26 +166,26 @@ class GithubGraphQLClient(object):
         if not summaries:
             return []
 
-        numbers = [x['number'] for x in summaries]
+        numbers = [x[u'number'] for x in summaries]
         if numbers:
             missing = (x for x in xrange(1, numbers[-1]) if x not in numbers)
         else:
             missing = []
         for x in missing:
             data = {
-                'created_at': None,
-                'updated_at': None,
-                'id': None,
-                'number': x,
-                'state': 'closed',
-                'repository': {
-                    'nameWithOwner': '%s/%s' % (owner, repo)
+                u'created_at': None,
+                u'updated_at': None,
+                u'id': None,
+                u'number': x,
+                u'state': u'closed',
+                u'repository': {
+                    u'nameWithOwner': u'%s/%s' % (owner, repo)
                 },
-                'type': None
+                u'type': None
             }
             summaries.append(data)
 
-        return sorted(summaries, key=itemgetter('number'))
+        return sorted(summaries, key=itemgetter(u'number'))
 
     def get_summaries(self, owner, repo, otype='issues', last=None, first='first: 100', states='states: OPEN', paginate=True):
         """Collect all the summary data for issues or pullreuests
@@ -213,16 +216,16 @@ class GithubGraphQLClient(object):
         nodes = []
         pagecount = 0
         while True:
-            logging.debug('%s/%s %s pagecount:%s nodecount: %s' %
+            logging.debug(u'%s/%s %s pagecount:%s nodecount: %s' %
                           (owner, repo, otype, pagecount, len(nodes)))
 
-            issueparams = ', '.join([x for x in [states, first, last, after] if x])
+            issueparams = u', '.join([x for x in [states, first, last, after] if x])
             query = templ.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS=issueparams, FIELDS=QUERY_FIELDS)
 
             payload = {
-                'query': query.encode('ascii', 'ignore').strip(),
-                'variables': '{}',
-                'operationName': None
+                u'query': to_bytes(query, 'ascii', 'ignore').strip(),
+                u'variables': u'{}',
+                u'operationName': None
             }
             rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
             if not rr.ok:
@@ -232,21 +235,21 @@ class GithubGraphQLClient(object):
                 break
 
             # keep each edge/node/issue
-            for edge in data['data']['repository'][otype]['edges']:
-                node = edge['node']
+            for edge in data[u'data'][u'repository'][otype][u'edges']:
+                node = edge[u'node']
                 self.update_node(node, otype.lower()[:-1], owner, repo)
                 nodes.append(node)
 
             if not paginate:
                 break
 
-            pageinfo = data.get('data', {}).get('repository', {}).get(otype, {}).get('pageInfo')
+            pageinfo = data.get(u'data', {}).get(u'repository', {}).get(otype, {}).get(u'pageInfo')
             if not pageinfo:
                 break
-            if not pageinfo.get('hasNextPage'):
+            if not pageinfo.get(u'hasNextPage'):
                 break
 
-            after = 'after: "%s"' % pageinfo['endCursor']
+            after = u'after: "%s"' % pageinfo[u'endCursor']
             pagecount += 1
 
         return nodes
@@ -259,22 +262,25 @@ class GithubGraphQLClient(object):
             otype     (str): issue or pullRequest
             number    (str): Identifies the pull-request or issue, for example: 12345
         """
-        owner = repo_url.split('/', 1)[0]
-        repo = repo_url.split('/', 1)[1]
+        owner = repo_url.split(u'/', 1)[0]
+        repo = repo_url.split(u'/', 1)[1]
 
         template = self.environment.from_string(QUERY_TEMPLATE_SINGLE_NODE)
 
         query = template.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS='number: %s' % number, FIELDS=QUERY_FIELDS)
 
         payload = {
-            'query': query.encode('ascii', 'ignore').strip(),
-            'variables': '{}',
-            'operationName': None
+            u'query': to_bytes(query, 'ascii', 'ignore').strip(),
+            u'variables': u'{}',
+            u'operationName': None
         }
+        if six.PY3:
+            payload[u'query'] = to_text(payload[u'query'], 'ascii')
+
         rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
         data = rr.json()
 
-        node = data['data']['repository'][otype]
+        node = data[u'data'][u'repository'][otype]
         if node is None:
             return
 
@@ -283,17 +289,17 @@ class GithubGraphQLClient(object):
         return node
 
     def update_node(self, node, node_type, owner, repo):
-        node['state'] = node['state'].lower()
-        node['created_at'] = node.get('createdAt')
-        node['updated_at'] = node.get('updatedAt')
+        node[u'state'] = node[u'state'].lower()
+        node[u'created_at'] = node.get(u'createdAt')
+        node[u'updated_at'] = node.get(u'updatedAt')
 
-        if 'repository' not in node:
-            node['repository'] = {}
+        if u'repository' not in node:
+            node[u'repository'] = {}
 
-        if 'nameWithOwner' not in node['repository']:
-            node['repository']['nameWithOwner'] = '%s/%s' % (owner, repo)
+        if u'nameWithOwner' not in node[u'repository']:
+            node[u'repository'][u'nameWithOwner'] = u'%s/%s' % (owner, repo)
 
-        node['type'] = node_type
+        node[u'type'] = node_type
 
     def get_usernames_from_filename_blame(self, owner, repo, branch, filepath):
 
@@ -304,14 +310,17 @@ class GithubGraphQLClient(object):
         query = template.render(OWNER=owner, REPO=repo, BRANCH=branch, PATH=filepath)
 
         payload = {
-            'query': query.encode('ascii', 'ignore').strip(),
-            'variables': '{}',
-            'operationName': None
+            u'query': to_text(
+                to_bytes(query, 'ascii', 'ignore'),
+                'ascii',
+            ).strip(),
+            u'variables': u'{}',
+            u'operationName': None
         }
         response = self.requests(payload)
         data = response.json()
 
-        nodes = data['data']['repository']['ref']['target']['blame']['ranges']
+        nodes = data[u'data'][u'repository'][u'ref'][u'target'][u'blame'][u'ranges']
         """
         [
             'commit':
@@ -326,15 +335,15 @@ class GithubGraphQLClient(object):
         ]
         """
         for node in nodes:
-            node = node['commit']
-            if not node['author']['user']:
+            node = node[u'commit']
+            if not node[u'author'][u'user']:
                 continue
-            github_id = node['author']['user']['login']
-            committers[github_id].add(node['oid'])
+            github_id = node[u'author'][u'user'][u'login']
+            committers[github_id].add(node[u'oid'])
             # emails come from 'git log --follow' but all github id aren't fetch:
             # - GraphQL/git 'blame' don't list all commits
             # - GraphQL 'history' neither because 'history' is like 'git log' but without '--follow'
-            email = node['author'].get('email')
+            email = node[u'author'].get(u'email')
             if email and email not in emailmap:
                 emailmap[email] = github_id
 
@@ -348,11 +357,11 @@ class GithubGraphQLClient(object):
         response.raise_for_status()
         # GitHub GraphQL will happily return a 200 result with errors. One
         # must dig through the data to see if there were errors.
-        errors = response.json().get('errors')
+        errors = response.json().get(u'errors')
         if errors:
-            msgs = ', '.join([e['message'] for e in errors])
+            msgs = u', '.join([e[u'message'] for e in errors])
             raise requests.exceptions.InvalidSchema(
-                'Error(s) from graphql: %s' % msgs)
+                u'Error(s) from graphql: %s' % msgs)
         return response
 
 
@@ -363,6 +372,6 @@ if __name__ == "__main__":
     import ansibullbot.constants as C
     logging.basicConfig(level=logging.DEBUG)
     client = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
-    summaries = client.get_all_summaries('ansible', 'ansible')
-    ln = client.get_last_number('ansible/ansible')
+    summaries = client.get_all_summaries(u'ansible', u'ansible')
+    ln = client.get_last_number(u'ansible/ansible')
     #import epdb; epdb.st()

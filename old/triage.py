@@ -23,6 +23,8 @@ import sys
 import time
 from datetime import datetime
 
+import six
+
 # remember to pip install PyGithub, kids!
 from github import Github
 
@@ -218,7 +220,7 @@ class PullRequest:
         """Resolves boilerplate the key labels to labels using an
         alias dict
         """
-        for resolved_desired_pr_label, aliases in ALIAS_LABELS.iteritems():
+        for resolved_desired_pr_label, aliases in six.iteritems(ALIAS_LABELS):
             if desired_pr_label in aliases:
                 return resolved_desired_pr_label
         return desired_pr_label
@@ -305,7 +307,7 @@ class TriagePullRequests:
         if self.module_maintainers:
             return self.module_maintainers
 
-        for owner_space, maintainers in self._get_maintainers().iteritems():
+        for owner_space, maintainers in six.iteritems(self._get_maintainers()):
             for filename in self.pull_request.get_pr_filenames():
                 if owner_space in filename:
                     for maintainer in maintainers:
@@ -335,7 +337,7 @@ class TriagePullRequests:
         """Adds labels regarding module namespaces"""
         for pr_filename in self.pull_request.get_pr_filenames():
             namespace = pr_filename.split('/')[0]
-            for key, value in MODULE_NAMESPACE_LABELS.iteritems():
+            for key, value in six.iteritems(MODULE_NAMESPACE_LABELS):
                 if key == namespace:
                     self.pull_request.add_desired_label(value)
 

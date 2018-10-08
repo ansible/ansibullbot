@@ -3,6 +3,7 @@
 import json
 import unittest
 
+from ansibullbot._text_compat import to_text
 from ansibullbot.triagers.ansible import AnsibleTriage
 from ansibullbot.utils.extractors import extract_template_data
 
@@ -23,7 +24,7 @@ class TestModuleMatching(unittest.TestCase):
 
         for key in keys:
 
-            k = str(key)
+            k = to_text(key)
             v = jdata[k]
 
             if '/pull/' in v['html_url']:

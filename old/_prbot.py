@@ -11,7 +11,7 @@
 # Useful! https://developer.github.com/v3/pulls/
 # Useful! https://developer.github.com/v3/issues/comments/
 
-import requests, json, yaml, sys, argparse, time, signal
+import requests, json, yaml, sys, argparse, time, signal, six
 
 # Here's a nasty hack to get around the occasional ssl handshake
 # timeout.  Thanks, ssl!
@@ -107,7 +107,7 @@ def triage(urlstring):
     # DEBUG: Dump JSON to /tmp for analysis if needed
     #++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     if debug:
-        debugfileid = '/tmp/pull-' + str(pull['number'])
+        debugfileid = '/tmp/pull-' + six.text_type(pull['number'])
         print "DEBUG JSON TO: ", debugfileid
         debugfile = open(debugfileid, 'w')
         print >>debugfile, json.dumps(pull, ensure_ascii=True, indent=4, separators=(',', ': '))
@@ -134,7 +134,7 @@ def triage(urlstring):
     signal.alarm(0)
 
     if debug:
-        debugfileid = '/tmp/diff-' + str(pull['number'])
+        debugfileid = '/tmp/diff-' + six.text_type(pull['number'])
         print "DEBUG DIFF TO: ", debugfileid
         debugfile = open(debugfileid, 'w')
         print >>debugfile, json.dumps(diff, ensure_ascii=True, indent=4, separators=(',', ': '))
@@ -579,7 +579,7 @@ else:
     signal.alarm(5)
     r = requests.get(repo_url, params=args, auth=(ghuser,ghpass))
     signal.alarm(0)
-    lastpage = int(str(r.links['last']['url']).split('=')[-1])
+    lastpage = int(six.text_type(r.links['last']['url']).split('=')[-1])
 
     # Set range for 1..2 for testing only
     # for page in range(1,2):

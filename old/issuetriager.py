@@ -24,6 +24,8 @@ import time
 from datetime import datetime
 from operator import itemgetter
 
+import six
+
 # remember to pip install PyGithub, kids!
 from github import Github
 
@@ -426,7 +428,7 @@ class TriageIssues(DefaultTriager):
             self.debug(msg='bot skip stanza')
 
             # clear out all actions and do nothing
-            for k,v in self.actions.iteritems():
+            for k,v in six.iteritems(self.actions):
                 if type(v) == list:
                     self.actions[k] = []
             self.actions['close'] = False
@@ -436,7 +438,7 @@ class TriageIssues(DefaultTriager):
             self.debug(msg='bot spam stanza')
 
             # clear out all actions and do nothing
-            for k,v in self.actions.iteritems():
+            for k,v in six.iteritems(self.actions):
                 if type(v) == list:
                     self.actions[k] = []
             self.actions['close'] = False
@@ -632,7 +634,7 @@ class TriageIssues(DefaultTriager):
         # Has the bot been overzealous with comments?
         hfacts['bot_spam'] = False
         bcg = self.history.get_user_comments_groupby('ansibot', groupby='w')
-        for k,v in bcg.iteritems():
+        for k,v in six.iteritems(bcg):
             if v >= self.MAX_BOT_COMMENTS_PER_WEEK:
                 hfacts['bot_spam'] = True
 

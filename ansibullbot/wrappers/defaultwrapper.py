@@ -29,9 +29,12 @@ import sys
 import time
 from datetime import datetime
 
+import six
+
 # remember to pip install PyGithub, kids!
 import github
 
+from ansibullbot._text_compat import to_text
 from ansibullbot.utils.extractors import extract_template_sections
 from ansibullbot.utils.extractors import extract_template_data
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
@@ -45,23 +48,23 @@ import ansibullbot.constants as C
 class DefaultWrapper(object):
 
     ALIAS_LABELS = {
-        'core_review': [
-            'core_review_existing'
+        u'core_review': [
+            u'core_review_existing'
         ],
-        'community_review': [
-            'community_review_existing',
-            'community_review_new',
-            'community_review_owner_pr',
+        u'community_review': [
+            u'community_review_existing',
+            u'community_review_new',
+            u'community_review_owner_pr',
         ],
-        'shipit': [
-            'shipit_owner_pr'
+        u'shipit': [
+            u'shipit_owner_pr'
         ],
-        'needs_revision': [
-            'needs_revision_not_mergeable'
+        u'needs_revision': [
+            u'needs_revision_not_mergeable'
         ],
-        'pending_action': [
-            'pending_action_close_me',
-            'pending_maintainer_unknown'
+        u'pending_action': [
+            u'pending_action_close_me',
+            u'pending_maintainer_unknown'
         ]
     }
 
@@ -69,18 +72,18 @@ class DefaultWrapper(object):
     ]
 
     MUTUALLY_EXCLUSIVE_LABELS = [
-        "bug_report",
-        "feature_idea",
-        "docs_report"
+        u"bug_report",
+        u"feature_idea",
+        u"docs_report"
     ]
 
-    TOPIC_MAP = {'amazon': 'aws',
-                 'google': 'gce',
-                 'network': 'networking'}
+    TOPIC_MAP = {u'amazon': u'aws',
+                 u'google': u'gce',
+                 u'network': u'networking'}
 
     REQUIRED_SECTIONS = []
 
-    TEMPLATE_HEADER = '#####'
+    TEMPLATE_HEADER = u'#####'
 
     def __init__(self, github=None, repo=None, issue=None, cachedir=None, file_indexer=None):
         self.meta = {}
@@ -113,8 +116,8 @@ class DefaultWrapper(object):
         self.last_bot_comment = None
         self.current_reactions = []
         self.desired_comments = []
-        self.current_state = 'open'
-        self.desired_state = 'open'
+        self.current_state = u'open'
+        self.desired_state = u'open'
         self.pr_status_raw = None
         self.pull_raw = None
         self.pr_files = []
@@ -122,8 +125,8 @@ class DefaultWrapper(object):
 
         self.full_cachedir = os.path.join(
             self.cachedir,
-            'issues',
-            str(self.number)
+            u'issues',
+            to_text(self.number)
         )
 
         self.valid_assignees = []
@@ -139,16 +142,16 @@ class DefaultWrapper(object):
     def save_issue(self):
         pfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(self.instance.number),
-            'issue.pickle'
+            u'issues',
+            to_text(self.instance.number),
+            u'issue.pickle'
         )
         pdir = os.path.dirname(pfile)
 
         if not os.path.isdir(pdir):
             os.makedirs(pdir)
 
-        logging.debug('dump %s' % pfile)
+        logging.debug(u'dump %s' % pfile)
         with open(pfile, 'wb') as f:
             pickle.dump(self.instance, f)
 
@@ -156,7 +159,7 @@ class DefaultWrapper(object):
     def get_comments(self):
         """Returns all current comments of the PR"""
 
-        comments = self.load_update_fetch('comments')
+        comments = self.load_update_fetch(u'comments')
 
         self.current_comments = [x for x in comments]
         self.current_comments.reverse()
@@ -164,13 +167,13 @@ class DefaultWrapper(object):
         # look for any comments made by the bot
         for idx, x in enumerate(self.current_comments):
             body = x.body
-            lines = body.split('\n')
+            lines = body.split(u'\n')
             lines = [y.strip() for y in lines if y.strip()]
 
-            if lines[-1].startswith('<!---') \
-                    and lines[-1].endswith('--->') \
-                    and 'boilerplate:' in lines[-1]\
-                    and x.user.login == 'ansibot':
+            if lines[-1].startswith(u'<!---') \
+                    and lines[-1].endswith(u'--->') \
+                    and u'boilerplate:' in lines[-1]\
+                    and x.user.login == u'ansibot':
 
                 parts = lines[-1].split()
                 boilerplate = parts[2]
@@ -182,7 +185,7 @@ class DefaultWrapper(object):
     def raw_data_issue(self):
         if self._raw_data_issue is None:
             self._raw_data_issue = \
-                self.load_update_fetch('raw_data', obj='issue')
+                self.load_update_fetch(u'raw_data', obj=u'issue')
         return self._raw_data_issue
 
     @property
@@ -193,7 +196,7 @@ class DefaultWrapper(object):
 
     @RateLimited
     def get_events(self):
-        self.current_events = self.load_update_fetch('events')
+        self.current_events = self.load_update_fetch(u'events')
         return self.current_events
 
     #def get_commits(self):
@@ -201,11 +204,11 @@ class DefaultWrapper(object):
     #    return self.commits
 
     def get_files(self):
-        self.files = self.load_update_fetch('files')
+        self.files = self.load_update_fetch(u'files')
         return self.files
 
     def get_review_comments(self):
-        self.review_comments = self.load_update_fetch('review_comments')
+        self.review_comments = self.load_update_fetch(u'review_comments')
         return self.review_comments
 
     @RateLimited
@@ -227,13 +230,13 @@ class DefaultWrapper(object):
         jdata = None
         while True:
             resp = self.instance._requester.requestJson(
-                'GET',
+                u'GET',
                 url
             )
             data = resp[2]
             jdata = json.loads(data)
 
-            if isinstance(jdata, dict) and jdata.get('documentation_url'):
+            if isinstance(jdata, dict) and jdata.get(u'documentation_url'):
                 if C.DEFAULT_BREAKPOINTS:
                     import epdb; epdb.st()
                 else:
@@ -247,12 +250,12 @@ class DefaultWrapper(object):
         '''Move files to the correct location to fix bad pathing'''
         srcdir = os.path.join(
             self.cachedir,
-            'issues',
-            str(self.instance.number)
+            u'issues',
+            to_text(self.instance.number)
         )
         destdir = os.path.join(
             self.cachedir,
-            str(self.instance.number)
+            to_text(self.instance.number)
         )
 
         if not os.path.isdir(srcdir):
@@ -295,9 +298,9 @@ class DefaultWrapper(object):
 
         pfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(self.instance.number),
-            '%s.pickle' % property_name
+            u'issues',
+            to_text(self.instance.number),
+            u'%s.pickle' % property_name
         )
         pdir = os.path.dirname(pfile)
         logging.debug(pfile)
@@ -323,35 +326,35 @@ class DefaultWrapper(object):
 
         baseobj = None
         if obj:
-            if obj == 'issue':
+            if obj == u'issue':
                 baseobj = self.instance
-            elif obj == 'pullrequest':
+            elif obj == u'pullrequest':
                 baseobj = self.pullrequest
         else:
-            if hasattr(self.instance, 'get_' + property_name):
+            if hasattr(self.instance, u'get_' + property_name):
                 baseobj = self.instance
             else:
                 if self.pullrequest:
-                    if hasattr(self.pullrequest, 'get_' + property_name):
+                    if hasattr(self.pullrequest, u'get_' + property_name):
                         baseobj = self.pullrequest
 
         if not baseobj:
             logging.error(
-                '%s was not a property for the issue or the pullrequest'
+                u'%s was not a property for the issue or the pullrequest'
                 % property_name
             )
             if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
+                logging.error(u'breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception('property error')
+                raise Exception(u'property error')
 
         # pull all events if timestamp is behind or no events cached
         if update or not events:
             write_cache = True
             updated = self.get_current_time()
 
-            if not hasattr(baseobj, 'get_' + property_name) \
+            if not hasattr(baseobj, u'get_' + property_name) \
                     and hasattr(baseobj, property_name):
                 # !callable properties
                 try:
@@ -359,22 +362,22 @@ class DefaultWrapper(object):
                 except Exception as e:
                     logging.error(e)
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
+                        logging.error(u'breakpoint!')
                         import epdb; epdb.st()
                     else:
-                        raise Exception(str(e))
+                        raise Exception(to_text(e))
                 events = methodToCall
             else:
                 # callable properties
                 try:
-                    methodToCall = getattr(baseobj, 'get_' + property_name)
+                    methodToCall = getattr(baseobj, u'get_' + property_name)
                 except Exception as e:
                     logging.error(e)
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
+                        logging.error(u'breakpoint!')
                         import epdb; epdb.st()
                     else:
-                        raise Exception(str(e))
+                        raise Exception(to_text(e))
                 events = [x for x in methodToCall()]
 
         if write_cache or not os.path.isfile(pfile):
@@ -396,10 +399,10 @@ class DefaultWrapper(object):
             for x in self.instance.assignee:
                 assignee.append(x.login)
             if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
+                logging.error(u'breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception('exception')
+                raise Exception(u'exception')
         return assignee
 
     @property
@@ -413,14 +416,14 @@ class DefaultWrapper(object):
         # https://developer.github.com/v3/reactions/
         if not self.current_reactions:
             baseurl = self.instance.url
-            reactions_url = baseurl + '/reactions'
-            headers = dict(
-                Accept='application/vnd.github.squirrel-girl-preview',
-            )
+            reactions_url = baseurl + u'/reactions'
+            headers = {
+                u'Accept': u'application/vnd.github.squirrel-girl-preview',
+            }
             jdata = []
             try:
                 resp = self.instance._requester.requestJson(
-                    'GET',
+                    u'GET',
                     reactions_url,
                     headers=headers
                 )
@@ -449,9 +452,9 @@ class DefaultWrapper(object):
         """Extract templated data from an issue body"""
 
         if self.is_issue():
-            tfile = '.github/ISSUE_TEMPLATE.md'
+            tfile = u'.github/ISSUE_TEMPLATE.md'
         else:
-            tfile = '.github/PULL_REQUEST_TEMPLATE.md'
+            tfile = u'.github/PULL_REQUEST_TEMPLATE.md'
 
         # use the fileindexer whenever possible to conserve ratelimits
         if self.file_indexer:
@@ -461,8 +464,8 @@ class DefaultWrapper(object):
                 tf = self.repo.get_file_contents(tfile)
                 tf_content = tf.decoded_content
             except Exception:
-                logging.warning('repo does not have {}'.format(tfile))
-                tf_content = ''
+                logging.warning(u'repo does not have {}'.format(tfile))
+                tf_content = u''
 
         # pull out the section names from the tempalte
         tf_sections = extract_template_sections(tf_content, header=self.TEMPLATE_HEADER)
@@ -470,7 +473,7 @@ class DefaultWrapper(object):
         # what is required?
         self._required_template_sections = \
             [x.lower() for x in tf_sections.keys()
-             if tf_sections[x]['required']]
+             if tf_sections[x][u'required']]
 
         # extract ...
         template_data = \
@@ -500,41 +503,41 @@ class DefaultWrapper(object):
                         if v and (k not in template_data or not template_data.get(k)):
                             template_data[k] = v
 
-        if 'ANSIBLE VERSION' in tf_sections and 'ansible version' not in template_data:
+        if u'ANSIBLE VERSION' in tf_sections and u'ansible version' not in template_data:
 
             # FIXME - abstract this into a historywrapper method
-            vlabels = [x for x in self.history.history if x['event'] == 'labeled']
-            vlabels = [x for x in vlabels if x['actor'] not in ['ansibot', 'ansibotdev']]
-            vlabels = [x['label'] for x in vlabels if x['label'].startswith('affects_')]
-            vlabels = [x for x in vlabels if x.startswith('affects_')]
+            vlabels = [x for x in self.history.history if x[u'event'] == u'labeled']
+            vlabels = [x for x in vlabels if x[u'actor'] not in [u'ansibot', u'ansibotdev']]
+            vlabels = [x[u'label'] for x in vlabels if x[u'label'].startswith(u'affects_')]
+            vlabels = [x for x in vlabels if x.startswith(u'affects_')]
 
-            versions = [x.split('_')[1] for x in vlabels]
+            versions = [x.split(u'_')[1] for x in vlabels]
             versions = [float(x) for x in versions]
             if versions:
                 version = versions[-1]
-                template_data['ansible version'] = str(version)
+                template_data[u'ansible version'] = to_text(version)
 
-        if 'COMPONENT NAME' in tf_sections and 'component name' not in template_data:
+        if u'COMPONENT NAME' in tf_sections and u'component name' not in template_data:
             if self.is_pullrequest():
                 fns = self.files
                 if fns:
-                    template_data['component name'] = '\n'.join(fns)
-                    template_data['component_raw'] = '\n'.join(fns)
+                    template_data[u'component name'] = u'\n'.join(fns)
+                    template_data[u'component_raw'] = u'\n'.join(fns)
             else:
-                clabels = [x for x in self.labels if x.startswith('c:')]
+                clabels = [x for x in self.labels if x.startswith(u'c:')]
                 if clabels:
                     fns = []
                     for clabel in clabels:
-                        clabel = clabel.replace('c:', '')
-                        fns.append('lib/ansible/' + clabel)
-                    template_data['component name'] = '\n'.join(fns)
-                    template_data['component_raw'] = '\n'.join(fns)
+                        clabel = clabel.replace(u'c:', u'')
+                        fns.append(u'lib/ansible/' + clabel)
+                    template_data[u'component name'] = u'\n'.join(fns)
+                    template_data[u'component_raw'] = u'\n'.join(fns)
 
-                elif 'documentation' in template_data.get('issue type', '').lower():
-                    template_data['component name'] = 'docs'
-                    template_data['component_raw'] = 'docs'
+                elif u'documentation' in template_data.get(u'issue type', u'').lower():
+                    template_data[u'component name'] = u'docs'
+                    template_data[u'component_raw'] = u'docs'
 
-        if 'ISSUE TYPE' in tf_sections and 'issue type' not in template_data:
+        if u'ISSUE TYPE' in tf_sections and u'issue type' not in template_data:
 
             # FIXME - turn this into a real classifier based on work done in
             # jctanner/pr-triage repo.
@@ -544,14 +547,14 @@ class DefaultWrapper(object):
             while not itype:
 
                 for label in self.labels:
-                    if label.startswith('bug'):
-                        itype = 'bug'
+                    if label.startswith(u'bug'):
+                        itype = u'bug'
                         break
-                    elif label.startswith('feature'):
-                        itype = 'feature'
+                    elif label.startswith(u'feature'):
+                        itype = u'feature'
                         break
-                    elif label.startswith('doc'):
-                        itype = 'docs'
+                    elif label.startswith(u'doc'):
+                        itype = u'docs'
                         break
                 if itype:
                     break
@@ -559,57 +562,57 @@ class DefaultWrapper(object):
                 if self.is_pullrequest():
                     fns = self.files
                     for fn in fns:
-                        if fn.startswith('doc'):
-                            itype = 'docs'
+                        if fn.startswith(u'doc'):
+                            itype = u'docs'
                             break
                 if itype:
                     break
 
                 msgs = [self.title, self.body]
                 if self.is_pullrequest():
-                    msgs += [x['message'] for x in self.history.history if x['event'] == 'committed']
+                    msgs += [x[u'message'] for x in self.history.history if x[u'event'] == u'committed']
 
                 msgs = [x for x in msgs if x]
                 msgs = [x.lower() for x in msgs]
 
                 for msg in msgs:
-                    if 'fix' in msg:
-                        itype = 'bug'
+                    if u'fix' in msg:
+                        itype = u'bug'
                         break
-                    if 'addresses' in msg:
-                        itype = 'bug'
+                    if u'addresses' in msg:
+                        itype = u'bug'
                         break
-                    if 'broke' in msg:
-                        itype = 'bug'
+                    if u'broke' in msg:
+                        itype = u'bug'
                         break
-                    if 'add' in msg:
-                        itype = 'feature'
+                    if u'add' in msg:
+                        itype = u'feature'
                         break
-                    if 'should' in msg:
-                        itype = 'feature'
+                    if u'should' in msg:
+                        itype = u'feature'
                         break
-                    if 'please' in msg:
-                        itype = 'feature'
+                    if u'please' in msg:
+                        itype = u'feature'
                         break
-                    if 'feature' in msg:
-                        itype = 'feature'
+                    if u'feature' in msg:
+                        itype = u'feature'
                         break
 
                 # quit now
                 break
 
-            if itype and itype == 'bug' and self.is_issue():
-                template_data['issue type'] = 'bug report'
-            elif itype and itype == 'bug' and not self.is_issue():
-                template_data['issue type'] = 'bugfix pullrequest'
-            elif itype and itype == 'feature' and self.is_issue():
-                template_data['issue type'] = 'feature idea'
-            elif itype and itype == 'feature' and not self.is_issue():
-                template_data['issue type'] = 'feature pullrequest'
-            elif itype and itype == 'docs' and self.is_issue():
-                template_data['issue type'] = 'documentation report'
-            elif itype and itype == 'docs' and not self.is_issue():
-                template_data['issue type'] = 'documenation pullrequest'
+            if itype and itype == u'bug' and self.is_issue():
+                template_data[u'issue type'] = u'bug report'
+            elif itype and itype == u'bug' and not self.is_issue():
+                template_data[u'issue type'] = u'bugfix pullrequest'
+            elif itype and itype == u'feature' and self.is_issue():
+                template_data[u'issue type'] = u'feature idea'
+            elif itype and itype == u'feature' and not self.is_issue():
+                template_data[u'issue type'] = u'feature pullrequest'
+            elif itype and itype == u'docs' and self.is_issue():
+                template_data[u'issue type'] = u'documentation report'
+            elif itype and itype == u'docs' and not self.is_issue():
+                template_data[u'issue type'] = u'documenation pullrequest'
 
         return template_data
 
@@ -628,7 +631,7 @@ class DefaultWrapper(object):
         return missing
 
     def resolve_desired_labels(self, desired_label):
-        for resolved_label, aliases in self.ALIAS_LABELS.iteritems():
+        for resolved_label, aliases in six.iteritems(self.ALIAS_LABELS):
             if desired_label in aliases:
                 return resolved_label
         return desired_label
@@ -651,7 +654,7 @@ class DefaultWrapper(object):
                 self.desired_labels.append(name)
             else:
                 mutually_exclusive = \
-                    [x.replace(' ', '_') for x in mutually_exclusive]
+                    [x.replace(u' ', u'_') for x in mutually_exclusive]
                 me = [x for x in self.desired_labels if x in mutually_exclusive]
                 if len(me) == 0:
                     self.desired_labels.append(name)
@@ -700,7 +703,7 @@ class DefaultWrapper(object):
         self.get_issue().create_comment(comment)
 
     def set_desired_state(self, state):
-        assert state in ['open', 'closed']
+        assert state in [u'open', u'closed']
         self.desired_state = state
 
     def set_description(self, description):
@@ -720,8 +723,8 @@ class DefaultWrapper(object):
         # the pygithub issue object only offers a single assignee (right now)
 
         assignees = []
-        if not hasattr(self.instance, 'assignees'):
-            raw_assignees = self.raw_data_issue['assignees']
+        if not hasattr(self.instance, u'assignees'):
+            raw_assignees = self.raw_data_issue[u'assignees']
             assignees = \
                 [x.login for x in self.instance._makeListOfClassesAttribute(
                     github.NamedUser.NamedUser,
@@ -757,43 +760,43 @@ class DefaultWrapper(object):
         #self.instance.edit(body=description)
 
         vparms = inspect.getargspec(self.instance.edit)
-        if 'assignees' in vparms.args:
+        if u'assignees' in vparms.args:
             new_assignees = self.assignees + assignees
             new_assignees = sorted(set(new_assignees))
             self.instance.edit(assignees=assignees)
         else:
-            post_parameters = dict()
+            post_parameters = {}
             post_parameters["assignees"] = [x for x in assignees]
 
             headers, data = self.instance._requester.requestJsonAndCheck(
-                "PATCH",
+                u"PATCH",
                 self.instance.url,
                 input=post_parameters
             )
-            if headers['status'] != '200 OK':
-                print('ERROR: failed to edit assignees')
+            if headers[u'status'] != u'200 OK':
+                print(u'ERROR: failed to edit assignees')
                 sys.exit(1)
 
     @RateLimited
     def _delete_comment_by_url(self, url):
         # https://developer.github.com/v3/issues/comments/#delete-a-comment
         headers, data = self.instance._requester.requestJsonAndCheck(
-            "DELETE",
+            u"DELETE",
             url,
         )
-        if headers['status'] != '204 No Content':
-            print('ERROR: failed to remove %s' % url)
+        if headers[u'status'] != u'204 No Content':
+            print(u'ERROR: failed to remove %s' % url)
             sys.exit(1)
         return True
 
     def is_pullrequest(self):
-        if self.github_type == 'pullrequest':
+        if self.github_type == u'pullrequest':
             return True
         else:
             return False
 
     def is_issue(self):
-        if self.github_type == 'issue':
+        if self.github_type == u'issue':
             return True
         else:
             return False
@@ -841,10 +844,10 @@ class DefaultWrapper(object):
 
     @property
     def github_type(self):
-        if '/pull/' in self.html_url:
-            return 'pullrequest'
+        if u'/pull/' in self.html_url:
+            return u'pullrequest'
         else:
-            return 'issue'
+            return u'issue'
 
     @property
     def number(self):
@@ -854,8 +857,8 @@ class DefaultWrapper(object):
     def submitter(self):
         # auto-migrated issue by ansibot{-dev}
         # figure out the original submitter
-        if self.instance.user.login.startswith('ansibot'):
-            m = re.match('From @(.*) on', self.instance.body)
+        if self.instance.user.login.startswith(u'ansibot'):
+            m = re.match(u'From @(.*) on', self.instance.body)
             if m:
                 return m.group(1)
 
@@ -870,7 +873,7 @@ class DefaultWrapper(object):
     @property
     def pullrequest(self):
         if not self._pr:
-            logging.debug('@pullrequest.get_pullrequest #%s' % self.number)
+            logging.debug(u'@pullrequest.get_pullrequest #%s' % self.number)
             self._pr = self.repo.get_pullrequest(self.number)
             #self.repo.save_pullrequest(self._pr)
         return self._pr
@@ -888,7 +891,7 @@ class DefaultWrapper(object):
     @RateLimited
     def pullrequest_raw_data(self):
         if not self.pull_raw:
-            logging.info('@pullrequest_raw_data')
+            logging.info(u'@pullrequest_raw_data')
             self.pull_raw = self.pullrequest.raw_data
         return self.pull_raw
 
@@ -906,7 +909,7 @@ class DefaultWrapper(object):
                         groups.append(thisgroup)
                     continue
                 else:
-                    if thisgroup[-1]['target_url'] == x['target_url']:
+                    if thisgroup[-1][u'target_url'] == x[u'target_url']:
                         thisgroup.append(x)
                     else:
                         groups.append(thisgroup)
@@ -917,7 +920,7 @@ class DefaultWrapper(object):
                         groups.append(thisgroup)
 
             for group in groups:
-                group.sort(key=operator.itemgetter('updated_at'))
+                group.sort(key=operator.itemgetter(u'updated_at'))
                 result.append(group[-1])
 
             return result
@@ -927,27 +930,27 @@ class DefaultWrapper(object):
         pdata = None
         # pull out the status url from the raw data
         rd = self.pullrequest_raw_data
-        surl = rd['statuses_url']
+        surl = rd[u'statuses_url']
 
         pfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(self.number),
-            'pr_status.pickle'
+            u'issues',
+            to_text(self.number),
+            u'pr_status.pickle'
         )
         pdir = os.path.dirname(pfile)
         if not os.path.isdir(pdir):
             os.makedirs(pdir)
 
         if os.path.isfile(pfile):
-            logging.info('pullrequest_status load pfile')
+            logging.info(u'pullrequest_status load pfile')
             with open(pfile, 'rb') as f:
                 pdata = pickle.load(f)
 
         if pdata:
             # is the data stale?
             if pdata[0] < self.pullrequest.updated_at or force_fetch:
-                logging.info('fetching pr status: stale, previous from %s' % pdata[0])
+                logging.info(u'fetching pr status: stale, previous from %s' % pdata[0])
                 jdata = self._fetch_api_url(surl)
                 self.log_ci_status(jdata)
                 fetched = True
@@ -956,12 +959,12 @@ class DefaultWrapper(object):
 
         # missing?
         if not jdata:
-            logging.info('fetching pr status: !data')
+            logging.info(u'fetching pr status: !data')
             jdata = self._fetch_api_url(surl)
             fetched = True
 
         if fetched or not os.path.isfile(pfile):
-            logging.info('writing %s' % pfile)
+            logging.info(u'writing %s' % pfile)
             pdata = (self.pullrequest.updated_at, jdata)
             with open(pfile, 'wb') as f:
                 pickle.dump(pdata, f, protocol=2)
@@ -976,9 +979,9 @@ class DefaultWrapper(object):
 
         logfile = os.path.join(
             self.cachedir,
-            'issues',
-            str(self.number),
-            'pr_status_log.json'
+            u'issues',
+            to_text(self.number),
+            u'pr_status_log.json'
         )
 
         jdata = {}
@@ -991,25 +994,25 @@ class DefaultWrapper(object):
 
         for sd in status_data:
             try:
-                turl = sd['target_url']
+                turl = sd[u'target_url']
             except TypeError:
                 # https://github.com/ansible/ansibullbot/issues/959
                 # the above traceback sometimes occurs and cannot be reproduced
                 # log the following info to have better idea how to handle this
-                logging.error('sd = %s, type = %s' % (sd, type(sd)))
+                logging.error(u'sd = %s, type = %s' % (sd, type(sd)))
                 raise
 
             if turl not in jdata:
                 jdata[turl] = {
-                    'meta': sd.copy(),
-                    'history': {}
+                    u'meta': sd.copy(),
+                    u'history': {}
                 }
             else:
-                if jdata[turl]['meta']['updated_at'] < sd['updated_at']:
-                    jdata[turl]['meta'] = sd.copy()
-            ts = sd['updated_at']
-            if ts not in jdata[turl]['history']:
-                jdata[turl]['history'][ts] = sd['state']
+                if jdata[turl][u'meta'][u'updated_at'] < sd[u'updated_at']:
+                    jdata[turl][u'meta'] = sd.copy()
+            ts = sd[u'updated_at']
+            if ts not in jdata[turl][u'history']:
+                jdata[turl][u'history'][ts] = sd[u'state']
 
         with open(logfile, 'w') as f:
             f.write(json.dumps(jdata))
@@ -1025,7 +1028,7 @@ class DefaultWrapper(object):
         if self.is_issue():
             return None
         if not self.pr_files:
-            self.pr_files = self.load_update_fetch('files')
+            self.pr_files = self.load_update_fetch(u'files')
         files = [x.filename for x in self.pr_files]
         return files
 
@@ -1038,16 +1041,16 @@ class DefaultWrapper(object):
     def new_modules(self):
         new_modules = self.new_files
         new_modules = [
-            x for x in new_modules if x.startswith('lib/ansible/modules')
+            x for x in new_modules if x.startswith(u'lib/ansible/modules')
         ]
         new_modules = [
-            x for x in new_modules if not os.path.basename(x) == '__init__.py'
+            x for x in new_modules if not os.path.basename(x) == u'__init__.py'
         ]
         new_modules = [
-            x for x in new_modules if not os.path.basename(x).startswith('_')
+            x for x in new_modules if not os.path.basename(x).startswith(u'_')
         ]
         new_modules = [
-            x for x in new_modules if not os.path.basename(x).endswith('.ps1')
+            x for x in new_modules if not os.path.basename(x).endswith(u'.ps1')
         ]
         return new_modules
 
@@ -1058,7 +1061,7 @@ class DefaultWrapper(object):
     @property
     def labels(self):
         if self._labels is False:
-            logging.debug('_labels == False')
+            logging.debug(u'_labels == False')
             self._labels = [x for x in self.get_labels()]
         return self._labels
 
@@ -1070,8 +1073,8 @@ class DefaultWrapper(object):
         # https://github.com/ansible/ansibullbot/issues/881
         # https://github.com/ansible/ansibullbot/issues/883
         for idx, x in enumerate(self._pr_reviews):
-            if 'commit_id' not in x:
-                self._pr_reviews[idx]['commit_id'] = None
+            if u'commit_id' not in x:
+                self._pr_reviews[idx][u'commit_id'] = None
 
         return self._pr_reviews
 
@@ -1081,20 +1084,20 @@ class DefaultWrapper(object):
         #   early-access/graphql/enum/pullrequestreviewstate/
         # https://developer.github.com/v3/
         #   pulls/reviews/#list-reviews-on-a-pull-request
-        reviews_url = self.pullrequest.url + '/reviews'
-        headers = dict(
-            Accept='application/vnd.github.black-cat-preview+json',
-        )
+        reviews_url = self.pullrequest.url + u'/reviews'
+        headers = {
+            u'Accept': u'application/vnd.github.black-cat-preview+json',
+        }
 
         resp = self.instance._requester.requestJson(
-            'GET',
+            u'GET',
             reviews_url,
             headers=headers
         )
         jdata = json.loads(resp[2])
 
         # need to catch rate limit message here
-        if isinstance(jdata, dict) and 'rate' in jdata:
+        if isinstance(jdata, dict) and u'rate' in jdata:
             raise RateLimitError("rate limited")
 
         return jdata
@@ -1116,10 +1119,10 @@ class DefaultWrapper(object):
 
             if self.instance.updated_at > self.pullrequest.updated_at:
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
+                    logging.error(u'breakpoint!')
                     import epdb; epdb.st()
                 else:
-                    raise Exception('issue date != pr date')
+                    raise Exception(u'issue date != pr date')
 
     @property
     def commits(self):
@@ -1136,20 +1139,20 @@ class DefaultWrapper(object):
 
     @property
     def mergeable_state(self):
-        if not self.is_pullrequest() or self.pullrequest.state == 'closed':
+        if not self.is_pullrequest() or self.pullrequest.state == u'closed':
             return None
 
         # http://stackoverflow.com/a/30620973
         fetchcount = 0
-        while self.pullrequest.mergeable_state == 'unknown':
+        while self.pullrequest.mergeable_state == u'unknown':
             fetchcount += 1
             if fetchcount >= 10:
-                logging.error('exceeded fetch threshold for mstate')
+                logging.error(u'exceeded fetch threshold for mstate')
                 #sys.exit(1)
                 return False
 
             logging.warning(
-                're-fetch[%s] PR#%s because mergeable state is unknown' % (
+                u're-fetch[%s] PR#%s because mergeable state is unknown' % (
                     fetchcount,
                     self.number
                  )
@@ -1163,9 +1166,9 @@ class DefaultWrapper(object):
     @property
     def wip(self):
         '''Is this a WIP?'''
-        if self.title.startswith('WIP'):
+        if self.title.startswith(u'WIP'):
             return True
-        elif '[WIP]' in self.title:
+        elif u'[WIP]' in self.title:
             return True
         return False
 
@@ -1174,7 +1177,7 @@ class DefaultWrapper(object):
         if self.pullrequest.head.repo is None:
             return True
 
-        return self.pullrequest.head.repo.full_name != 'ansible/ansible'
+        return self.pullrequest.head.repo.full_name != u'ansible/ansible'
 
     @RateLimited
     def get_commit_parents(self, commit):
@@ -1196,7 +1199,7 @@ class DefaultWrapper(object):
             for commit in self.commits:
                 parents = self.get_commit_parents(commit)
                 message = self.get_commit_message(commit)
-                if len(parents) > 1 or message.startswith('Merge branch'):
+                if len(parents) > 1 or message.startswith(u'Merge branch'):
                     self._merge_commits.append(commit)
         return self._merge_commits
 
@@ -1227,38 +1230,38 @@ class DefaultWrapper(object):
 
         if len(self.commits) == 1 or len(emails) == 1:
             # squash single committer PRs
-            merge_method = 'squash'
+            merge_method = u'squash'
         elif (len(self.commits) == len(emails)) and len(self.commits) <= 10:
             # rebase multi-committer PRs
-            merge_method = 'rebase'
+            merge_method = u'rebase'
         else:
-            logging.error('merge skipped for %s' % self.number)
+            logging.error(u'merge skipped for %s' % self.number)
             return
 
-        url = os.path.join(self.pullrequest.url, 'merge')
-        headers = dict(
-            Accept='application/vnd.github.polaris-preview+json',
-        )
-        params = dict(
-            merge_method=merge_method,
-        )
+        url = os.path.join(self.pullrequest.url, u'merge')
+        headers = {
+            u'Accept': u'application/vnd.github.polaris-preview+json',
+        }
+        params = {
+            'merge_method': merge_method,
+        }
         resp = self.pullrequest._requester.requestJson(
-            "PUT",
+            u"PUT",
             url,
             headers=headers,
             input=params
         )
 
-        if resp[0] != 200 or 'successfully merged' not in resp[2]:
-            logging.error('merge failed on %s' % self.number)
+        if resp[0] != 200 or u'successfully merged' not in resp[2]:
+            logging.error(u'merge failed on %s' % self.number)
             logging.error(resp)
             if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
+                logging.error(u'breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception('merge failed - %d - %s' % (resp[0], resp[1]['status']))
+                raise Exception(u'merge failed - %d - %s' % (resp[0], resp[1][u'status']))
         else:
-            logging.info('merge successful for %s' % self.number)
+            logging.info(u'merge successful for %s' % self.number)
 
     @property
     def migrated_from(self):
@@ -1268,26 +1271,26 @@ class DefaultWrapper(object):
     @property
     def migrated(self):
         if self._migrated is None:
-            if self.body and 'Copied from original issue' in self.body:
+            if self.body and u'Copied from original issue' in self.body:
                 self._migrated = True
                 migrated_issue = None
-                idx = self.body.find('Copied from original issue')
+                idx = self.body.find(u'Copied from original issue')
                 msg = self.body[idx:]
                 try:
                     migrated_issue = msg.split()[4]
                 except Exception as e:
                     logging.error(e)
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
+                        logging.error(u'breakpoint!')
                         import epdb; epdb.st()
                     else:
-                        raise Exception('split failed')
-                if migrated_issue.endswith('_'):
-                    migrated_issue = migrated_issue.rstrip('_')
+                        raise Exception(u'split failed')
+                if migrated_issue.endswith(u'_'):
+                    migrated_issue = migrated_issue.rstrip(u'_')
                 self._migrated_from = migrated_issue
             else:
                 for comment in self.comments:
-                    if comment.body.lower().startswith('migrated from'):
+                    if comment.body.lower().startswith(u'migrated from'):
                         self._migrated = True
                         bparts = comment.body.split()
                         self._migrated_from = bparts[2]
@@ -1313,9 +1316,9 @@ class DefaultWrapper(object):
         resp = None
         cachefile = os.path.join(
             self.cachedir,
-            'issues',
-            str(self.number),
-            'shippable_yml.pickle'
+            u'issues',
+            to_text(self.number),
+            u'shippable_yml.pickle'
         )
 
         try:
@@ -1323,21 +1326,21 @@ class DefaultWrapper(object):
                 with open(cachefile, 'rb') as f:
                     pdata = pickle.load(f)
         except Exception as e:
-            logging.error('failed to unpickle %s %s' % (cachefile, str(e)))
+            logging.error(u'failed to unpickle %s %s' % (cachefile, to_text(e)))
 
         if not pdata or pdata[0] != sha:
 
             if self.pullrequest.head.repo:
 
-                url = 'https://api.github.com/repos/'
+                url = u'https://api.github.com/repos/'
                 url += self.pullrequest.head.repo.full_name
-                url += '/contents/'
+                url += u'/contents/'
                 url += filepath
 
                 resp = self.pullrequest._requester.requestJson(
-                    "GET",
+                    u"GET",
                     url,
-                    input={'ref': self.pullrequest.head.ref}
+                    input={u'ref': self.pullrequest.head.ref}
                 )
 
             else:
