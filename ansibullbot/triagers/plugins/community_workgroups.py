@@ -9,6 +9,7 @@ def get_community_workgroup_facts(issuewrapper, meta):
     WORKING_GROUPS = {
         u'cloud/amazon': u'aws',
         u'cloud/azure': u'azure',
+        u'cloud/linode/': u'linode',
         u'cloud/vmware': u'vmware',
         u'network/': u'network',
         u'windows/': u'windows'
