@@ -1,3 +1,5 @@
+[![Run Status](https://api.shippable.com/projects/573f79d02a8192902e20e350/badge?branch=master)](https://app.shippable.com/github/ansible/ansibullbot/dashboard) [![Coverage Badge](https://api.shippable.com/projects/573f79d02a8192902e20e350/coverageBadge?branch=master)](https://app.shippable.com/github/ansible/ansibullbot/dashboard)
+
 See the Ansibullbot Project Board for what is being worked on:  [![Project Board](https://img.shields.io/github/issues/ansible/ansibullbot.svg)](https://github.com/ansible/ansibullbot/projects/1)
 
 # User Guide
