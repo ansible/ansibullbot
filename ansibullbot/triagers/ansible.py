@@ -1188,6 +1188,7 @@ class AnsibleTriage(DefaultTriager):
                 tvars = {
                     u'notify': self.meta[u'to_notify'],
                     u'submitter': iw.submitter,
+                    u'is_pullrequest': iw.is_pullrequest(),
                 }
                 comment = self.render_boilerplate(tvars, boilerplate=u'notify')
                 if comment not in actions.comments:
