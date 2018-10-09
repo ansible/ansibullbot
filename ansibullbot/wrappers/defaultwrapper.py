@@ -1000,6 +1000,7 @@ class DefaultWrapper(object):
                 # the above traceback sometimes occurs and cannot be reproduced
                 # log the following info to have better idea how to handle this
                 logging.error(u'sd = %s, type = %s' % (sd, type(sd)))
+                logging.error(u'status_data = %s, type = %s' % (status_data, type(status_data)))
                 raise
 
             if turl not in jdata:
