@@ -153,7 +153,7 @@ rdata += '<br>'
 rdata += "################################ TRACEBACKS #########################<br>\n"
 for tb in tracebacks:
     rdata += '<pre>'
-    rdata += '\n'.join(tb)
+    rdata += '\n'.join([x for x in tb if x is not None])
     rdata += '</pre>'
 rdata += "<br>\n"
 
