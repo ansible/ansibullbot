@@ -936,7 +936,7 @@ class AnsibleComponentMatcher(object):
                 for m in matches:
                     if match == m:
                         continue
-                    if len(m) < match and match.startswith(m):
+                    if len(m) < len(match) and match.startswith(m):
                         tr.append(m)
 
             for r in tr:
