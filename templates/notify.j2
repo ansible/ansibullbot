@@ -1,5 +1,3 @@
-@{{ submitter }}: thank you for submitting this {% if is_pullrequest %}pull-request{% else %}issue{% endif %}!
-
 {% if notify|length > 1 %}
 cc @{{ notify|join(' @') }}
 {% else %}
