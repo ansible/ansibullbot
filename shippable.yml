@@ -12,3 +12,4 @@ build:
    - shippable_retry pip install -Ur test-requirements.txt
 
    - pytest
+   - codecov
