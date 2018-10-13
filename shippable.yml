@@ -16,10 +16,11 @@ build:
 
    - pytest
 
-after_success:
+  always:
+    - codecov -f shippable/codecoverage/pytest-cov.xml -X gcov
 
-  - codecov --token=272fc7a8-bd55-4e0c-af2f-7d475d0f3c0a -r ansible/ansibullbot
+    - codecov --token=272fc7a8-bd55-4e0c-af2f-7d475d0f3c0a -r ansible/ansibullbot
 
-  - coverage xml -o $COVERAGE_REPORTS/coverage.xml
+    - coverage xml -o $COVERAGE_REPORTS/coverage.xml
 
-  - coverage report
+    - coverage report
