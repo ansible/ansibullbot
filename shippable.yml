@@ -2,9 +2,6 @@ language: python
 python:
   - 2.7
   - 3.7
-env:
-  - CI_REPORTS=shippable/testresults COVERAGE_REPORTS=shippable/codecoverage
-
 build:
   pre_ci_boot:
     image_name: drydock/u16pytall
@@ -18,7 +15,3 @@ build:
 
   always:
     - codecov --token=272fc7a8-bd55-4e0c-af2f-7d475d0f3c0a -r ansible/ansibullbot -f shippable/codecoverage/pytest-cov.xml -X gcov
-
-    - coverage xml -o $COVERAGE_REPORTS/coverage.xml
-
-    - coverage report
