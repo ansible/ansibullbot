@@ -1075,11 +1075,7 @@ class DefaultWrapper(object):
         # https://github.com/ansible/ansibullbot/issues/883
         for idx, x in enumerate(self._pr_reviews):
             if u'commit_id' not in x:
-                try:
-                    self._pr_reviews[idx][u'commit_id'] = None
-                except KeyError:
-                    logging.error(u'type=%s, _pr_reviews=%s', type(self._pr_reviews), self._pr_reviews)
-                    raise
+                self._pr_reviews[idx][u'commit_id'] = None
 
         return self._pr_reviews
 
@@ -1102,7 +1098,7 @@ class DefaultWrapper(object):
         jdata = json.loads(resp[2])
 
         # need to catch rate limit message here
-        if isinstance(jdata, dict) and u'rate' in jdata:
+        if isinstance(jdata, dict) and u'rate' in jdata[u'message']:
             raise RateLimitError("rate limited")
 
         return jdata
