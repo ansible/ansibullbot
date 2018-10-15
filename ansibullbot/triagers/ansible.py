@@ -192,7 +192,6 @@ class AnsibleTriage(DefaultTriager):
         self.botmeta = {}
         self.automerge_on = False
 
-        import epdb; epdb.st()
         self.cachedir_base = os.path.expanduser(self.cachedir_base)
 
         # repo objects
