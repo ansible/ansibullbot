@@ -91,7 +91,10 @@ query {
 class GithubGraphQLClient(object):
     baseurl = u'https://api.github.com/graphql'
 
-    def __init__(self, token):
+    def __init__(self, token, server=None):
+        if server:
+            # this is for testing
+            self.baseurl = server.rstrip('/') + '/graphql'
         self.token = token
         self.headers = {
             u'Accept': u'application/json',

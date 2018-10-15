@@ -192,6 +192,7 @@ class AnsibleTriage(DefaultTriager):
         self.botmeta = {}
         self.automerge_on = False
 
+        import epdb; epdb.st()
         self.cachedir_base = os.path.expanduser(self.cachedir_base)
 
         # repo objects
@@ -202,9 +203,16 @@ class AnsibleTriage(DefaultTriager):
 
         # create the scraper for www data
         logging.info('creating webscraper')
-        self.gws = GithubWebScraper(cachedir=self.cachedir_base)
+        self.gws = GithubWebScraper(
+            cachedir=self.cachedir_base,
+            server=C.DEFAULT_GITHUB_URL
+        )
         if C.DEFAULT_GITHUB_TOKEN:
-            self.gqlc = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
+            logging.info('creating graphql client')
+            self.gqlc = GithubGraphQLClient(
+                C.DEFAULT_GITHUB_TOKEN,
+                server=C.DEFAULT_GITHUB_URL
+            )
         else:
             self.gqlc = None
 
