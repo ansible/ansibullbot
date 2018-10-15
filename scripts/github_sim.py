@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 
+import json
 import six
 import time
 
+from pprint import pprint
 from flask import Flask
 from flask import jsonify
 from flask import request
+
 
 app = Flask(__name__)
 
@@ -20,8 +23,20 @@ ISSUES = {
     'github': {}
 }
 
+EVENTS = {}
+
 
 def get_issue(org, repo, number):
+
+    def get_labels(org, repo, number):
+        labels = []
+        events = EVENTS.get((org, repo, number), [])
+        for event in events:
+            if event['event'] == 'labeled':
+                labels.append(event['label'])
+            elif event['event'] == ['unlabeled']:
+                labels = [x for x in labels if x['name'] != event['label']['name']]
+        return labels
 
     key = (org, repo, number)
     if key in ISSUES:
@@ -61,7 +76,8 @@ def get_issue(org, repo, number):
     e_url += '/'
     e_url += 'events'
 
-    return {
+    payload = {
+        'id': 1000 + int(number),
         'assignees': [],
         'created_at': '2018-09-12T21:14:02Z',
         'updated_at': '2018-09-12T21:24:05Z',
@@ -69,7 +85,7 @@ def get_issue(org, repo, number):
         'events_url': e_url,
         'html_url': h_url,
         'number': int(number),
-        'labels': [],
+        'labels': get_labels(org, repo, int(number)),
         'user': {
             'login': 'foouser'
         },
@@ -77,6 +93,19 @@ def get_issue(org, repo, number):
         'body': '',
         'state': 'open'
     }
+
+    ISSUES[key] = payload.copy()
+
+    return payload
+
+
+def add_issue_event(org, repo, number, event):
+    key = (org, repo, int(number))
+    if key not in ISSUES:
+        get_issue(org, repo, int(number))
+    if key not in EVENTS:
+        EVENTS[key] = []
+    EVENTS[key].append(event)
 
 
 def error_time():
@@ -112,6 +141,12 @@ def throw_ise(error):
     response = jsonify(error.to_dict())
     response.status_code = error.status_code
     return response
+
+
+@app.before_first_request
+def prep_server():
+    for i in range(0, 100):
+        get_issue('ansbile', 'ansible', i)
 
 
 @app.route('/')
@@ -156,8 +191,150 @@ def orgs(path):
             'created_at': '2018-01-08T20:25:21Z',
             'updated_at': '2018-01-08T20:25:21Z'
         })
+    elif len(path_parts) == 2 and path_parts[-1] == 'members':
+        return jsonify([])
     elif len(path_parts) == 2 and path_parts[-1] == 'teams':
         return jsonify([])
+
+
+def dict_xpath_set(ddict, path, key, value):
+
+    obj = ddict
+    for ix in path:
+        if ix not in obj:
+            obj[ix] = {} 
+        obj = obj[ix]
+
+    if 'kwargs' not in obj:
+        obj['kwargs'] = {}
+    if 'nodes' not in obj:
+        obj['nodes'] = []
+    obj['kwargs'][key] = value
+
+    #pprint(ddict)
+    #import epdb; epdb.st()
+    return ddict
+
+
+def dict_xpath_add(ddict, path, value):
+    obj = ddict
+    for ix in path:
+        if ix not in obj:
+            obj[ix] = {} 
+        obj = obj[ix]
+
+    if 'kwargs' not in obj:
+        obj['kwargs'] = {}
+    if 'nodes' not in obj:
+        obj['nodes'] = []
+    obj['nodes'].append(value)
+    return ddict
+
+
+@app.route('/graphql', methods=['GET', 'POST'])
+def graphql():
+    # 127.0.0.1 - - [14/Oct/2018 23:03:10] "POST /graphql HTTP/1.1" 404 -
+
+    headers = dict(request.headers)
+    print(request.data)
+    #payload = request.data
+    print(request.json)
+    payload = request.json
+    print(payload)
+
+    try:
+        jdata = json.loads(request.data)
+        print(jdata)
+        print(jdata.keys())
+        print(jdata['query'])
+    except Exception as e:
+        print('ERROR: %s' % e)
+
+
+    qinfo = {}
+    qpath = []
+    qlines = jdata['query'].split('\n')
+    for idl,ql in enumerate(qlines):
+        # normalize
+        ql = ql.replace('){', ') {')
+
+        print('%s:: %s' % (idl,ql))
+
+        # 1::     repository(owner:"ansible", name:"ansible") {
+        if ql.rstrip().endswith('{'):
+            if '(' in ql and ')' in ql:
+
+                # repository
+                qlkey = ql.lstrip().split('(')[0]
+                if not qlkey:
+                    continue
+                qpath.append(qlkey)
+                print('branch?: %s' % qlkey)
+
+                #qinfo[qlkey] = {}
+                ql = ql.strip()
+                ql = ql.replace('repository(', '')
+                ql = ql.replace('pullRequest(', '')
+                ql = ql.replace(') {', '')
+
+                # owner/name/etc
+                parts = ql.split(',')            
+                for part in parts:
+                    key = part.split(':')[0].strip()
+                    val = part.split(':')[-1].strip()
+                    #qinfo[qlkey][key] = val
+
+                    '''
+                    print('# sending in ...')
+                    print('\tpath: ' + str(qpath))
+                    print('\tkey: ' + key)
+                    print('\tval: ' + val)
+
+                    print('# result ...')
+                    '''
+                    qinfo = dict_xpath_set(qinfo, qpath, key, val)
+                    #pprint(qinfo)
+                    #import epdb; epdb.st()
+            elif ql.rstrip().endswith('{'):
+                # new branch
+                qlkey = ql.lstrip().split('{')[0]
+                if not qlkey:
+                    continue
+                print('branch?: %s' % qlkey)
+                qpath.append(qlkey)
+
+        elif ql.rstrip().endswith('}'):
+            qpath = qpath[:-1]
+
+        elif '{' not in ql and '}' not in ql and ql.strip():
+            # nodes
+            node = ql.strip()
+            print('node?: ' + ql)
+            qinfo = dict_xpath_add(qinfo, qpath, node)
+
+
+    pprint(qinfo)
+
+    data = {}
+    if 'repository' in qinfo:
+        data['repository'] = {}
+        if 'pullRequest' in qinfo['repository']:
+            data['repository']['pullRequest'] = {}
+            nodes = qinfo['repository']['pullRequest']['nodes'][:]
+            if 'number' in qinfo['repository']['pullRequest']['kwargs']:
+                issue = get_issue(
+                    'ansible',
+                    'ansible',
+                    qinfo['repository']['pullRequest']['kwargs']['number']
+                )
+                pprint(issue)
+                for node in nodes:
+                    node = node.replace('At', '_at')
+                    data['repository']['pullRequest'][node] = issue[node.lower()]
+
+
+    pprint(data)
+    return jsonify({'data': data})
 
 
 @app.route('/repos/<path:path>', methods=['GET', 'POST'])
@@ -185,21 +362,58 @@ def repos(path):
         return jsonify([])
 
     if path_parts[-1] == 'labels':
-        print('sending repo labels')
-        return jsonify([])
+        if len(path_parts) == 5:
+            # [u'ansible', u'ansible', u'issues', u'1', u'labels']
+            auth = dict(request.headers)['Authorization']
+            token = auth.split()[-1]
+            username = TOKENS.get(token)
+            org = path_parts[0]
+            repo = path_parts[1]
+            number = int(path_parts[3])
+
+            labels = request.json
+
+            print('adding label(s) %s by %s' % (labels, username))
+            for label in labels:
+                event = {
+                    'event': 'labeled',
+                    'created_at': None,
+                    'updated_at': None,
+                    'label': {'name': label}
+                }
+                if request.method != 'POST':
+                    event['event'] = 'unlabeled'
+                add_issue_event(org, repo, number, event)
+            return jsonify({})
+
+        else:
+            print('path: %s %s' % (path_parts, len(path_parts)))
+            print('sending repo labels')
+            return jsonify([])
 
     elif path_parts[-1] == 'comments':
+
+        auth = dict(request.headers)['Authorization']
+        token = auth.split()[-1]
+        username = TOKENS.get(token)
+        org = path_parts[0]
+        repo = path_parts[1]
+        number = int(path_parts[3])
+
         if request.method == 'POST':
-            print('adding comment(s)')
-            print(request.headers)
-            print(request.data)
-            '''
-            {"body": "blah blah blah"}
-            '''
-            import epdb; epdb.st()
+            print('adding comment(s) by %s' % username)
+            event = {
+                'event': 'commented',
+                'created_at': None,
+                'updated_at': None,
+                'body': request.json['body']
+            }
+            add_issue_event(org, repo, number, event)
             return jsonify({})
         else:
-            return jsonify([])
+            events = EVENTS.get((org, repo, number), [])
+            comments = [x for x in events if x['event'] == 'commented']
+            return jsonify(comments)
 
     elif len(path_parts) == 4 and path_parts[-2] == 'issues':
         print('sending issue')
@@ -207,6 +421,7 @@ def repos(path):
 
     elif len(path_parts) == 5 and path_parts[-1] == 'comments':
         print('sending comments')
+
         return jsonify([])
     elif len(path_parts) == 5 and path_parts[-1] == 'events':
         print('sending events')
