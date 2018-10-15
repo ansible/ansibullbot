@@ -1075,7 +1075,11 @@ class DefaultWrapper(object):
         # https://github.com/ansible/ansibullbot/issues/883
         for idx, x in enumerate(self._pr_reviews):
             if u'commit_id' not in x:
-                self._pr_reviews[idx][u'commit_id'] = None
+                try:
+                    self._pr_reviews[idx][u'commit_id'] = None
+                except KeyError:
+                    logging.error(u'type=%s, _pr_reviews=%s', type(self._pr_reviews), self._pr_reviews)
+                    raise
 
         return self._pr_reviews
 
