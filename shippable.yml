@@ -7,3 +7,6 @@ build:
    - shippable_retry pip install -Ur test-requirements.txt
 
    - pytest
+
+  always:
+    - codecov --token=272fc7a8-bd55-4e0c-af2f-7d475d0f3c0a -r ansible/ansibullbot -f shippable/codecoverage/pytest-cov.xml -X gcov
