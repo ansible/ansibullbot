@@ -1192,6 +1192,11 @@ class DefaultWrapper(object):
         msg = commit.commit.message
         return msg
 
+    @RateLimited
+    def get_commit_files(self, commit):
+        files = commit.files
+        return files
+
     @property
     def merge_commits(self):
         # https://api.github.com/repos/ansible/ansible/pulls/91/commits
