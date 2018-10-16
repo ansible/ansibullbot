@@ -220,6 +220,16 @@ DEFAULT_BREAKPOINTS = get_config(
     value_type='boolean'
 )
 
+# Use or don't use the ratelimiting decorator
+DEFAULT_RATELIMIT = get_config(
+    p,
+    DEFAULTS,
+    'ratelimit',
+    '%s_RATELIMIT' % PROG_NAME.upper(),
+    True,
+    value_type='boolean'
+)
+
 DEFAULT_GITHUB_URL = get_config(
     p,
     DEFAULTS,
