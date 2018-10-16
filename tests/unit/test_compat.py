@@ -38,6 +38,6 @@ def test_json_dump_to_stringio():
     assert stored_data == TEST_DATA
 
 
-def test_json_dumps(tmpdir):
+def test_json_dumps():
     dumped_data = json_dumps(TEST_DATA)
     assert dumped_data == STRING_DATA
