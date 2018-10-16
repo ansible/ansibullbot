@@ -6,6 +6,7 @@ import re
 import requests
 import os
 import shutil
+import sys
 import tempfile
 import time
 
@@ -618,6 +619,8 @@ class GithubWebScraper(object):
                     logging.debug(
                         u'too many www requests, sleeping %ss' % sleep
                     )
+                    if not C.DEFAULT_RATELIMIT:
+                        sys.exit(1)
                     time.sleep(sleep)
                     sleep *=  2
                 else:
@@ -626,16 +629,22 @@ class GithubWebScraper(object):
                 # Failed to establish a new connection: [Errno 111] Connection
                 # refused',))
                 logging.debug(u'connection refused')
+                if not C.DEFAULT_RATELIMIT:
+                    sys.exit(1)
                 time.sleep(sleep)
                 sleep *= 2
             except requests.exceptions.ChunkedEncodingError as e:
                 logging.debug(e)
+                if not C.DEFAULT_RATELIMIT:
+                    sys.exit(1)
                 time.sleep(sleep)
                 sleep *= 2
 
             if not rr:
                 failed = True
                 logging.warning(u'no response')
+                if not C.DEFAULT_RATELIMIT:
+                    sys.exit(1)
                 time.sleep(sleep)
                 sleep *= 2
 
@@ -643,6 +652,8 @@ class GithubWebScraper(object):
             if not rr or u'page is taking way too long to load' in rr.text.lower():
                 failed = True
                 logging.warning(u'github page took too long to load')
+                if not C.DEFAULT_RATELIMIT:
+                    sys.exit(1)
                 time.sleep(sleep)
                 sleep *= 2
 
