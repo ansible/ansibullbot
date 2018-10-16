@@ -9,13 +9,16 @@ from ._text_compat import to_text
 __all__ = 'json_dump', 'json_dumps'
 
 
+_to_surrogate_text = partial(to_text, errors='surrogate_or_strict')
+
+
 class JSONUnicodeEncoder(json.JSONEncoder):
     """JSON encoder honoring unicode strings."""
 
     def iterencode(self, o, *args, **kwargs):
         """Emit unicode chunks when writing to file."""
         def noop(v): return v
-        transformer = noop if self.ensure_ascii else to_text
+        transformer = noop if self.ensure_ascii else _to_surrogate_text
 
         return (
             transformer(chunk)
