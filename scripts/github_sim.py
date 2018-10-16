@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import json
+import random
 import six
 import time
 
@@ -26,7 +27,9 @@ ISSUES = {
 EVENTS = {}
 
 
-def get_issue(org, repo, number):
+def get_issue(org, repo, number, itype='issue'):
+
+    global ISSUES
 
     def get_labels(org, repo, number):
         labels = []
@@ -61,6 +64,7 @@ def get_issue(org, repo, number):
     h_url += repo
     h_url += '/'
     h_url += 'issues'
+    #h_url += 'issue'
     h_url += '/'
     h_url += str(number)
 
@@ -94,7 +98,19 @@ def get_issue(org, repo, number):
         'state': 'open'
     }
 
-    ISSUES[key] = payload.copy()
+    if itype.lower() in ['pull', 'pullrequest']:
+        pull_url = url.replace('issues', 'pulls')
+        diff_url = pull_url + '.diff'
+        patch_url = pull_url + '.patch'
+        pull_h_url = h_url.replace('issues', 'pull')
+        payload['pull_request'] = {
+            "url": pull_url,
+            "html_url": pull_h_url,
+            "diff_url": diff_url,
+            "patch_url": patch_url
+        }
+
+    ISSUES['github'][key] = payload.copy()
 
     return payload
 
@@ -145,8 +161,13 @@ def throw_ise(error):
 
 @app.before_first_request
 def prep_server():
+    #import epdb; epdb.st()
     for i in range(0, 100):
-        get_issue('ansbile', 'ansible', i)
+        ispr = bool(random.getrandbits(1))
+        if ispr:
+            get_issue('ansbile', 'ansible', i, itype='pull')
+        else:
+            get_issue('ansbile', 'ansible', i, itype='issue')
 
 
 @app.route('/')
@@ -313,6 +334,7 @@ def graphql():
             qinfo = dict_xpath_add(qinfo, qpath, node)
 
 
+    print('# QINFO ...')
     pprint(qinfo)
 
     data = {}
@@ -332,7 +354,44 @@ def graphql():
                     node = node.replace('At', '_at')
                     data['repository']['pullRequest'][node] = issue[node.lower()]
 
+        elif 'issues' in qinfo['repository'] or 'pullRequests' in qinfo['repository']:
 
+            ikey = 'issues'
+            if 'pullRequests' in qinfo['repository']:
+                ikey = 'pullRequests'
+            data['repository'][ikey] = {'edges': [] }
+
+            issues_keys = []
+            for k,v in ISSUES['github'].items():
+                #print(k)
+                #pprint(v)
+                if 'pullRequests' in qinfo['repository']:
+                    if v.get('pull_request'):
+                        issues_keys.append(k)
+                elif not v.get('pull_request'):
+                    issues_keys.append(k)
+
+            print('# total keys: %s' % len(issues_keys))
+            issues_keys = sorted(issues_keys)
+            issues = []
+            for ik in issues_keys:
+                issue = ISSUES['github'][ik]
+                node = {}
+                node['id'] = issue['id']
+                node['url'] = issue['url']
+                node['number'] = issue['number']
+                node['state'] = issue['state']
+                node['createdAt'] = issue['created_at']
+                node['updatedAt'] = issue['updated_at']
+                node['repository'] = {
+                    'nameWithOwner': None
+                }
+                data['repository'][ikey]['edges'].append({'node': node.copy()})
+
+        else:
+            print('# UNHANDLED GRAPH ENDPOINT')
+
+    print('# RESULT ...')
     pprint(data)
     return jsonify({'data': data})
 
