@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+import hashlib
 import json
 import os
 import pickle
@@ -35,9 +36,27 @@ class GithubMock(object):
     efile = '/tmp/fakeup/events.p'
     ISSUES = {'github': {}}
     EVENTS = {}
+    STATUS_HASHES = {}
 
     def __init__(self):
         pass
+
+    def get_issue_status_uuid(self, org, repo, number):
+        # .../repos/ansible/ansibullbot/statuses/882849ea5f96f757eae148ebe59f504a40fca2ce
+        key = (org, repo, int(number))
+        if key not in self.STATUS_HASHES:
+            hash_object = hashlib.sha256(str(key))
+            self.STATUS_HASHES[key] = hash_object.hexdigest()
+        return self.STATUS_HASHES[key]
+
+    def get_status(self, hex_digest):
+        key = None
+        for k,v in self.STATUS_HASHES.items():
+            if v == hex_digest:
+                key = k 
+                break
+        status = {}
+        return status
 
     def get_issue(self, org, repo, number, itype='issue'):
 
@@ -51,9 +70,11 @@ class GithubMock(object):
                     labels = [x for x in labels if x['name'] != event['label']['name']]
             return labels
 
-        key = (org, repo, number)
-        if key in self.ISSUES:
-            return self.ISSUES[key]
+        key = (org, repo, int(number))
+        if key in self.ISSUES['github']:
+            return self.ISSUES['github'][key]
+
+        print('# creating %s %s' % (number, itype))
 
         url = BASEURL
         url += '/'
@@ -63,6 +84,12 @@ class GithubMock(object):
         url += '/'
         url += repo
         url += '/'
+        '''
+        if itype.lower() in ['pull', 'pullrequest']:
+            url += 'pulls'
+        else:
+            url += 'issues'
+        '''
         url += 'issues'
         url += '/'
         url += str(number)
@@ -73,7 +100,11 @@ class GithubMock(object):
         h_url += '/'
         h_url += repo
         h_url += '/'
-        h_url += 'issues'
+        if itype.lower() in ['pull', 'pullrequest']:
+            h_url += 'pull'
+        else:
+            h_url += 'issues'
+        #h_url += 'issues'
         #h_url += 'issue'
         h_url += '/'
         h_url += str(number)
@@ -123,6 +154,8 @@ class GithubMock(object):
         self.ISSUES['github'][key] = payload.copy()
         self.save_data()
 
+        #import epdb; epdb.st()
+        pprint(payload)
         return payload
 
 
@@ -247,15 +280,17 @@ def throw_ise(error):
 @app.before_first_request
 def prep_server():
     #import epdb; epdb.st()
-    GM.load_data()
+    #GM.load_data()
     if not GM.ISSUES['github']:
-        for i in range(0, 10):
+        for i in range(1, 11):
             ispr = bool(random.getrandbits(1))
-            if ispr:
+            if ispr or i == 1:
                 GM.get_issue('ansible', 'ansible', i, itype='pull')
             else:
                 GM.get_issue('ansible', 'ansible', i, itype='issue')
 
+    #issue = GM.get_issue('ansible', 'ansible', 1)
+    #import epdb; epdb.st()
 
 @app.route('/')
 def root():
@@ -490,18 +525,22 @@ def repos(path):
 
     path_parts = path.split('/')
     print(six.text_type((len(path_parts),path_parts)))
+    print(request.path)
 
     if error_time():
         raise InternalServerError(None, status_code=500)
 
     if len(path_parts) == 2:
         print('sending repo')
-        return jsonify({
+        payload = {
             'name': path_parts[-1],
+            'url': BASEURL + '/repos/' + path_parts[-2] + '/' + path_parts[-1],
             'full_name': '/'.join([path_parts[-2],path_parts[-1]]),
             'created_at': '2012-03-06T14:58:02Z',
             'updated_at': get_timestamp()
-        })
+        }
+        pprint(payload)
+        return jsonify(payload)
 
     auth = dict(request.headers)['Authorization']
     token = auth.split()[-1]
@@ -581,11 +620,15 @@ def repos(path):
 
     elif len(path_parts) == 4 and path_parts[-2] == 'issues':
         print('sending issue')
-        return jsonify(GM.get_issue(path_parts[0], path_parts[1], path_parts[-1]))
-
-    #elif len(path_parts) == 5 and path_parts[-1] == 'comments':
-    #    print('sending comments')
-    #    return jsonify([])
+        # [u'ansible', u'ansible', u'issues', u'1issues']
+        if not path_parts[-1].isdigit():
+            raise InternalServerError(None, status_code=500)
+        #return jsonify(GM.get_issue(path_parts[0], path_parts[1], path_parts[-1]))
+	issue = GM.get_issue(path_parts[0], path_parts[1], path_parts[-1])
+        pprint(issue)
+	resp = jsonify(issue)
+	resp.headers['ETag'] = 'a00049ba79152d03380c34652f2cb612'
+	return resp
 
     elif len(path_parts) == 5 and path_parts[-2] == 'comments':
         # (5, [u'ansible', u'ansible', u'issues', u'comments', u'2'])
@@ -635,6 +678,50 @@ def repos(path):
         return jsonify(events)
     elif len(path_parts) == 2:
         return jsonify({})
+
+    elif len(path_parts) == 4 and path_parts[-2] == 'pulls':
+        # (4, [u'ansible', u'ansible', u'pulls', u'1'])
+	issue = GM.get_issue(path_parts[0], path_parts[1], path_parts[-1])
+        issue['url'] = issue['url'].replace('issues', 'pulls')
+        issue['requested_reviewers'] = []
+        issue['requested_teams'] = []
+        issue['commits_url'] = issue['url'] + '/commits'
+        issue['review_comments_url'] = issue['url'] + '/comments'
+        issue['review_comment_url'] = issue['url'] + '/comments{/number}'
+        issue['head'] = {}
+        issue['base'] = {}
+        issue['_links'] = {}
+        issue['merged'] = False
+        issue['mergeable'] = True
+        issue['rebaseable'] = True
+        issue['mergeable_state'] = 'unstable'
+        issue['merged_by'] = None
+        issue['review_comments'] = 0
+        issue['commits'] = 1
+        issue['additions'] = 10
+        issue['deletions'] = 2
+        issue['changed_files'] = 1
+        issue['author_association'] = 'CONTRIBUTOR'
+
+        status_hash = GM.get_issue_status_uuid(org, repo, path_parts[-1])
+        issue['statuses_url'] = BASEURL + '/repos/' + org + '/' + repo + '/statuses/' + status_hash
+
+	resp = jsonify(issue)
+	resp.headers['ETag'] = 'a00049ba79152d03380c34652f2cb612'
+	return resp
+
+    elif len(path_parts) == 4 and path_parts[-2] == 'statuses':
+        status = GM.get_status(path_parts[-1])        
+        return jsonify(status)
+
+    elif len(path_parts) == 5 and path_parts[-1] == 'commits':
+        return jsonify([])
+
+    elif len(path_parts) == 5 and path_parts[-1] == 'files':
+        return jsonify([])
+
+    elif len(path_parts) == 5 and path_parts[-1] == 'reviews':
+        return jsonify([])
 
     print('unhandled path ...')
     print(six.text_type((len(path_parts),path_parts)))
