@@ -38,6 +38,7 @@ import pytz
 import requests
 import six
 
+from ansibullbot._json_compat import json_dump
 from ansibullbot._text_compat import to_bytes, to_text
 
 import ansibullbot.constants as C
@@ -740,14 +741,8 @@ class AnsibleTriage(DefaultTriager):
         meta[u'time'] = to_text(datetime.datetime.now().isoformat())
         logging.info('dump meta to %s' % mfile)
 
-        # Using in-memory buffer here to work around inability to dump
-        # json to file directly
-        tmp_inmemory_json = six.StringIO()
-        json.dump(meta, tmp_inmemory_json, sort_keys=True, indent=2)
         with io.open(mfile, 'w', encoding='utf-8') as f:
-            shutil.copyfileobj(tmp_inmemory_json, f, -1)
-        tmp_inmemory_json.close()
-        del tmp_inmemory_json
+            json_dump(meta, f)
 
     def create_actions(self, iw, actions):
         '''Parse facts and make actions from them'''
