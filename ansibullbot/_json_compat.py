@@ -12,14 +12,14 @@ __all__ = 'json_dump', 'json_dumps'
 class JSONUnicodeEncoder(json.JSONEncoder):
     """JSON encoder honoring unicode strings."""
 
-    def iterencode(self, o):
+    def iterencode(self, o, *args, **kwargs):
         """Emit unicode chunks when writing to file."""
         def noop(v): return v
         transformer = noop if self.ensure_ascii else to_text
 
         return (
             transformer(chunk)
-            for chunk in super(JSONUnicodeEncoder, self).iterencode(o)
+            for chunk in super(JSONUnicodeEncoder, self).iterencode(o, *args, **kwargs)
         )
 
 
