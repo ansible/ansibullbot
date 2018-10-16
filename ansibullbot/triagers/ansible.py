@@ -505,6 +505,30 @@ class AnsibleTriage(DefaultTriager):
                         for msg in self.meta[u'is_needs_rebase_msgs']:
                             logging.info('needs_rebase_msg: %s' % msg)
 
+                    # DEBUG!
+                    if self.meta.get(u'mergeable_state') == u'unknown' or \
+                            u'needs_rebase' in actions.newlabel or \
+                            u'needs_rebase' in actions.unlabel or \
+                            u'needs_revision' in actions.newlabel or \
+                            u'needs_revision' in actions.unlabel:
+                        rn = iw.repo_full_name
+                        summary = self.issue_summaries.get(rn, {}).\
+                            get(iw.number, None)
+                        if not summary:
+                            # sometimes these are indexes as strings [?]
+                            summary = self.issue_summaries.get(rn, {}).\
+                                get(to_text(iw.number), None)
+                        if not summary:
+                            summary = self.gws.get_single_issue_summary(
+                                rn,
+                                iw.number,
+                                force=True
+                            )
+                        #pprint(summary)
+
+                        if self.meta.get(u'mergeable_state') == u'unknown':
+                            pprint(vars(actions))
+
                     pprint(vars(actions))
 
                     # do the actions
