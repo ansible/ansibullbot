@@ -723,8 +723,18 @@ def repos(path):
     elif len(path_parts) == 5 and path_parts[-1] == 'reviews':
         return jsonify([])
 
-    print('unhandled path ...')
+    print('unhandled path for "repo" route ...')
     print(six.text_type((len(path_parts),path_parts)))
+
+
+@app.route('/<path:path>', methods=['GET', 'POST'])
+def abstract_path(path):
+    # /ansible/ansible/issues/1
+
+    print('# ABSTRACT PATH! - %s' % path)
+    path_parts = path.split('/')
+    print(six.text_type((len(path_parts),path_parts)))
+    print(request.path)
 
 
 
