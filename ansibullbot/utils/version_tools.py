@@ -162,6 +162,9 @@ class AnsibleVersionIndexer(object):
         if not self.VALIDVERSIONS:
             self._get_versions()
 
+        if rawtext is None:
+            return u'devel'
+
         aversion = False
 
         rawtext = rawtext.replace(u'`', u'')
