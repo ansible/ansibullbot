@@ -1675,7 +1675,7 @@ class AnsibleTriage(DefaultTriager):
         self.gh = self._connect()
 
         logging.info('creating github connection wrapper')
-        self.ghw = GithubWrapper(self.gh)
+        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
 
         for repo in REPOS:
             # skip repos based on args
