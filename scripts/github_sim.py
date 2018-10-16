@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 
+import datetime
 import json
+import os
+import pickle
 import random
 import six
 import time
@@ -14,121 +17,203 @@ from flask import request
 app = Flask(__name__)
 
 
+BASEURL = 'http://localhost:5000'
 ERROR_TIMER = 0
 
 TOKENS = {
-    'AAA': 'abot'
+    'AAA': 'ansibot'
 }
 
-ISSUES = {
-    'github': {}
-}
 
-EVENTS = {}
+########################################################
+#   MOCK 
+########################################################
 
+class GithubMock(object):
 
-def get_issue(org, repo, number, itype='issue'):
+    ifile = '/tmp/fakeup/issues.p'
+    efile = '/tmp/fakeup/events.p'
+    ISSUES = {'github': {}}
+    EVENTS = {}
 
-    global ISSUES
+    def __init__(self):
+        pass
 
-    def get_labels(org, repo, number):
-        labels = []
-        events = EVENTS.get((org, repo, number), [])
-        for event in events:
-            if event['event'] == 'labeled':
-                labels.append(event['label'])
-            elif event['event'] == ['unlabeled']:
-                labels = [x for x in labels if x['name'] != event['label']['name']]
-        return labels
+    def get_issue(self, org, repo, number, itype='issue'):
 
-    key = (org, repo, number)
-    if key in ISSUES:
-        return ISSUES[key]
+        def get_labels(org, repo, number):
+            labels = []
+            events = self.EVENTS.get((org, repo, number), [])
+            for event in events:
+                if event['event'] == 'labeled':
+                    labels.append(event['label'])
+                elif event['event'] == ['unlabeled']:
+                    labels = [x for x in labels if x['name'] != event['label']['name']]
+            return labels
 
-    url = 'http://localhost:5000'
-    url += '/'
-    url += 'repos'
-    url += '/'
-    url += org
-    url += '/'
-    url += repo
-    url += '/'
-    url += 'issues'
-    url += '/'
-    url += str(number)
+        key = (org, repo, number)
+        if key in self.ISSUES:
+            return self.ISSUES[key]
 
-    h_url = 'http://localhost:5000'
-    h_url += '/'
-    h_url += org
-    h_url += '/'
-    h_url += repo
-    h_url += '/'
-    h_url += 'issues'
-    #h_url += 'issue'
-    h_url += '/'
-    h_url += str(number)
+        url = BASEURL
+        url += '/'
+        url += 'repos'
+        url += '/'
+        url += org
+        url += '/'
+        url += repo
+        url += '/'
+        url += 'issues'
+        url += '/'
+        url += str(number)
 
-    e_url = 'http://localhost:5000'
-    e_url += '/'
-    e_url += org
-    e_url += '/'
-    e_url += repo
-    e_url += '/'
-    e_url += 'issues'
-    e_url += '/'
-    e_url += str(number)
-    e_url += '/'
-    e_url += 'events'
+        h_url = BASEURL
+        h_url += '/'
+        h_url += org
+        h_url += '/'
+        h_url += repo
+        h_url += '/'
+        h_url += 'issues'
+        #h_url += 'issue'
+        h_url += '/'
+        h_url += str(number)
 
-    payload = {
-        'id': 1000 + int(number),
-        'assignees': [],
-        'created_at': '2018-09-12T21:14:02Z',
-        'updated_at': '2018-09-12T21:24:05Z',
-        'url': url,
-        'events_url': e_url,
-        'html_url': h_url,
-        'number': int(number),
-        'labels': get_labels(org, repo, int(number)),
-        'user': {
-            'login': 'foouser'
-        },
-        'title': 'this thing is broken',
-        'body': '',
-        'state': 'open'
-    }
+        e_url = BASEURL
+        e_url += '/'
+        e_url += org
+        e_url += '/'
+        e_url += repo
+        e_url += '/'
+        e_url += 'issues'
+        e_url += '/'
+        e_url += str(number)
+        e_url += '/'
+        e_url += 'events'
 
-    if itype.lower() in ['pull', 'pullrequest']:
-        pull_url = url.replace('issues', 'pulls')
-        diff_url = pull_url + '.diff'
-        patch_url = pull_url + '.patch'
-        pull_h_url = h_url.replace('issues', 'pull')
-        payload['pull_request'] = {
-            "url": pull_url,
-            "html_url": pull_h_url,
-            "diff_url": diff_url,
-            "patch_url": patch_url
+        payload = {
+            'id': 1000 + int(number),
+            'assignees': [],
+            'created_at': get_timestamp(), 
+            'updated_at': get_timestamp(),
+            'url': url,
+            'events_url': e_url,
+            'html_url': h_url,
+            'number': int(number),
+            'labels': get_labels(org, repo, int(number)),
+            'user': {
+                'login': 'foouser'
+            },
+            'title': 'this thing is broken',
+            'body': '',
+            'state': 'open'
         }
 
-    ISSUES['github'][key] = payload.copy()
+        if itype.lower() in ['pull', 'pullrequest']:
+            pull_url = url.replace('issues', 'pulls')
+            diff_url = pull_url + '.diff'
+            patch_url = pull_url + '.patch'
+            pull_h_url = h_url.replace('issues', 'pull')
+            payload['pull_request'] = {
+                "url": pull_url,
+                "html_url": pull_h_url,
+                "diff_url": diff_url,
+                "patch_url": patch_url
+            }
 
-    return payload
+        self.ISSUES['github'][key] = payload.copy()
+        self.save_data()
+
+        return payload
 
 
-def add_issue_event(org, repo, number, event):
-    key = (org, repo, int(number))
-    if key not in ISSUES:
-        get_issue(org, repo, int(number))
-    if key not in EVENTS:
-        EVENTS[key] = []
-    EVENTS[key].append(event)
+    def save_data(self):
 
+        with open(self.ifile, 'w') as f:
+            #f.write(json.dumps(ISSUES))
+            pickle.dump(self.ISSUES, f)
+
+        with open(self.efile, 'w') as f:
+            #f.write(json.dumps(EVENTS))
+            pickle.dump(self.EVENTS, f)
+
+
+    def load_data(self):
+
+        if os.path.exists(self.ifile):
+            with open(self.ifile, 'r') as f:
+                #ISSUES = json.loads(f.read()) 
+                self.ISSUES = pickle.load(f)
+
+        if os.path.exists(self.efile):
+            with open(self.efile, 'r') as f:
+                #EVENTS = json.loads(f.read()) 
+                self.EVENTS = pickle.load(f)
+
+    def get_issue_event(self, org, repo, eid):
+        event = None
+        for k,events in GM.EVENTS.items():
+            for ev in events:
+                if ev['id'] == eid:
+                    event = ev.copy()
+                    break
+        return event
+
+    def get_issue_events(self, org, repo, number):
+        key = (org, repo, int(number))
+        events = self.EVENTS.get(key, [])
+        # do not return comments as events!
+        events = [x for x in events if x['event'] != 'commented']
+        return events
+
+    def add_issue_event(self, org, repo, number, event):
+
+        key = (org, repo, int(number))
+        if key not in self.ISSUES:
+            self.get_issue(org, repo, int(number))
+        if key not in self.EVENTS:
+            self.EVENTS[key] = []
+        eid = 0
+        for k,v in self.EVENTS.items():
+            for ev in v:
+                eid+=1
+        eid += 1
+        event['id'] = eid
+
+        if event['event'] == 'commented':
+            #https://api.github.com/repos/ansible/ansible/issues/comments/428709071
+            event['url'] = '%s/repos/%s/%s/issues/comments/%s' % (BASEURL, org, repo, eid)
+        else:
+            event['url'] = '%s/repos/%s/%s/issues/events/%s' % (BASEURL, org, repo, eid)
+
+        #if event['event'] == 'commented' and not 'body' in event:
+        #    import epdb; epdb.st()
+
+        self.EVENTS[key].append(event)
+        self.ISSUES['github'][key]['updated_at'] = event['updated_at']
+        self.save_data()
+
+
+GM = GithubMock()
+
+
+def get_timestamp():
+    # 2018-10-15T21:21:48.150184
+    # 2018-10-10T18:25:49Z
+    ts = datetime.datetime.now().isoformat()
+    ts = ts.split('.')[0]
+    ts += 'Z'
+    return ts
+
+
+########################################################
+#   ROUTES
+########################################################
 
 def error_time():
     global ERROR_TIMER
     print('ERROR_TIMER: %s' % ERROR_TIMER)
     ERROR_TIMER += 1
-    if ERROR_TIMER >= 100:
+    if ERROR_TIMER >= 10000:
         ERROR_TIMER = 0
         return True
     else:
@@ -162,12 +247,14 @@ def throw_ise(error):
 @app.before_first_request
 def prep_server():
     #import epdb; epdb.st()
-    for i in range(0, 100):
-        ispr = bool(random.getrandbits(1))
-        if ispr:
-            get_issue('ansbile', 'ansible', i, itype='pull')
-        else:
-            get_issue('ansbile', 'ansible', i, itype='issue')
+    GM.load_data()
+    if not GM.ISSUES['github']:
+        for i in range(0, 10):
+            ispr = bool(random.getrandbits(1))
+            if ispr:
+                GM.get_issue('ansible', 'ansible', i, itype='pull')
+            else:
+                GM.get_issue('ansible', 'ansible', i, itype='issue')
 
 
 @app.route('/')
@@ -344,7 +431,7 @@ def graphql():
             data['repository']['pullRequest'] = {}
             nodes = qinfo['repository']['pullRequest']['nodes'][:]
             if 'number' in qinfo['repository']['pullRequest']['kwargs']:
-                issue = get_issue(
+                issue = GM.get_issue(
                     'ansible',
                     'ansible',
                     qinfo['repository']['pullRequest']['kwargs']['number']
@@ -362,7 +449,7 @@ def graphql():
             data['repository'][ikey] = {'edges': [] }
 
             issues_keys = []
-            for k,v in ISSUES['github'].items():
+            for k,v in GM.ISSUES['github'].items():
                 #print(k)
                 #pprint(v)
                 if 'pullRequests' in qinfo['repository']:
@@ -375,7 +462,7 @@ def graphql():
             issues_keys = sorted(issues_keys)
             issues = []
             for ik in issues_keys:
-                issue = ISSUES['github'][ik]
+                issue = GM.ISSUES['github'][ik]
                 node = {}
                 node['id'] = issue['id']
                 node['url'] = issue['url']
@@ -413,8 +500,14 @@ def repos(path):
             'name': path_parts[-1],
             'full_name': '/'.join([path_parts[-2],path_parts[-1]]),
             'created_at': '2012-03-06T14:58:02Z',
-            'updated_at': '2018-09-13T03:17:56Z'
+            'updated_at': get_timestamp()
         })
+
+    auth = dict(request.headers)['Authorization']
+    token = auth.split()[-1]
+    username = TOKENS.get(token)
+    org = path_parts[0]
+    repo = path_parts[1]
 
     if len(path_parts) == 3 and path_parts[-1] == 'assignees':
         print('sending repo assignees')
@@ -423,11 +516,11 @@ def repos(path):
     if path_parts[-1] == 'labels':
         if len(path_parts) == 5:
             # [u'ansible', u'ansible', u'issues', u'1', u'labels']
-            auth = dict(request.headers)['Authorization']
-            token = auth.split()[-1]
-            username = TOKENS.get(token)
-            org = path_parts[0]
-            repo = path_parts[1]
+            #auth = dict(request.headers)['Authorization']
+            #token = auth.split()[-1]
+            #username = TOKENS.get(token)
+            #org = path_parts[0]
+            #repo = path_parts[1]
             number = int(path_parts[3])
 
             labels = request.json
@@ -436,13 +529,19 @@ def repos(path):
             for label in labels:
                 event = {
                     'event': 'labeled',
-                    'created_at': None,
-                    'updated_at': None,
-                    'label': {'name': label}
+                    'created_at': get_timestamp(),
+                    'updated_at': get_timestamp(),
+                    'label': {'name': label},
+                    'user': {
+                        'login': username
+                    },
+                    'actor': {
+                        'login': username
+                    }
                 }
                 if request.method != 'POST':
                     event['event'] = 'unlabeled'
-                add_issue_event(org, repo, number, event)
+                GM.add_issue_event(org, repo, number, event)
             return jsonify({})
 
         else:
@@ -452,42 +551,88 @@ def repos(path):
 
     elif path_parts[-1] == 'comments':
 
-        auth = dict(request.headers)['Authorization']
-        token = auth.split()[-1]
-        username = TOKENS.get(token)
-        org = path_parts[0]
-        repo = path_parts[1]
+        #auth = dict(request.headers)['Authorization']
+        #token = auth.split()[-1]
+        #username = TOKENS.get(token)
+        #org = path_parts[0]
+        #repo = path_parts[1]
         number = int(path_parts[3])
 
         if request.method == 'POST':
             print('adding comment(s) by %s' % username)
             event = {
                 'event': 'commented',
-                'created_at': None,
-                'updated_at': None,
+                'created_at': get_timestamp(),
+                'updated_at': get_timestamp(),
+                'user': {
+                    'login': username
+                },
+                'actor': {
+                    'login': username
+                },
                 'body': request.json['body']
             }
-            add_issue_event(org, repo, number, event)
+            GM.add_issue_event(org, repo, number, event)
             return jsonify({})
         else:
-            events = EVENTS.get((org, repo, number), [])
+            events = GM.EVENTS.get((org, repo, number), [])
             comments = [x for x in events if x['event'] == 'commented']
             return jsonify(comments)
 
     elif len(path_parts) == 4 and path_parts[-2] == 'issues':
         print('sending issue')
-        return jsonify(get_issue(path_parts[0], path_parts[1], path_parts[-1]))
+        return jsonify(GM.get_issue(path_parts[0], path_parts[1], path_parts[-1]))
 
-    elif len(path_parts) == 5 and path_parts[-1] == 'comments':
-        print('sending comments')
+    #elif len(path_parts) == 5 and path_parts[-1] == 'comments':
+    #    print('sending comments')
+    #    return jsonify([])
 
-        return jsonify([])
+    elif len(path_parts) == 5 and path_parts[-2] == 'comments':
+        # (5, [u'ansible', u'ansible', u'issues', u'comments', u'2'])
+        #org = path_parts[0]
+        #repo = path_parts[1]
+        cid = int(path_parts[-1])
+
+        comment = None
+        for k,ev in GM.EVENTS:
+            if ev['id'] == cid:
+                comment = ev.copy()
+                break
+
+        print('sending comment: %s' % comment)
+        return jsonify(comment)
+
     elif len(path_parts) == 5 and path_parts[-1] == 'events':
-        print('sending events')
-        return jsonify([])
+        #org = path_parts[0]
+        #repo = path_parts[1]
+        number = int(path_parts[3])
+        events = GM.get_issue_events(org, repo, number)
+        print('sending %s events %s/%s/%s' % (len(events), org, repo, number))
+        return jsonify(events)
+
+    elif len(path_parts) == 5 and path_parts[-2] == 'events':
+        # (5, [u'ansible', u'ansible', u'issues', u'events', u'3'])
+        #org = path_parts[0]
+        #repo = path_parts[1]
+        eid = int(path_parts[-1])
+
+        event = GM.get_issue_event(org, repo, eid)
+        print('# found event ...')
+        pprint(event)
+        return jsonify(event)
+
     elif len(path_parts) == 5 and path_parts[-1] == 'reactions':
-        print('sending reactions')
-        return jsonify([])
+        #org = path_parts[0]
+        #repo = path_parts[1]
+        number = int(path_parts[3])
+
+        key = (org, repo, int(number))
+        events = GM.EVENTS.get(key, [])
+        events = [x for x in events if x['event'] == 'reacted']
+
+        print('sending %s reactions %s/%s/%s' % (len(events), org, repo, number))
+
+        return jsonify(events)
     elif len(path_parts) == 2:
         return jsonify({})
 
