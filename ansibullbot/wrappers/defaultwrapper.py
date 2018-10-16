@@ -1402,18 +1402,12 @@ class DefaultWrapper(object):
         if not pdata or pdata[0] != sha:
 
             if self.pullrequest.head.repo:
-
-                url = u'https://api.github.com/repos/'
-                url += self.pullrequest.head.repo.full_name
-                url += u'/contents/'
-                url += filepath
-
+                url = self.pullrequest.head.repo.url + '/contents/' + filepath
                 resp = self.pullrequest._requester.requestJson(
                     u"GET",
                     url,
                     input={u'ref': self.pullrequest.head.ref}
                 )
-
             else:
                 # https://github.com/ansible/ansible/pull/19891
                 # Sometimes the repo repo/branch has disappeared
