@@ -688,7 +688,14 @@ def repos(path):
         issue['commits_url'] = issue['url'] + '/commits'
         issue['review_comments_url'] = issue['url'] + '/comments'
         issue['review_comment_url'] = issue['url'] + '/comments{/number}'
-        issue['head'] = {}
+        issue['head'] = {
+            'repo': {
+                'name': repo,
+                'full_name': username + '/' + repo,
+                'url': BASEURL + '/repos/' + username + '/' + repo
+            },
+            'sha': '882849ea5f96f757eae148ebe59f504a40fca2ce'
+        }
         issue['base'] = {}
         issue['_links'] = {}
         issue['merged'] = False
@@ -722,6 +729,9 @@ def repos(path):
 
     elif len(path_parts) == 5 and path_parts[-1] == 'reviews':
         return jsonify([])
+
+    elif len(path_parts) == 4 and path_parts[2] == 'contents':
+        return ''
 
     print('unhandled path for "repo" route ...')
     print(six.text_type((len(path_parts),path_parts)))
