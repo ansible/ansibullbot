@@ -16,7 +16,7 @@ STRING_DATA = u'''
 def test_json_dump_to_file(tmpdir):
     p = str(tmpdir.join('test_food_dump.json'))
 
-    with open(p, 'w') as jf:
+    with io.open(p, 'w', encoding='utf-8') as jf:
         json_dump(TEST_DATA, jf)
 
     with open(p) as jf:
