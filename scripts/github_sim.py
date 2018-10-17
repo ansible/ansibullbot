@@ -250,12 +250,59 @@ class GithubMock(object):
         else:
             event['url'] = '%s/repos/%s/%s/issues/events/%s' % (BASEURL, org, repo, eid)
 
-        #if event['event'] == 'commented' and not 'body' in event:
-        #    import epdb; epdb.st()
-
         self.EVENTS[key].append(event)
         self.ISSUES['github'][key]['updated_at'] = event['updated_at']
         self.save_data()
+
+    def add_issue_label(self, org, repo, number, label, username):
+        event = {
+            'event': 'labeled',
+            'created_at': get_timestamp(),
+            'updated_at': get_timestamp(),
+            'label': {'name': label},
+            'user': {
+                'login': username
+            },
+            'actor': {
+                'login': username
+            }
+        }
+        self.add_issue_event(org, repo, number, event)
+
+    def remove_issue_label(self, org, repo, number, label, username):
+        event = {
+            'event': 'unlabeled',
+            'created_at': get_timestamp(),
+            'updated_at': get_timestamp(),
+            'label': {'name': label},
+            'user': {
+                'login': username
+            },
+            'actor': {
+                'login': username
+            }
+        }
+        self.add_issue_event(org, repo, number, event)
+
+    def add_issue_comment(self, org, repo, number, body, username):
+        event = {
+            'event': 'commented',
+            'created_at': get_timestamp(),
+            'updated_at': get_timestamp(),
+            'user': {
+                'login': username
+            },
+            'actor': {
+                'login': username
+            },
+            'body': request.json['body']
+        }
+        self.add_issue_event(org, repo, number, event)
+
+    def get_issue_comments(self, org, repo, number):
+        events = self.EVENTS.get((org, repo, number), [])
+        comments = [x for x in events if x['event'] == 'commented']
+        return comments
 
 
 GM = GithubMock()
@@ -584,70 +631,36 @@ def repos(path):
         print('sending repo assignees')
         return jsonify([])
 
-    if path_parts[-1] == 'labels':
-        if len(path_parts) == 5:
-            # [u'ansible', u'ansible', u'issues', u'1', u'labels']
-            #auth = dict(request.headers)['Authorization']
-            #token = auth.split()[-1]
-            #username = TOKENS.get(token)
-            #org = path_parts[0]
-            #repo = path_parts[1]
-            number = int(path_parts[3])
+    if len(path_parts) == 3 and path_parts[-1] == 'labels':
+        print('path: %s %s' % (path_parts, len(path_parts)))
+        print('sending repo labels')
+        return jsonify([])
 
+    if len(path_parts) == 5 and path_parts[-1] == 'labels':
+        # [u'ansible', u'ansible', u'issues', u'1', u'labels']
+        if request.method in ['POST', 'PUT', 'DELETE']:
+            number = int(path_parts[3])
             labels = request.json
 
-            print('adding label(s) %s by %s' % (labels, username))
+            print('adding label(s) %s to %s by %s' % (labels, number, username))
             for label in labels:
-                event = {
-                    'event': 'labeled',
-                    'created_at': get_timestamp(),
-                    'updated_at': get_timestamp(),
-                    'label': {'name': label},
-                    'user': {
-                        'login': username
-                    },
-                    'actor': {
-                        'login': username
-                    }
-                }
-                if request.method != 'POST':
-                    event['event'] = 'unlabeled'
-                GM.add_issue_event(org, repo, number, event)
+                if request.method == 'POST':
+                    GM.add_issue_label(org, repo, number, label, username)
+                elif request.method == 'DELETE':
+                    GM.remove_issue_label(org, repo, number, label, username)
+
             return jsonify({})
 
-        else:
-            print('path: %s %s' % (path_parts, len(path_parts)))
-            print('sending repo labels')
-            return jsonify([])
-
-    elif path_parts[-1] == 'comments':
-
-        #auth = dict(request.headers)['Authorization']
-        #token = auth.split()[-1]
-        #username = TOKENS.get(token)
-        #org = path_parts[0]
-        #repo = path_parts[1]
+    elif len(path_parts) == 5 and path_parts[-1] == 'comments':
         number = int(path_parts[3])
 
         if request.method == 'POST':
             print('adding comment(s) by %s' % username)
-            event = {
-                'event': 'commented',
-                'created_at': get_timestamp(),
-                'updated_at': get_timestamp(),
-                'user': {
-                    'login': username
-                },
-                'actor': {
-                    'login': username
-                },
-                'body': request.json['body']
-            }
-            GM.add_issue_event(org, repo, number, event)
+            GM.add_issue_comment(org, repo, number, request.json['body'], username)
             return jsonify({})
         else:
-            events = GM.EVENTS.get((org, repo, number), [])
-            comments = [x for x in events if x['event'] == 'commented']
+            comments = GM.get_issue_comments(org, repo, number)
+            print('return %s comments for %s' % (len(comments), number))
             return jsonify(comments)
 
     elif len(path_parts) == 4 and path_parts[-2] == 'issues':
@@ -664,22 +677,16 @@ def repos(path):
 
     elif len(path_parts) == 5 and path_parts[-2] == 'comments':
         # (5, [u'ansible', u'ansible', u'issues', u'comments', u'2'])
-        #org = path_parts[0]
-        #repo = path_parts[1]
         cid = int(path_parts[-1])
-
         comment = None
         for k,ev in GM.EVENTS:
             if ev['id'] == cid:
                 comment = ev.copy()
                 break
-
         print('sending comment: %s' % comment)
         return jsonify(comment)
 
     elif len(path_parts) == 5 and path_parts[-1] == 'events':
-        #org = path_parts[0]
-        #repo = path_parts[1]
         number = int(path_parts[3])
         events = GM.get_issue_events(org, repo, number)
         print('sending %s events %s/%s/%s' % (len(events), org, repo, number))
@@ -687,27 +694,20 @@ def repos(path):
 
     elif len(path_parts) == 5 and path_parts[-2] == 'events':
         # (5, [u'ansible', u'ansible', u'issues', u'events', u'3'])
-        #org = path_parts[0]
-        #repo = path_parts[1]
         eid = int(path_parts[-1])
-
         event = GM.get_issue_event(org, repo, eid)
         print('# found event ...')
         pprint(event)
         return jsonify(event)
 
     elif len(path_parts) == 5 and path_parts[-1] == 'reactions':
-        #org = path_parts[0]
-        #repo = path_parts[1]
         number = int(path_parts[3])
-
         key = (org, repo, int(number))
         events = GM.EVENTS.get(key, [])
         events = [x for x in events if x['event'] == 'reacted']
-
         print('sending %s reactions %s/%s/%s' % (len(events), org, repo, number))
-
         return jsonify(events)
+
     elif len(path_parts) == 2:
         return jsonify({})
 
