@@ -158,6 +158,39 @@ class GithubMock(object):
         pprint(payload)
         return payload
 
+    def get_pullrequest(self, org, repo, number):
+        issue = GM.get_issue(org, repo, number, itype='pull')
+        issue['url'] = issue['url'].replace('issues', 'pulls')
+        issue['requested_reviewers'] = []
+        issue['requested_teams'] = []
+        issue['commits_url'] = issue['url'] + '/commits'
+        issue['review_comments_url'] = issue['url'] + '/comments'
+        issue['review_comment_url'] = issue['url'] + '/comments{/number}'
+        issue['head'] = {
+            'repo': {
+                'name': repo,
+                'full_name': issue['user']['login'] + '/' + repo,
+                'url': BASEURL + '/repos/' + issue['user']['login'] + '/' + repo
+            },
+            'sha': '882849ea5f96f757eae148ebe59f504a40fca2ce'
+        }
+        issue['base'] = {}
+        issue['_links'] = {}
+        issue['merged'] = False
+        issue['mergeable'] = True
+        issue['rebaseable'] = True
+        issue['mergeable_state'] = 'unstable'
+        issue['merged_by'] = None
+        issue['review_comments'] = 0
+        issue['commits'] = 1
+        issue['additions'] = 10
+        issue['deletions'] = 2
+        issue['changed_files'] = 1
+        issue['author_association'] = 'CONTRIBUTOR'
+
+        status_hash = self.get_issue_status_uuid(org, repo, number)
+        issue['statuses_url'] = BASEURL + '/repos/' + org + '/' + repo + '/statuses/' + status_hash
+        return issue
 
     def save_data(self):
 
@@ -681,7 +714,8 @@ def repos(path):
 
     elif len(path_parts) == 4 and path_parts[-2] == 'pulls':
         # (4, [u'ansible', u'ansible', u'pulls', u'1'])
-	issue = GM.get_issue(path_parts[0], path_parts[1], path_parts[-1])
+        '''
+        issue = GM.get_issue(path_parts[0], path_parts[1], path_parts[-1])
         issue['url'] = issue['url'].replace('issues', 'pulls')
         issue['requested_reviewers'] = []
         issue['requested_teams'] = []
@@ -712,7 +746,9 @@ def repos(path):
 
         status_hash = GM.get_issue_status_uuid(org, repo, path_parts[-1])
         issue['statuses_url'] = BASEURL + '/repos/' + org + '/' + repo + '/statuses/' + status_hash
+        '''
 
+        issue = GM.get_pullrequest(path_parts[0], path_parts[1], path_parts[-1])
 	resp = jsonify(issue)
 	resp.headers['ETag'] = 'a00049ba79152d03380c34652f2cb612'
 	return resp
