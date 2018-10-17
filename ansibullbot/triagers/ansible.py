@@ -187,7 +187,7 @@ class AnsibleTriage(DefaultTriager):
         self.valid_labels = self.get_valid_labels(u"ansible/ansible")
 
         self._ansible_members = []
-        self._ansible_core_team = []
+        self._ansible_core_team = None
         self._botmeta_content = None
         self.botmeta = {}
         self.automerge_on = False
@@ -273,7 +273,7 @@ class AnsibleTriage(DefaultTriager):
 
     @property
     def ansible_core_team(self):
-        if not self._ansible_core_team:
+        if self._ansible_core_team is None:
             teams = [
                 u'ansible-commit',
                 u'ansible-community',
