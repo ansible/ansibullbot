@@ -120,7 +120,7 @@ class DefaultWrapper(object):
         self.desired_state = u'open'
         self.pr_status_raw = None
         self.pull_raw = None
-        self.pr_files = []
+        self.pr_files = None
         self.file_indexer = file_indexer
 
         self.full_cachedir = os.path.join(
@@ -1028,7 +1028,7 @@ class DefaultWrapper(object):
     def files(self):
         if self.is_issue():
             return None
-        if not self.pr_files:
+        if self.pr_files is None:
             self.pr_files = self.load_update_fetch(u'files')
         files = [x.filename for x in self.pr_files]
         return files
