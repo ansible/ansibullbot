@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 
+
 import datetime
+import glob
 import hashlib
 import json
 import os
 import pickle
 import random
 import six
+import subprocess
 import time
 
 from pprint import pprint
@@ -25,13 +28,33 @@ TOKENS = {
     'AAA': 'ansibot'
 }
 
+# https://elasticread.eng.ansible.com/ansible-issues/_search
+# https://elasticread.eng.ansible.com/ansible-pull-requests/_search
+#	?q=lucene_syntax_here
+#	_search accepts POST
 
 ########################################################
 #   MOCK 
 ########################################################
 
+def get_timestamp():
+    # 2018-10-15T21:21:48.150184
+    # 2018-10-10T18:25:49Z
+    ts = datetime.datetime.now().isoformat()
+    ts = ts.split('.')[0]
+    ts += 'Z'
+    return ts
+
+
+def run_command(cmd):
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    (so, se) = p.communicate()
+    return (p.returncode, so, se)
+
+
 class GithubMock(object):
 
+    botcache = '/data/ansibot.production.cache'
     ifile = '/tmp/fakeup/issues.p'
     efile = '/tmp/fakeup/events.p'
     ISSUES = {'github': {}}
@@ -39,7 +62,97 @@ class GithubMock(object):
     STATUS_HASHES = {}
 
     def __init__(self):
+        self.load_ansibot_cache()
         pass
+
+    def load_ansibot_cache(self):
+        cmd = 'find %s -type f -name "meta.json"' % self.botcache
+        (rc, so, se) = run_command(cmd)
+        metafiles = [x.strip() for x in so.split('\n') if x.strip()]
+        metafiles = [x for x in metafiles if '/ansible/ansible/' in x]
+        metafiles = sorted(set(metafiles))
+
+        metafiles = metafiles[::-1]
+        metafiles = metafiles[:100]
+        #import epdb; epdb.st()
+
+        total = len(metafiles)
+        for idmf,mf in enumerate(metafiles):
+            print('%s|%s %s' % (total, idmf, mf))
+
+            bd = os.path.dirname(mf)
+            parts = mf.split('/')
+            if len(parts) != 10:
+                continue
+
+            org = parts[-5]
+            repo = parts[-4]
+            number = int(parts[-2])
+            key = (org, repo, number)
+
+            ifile = os.path.join(bd, 'issue.pickle')
+            rdfile = os.path.join(bd, 'raw_data.pickle')
+            hfile = os.path.join(bd, 'history.pickle')
+            cfile = os.path.join(bd, 'events.pickle')
+            efile = os.path.join(bd, 'events.pickle')
+
+            if not os.path.isfile(rdfile) and not os.path.isfile(ifile):
+                continue
+
+            if os.path.isfile(ifile):
+                with open(ifile, 'r') as f:
+                    issue = pickle.load(f)
+                rawdata = issue._rawData
+            else:
+                with open(rdfile, 'r') as f:
+                    rawdata = pickle.load(f)
+                rawdata = rawdata[1]
+
+            rawdata = json.dumps(rawdata)
+            rawdata = rawdata.replace("https://api.github.com", BASEURL)
+            rawdata = json.loads(rawdata)
+            rawdata['state'] = u'open'
+            self.ISSUES['github'][key] = rawdata.copy()
+
+            if key not in self.EVENTS:
+                self.EVENTS[key] = []
+
+            '''
+            with open(hfile, 'r') as f:
+                history = pickle.load(f)
+            history = history['history']
+            for idx,x in enumerate(history):
+                x['created_at'] = x['created_at'].isoformat() + 'Z'
+                if 'updated_at' in x:
+                    x['updated_at'] = x['updated_at'].isoformat() + 'Z'
+                x['user'] = {
+                    'login': x['actor']
+                }
+                x.pop('actor', None)
+                import epdb; epdb.st()
+            '''
+
+            with open(cfile, 'r') as f:
+                comments = pickle.load(f)
+            comments = comments[1]
+            for comment in comments:
+                rd = comment._rawData
+                rd = json.dumps(rd)
+                rd = rd.replace("https://api.github.com", BASEURL)
+                rd = json.loads(rd)
+                self.EVENTS[key].append(rd)
+
+            with open(efile, 'r') as f:
+                events = pickle.load(f)
+            events = events[1]
+            for event in events:
+                rd = event._rawData
+                rd = json.dumps(rd)
+                rd = rd.replace("https://api.github.com", BASEURL)
+                rd = json.loads(rd)
+                self.EVENTS[key].append(rd)
+
+        import epdb; epdb.st()
 
     def get_issue_status_uuid(self, org, repo, number):
         # .../repos/ansible/ansibullbot/statuses/882849ea5f96f757eae148ebe59f504a40fca2ce
@@ -308,15 +421,6 @@ class GithubMock(object):
 GM = GithubMock()
 
 
-def get_timestamp():
-    # 2018-10-15T21:21:48.150184
-    # 2018-10-10T18:25:49Z
-    ts = datetime.datetime.now().isoformat()
-    ts = ts.split('.')[0]
-    ts += 'Z'
-    return ts
-
-
 ########################################################
 #   ROUTES
 ########################################################
@@ -358,6 +462,9 @@ def throw_ise(error):
 
 @app.before_first_request
 def prep_server():
+    if GM.ISSUES['github']:
+        return None
+
     #import epdb; epdb.st()
     #GM.load_data()
     if not GM.ISSUES['github']:
@@ -750,4 +857,5 @@ def abstract_path(path):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
+    app.run(debug=False)
