@@ -17,6 +17,9 @@ from flask import Flask
 from flask import jsonify
 from flask import request
 
+#from werkzeug.serving import WSGIRequestHandler
+#WSGIRequestHandler.protocol_version = "HTTP/1.1"
+
 
 app = Flask(__name__)
 
@@ -55,15 +58,27 @@ def run_command(cmd):
 class GithubMock(object):
 
     botcache = '/data/ansibot.production.cache'
+    use_botcache = True
     ifile = '/tmp/fakeup/issues.p'
     efile = '/tmp/fakeup/events.p'
     ISSUES = {'github': {}}
     EVENTS = {}
     STATUS_HASHES = {}
+    META = {}
 
     def __init__(self):
-        self.load_ansibot_cache()
-        pass
+        if self.use_botcache:
+            self.load_ansibot_cache()
+        else:
+            self.seed_fake_issues()
+
+    def seed_fake_issues(self):
+        for i in range(1, 1000):
+            ispr = bool(random.getrandbits(1))
+            if ispr or i == 1:
+                GM.get_issue('ansible', 'ansible', i, itype='pull')
+            else:
+                GM.get_issue('ansible', 'ansible', i, itype='issue')
 
     def load_ansibot_cache(self):
         cmd = 'find %s -type f -name "meta.json"' % self.botcache
@@ -74,6 +89,7 @@ class GithubMock(object):
 
         metafiles = metafiles[::-1]
         metafiles = metafiles[:100]
+        #metafiles = metafiles[:1000]
         #import epdb; epdb.st()
 
         total = len(metafiles)
@@ -108,11 +124,21 @@ class GithubMock(object):
                     rawdata = pickle.load(f)
                 rawdata = rawdata[1]
 
+            if rawdata['state'] != 'open':
+                continue
+
             rawdata = json.dumps(rawdata)
             rawdata = rawdata.replace("https://api.github.com", BASEURL)
             rawdata = json.loads(rawdata)
-            rawdata['state'] = u'open'
+            #rawdata['state'] = u'open'
             self.ISSUES['github'][key] = rawdata.copy()
+
+            try:
+                with open(mf, 'r') as f:
+                    meta = json.loads(f.read())
+                self.META[key] = meta.copy()
+            except Exception as e:
+                self.META[key] = {}
 
             if key not in self.EVENTS:
                 self.EVENTS[key] = []
@@ -139,6 +165,7 @@ class GithubMock(object):
                 rd = comment._rawData
                 rd = json.dumps(rd)
                 rd = rd.replace("https://api.github.com", BASEURL)
+                rd = rd.replace("https://github.com", BASEURL)
                 rd = json.loads(rd)
                 self.EVENTS[key].append(rd)
 
@@ -149,10 +176,18 @@ class GithubMock(object):
                 rd = event._rawData
                 rd = json.dumps(rd)
                 rd = rd.replace("https://api.github.com", BASEURL)
+                rd = rd.replace("https://github.com", BASEURL)
                 rd = json.loads(rd)
                 self.EVENTS[key].append(rd)
 
-        import epdb; epdb.st()
+            if 'pull' in rawdata['html_url']:
+                # pullrequest_status in meta.json
+                # pullrequest_reviews in meta.json
+                # owner_pr in meta.json
+                #import epdb; epdb.st()
+                pass
+
+        #import epdb; epdb.st()
 
     def get_issue_status_uuid(self, org, repo, number):
         # .../repos/ansible/ansibullbot/statuses/882849ea5f96f757eae148ebe59f504a40fca2ce
@@ -236,6 +271,7 @@ class GithubMock(object):
 
         payload = {
             'id': 1000 + int(number),
+            'author_association': 'MEMBER',
             'assignees': [],
             'created_at': get_timestamp(), 
             'updated_at': get_timestamp(),
@@ -272,7 +308,19 @@ class GithubMock(object):
         return payload
 
     def get_pullrequest(self, org, repo, number):
+
+        key = (org, repo, int(number))
+
         issue = GM.get_issue(org, repo, number, itype='pull')
+
+        '''
+        issue = json.dumps(issue)
+        issue = issue.replace('https://api.github.com', BASEURL)
+        issue = issue.replace('https://github.com', BASEURL)
+        issue = json.loads(issue)
+        #import epdb; epdb.st()
+        '''
+
         issue['url'] = issue['url'].replace('issues', 'pulls')
         issue['requested_reviewers'] = []
         issue['requested_teams'] = []
@@ -290,22 +338,26 @@ class GithubMock(object):
         issue['base'] = {}
         issue['_links'] = {}
         issue['merged'] = False
-        issue['mergeable'] = True
+        issue['mergeable'] = self.META[key].get('mergeable', True)
         issue['rebaseable'] = True
-        issue['mergeable_state'] = 'unstable'
+        issue['mergeable_state'] = self.META[key].get('mergeable_state', u'clean')
         issue['merged_by'] = None
         issue['review_comments'] = 0
         issue['commits'] = 1
         issue['additions'] = 10
         issue['deletions'] = 2
         issue['changed_files'] = 1
-        issue['author_association'] = 'CONTRIBUTOR'
+
+        #issue['author_association'] = 'CONTRIBUTOR'
 
         status_hash = self.get_issue_status_uuid(org, repo, number)
         issue['statuses_url'] = BASEURL + '/repos/' + org + '/' + repo + '/statuses/' + status_hash
         return issue
 
     def save_data(self):
+
+        if self.use_botcache:
+            return None
 
         with open(self.ifile, 'w') as f:
             #f.write(json.dumps(ISSUES))
@@ -316,6 +368,9 @@ class GithubMock(object):
             pickle.dump(self.EVENTS, f)
 
     def load_data(self):
+
+        if self.use_botcache:
+            return None
 
         if os.path.exists(self.ifile):
             with open(self.ifile, 'r') as f:
@@ -460,6 +515,7 @@ def throw_ise(error):
     return response
 
 
+'''
 @app.before_first_request
 def prep_server():
     if GM.ISSUES['github']:
@@ -477,6 +533,8 @@ def prep_server():
 
     #issue = GM.get_issue('ansible', 'ansible', 1)
     #import epdb; epdb.st()
+'''
+
 
 @app.route('/')
 def root():
@@ -704,7 +762,7 @@ def graphql():
     return jsonify({'data': data})
 
 
-@app.route('/repos/<path:path>', methods=['GET', 'POST'])
+@app.route('/repos/<path:path>', methods=['GET', 'POST', 'DELETE'])
 def repos(path):
     # http://localhost/repos/ansible/ansible/labels
     # http://localhost/repos/ansible/ansible/issues/1/comments
@@ -751,12 +809,24 @@ def repos(path):
 
             print('adding label(s) %s to %s by %s' % (labels, number, username))
             for label in labels:
-                if request.method == 'POST':
-                    GM.add_issue_label(org, repo, number, label, username)
-                elif request.method == 'DELETE':
-                    GM.remove_issue_label(org, repo, number, label, username)
+                #if request.method == 'POST':
+                #    GM.add_issue_label(org, repo, number, label, username)
+                #elif request.method == 'DELETE':
+                #    GM.remove_issue_label(org, repo, number, label, username)
+                start = time.time()
+                GM.add_issue_label(org, repo, number, label, username)
+                stop = time.time()
+                print('add label duration: %s' % (stop - start))
 
             return jsonify({})
+
+    if len(path_parts) == 6 and path_parts[-2] == 'labels' and request.method == 'DELETE':
+        # (6, [u'ansible', u'ansible', u'issues', u'47136', u'labels', u'community_review'] 
+        number = int(path_parts[-3])
+        label = path_parts[-1]
+        GM.remove_issue_label(org, repo, number, label, username)
+        #import epdb; epdb.st()
+        return jsonify({})
 
     elif len(path_parts) == 5 and path_parts[-1] == 'comments':
         number = int(path_parts[3])
@@ -857,5 +927,5 @@ def abstract_path(path):
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
-    app.run(debug=False)
+    app.run(debug=True)
+    #app.run(debug=False)
