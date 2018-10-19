@@ -64,6 +64,8 @@ class GithubMock(object):
     ISSUES = {'github': {}}
     EVENTS = {}
     STATUS_HASHES = {}
+    PR_STATUSES = {}
+    FILES = {}
     META = {}
 
     def __init__(self):
@@ -107,10 +109,12 @@ class GithubMock(object):
             key = (org, repo, number)
 
             ifile = os.path.join(bd, 'issue.pickle')
+            ffile = os.path.join(bd, 'files.pickle')
             rdfile = os.path.join(bd, 'raw_data.pickle')
             hfile = os.path.join(bd, 'history.pickle')
             cfile = os.path.join(bd, 'events.pickle')
             efile = os.path.join(bd, 'events.pickle')
+            sfile = os.path.join(bd, 'pr_status.pickle')
 
             if not os.path.isfile(rdfile) and not os.path.isfile(ifile):
                 continue
@@ -180,6 +184,41 @@ class GithubMock(object):
                 rd = json.loads(rd)
                 self.EVENTS[key].append(rd)
 
+            if os.path.exists(sfile):
+                with open(sfile, 'r') as f:
+                    pr_status = pickle.load(f)
+                pr_status = pr_status[-1]
+                pr_status = json.dumps(pr_status)
+                pr_status = pr_status.replace("https://api.github.com", BASEURL)
+                pr_status = pr_status.replace("https://github.com", BASEURL)
+                pr_status = json.loads(pr_status)
+                ids = [x['url'].split('/')[-1] for x in pr_status]
+                ids = sorted(set(ids))
+                statusid = ids[0]
+                self.STATUS_HASHES[key] = statusid
+                self.PR_STATUSES[statusid] = pr_status[:]
+                #import epdb; epdb.st()
+
+            if os.path.exists(ffile):
+                with open(ffile, 'r') as f:
+                    ffdata = pickle.load(f)
+                self.FILES[key] = []
+                ffdata = ffdata[1]
+                for ff in ffdata:
+                    ffd = ff._rawData
+                    ffd = json.dumps(ffd)
+                    ffd = ffd.replace("https://api.github.com", BASEURL)
+                    ffd = ffd.replace("https://github.com", BASEURL)
+                    ffd = json.loads(ffd)
+                    fid = ffd['contents_url'].split('=')[-1]
+                    '''
+                    if fid not in self.FILES:
+                        self.FILES[fid] = {}
+                    self.FILES[fid][ffd['filename']] = ffd
+                    '''
+                    self.FILES[key].append(ffd)
+                    #import epdb; epdb.st()
+
             if 'pull' in rawdata['html_url']:
                 # pullrequest_status in meta.json
                 # pullrequest_reviews in meta.json
@@ -187,23 +226,33 @@ class GithubMock(object):
                 #import epdb; epdb.st()
                 pass
 
+            #if int(number) == 47087:
+            #    import epdb; epdb.st()
+
         #import epdb; epdb.st()
 
     def get_issue_status_uuid(self, org, repo, number):
         # .../repos/ansible/ansibullbot/statuses/882849ea5f96f757eae148ebe59f504a40fca2ce
         key = (org, repo, int(number))
+        #import epdb; epdb.st()
         if key not in self.STATUS_HASHES:
             hash_object = hashlib.sha256(str(key))
             self.STATUS_HASHES[key] = hash_object.hexdigest()
         return self.STATUS_HASHES[key]
 
     def get_status(self, hex_digest):
+        '''
         key = None
         for k,v in self.STATUS_HASHES.items():
             if v == hex_digest:
                 key = k 
                 break
-        status = {}
+        status = self.PR_STATUSES.get(key, [])
+        '''
+        status = self.PR_STATUSES.get(hex_digest, [])
+        # u'1d5b14446520e24186e4da40a4d5b68e0dfbcb43'
+        #print('# return status: %s %s' % (hex_digest, status))
+        #import epdb; epdb.st()
         return status
 
     def get_issue(self, org, repo, number, itype='issue'):
@@ -335,7 +384,9 @@ class GithubMock(object):
             },
             'sha': '882849ea5f96f757eae148ebe59f504a40fca2ce'
         }
-        issue['base'] = {}
+        issue['base'] = {
+            'ref': 'devel'
+        }
         issue['_links'] = {}
         issue['merged'] = False
         issue['mergeable'] = self.META[key].get('mergeable', True)
@@ -353,6 +404,9 @@ class GithubMock(object):
         status_hash = self.get_issue_status_uuid(org, repo, number)
         issue['statuses_url'] = BASEURL + '/repos/' + org + '/' + repo + '/statuses/' + status_hash
         return issue
+
+    def get_pullrequest_files(self, org, repo, number):
+        return self.FILES.get((org, repo, int(number)), [])
 
     def save_data(self):
 
@@ -900,10 +954,14 @@ def repos(path):
         return jsonify(status)
 
     elif len(path_parts) == 5 and path_parts[-1] == 'commits':
+        import epdb; epdb.st()
         return jsonify([])
 
     elif len(path_parts) == 5 and path_parts[-1] == 'files':
-        return jsonify([])
+        number = int(path_parts[-2])
+        files = GM.get_pullrequest_files(org, repo, number)
+        #import epdb; epdb.st()
+        return jsonify(files)
 
     elif len(path_parts) == 5 and path_parts[-1] == 'reviews':
         return jsonify([])
