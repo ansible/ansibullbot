@@ -161,40 +161,6 @@ class TestBotMetadataPropagation(TestBotMetaIndexerBase):
         'Current way of mocking prevents us '
         'from patching unicode aware loader',
     )
-    @mock.patch('yaml.load', ruamel.yaml.YAML().load)
-    def test_keywords_order(self):
-        """Check that:
-        - labels are inherited
-        - support keyword is inherited when not set
-        Use ruamel in order to check that order does't count
-        """
-        LABELS_SUPPORT_PROPAGATION = """
-        macros:
-          module_utils: lib/ansible/module_utils
-        files:
-          $module_utils/network/fw/sub/childA:
-          $module_utils/network/fw/sub/childB:
-              support: another_level
-              labels: labelB
-          $module_utils/network/fw/sub:
-              support: core
-              labels: [fwsub]
-          $module_utils/other:
-              labels: thing
-          $module_utils/network/iwfu.py:
-              support: community
-              labels: firewall
-          $module_utils/network/:
-              support: network
-              labels: networking
-          $module_utils/network/fw:
-              labels: firewall
-        """
-
-        data = BotMetadataParser.parse_yaml(LABELS_SUPPORT_PROPAGATION)
-        self.assertIsInstance(data, ruamel.yaml.comments.CommentedMap)  # ensure mock is effective
-
-        self._test(data)
 
     def _test(self, data):
 
