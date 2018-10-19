@@ -100,6 +100,9 @@ def get_automerge_facts(issuewrapper, meta):
             if pr_file.deletions:
                 # new exception delete
                 continue
+        elif fnmatch(thisfn, u'changelogs/fragments/*') and pr_file.status == u'added':
+            # ignore new changelog fragment
+            continue
         else:
             # other file modified, pull-request must be checked by an human
             return create_ameta(False, u'automerge !module file(s) test failed')
