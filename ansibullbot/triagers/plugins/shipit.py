@@ -242,9 +242,12 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
     modules_files_owned = 0
     if not meta[u'is_new_module']:
-        for f in iw.files:
-            if f.startswith(u'lib/ansible/modules') and iw.submitter in meta[u'component_maintainers']:
-                modules_files_owned += 1
+        if iw.submitter in meta[u'component_maintainers']:
+            for pr_file in iw.pr_files:
+                if pr_file.filename.startswith(u'lib/ansible/modules/'):
+                    modules_files_owned += 1
+                elif pr_file.filename.startswith(u'changelogs/fragments/') and pr_file.status == u'added':
+                    modules_files_owned += 1
     nmeta[u'owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
 
     #if not meta['module_match']:
