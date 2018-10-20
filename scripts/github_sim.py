@@ -81,6 +81,7 @@ class GithubMock(object):
     HISTORY = {}
     STATUS_HASHES = {}
     PR_STATUSES = {}
+    PULL_COMMITS = {}
     COMMITS = {}
     FILES = {}
     META = {}
@@ -138,6 +139,19 @@ class GithubMock(object):
             commits = crr.json()
             commits_headers = dict(crr.headers)
             self.write_fixture(fixdir, 'commits', commits, commits_headers)
+
+            for commit in commits:
+                curl = commit['url']
+                crr = requests.get(curl)
+                commitx = crr.json()
+                commitx_headers = dict(crr.headers)
+                self.write_fixture(
+                    fixdir,
+                    'commit_%s' % commitx['sha'],
+                    commitx,
+                    commitx_headers
+                )
+                #import epdb; epdb.st()
 
             furl = purl + '/files'
             frr = requests.get(furl)
@@ -211,7 +225,10 @@ class GithubMock(object):
             elif bn == 'files':
                 self.FILES[key] = data
             elif bn == 'commits':
-                self.COMMITS[key] = data
+                self.PULL_COMMITS[key] = data
+            elif bn.startswith('commit_'):
+                sha = bn.split('_')[-1]
+                self.COMMITS[sha] = data
             elif bn == 'pr_status':
                 urls = [x['url'] for x in data]
                 urls = sorted(set(urls))
@@ -574,16 +591,20 @@ class GithubMock(object):
         return self.FILES.get((org, repo, int(number)), [])
 
     def get_commit(self, sha):
+        return self.COMMITS.get(sha, None)
+        '''
         for iid,commits in self.COMMITS.items():
             for commit in commits:
+                import epdb; epdb.st()
                 if commit['sha'] == sha:
                     return commit
+        '''
 
     def get_pullrequest_commits(self, org, repo, number):
 
         key = (org, repo, int(number))
-        if key in self.COMMITS:
-            return self.COMMITS[key]
+        if key in self.PULL_COMMITS:
+            return self.PULL_COMMITS[key]
 
         if not self.generate:
             raise Exception('The simulator is not in generative mode')
