@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 
+import argparse
 import datetime
 import glob
 import hashlib
@@ -8,6 +9,7 @@ import json
 import os
 import pickle
 import random
+import requests
 import six
 import subprocess
 import time
@@ -30,6 +32,14 @@ ERROR_TIMER = 0
 TOKENS = {
     'AAA': 'ansibot'
 }
+
+ANSIBLE_PROJECT_ID = u'573f79d02a8192902e20e34b'
+SHIPPABLE_URL = u'https://api.shippable.com'
+ANSIBLE_PROVIDER_ID = u'562dbd9710c5980d003b0451'
+ANSIBLE_RUNS_URL = u'%s/runs?projectIds=%s&isPullRequest=True' % (
+    SHIPPABLE_URL,
+    ANSIBLE_PROJECT_ID
+)
 
 # https://elasticread.eng.ansible.com/ansible-issues/_search
 # https://elasticread.eng.ansible.com/ansible-pull-requests/_search
@@ -57,22 +67,177 @@ def run_command(cmd):
 
 class GithubMock(object):
 
+    generate = False
+    fixturedir = '/tmp/bot.fixtures'
     botcache = '/data/ansibot.production.cache'
     use_botcache = True
     ifile = '/tmp/fakeup/issues.p'
     efile = '/tmp/fakeup/events.p'
     ISSUES = {'github': {}}
+    PULLS = {'github': {}}
     EVENTS = {}
+    REACTIONS = {}
+    COMMENTS = {}
+    HISTORY = {}
     STATUS_HASHES = {}
     PR_STATUSES = {}
+    COMMITS = {}
     FILES = {}
     META = {}
+    RUNS = {}
 
     def __init__(self):
+        '''
         if self.use_botcache:
             self.load_ansibot_cache()
         else:
             self.seed_fake_issues()
+        '''
+        pass
+
+    def fetch_fixtures(self, org, repo, number):
+        key = (org, repo, int(number))
+
+        fixdir = os.path.join(self.fixturedir, 'repos', org, repo, str(number))
+        if not os.path.exists(fixdir):
+            os.makedirs(fixdir)
+
+        iurl = 'https://api.github.com/repos/%s/%s/issues/%s' % (org, repo, number)
+        irr = requests.get(iurl)
+        issue = irr.json()
+        issue_headers = dict(irr.headers)
+        self.write_fixture(fixdir, 'issue', issue, issue_headers)
+
+        courl = issue['comments_url']
+        corr = requests.get(courl)
+        comments = corr.json()
+        comments_headers = dict(corr.headers)
+        self.write_fixture(fixdir, 'comments', comments, comments_headers)
+
+        reurl = issue['url'] + '/reactions'
+        rerr = requests.get(reurl, headers={'Accept': 'application/vnd.github.squirrel-girl-preview+json'})
+        reactions = rerr.json()
+        reactions_headers = dict(rerr.headers)
+        self.write_fixture(fixdir, 'reactions', reactions, reactions_headers)
+
+        eurl = issue['events_url']
+        err = requests.get(eurl)
+        events = err.json()
+        events_headers = dict(err.headers)
+        self.write_fixture(fixdir, 'events', events, events_headers)
+
+        if issue.get('pull_request'):
+            purl = issue['pull_request']['url']
+            prr = requests.get(purl)
+            pull = prr.json()
+            pull_headers = dict(prr.headers)
+            self.write_fixture(fixdir, 'pull_request', pull, pull_headers)
+
+            curl = pull['commits_url']
+            crr = requests.get(curl)
+            commits = crr.json()
+            commits_headers = dict(crr.headers)
+            self.write_fixture(fixdir, 'commits', commits, commits_headers)
+
+            furl = purl + '/files'
+            frr = requests.get(furl)
+            files = frr.json()
+            files_headers = dict(frr.headers)
+            self.write_fixture(fixdir, 'files', files, files_headers)
+
+            surl = pull['statuses_url']
+            srr = requests.get(surl)
+            statuses = srr.json()
+            statuses_headers = dict(srr.headers)
+            self.write_fixture(fixdir, 'pr_status', statuses, statuses_headers)
+
+            # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
+            # https://api.shippable.com/runs/58caf30337380a0800e31219
+            runids = set()
+            for status in statuses:
+                # a finished job will have a target url ending with /summary
+                #_trr = requests.get(status['target_url'])
+                sparts = status['target_url'].split('/')
+                if sparts[-1] == 'summary':
+                    runid = sparts[-2]
+                elif sparts[-1].isdigit():
+                    runid = sparts[-1]
+                else:
+                    import epdb; epdb.st()
+                runids.add(runid)
+
+            for runid in runids:
+                rurl = 'https://api.shippable.com/runs'
+                rurl += '?'
+                rurl += 'projectIds=%s' % ANSIBLE_PROJECT_ID
+                rurl += '&'
+                rurl += 'runNumbers=%s' % runid
+
+                ridrr = requests.get(rurl)
+                self.write_fixture(
+                    fixdir,
+                    'run_%s' % runid,
+                    ridrr.json(),
+                    dict(ridrr.headers)
+                )
+                #import epdb; epdb.st()
+
+        #import epdb; epdb.st()
+
+    def load_issue_fixtures(self, org, repo, number):
+        number = int(number)
+        key = (org, repo, number)
+        bd = os.path.join(self.fixturedir, 'repos', org, repo, str(number))
+        fns = sorted(glob.glob('%s/*' % bd))
+        fns = [x for x in fns if not 'headers' in x]
+        for fn in fns:
+            bn = os.path.basename(fn)
+            bn = os.path.splitext(bn)[0]
+
+            with open(fn, 'r') as f:
+                data = json.loads(f.read())
+            data = self.replace_data_urls(data)
+
+            if bn == 'issue':
+                self.ISSUES['github'][key] = data
+            elif bn == 'pull_request':
+                self.PULLS['github'][key] = data
+            elif bn == 'comments':
+                self.COMMENTS[key] = data
+            elif bn == 'reactions':
+                self.REACTIONS[key] = data
+            elif bn == 'events':
+                self.EVENTS[key] = data
+            elif bn == 'files':
+                self.FILES[key] = data
+            elif bn == 'commits':
+                self.COMMITS[key] = data
+            elif bn == 'pr_status':
+                urls = [x['url'] for x in data]
+                urls = sorted(set(urls))
+                hexdigest = urls[0].split('/')[0]
+                self.STATUS_HASHES[key] = hexdigest
+                self.PR_STATUSES[hexdigest] = data
+            elif bn.startswith('run_'):
+                runid = bn.replace('run_', '')                
+                self.RUNS[runid] = data
+
+        #import epdb; epdb.st()
+
+    def replace_data_urls(self, data):
+        '''Point ALL urls back to this instance instead of the origin'''
+        data = json.dumps(data)
+        data = data.replace('https://api.github.com', BASEURL)
+        data = data.replace('https://github.com', BASEURL)
+        data = data.replace('https://api.shippable.com', BASEURL)
+        data = json.loads(data)
+        return data
+
+    def write_fixture(self, directory, fixture_type, data, headers):
+        with open(os.path.join(directory, '%s.json' % fixture_type), 'w') as f:
+            f.write(json.dumps(data, indent=2, sort_keys=True))
+        with open(os.path.join(directory, '%s.headers.json' % fixture_type), 'w') as f:
+            f.write(json.dumps(headers, indent=2, sort_keys=True))
 
     def seed_fake_issues(self):
         for i in range(1, 1000):
@@ -89,8 +254,11 @@ class GithubMock(object):
         metafiles = [x for x in metafiles if '/ansible/ansible/' in x]
         metafiles = sorted(set(metafiles))
 
+        i47087 = [x for x in metafiles if '47087' in x]
+
         metafiles = metafiles[::-1]
         metafiles = metafiles[:100]
+        metafiles += i47087
         #metafiles = metafiles[:1000]
         #import epdb; epdb.st()
 
@@ -147,20 +315,9 @@ class GithubMock(object):
             if key not in self.EVENTS:
                 self.EVENTS[key] = []
 
-            '''
             with open(hfile, 'r') as f:
                 history = pickle.load(f)
-            history = history['history']
-            for idx,x in enumerate(history):
-                x['created_at'] = x['created_at'].isoformat() + 'Z'
-                if 'updated_at' in x:
-                    x['updated_at'] = x['updated_at'].isoformat() + 'Z'
-                x['user'] = {
-                    'login': x['actor']
-                }
-                x.pop('actor', None)
-                import epdb; epdb.st()
-            '''
+            self.HISTORY[key] = history['history']
 
             with open(cfile, 'r') as f:
                 comments = pickle.load(f)
@@ -271,6 +428,9 @@ class GithubMock(object):
         if key in self.ISSUES['github']:
             return self.ISSUES['github'][key]
 
+        if not self.generate:
+            raise Exception('The Mocker was not run in generative mode')
+
         print('# creating %s %s' % (number, itype))
 
         url = BASEURL
@@ -359,6 +519,11 @@ class GithubMock(object):
     def get_pullrequest(self, org, repo, number):
 
         key = (org, repo, int(number))
+        if key in self.PULLS['github']:
+            return self.PULLS['github'][key]
+
+        if not self.generate:
+            raise Exception('This mock is not in generative mode')
 
         issue = GM.get_issue(org, repo, number, itype='pull')
 
@@ -407,6 +572,44 @@ class GithubMock(object):
 
     def get_pullrequest_files(self, org, repo, number):
         return self.FILES.get((org, repo, int(number)), [])
+
+    def get_commit(self, sha):
+        for iid,commits in self.COMMITS.items():
+            for commit in commits:
+                if commit['sha'] == sha:
+                    return commit
+
+    def get_pullrequest_commits(self, org, repo, number):
+
+        key = (org, repo, int(number))
+        if key in self.COMMITS:
+            return self.COMMITS[key]
+
+        if not self.generate:
+            raise Exception('The simulator is not in generative mode')
+
+        issue = self.get_issue(org, repo, int(number))
+        pull = self.get_pullrequest(org, repo, int(number))
+        files = self.get_pullrequest(org, repo, int(number))
+        history = self.HISTORY[(org, repo, int(number))]
+        meta = self.META[(org, repo, int(number))]
+
+        commits = []
+        for x in range(0, pull['commits']):
+            # https://api.github.com/repos/ansible/ansible/pulls/47087/commits
+            # sha
+            # nodeid
+            # commit
+            # url
+            # html_url
+            # comments_url
+            # author
+            # committer
+            # parents
+            import epdb; epdb.st()
+
+        import epdb; epdb.st()
+
 
     def save_data(self):
 
@@ -954,8 +1157,18 @@ def repos(path):
         return jsonify(status)
 
     elif len(path_parts) == 5 and path_parts[-1] == 'commits':
-        import epdb; epdb.st()
-        return jsonify([])
+        number = path_parts[-2]
+        commits = GM.get_pullrequest_commits(org, repo, number)
+        print('# return %s commits' % len(commits))
+        return jsonify(commits)
+
+    elif len(path_parts) in [4, 5] and path_parts[-2] == 'commits':
+        # (4, [u'ansible', u'ansible', u'commits', u'1d5b14446520e24186e4da40a4d5b68e0dfbcb43'])
+        # (5, [u'ansible', u'ansible', u'git', u'commits', u'1d5b14446520e24186e4da40a4d5b68e0dfbcb43'])
+        hashid = path_parts[-1]
+        commit = GM.get_commit(hashid)
+        print('# returning commit: %s' % commit)
+        return jsonify(commit)
 
     elif len(path_parts) == 5 and path_parts[-1] == 'files':
         number = int(path_parts[-2])
@@ -985,5 +1198,40 @@ def abstract_path(path):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
-    #app.run(debug=False)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('action', choices=['fetch', 'load', 'generate'])
+    parser.add_argument('--fixtures', default='/tmp/bot.fixtures')
+    parser.add_argument('--count', type=int, default=None)
+    parser.add_argument('--org', default='ansible')
+    parser.add_argument('--repo', default='ansible')
+    parser.add_argument('--number', type=int, default=None, action='append')
+    args = parser.parse_args()
+
+    GM.fixturedir = args.fixtures
+
+    if args.action == 'fetch':
+        # get the real upstream data for an issue and store it to disk
+        for number in args.number:
+            GM.fetch_fixtures(args.org, args.repo, number)
+    else:
+        if args.action == 'load':
+            # use ondisk fixtures created by 'fetch'
+            for number in args.number:
+                GM.load_issue_fixtures(args.org, args.repo, number)
+
+        elif args.action == 'generate':
+            # make a range of synthetic issues and PRs
+            GM.generate = True
+            if args.number:
+                for number in args.number:
+                    GM.get_issue(args.org, args.repo, number, itype='issue')
+            else:
+                for i in range(1, args.count):
+                    ispr = bool(random.getrandbits(1))
+                    if ispr or i == 1:
+                        GM.get_issue(args.org, args.repo, i, itype='pull')
+                    else:
+                        GM.get_issue(args.org, args.repo, i, itype='issue')
+
+        app.run(debug=True)
+        #app.run(debug=False)
