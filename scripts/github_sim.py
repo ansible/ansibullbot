@@ -83,6 +83,7 @@ class GithubMock(object):
     PR_STATUSES = {}
     PULL_COMMITS = {}
     COMMITS = {}
+    GITCOMMITS = {}
     FILES = {}
     META = {}
     RUNS = {}
@@ -151,7 +152,18 @@ class GithubMock(object):
                     commitx,
                     commitx_headers
                 )
-                #import epdb; epdb.st()
+
+                # git commits are somewhat different
+                gcurl = commitx['commit']['url']
+                gcrr = requests.get(gcurl)
+                gcommitx = gcrr.json()
+                gcommitx_headers = dict(gcrr.headers)
+                self.write_fixture(
+                    fixdir,
+                    'gitcommit_%s' % commitx['sha'],
+                    gcommitx,
+                    gcommitx_headers
+                )
 
             furl = purl + '/files'
             frr = requests.get(furl)
@@ -229,17 +241,18 @@ class GithubMock(object):
             elif bn.startswith('commit_'):
                 sha = bn.split('_')[-1]
                 self.COMMITS[sha] = data
+            elif bn.startswith('gitcommit_'):
+                sha = bn.split('_')[-1]
+                self.GITCOMMITS[sha] = data
             elif bn == 'pr_status':
                 urls = [x['url'] for x in data]
                 urls = sorted(set(urls))
-                hexdigest = urls[0].split('/')[0]
+                hexdigest = urls[0].split('/')[-1]
                 self.STATUS_HASHES[key] = hexdigest
                 self.PR_STATUSES[hexdigest] = data
             elif bn.startswith('run_'):
                 runid = bn.replace('run_', '')                
                 self.RUNS[runid] = data
-
-        #import epdb; epdb.st()
 
     def replace_data_urls(self, data):
         '''Point ALL urls back to this instance instead of the origin'''
@@ -247,6 +260,7 @@ class GithubMock(object):
         data = data.replace('https://api.github.com', BASEURL)
         data = data.replace('https://github.com', BASEURL)
         data = data.replace('https://api.shippable.com', BASEURL)
+        data = data.replace('https://app.shippable.com', BASEURL)
         data = json.loads(data)
         return data
 
@@ -299,7 +313,7 @@ class GithubMock(object):
             hfile = os.path.join(bd, 'history.pickle')
             cfile = os.path.join(bd, 'events.pickle')
             efile = os.path.join(bd, 'events.pickle')
-            sfile = os.path.join(bd, 'pr_status.pickle')
+            stfile = os.path.join(bd, 'pr_status.pickle')
 
             if not os.path.isfile(rdfile) and not os.path.isfile(ifile):
                 continue
@@ -358,8 +372,8 @@ class GithubMock(object):
                 rd = json.loads(rd)
                 self.EVENTS[key].append(rd)
 
-            if os.path.exists(sfile):
-                with open(sfile, 'r') as f:
+            if os.path.exists(stfile):
+                with open(stfile, 'r') as f:
                     pr_status = pickle.load(f)
                 pr_status = pr_status[-1]
                 pr_status = json.dumps(pr_status)
@@ -371,7 +385,6 @@ class GithubMock(object):
                 statusid = ids[0]
                 self.STATUS_HASHES[key] = statusid
                 self.PR_STATUSES[statusid] = pr_status[:]
-                #import epdb; epdb.st()
 
             if os.path.exists(ffile):
                 with open(ffile, 'r') as f:
@@ -427,6 +440,8 @@ class GithubMock(object):
         # u'1d5b14446520e24186e4da40a4d5b68e0dfbcb43'
         #print('# return status: %s %s' % (hex_digest, status))
         #import epdb; epdb.st()
+        if not status:
+            import epdb; epdb.st()
         return status
 
     def get_issue(self, org, repo, number, itype='issue'):
@@ -592,13 +607,9 @@ class GithubMock(object):
 
     def get_commit(self, sha):
         return self.COMMITS.get(sha, None)
-        '''
-        for iid,commits in self.COMMITS.items():
-            for commit in commits:
-                import epdb; epdb.st()
-                if commit['sha'] == sha:
-                    return commit
-        '''
+
+    def get_git_commit(self, sha):
+        return self.GITCOMMITS.get(sha, None)
 
     def get_pullrequest_commits(self, org, repo, number):
 
@@ -1174,7 +1185,7 @@ def repos(path):
 	return resp
 
     elif len(path_parts) == 4 and path_parts[-2] == 'statuses':
-        status = GM.get_status(path_parts[-1])        
+        status = GM.get_status(path_parts[-1])
         return jsonify(status)
 
     elif len(path_parts) == 5 and path_parts[-1] == 'commits':
@@ -1187,7 +1198,10 @@ def repos(path):
         # (4, [u'ansible', u'ansible', u'commits', u'1d5b14446520e24186e4da40a4d5b68e0dfbcb43'])
         # (5, [u'ansible', u'ansible', u'git', u'commits', u'1d5b14446520e24186e4da40a4d5b68e0dfbcb43'])
         hashid = path_parts[-1]
-        commit = GM.get_commit(hashid)
+        if path_parts[2] == 'commits':
+            commit = GM.get_commit(hashid)
+        elif path_parts[2] == 'git':
+            commit = GM.get_git_commit(hashid)
         print('# returning commit: %s' % commit)
         return jsonify(commit)
 
