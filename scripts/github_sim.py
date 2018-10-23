@@ -754,11 +754,13 @@ class GithubMock(object):
             },
             'body': request.json['body']
         }
-        self.add_issue_event(org, repo, number, event)
+        #self.add_issue_event(org, repo, number, event)
+        self.COMMENTS[(org, repo, int(number))].append(event)
 
     def get_issue_comments(self, org, repo, number):
-        events = self.EVENTS.get((org, repo, number), [])
-        comments = [x for x in events if x['event'] == 'commented']
+        #events = self.EVENTS.get((org, repo, number), [])
+        #comments = [x for x in events if x['event'] == 'commented']
+        comments = self.COMMENTS.get((org, repo, int(number)), [])
         return comments
 
 
