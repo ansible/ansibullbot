@@ -31,13 +31,14 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, botmetafile=None, gitrepo=None):
+    def __init__(self, botmetafile=None, gitrepo=None, commit=None):
         self.botmetafile = botmetafile
         self.botmeta = {}
         self.CMAP = {}
         self.FILEMAP = {}
         self.match_cache = {}
         self.gitrepo = gitrepo
+        self.commit = commit
         self.update(force=True)
         self.email_commits = {}
 

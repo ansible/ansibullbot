@@ -13,8 +13,9 @@ class GitRepoWrapper(object):
 
     _files = []
 
-    def __init__(self, cachedir, repo):
+    def __init__(self, cachedir, repo, commit=None):
         self.repo = repo
+        self.commit = commit
         self.checkoutdir = cachedir or u'~/.ansibullbot/cache'
         self.checkoutdir = os.path.join(cachedir, u'ansible.checkout')
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
@@ -38,6 +39,8 @@ class GitRepoWrapper(object):
             shutil.rmtree(self.checkoutdir)
         cmd = "git clone %s %s" \
             % (self.repo, self.checkoutdir)
+        #if self.commit:
+        #    import epdb; epdb.st()
         (rc, so, se) = run_command(cmd)
         print(to_text(so) + to_text(se))
 
@@ -53,18 +56,36 @@ class GitRepoWrapper(object):
 
         changed = False
 
-        cmd = "cd %s ; git pull --rebase" % self.checkoutdir
-        (rc, so, se) = run_command(cmd)
-        so = to_text(so)
-        print(so + to_text(se))
+        # get a specific commit or do a rebase
+        if self.commit:
+            cmd = "cd %s; git log -1  | head -n1 | awk '{print $2}'" % self.checkoutdir
+            (rc, so, se) = run_command(cmd)
+            so = to_text(so).strip()
 
-        # If rebase failed, recreate the checkout
-        if rc != 0:
-            self.create_checkout()
-            return True
-        else:
-            if u'current branch devel is up to date.' not in so.lower():
+            if so != self.commit:
+                cmd = "cd %s; git checkout %s" % (self.checkoutdir, self.commit)
+                (rc, so, se) = run_command(cmd)
                 changed = True
+
+            if rc != 0:
+                self.create_checkout()
+                changed = True
+
+        else:
+            changed = False
+
+            cmd = "cd %s ; git pull --rebase" % self.checkoutdir
+            (rc, so, se) = run_command(cmd)
+            so = to_text(so)
+            print(so + to_text(se))
+
+            # If rebase failed, recreate the checkout
+            if rc != 0:
+                self.create_checkout()
+                return True
+            else:
+                if u'current branch devel is up to date.' not in so.lower():
+                    changed = True
 
         self.commits_by_email = None
 

@@ -36,9 +36,10 @@ def list_to_version(inlist, cast_string=True, reverse=True, binary=False):
 
 class AnsibleVersionIndexer(object):
 
-    def __init__(self, checkoutdir):
+    def __init__(self, checkoutdir, commit=None):
         self.modules = {}
         self.checkoutdir = checkoutdir
+        self.COMMIT = commit
         self.VALIDVERSIONS = None
         self.COMMITVERSIONS = None
         self.DATEVERSIONS = None

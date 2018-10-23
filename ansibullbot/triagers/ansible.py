@@ -217,18 +217,19 @@ class AnsibleTriage(DefaultTriager):
 
         # clone ansible/ansible
         repo = u'https://github.com/ansible/ansible'
-        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo)
+        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit)
 
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer(
-            checkoutdir=gitrepo.checkoutdir
+            checkoutdir=gitrepo.checkoutdir,
+            commit=self.ansible_commit
         )
 
         logging.info('creating file indexer')
         self.file_indexer = FileIndexer(
             botmetafile=self.botmetafile,
-            gitrepo=gitrepo
+            gitrepo=gitrepo,
         )
 
         logging.info('creating module indexer')
@@ -244,7 +245,7 @@ class AnsibleTriage(DefaultTriager):
         self.component_matcher = AnsibleComponentMatcher(
             gitrepo=gitrepo,
             botmetafile=self.botmetafile,
-            email_cache=self.module_indexer.emails_cache
+            email_cache=self.module_indexer.emails_cache,
         )
 
         # instantiate shippable api
@@ -2473,6 +2474,9 @@ class AnsibleTriage(DefaultTriager):
                             help="pickup right after where the bot last stopped")
         parser.add_argument("--no_since", action="store_true",
                             help="Do not use the since keyword to fetch issues")
+
+        parser.add_argument('--commit', dest='ansible_commit',
+                            help="Use a specific commit for the indexers")
 
         return parser
 
