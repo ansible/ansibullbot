@@ -67,6 +67,7 @@ def run_command(cmd):
 
 class GithubMock(object):
 
+    TOKEN = None
     generate = False
     fixturedir = '/tmp/bot.fixtures'
     botcache = '/data/ansibot.production.cache'
@@ -97,7 +98,47 @@ class GithubMock(object):
         '''
         pass
 
-    def fetch_fixtures(self, org, repo, number):
+    def tokenized_request(self, url):
+        print('\t(F) %s' % url)
+        _headers = {}
+        if self.TOKEN:
+            _headers['Authorization'] = 'token %s' % self.TOKEN
+
+        # reactions
+        _headers['Accept'] = 'application/vnd.github.squirrel-girl-preview+json'
+
+        rr = requests.get(url, headers=_headers)
+        data = rr.json()
+        headers = dict(rr.headers)
+
+        if 'Link' in headers:
+            #links = headers['Link'].split(',')
+            #links = [x.split(';') for x in links]
+            links = self.extract_header_links(headers)
+            if links.get('next'):
+                (_headers, _data) = self.tokenized_request(links['next'])
+                data += _data
+                #import epdb; epdb.st()
+
+        return (headers, data)
+
+    def extract_header_links(self, headers):
+
+        links = {}
+        for line in headers['Link'].split(','):
+            parts = line.split(';')
+            rel = parts[-1].split('"')[1]
+            link = parts[0].replace('<', '').replace('>', '').strip()
+            links[rel] = link
+
+        #import epdb; epdb.st()
+        return links
+
+    def fetch_fixtures(self, org, repo, number, token=None):
+
+        if token:
+            self.TOKEN = token
+
         key = (org, repo, int(number))
 
         fixdir = os.path.join(self.fixturedir, 'repos', org, repo, str(number))
@@ -105,47 +146,54 @@ class GithubMock(object):
             os.makedirs(fixdir)
 
         iurl = 'https://api.github.com/repos/%s/%s/issues/%s' % (org, repo, number)
-        irr = requests.get(iurl)
-        issue = irr.json()
-        issue_headers = dict(irr.headers)
+        #irr = requests.get(iurl)
+        #issue = irr.json()
+        #issue_headers = dict(irr.headers)
+        (issue_headers, issue) = self.tokenized_request(iurl) 
         self.write_fixture(fixdir, 'issue', issue, issue_headers)
 
         courl = issue['comments_url']
-        corr = requests.get(courl)
-        comments = corr.json()
-        comments_headers = dict(corr.headers)
+        #corr = requests.get(courl)
+        #comments = corr.json()
+        #comments_headers = dict(corr.headers)
+        (comments_headers, comments) = self.tokenized_request(courl) 
         self.write_fixture(fixdir, 'comments', comments, comments_headers)
 
         reurl = issue['url'] + '/reactions'
-        rerr = requests.get(reurl, headers={'Accept': 'application/vnd.github.squirrel-girl-preview+json'})
-        reactions = rerr.json()
-        reactions_headers = dict(rerr.headers)
+        #rerr = requests.get(reurl, headers={'Accept': 'application/vnd.github.squirrel-girl-preview+json'})
+        #reactions = rerr.json()
+        #reactions_headers = dict(rerr.headers)
+        (reactions_headers, reactions) = self.tokenized_request(courl) 
         self.write_fixture(fixdir, 'reactions', reactions, reactions_headers)
 
         eurl = issue['events_url']
-        err = requests.get(eurl)
-        events = err.json()
-        events_headers = dict(err.headers)
+        #err = requests.get(eurl)
+        #events = err.json()
+        #events_headers = dict(err.headers)
+        (events_headers, events) = self.tokenized_request(eurl) 
         self.write_fixture(fixdir, 'events', events, events_headers)
 
         if issue.get('pull_request'):
             purl = issue['pull_request']['url']
-            prr = requests.get(purl)
-            pull = prr.json()
-            pull_headers = dict(prr.headers)
+            #prr = requests.get(purl)
+            #pull = prr.json()
+            #pull_headers = dict(prr.headers)
+            (pull_headers, pull) = self.tokenized_request(purl) 
             self.write_fixture(fixdir, 'pull_request', pull, pull_headers)
 
             curl = pull['commits_url']
-            crr = requests.get(curl)
-            commits = crr.json()
-            commits_headers = dict(crr.headers)
+            #crr = requests.get(curl)
+            #commits = crr.json()
+            #commits_headers = dict(crr.headers)
+            (commits_headers, commits) = self.tokenized_request(curl) 
             self.write_fixture(fixdir, 'commits', commits, commits_headers)
 
             for commit in commits:
                 curl = commit['url']
-                crr = requests.get(curl)
-                commitx = crr.json()
-                commitx_headers = dict(crr.headers)
+                #crr = requests.get(curl)
+                #commitx = crr.json()
+                #commitx_headers = dict(crr.headers)
+                (commitx_headers, commitx) = self.tokenized_request(curl) 
                 self.write_fixture(
                     fixdir,
                     'commit_%s' % commitx['sha'],
@@ -155,9 +203,10 @@ class GithubMock(object):
 
                 # git commits are somewhat different
                 gcurl = commitx['commit']['url']
-                gcrr = requests.get(gcurl)
-                gcommitx = gcrr.json()
-                gcommitx_headers = dict(gcrr.headers)
+                #gcrr = requests.get(gcurl)
+                #gcommitx = gcrr.json()
+                #gcommitx_headers = dict(gcrr.headers)
+                (gcommitx_headers, gcommitx) = self.tokenized_request(gcurl) 
                 self.write_fixture(
                     fixdir,
                     'gitcommit_%s' % commitx['sha'],
@@ -166,15 +215,17 @@ class GithubMock(object):
                 )
 
             furl = purl + '/files'
-            frr = requests.get(furl)
-            files = frr.json()
-            files_headers = dict(frr.headers)
+            #frr = requests.get(furl)
+            #files = frr.json()
+            #files_headers = dict(frr.headers)
+            (files_headers, files) = self.tokenized_request(furl) 
             self.write_fixture(fixdir, 'files', files, files_headers)
 
             surl = pull['statuses_url']
-            srr = requests.get(surl)
-            statuses = srr.json()
-            statuses_headers = dict(srr.headers)
+            #srr = requests.get(surl)
+            #statuses = srr.json()
+            #statuses_headers = dict(srr.headers)
+            (statuses_headers, statuses) = self.tokenized_request(surl) 
             self.write_fixture(fixdir, 'pr_status', statuses, statuses_headers)
 
             # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
@@ -1237,6 +1288,7 @@ def abstract_path(path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=['fetch', 'load', 'generate'])
+    parser.add_argument('--token', default=None)
     parser.add_argument('--fixtures', default='/tmp/bot.fixtures')
     parser.add_argument('--count', type=int, default=None)
     parser.add_argument('--org', default='ansible')
@@ -1249,7 +1301,7 @@ if __name__ == "__main__":
     if args.action == 'fetch':
         # get the real upstream data for an issue and store it to disk
         for number in args.number:
-            GM.fetch_fixtures(args.org, args.repo, number)
+            GM.fetch_fixtures(args.org, args.repo, number, token=args.token)
     else:
         if args.action == 'load':
             # use ondisk fixtures created by 'fetch'
