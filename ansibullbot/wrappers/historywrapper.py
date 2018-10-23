@@ -155,10 +155,9 @@ class HistoryWrapper(object):
                     matching_events.append(event)
                 elif type(actor) == list and event[u'actor'] in actor:
                     matching_events.append(event)
-                elif not actor:
-                    matching_events.append(event)
                 if len(matching_events) == maxcount:
                     break
+
         return matching_events
 
     def get_user_comments(self, username):
