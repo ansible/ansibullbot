@@ -1,0 +1,129 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import shutil
+import subprocess
+import sys
+import tempfile
+import yaml
+
+
+class IntegrationTest(object):
+
+    def __init__(self, target=None):
+        self.target = target
+        self.target_info = None
+        self.simpid = None
+        self.target_meta = self.read_target_meta(self.target)
+        self.tmpdir = tempfile.mkdtemp()
+        self.run_simulator(self.target_meta)
+        self.run_bot()
+        self.kill_simulator()
+
+    def write_bot_config(self, directory=None):
+        cfg = [
+            '[defaults]',
+            'debug=True',
+            'breakpoints=False',
+            'ratelimit=False',
+            'shippable_token=XXXX-XXXX-XXXX',
+            'github_url=http://localhost:5000',
+            'github_username=ansibot',
+            'github_password=foobar',
+            'github_token=AAA'
+        ]
+        cfg = '\n'.join(cfg) + '\n'
+        cfile = os.path.join(directory, 'ansibullbot.cfg')
+        with open(cfile, 'w') as f:
+            f.write(cfg)
+
+    def read_target_meta(self, target):
+        mpath = os.path.join('tests', 'integration', 'targets', target, 'meta.yml')
+        with open(mpath, 'r') as f:
+            ydata = yaml.load(f.read())
+        #import epdb; epdb.st()
+        return ydata
+
+    def run_bot(self):
+        if not os.path.exists(self.tmpdir):
+            os.makedirs(self.tmpdir)
+        self.write_bot_config(directory=self.tmpdir)
+        #self.write_bot_config(directory='/tmp')
+
+        cmd = [
+            'ANSIBULLBOT_CONFIG=%s/ansibullbot.cfg' % self.tmpdir,
+            './triage_ansible.py',
+            '--logfile=%s' % os.path.join(self.tmpdir, 'bot.log'),
+            '--commit=%s' % self.target_meta['ansible_commit'],
+            '--debug',
+            '--verbose',
+            '--skip_module_repos',
+            '--ignore_module_commits',
+            '--cachedir=%s' % os.path.join(self.tmpdir, 'cache'),
+            '--force'
+        ]
+        cmd = ' '.join(cmd)
+        print(cmd)
+
+        p = subprocess.Popen(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        (so, se) = p.communicate()
+        import epdb; epdb.st()
+
+    def kill_simulator(self):
+        self.simpid.kill()
+
+    def run_simulator(self, meta):
+
+        if not os.path.exists(self.tmpdir):
+            os.makedirs(self.tmpdir)
+
+        fixture_path = os.path.join(
+            'tests',
+            'fixtures',
+            'issues',
+            meta['fixtures_date']
+        )
+
+        cmd = 'python tests/bin/github_sim.py'    
+        cmd += ' '
+        cmd += 'load'
+        cmd += ' '
+        cmd += '--fixtures=%s' % fixture_path
+        cmd += ' | tee -a %s/sim.log' % self.tmpdir
+
+        self.simpid = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+
+        #self.simpid.stdout.readline()
+        #print(self.simpid.returncode)
+        #import epdb; epdb.st()
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(help='family of tests to run')
+    parser.add_argument("-v")
+
+    u_parser = subparsers.add_parser("units", help='run unit tests')
+    c_parser = subparsers.add_parser("components", help='run component tests')
+    i_parser = subparsers.add_parser("integration", help='run integration tests')
+    i_parser.add_argument('target', default=None)
+
+    args = parser.parse_args()
+
+    IT = IntegrationTest(target=args.target)
+
+
+
+if __name__ == "__main__":
+    main()
