@@ -23,7 +23,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
 
 
 ANSIBLE_PROJECT_ID = u'573f79d02a8192902e20e34b'
-SHIPPABLE_URL = u'https://api.shippable.com'
+SHIPPABLE_URL = C.DEFAULT_SHIPPABLE_URL
 ANSIBLE_RUNS_URL = u'%s/runs?projectIds=%s&isPullRequest=True' % (
     SHIPPABLE_URL,
     ANSIBLE_PROJECT_ID
@@ -368,6 +368,7 @@ class ShippableRuns(object):
     def get_run_id(self, run_number):
         """trigger a new run"""
         run_url = u"%s&runNumbers=%s" % (self.url, run_number)
+        import epdb; epdb.st()
         response = self.fetch(run_url, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)

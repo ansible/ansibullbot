@@ -275,6 +275,15 @@ DEFAULT_SHIPPABLE_TOKEN = get_config(
     value_type='string'
 )
 
+DEFAULT_SHIPPABLE_URL = get_config(
+    p,
+    DEFAULTS,
+    'shippable_url',
+    '%s_SHIPPABLE_URL' % PROG_NAME.upper(),
+    u'https://api.shippable.com',
+    value_type='string'
+)
+
 DEFAULT_NEEDS_INFO_WARN = get_config(
     p,
     'needs_info',
@@ -302,6 +311,7 @@ DEFAULT_STALE_WINDOW = get_config(
     7,
     value_type='int'
 )
+
 
 ###########################################
 #   METADATA RECEIVER
