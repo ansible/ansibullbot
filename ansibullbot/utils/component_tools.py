@@ -150,6 +150,8 @@ class AnsibleComponentMatcher(object):
         for fn in self.gitrepo.module_files:
             if os.path.isdir(fn):
                 continue
+            if not os.path.exists(fn):
+                continue
             mname = os.path.basename(fn)
             mname = mname.replace(u'.py', u'').replace(u'.ps1', u'')
             if mname.startswith(u'__'):
