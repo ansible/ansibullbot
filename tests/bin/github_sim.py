@@ -1305,8 +1305,19 @@ if __name__ == "__main__":
     else:
         if args.action == 'load':
             # use ondisk fixtures created by 'fetch'
-            for number in args.number:
-                GM.load_issue_fixtures(args.org, args.repo, number)
+            if args.number:
+                for number in args.number:
+                    GM.load_issue_fixtures(args.org, args.repo, number)
+
+            else:
+                cmd = 'find %s -type d' % args.fixtures                              
+                (rc, so, se) = run_command(cmd)
+                numbers = [x.strip() for x in so.split('\n') if x.strip()]
+                numbers = [x.split('/')[-3:] for x in numbers]
+                numbers = [x for x in numbers if x[-1].isdigit()]
+                for number in numbers:
+                    print(number)
+                    GM.load_issue_fixtures(number[0], number[1], number[2])
 
         elif args.action == 'generate':
             # make a range of synthetic issues and PRs
@@ -1322,5 +1333,5 @@ if __name__ == "__main__":
                     else:
                         GM.get_issue(args.org, args.repo, i, itype='issue')
 
-        app.run(debug=True)
-        #app.run(debug=False)
+        #app.run(debug=True)
+        app.run(debug=False)
