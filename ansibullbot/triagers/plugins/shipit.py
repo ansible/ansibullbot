@@ -240,9 +240,12 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
                 if maintainers and (iw.submitter in maintainers):
                     module_utils_files_owned += 1
 
+    maintainers = meta.get(u'component_maintainers', [])
+    maintainers = ModuleIndexer.replace_ansible(maintainers, core_team, bots=botnames)
+
     modules_files_owned = 0
     if not meta[u'is_new_module']:
-        if iw.submitter in meta[u'component_maintainers']:
+        if iw.submitter in maintainers:
             for pr_file in iw.pr_files:
                 if pr_file.filename.startswith(u'lib/ansible/modules/'):
                     modules_files_owned += 1
@@ -261,14 +264,6 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     if meta[u'is_needs_revision'] or meta[u'is_needs_rebase']:
         logging.debug(u'PRs with needs_revision or needs_rebase label do not get shipits')
         return nmeta
-
-    maintainers = meta.get(u'component_maintainers', [])
-    maintainers = \
-        ModuleIndexer.replace_ansible(
-            maintainers,
-            core_team,
-            bots=botnames
-        )
 
     # community is the other maintainers in the same namespace
     community = meta.get(u'component_namespace_maintainers', [])
