@@ -9,7 +9,12 @@
 5. Create the config file
 6. sudo touch /var/log/ansibullbot.log
 7. sudo chmod 777 /var/log/ansibullbot.log
-8. Copy examples/ansibullbot.cfg to ~/.ansibullbot.cfg and fill in the credentials
+8. Copy [`examples/ansibullbot.cfg`](https://github.com/ansible/ansibullbot/blob/master/examples/ansibullbot.cfg) to one of these paths:
+    * `~/.ansibullbot.cfg`
+    * `$CWD/ansibullot.cfg`
+    * `/etc/ansibullot/ansibullbot.cfg`
+    * define `ANSIBULLBOT_CONFIG` environment variable where the configuration file is located
+9. fill in the credentials
 
 ## Testing your changes
 
