@@ -1,5 +1,11 @@
 # Ansibullbot Contributor's Guide
 
+## Python compatibility
+
+Ansibullbot is compatible with both Python 2.7 and Python 3.7.
+
+Usage of unicode strings is required.
+
 ## Getting started
 
 1. Fork this repo
