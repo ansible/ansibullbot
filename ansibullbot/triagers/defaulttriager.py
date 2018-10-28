@@ -76,7 +76,19 @@ class DefaultActions(object):
 
 
 class DefaultTriager(object):
-
+    """
+    How to use:
+    1. Create a new class which inherits from DefaultTriager
+    2. Implement 'Triager.run(self)' method:
+        - iterate over issues/pull requests
+        - for each issue
+        1. create 'actions = DefaultActions()'
+        2. define which action(s) should be done updating 'actions' instance
+        3. call parent 'apply_actions' methods: 'DefaultTriager.apply_actions(iw, actions)'
+    3. Run:
+    def main():
+        Triager().start()
+    """
     ITERATION = 0
 
     def __init__(self):

@@ -25,7 +25,7 @@ def add_dynamic_attr(cls, klass):
 
 
 def transform(cls):
-    if cls.name in ['AnsibleTriage', 'DefaultTriager', 'SimpleTriager']:
+    if cls.name in ['AnsibleTriage', 'DefaultTriager']:
         mod = import_module(cls.parent.name)
         add_dynamic_attr(cls, getattr(mod, cls.name))
 
