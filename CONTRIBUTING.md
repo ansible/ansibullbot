@@ -5,7 +5,8 @@
 1. Fork this repo
 2. Clone your fork
 3. Create a feature branch
-4. Install the python requirements
+4. Optionally: create a [Python virtual environment](https://realpython.com/python-virtual-environments-a-primer/)
+4. Install the python requirements: `pip install -r requirements.txt`
 5. Create the log file:
     * either add `--log path/to/file.log` to the `triage_ansible.py` below
     * or use `sudo touch /var/log/ansibullbot.log && sudo chmod 777 /var/log/ansibullbot.log`
