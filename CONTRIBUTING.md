@@ -1,15 +1,27 @@
 # Ansibullbot Contributor's Guide
 
+## Python compatibility
+
+Ansibullbot is compatible with both Python 2.7 and Python 3.7.
+
+Usage of unicode strings is required.
+
 ## Getting started
 
 1. Fork this repo
 2. Clone your fork
 3. Create a feature branch
-4. Install the python requirements
-5. Create the config file
-6. sudo touch /var/log/ansibullbot.log
-7. sudo chmod 777 /var/log/ansibullbot.log
-8. Copy examples/ansibullbot.cfg to ~/.ansibullbot.cfg and fill in the credentials
+4. Optionally: create a [Python virtual environment](https://realpython.com/python-virtual-environments-a-primer/)
+4. Install the python requirements: `pip install -r requirements.txt`
+5. Create the log file:
+    * either add `--log path/to/file.log` to the `triage_ansible.py` below
+    * or use `sudo touch /var/log/ansibullbot.log && sudo chmod 777 /var/log/ansibullbot.log`
+6. Create the config file, copy [`examples/ansibullbot.cfg`](https://github.com/ansible/ansibullbot/blob/master/examples/ansibullbot.cfg) to one of these paths:
+    * `~/.ansibullbot.cfg`
+    * `$CWD/ansibullot.cfg`
+    * `/etc/ansibullot/ansibullbot.cfg`
+    * define `ANSIBULLBOT_CONFIG` environment variable where the configuration file is located
+7. fill in the credentials
 
 ## Testing your changes
 
