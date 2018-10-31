@@ -1090,16 +1090,24 @@ class DefaultWrapper(object):
             u'Accept': u'application/vnd.github.black-cat-preview+json',
         }
 
-        resp = self.instance._requester.requestJson(
+        status, hdrs, body = self.instance._requester.requestJson(
             u'GET',
             reviews_url,
             headers=headers
         )
-        jdata = json.loads(resp[2])
+        jdata = json.loads(body)
 
         # need to catch rate limit message here
         if isinstance(jdata, dict) and u'rate' in jdata[u'message']:
             raise RateLimitError("rate limited")
+
+        if isinstance(jdata, dict):
+            logging.error(
+                u'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
+                u'resp.headers=%s | resp.status=%s',
+                jdata.keys(), len(jdata),
+                hdrs, status,
+            )
 
         return jdata
 
