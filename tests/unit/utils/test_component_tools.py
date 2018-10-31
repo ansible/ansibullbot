@@ -350,7 +350,7 @@ class TestComponentMatcher(TestCase):
             u'the "user" module': [u'lib/ansible/modules/system/user.py'],
             u'`ansible_module_ec2_ami_copy.py`': [u'lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],
             u'module: `include_vars `': [u'lib/ansible/modules/utilities/logic/include_vars.py'],
-            u'rabbitmq_plugin  module': [u'lib/ansible/modules/messaging/rabbitmq_plugin.py'],
+            u'rabbitmq_plugin  module': [u'lib/ansible/modules/messaging/rabbitmq/rabbitmq_plugin.py'],
             #'F5 bigip (bigip_selfip)': [u'lib/ansible/modules/network/f5/bigip_selfip.py'],
             u'module: `vsphere_guest`': [u'lib/ansible/modules/cloud/vmware/_vsphere_guest.py'],
             u'Add to vmware_guest module, Clone to Virtual Machine task': [
