@@ -1,0 +1,49 @@
+coverage:
+  precision: 2
+  round: nearest
+  range: "40..100"
+  status:
+    # Only consider coverage of the code snippet changed in PR
+    # https://docs.codecov.io/docs/commit-status
+    project: no
+    patch: yes
+    changes: no
+
+comment:
+  layout: "header, diff"
+  behavior: default
+  require_changes: no
+
+flags:
+  library:
+    paths:
+    - aiohttp/
+  configs:
+    paths:
+    - requirements/
+    - ".git*"
+    - "*.toml"
+    - "*.yml"
+  changelog:
+    paths:
+    - CHANGES/
+    - CHANGES.rst
+  docs:
+    paths:
+    - docs/
+    - "*.md"
+    - "*.rst"
+    - "*.txt"
+  tests:
+    paths:
+    - tests/
+  tools:
+    paths:
+    - tools/
+  third-party:
+    paths:
+    - vendor/
+
+ignore:
+- old/
+- tests/
