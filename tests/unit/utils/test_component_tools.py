@@ -86,6 +86,7 @@ class TestComponentMatcher(TestCase):
         self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/modules/packaging/os/yum.py': {
+                    u'ignored': [u'verm666'],
                     u'maintainers': [u'maxamillion'],
                 }
             }
@@ -97,7 +98,6 @@ class TestComponentMatcher(TestCase):
             u'berenddeschouwer',
             u'kustodian',
             u'maxamillion',
-            u'verm666',
         ])
 
     def test_get_meta_for_file_powershell(self):
