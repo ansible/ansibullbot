@@ -86,8 +86,8 @@ class TestComponentMatcher(TestCase):
         self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/modules/packaging/os/yum.py': {
-                    u'ignored': [u'verm666'],
-                    u'maintainers': [u'maxamillion'],
+                    u'ignored': [u'verm666'],  # 'verm666' is also listed as an author of yum module
+                    u'maintainers': [u'maxamillion', u'verm666'],
                 }
             }
         }
