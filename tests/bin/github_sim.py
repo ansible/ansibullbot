@@ -87,7 +87,11 @@ class GithubMock(object):
     GITCOMMITS = {}
     FILES = {}
     META = {}
-    RUNS = {}
+    RUNNUMBERS = {}
+    RUNIDS = {}
+    JOBS = {}
+    JOBIDS = {}
+    JOBTESTREPORTS = {}
 
     def __init__(self):
         '''
@@ -134,7 +138,7 @@ class GithubMock(object):
         #import epdb; epdb.st()
         return links
 
-    def fetch_fixtures(self, org, repo, number, token=None):
+    def fetch_fixtures(self, org, repo, number, token=None, shippable_token=None):
 
         if token:
             self.TOKEN = token
@@ -230,10 +234,12 @@ class GithubMock(object):
 
             # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
             # https://api.shippable.com/runs/58caf30337380a0800e31219
-            runids = set()
+            runs = set()
             for status in statuses:
                 # a finished job will have a target url ending with /summary
                 #_trr = requests.get(status['target_url'])
+                if 'shippable' not in status['target_url']:
+                    continue
                 sparts = status['target_url'].split('/')
                 if sparts[-1] == 'summary':
                     runid = sparts[-2]
@@ -241,23 +247,102 @@ class GithubMock(object):
                     runid = sparts[-1]
                 else:
                     import epdb; epdb.st()
-                runids.add(runid)
+                runs.add(runid)
+                #import epdb; epdb.st()
 
-            for runid in runids:
-                rurl = 'https://api.shippable.com/runs'
-                rurl += '?'
-                rurl += 'projectIds=%s' % ANSIBLE_PROJECT_ID
-                rurl += '&'
-                rurl += 'runNumbers=%s' % runid
+            for runNumber in runs:
+                if len(runNumber) < 24:
+                    rurl = 'https://api.shippable.com/runs'
+                    rurl += '?'
+                    rurl += 'projectIds=%s' % ANSIBLE_PROJECT_ID
+                    rurl += '&'
+                    rurl += 'runNumbers=%s' % runNumber
+                    #rurl += 'runIds=%s' % run
+                else:
+                    import epdb; epdb.st()
 
-                ridrr = requests.get(rurl)
+
+                print('\t(F) %s' % rurl)
+                sheaders = {'Authorize': 'apiToken %s' % shippable_token}
+                rndrr = requests.get(rurl, headers=sheaders)
                 self.write_fixture(
                     fixdir,
-                    'run_%s' % runid,
-                    ridrr.json(),
-                    dict(ridrr.headers)
+                    'runNumber_%s' % runNumber,
+                    rndrr.json(),
+                    dict(rndrr.headers)
                 )
+                rdata = rndrr.json()
+                #if not rdata:
+                #    import epdb; epdb.st()
+                #projectid = ridrr.json()[0]['projectId']
                 #import epdb; epdb.st()
+
+                #if pull['number'] == 47419 or issue['number'] == 47419:
+                #if runNumber == '89652':
+                #    import epdb; epdb.st()
+
+                for run in rdata:
+                    try:
+                        runid = run['id']
+                    except:
+                        import epdb; epdb.st()
+                    projectid = run['projectId']
+                    run_url = 'https://api.shippable.com/runs?projectIds=%s&runIds=%s' % (projectid, runid)
+                    print('\t(F) %s' % run_url)
+                    sheaders = {'Authorize': 'apiToken %s' % shippable_token}
+                    ridrr = requests.get(run_url, headers=sheaders)
+                    ridata = ridrr.json()
+
+                    if isinstance(ridata, list):
+                        import epdb; epdb.st()
+                    self.write_fixture(
+                        fixdir,
+                        'runId_%s' % runid,
+                        ridrr.json(),
+                        dict(ridrr.headers)
+                    )
+
+                    jobsurl = 'https://api.shippable.com/jobs?runIds=%s' % runid
+                    print('\t(F) %s' % jobsurl)
+                    jrr = requests.get(jobsurl, headers=sheaders)
+                    self.write_fixture(
+                        fixdir,
+                        'jobs_%s' % runid,
+                        jrr.json(),
+                        dict(jrr.headers)
+                    )
+
+                    for job in jrr.json():
+                        '''
+                        self.write_fixture(
+                            fixdir,
+                            'jobId_%s' % job['id'],
+                            job,
+                            dict(ridrr.headers)
+                        )
+                        #import epdb; epdb.st()
+                        '''
+
+                        # jobs/<jobid>/jobTestReports
+                        jtr_url = 'https://api.shippable.com/jobs/%s/jobTestReports' % job['id']
+                        print('\t(F) %s' % jtr_url)
+                        jtr_rr = requests.get(jtr_url, headers=sheaders)
+                        self.write_fixture(
+                            fixdir,
+                            'jobTestReport_%s' % job['id'],
+                            jtr_rr.json(),
+                            dict(jtr_rr.headers)
+                        )
+
+                        #import epdb; epdb.st()
+
+                '''
+                projectid = ridrr.json()[0]['projectId']
+                jobsurl = 'https://api.shippable.com/jobs?projectIds=%srunIds=%s' % (projectid, runid)
+                sheaders = {'Authorize': 'apiToken %s' % shippable_token}
+                jrr = requests.get(jobsurl, headers=sheaders)
+                import epdb; epdb.st()
+                '''
 
         #import epdb; epdb.st()
 
@@ -301,9 +386,23 @@ class GithubMock(object):
                 hexdigest = urls[0].split('/')[-1]
                 self.STATUS_HASHES[key] = hexdigest
                 self.PR_STATUSES[hexdigest] = data
-            elif bn.startswith('run_'):
-                runid = bn.replace('run_', '')                
-                self.RUNS[runid] = data
+            elif bn.startswith('runNumber'):
+                runNumber = bn.replace('runNumber_', '')                
+                self.RUNNUMBERS[runNumber] = data
+            elif bn.startswith('runId'):
+                runId = bn.replace('runId_', '')                
+                self.RUNIDS[runId] = data
+            elif bn.startswith('jobId'):
+                jobId = bn.replace('jobId_', '')                
+                self.JOBIDS[jobId] = data
+            elif bn.startswith('jobTestReport_'):
+                jobId = bn.replace('jobTestReport_', '')                
+                self.JOBTESTREPORTS[jobId] = data
+                #if [x for x in data if 'path' not in x]:
+                #    import epdb; epdb.st()
+            elif bn.startswith('jobs_'):
+                jobsId = bn.replace('jobs_', '')                
+                self.JOBS[jobsId] = data
 
     def replace_data_urls(self, data):
         '''Point ALL urls back to this instance instead of the origin'''
@@ -1274,6 +1373,37 @@ def repos(path):
     print(six.text_type((len(path_parts),path_parts)))
 
 
+@app.route('/runs', methods=['GET', 'POST'])
+def shippable_runs():
+    # /runs?projectIds=573f79d02a8192902e20e34b&runNumbers=89651
+    runNumber = request.args.get('runNumbers')
+    run = GM.RUNNUMBERS.get(runNumber, {})
+    return jsonify(run)
+
+
+@app.route('/runs/<runid>', methods=['GET', 'POST'])
+def shippable_run(runid):
+    # /runs?projectIds=573f79d02a8192902e20e34b&runNumbers=89651
+    run = GM.RUNIDS.get(runid, {})
+    print(run)
+    return jsonify(run)
+
+
+@app.route('/jobs/<jobid>/jobTestReports',  methods=['GET', 'POST'])
+def shippable_jobtestreport(jobid):
+    # /jobs/5bce1a1604bbcb0800b221cb/jobTestReports
+    job = GM.JOBTESTREPORTS.get(jobid)
+    return jsonify(job)
+
+
+@app.route('/jobs', methods=['GET', 'POST'])
+def shippable_jobs():
+    # /jobs?runIds=5bce19ed8db149070006b6a2
+    runid = request.args.get('runIds')
+    job = GM.JOBS.get(runid, {})
+    return jsonify(job)
+
+
 @app.route('/<path:path>', methods=['GET', 'POST'])
 def abstract_path(path):
     # /ansible/ansible/issues/1
@@ -1289,6 +1419,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=['fetch', 'load', 'generate'])
     parser.add_argument('--token', default=None)
+    parser.add_argument('--shippable_token', default=None)
     parser.add_argument('--fixtures', default='/tmp/bot.fixtures')
     parser.add_argument('--count', type=int, default=None)
     parser.add_argument('--org', default='ansible')
@@ -1301,7 +1432,13 @@ if __name__ == "__main__":
     if args.action == 'fetch':
         # get the real upstream data for an issue and store it to disk
         for number in args.number:
-            GM.fetch_fixtures(args.org, args.repo, number, token=args.token)
+            GM.fetch_fixtures(
+                args.org,
+                args.repo,
+                number,
+                token=args.token,
+                shippable_token=args.shippable_token
+            )
     else:
         if args.action == 'load':
             # use ondisk fixtures created by 'fetch'
