@@ -299,7 +299,8 @@ class GithubMock(object):
                     import epdb; epdb.st()
 
 
-                print('\t(F) %s' % rurl)
+                #print('\t(F) %s' % rurl)
+                logger.info('\t(F) %s' % rurl)
                 sheaders = {'Authorize': 'apiToken %s' % shippable_token}
                 rndrr = requests.get(rurl, headers=sheaders)
                 self.write_fixture(
@@ -325,65 +326,69 @@ class GithubMock(object):
                         import epdb; epdb.st()
                     projectid = run['projectId']
                     run_url = 'https://api.shippable.com/runs?projectIds=%s&runIds=%s' % (projectid, runid)
-                    print('\t(F) %s' % run_url)
+                    #print('\t(F) %s' % run_url)
+                    logger.info('\t(F) %s' % run_url)
                     sheaders = {'Authorize': 'apiToken %s' % shippable_token}
                     ridrr = requests.get(run_url, headers=sheaders)
                     ridata = ridrr.json()
 
                     # FIXME - why?
-                    if isinstance(ridata, list):
-                        import epdb; epdb.st()
+                    if not isinstance(ridata, list):
+                        ridata = [ridata]
 
-                    self.write_fixture(
-                        fixdir,
-                        'runId_%s' % runid,
-                        ridrr.json(),
-                        dict(ridrr.headers)
-                    )
-
-                    jobsurl = 'https://api.shippable.com/jobs?runIds=%s' % runid
-                    print('\t(F) %s' % jobsurl)
-                    jrr = requests.get(jobsurl, headers=sheaders)
-                    self.write_fixture(
-                        fixdir,
-                        'jobs_%s' % runid,
-                        jrr.json(),
-                        dict(jrr.headers)
-                    )
-
-                    for job in jrr.json():
-                        '''
+                    for _rirun in ridata:
                         self.write_fixture(
                             fixdir,
-                            'jobId_%s' % job['id'],
-                            job,
+                            'runId_%s' % _rirun['id'],
+                            ridrr.json(),
                             dict(ridrr.headers)
                         )
-                        #import epdb; epdb.st()
-                        '''
 
-                        # jobs/<jobid>/jobTestReports
-                        jtr_url = 'https://api.shippable.com/jobs/%s/jobTestReports' % job['id']
-                        print('\t(F) %s' % jtr_url)
-                        jtr_rr = requests.get(jtr_url, headers=sheaders)
+                        jobsurl = 'https://api.shippable.com/jobs?runIds=%s' % _rirun['id']
+                        #print('\t(F) %s' % jobsurl)
+                        logger.info('\t(F) %s' % jobsurl)
+                        jrr = requests.get(jobsurl, headers=sheaders)
                         self.write_fixture(
                             fixdir,
-                            'jobTestReport_%s' % job['id'],
-                            jtr_rr.json(),
-                            dict(jtr_rr.headers)
+                            'jobs_%s' % _rirun['id'],
+                            jrr.json(),
+                            dict(jrr.headers)
                         )
 
-                        #import epdb; epdb.st()
+                        for job in jrr.json():
+                            '''
+                            self.write_fixture(
+                                fixdir,
+                                'jobId_%s' % job['id'],
+                                job,
+                                dict(ridrr.headers)
+                            )
+                            #import epdb; epdb.st()
+                            '''
 
-                '''
-                projectid = ridrr.json()[0]['projectId']
-                jobsurl = 'https://api.shippable.com/jobs?projectIds=%srunIds=%s' % (projectid, runid)
-                sheaders = {'Authorize': 'apiToken %s' % shippable_token}
-                jrr = requests.get(jobsurl, headers=sheaders)
-                import epdb; epdb.st()
-                '''
+                            # jobs/<jobid>/jobTestReports
+                            jtr_url = 'https://api.shippable.com/jobs/%s/jobTestReports' % job['id']
+                            #print('\t(F) %s' % jtr_url)
+                            logger.info('\t(F) %s' % jtr_url)
+                            jtr_rr = requests.get(jtr_url, headers=sheaders)
+                            self.write_fixture(
+                                fixdir,
+                                'jobTestReport_%s' % job['id'],
+                                jtr_rr.json(),
+                                dict(jtr_rr.headers)
+                            )
 
-        #import epdb; epdb.st()
+                            #import epdb; epdb.st()
+
+                    '''
+                    projectid = ridrr.json()[0]['projectId']
+                    jobsurl = 'https://api.shippable.com/jobs?projectIds=%srunIds=%s' % (projectid, runid)
+                    sheaders = {'Authorize': 'apiToken %s' % shippable_token}
+                    jrr = requests.get(jobsurl, headers=sheaders)
+                    import epdb; epdb.st()
+                    '''
+
+            #import epdb; epdb.st()
 
     def load_issue_fixtures(self, org, repo, number):
         number = int(number)
