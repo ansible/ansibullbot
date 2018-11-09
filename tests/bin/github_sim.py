@@ -14,6 +14,7 @@ import six
 import subprocess
 import time
 
+from logzero import logger
 from pprint import pprint
 from flask import Flask
 from flask import jsonify
@@ -102,29 +103,33 @@ class GithubMock(object):
         '''
         pass
 
-    def tokenized_request(self, url):
-        print('\t(F) %s' % url)
+    def tokenized_request(self, url, headers=None):
+        #print('\t(F) %s' % url)
+        logger.info('(F) %s' % url)
         _headers = {}
         if self.TOKEN:
             _headers['Authorization'] = 'token %s' % self.TOKEN
 
         # reactions
         _headers['Accept'] = 'application/vnd.github.squirrel-girl-preview+json'
+        if headers is not None:
+            for k,v in headers.items():
+                _headers[k] = v
 
         rr = requests.get(url, headers=_headers)
         data = rr.json()
-        headers = dict(rr.headers)
+        rheaders = dict(rr.headers)
 
-        if 'Link' in headers:
+        if 'Link' in rheaders:
             #links = headers['Link'].split(',')
             #links = [x.split(';') for x in links]
-            links = self.extract_header_links(headers)
+            links = self.extract_header_links(rheaders)
             if links.get('next'):
                 (_headers, _data) = self.tokenized_request(links['next'])
                 data += _data
                 #import epdb; epdb.st()
 
-        return (headers, data)
+        return (rheaders, data)
 
     def extract_header_links(self, headers):
 
@@ -182,7 +187,39 @@ class GithubMock(object):
             #prr = requests.get(purl)
             #pull = prr.json()
             #pull_headers = dict(prr.headers)
-            (pull_headers, pull) = self.tokenized_request(purl) 
+
+            etag = None
+            mergeable_state = 'unknown'
+            count = 0
+            while mergeable_state == 'unknown':
+                if count > 0:
+                    logger.warning('refetch pull %s for mergeable state' % number)
+                count += 1
+
+                (pull_headers, pull) = self.tokenized_request(
+                    purl,
+                    headers={
+                        'ETag': etag
+                    }
+                ) 
+                if pull['state'] == 'closed':
+                    break
+                    #continue
+
+                logger.debug(pull['state'])
+                etag = pull_headers['ETag']
+                mergeable_state = pull['mergeable_state']                
+                #import epdb; epdb.st()
+                if mergeable_state == 'unknown':
+                    time.sleep(5)
+                #import epdb; epdb.st()
+
+            if pull['state'] == 'closed':
+                #continue
+                return None
+
+            #import epdb; epdb.st()
+
             self.write_fixture(fixdir, 'pull_request', pull, pull_headers)
 
             curl = pull['commits_url']
@@ -293,8 +330,10 @@ class GithubMock(object):
                     ridrr = requests.get(run_url, headers=sheaders)
                     ridata = ridrr.json()
 
+                    # FIXME - why?
                     if isinstance(ridata, list):
                         import epdb; epdb.st()
+
                     self.write_fixture(
                         fixdir,
                         'runId_%s' % runid,
