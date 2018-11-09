@@ -86,12 +86,19 @@ class TestComponentMatcher(TestCase):
         self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/modules/packaging/os/yum.py': {
-                    u'maintainers': [u'maxamillion'],
+                    u'ignored': [u'verm666'],  # 'verm666' is also listed as an author of yum module
+                    u'maintainers': [u'maxamillion', u'verm666'],
                 }
             }
         }
         result = self.component_matcher.get_meta_for_file(u'lib/ansible/modules/packaging/os/yum.py')
-        self.assertEqual(result[u'maintainers'], [u'maxamillion'])
+        assert sorted(result[u'maintainers']) == sorted([
+            u'Akasurde',
+            u'ansible',
+            u'berenddeschouwer',
+            u'kustodian',
+            u'maxamillion',
+        ])
 
     def test_get_meta_for_file_powershell(self):
         self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
@@ -103,8 +110,9 @@ class TestComponentMatcher(TestCase):
             }
         }
         result = self.component_matcher.get_meta_for_file(u'lib/ansible/modules/windows/win_ping.ps1')
-        self.assertEqual(result[u'labels'], [u'windoez'])
-        self.assertEqual(result[u'maintainers'], [u'jborean93'])
+        assert result[u'labels'] == [u'windoez']
+        expected_maintainers = sorted([u'cchurch', u'jborean93'])
+        assert sorted(result[u'maintainers']) == expected_maintainers
 
     def test_reduce_filepaths(self):
 
