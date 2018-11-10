@@ -1,12 +1,88 @@
 #!/usr/bin/env python
 
 import argparse
+import glob
+import json
 import os
+import requests
 import shutil
 import subprocess
 import sys
+import threading
 import tempfile
 import yaml
+
+from logzero import logger
+
+
+class SimRunner(object):
+    def __init__(self, meta=None, number=None):
+        self.meta = meta
+        self.number = number
+        self.simpid = None
+        self.tmpdir = tempfile.mkdtemp()
+        self.kill()
+        thread = threading.Thread(target=self.run, args=())
+        thread.daemon = True
+        thread.start()
+
+    def kill(self):
+        #self.simpid.kill()
+        #os.kill(self.simpid.pid)
+        cmd = "lsof -i :5000 | head -n2 | tail -n1 | awk '{print $2}'"
+        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        (so, se) = p.communicate()
+        pid = so.strip()
+        if pid:
+            #import epdb; epdb.st()
+            os.kill(int(pid), 9)
+        #import epdb; epdb.st()
+
+    def run(self):
+        '''Spawn a processs for the simulator'''
+        if not os.path.exists(self.tmpdir):
+            os.makedirs(self.tmpdir)
+
+        fixture_path = os.path.join(
+            'tests',
+            'fixtures',
+            'issues',
+            self.meta['fixtures_date']
+        )
+
+        cmd = 'python tests/bin/github_sim.py'    
+        cmd += ' '
+        cmd += 'load'
+        cmd += ' '
+        cmd += '--fixtures=%s' % fixture_path
+        if self.number:
+            cmd += ' '
+            cmd += '--number=%s' % self.number
+        cmd += ' | tee -a %s/sim.log' % self.tmpdir
+        logger.info(cmd)
+
+        self.simpid = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            shell=True
+        )
+
+        #self.simpid.stdout.readline()
+        #print(self.simpid.returncode)
+        #import epdb; epdb.st()
+
+        while True:
+            #logger.debug('getting next line of sim output ...')
+            line = self.simpid.stdout.readline().rstrip()
+            logger.debug(line)
+            if line == '' and self.simpid.poll() != None:
+                break
+
+        try:
+            self.simpid.kill()
+        except Exception as e:
+            logger.warning(e)
 
 
 class IntegrationTest(object):
@@ -15,19 +91,24 @@ class IntegrationTest(object):
         self.target = target
         self.target_info = None
         self.simpid = None
+        self.sim = None
+        self.target_path = os.path.join('tests', 'integration', 'targets', self.target)
         self.target_meta = self.read_target_meta(self.target)
         self.tmpdir = tempfile.mkdtemp()
-        self.run_simulator(self.target_meta)
+        self.run_simulator(self.target_meta, number=47375)
         self.run_bot()
         self.kill_simulator()
+        self.check_results()
 
     def write_bot_config(self, directory=None):
+        '''Make an isolated config for testing'''
         cfg = [
             '[defaults]',
             'debug=True',
             'breakpoints=False',
             'ratelimit=False',
             'shippable_token=XXXX-XXXX-XXXX',
+            'shippable_url=http://localhost:5000',
             'github_url=http://localhost:5000',
             'github_username=ansibot',
             'github_password=foobar',
@@ -39,17 +120,18 @@ class IntegrationTest(object):
             f.write(cfg)
 
     def read_target_meta(self, target):
-        mpath = os.path.join('tests', 'integration', 'targets', target, 'meta.yml')
+        '''Targets have meta to inform how tests should run'''
+        mpath = os.path.join(self.target_path, 'meta.yml')
         with open(mpath, 'r') as f:
             ydata = yaml.load(f.read())
         #import epdb; epdb.st()
         return ydata
 
     def run_bot(self):
+        '''Fork the bot and let it triage the issue(s)'''
         if not os.path.exists(self.tmpdir):
             os.makedirs(self.tmpdir)
         self.write_bot_config(directory=self.tmpdir)
-        #self.write_bot_config(directory='/tmp')
 
         cmd = [
             'ANSIBULLBOT_CONFIG=%s/ansibullbot.cfg' % self.tmpdir,
@@ -61,10 +143,11 @@ class IntegrationTest(object):
             '--skip_module_repos',
             '--ignore_module_commits',
             '--cachedir=%s' % os.path.join(self.tmpdir, 'cache'),
-            '--force'
+            '--force',
+            '--id=47375'
         ]
         cmd = ' '.join(cmd)
-        print(cmd)
+        logger.info(cmd)
 
         p = subprocess.Popen(
             cmd,
@@ -72,40 +155,60 @@ class IntegrationTest(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
-        (so, se) = p.communicate()
-        import epdb; epdb.st()
+
+        output = []
+
+        while True:
+            line = p.stdout.readline().rstrip()
+            logger.info(line)
+            output.append(line)
+            if line == '' and p.poll() != None:
+                break
+
+        logger.info('bot returncode: %s' % p.returncode)
+        return (p.returncode, output, None)
 
     def kill_simulator(self):
-        self.simpid.kill()
+        self.sim.kill()
 
-    def run_simulator(self, meta):
+    def run_simulator(self, meta, number=None):
+        '''Spawn the simulator thread'''
+        self.sim = SimRunner(meta=meta, number=number)
 
-        if not os.path.exists(self.tmpdir):
-            os.makedirs(self.tmpdir)
+        # wait for sim to load ...
+        simurl = 'http://localhost:5000'
+        while True:
+            try:
+                rr = requests.get(simurl)
+            except requests.exceptions.ConnectionError:
+                continue
+            break
 
-        fixture_path = os.path.join(
-            'tests',
-            'fixtures',
-            'issues',
-            meta['fixtures_date']
-        )
+    def check_results(self):
+        '''Compare saved meta vs expected meta'''
 
-        cmd = 'python tests/bin/github_sim.py'    
-        cmd += ' '
-        cmd += 'load'
-        cmd += ' '
-        cmd += '--fixtures=%s' % fixture_path
-        cmd += ' | tee -a %s/sim.log' % self.tmpdir
+        # /tmp/tmpstCSTB/cache/ansible/ansible/issues/47375/meta.json
+        cachedir = os.path.join(self.tmpdir, 'cache')
+        metafiles = glob.glob('%s/*/*/*/*/meta.json' % cachedir)
 
-        self.simpid = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=True
-        )
+        for mf in metafiles:
+            logger.info(mf)
 
-        #self.simpid.stdout.readline()
-        #print(self.simpid.returncode)
+            paths = mf.split('/')
+            number = paths[-2]
+            repo = paths[-4]
+            org = paths[-5]
+
+            with open(mf, 'r') as f:
+                meta = json.loads(f.read())
+
+            check_file = os.path.join(self.target_path, 'data', org, repo, number, 'meta.json')
+            logger.info(check_file)
+            with open(check_file, 'r') as f:
+                expected = json.loads(f.read())
+
+            assert meta['actions'] == expected['actions']
+
         #import epdb; epdb.st()
 
 
@@ -122,7 +225,6 @@ def main():
     args = parser.parse_args()
 
     IT = IntegrationTest(target=args.target)
-
 
 
 if __name__ == "__main__":

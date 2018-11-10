@@ -391,6 +391,7 @@ class GithubMock(object):
             #import epdb; epdb.st()
 
     def load_issue_fixtures(self, org, repo, number):
+        logger.info('load %s %s %s' % (org, repo, number))
         number = int(number)
         key = (org, repo, number)
         bd = os.path.join(self.fixturedir, 'repos', org, repo, str(number))
