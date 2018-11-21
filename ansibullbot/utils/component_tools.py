@@ -1042,6 +1042,10 @@ class AnsibleComponentMatcher(object):
                 if meta[u'metadata'][u'supported_by']:
                     meta[u'support'] = meta[u'metadata'][u'supported_by']
 
+        # reconcile the delta between a child and it's parents
+        #support_levels = set()
+        support_levels = {}
+
         for entry in botmeta_entries:
             fdata = self.BOTMETA[u'files'][entry].copy()
 
@@ -1059,18 +1063,20 @@ class AnsibleComponentMatcher(object):
                 meta[u'ignore'] += fdata[u'ignore']
             if u'ignored' in fdata:
                 meta[u'ignore'] += fdata[u'ignored']
+
             if u'support' in fdata:
                 if isinstance(fdata[u'support'], list):
-                    meta[u'support'] = fdata[u'support'][0]
+                    support_levels[entry] = fdata[u'support'][0]
                 else:
                     meta[u'support'] = fdata[u'support']
             elif u'supported_by' in fdata:
                 if isinstance(fdata[u'supported_by'], list):
-                    meta[u'support'] = fdata[u'supported_by'][0]
+                    support_levels[entry] = fdata[u'supported_by'][0]
                 else:
-                    meta[u'support'] = fdata[u'supported_by']
+                    support_levels[entry] = fdata[u'supported_by']
 
-            if u'deprecated' in fdata:
+            # only "deprecate" exact matches
+            if u'deprecated' in fdata and entry == filename:
                 meta[u'deprecated'] = fdata[u'deprecated']
 
             populated = True
@@ -1081,11 +1087,16 @@ class AnsibleComponentMatcher(object):
             thispath = u'/'.join(paths[:(0-idx)])
             if thispath in self.BOTMETA[u'files']:
                 fdata = self.BOTMETA[u'files'][thispath].copy()
-                if u'support' in fdata and not meta[u'support']:
+                if u'support' in fdata:
                     if isinstance(fdata[u'support'], list):
-                        meta[u'support'] = fdata[u'support'][0]
+                        support_levels[thispath] = fdata[u'support'][0]
                     else:
-                        meta[u'support'] = fdata[u'support']
+                        support_levels[thispath] = fdata[u'support']
+                elif u'supported_by' in fdata:
+                    if isinstance(fdata[u'supported_by'], list):
+                        support_levels[thispath] = fdata[u'supported_by'][0]
+                    else:
+                        support_levels[thispath] = fdata[u'supported_by']
                 if u'labels' in fdata:
                     meta[u'labels'] += fdata[u'labels']
                 if u'maintainers' in fdata:
@@ -1122,6 +1133,17 @@ class AnsibleComponentMatcher(object):
             for ignoree in ignored:
                 while ignoree in meta[u'namespace_maintainers']:
                     meta[u'namespace_maintainers'].remove(ignoree)
+
+        # reconcile support levels
+        if filename in support_levels:
+            meta['support'] = support_levels[filename]
+            meta['supported_by'] = support_levels[filename]
+        else:
+            keys = support_levels.keys()
+            keys = sorted(keys, key=lambda x: len(x))
+            if keys:
+                meta['support'] = support_levels[keys[0]]
+                meta['supported_by'] = support_levels[keys[0]]
 
         # new modules should default to "community" support
         if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files:
