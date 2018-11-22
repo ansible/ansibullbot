@@ -1047,7 +1047,6 @@ class AnsibleComponentMatcher(object):
                     meta[u'support'] = meta[u'metadata'][u'supported_by']
 
         # reconcile the delta between a child and it's parents
-        #support_levels = set()
         support_levels = {}
 
         for entry in botmeta_entries:
@@ -1297,9 +1296,6 @@ class AnsibleComponentMatcher(object):
                     if mf.endswith((pattern, ppy, ps1)):
                         candidate = mf
                         break
-
-        #if candidate.startswith('/private'):
-        #    import epdb; epdb.st()
 
         return candidate
 
