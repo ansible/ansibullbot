@@ -173,6 +173,10 @@ class AnsibleComponentMatcher(object):
         lines = to_text(so).split(u'\n')
         for line in lines:
 
+            # compat for macos tmpdirs
+            if ' /private' in line:
+                line = line.replace(' /private', '', 1)
+
             parts = line.split()
             parts = [x.strip() for x in parts]
 
@@ -1293,6 +1297,9 @@ class AnsibleComponentMatcher(object):
                     if mf.endswith((pattern, ppy, ps1)):
                         candidate = mf
                         break
+
+        #if candidate.startswith('/private'):
+        #    import epdb; epdb.st()
 
         return candidate
 

@@ -3,6 +3,7 @@
 import ast
 import logging
 import operator
+import os
 import re
 #import shlex
 import yaml
@@ -430,6 +431,8 @@ class ModuleExtractor(object):
     @property
     def filedata(self):
         if self._FILEDATA is None:
+            if not os.path.exists(self.filepath):
+                return ''
             with open(self.filepath, 'rb') as f:
                 self._FILEDATA = f.read()
         return self._FILEDATA
