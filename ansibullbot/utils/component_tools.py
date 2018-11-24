@@ -1030,6 +1030,8 @@ class AnsibleComponentMatcher(object):
                 filenames.append(pyfile)
 
         botmeta_entries = self.file_indexer._filenames_to_keys(filenames)
+        for bme in botmeta_entries:
+            logging.debug('matched botmeta entry: %s' % bme)
 
         # Modules contain metadata in docstrings and that should
         # be factored in ...
@@ -1139,14 +1141,18 @@ class AnsibleComponentMatcher(object):
 
         # reconcile support levels
         if filename in support_levels:
+            # exact match
             meta['support'] = support_levels[filename]
             meta['supported_by'] = support_levels[filename]
+            logging.debug('%s support == %s' % (filename, meta['supported_by']))
         else:
+            # pick the closest match
             keys = support_levels.keys()
-            keys = sorted(keys, key=lambda x: len(x))
+            keys = sorted(keys, key=lambda x: len(x), reverse=True)
             if keys:
                 meta['support'] = support_levels[keys[0]]
                 meta['supported_by'] = support_levels[keys[0]]
+                logging.debug('%s support == %s' % (keys[0], meta['supported_by']))
 
         # new modules should default to "community" support
         if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files:
