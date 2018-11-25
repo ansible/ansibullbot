@@ -1073,7 +1073,7 @@ class AnsibleComponentMatcher(object):
                 if isinstance(fdata[u'support'], list):
                     support_levels[entry] = fdata[u'support'][0]
                 else:
-                    meta[u'support'] = fdata[u'support']
+                    support_levels[entry] = fdata[u'support']
             elif u'supported_by' in fdata:
                 if isinstance(fdata[u'supported_by'], list):
                     support_levels[entry] = fdata[u'supported_by'][0]
