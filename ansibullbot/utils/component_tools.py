@@ -173,6 +173,10 @@ class AnsibleComponentMatcher(object):
         lines = to_text(so).split(u'\n')
         for line in lines:
 
+            # compat for macos tmpdirs
+            if ' /private' in line:
+                line = line.replace(' /private', '', 1)
+
             parts = line.split()
             parts = [x.strip() for x in parts]
 
@@ -1026,6 +1030,8 @@ class AnsibleComponentMatcher(object):
                 filenames.append(pyfile)
 
         botmeta_entries = self.file_indexer._filenames_to_keys(filenames)
+        for bme in botmeta_entries:
+            logging.debug('matched botmeta entry: %s' % bme)
 
         # Modules contain metadata in docstrings and that should
         # be factored in ...
@@ -1041,6 +1047,9 @@ class AnsibleComponentMatcher(object):
             if meta[u'metadata']:
                 if meta[u'metadata'][u'supported_by']:
                     meta[u'support'] = meta[u'metadata'][u'supported_by']
+
+        # reconcile the delta between a child and it's parents
+        support_levels = {}
 
         for entry in botmeta_entries:
             fdata = self.BOTMETA[u'files'][entry].copy()
@@ -1059,18 +1068,20 @@ class AnsibleComponentMatcher(object):
                 meta[u'ignore'] += fdata[u'ignore']
             if u'ignored' in fdata:
                 meta[u'ignore'] += fdata[u'ignored']
+
             if u'support' in fdata:
                 if isinstance(fdata[u'support'], list):
-                    meta[u'support'] = fdata[u'support'][0]
+                    support_levels[entry] = fdata[u'support'][0]
                 else:
-                    meta[u'support'] = fdata[u'support']
+                    support_levels[entry] = fdata[u'support']
             elif u'supported_by' in fdata:
                 if isinstance(fdata[u'supported_by'], list):
-                    meta[u'support'] = fdata[u'supported_by'][0]
+                    support_levels[entry] = fdata[u'supported_by'][0]
                 else:
-                    meta[u'support'] = fdata[u'supported_by']
+                    support_levels[entry] = fdata[u'supported_by']
 
-            if u'deprecated' in fdata:
+            # only "deprecate" exact matches
+            if u'deprecated' in fdata and entry == filename:
                 meta[u'deprecated'] = fdata[u'deprecated']
 
             populated = True
@@ -1081,11 +1092,16 @@ class AnsibleComponentMatcher(object):
             thispath = u'/'.join(paths[:(0-idx)])
             if thispath in self.BOTMETA[u'files']:
                 fdata = self.BOTMETA[u'files'][thispath].copy()
-                if u'support' in fdata and not meta[u'support']:
+                if u'support' in fdata:
                     if isinstance(fdata[u'support'], list):
-                        meta[u'support'] = fdata[u'support'][0]
+                        support_levels[thispath] = fdata[u'support'][0]
                     else:
-                        meta[u'support'] = fdata[u'support']
+                        support_levels[thispath] = fdata[u'support']
+                elif u'supported_by' in fdata:
+                    if isinstance(fdata[u'supported_by'], list):
+                        support_levels[thispath] = fdata[u'supported_by'][0]
+                    else:
+                        support_levels[thispath] = fdata[u'supported_by']
                 if u'labels' in fdata:
                     meta[u'labels'] += fdata[u'labels']
                 if u'maintainers' in fdata:
@@ -1122,6 +1138,21 @@ class AnsibleComponentMatcher(object):
             for ignoree in ignored:
                 while ignoree in meta[u'namespace_maintainers']:
                     meta[u'namespace_maintainers'].remove(ignoree)
+
+        # reconcile support levels
+        if filename in support_levels:
+            # exact match
+            meta['support'] = support_levels[filename]
+            meta['supported_by'] = support_levels[filename]
+            logging.debug('%s support == %s' % (filename, meta['supported_by']))
+        else:
+            # pick the closest match
+            keys = support_levels.keys()
+            keys = sorted(keys, key=lambda x: len(x), reverse=True)
+            if keys:
+                meta['support'] = support_levels[keys[0]]
+                meta['supported_by'] = support_levels[keys[0]]
+                logging.debug('%s support == %s' % (keys[0], meta['supported_by']))
 
         # new modules should default to "community" support
         if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files:
