@@ -126,8 +126,23 @@ class TestComponentMatcher(TestCase):
             }
         }
         result = self.component_matcher.get_meta_for_file(u'lib/ansible/plugins/filter/core.py')
-        #import epdb; epdb.st()
         assert result[u'support'] == u'core'
+
+    def test_get_meta_support_new_filter_plugin(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            u'files': {
+                u'lib/ansible/plugins/filter/': {
+                    u'support': u'community',
+                    u'supported_by': u'community',
+                },
+                u'lib/ansible/plugins/filter/core.py': {
+                    u'support': u'core',
+                    u'supported_by': u'core'
+                },
+            }
+        }
+        result = self.component_matcher.get_meta_for_file(u'lib/ansible/plugins/filter/new.py')
+        assert result[u'support'] == u'community'
 
     def test_get_meta_for_file_powershell(self):
         self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
