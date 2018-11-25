@@ -19,3 +19,6 @@
 [submodule "playbooks/roles/yum-cron"]
 	path = playbooks/roles/yum-cron
 	url = https://github.com/samdoran/ansible-role-yum-cron.git
+[submodule "playbooks/roles/geerlingguy.docker"]
+	path = playbooks/roles/geerlingguy.docker
+	url = https://github.com/geerlingguy/ansible-role-docker
