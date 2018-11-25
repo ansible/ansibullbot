@@ -84,7 +84,7 @@ def get_receiver_summaries(username, reponame, state=None, number=None):
     return None
 
 
-def get_receiver_metadata(username, reponame, number=None):
+def get_receiver_metadata(username, reponame, number=None, keys=None):
     '''
     @app.route('/metadata', methods=['GET', 'POST'])
     def metadata():
@@ -113,6 +113,8 @@ def get_receiver_metadata(username, reponame, number=None):
         params = {u'user': username, u'repo': reponame}
         if number:
             params[u'number'] = number
+        if keys:
+            params[u'key'] = keys
 
         rr = None
         try:
@@ -127,5 +129,3 @@ def get_receiver_metadata(username, reponame, number=None):
             return rr.json()
 
     return None
-
-
