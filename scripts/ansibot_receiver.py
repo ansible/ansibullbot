@@ -90,6 +90,7 @@ def metadata():
     username = request.args.get('user')
     reponame = request.args.get('repo')
     number = request.args.get('number')
+    keys = request.args.getlist('key')
     if number:
         number = int(number)
 
@@ -122,10 +123,22 @@ def metadata():
         return jsonify(res)
 
     elif request.method == 'GET':
-        # get the existing document
-        cursor = mongo.db.metadata.find(
-            {'github_org': username, 'github_repo': reponame, 'github_number': number}
-        )
+
+        if not keys:
+            # get the existing document
+            cursor = mongo.db.metadata.find(
+                {'github_org': username, 'github_repo': reponame, 'github_number': number}
+            )
+        else:
+            pipeline = [
+                {'$match': {'github_org': username, 'github_repo': reponame, 'github_number': number}},
+            ]
+            project = {'_id': 0, 'number': 1}
+            for keyname in keys:
+                project[keyname] = 1
+            pipeline.append({'$project': project})
+            cursor = mongo.db.metadata.aggregate(pipeline)
+
         docs = list(cursor)
         docs = [dict(x) for x in docs]
         for idx,x in enumerate(docs):
