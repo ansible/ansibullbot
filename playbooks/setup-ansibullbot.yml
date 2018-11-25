@@ -15,6 +15,7 @@
     - repo-epel
     - firewall
     - fail2ban
+    - geerlingguy.docker
     - mongodb
     - ansibullbot
     - yum-cron
