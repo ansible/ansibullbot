@@ -19,3 +19,4 @@
     - mongodb
     - ansibullbot
     - yum-cron
+    - ansibullbot.httpd
