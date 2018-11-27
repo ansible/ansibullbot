@@ -806,18 +806,6 @@ class AnsibleTriage(DefaultTriager):
                 if u'needs_triage' not in actions.unlabel:
                     actions.unlabel.append(u'needs_triage')
 
-        # Thank submitter
-        if iw.created_at > datetime.datetime(2018, 10, 11): # before, PR could already have been thanked
-            previous_comment = iw.history.last_date_for_boilerplate(u'thank_submitter')
-            if not previous_comment:
-                tvars = {
-                    u'submitter': iw.submitter,
-                    u'is_pullrequest': iw.is_pullrequest(),
-                }
-                comment = self.render_boilerplate(tvars, boilerplate=u'thank_submitter')
-                if comment not in actions.comments:
-                    actions.comments.insert(0, comment) # thank should be first comment
-
         # owner PRs
         if iw.is_pullrequest():
             if self.meta[u'owner_pr']:
