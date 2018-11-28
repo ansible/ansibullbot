@@ -862,6 +862,8 @@ class ModuleIndexer(object):
     def extract_github_id(self, author):
         authors = set()
 
+        if author is None:
+            return list()
         if u'ansible core team' in author.lower():
             authors.add(u'ansible')
         elif u'@' in author:
