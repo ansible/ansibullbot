@@ -17,6 +17,8 @@ class TestGitHubIdExtractor(unittest.TestCase):
 
     def test_extract(self):
         authors = [
+            (None, []),  # Testing for None, which should return an empty list,
+            (u'#- "Hai Cao <t-haicao@microsoft.com>"', []),  # Commented out author line should return an empty list
             (u'First-Name Last (@k0-mIg)', [u'k0-mIg']),  # expected format
             (u'Ansible Core Team', [u'ansible']),  # special case
             (u'Ansible core Team', [u'ansible']),  # special case
