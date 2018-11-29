@@ -14,14 +14,14 @@ if [[ $RC != 0 ]]; then
 fi
 
 # BASELINE PACKAGES
-PACKAGES="epel-release ansible git vim-enhanced bind-utils policycoreutils-python"
+PACKAGES="epel-release ansible git vim-enhanced bind-utils policycoreutils-python net-tools lsof"
 for PKG in $PACKAGES; do
     rpm -q $PKG || yum -y install $PKG
 done
 
 # VIMRC
 rm -f /etc/vimrc
-cp /vagrant/playbook/files/centos7.vimrc /etc/vimrc
+cp /vagrant/playbooks/files/centos7.vimrc /etc/vimrc
 
 # PSEUDO ANSIBLE-LOCAL PROVISIONER
 echo "ansibullbot ansible_host=localhost ansible_connection=local" > /tmp/inv.ini
@@ -32,6 +32,11 @@ ansible-playbook \
     -e "ansibullbot_action=install" \
     --skip-tags=botinstance,dns,ssh,ansibullbot_service,ansibullbot_logs \
     setup-ansibullbot.yml
+
+# HACK IN FIREWALL EXCEPTIONS
+firewall-cmd --zone=public --add-port=80/tcp --permanent
+firewall-cmd --reload
+
 SCRIPT
 
 ENV['VAGRANT_DEFAULT_PROVIDER'] = 'virtualbox'

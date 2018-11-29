@@ -1,0 +1,47 @@
+version: '3.3'
+services:
+  rabbit:
+    hostname: rabbit
+    image: rabbitmq:latest
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=mypass
+    ports:
+      - "5673:5672"
+    networks:
+      ansibot_nw:
+        ipv4_address: 172.20.0.2
+  schemavalidator:
+    hostname: schemavalidator
+    image: schemavalidator
+    build:
+      context: .
+      dockerfile: botmeta_schema_validator/Dockerfile
+    links:
+      - rabbit
+    depends_on:
+      - rabbit
+    networks:
+      ansibot_nw:
+        ipv4_address: 172.20.0.4
+    environment:
+      PYTHONUNBUFFERED: 1
+      CELERY_BROKER_URL: pyamqp://rabbit:5672
+      CELERY_RESULT_BACKEND: mongodb://mongo:27017
+      CELERY_MONGODB_BACKEND_DATABASE: schemavalidator
+      CELERY_MONGODB_BACKEND_COLLECTION: results
+  database:
+    hostname: mongo
+    image: mongo:latest
+    ports:
+      - "27018:27017"
+    networks:
+      ansibot_nw:
+        ipv4_address: 172.20.0.3
+
+networks:
+  ansibot_nw:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
