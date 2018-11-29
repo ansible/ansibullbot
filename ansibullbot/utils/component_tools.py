@@ -174,8 +174,8 @@ class AnsibleComponentMatcher(object):
         for line in lines:
 
             # compat for macos tmpdirs
-            if ' /private' in line:
-                line = line.replace(' /private', '', 1)
+            if u' /private' in line:
+                line = line.replace(u' /private', u'', 1)
 
             parts = line.split()
             parts = [x.strip() for x in parts]
@@ -1031,7 +1031,7 @@ class AnsibleComponentMatcher(object):
 
         botmeta_entries = self.file_indexer._filenames_to_keys(filenames)
         for bme in botmeta_entries:
-            logging.debug('matched botmeta entry: %s' % bme)
+            logging.debug(u'matched botmeta entry: %s' % bme)
 
         # Modules contain metadata in docstrings and that should
         # be factored in ...
@@ -1040,7 +1040,7 @@ class AnsibleComponentMatcher(object):
         if u'lib/ansible/modules' in filename:
             mmatch = self.find_module_match(filename)
             if len(mmatch) == 1 and mmatch[0][u'filename'] == filename:
-                meta[u'metadata'].update(mmatch[0]['metadata'])
+                meta[u'metadata'].update(mmatch[0][u'metadata'])
                 for k in u'authors', u'maintainers':
                     meta[k] += mmatch[0][k]
 
@@ -1142,17 +1142,17 @@ class AnsibleComponentMatcher(object):
         # reconcile support levels
         if filename in support_levels:
             # exact match
-            meta['support'] = support_levels[filename]
-            meta['supported_by'] = support_levels[filename]
-            logging.debug('%s support == %s' % (filename, meta['supported_by']))
+            meta[u'support'] = support_levels[filename]
+            meta[u'supported_by'] = support_levels[filename]
+            logging.debug(u'%s support == %s' % (filename, meta[u'supported_by']))
         else:
             # pick the closest match
             keys = support_levels.keys()
-            keys = sorted(keys, key=lambda x: len(x), reverse=True)
+            keys = sorted(keys, key=len, reverse=True)
             if keys:
-                meta['support'] = support_levels[keys[0]]
-                meta['supported_by'] = support_levels[keys[0]]
-                logging.debug('%s support == %s' % (keys[0], meta['supported_by']))
+                meta[u'support'] = support_levels[keys[0]]
+                meta[u'supported_by'] = support_levels[keys[0]]
+                logging.debug(u'%s support == %s' % (keys[0], meta[u'supported_by']))
 
         # new modules should default to "community" support
         if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files:

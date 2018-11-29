@@ -431,10 +431,11 @@ class ModuleExtractor(object):
     @property
     def filedata(self):
         if self._FILEDATA is None:
-            if not os.path.exists(self.filepath):
-                return ''
-            with open(self.filepath, 'rb') as f:
-                self._FILEDATA = f.read()
+            try:
+                with open(self.filepath, 'rb') as f:
+                    self._FILEDATA = f.read()
+            except (IOError, OSError):
+                return b''
         return self._FILEDATA
 
     @property
