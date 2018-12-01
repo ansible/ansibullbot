@@ -7,7 +7,7 @@
 - name: enable httpd
   service:
     name: httpd
-    enabled: yes
+    enabled: true
 
 - name: copy the proxy config
   template:
