@@ -15,6 +15,7 @@ ansibullbot_options:
 firewall_allowed_tcp_ports:
   - 22
   - 80
+  - 443
 
 ansibullbot_receiver_enabled: true
 
