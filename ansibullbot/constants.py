@@ -311,3 +311,49 @@ DEFAULT_RECEIVER_PORT = get_config(
     None,
     value_type='int'
 )
+
+###########################################
+#   SENTRY ERROR REPORTING
+###########################################
+# Ref:
+# https://docs.sentry.io/error-reporting/configuration/?platform=python
+###########################################
+
+SENTRY_SECTION = 'sentry'
+SENTRY_ENV_VAR_TMPL = 'SENTRY_{var_name}'
+
+DEFAULT_SENTRY_DSN = get_config(
+    p,
+    SENTRY_SECTION,
+    'dsn',
+    SENTRY_ENV_VAR_TMPL.format(var_name='DSN'),
+    None,
+    value_type='string'
+)
+
+DEFAULT_SENTRY_ENV = get_config(
+    p,
+    SENTRY_SECTION,
+    'env',
+    SENTRY_ENV_VAR_TMPL.format(var_name='ENV'),
+    'prod',
+    value_type='string'
+)
+
+DEFAULT_SENTRY_TRACE = get_config(
+    p,
+    SENTRY_SECTION,
+    'trace',
+    SENTRY_ENV_VAR_TMPL.format(var_name='TRACE'),
+    False,
+    value_type='boolean'
+)
+
+DEFAULT_SENTRY_SERVER_NAME = get_config(
+    p,
+    SENTRY_SECTION,
+    'server_name',
+    SENTRY_ENV_VAR_TMPL.format(var_name='SERVER_NAME'),
+    'ansibullbot',
+    value_type='string'
+)
