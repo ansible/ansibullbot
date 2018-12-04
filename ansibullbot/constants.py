@@ -24,6 +24,7 @@ from __future__ import absolute_import, division, print_function
 import sys
 import tempfile
 import os
+import subprocess
 
 from six import string_types
 from six.moves import configparser
@@ -357,3 +358,14 @@ DEFAULT_SENTRY_SERVER_NAME = get_config(
     'ansibullbot',
     value_type='string'
 )
+
+
+def get_ansibullbot_version():
+    """Return currently checked out Git revision."""
+    try:
+        return to_text(subprocess.check_output(('git', 'rev-parse', 'HEAD')).strip())
+    except subprocess.CalledProcessError:
+        return u'unknown'
+
+
+ANSIBULLBOT_VERSION = get_ansibullbot_version()

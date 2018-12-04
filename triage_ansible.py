@@ -41,6 +41,7 @@ def main():
         environment=constants.DEFAULT_SENTRY_ENV,
         server_name=constants.DEFAULT_SENTRY_SERVER_NAME,
         attach_stacktrace=constants.DEFAULT_SENTRY_TRACE,
+        release=constants.ANSIBULLBOT_VERSION,
     )
     # Run the triager ...
     AnsibleTriage().start()
