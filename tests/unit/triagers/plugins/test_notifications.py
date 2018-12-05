@@ -35,6 +35,6 @@ def test_notify_authors(iw, meta):
     facts = get_notification_facts(iw, meta)
 
     expected_assign_users = [u'target_user']
-    expected_notify_users = [u'another_user', u'target_user']
+    expected_notify_users = [u'another_user']  # , u'target_user']
     assert sorted(facts[u'to_assign']) == expected_assign_users
     assert sorted(facts[u'to_notify']) == expected_notify_users

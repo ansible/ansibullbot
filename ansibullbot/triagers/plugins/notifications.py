@@ -104,7 +104,7 @@ def get_notification_facts(issuewrapper, meta):
     # prevent duplication
     nfacts[u'to_assign'] = sorted(set(nfacts[u'to_assign']))
     nfacts[u'to_notify'] = sorted(
-        set(nfacts[u'to_notify'] + nfacts[u'to_assign'])
+        set(nfacts[u'to_notify'])  # + nfacts[u'to_assign'])
     )
 
     return nfacts
