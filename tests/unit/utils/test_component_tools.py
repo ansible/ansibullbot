@@ -99,6 +99,13 @@ class TestComponentMatcher(TestCase):
             u'kustodian',
             u'maxamillion',
         ])
+        assert sorted(result[u'notify']) == sorted([
+            u'Akasurde',
+            u'ansible',
+            u'berenddeschouwer',
+            # u'kustodian',  added in botmeta, not authors, to be merged later
+            u'maxamillion',
+        ])
 
     def test_get_meta_support_core_from_module(self):
         self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {

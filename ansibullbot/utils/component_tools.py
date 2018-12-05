@@ -1043,6 +1043,7 @@ class AnsibleComponentMatcher(object):
                 meta[u'metadata'].update(mmatch[0][u'metadata'])
                 for k in u'authors', u'maintainers':
                     meta[k] += mmatch[0][k]
+                meta[u'notify'] += mmatch[0][u'notified']
 
             if meta[u'metadata']:
                 if meta[u'metadata'][u'supported_by']:
@@ -1055,7 +1056,8 @@ class AnsibleComponentMatcher(object):
             fdata = self.BOTMETA[u'files'][entry].copy()
 
             if u'authors' in fdata:
-                meta[u'authors'] = fdata[u'authors']
+                meta[u'notify'] += fdata[u'authors']
+                meta[u'authors'] += fdata[u'authors']
             if u'maintainers' in fdata:
                 meta[u'notify'] += fdata[u'maintainers']
                 meta[u'assign'] += fdata[u'maintainers']
