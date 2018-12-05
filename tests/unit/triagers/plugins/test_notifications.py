@@ -6,7 +6,6 @@ import pytest
 
 from ansibullbot.triagers.plugins.notifications import get_notification_facts
 from tests.utils.helpers import get_issue
-from tests.utils.file_indexer_mock import create_indexer
 from tests.utils.repo_mock import RepoMock
 
 
@@ -24,27 +23,6 @@ def statusfile():
 
 
 @pytest.fixture
-def botmeta():
-    return textwrap.dedent(u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $modules/foo/bar.py:
-                maintainers: ElsA ZaZa
-            $module_utils/baz/bar.py:
-                maintainers: TiTi mscherer
-    """)
-
-
-@pytest.fixture
-def module_indexer(botmeta):
-    modules = {u'lib/ansible/modules/foo/bar.py': None}
-    module_indexer = create_indexer(botmeta, modules)
-
-
-@pytest.fixture
 def iw(meta, statusfile):
     datafile = u'tests/fixtures/needs_contributor/0_issue.yml'
     with get_issue(datafile, statusfile) as iw:
@@ -53,8 +31,8 @@ def iw(meta, statusfile):
         return iw
 
 
-def test_notify_authors(iw, meta, module_indexer):
-    facts = get_notification_facts(iw, meta, module_indexer)
+def test_notify_authors(iw, meta):
+    facts = get_notification_facts(iw, meta)
 
     expected_assign_users = [u'target_user']
     expected_notify_users = [u'another_user', u'target_user']

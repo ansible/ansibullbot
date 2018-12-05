@@ -1911,7 +1911,7 @@ class AnsibleTriage(DefaultTriager):
             )
         )
 
-        self.meta.update(get_notification_facts(iw, self.meta, self.file_indexer))
+        self.meta.update(get_notification_facts(iw, self.meta))
 
         # ci_verified and test results
         self.meta.update(

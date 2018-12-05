@@ -3,7 +3,7 @@
 import logging
 
 
-def get_notification_facts(issuewrapper, meta, file_indexer):
+def get_notification_facts(issuewrapper, meta):
     '''Build facts about mentions/pings'''
     iw = issuewrapper
 
