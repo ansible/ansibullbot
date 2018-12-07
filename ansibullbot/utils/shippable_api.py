@@ -4,7 +4,7 @@
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
 import ansibullbot.constants as C
-from ansibullbot._text_compat import to_text
+from ansibullbot._text_compat import to_text, to_bytes
 
 import datetime
 import gzip
@@ -138,7 +138,7 @@ class ShippableRuns(object):
 
     def _write_cache_file(self, cfile, data):
         with gzip.open(cfile, 'w') as f:
-            f.write(json.dumps(data))
+            f.write(to_bytes(json.dumps(data)))
 
     def _compress_cache_file(self, cfile, gzfile):
         with open(cfile, 'r') as f_in, gzip.open(gzfile, 'w') as f_out:
