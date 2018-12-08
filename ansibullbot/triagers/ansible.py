@@ -761,6 +761,32 @@ class AnsibleTriage(DefaultTriager):
                 return
 
         if iw.is_pullrequest():
+            if not iw.incoming_repo_exists:
+                type_to_branch_prefix = {
+                    u'bugfix pull request': u'bugfix',
+                    u'feature pull request': u'feature',
+                    u'documenation pull request': u'docs',
+                    u'test pull request': u'testing',
+                    None: u'misc',
+                }
+                tvars = {
+                    u'pr_number': iw.number,
+                    u'pr_topic': iw.title.strip().replace(' ', '-'),
+                    u'pr_title': iw.title,
+                    u'pr_type': type_to_branch_prefix[
+                        iw.template_data.get(u'issue type')
+                    ],
+                    u'submitter': iw.submitter,
+                }
+                comment = self.render_boilerplate(
+                    tvars, boilerplate=u'incoming_ref_missing',
+                )
+                actions.comments.append(comment)
+                actions.close = True
+                actions.cancel_ci = True
+                actions.cancel_ci_branch = True
+                return
+
             if not iw.from_fork:
                 tvars = {u'submitter': iw.submitter}
                 comment = self.render_boilerplate(tvars, boilerplate=u'fork')
