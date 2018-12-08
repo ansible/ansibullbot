@@ -1182,11 +1182,30 @@ class DefaultWrapper(object):
         return False
 
     @property
+    def incoming_repo(self):
+        return self.pullrequest.head.repo
+
+    @property
+    def incoming_repo_exists(self):
+        return self.pullrequest.head.repo is not None
+
+    @property
+    def incoming_repo_slug(self):
+        try:
+            return self.pullrequest.head.repo.full_name
+        except TypeError:
+            return None
+
+    @property
+    def incoming_repo_branch(self):
+        return self.pullrequest.head.ref
+
+    @property
     def from_fork(self):
-        if self.pullrequest.head.repo is None:
+        if not incoming_repo_exists:
             return True
 
-        return self.pullrequest.head.repo.full_name != u'ansible/ansible'
+        return self.incoming_repo_slug != u'ansible/ansible'
 
     @RateLimited
     def get_commit_parents(self, commit):
