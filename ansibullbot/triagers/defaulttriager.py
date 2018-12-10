@@ -19,7 +19,6 @@ from __future__ import print_function
 
 import abc
 import argparse
-import json
 import logging
 import os
 import sys
@@ -36,6 +35,7 @@ from github import Github
 from jinja2 import Environment, FileSystemLoader
 
 import ansibullbot.constants as C
+from ansibullbot._json_compat import json_dumps
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
@@ -502,4 +502,4 @@ class DefaultTriager(object):
 
         logging.info('dumping {}'.format(fn))
         with open(fn, 'wb') as f:
-            f.write(json.dumps(actions, indent=2, sort_keys=True))
+            f.write(json_dumps(actions))

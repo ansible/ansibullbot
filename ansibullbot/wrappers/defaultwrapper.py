@@ -34,6 +34,7 @@ import six
 import github
 
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
+from ansibullbot._json_compat import json_dumps
 from ansibullbot._text_compat import to_text
 from ansibullbot.utils.extractors import extract_template_sections
 from ansibullbot.utils.extractors import extract_template_data
@@ -1016,7 +1017,7 @@ class DefaultWrapper(object):
                 jdata[turl][u'history'][ts] = sd[u'state']
 
         with open(logfile, 'w') as f:
-            f.write(json.dumps(jdata))
+            f.write(json_dumps(jdata))
 
     @property
     def pullrequest_status(self):

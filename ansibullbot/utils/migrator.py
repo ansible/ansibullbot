@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import json
 import logging
 import requests
 import time
@@ -9,6 +8,7 @@ from tenacity import stop_after_attempt
 from tenacity import wait_fixed
 from six.moves.urllib.parse import urlparse
 
+from ansibullbot._json_compat import json_dumps
 
 class IssueMigrator(object):
     def __init__(self, token):
@@ -32,7 +32,7 @@ class IssueMigrator(object):
             self.postcount = 0
 
         logging.info(headers)
-        rr = self.s.post(url, headers=headers, data=json.dumps(payload))
+        rr = self.s.post(url, headers=headers, data=json_dumps(payload))
 
         if isinstance(rr.json(), dict) and u'documentation_url' in rr.json():
             logging.error(rr.json())
@@ -164,7 +164,7 @@ class IssueMigrator(object):
         # close the old issue
         payload = {u'state': u'closed'}
         logging.info(u'close {}'.format(issueurl))
-        closure_rr = self.s.patch(src_api_url, headers=self.get_headers(), data=json.dumps(payload))
+        closure_rr = self.s.patch(src_api_url, headers=self.get_headers(), data=json_dumps(payload))
         if closure_rr.status_code != 200:
             logging.info(u'closing {} failed'.format(issueurl))
 

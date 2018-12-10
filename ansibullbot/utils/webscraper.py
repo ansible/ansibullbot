@@ -13,6 +13,7 @@ import six
 from six.moves.urllib import parse as urllib2
 from bs4 import BeautifulSoup
 
+from ansibullbot._json_compat import json_dumps
 from ansibullbot._text_compat import to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 import ansibullbot.constants as C
@@ -105,7 +106,7 @@ class GithubWebScraper(object):
         tfh, tfn = tempfile.mkstemp()
         os.close(tfh)
         with open(tfn, 'wb') as f:
-            f.write(json.dumps(issues, sort_keys=True, indent=2))
+            f.write(json_dumps(issues, sort_keys=True, indent=2))
 
         if os.path.isfile(cachefile):
             os.remove(cachefile)

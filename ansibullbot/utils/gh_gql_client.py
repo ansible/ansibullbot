@@ -4,7 +4,6 @@
 # https://developer.github.com/v4/guides/forming-calls/
 
 import jinja2
-import json
 import logging
 import requests
 from collections import defaultdict
@@ -13,6 +12,7 @@ from operator import itemgetter
 import six
 
 from tenacity import retry, wait_random, stop_after_attempt
+from ansibullbot._json_compat import json_dumps
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 
@@ -227,7 +227,7 @@ class GithubGraphQLClient(object):
                 u'variables': u'{}',
                 u'operationName': None
             }
-            rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+            rr = requests.post(self.baseurl, headers=self.headers, data=json_dumps(payload))
             if not rr.ok:
                 break
             data = rr.json()
@@ -277,7 +277,7 @@ class GithubGraphQLClient(object):
         if six.PY3:
             payload[u'query'] = to_text(payload[u'query'], 'ascii')
 
-        rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+        rr = requests.post(self.baseurl, headers=self.headers, data=json_dumps(payload))
         data = rr.json()
 
         node = data[u'data'][u'repository'][otype]
@@ -353,7 +353,7 @@ class GithubGraphQLClient(object):
 
     @retry(wait=wait_random(min=1, max=2), stop=stop_after_attempt(5))
     def requests(self, payload):
-        response = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+        response = requests.post(self.baseurl, headers=self.headers, data=json_dumps(payload))
         response.raise_for_status()
         # GitHub GraphQL will happily return a 200 result with errors. One
         # must dig through the data to see if there were errors.

@@ -38,7 +38,7 @@ import pytz
 import requests
 import six
 
-from ansibullbot._json_compat import json_dump
+from ansibullbot._json_compat import json_dump, json_dumps
 from ansibullbot._text_compat import to_bytes, to_text
 
 import ansibullbot.constants as C
@@ -1545,7 +1545,7 @@ class AnsibleTriage(DefaultTriager):
         # cache the data in case of errors
         mdata = self.IM.migration_map.get(issue.html_url)
         with open(mfile, 'wb') as f:
-            f.write(json.dumps(mdata, indent=2))
+            f.write(json_dumps(mdata))
 
     def add_repomerge_comment(self, issue, actions, bp=u'repomerge'):
         '''Add the comment without closing'''
@@ -2450,4 +2450,4 @@ class AnsibleTriage(DefaultTriager):
         }
         resume_file = os.path.join(self.cachedir_base, u'resume.json')
         with open(resume_file, 'wb') as f:
-            f.write(json.dumps(data, indent=2))
+            f.write(json_dumps(data))
