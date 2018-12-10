@@ -27,7 +27,9 @@ and have `origin` pointing to your fork and `upstream` pointing to
    ```
 3. :sparkles: Do your magic. :pencil: Change stuff. :lock: Commit. :hammer:
 4. :package: Push it to your fork:
+   ```console
    git push -u origin recovered-{{ pr_type }}/{{ pr_number }}-{{ pr_topic }}
+   ```
 5. :rocket: Now, [create a PR with your renovated work](
    https://github.com/ansible/ansible/compare/devel...:recovered-{{ pr_type }}/{{ pr_number }}-{{ pr_topic }}?quick_pull=1&labels={{ pr_type }}&title={{ pr_title }}&body=This is a resubmission of PR %23{{ pr_number }}). _(Of course, don't forget to fill in
    the PR template properly)._
