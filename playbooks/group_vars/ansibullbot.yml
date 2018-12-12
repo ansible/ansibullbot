@@ -11,12 +11,6 @@ ansibullbot_options:
   - skip_no_update_timeout
   - verbose
 
-
-firewall_allowed_tcp_ports:
-  - 22
-  - 80
-  - 443
-
 ansibullbot_receiver_enabled: true
 
 ansibullbot_github_password: !vault |
@@ -83,3 +77,17 @@ ansibullbot_sentry_url: !vault |
           39336661386633373538373633336262373939386165643162646137376532656233396433353434
           38336265326137343963363333323434353230626665666663346637333430333064333436343037
           373238326163396130616162616363643832
+
+# Caddy settings
+caddy_root: /usr/share/caddy
+caddy_config_path: /etc/caddy
+caddy_user: caddy
+caddy_group: caddy
+caddy_download_custom_build: true
+caddy_systemd_protect_home: 'false'
+
+# Firewall settings
+firewall_allowed_tcp_ports:
+  - 22
+  - 80
+  - 443
