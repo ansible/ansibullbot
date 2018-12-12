@@ -190,6 +190,9 @@ def RateLimited(fn):
                 elif hasattr(e, 'status') and e.status == 500:
                     # https://github.com/ansible/ansibullbot/issues/1025
                     stime = 2*60
+                elif hasattr(e, 'status') and e.status == 502:
+                    # https://sentry.io/red-hat-ansibullbot/ansibullbot/issues/804854465
+                    stime = 2*60
                 else:
                     if C.DEFAULT_BREAKPOINTS:
                         logging.error('breakpoint!')
