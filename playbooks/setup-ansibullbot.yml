@@ -12,11 +12,11 @@
   become: true
 
   roles:
-    - repo-epel
+    - repo_epel
     - firewall
     - fail2ban
     - docker
     - mongodb
     - caddy
-    - yum-cron
+    - yum_cron
     - ansibullbot
