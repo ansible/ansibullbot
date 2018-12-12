@@ -4,11 +4,11 @@
 [submodule "playbooks/roles/firewall"]
 	path = playbooks/roles/firewall
 	url = https://github.com/samdoran/ansible-role-firewall.git
-[submodule "playbooks/roles/repo-epel"]
-	path = playbooks/roles/repo-epel
+[submodule "playbooks/roles/repo_epel"]
+	path = playbooks/roles/repo_epel
 	url = https://github.com/samdoran/ansible-role-repo-epel.git
-[submodule "playbooks/roles/ansibullbot-instance"]
-	path = playbooks/roles/ansibullbot-instance
+[submodule "playbooks/roles/ansibullbot_instance"]
+	path = playbooks/roles/ansibullbot_instance
 	url = https://github.com/samdoran/ansible-role-ansibullbot-instance.git
 [submodule "playbooks/roles/mongodb"]
 	path = playbooks/roles/mongodb
@@ -16,8 +16,8 @@
 [submodule "playbooks/roles/fail2ban"]
 	path = playbooks/roles/fail2ban
 	url = https://github.com/samdoran/ansible-role-fail2ban.git
-[submodule "playbooks/roles/yum-cron"]
-	path = playbooks/roles/yum-cron
+[submodule "playbooks/roles/yum_cron"]
+	path = playbooks/roles/yum_cron
 	url = https://github.com/samdoran/ansible-role-yum-cron.git
 [submodule "playbooks/roles/docker"]
 	path = playbooks/roles/docker
