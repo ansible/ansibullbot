@@ -769,14 +769,27 @@ class AnsibleTriage(DefaultTriager):
                     u'test pull request': u'testing',
                     None: u'misc',
                 }
+                pr_number = iw.number
+                pr_topic = iw.title.strip().replace(' ', '-').lower()
+                pr_type = type_to_branch_prefix[
+                    iw.template_data.get(u'issue type')
+                ]
+                pr_backup_branch = 'pull/{:d}/head'.format(pr_number)
+                pr_recovered_branch = (
+                    'recovered-{pr_type}/{pr_number:d}-{pr_topic}'.
+                    format(
+                        pr_type=pr_type,
+                        pr_number=pr_number,
+                        pr_topic=pr_topic,
+                    )
+                )
                 tvars = {
-                    u'pr_number': iw.number,
-                    u'pr_topic': iw.title.strip().replace(' ', '-'),
+                    u'pr_number': pr_number,
+                    u'pr_recovered_branch': pr_recovered_branch,
+                    u'pr_topic': pr_topic,
                     u'pr_title': iw.title,
-                    u'pr_type': type_to_branch_prefix[
-                        iw.template_data.get(u'issue type')
-                    ],
-                    u'submitter': iw.submitter,
+                    u'pr_type': pr_type,
+                    u'pr_submitter': iw.submitter,
                 }
                 comment = self.render_boilerplate(
                     tvars, boilerplate=u'incoming_ref_missing',
