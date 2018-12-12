@@ -31,7 +31,7 @@ and have `origin` pointing to your fork and `upstream` pointing to
    git push -u origin {{ pr_recovered_branch }}:{{ pr_recovered_branch }}
    ```
 5. :rocket: Now, [create a PR with your renovated work](
-   https://github.com/ansible/ansible/compare/devel...:{{ pr_recovered_branch }}?quick_pull=1&labels={{ pr_type }}&title={{ pr_title }}&body=This is a resubmission of PR %23{{ pr_number }}).
+   https://github.com/ansible/ansible/compare/devel...:{{ pr_recovered_branch }}?quick_pull=1&labels={{ pr_type }}&title={{ pr_title_urlencoded }}&body=This%20is%20a%20resubmission%20of%20PR%20%23{{ pr_number }}).
    _(Of course, don't forget to fill in the PR template properly)._
 
 

@@ -787,7 +787,7 @@ class AnsibleTriage(DefaultTriager):
                     u'pr_number': pr_number,
                     u'pr_recovered_branch': pr_recovered_branch,
                     u'pr_topic': pr_topic,
-                    u'pr_title': iw.title,
+                    u'pr_title_urlencoded': iw.title.replace(' ', '%20'),
                     u'pr_type': pr_type,
                     u'pr_submitter': iw.submitter,
                 }
