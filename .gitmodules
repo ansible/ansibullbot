@@ -22,3 +22,6 @@
 [submodule "playbooks/roles/docker"]
 	path = playbooks/roles/docker
 	url = https://github.com/samdoran/ansible-role-docker.git
+[submodule "playbooks/roles/caddy"]
+	path = playbooks/roles/caddy
+	url = https://github.com/samdoran/ansible-role-caddy.git

@@ -8,15 +8,15 @@
     - ansibullbot-instance
 
 - name: Install ansibullbot
-  hosts: ansibullbot
+  hosts: ansibullbot-dev
   become: true
 
   roles:
     - repo-epel
     - firewall
     - fail2ban
-    - geerlingguy.docker
+    - docker
     - mongodb
-    - ansibullbot
+    - caddy
     - yum-cron
-    - ansibullbot.httpd
+    - ansibullbot

@@ -4,6 +4,5 @@
 
   roles:
     - geerlingguy.docker
-    - ansibullbot.httpd
     - role: ansibullbot
       ansibullbot_action: update
