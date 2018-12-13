@@ -424,13 +424,16 @@ class ShippableRuns(object):
     def fetch(self, url, verb='get', **kwargs):
         """return response or None in case of failure, try twice"""
         @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
-        def _fetch():
+        def _fetch(verb='get'):
             headers = {
                 'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
             }
 
+            logging.info(u'%s %s' % (verb, url))
             http_method = getattr(requests, verb)
             resp = http_method(url, headers=headers, **kwargs)
+            logging.info(u'shippable status code: %s' % resp.status_code)
+            logging.info(u'shippable reason: %s' % resp.reason)
 
             if resp.status_code not in [200, 302, 400]:
                 logging.error(u'RC: %s', resp.status_code)
@@ -440,7 +443,7 @@ class ShippableRuns(object):
 
         try:
             logging.debug(u'%s', url)
-            return _fetch()
+            return _fetch(verb=verb)
         except RetryError:
             pass
 
