@@ -761,7 +761,7 @@ class AnsibleTriage(DefaultTriager):
                 return
 
         if iw.is_pullrequest():
-            if not iw.incoming_repo_exists and C.features.is_enabled('close_missing_ref_prs'):
+            if not iw.incoming_repo_exists:
                 type_to_branch_prefix = {
                     u'bugfix pull request': u'bugfix',
                     u'feature pull request': u'feature',
