@@ -795,7 +795,8 @@ class AnsibleTriage(DefaultTriager):
                     tvars, boilerplate=u'incoming_ref_missing',
                 )
                 actions.comments.append(comment)
-                actions.close = True
+                if C.features.is_enabled('close_missing_ref_prs'):
+                    actions.close = True
                 actions.cancel_ci = True
                 actions.cancel_ci_branch = True
                 return

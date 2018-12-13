@@ -30,6 +30,8 @@ from six import string_types
 from six.moves import configparser
 
 from ._text_compat import to_text
+from .utils.feature_flags import FeatureFlags
+
 
 PROG_NAME = u'ansibullbot'
 BOOL_TRUE = frozenset([u"true", u"t", u"y", u"1", u"yes", u"on"])
@@ -369,3 +371,6 @@ def get_ansibullbot_version():
 
 
 ANSIBULLBOT_VERSION = get_ansibullbot_version()
+
+
+features = FeatureFlags.from_config('features.yaml')
