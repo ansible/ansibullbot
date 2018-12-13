@@ -5,7 +5,7 @@
   become: false
 
   roles:
-    - ansibullbot-instance
+    - ansibullbot_instance
 
 - name: Install ansibullbot
   hosts: ansibullbot-dev
@@ -13,10 +13,10 @@
 
   roles:
     - repo_epel
+    - yum_cron
     - firewall
     - fail2ban
     - docker
     - mongodb
     - caddy
-    - yum_cron
     - ansibullbot
