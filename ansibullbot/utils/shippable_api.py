@@ -429,7 +429,7 @@ class ShippableRuns(object):
                 'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
             }
 
-            logging.info('%s %s' % (verb, url))
+            logging.info(u'%s %s' % (verb, url))
             http_method = getattr(requests, verb)
             resp = http_method(url, headers=headers, **kwargs)
             logging.info(u'shippable status code: %s' % resp.status_code)
