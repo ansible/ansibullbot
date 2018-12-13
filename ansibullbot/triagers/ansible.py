@@ -761,6 +761,45 @@ class AnsibleTriage(DefaultTriager):
                 return
 
         if iw.is_pullrequest():
+            if not iw.incoming_repo_exists:
+                type_to_branch_prefix = {
+                    u'bugfix pull request': u'bugfix',
+                    u'feature pull request': u'feature',
+                    u'documenation pull request': u'docs',
+                    u'test pull request': u'testing',
+                    None: u'misc',
+                }
+                pr_number = iw.number
+                pr_topic = iw.title.strip().replace(' ', '-').lower()
+                pr_type = type_to_branch_prefix[
+                    iw.template_data.get(u'issue type')
+                ]
+                pr_backup_branch = 'pull/{:d}/head'.format(pr_number)
+                pr_recovered_branch = (
+                    'recovered-{pr_type}/{pr_number:d}-{pr_topic}'.
+                    format(
+                        pr_type=pr_type,
+                        pr_number=pr_number,
+                        pr_topic=pr_topic,
+                    )
+                )
+                tvars = {
+                    u'pr_number': pr_number,
+                    u'pr_recovered_branch': pr_recovered_branch,
+                    u'pr_topic': pr_topic,
+                    u'pr_title_urlencoded': iw.title.replace(' ', '%20'),
+                    u'pr_type': pr_type,
+                    u'pr_submitter': iw.submitter,
+                }
+                comment = self.render_boilerplate(
+                    tvars, boilerplate=u'incoming_ref_missing',
+                )
+                actions.comments.append(comment)
+                actions.close = True
+                actions.cancel_ci = True
+                actions.cancel_ci_branch = True
+                return
+
             if not iw.from_fork:
                 tvars = {u'submitter': iw.submitter}
                 comment = self.render_boilerplate(tvars, boilerplate=u'fork')

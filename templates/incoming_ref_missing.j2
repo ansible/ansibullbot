@@ -1,0 +1,38 @@
+Hello,
+we're closing this pull request because the original PR-bound branch
+went missing. (This PR's fork repository or branch has been deleted by
+the owner).
+
+@{{ pr_submitter }}, if you wish to restore the PR, please, re-create
+a branch in the same fork repo and with the exactly same name and reopen
+this pull request. Or submit a new PR.
+
+##### To whom it may concern,
+If you're an individual wishing to pick up the work done by the original
+submitter (@{{ pr_submitter }}), [here's how you can do this](
+https://help.github.com/articles/checking-out-pull-requests-locally/#modifying-an-inactive-pull-request-locally)
+(given you followed the instructions at [Ansible Dev Guide](
+https://docs.ansible.com/ansible/devel/dev_guide/developing_rebasing.html#configuring-your-remotes)
+and have `origin` pointing to your fork and `upstream` pointing to
+`ansible/ansible`):
+
+1. :ambulance: Pull the branch locally from read-only copy held by GitHub:
+   ```console
+   git fetch upstream pull/{{ pr_number }}/head:{{ pr_recovered_branch }}
+   ```
+   Now you have it locally!
+2. :construction: Switch to your local branch containing PR changes:
+   ```console
+   git checkout {{ pr_recovered_branch }}
+   ```
+3. :sparkles: Do your magic. :pencil: Change stuff. :lock: Commit. :hammer:
+4. :package: Push it to your fork:
+   ```console
+   git push -u origin {{ pr_recovered_branch }}:{{ pr_recovered_branch }}
+   ```
+5. :rocket: Now, [create a PR with your renovated work](
+   https://github.com/ansible/ansible/compare/devel...:{{ pr_recovered_branch }}?quick_pull=1&labels={{ pr_type }}&title={{ pr_title_urlencoded }}&body=This%20is%20a%20resubmission%20of%20PR%20%23{{ pr_number }}).
+   _(Of course, don't forget to fill in the PR template properly)._
+
+
+<!--- boilerplate: incoming_ref_missing --->
