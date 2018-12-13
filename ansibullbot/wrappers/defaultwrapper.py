@@ -1202,7 +1202,7 @@ class DefaultWrapper(object):
 
     @property
     def from_fork(self):
-        if not incoming_repo_exists:
+        if not self.incoming_repo_exists:
             return True
 
         return self.incoming_repo_slug != u'ansible/ansible'
