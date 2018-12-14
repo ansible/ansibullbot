@@ -91,3 +91,7 @@ firewall_allowed_tcp_ports:
   - 22
   - 80
   - 443
+
+# Docker
+docker_users:
+  - "{{ ansibullbot_user }}"
