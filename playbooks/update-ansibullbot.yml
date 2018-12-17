@@ -3,7 +3,6 @@
   become: yes
 
   roles:
-    - geerlingguy.docker
-    - ansibullbot.httpd
+    - docker
     - role: ansibullbot
       ansibullbot_action: update

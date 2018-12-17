@@ -1,0 +1,18 @@
+- name: Teardown dev ansibullbot instance
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+
+  vars:
+    botinstance_name: ansibullbot-dev
+    botinstance_dns_entries:
+      - type: A
+        record: ansibullbot-dev.eng.ansible.com
+
+  tasks:
+    - name: Delete dev bot instance and DNS entries
+      import_role:
+        name: ansibullbot_instance
+      vars:
+        botinstance_action: destroy-dev

@@ -1,22 +1,22 @@
 - name: Create ansibullbot instance
   hosts: localhost
   connection: local
-  gather_facts: no
-  become: no
+  gather_facts: false
+  become: false
 
   roles:
-    - ansibullbot-instance
+    - ansibullbot_instance
 
 - name: Install ansibullbot
-  hosts: ansibullbot
-  become: yes
+  hosts: ansibullbot.eng.ansible.com
+  become: true
 
   roles:
-    - repo-epel
+    - repo_epel
+    - yum_cron
     - firewall
     - fail2ban
-    - geerlingguy.docker
+    - docker
     - mongodb
+    - caddy
     - ansibullbot
-    - yum-cron
-    - ansibullbot.httpd

@@ -1,13 +1,3 @@
-botinstance_ssh_keys:
-  - name: sdoran@aws
-    key_material: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfJ88NuTDKSpYq+wrDCd+AKg2l1jqg0qgXxjiNXwaEUOUllb5II0uin7xh/6jl9hLRbwVOe/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jEh6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPuJzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5 sdoran
-
-  - name: jtanner
-    key_material: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8FEp2Kr8lD0Sp7kfbUWWHTT/ilD0Tup2Wh8K1HGN8usZk4O6dAVZJHUp35DcCj8JV5l5zrdO7o+PHvlkYigC/y/17dsAsTC0MZeHAA0p8aFhJv08+l8JF4WIAt34OrMZ2UePblO27/XTIm6MvynBye6BwDQ/GFQKebPyU4GBamy9IIqW1RCupMj6P04GYDGpQMjYTgtHZD5xstUFWxs0ybEvbpQZglGNuD6E7+8xApqZrMX6hgFglWmxMPzJZxIirzZ/TWRW0eEZ7r468I5HJcFGO8/qe1xBv8BYWGFt9L6tVNTLi9gI3lbxv87O0ksQ2c37nBvZ+2h2xQoIJDkuf jtanner
-
-  - name: deploy
-    key_material: ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC9zMEs0TbOwvleb/NNeWWslDFQJ1ieSoYTrQrU/n0fceffT1WXgx5RLr8+dUICzsSUUTeP9KdJMi91G5i/xwyVCEI44x1DeXWUpoYzHEdpPgUq1cbAPGLUkTuy/+M08WUn6Xi4z84rzgO950nRWEDSkyDMzqpKLl4eYGkweu+qON2k17mA8bi2sciOoRLuARRaAv2SQtbjCOww0lh7bXMZ6Iom49sITzjjgOGwKmogc+w6rAqgfEM7gIMUcMlill4DdeKS/jF9XUrtPnppjr+svdRRorefpAgaGLeRl1uf4IsYhH9eGjXywWPUXaE2bJyVnjRu9DgMDyh85BiTq9yn deploy
-
 ansible_user: centos
 
 ansibullbot_options:
@@ -20,11 +10,6 @@ ansibullbot_options:
   - skip_no_update
   - skip_no_update_timeout
   - verbose
-
-
-firewall_allowed_tcp_ports:
-  - 22
-  - 80
 
 ansibullbot_receiver_enabled: true
 
@@ -92,3 +77,21 @@ ansibullbot_sentry_url: !vault |
           39336661386633373538373633336262373939386165643162646137376532656233396433353434
           38336265326137343963363333323434353230626665666663346637333430333064333436343037
           373238326163396130616162616363643832
+
+# Caddy settings
+caddy_root: /usr/share/caddy
+caddy_config_path: /etc/caddy
+caddy_user: caddy
+caddy_group: caddy
+caddy_download_custom_build: true
+caddy_systemd_protect_home: 'false'
+
+# Firewall settings
+firewall_allowed_tcp_ports:
+  - 22
+  - 80
+  - 443
+
+# Docker
+docker_users:
+  - "{{ ansibullbot_user }}"
