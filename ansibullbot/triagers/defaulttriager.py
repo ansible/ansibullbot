@@ -21,6 +21,7 @@ import abc
 import argparse
 import json
 import logging
+import operator
 import os
 import sys
 import time
@@ -49,6 +50,11 @@ libindex = (len(basepath) - 1) - libindex
 basepath = '/'.join(basepath[0:libindex])
 loader = FileSystemLoader(os.path.join(basepath, 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
+
+
+# https://github.com/ansible/ansibullbot/issues/1129
+if 'equalto' not in environment.tests:
+    environment.tests['equalto'] = operator.eq
 
 
 class DefaultActions(object):
