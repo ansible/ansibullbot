@@ -4,6 +4,7 @@ argparse
 beautifulsoup4
 fuzzywuzzy
 jinja2
+logzero
 PyYAML
 pygithub
 python-Levenshtein

@@ -1,6 +1,10 @@
 #!/usr/bin/env python
 
+# docker build -t jctanner/githubsim -f github_sim_container/Dockerfile .
+# docker run -v $(pwd):/test -it jctanner/githubsim:latest /bin/bash
+
 import argparse
+import docker
 import glob
 import json
 import os
@@ -15,8 +19,18 @@ import yaml
 from logzero import logger
 
 
+docker_client = client = docker.from_env()
+
+
 class SimRunner(object):
+
+    IMAGE = 'ansibot/githubsim:latest'
+    DOCKERFILE = 'github_sim_container/Dockerfile'
+
+
     def __init__(self, meta=None, number=None):
+
+        """
         self.meta = meta
         self.number = number
         self.simpid = None
@@ -25,7 +39,39 @@ class SimRunner(object):
         thread = threading.Thread(target=self.run, args=())
         thread.daemon = True
         thread.start()
+        """
 
+        self.build_kwargs = {
+            'path': '.',
+            'dockerfile': self.DOCKERFILE,
+            'tag': self.IMAGE,
+        }
+        self.run_kwargs = {
+            'detach': True,
+            'working_dir': '/src',
+            'entrypoint': ['python', 'tests/bin/github_sim.py', '--generate'],
+            'volumes': ['%s:%s' % (os.path.abspath('.'), '/src')]
+        }
+        self.container = None
+
+        self.build_image()
+        self.run_container()
+        import epdb; epdb.st()
+
+    def build_image(self):
+        if hasattr(docker_client, 'build'):
+            # docker-py v1.x.x
+            for entry in docker_client.build(**self.build_kwargs):
+                logger.info(entry.strip())
+        else:
+            raise Exception('the docker_client does not have a .build attribute. please reinstall')
+
+    def run_container(self):
+        self.container = docker_client.create_container(self.IMAGE, **self.run_kwargs)
+        import epdb; epdb.st()
+
+
+    """
     def kill(self):
         #self.simpid.kill()
         #os.kill(self.simpid.pid)
@@ -83,6 +129,7 @@ class SimRunner(object):
             self.simpid.kill()
         except Exception as e:
             logger.warning(e)
+    """
 
 
 class IntegrationTest(object):

@@ -14,7 +14,7 @@ if [[ $RC != 0 ]]; then
 fi
 
 # BASELINE PACKAGES
-PACKAGES="epel-release ansible git vim-enhanced bind-utils policycoreutils-python net-tools lsof"
+PACKAGES="epel-release ansible git rsync vim-enhanced bind-utils policycoreutils-python net-tools lsof"
 for PKG in $PACKAGES; do
     rpm -q $PKG || yum -y install $PKG
 done
@@ -23,16 +23,33 @@ done
 rm -f /etc/vimrc
 cp /vagrant/playbooks/files/centos7.vimrc /etc/vimrc
 
-# PSEUDO ANSIBLE-LOCAL PROVISIONER
-echo "ansibullbot ansible_host=localhost ansible_connection=local" > /tmp/inv.ini
-cd /vagrant/playbooks
-ansible-playbook \
-    -v \
-    -i /tmp/inv.ini \
-    -e "ansibullbot_action=install" \
-    --skip-tags=botinstance,dns,ssh,ansibullbot_service,ansibullbot_logs \
-    setup-ansibullbot.yml
+# WORKAROUNDS
+setenforce 0
+fgrep docker /etc/group || groupadd -g 993 docker
+fgrep ansibot /etc/group || groupadd -g 1099 ansibot
+id ansibot || useradd -u 1099 -g ansibot ansibot
+usermod -a -G docker ansibot
+rsync -avz --exclude='/vagrant/.vagrant' /vagrant/* /home/ansibot/ansibullbot
 
+# PSEUDO ANSIBLE-LOCAL PROVISIONER
+setenforce 0
+echo "ansibullbot ansible_host=localhost ansible_connection=local" > /tmp/inv.ini
+echo "ansibullbot.eng.ansible.com ansible_host=localhost ansible_connection=local" >> /tmp/inv.ini
+cd /vagrant/playbooks
+#PLAYBOOKS="setup-ansibullbot.yml"
+PLAYBOOKS="vagrant.yml"
+for PLAYBOOK in $PLAYBOOKS; do
+    ansible-playbook \
+        -v \
+        -i /tmp/inv.ini \
+        --skip-tags=ssh \
+        $PLAYBOOK
+done
+
+#        --tags=packages,ansibullbot,caddy \
+#        --skip-tags=botinstance,dns,ssh,ansibullbot_service,ansibullbot_logs \
+#--skip-tags=botinstance,dns,ssh,ansibullbot_service,ansibullbot_logs \
+#    -e "ansibullbot_action=install" \
 # HACK IN FIREWALL EXCEPTIONS
 firewall-cmd --zone=public --add-port=80/tcp --permanent
 firewall-cmd --reload

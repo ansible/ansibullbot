@@ -1151,7 +1151,7 @@ def graphql():
                 ql = ql.replace(') {', '')
 
                 # owner/name/etc
-                parts = ql.split(',')            
+                parts = ql.split(',')
                 for part in parts:
                     key = part.split(':')[0].strip()
                     val = part.split(':')[-1].strip()
@@ -1463,6 +1463,7 @@ def abstract_path(path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=['fetch', 'load', 'generate'])
+    parser.add_argument('--debug', action='store_true')
     parser.add_argument('--token', default=None)
     parser.add_argument('--shippable_token', default=None)
     parser.add_argument('--fixtures', default='/tmp/bot.fixtures')
@@ -1492,7 +1493,7 @@ if __name__ == "__main__":
                     GM.load_issue_fixtures(args.org, args.repo, number)
 
             else:
-                cmd = 'find %s -type d' % args.fixtures                              
+                cmd = 'find %s -type d' % args.fixtures
                 (rc, so, se) = run_command(cmd)
                 numbers = [x.strip() for x in so.split('\n') if x.strip()]
                 numbers = [x.split('/')[-3:] for x in numbers]
