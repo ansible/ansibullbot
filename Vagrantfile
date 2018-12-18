@@ -39,7 +39,6 @@ firewall-cmd --reload
 
 SCRIPT
 
-ENV['VAGRANT_DEFAULT_PROVIDER'] = 'virtualbox'
 
 Vagrant.configure("2") do |config|
   config.vm.box = "centos/7"
@@ -49,7 +48,13 @@ Vagrant.configure("2") do |config|
   config.hostmanager.manage_guest = true
   config.hostmanager.ignore_private_ip = false
   config.hostmanager.include_offline = true
-  config.vm.network "private_network", ip: "192.168.10.199"
-  config.vm.synced_folder ".", "/vagrant", type: "nfs"
+  config.vm.network "private_network", ip: "10.0.0.210"
+  config.vm.synced_folder ".", "/vagrant", type: "nfs", nfs_udp: false
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.cpus = 2
+    libvirt.memory = 2048
+  end
+
   config.vm.provision "shell", inline: $script
 end
