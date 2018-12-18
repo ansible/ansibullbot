@@ -4,6 +4,7 @@
 import argparse
 import datetime
 import glob
+import gzip
 import hashlib
 import json
 import os
@@ -64,6 +65,16 @@ def run_command(cmd):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     (so, se) = p.communicate()
     return (p.returncode, so, se)
+
+
+def read_gzip_json(cfile):
+    with gzip.open(cfile, 'r') as f:
+        jdata = json.loads(f.read())
+    return jdata
+
+def write_gzip_json(cfile, data):
+    with gzip.open(cfile, 'w') as f:
+        f.write(json.dumps(data))
 
 
 class GithubMock(object):
@@ -352,7 +363,8 @@ class GithubMock(object):
                             fixdir,
                             'jobs_%s' % _rirun['id'],
                             jrr.json(),
-                            dict(jrr.headers)
+                            dict(jrr.headers),
+                            compress=True
                         )
 
                         for job in jrr.json():
@@ -375,7 +387,8 @@ class GithubMock(object):
                                 fixdir,
                                 'jobTestReport_%s' % job['id'],
                                 jtr_rr.json(),
-                                dict(jtr_rr.headers)
+                                dict(jtr_rr.headers),
+                                compress=True
                             )
 
                             #import epdb; epdb.st()
@@ -459,11 +472,17 @@ class GithubMock(object):
         data = json.loads(data)
         return data
 
-    def write_fixture(self, directory, fixture_type, data, headers):
-        with open(os.path.join(directory, '%s.json' % fixture_type), 'w') as f:
-            f.write(json.dumps(data, indent=2, sort_keys=True))
-        with open(os.path.join(directory, '%s.headers.json' % fixture_type), 'w') as f:
-            f.write(json.dumps(headers, indent=2, sort_keys=True))
+    def write_fixture(self, directory, fixture_type, data, headers, compress=False):
+        if compress:
+            hfn = os.path.join(directory, '%s.headers.json.gz' % fixture_type)
+            write_gzip_json(hfn, headers)
+            dfn = os.path.join(directory, '%s.json.gz' % fixture_type)
+            write_gzip_json(dfn, data)
+        else:
+            with open(os.path.join(directory, '%s.json' % fixture_type), 'w') as f:
+                f.write(json.dumps(data, indent=2, sort_keys=True))
+            with open(os.path.join(directory, '%s.headers.json' % fixture_type), 'w') as f:
+                f.write(json.dumps(headers, indent=2, sort_keys=True))
 
     def seed_fake_issues(self):
         for i in range(1, 1000):
