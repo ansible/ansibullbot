@@ -444,8 +444,8 @@ class ShippableRuns(object):
         try:
             logging.debug(u'%s', url)
             return _fetch(verb=verb)
-        except RetryError:
-            pass
+        except RetryError as e:
+            logging.error(e)
 
     def check_response(self, response):
         if response and response.status_code == 404:
