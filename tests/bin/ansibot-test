@@ -9,37 +9,38 @@ import glob
 import json
 import os
 import requests
+import sh
 import shutil
 import subprocess
 import sys
 import threading
 import tempfile
+import time
 import yaml
 
 from logzero import logger
+from sh import docker as dockersh
 
 
 docker_client = client = docker.from_env()
 
 
+class LocalSimRunner(object):
+
+    ip = '127.0.0.1'
+
+    def logs(self):
+        return []
+
+
 class SimRunner(object):
 
+    NAME = 'github_sim'
     IMAGE = 'ansibot/githubsim:latest'
     DOCKERFILE = 'github_sim_container/Dockerfile'
 
 
     def __init__(self, meta=None, number=None):
-
-        """
-        self.meta = meta
-        self.number = number
-        self.simpid = None
-        self.tmpdir = tempfile.mkdtemp()
-        self.kill()
-        thread = threading.Thread(target=self.run, args=())
-        thread.daemon = True
-        thread.start()
-        """
 
         self.build_kwargs = {
             'path': '.',
@@ -53,10 +54,13 @@ class SimRunner(object):
             'volumes': ['%s:%s' % (os.path.abspath('.'), '/src')]
         }
         self.container = None
+        self.containerid = None
 
+    def run(self):
         self.build_image()
+        self.kill_container()
         self.run_container()
-        import epdb; epdb.st()
+        self.ip = self.get_container_ip(self.NAME)
 
     def build_image(self):
         if hasattr(docker_client, 'build'):
@@ -66,86 +70,103 @@ class SimRunner(object):
         else:
             raise Exception('the docker_client does not have a .build attribute. please reinstall')
 
-    def run_container(self):
-        self.container = docker_client.create_container(self.IMAGE, **self.run_kwargs)
-        import epdb; epdb.st()
-
-
-    """
     def kill(self):
-        #self.simpid.kill()
-        #os.kill(self.simpid.pid)
-        cmd = "lsof -i :5000 | head -n2 | tail -n1 | awk '{print $2}'"
-        p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        (so, se) = p.communicate()
-        pid = so.strip()
-        if pid:
-            #import epdb; epdb.st()
-            os.kill(int(pid), 9)
-        #import epdb; epdb.st()
+        self.kill_container()
 
-    def run(self):
-        '''Spawn a processs for the simulator'''
-        if not os.path.exists(self.tmpdir):
-            os.makedirs(self.tmpdir)
-
-        fixture_path = os.path.join(
-            'tests',
-            'fixtures',
-            'issues',
-            self.meta['fixtures_date']
-        )
-
-        cmd = 'python tests/bin/github_sim.py'    
-        cmd += ' '
-        cmd += 'load'
-        cmd += ' '
-        cmd += '--fixtures=%s' % fixture_path
-        if self.number:
-            cmd += ' '
-            cmd += '--number=%s' % self.number
-        cmd += ' | tee -a %s/sim.log' % self.tmpdir
-        logger.info(cmd)
-
-        self.simpid = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            shell=True
-        )
-
-        #self.simpid.stdout.readline()
-        #print(self.simpid.returncode)
-        #import epdb; epdb.st()
-
-        while True:
-            #logger.debug('getting next line of sim output ...')
-            line = self.simpid.stdout.readline().rstrip()
-            logger.debug(line)
-            if line == '' and self.simpid.poll() != None:
-                break
-
+    def kill_container(self):
         try:
-            self.simpid.kill()
-        except Exception as e:
-            logger.warning(e)
-    """
+            info = dockersh('inspect', self.NAME)
+        except sh.ErrorReturnCode_1:
+            info = None
+        if info is not None:
+            info = json.loads(info.stdout)
+            running = info[0]['State']['Running']
+            if running:
+                res = dockersh('kill', self.NAME)
+            dockersh('rm', self.NAME)
+
+    def run_container(self):
+        # docker run -v $(pwd):/test -it jctanner/githubsim:latest /bin/bash
+        #self.container = docker_client.create_container(self.IMAGE, **self.run_kwargs)
+        res = dockersh(
+            'run',
+            '--name=%s' % self.NAME,
+            '--detach',
+            '--volume',
+            '%s:%s' % (os.path.abspath('.'), '/src'),
+            self.IMAGE,
+            'python',
+            'tests/bin/github_sim.py',
+            'load',
+            '--fixtures="tests/fixtures/issues/2018-12-18"',
+        )            
+        logger.info('new container id [%s] %s' % (self.NAME, res.strip()))
+        self.containerid = res.strip()
+        time.sleep(2)
+        log = dockersh('logs', self.containerid)
+        for line in log.stdout.split('\n'):
+            logger.info(line)
+        for line in log.stderr.split('\n'):
+            logger.info(line)
+        logger.info('container started')
+
+    def get_container_ip(self, containerid):
+        try:
+            info = dockersh('inspect', containerid)
+        except sh.ErrorReturnCode_1:
+            return None
+        info = json.loads(info.stdout)
+        ip = info[0]['NetworkSettings']['Networks']['bridge']['IPAddress']
+        logger.info('container ip found: %s' % ip)
+        return ip
+
+    def logs(self):
+        logs = dockersh('logs', self.containerid)
+        logs = logs.stdout + logs.stderr
+        return logs
 
 
 class IntegrationTest(object):
 
-    def __init__(self, target=None):
+    def __init__(self, target=None, local=False, checkoutsrc=None):
         self.target = target
         self.target_info = None
         self.simpid = None
         self.sim = None
         self.target_path = os.path.join('tests', 'integration', 'targets', self.target)
         self.target_meta = self.read_target_meta(self.target)
-        self.tmpdir = tempfile.mkdtemp()
-        self.run_simulator(self.target_meta, number=47375)
-        self.run_bot()
-        self.kill_simulator()
+        self.tmpdir = tempfile.mkdtemp(prefix='/tmp/ansibot.test')
+        self.checkoutsrc = checkoutsrc
+
+        if self.checkoutsrc:
+            self.copy_checkout()
+
+        if local:
+            self.sim = LocalSimRunner()
+        else:
+            #self.run_simulator(self.target_meta, number=47375)
+            self.run_simulator(self.target_meta)
+
+        (rc, so, se) = self.run_bot()
+        if rc != 0:
+            for line in so:
+                logger.error(line)
+            for line in self.sim.logs():
+                logger.error(line)
+
+        if not local:
+            self.kill_simulator()
         self.check_results()
+
+    def copy_checkout(self):
+        # /tmp/ansibot.test5fxYR8/cache/ansible.checkout
+        src = self.checkoutsrc
+        dst = os.path.join(self.tmpdir, 'cache', 'ansible.checkout')
+        dstparent = os.path.dirname(dst)
+        if not os.path.exists(dstparent):
+            os.makedirs(dstparent)
+        logger.info('copy %s to %s' % (src, dst))
+        shutil.copytree(src, dst)
 
     def write_bot_config(self, directory=None):
         '''Make an isolated config for testing'''
@@ -155,8 +176,8 @@ class IntegrationTest(object):
             'breakpoints=False',
             'ratelimit=False',
             'shippable_token=XXXX-XXXX-XXXX',
-            'shippable_url=http://localhost:5000',
-            'github_url=http://localhost:5000',
+            'shippable_url=http://%s:5000' % self.sim.ip,
+            'github_url=http://%s:5000' % self.sim.ip,
             'github_username=ansibot',
             'github_password=foobar',
             'github_token=AAA'
@@ -171,19 +192,24 @@ class IntegrationTest(object):
         mpath = os.path.join(self.target_path, 'meta.yml')
         with open(mpath, 'r') as f:
             ydata = yaml.load(f.read())
+        if not isinstance(ydata, dict):
+            raise Exception('target meta should be a dict-like structure')
+        if 'ansible_commit' not in ydata:
+            raise Exception('target meta needs to have an ansible_commit hash')
         #import epdb; epdb.st()
         return ydata
 
     def run_bot(self):
         '''Fork the bot and let it triage the issue(s)'''
+        logger.info('starting bot')
         if not os.path.exists(self.tmpdir):
             os.makedirs(self.tmpdir)
         self.write_bot_config(directory=self.tmpdir)
-
+        logfile = os.path.join(self.tmpdir, 'bot.log')
         cmd = [
             'ANSIBULLBOT_CONFIG=%s/ansibullbot.cfg' % self.tmpdir,
             './triage_ansible.py',
-            '--logfile=%s' % os.path.join(self.tmpdir, 'bot.log'),
+            '--logfile=%s' % logfile,
             '--commit=%s' % self.target_meta['ansible_commit'],
             '--debug',
             '--verbose',
@@ -191,7 +217,7 @@ class IntegrationTest(object):
             '--ignore_module_commits',
             '--cachedir=%s' % os.path.join(self.tmpdir, 'cache'),
             '--force',
-            '--id=47375'
+            '--id=50096'
         ]
         cmd = ' '.join(cmd)
         logger.info(cmd)
@@ -212,6 +238,12 @@ class IntegrationTest(object):
             if line == '' and p.poll() != None:
                 break
 
+        if p.returncode != 0:
+            with open(logfile, 'r') as f:
+                for line in f.readlines():
+                    logger.error(line.rstrip())
+            import epdb; epdb.st()
+
         logger.info('bot returncode: %s' % p.returncode)
         return (p.returncode, output, None)
 
@@ -219,16 +251,22 @@ class IntegrationTest(object):
         self.sim.kill()
 
     def run_simulator(self, meta, number=None):
-        '''Spawn the simulator thread'''
+        '''Spawn the simulator'''
         self.sim = SimRunner(meta=meta, number=number)
+        self.sim.run()
 
         # wait for sim to load ...
-        simurl = 'http://localhost:5000'
+        simurl = 'http://%s:5000' % self.sim.ip
+        retries = 0
         while True:
+            retries += 1
             try:
                 rr = requests.get(simurl)
             except requests.exceptions.ConnectionError:
+                if retries >= 10:
+                    raise Exception('simulator was unreachable')
                 continue
+            logger.info('test connection to simulator succeeded')
             break
 
     def check_results(self):
@@ -267,11 +305,14 @@ def main():
     u_parser = subparsers.add_parser("units", help='run unit tests')
     c_parser = subparsers.add_parser("components", help='run component tests')
     i_parser = subparsers.add_parser("integration", help='run integration tests')
+    i_parser.add_argument('--nobuild', action='store_true', help='do not rebuild the container')
+    i_parser.add_argument('--local', action='store_true', help='use http://localhost:5000 for the sim')
+    i_parser.add_argument('--checkoutsrc', help="use this path to copy the ansible checkout from")
     i_parser.add_argument('target', default=None)
 
     args = parser.parse_args()
 
-    IT = IntegrationTest(target=args.target)
+    IT = IntegrationTest(target=args.target, local=args.local, checkoutsrc=args.checkoutsrc)
 
 
 if __name__ == "__main__":

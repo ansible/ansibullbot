@@ -1,0 +1,4 @@
+logzero
+flask
+requests
+six

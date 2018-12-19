@@ -114,8 +114,7 @@ class GithubMock(object):
         '''
         pass
 
-    def tokenized_request(self, url, headers=None):
-        #print('\t(F) %s' % url)
+    def tokenized_request(self, url, headers=None, pages=None, pagecount=0):
         logger.info('(F) %s' % url)
         _headers = {}
         if self.TOKEN:
@@ -131,14 +130,16 @@ class GithubMock(object):
         data = rr.json()
         rheaders = dict(rr.headers)
 
+        # exit early if enough pages were collected
+        pagecount += 1
+        if pages and pagecount >= pages:
+            return (rheaders, data)
+
         if 'Link' in rheaders:
-            #links = headers['Link'].split(',')
-            #links = [x.split(';') for x in links]
             links = self.extract_header_links(rheaders)
             if links.get('next'):
-                (_headers, _data) = self.tokenized_request(links['next'])
+                (_headers, _data) = self.tokenized_request(links['next'], pagecount=pagecount)
                 data += _data
-                #import epdb; epdb.st()
 
         return (rheaders, data)
 
@@ -153,6 +154,11 @@ class GithubMock(object):
 
         #import epdb; epdb.st()
         return links
+
+    def fetch_first_issue_number(self, org, repo):
+        iurl = 'https://api.github.com/repos/%s/%s/issues' % (org, repo)
+        (issues_headers, issues) = self.tokenized_request(iurl, pages=1) 
+        return issues[0]['number']
 
     def fetch_fixtures(self, org, repo, number, token=None, shippable_token=None):
 
@@ -414,8 +420,16 @@ class GithubMock(object):
             bn = os.path.basename(fn)
             bn = os.path.splitext(bn)[0]
 
-            with open(fn, 'r') as f:
-                data = json.loads(f.read())
+            if fn.endswith('.gz'):
+                data = read_gzip_json(fn)
+            else:
+                with open(fn, 'r') as f:
+                    try:
+                        data = json.loads(f.read())
+                    except ValueError as e:
+                        logger.error('unable to parse %s' % fn)
+                        raise Exception(e)
+
             data = self.replace_data_urls(data)
 
             if bn == 'issue':
@@ -1046,6 +1060,31 @@ def root():
     return jsonify({})
 
 
+@app.route('/summaries')
+def summaries():
+    res = []
+
+    for domain, issues in GM.ISSUES.items():
+        for k,v in issues.items():
+            res.append([domain] + list(k) + ['issue', v['state']])
+
+    for domain, issues in GM.ISSUES.items():
+        for k,v in issues.items():
+            if [domain] + list(k) + ['issue', v['state']] in res:
+                res.remove([domain] + list(k) + ['issue', v['state']])
+            res.append([domain] + list(k) + ['pull', v['state']])
+
+    for idx,x in enumerate(res):
+        key = tuple(x[1:4])
+        ca = GM.ISSUES[x[0]][key]['created_at']
+        ua = GM.ISSUES[x[0]][key]['updated_at']
+        res[idx] += [ca, ua]
+
+    res = sorted(res)
+
+    return jsonify(res)
+
+
 @app.route('/rate_limit')
 def rate_limit():
     reset = int(time.time()) + 10
@@ -1351,11 +1390,11 @@ def repos(path):
         if not path_parts[-1].isdigit():
             raise InternalServerError(None, status_code=500)
         #return jsonify(GM.get_issue(path_parts[0], path_parts[1], path_parts[-1]))
-	issue = GM.get_issue(path_parts[0], path_parts[1], path_parts[-1])
+        issue = GM.get_issue(path_parts[0], path_parts[1], path_parts[-1])
         pprint(issue)
-	resp = jsonify(issue)
-	resp.headers['ETag'] = 'a00049ba79152d03380c34652f2cb612'
-	return resp
+        resp = jsonify(issue)
+        resp.headers['ETag'] = 'a00049ba79152d03380c34652f2cb612'
+        return resp
 
     elif len(path_parts) == 5 and path_parts[-2] == 'comments':
         # (5, [u'ansible', u'ansible', u'issues', u'comments', u'2'])
@@ -1396,9 +1435,9 @@ def repos(path):
     elif len(path_parts) == 4 and path_parts[-2] == 'pulls':
         # (4, [u'ansible', u'ansible', u'pulls', u'1'])
         issue = GM.get_pullrequest(path_parts[0], path_parts[1], path_parts[-1])
-	resp = jsonify(issue)
-	resp.headers['ETag'] = 'a00049ba79152d03380c34652f2cb612'
-	return resp
+        resp = jsonify(issue)
+        resp.headers['ETag'] = 'a00049ba79152d03380c34652f2cb612'
+        return resp
 
     elif len(path_parts) == 4 and path_parts[-2] == 'statuses':
         status = GM.get_status(path_parts[-1])
@@ -1478,8 +1517,7 @@ def abstract_path(path):
     print(request.path)
 
 
-
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('action', choices=['fetch', 'load', 'generate'])
     parser.add_argument('--debug', action='store_true')
@@ -1490,19 +1528,30 @@ if __name__ == "__main__":
     parser.add_argument('--org', default='ansible')
     parser.add_argument('--repo', default='ansible')
     parser.add_argument('--number', type=int, default=None, action='append')
+    parser.add_argument('--fixturedir', default='/tmp/bot.fixtures')
     args = parser.parse_args()
 
     GM.fixturedir = args.fixtures
 
     if args.action == 'fetch':
         # get the real upstream data for an issue and store it to disk
-        for number in args.number:
+        if not args.number and not args.count:
+            raise Exception('please specify a set of numbers or a count to fetch')
+
+        if not args.number and args.count:
+            first = GM.fetch_first_issue_number(args.org, args.repo)
+            numbers = range(first-args.count, first)
+        else:
+            numbers = args.numbers[:]
+
+        numbers = sorted(numbers, reverse=True)
+        for number in numbers:
             GM.fetch_fixtures(
                 args.org,
                 args.repo,
                 number,
                 token=args.token,
-                shippable_token=args.shippable_token
+                shippable_token=args.shippable_token,
             )
     else:
         if args.action == 'load':
@@ -1514,6 +1563,7 @@ if __name__ == "__main__":
             else:
                 cmd = 'find %s -type d' % args.fixtures
                 (rc, so, se) = run_command(cmd)
+                so = so.decode('utf-8')
                 numbers = [x.strip() for x in so.split('\n') if x.strip()]
                 numbers = [x.split('/')[-3:] for x in numbers]
                 numbers = [x for x in numbers if x[-1].isdigit()]
@@ -1536,4 +1586,8 @@ if __name__ == "__main__":
                         GM.get_issue(args.org, args.repo, i, itype='issue')
 
         #app.run(debug=True)
-        app.run(debug=False)
+        app.run(debug=False, host='0.0.0.0')
+
+
+if __name__ == "__main__":
+    main()
