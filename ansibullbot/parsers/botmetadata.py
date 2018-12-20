@@ -9,12 +9,6 @@ import yaml
 
 import six
 
-try:
-    import ruamel.yaml
-    RUAMEL_YAML_FUNC = ruamel.yaml.load
-except ImportError:
-    RUAMEL_YAML_FUNC = None
-
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text
 
@@ -168,12 +162,7 @@ class BotMetadataParser:
         #   PARSE
         #################################
 
-        yaml_loader = (
-            BotRuamelLoader if RUAMEL_YAML_FUNC is yaml.load
-            else BotYAMLLoader
-        )
-        yaml_args = (yaml_loader, ) if True else ()
-        ydata = yaml.load(data, *yaml_args)
+        ydata = yaml.load(data, BotYAMLLoader)
 
         # fix the team macros
         ydata = fix_teams(ydata)
@@ -230,15 +219,3 @@ class BotYAMLLoader(yaml.Loader):
 @default_to_unicode_strings
 class BotSafeYAMLLoader(yaml.SafeLoader):
     pass
-
-
-BotRuamelLoader = BotSafeRuamelLoader = None
-
-if RUAMEL_YAML_FUNC:
-    @default_to_unicode_strings
-    class BotRuamelLoader(ruamel.yaml.loader.Loader):
-        pass
-
-    @default_to_unicode_strings
-    class BotSafeRuamelLoader(ruamel.yaml.loader.SafeLoader):
-        pass
