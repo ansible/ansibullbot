@@ -58,6 +58,23 @@ class MockRepo(object):
         self.repo_path = repo_path
 
 
+class TestSuperShipitFacts(unittest.TestCase):
+
+    def setUp(self):
+        self.meta = {
+            u'is_new_module': False,
+            u'module_match': {
+                u'namespace': u'system',
+                u'maintainers': [u'abulimov'],
+            },
+            u'is_needs_revision': False,  # always set by needs_revision plugin (get_needs_revision_facts)
+            u'is_needs_rebase': False,
+            u'is_module_util': False,
+        }
+
+    def test_submitter_is_maintainer(self):
+        pass
+
 class TestShipitFacts(unittest.TestCase):
 
     def setUp(self):
