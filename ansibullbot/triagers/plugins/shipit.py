@@ -30,6 +30,7 @@ def get_automerge_facts(issuewrapper, meta):
         return {u'automerge': automerge, u'automerge_status': automerge_status}
 
     issue = issuewrapper
+    is_supershipit = meta[u'supershipit']
 
     if not meta[u'shipit']:
         return create_ameta(False, u'automerge shipit test failed')
@@ -43,9 +44,6 @@ def get_automerge_facts(issuewrapper, meta):
 
     if not issue.is_pullrequest():
         return create_ameta(False, u'automerge is_pullrequest test failed')
-
-    if meta[u'is_new_directory']:
-        return create_ameta(False, u'automerge is_new_directory test failed')
 
     if meta[u'merge_commits']:
         return create_ameta(False, u'automerge merge_commits test failed')
@@ -71,15 +69,6 @@ def get_automerge_facts(issuewrapper, meta):
     if not meta[u'mergeable']:
         return create_ameta(False, u'automerge mergeable test failed')
 
-    if meta[u'is_new_module']:
-        return create_ameta(False, u'automerge new_module test failed')
-
-    if not meta[u'is_module']:
-        return create_ameta(False, u'automerge is_module test failed')
-
-    if not meta[u'module_match']:
-        return create_ameta(False, u'automerge module_match test failed')
-
     if meta[u'ci_stale']:
         return create_ameta(False, u'automerge ci_stale test failed')
 
@@ -87,25 +76,40 @@ def get_automerge_facts(issuewrapper, meta):
     if meta[u'ci_state'] != u'success':
         return create_ameta(False, u'automerge ci_state test failed')
 
-    for pr_file in issue.pr_files:
+    # extra checks for anything not covered by a supershipit
+    if not is_supershipit:
 
-        thisfn = pr_file.filename
-        if thisfn.startswith(u'lib/ansible/modules'):
-            continue
+        if meta[u'is_new_module']:
+            return create_ameta(False, u'automerge new_module test failed')
 
-        elif fnmatch(thisfn, u'test/sanity/*/*.txt'):
-            if pr_file.additions or pr_file.status == u'added':
-                # new exception added, addition must be checked by an human
-                return create_ameta(False, u'automerge new file(s) test failed')
-            if pr_file.deletions:
-                # new exception delete
+        if meta[u'is_new_directory']:
+            return create_ameta(False, u'automerge is_new_directory test failed')
+
+        if not meta[u'is_module']:
+            return create_ameta(False, u'automerge is_module test failed')
+
+        if not meta[u'module_match']:
+            return create_ameta(False, u'automerge module_match test failed')
+
+        for pr_file in issue.pr_files:
+
+            thisfn = pr_file.filename
+            if thisfn.startswith(u'lib/ansible/modules'):
                 continue
-        else:
-            # other file modified, pull-request must be checked by an human
-            return create_ameta(False, u'automerge !module file(s) test failed')
 
-    if meta.get(u'component_support') != [u'community']:
-        return create_ameta(False, u'automerge community support test failed')
+            elif fnmatch(thisfn, u'test/sanity/*/*.txt'):
+                if pr_file.additions or pr_file.status == u'added':
+                    # new exception added, addition must be checked by an human
+                    return create_ameta(False, u'automerge new file(s) test failed')
+                if pr_file.deletions:
+                    # new exception delete
+                    continue
+            else:
+                # other file modified, pull-request must be checked by an human
+                return create_ameta(False, u'automerge !module file(s) test failed')
+
+        if meta.get(u'component_support') != [u'community']:
+            return create_ameta(False, u'automerge community support test failed')
 
     return create_ameta(True, u'automerge tests passed')
 
@@ -206,6 +210,7 @@ def get_review_facts(issuewrapper, meta):
 def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=[]):
     """ Count shipits by maintainers/community/other """
 
+    # supershipit - maintainers with isolated commit access
     # maintainers - people who maintain this file/module
     # community - people who maintain file(s) in the same directory
     # other - anyone else who comments with shipit/+1/LGTM
@@ -213,6 +218,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     iw = issuewrapper
     nmeta = {
         u'shipit': False,
+        u'supershipit': False,
         u'owner_pr': False,
         u'shipit_ansible': False,
         u'shipit_community': False,
@@ -222,6 +228,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         u'shipit_count_ansible': False,
         u'shipit_count_vtotal': False,
         u'shipit_actors': None,
+        u'supershipit_actors': None,
         u'community_usernames': [],
         u'notify_community_shipit': False,
     }
@@ -256,6 +263,16 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         logging.debug(u'PRs with needs_revision or needs_rebase label do not get shipits')
         return nmeta
 
+    supershipiteers_byfile = {}
+    supershipiteers_byuser = {}
+    for cm in meta['component_matches']:
+        _ss = cm.get('supershipit', [])
+        supershipiteers_byfile[cm[u'repo_filename']] = _ss[:]
+        for ss in _ss:
+            if ss not in supershipiteers_byuser:
+                supershipiteers_byuser[ss] = []
+            supershipiteers_byuser[ss].append(cm[u'repo_filename'])
+
     maintainers = meta.get(u'component_maintainers', [])
     maintainers = \
         ModuleIndexer.replace_ansible(
@@ -277,6 +294,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     other_shipits = 0
     shipit_actors = []
     shipit_actors_other = []
+    supershipteers_voted = set()
 
     for event in iw.history.history:
 
@@ -293,6 +311,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             other_shipits = 0
             shipit_actors = []
             shipit_actors_other = []
+            supershipiteers_voted = set()
             continue
 
         actor = event[u'actor']
@@ -301,6 +320,10 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         if not is_approval(body):
             continue
         logging.info(u'%s shipit' % actor)
+
+        # super shipits
+        if actor in supershipiteers_byuser:
+            supershipiteers_voted.add(actor)
 
         # ansible shipits
         if actor in core_team:
@@ -327,6 +350,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         if actor not in shipit_actors_other:
             other_shipits += 1
             shipit_actors_other.append(actor)
+
         continue
 
     # submitters should count if they are core team/maintainers/community
@@ -370,6 +394,22 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
                 nmeta[u'notify_community_shipit'] = True
 
     logging.info(u'total shipits: %s' % total)
+
+    # supershipit ...
+    #   if a supershipiteer for each file exists and has blessed the PR
+    #   on the current commit, then override all shipit tallies and get this PR merged
+    if supershipiteers_voted:
+        nmeta[u'supershipit_actors'] = list(supershipiteers_voted)
+        cm_files = [x[u'repo_filename'] for x in meta[u'component_matches']]
+        ss_files = set()
+        for ssv in supershipiteers_voted:
+            for fn in supershipiteers_byuser[ssv]:
+                ss_files.add(fn)
+
+        if sorted(set(cm_files)) == sorted(set(ss_files)):
+            logging.info(u'supershipit enabled on %s' % iw.html_url)
+            nmeta[u'supershipit'] = True
+            nmeta[u'shipit'] = True
 
     return nmeta
 

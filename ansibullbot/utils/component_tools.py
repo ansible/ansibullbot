@@ -1015,6 +1015,7 @@ class AnsibleComponentMatcher(object):
             u'deprecated': False,
             u'topic': None,
             u'subtopic': None,
+            u'supershipit': [],
             u'namespace': None,
             u'namespace_maintainers': [],
             u'metadata': {},
@@ -1243,6 +1244,23 @@ class AnsibleComponentMatcher(object):
                 for ignoree in meta[u'ignore']:
                     if ignoree in v:
                         meta[k].remove(ignoree)
+
+        # get supershipits
+        if filename in self.BOTMETA[u'files']:
+            if u'supershipit' in self.BOTMETA[u'files'][filename]:
+                for username in self.BOTMETA[u'files'][filename]['supershipit']:
+                    if username not in meta[u'supershipit']:
+                        meta[u'supershipit'].append(username)
+        for x in reversed(range(0, len(namespace_paths) + 1)):
+            this_ns_path = u'/'.join(namespace_paths[:x])
+            if not this_ns_path:
+                continue
+            if this_ns_path in self.BOTMETA[u'files']:
+                this_supershipit = self.BOTMETA[u'files'][this_ns_path].get(u'supershipit')
+                if this_supershipit:
+                    for username in this_supershipit:
+                        if username not in meta[u'supershipit']:
+                            meta[u'supershipit'].append(username)
 
         return meta
 
