@@ -1,6 +1,3 @@
-# Prerequisites:
-pip>=9.0
-
 # Prod deps:
 -r requirements.txt
 
@@ -8,6 +5,3 @@ pip>=9.0
 pytest>=3.0
 pytest-cov>=2.6.0
 pytest-sugar>=0.9.1
-
-# Reporting:
-codecov
