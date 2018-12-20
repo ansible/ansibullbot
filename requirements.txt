@@ -10,7 +10,6 @@ python-Levenshtein
 pytz
 requests
 requests_cache
-ruamel.yaml
 sentry-sdk
 six
 sqlalchemy
