@@ -25,6 +25,59 @@ class ComponentMatcherMock(object):
         return self.expected_results
 
 
+class HistoryWrapperMock(object):
+    history = None
+    def __init__(self):
+        self.history = []
+
+
+class IssueWrapperMock(object):
+    _is_pullrequest = False
+    _files = []
+    _wip = False
+    _history = None
+    _submitter = 'bob'
+
+    def __init__(self, org, repo, number):
+        self._history = HistoryWrapperMock()
+        self.org = org
+        self.repo = repo
+        self.number = number
+
+    def is_pullrequest(self):
+        return self._is_pullrequest
+
+    def add_comment(self, user, body):
+        payload = {'actor': user, 'event': 'commented', 'body': body}
+        self.history.history.append(payload)
+
+    def add_file(self, filename, content):
+        pass
+
+    @property
+    def wip(self):
+        return self._wip
+
+    @property
+    def files(self):
+        return self._files
+
+    @property
+    def history(self):
+        return self._history
+
+    @property
+    def submitter(self):
+        return self._submitter
+
+    @property
+    def html_url(self):
+        if self.is_pullrequest():
+            return 'https://github.com/%s/%s/pulls/%s' % (self.org, self.repo, self.number)
+        else:
+            return 'https://github.com/%s/%s/issues/%s' % (self.org, self.repo, self.number)
+
+
 class ModuleIndexerMock(object):
 
     def __init__(self, namespace_maintainers):
@@ -58,22 +111,120 @@ class MockRepo(object):
         self.repo_path = repo_path
 
 
-class TestSuperShipitFacts(unittest.TestCase):
+class TestSuperShipit(unittest.TestCase):
 
-    def setUp(self):
-        self.meta = {
-            u'is_new_module': False,
-            u'module_match': {
-                u'namespace': u'system',
-                u'maintainers': [u'abulimov'],
-            },
-            u'is_needs_revision': False,  # always set by needs_revision plugin (get_needs_revision_facts)
-            u'is_needs_rebase': False,
+    def test_supershipit_shipit_facts(self):
+        # a supershipit should count from a supershipiteer
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_comment('jane', 'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
             u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']}
+            ]
         }
+        sfacts = get_shipit_facts(IW, meta, MI)
+        assert sfacts[u'shipit']
+        assert sfacts[u'supershipit']
+        assert sfacts[u'shipit_actors'] == []
+        assert sfacts[u'shipit_actors_other'] == [u'jane']
 
-    def test_submitter_is_maintainer(self):
-        pass
+    def test_supershipit_shipit_on_all_files(self):
+        # count all the supershipits
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_comment(u'jane', u'shipit')
+        IW.add_comment(u'doe', u'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane']},
+                {u'repo_filename': u'bar', u'supershipit': [u'doe']}
+            ]
+        }
+        sfacts = get_shipit_facts(IW, meta, MI)
+        assert sfacts[u'shipit']
+        assert sfacts[u'supershipit']
+        assert sfacts[u'shipit_actors'] == []
+        assert sfacts[u'shipit_actors_other'] == [u'jane', u'doe']
+
+    def test_supershipit_shipit_not_all_files(self):
+        # make sure there is supershipit for all files
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_comment(u'jane', u'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane']},
+                {u'repo_filename': u'bar', u'supershipit': [u'doe']}
+            ]
+        }
+        sfacts = get_shipit_facts(IW, meta, MI)
+        assert not sfacts[u'shipit']
+        assert not sfacts[u'supershipit']
+        assert sfacts[u'shipit_actors_other'] == [u'jane']
+        assert not sfacts[u'shipit_actors']
+
+    def test_maintainer_is_not_supershipit(self):
+        # a maintainer should not be auto-added as a shipiteer
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_comment(u'janetainer', u'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_maintainers': [u'janetainer'],
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'maintainers': [u'janetainer']}
+            ]
+        }
+        sfacts = get_shipit_facts(IW, meta, MI)
+        assert not sfacts[u'shipit']
+        assert not sfacts[u'supershipit']
+        assert sfacts[u'shipit_actors'] == [u'janetainer']
+        assert not sfacts[u'shipit_actors_other']
+        assert sfacts[u'shipit_count_maintainer'] == 1
+        assert sfacts[u'shipit_actors'] == [u'janetainer']
+
+    def test_core_is_not_supershipit(self):
+        # a core team member should not be auto-added as a shipiteer
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_comment('coreperson', 'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']}
+            ]
+        }
+        sfacts = get_shipit_facts(IW, meta, MI, core_team=[u'coreperson'])
+        assert not sfacts[u'supershipit']
+        assert not sfacts[u'shipit']
+        assert not sfacts[u'supershipit']
+        assert not sfacts[u'shipit_actors_other']
+        assert sfacts[u'shipit_actors'] == [u'coreperson']
+
 
 class TestShipitFacts(unittest.TestCase):
 
