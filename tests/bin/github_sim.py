@@ -468,12 +468,12 @@ class GithubMock(object):
                 jobId = bn.replace('jobId_', '')                
                 self.JOBIDS[jobId] = data
             elif bn.startswith('jobTestReport_'):
-                jobId = bn.replace('jobTestReport_', '')                
+                jobId = bn.replace('jobTestReport_', '').replace('.json', '')
                 self.JOBTESTREPORTS[jobId] = data
                 #if [x for x in data if 'path' not in x]:
                 #    import epdb; epdb.st()
             elif bn.startswith('jobs_'):
-                jobsId = bn.replace('jobs_', '')                
+                jobsId = bn.replace('jobs_', '').replace('.json', '')
                 self.JOBS[jobsId] = data
 
     def replace_data_urls(self, data):
@@ -1488,8 +1488,17 @@ def shippable_runs():
 def shippable_run(runid):
     # /runs?projectIds=573f79d02a8192902e20e34b&runNumbers=89651
     run = GM.RUNIDS.get(runid, {})
-    print(run)
+    run = run[0]
+    #print(run)
+    #import epdb; epdb.st()
     return jsonify(run)
+
+
+@app.route('/runs/<runid>/<action>', methods=['GET', 'POST'])
+def run_action(runid, action):
+    run = GM.RUNIDS.get(runid, {})
+    run = run[0]
+    import epdb; epdb.st()
 
 
 @app.route('/jobs/<jobid>/jobTestReports',  methods=['GET', 'POST'])

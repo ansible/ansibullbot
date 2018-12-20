@@ -194,6 +194,7 @@ class ShippableRuns(object):
                 logging.error(u'breakpoint!')
                 import epdb; epdb.st()
             else:
+                import epdb; epdb.st()
                 #raise Exception(u'no json data')
                 raise ShippableNoData()
 
