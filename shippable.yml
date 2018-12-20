@@ -1,12 +1,15 @@
 language: python
 python:
-  - 2.7
-  - 3.7
+- 2.7
+- 3.7
+env:
+- TOXENV: python
 build:
   ci:
-   - shippable_retry pip install -Ur test-requirements.txt
+  - shippable_retry pip install -Ur tox>=3.6
+  - tox --notest
 
-   - pytest
+  - tox
 
   always:
-    - codecov --token=272fc7a8-bd55-4e0c-af2f-7d475d0f3c0a -r ansible/ansibullbot -f shippable/codecoverage/pytest-cov.xml -X gcov
+  - tox -e report-coverage
