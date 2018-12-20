@@ -1,3 +1,5 @@
+-c constraints.txt
+
 argparse
 beautifulsoup4
 fuzzywuzzy
