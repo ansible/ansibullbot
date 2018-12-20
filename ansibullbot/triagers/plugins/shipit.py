@@ -268,7 +268,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
     supershipiteers_byfile = {}
     supershipiteers_byuser = {}
-    for cm in meta['component_matches']:
+    for cm in meta.get('component_matches', []):
         _ss = cm.get('supershipit', [])
         supershipiteers_byfile[cm[u'repo_filename']] = _ss[:]
         for ss in _ss:
@@ -297,7 +297,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     other_shipits = 0
     shipit_actors = []
     shipit_actors_other = []
-    supershipteers_voted = set()
+    supershipiteers_voted = set()
 
     for event in iw.history.history:
 
