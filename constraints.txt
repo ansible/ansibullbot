@@ -186,6 +186,9 @@ markupsafe==1.1.0 \
     --hash=sha256:f82e347a72f955b7017a39708a3667f106e6ad4d10b25f237396a7115d8ed5fd \
     --hash=sha256:fb7c206e01ad85ce57feeaaa0bf784b97fa3cad0d4a5737bc5295785f5c613a1 \
     # via jinja2
+mock==2.0.0 \
+    --hash=sha256:5ce3c71c5545b472da17b72268978914d0252980348636840bd34a00b5cc96c1 \
+    --hash=sha256:b158b6df76edd239b8208d481dc46b6afd45a846b7812ff0ce58971cf5bc8bba
 more-itertools==4.3.0 \
     --hash=sha256:c187a73da93e7a8acc0001572aebc7e3c69daf7bf6881a2cea10650bd4420092 \
     --hash=sha256:c476b5d3a34e12d40130bc2f935028b5f636df8f372dc2c1c01dc19681b2039e \
@@ -201,6 +204,10 @@ packaging==18.0 \
 paramiko==2.4.2 \
     --hash=sha256:3c16b2bfb4c0d810b24c40155dbfd113c0521e7e6ee593d704e84b4c658a1f3b \
     --hash=sha256:a8975a7df3560c9f1e2b43dc54ebd40fd00a7017392ca5445ce7df409f900fcb
+pbr==5.1.1 \
+    --hash=sha256:f59d71442f9ece3dffc17bc36575768e1ee9967756e6b6535f0ee1f0054c3d68 \
+    --hash=sha256:f6d5b23f226a2ba58e14e49aa3b1bfaf814d0199144b95d78458212444de1387 \
+    # via mock
 pluggy==0.8.0 \
     --hash=sha256:447ba94990e8014ee25ec853339faf7b0fc8050cdc3289d4d71f7f410fb90095 \
     --hash=sha256:bde19360a8ec4dfd8a20dcb811780a30998101f078fc7ded6162f0076f50508f \
@@ -213,9 +220,6 @@ pyasn1==0.4.4 \
     --hash=sha256:b9d3abc5031e61927c82d4d96c1cec1e55676c1a991623cfed28faea73cdd7ca \
     --hash=sha256:f58f2a3d12fd754aa123e9fa74fb7345333000a035f3921dbdaa08597aa53137 \
     # via paramiko
-pycparser==2.19 \
-    --hash=sha256:a988718abfad80b6b157acce7bf130a30876d27603738ac39f140993246b25b3 \
-    # via cffi
 pygithub==1.43.3 \
     --hash=sha256:70d90139f61a3d88417ff15eaca6150d0b3ba7ef0dc59589ea3719c3ce518ef6
 pyjwt==1.7.1 \
@@ -243,10 +247,6 @@ pynacl==1.3.0 \
     --hash=sha256:e2da3c13307eac601f3de04887624939aca8ee3c9488a0bb0eca4fb9401fc6b1 \
     --hash=sha256:f67814c38162f4deb31f68d590771a29d5ae3b1bd64b75cf232308e5c74777e0 \
     # via paramiko
-pyparsing==2.3.0 \
-    --hash=sha256:40856e74d4987de5d01761a22d1621ae1c7f8774585acae358aa5c5936c6c90b \
-    --hash=sha256:f353aab21fd474459d97b709e527b5571314ee5f067441dc9f88e33eecd96592 \
-    # via packaging
 pytest-cov==2.6.0 \
     --hash=sha256:513c425e931a0344944f84ea47f3956be0e416d95acbd897a44970c8d926d5d7 \
     --hash=sha256:e360f048b7dae3f2f2a9a4d067b2dd6b6a015d384d1577c994a43f3f7cbad762
@@ -273,19 +273,15 @@ pyyaml==3.13 \
     --hash=sha256:d5eef459e30b09f5a098b9cea68bebfeb268697f78d647bd255a085371ac7f3f \
     --hash=sha256:e01d3203230e1786cd91ccfdc8f8454c8069c91bee3962ad93b87a4b2860f537 \
     --hash=sha256:e170a9e6fcfd19021dd29845af83bb79236068bf5fd4df3327c1be18182b2531
-requests-cache==0.4.13 \
-    --hash=sha256:e9270030becc739b0a7f7f834234c73a878b2d794122bf76f40055a22419eb67 \
-    --hash=sha256:fe561ca119879bbcfb51f03a35e35b425e18f338248e59fd5cf2166c77f457a2
 requests==2.21.0 \
     --hash=sha256:502a824f31acdacb3a35b6690b5fbf0bc41d63a24a45c4004352b0242707598e \
     --hash=sha256:7bf2a778576d825600030a110f3c0e3e8edc51dfaafe1c146e39a2027784957b
+requests_cache==0.4.13 \
+    --hash=sha256:e9270030becc739b0a7f7f834234c73a878b2d794122bf76f40055a22419eb67 \
+    --hash=sha256:fe561ca119879bbcfb51f03a35e35b425e18f338248e59fd5cf2166c77f457a2
 sentry-sdk==0.6.4 \
     --hash=sha256:635f2c9dde9995150435a4f6ba06a944ba94e9754ad7594b42c2fcb001a44dfd \
     --hash=sha256:c1ff8034b819b46b38d110f5d7d613450dd047469924be0fdfb77c67c24f7df4
-singledispatch==3.4.0.3 \
-    --hash=sha256:5b06af87df13818d14f08a028e42f566640aef80805c3b50c5056b086e3c2b9c \
-    --hash=sha256:833b46966687b3de7f438c761ac475213e53b306740f1abfaa86e1d1aae56aa8 \
-    # via nltk
 six==1.12.0 \
     --hash=sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c \
     --hash=sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73
@@ -304,9 +300,6 @@ urllib3==1.24.1 \
     --hash=sha256:61bf29cada3fc2fbefad4fdf059ea4bd1b4a86d2b6d15e1c7c0b582b9752fe39 \
     --hash=sha256:de9529817c93f27c8ccbfead6985011db27bd0ddfcdb2d86f3f663385c6a9c22 \
     # via requests, sentry-sdk
-wrapt==1.10.11 \
-    --hash=sha256:d4d560d479f2c21e1b5443bbd15fe7ec4b37fe7e53d335d3b9b0a7b1226fe3c6 \
-    # via deprecated
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip
