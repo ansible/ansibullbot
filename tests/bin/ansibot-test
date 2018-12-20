@@ -27,7 +27,7 @@ docker_client = client = docker.from_env()
 
 class LocalSimRunner(object):
 
-    ip = '127.0.0.1'
+    ip = 'localhost'
 
     def logs(self):
         return []
@@ -217,10 +217,19 @@ class IntegrationTest(object):
             '--ignore_module_commits',
             '--cachedir=%s' % os.path.join(self.tmpdir, 'cache'),
             '--force',
-            '--id=50096'
         ]
+
+        if 'numbers' in self.target_meta:
+            for number in self.target_meta['numbers']:
+                cmd.append('--id=%s' % number)
+
         cmd = ' '.join(cmd)
         logger.info(cmd)
+
+        runfile = os.path.join(self.tmpdir, 'run.sh')
+        with open(runfile, 'w') as f:
+            f.write('#!/bin/bash\n')
+            f.write(cmd + '\n')
 
         p = subprocess.Popen(
             cmd,
@@ -293,8 +302,6 @@ class IntegrationTest(object):
                 expected = json.loads(f.read())
 
             assert meta['actions'] == expected['actions']
-
-        #import epdb; epdb.st()
 
 
 def main():
