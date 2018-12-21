@@ -12,7 +12,10 @@ from tests.utils.issue_mock import IssueMock
 from tests.utils.helpers import get_issue
 from tests.utils.module_indexer_mock import create_indexer
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
-from ansibullbot.triagers.plugins.shipit import get_review_facts, get_shipit_facts, is_approval
+from ansibullbot.triagers.plugins.shipit import get_automerge_facts
+from ansibullbot.triagers.plugins.shipit import get_review_facts
+from ansibullbot.triagers.plugins.shipit import get_shipit_facts
+from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 
@@ -225,6 +228,38 @@ class TestSuperShipit(unittest.TestCase):
         assert not sfacts[u'shipit_actors_other']
         assert sfacts[u'shipit_actors'] == [u'coreperson']
 
+    def test_automerge_community_only(self):
+        # automerge should only be allowed if the support is 100% community
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        meta1 = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_support': [u'core', u'community'],
+            u'is_backport': False,
+            u'merge_commits': False,
+            u'has_commit_mention': False,
+            u'is_needs_info': False,
+            u'has_shippable': True,
+            u'has_travis': False,
+            u'mergeable': True,
+            u'ci_stale': False,
+            u'ci_state': u'success',
+            u'shipit': True,
+            u'supershipit': True,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']}
+            ]
+        }
+        meta2 = meta1.copy()
+        meta2[u'component_support'] = [u'community', u'community']
+        afacts1 = get_automerge_facts(IW, meta1)
+        afacts2 = get_automerge_facts(IW, meta2)
+
+        assert afacts1[u'automerge'] == False
+        assert afacts2[u'automerge'] == True
 
 class TestShipitFacts(unittest.TestCase):
 
