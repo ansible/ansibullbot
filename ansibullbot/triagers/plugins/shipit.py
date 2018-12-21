@@ -76,7 +76,9 @@ def get_automerge_facts(issuewrapper, meta):
     if meta[u'ci_state'] != u'success':
         return create_ameta(False, u'automerge ci_state test failed')
 
-    if meta['ucomponent_support'] != u'community':
+    # component support is a list of the support levels for each file
+    cs = sorted(set(meta.get(u'component_support', [])))
+    if cs != [u'community']:
         return create_ameta(False, u'automerge community support test failed')
 
     # extra checks for anything not covered by a supershipit
