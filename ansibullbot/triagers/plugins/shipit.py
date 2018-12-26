@@ -4,6 +4,7 @@ import itertools
 import logging
 from fnmatch import fnmatch
 from ansibullbot.utils.moduletools import ModuleIndexer
+from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 
 import ansibullbot.constants as C
 
@@ -12,7 +13,14 @@ def is_approval(body):
     if not body:
         return False
     lines = [x.strip() for x in body.split()]
-    return u'shipit' in lines or u'+1' in lines or u'LGTM' in lines
+    return u'shipit' in lines or u'+1' in lines or u'LGTM' in lines or 'rebuild_merge' in lines
+
+
+def is_rebuild_merge(body):
+    if not body:
+        return False
+    lines = [x.strip() for x in body.split()]
+    return u'rebuild_merge' in lines
 
 
 def get_automerge_facts(issuewrapper, meta):
@@ -236,6 +244,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
         u'supershipit_actors': None,
         u'community_usernames': [],
         u'notify_community_shipit': False,
+        u'is_rebuild_merge': False,
     }
 
     if not iw.is_pullrequest():
@@ -300,6 +309,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     shipit_actors = []
     shipit_actors_other = []
     supershipiteers_voted = set()
+    rebuild_merge = False
 
     for event in iw.history.history:
 
@@ -310,6 +320,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
 
         # commits reset the counters
         if event[u'event'] == u'committed':
+            logging.info(event)
             ansible_shipits = 0
             maintainer_shipits = 0
             community_shipits = 0
@@ -317,14 +328,22 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             shipit_actors = []
             shipit_actors_other = []
             supershipiteers_voted = set()
+            rebuild_merge = False
+            logging.info('commit detected, resetting shipit tallies')
             continue
 
         actor = event[u'actor']
         body = event.get(u'body', u'')
         body = body.strip()
+
         if not is_approval(body):
             continue
-        logging.info(u'%s shipit' % actor)
+
+        if actor in core_team and is_rebuild_merge(body):
+            rebuild_merge = True
+            logging.info(u'%s shipit [rebuild_merge]' % actor)
+        else:
+            logging.info(u'%s shipit' % actor)
 
         # super shipits
         if actor in supershipiteers_byuser:
@@ -383,11 +402,14 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     total = community_shipits + maintainer_shipits + ansible_shipits
     nmeta[u'shipit_count_vtotal'] = total + other_shipits
 
+    if rebuild_merge:
+        nmeta['is_rebuild_merge'] = True
+
     # include shipits from other people to push over the edge
     if total == 1 and other_shipits > 2:
         total += other_shipits
 
-    if total > 1:
+    if total > 1 or rebuild_merge:
         nmeta[u'shipit'] = True
     elif meta[u'is_new_module'] or \
             (len(maintainers) == 1 and maintainer_shipits == 1):
