@@ -36,7 +36,7 @@ class HistoryWrapperMock(object):
 
 class IssueWrapperMock(object):
     _is_pullrequest = False
-    _files = []
+    _pr_files = []
     _wip = False
     _history = None
     _submitter = 'bob'
@@ -55,7 +55,8 @@ class IssueWrapperMock(object):
         self.history.history.append(payload)
 
     def add_file(self, filename, content):
-        pass
+        mf = MockFile(filename, content=content)
+        self._pr_files.append(mf)
 
     @property
     def wip(self):
@@ -63,7 +64,7 @@ class IssueWrapperMock(object):
 
     @property
     def files(self):
-        return self._files
+        return [x.filename for x in self._pr_files]
 
     @property
     def history(self):
@@ -105,8 +106,9 @@ class FileIndexerMock(object):
 
 
 class MockFile(object):
-    def __init__(self, name):
+    def __init__(self, name, content=u''):
         self.filename = name
+        self.content = content
 
 
 class MockRepo(object):
@@ -260,6 +262,72 @@ class TestSuperShipit(unittest.TestCase):
 
         assert afacts1[u'automerge'] == False
         assert afacts2[u'automerge'] == True
+
+
+class TestShipitRebuildMerge(unittest.TestCase):
+
+    def testshipit_with_core_rebuild_merge(self):
+        # a rebuild_merge should also be a shipit
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_file(u'foo', u'')
+        IW.add_comment('jane', 'shipit')
+        IW.add_comment('x', 'rebuild_merge')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_maintainers': [u'jane', u'doe'],
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'maintainers': [u'jane', u'doe']}
+            ]
+        }
+        core_team = ['x']
+        sfacts = get_shipit_facts(IW, meta, MI, core_team=core_team)
+
+        assert sfacts[u'shipit']
+        assert not sfacts[u'supershipit']
+        assert not sfacts[u'supershipit_actors']
+        assert sfacts[u'shipit_actors'] == [u'jane', u'x']
+        assert not sfacts[u'shipit_actors_other']
+        assert sfacts[u'shipit_count_ansible'] == 1
+        assert sfacts[u'shipit_count_maintainer'] == 1
+        assert sfacts[u'shipit_count_other'] == 0
+        assert sfacts[u'shipit_count_vtotal'] == 2
+
+    def testshipit_with_noncore_rebuild_merge(self):
+        # a !core rebuild_merge should not be a shipit?
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_file(u'foo', u'')
+        IW.add_comment('jane', 'shipit')
+        IW.add_comment('z', 'rebuild_merge')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_maintainers': [u'jane', u'doe'],
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'maintainers': [u'jane', u'doe']}
+            ]
+        }
+        core_team = ['x']
+        sfacts = get_shipit_facts(IW, meta, MI, core_team=core_team)
+
+        assert not sfacts[u'shipit']
+        assert not sfacts[u'supershipit']
+        assert not sfacts[u'supershipit_actors']
+        assert sfacts[u'shipit_actors'] == [u'jane']
+        assert sfacts[u'shipit_actors_other'] == [u'z']
+        assert sfacts[u'shipit_count_ansible'] == 0
+        assert sfacts[u'shipit_count_maintainer'] == 1
+        assert sfacts[u'shipit_count_other'] == 1
+        assert sfacts[u'shipit_count_vtotal'] == 2
+
 
 class TestShipitFacts(unittest.TestCase):
 
