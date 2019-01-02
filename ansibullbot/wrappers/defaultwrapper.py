@@ -1098,9 +1098,6 @@ class DefaultWrapper(object):
         jdata = json.loads(body)
 
         # need to catch rate limit message here
-        if isinstance(jdata, dict) and u'rate' in jdata[u'message']:
-            raise RateLimitError("rate limited")
-
         if isinstance(jdata, dict):
             logging.error(
                 u'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
@@ -1108,6 +1105,14 @@ class DefaultWrapper(object):
                 jdata.keys(), len(jdata),
                 hdrs, status,
             )
+
+            is_rate_limited = u'rate' in jdata[u'message']
+            is_server_error = (
+                u'Server Error' == jdata[u'message']
+                or 500 <= status < 600
+            )
+            if is_rate_limited or is_server_error:
+                raise RateLimitError("rate limited")
 
         return jdata
 
