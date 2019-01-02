@@ -1097,7 +1097,6 @@ class DefaultWrapper(object):
         )
         jdata = json.loads(body)
 
-        # need to catch rate limit message here
         if isinstance(jdata, dict):
             logging.error(
                 u'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
@@ -1111,8 +1110,17 @@ class DefaultWrapper(object):
                 u'Server Error' == jdata[u'message']
                 or 500 <= status < 600
             )
-            if is_rate_limited or is_server_error:
+
+            if is_rate_limited:
                 raise RateLimitError("rate limited")
+
+            if is_server_error:
+                raise RateLimitError("server error")
+
+            raise RateLimitError(
+                "unknown error: GH responded with a dict "
+                "while a list of reviews was expected"
+            )
 
         return jdata
 
