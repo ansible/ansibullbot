@@ -20,9 +20,8 @@ from __future__ import print_function
 import logging
 import sys
 
-from ansibullbot import constants
 from ansibullbot.triagers.ansible import AnsibleTriage
-import sentry_sdk
+from ansibullbot.utils.sentry import initialize_sentry
 
 
 def handle_exception(exc_type, exc_value, exc_traceback):
@@ -36,13 +35,8 @@ sys.excepthook = handle_exception
 
 
 def main():
-    sentry_sdk.init(
-        dsn=constants.DEFAULT_SENTRY_DSN,
-        environment=constants.DEFAULT_SENTRY_ENV,
-        server_name=constants.DEFAULT_SENTRY_SERVER_NAME,
-        attach_stacktrace=constants.DEFAULT_SENTRY_TRACE,
-        release=constants.ANSIBULLBOT_VERSION,
-    )
+    initialize_sentry()
+
     # Run the triager ...
     AnsibleTriage().start()
 
