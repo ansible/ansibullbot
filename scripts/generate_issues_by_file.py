@@ -6,9 +6,11 @@ import sys
 
 from ansibullbot.utils.receiver_client import get_receiver_metadata
 from ansibullbot.utils.receiver_client import get_receiver_summaries
+from ansibullbot.utils.sentry import initialize_sentry
 
 
 def main():
+    initialize_sentry()
 
     # define where to dump the resulting files
     if len(sys.argv) > 1:
