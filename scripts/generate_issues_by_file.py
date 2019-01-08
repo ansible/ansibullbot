@@ -4,6 +4,7 @@ import json
 import os
 import sys
 
+from ansibullbot._text_compat import to_bytes
 from ansibullbot.utils.receiver_client import get_receiver_metadata
 from ansibullbot.utils.receiver_client import get_receiver_summaries
 from ansibullbot.utils.sentry import initialize_sentry
@@ -43,7 +44,6 @@ def main():
             this_meta.get('component_matches', [])
         except Exception as e:
             print(e)
-            #import epdb; epdb.st()
             continue
 
         for component in this_meta.get('component_matches', []):
@@ -56,9 +56,6 @@ def main():
 
             if not filename:
                 continue
-
-            #if filename.endswith('connection/docker.py'):
-            #    import epdb; epdb.st()
 
             if 'maintainers' in component:
                 for maintainer in component['maintainers']:
@@ -90,33 +87,30 @@ def main():
     tuples.reverse()
 
     destfile = os.path.join(destdir, 'byfile_sorted.txt')
-    with open(destfile, 'w') as f:
+    with open(destfile, 'wb') as f:
         for tup in tuples:
-            f.write('{}\n'.format(tup[0]))
+            f.write(b'%s\n' % to_bytes(tup[0]))
             for issue in tup[1:]:
-                issue = issue.encode('ascii', 'ignore')
-                title = ISSUES[issue]['title']
-                title = title.encode('ascii', 'ignore')
-                f.write('\t{}\t{}\n'.format(issue, title))
+                issue = to_bytes(issue)
+                title = to_bytes(ISSUES[issue]['title'])
+                f.write(b'\t%s\t%s\n' % (issue, title))
 
     destfile = os.path.join(destdir, 'byfile_sorted.html')
-    with open(destfile, 'w') as f:
-        for idp,tup in enumerate(tuples):
-            f.write('<div style="background-color: #cfc ; padding: 10px; border: 1px solid green;">\n')
-            file_ref = '{}. <a href="https://github.com/ansible/ansible/blob/devel/{}">https://github.com/ansible/ansible/blob/devel/{}</a> {} total'.format(
-                (idp+1), tup[0], tup[0], len(tup[1:])
+    with open(destfile, 'wb') as f:
+        for idp, tup in enumerate(tuples):
+            f.write(b'<div style="background-color: #cfc ; padding: 10px; border: 1px solid green;">\n')
+            file_ref = b'%s. <a href="https://github.com/ansible/ansible/blob/devel/%s">https://github.com/ansible/ansible/blob/devel/%s</a> %s total' % (
+                (idp+1), to_bytes(tup[0]), to_bytes(tup[0]), len(tup[1:])
             )
-            f.write('{}\n'.format(file_ref))
-            f.write('</div>')
-            f.write('<br>\n')
+            f.write(b'%s\n' % (file_ref))
+            f.write(b'</div>')
+            f.write(b'<br>\n')
             for issue in tup[1:]:
-                issue = issue.encode('ascii', 'ignore')
-                title = ISSUES[issue]['title']
-                title = title.encode('ascii', 'ignore')
-
-                issue_ref = '<a href="{}">{}</a>'.format(issue, issue)
-                f.write('\t{}\t{}<br>\n'.format(issue_ref, title))
-            f.write('<br>\n')
+                issue = to_bytes(issue)
+                title = to_bytes(ISSUES[issue]['title'])
+                issue_ref = b'<a href="%s">%s</a>' % (issue, issue)
+                f.write(b'\t%s\t%s<br>\n' % (issue_ref, title))
+            f.write(b'<br>\n')
 
     tuples = BYMAINTAINER.items()
     for idx, x in enumerate(tuples):
@@ -130,11 +124,11 @@ def main():
         f.write(json.dumps(BYMAINTAINER, indent=2, sort_keys=True))
 
     destfile = os.path.join(destdir, 'bymaintainer_sorted.txt')
-    with open(destfile, 'w') as f:
+    with open(destfile, 'wb') as f:
         for tup in tuples:
-            f.write('{}\n'.format(tup[0]))
+            f.write(b'%s\n' % to_bytes(tup[0]))
             for issue in tup[1:]:
-                f.write('\t{}\n'.format(issue))
+                f.write(b'\t%s\n' % to_bytes(issue))
 
 
 if __name__ == "__main__":
