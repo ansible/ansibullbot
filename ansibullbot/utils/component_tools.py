@@ -1215,24 +1215,36 @@ class AnsibleComponentMatcher(object):
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
 
-        # walk up the botmeta tree looking for ignores to include
-        if meta.get(u'repo_filename'):
-            namespace_paths = os.path.dirname(meta[u'repo_filename'])
+        def get_ns_paths(repo_filename, files):
+            """Emit all subpaths matching the given file list."""
+            if not repo_filename:
+                return
+
+            namespace_paths = os.path.dirname(repo_filename)
             namespace_paths = namespace_paths.split(u'/')
+
             for x in reversed(range(0, len(namespace_paths) + 1)):
                 this_ns_path = u'/'.join(namespace_paths[:x])
                 if not this_ns_path:
                     continue
                 print(u'check {}'.format(this_ns_path))
-                if this_ns_path in self.BOTMETA[u'files']:
-                    this_ignore = self.BOTMETA[u'files'][this_ns_path].get(u'ignore') or \
-                        self.BOTMETA[u'files'][this_ns_path].get(u'ignored') or \
-                        self.BOTMETA[u'files'][this_ns_path].get(u'ignores')
-                    print(u'ignored: {}'.format(this_ignore))
-                    if this_ignore:
-                        for username in this_ignore:
-                            if username not in meta[u'ignore']:
-                                meta[u'ignore'].append(username)
+                if this_ns_path in files:
+                    yield this_ns_path
+
+        # walk up the botmeta tree looking for ignores to include
+        for this_ns_path in get_ns_paths(
+            meta.get(u'repo_filename'), self.BOTMETA[u'files'],
+        ):
+            this_ignore = (
+                self.BOTMETA[u'files'][this_ns_path].get(u'ignore') or
+                self.BOTMETA[u'files'][this_ns_path].get(u'ignored') or
+                self.BOTMETA[u'files'][this_ns_path].get(u'ignores') or
+                []
+            )
+            print(u'ignored: {}'.format(this_ignore))
+            for username in this_ignore:
+                if username not in meta[u'ignore']:
+                    meta[u'ignore'].append(username)
 
         # process ignores AGAIN.
         if meta.get(u'ignore'):
@@ -1248,19 +1260,19 @@ class AnsibleComponentMatcher(object):
         # get supershipits
         if filename in self.BOTMETA[u'files']:
             if u'supershipit' in self.BOTMETA[u'files'][filename]:
-                for username in self.BOTMETA[u'files'][filename]['supershipit']:
+                for username in self.BOTMETA[u'files'][filename][u'supershipit']:
                     if username not in meta[u'supershipit']:
                         meta[u'supershipit'].append(username)
-        for x in reversed(range(0, len(namespace_paths) + 1)):
-            this_ns_path = u'/'.join(namespace_paths[:x])
-            if not this_ns_path:
-                continue
-            if this_ns_path in self.BOTMETA[u'files']:
-                this_supershipit = self.BOTMETA[u'files'][this_ns_path].get(u'supershipit')
-                if this_supershipit:
-                    for username in this_supershipit:
-                        if username not in meta[u'supershipit']:
-                            meta[u'supershipit'].append(username)
+
+        for this_ns_path in get_ns_paths(
+            meta.get(u'repo_filename'), self.BOTMETA[u'files'],
+        ):
+            this_supershipit = self.BOTMETA[u'files'][this_ns_path].get(
+                u'supershipit', [],
+            )
+            for username in this_supershipit:
+                if username not in meta[u'supershipit']:
+                    meta[u'supershipit'].append(username)
 
         return meta
 
