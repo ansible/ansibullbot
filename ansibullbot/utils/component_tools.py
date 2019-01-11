@@ -1248,7 +1248,7 @@ class AnsibleComponentMatcher(object):
         # get supershipits
         if filename in self.BOTMETA[u'files']:
             if u'supershipit' in self.BOTMETA[u'files'][filename]:
-                for username in self.BOTMETA[u'files'][filename]['supershipit']:
+                for username in self.BOTMETA[u'files'][filename][u'supershipit']:
                     if username not in meta[u'supershipit']:
                         meta[u'supershipit'].append(username)
         for x in reversed(range(0, len(namespace_paths) + 1)):
