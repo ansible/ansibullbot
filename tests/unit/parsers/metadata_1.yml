@@ -97,12 +97,12 @@ files:
   $modules/cloud/amazon/lambda_event.py: pjodouin ryansb
   $modules/cloud/amazon/lambda_facts.py: pjodouin
   $modules/cloud/amazon/lightsail.py: nickball willthames
-  $modules/cloud/amazon/rds.py: bpennypacker willthames
+  $modules/cloud/amazon/rds.py: willthames
   $modules/cloud/amazon/rds_param_group.py: scottanderson42 tastychutney
   $modules/cloud/amazon/rds_subnet_group.py: scottanderson42 tastychutney
   $modules/cloud/amazon/redshift.py: j-carl
   $modules/cloud/amazon/redshift_subnet_group.py: j-carl
-  $modules/cloud/amazon/route53.py: bpennypacker
+  $modules/cloud/amazon/route53.py: $team_ansible
   $modules/cloud/amazon/route53_facts.py: Etherdaemon
   $modules/cloud/amazon/route53_health_check.py: willthames zimbatm
   $modules/cloud/amazon/route53_zone.py: minichate
@@ -384,7 +384,7 @@ files:
   $modules/files/lineinfile.py: ahtik $team_ansible dhozac
   $modules/files/patch.py: jirutka luisperlaz
   $modules/files/replace.py: EvanK
-  $modules/files/stat.py: bpennypacker
+  $modules/files/stat.py: $team_ansible
   $modules/files/synchronize.py: $team_ansible tima
   $modules/files/tempfile.py:
   $modules/files/template.py: $team_ansible
@@ -411,7 +411,7 @@ files:
   $modules/messaging/rabbitmq_queue.py: $team_rabbitmq
   $modules/messaging/rabbitmq_user.py: $team_rabbitmq
   $modules/messaging/rabbitmq_vhost.py: choffman
-  $modules/monitoring/airbrake_deployment.py: bpennypacker
+  $modules/monitoring/airbrake_deployment.py: $team_ansible
   $modules/monitoring/bigpanda.py: hkariti
   $modules/monitoring/boundary_meter.py: ccollicutt
   $modules/monitoring/circonus_annotation.py: NickatEpic
