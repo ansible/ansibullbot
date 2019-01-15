@@ -1215,63 +1215,63 @@ class AnsibleComponentMatcher(object):
             if isinstance(v, list):
                 meta[k] = sorted(set(v))
 
-        def get_ns_paths(repo_filename, files):
-            """Emit all subpaths matching the given file list."""
+        def get_prefix_paths(repo_filename, files):
+            """Emit all prefix paths matching the given file list."""
             if not repo_filename:
                 return
 
-            namespace_paths = os.path.dirname(repo_filename)
-            namespace_paths = namespace_paths.split(u'/')
+            def make_prefixes(filename):
+                # make a byte by byte list of prefixes for this fp
+                indexes = range(0, len(filename) + 1)
+                indexes = [1-x for x in indexes]
+                indexes = [x for x in indexes if x < 0]
+                indexes = [None] + indexes
+                prefixes = [repo_filename[:x] for x in indexes]
+                return prefixes
 
-            for x in reversed(range(0, len(namespace_paths) + 1)):
-                this_ns_path = u'/'.join(namespace_paths[:x])
-                if not this_ns_path:
-                    continue
-                print(u'check {}'.format(this_ns_path))
-                if this_ns_path in files:
-                    yield this_ns_path
+            prefix_paths = make_prefixes(repo_filename)
 
-        # walk up the botmeta tree looking for ignores to include
-        for this_ns_path in get_ns_paths(
+            for prefix_path in prefix_paths:
+                if prefix_path in files:
+                    logging.info(u'found botmeta prefix: {}'.format(prefix_path))
+                    yield prefix_path
+
+        # walk up the botmeta tree looking for meta to include
+        for this_prefix in get_prefix_paths(
             meta.get(u'repo_filename'), self.BOTMETA[u'files'],
         ):
+
             this_ignore = (
-                self.BOTMETA[u'files'][this_ns_path].get(u'ignore') or
-                self.BOTMETA[u'files'][this_ns_path].get(u'ignored') or
-                self.BOTMETA[u'files'][this_ns_path].get(u'ignores') or
+                self.BOTMETA[u'files'][this_prefix].get(u'ignore') or
+                self.BOTMETA[u'files'][this_prefix].get(u'ignored') or
+                self.BOTMETA[u'files'][this_prefix].get(u'ignores') or
                 []
             )
-            print(u'ignored: {}'.format(this_ignore))
+
             for username in this_ignore:
                 if username not in meta[u'ignore']:
+                    logging.info(u'ignored: {}'.format(this_ignore))
                     meta[u'ignore'].append(username)
+                if username in meta[u'notify']:
+                    logging.info('remove %s notify by %s rule' % \
+                        (username, this_prefix))
+                    meta[u'notify'].remove(username)
+                if username in meta[u'assign']:
+                    logging.info('remove %s assignment by %s rule' % \
+                        (username, this_prefix))
+                    meta[u'assign'].remove(username)
+                if username in meta[u'maintainers']:
+                    logging.info('remove %s maintainer by %s rule' % \
+                        (username, this_prefix))
+                    meta[u'maintainers'].remove(username)
 
-        # process ignores AGAIN.
-        if meta.get(u'ignore'):
-            for k, v in meta.items():
-                if k == u'ignore':
-                    continue
-                if not isinstance(v, list):
-                    continue
-                for ignoree in meta[u'ignore']:
-                    if ignoree in v:
-                        meta[k].remove(ignoree)
-
-        # get supershipits
-        if filename in self.BOTMETA[u'files']:
-            if u'supershipit' in self.BOTMETA[u'files'][filename]:
-                for username in self.BOTMETA[u'files'][filename][u'supershipit']:
-                    if username not in meta[u'supershipit']:
-                        meta[u'supershipit'].append(username)
-
-        for this_ns_path in get_ns_paths(
-            meta.get(u'repo_filename'), self.BOTMETA[u'files'],
-        ):
-            this_supershipit = self.BOTMETA[u'files'][this_ns_path].get(
+            this_supershipit = self.BOTMETA[u'files'][this_prefix].get(
                 u'supershipit', [],
             )
+
             for username in this_supershipit:
                 if username not in meta[u'supershipit']:
+                    logging.info(u'supershipiteer: {}'.format(this_prefix))
                     meta[u'supershipit'].append(username)
 
         return meta
