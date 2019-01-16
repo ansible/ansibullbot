@@ -437,6 +437,10 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             logging.info(u'supershipit enabled on %s' % iw.html_url)
             nmeta[u'supershipit'] = True
             nmeta[u'shipit'] = True
+        else:
+            for cm_file in sorted(cm_files):
+                if cm_file not in ss_files:
+                    logging.info('%s is not governed by supershipit' % cm_file)
 
     return nmeta
 
