@@ -17,6 +17,17 @@ from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 
 
+
+def make_prefixes(filename):
+    # make a byte by byte list of prefixes for this fp
+    indexes = range(0, len(filename) + 1)
+    indexes = [1-x for x in indexes]
+    indexes = [x for x in indexes if x < 0]
+    indexes = [None] + indexes
+    prefixes = [filename[:x] for x in indexes]
+    return prefixes
+
+
 class AnsibleComponentMatcher(object):
 
     BOTMETA = {}
@@ -1219,15 +1230,6 @@ class AnsibleComponentMatcher(object):
             """Emit all prefix paths matching the given file list."""
             if not repo_filename:
                 return
-
-            def make_prefixes(filename):
-                # make a byte by byte list of prefixes for this fp
-                indexes = range(0, len(filename) + 1)
-                indexes = [1-x for x in indexes]
-                indexes = [x for x in indexes if x < 0]
-                indexes = [None] + indexes
-                prefixes = [repo_filename[:x] for x in indexes]
-                return prefixes
 
             prefix_paths = make_prefixes(repo_filename)
 
