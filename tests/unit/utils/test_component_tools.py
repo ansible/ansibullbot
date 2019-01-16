@@ -9,9 +9,21 @@ six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 from six.moves import mock
 
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
+from ansibullbot.utils.component_tools import make_prefixes
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.systemtools import run_command
+
+
+class TestMakePrefixes(TestCase):
+
+    def test_simple_path_is_split_correctly(self):
+        fp = u'lib/ansible/foo/bar'
+        prefixes = make_prefixes(fp)
+        assert len(prefixes) == len(fp)
+        assert fp in prefixes
+        assert prefixes[0] == fp
+        assert prefixes[-1] == u'l'
 
 
 class GitShallowRepo(GitRepoWrapper):
@@ -456,3 +468,134 @@ class TestComponentMatcher(TestCase):
     # [3739] tower_job_list module but I believe that also the other tower_* module have the same error
     # [4039] netapp_e_storagepool storage module
     # [4774] azure_rm_deployment (although azure_rm_common seems to be at work here)
+
+
+class TestComponentMatcherInheritance(TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        """Init the matcher"""
+        cachedir = tempfile.mkdtemp()
+        gitrepo = GitShallowRepo(cachedir=cachedir, repo=ComponentMatcher.REPO)
+        gitrepo.update()
+
+        file_indexer = FileIndexer(gitrepo=gitrepo)
+        file_indexer.get_files()
+        file_indexer.parse_metadata()
+
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=file_indexer)
+
+    @classmethod
+    def tearDownClass(cls):
+        """suppress temp dir"""
+        shutil.rmtree(cls.component_matcher.gitrepo.checkoutdir)
+
+    def test_get_meta_for_known_file(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            u'files': {
+                u'foo': {
+                    u'ignored': [u'foo_ignored'],
+                    u'supershipit': [u'foo_supershipit'],
+                    u'maintainers': [u'foo_maintainer'],
+                },
+                u'foo/bar': {
+                    u'ignored': [u'bar_ignored'],
+                    u'supershipit': [u'bar_supershipit'],
+                    u'maintainers': [u'bar_maintainer'],
+                },
+                u'foo/bar/baz.py': {
+                    u'ignored': [u'baz_ignored'],
+                    u'supershipit': [u'baz_supershipit'],
+                    u'maintainers': [u'baz_maintainer'],
+                    u'support': u'community'
+                },
+            }
+        }
+
+        # send in a file that is known
+        result = self.component_matcher.get_meta_for_file(u'foo/bar/baz.py')
+
+        # make sure everything inherited
+        keys = [u'ignored', u'maintainer', u'supershipit']
+        names = [u'bar', u'baz', u'foo']
+        for key in keys:
+            expected = [x + '_' + key for x in names]
+
+            if key == u'ignored':
+                key = u'ignore'
+            if key == u'maintainer':
+                key = u'maintainers'
+
+            assert sorted(result[key]) == sorted(expected)
+
+        # make sure the support level is preserved
+        assert result[u'support'] == u'community'
+
+    def test_get_meta_for_unknown_extension(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            u'files': {
+                u'foo': {
+                    u'ignored': [u'foo_ignored'],
+                    u'supershipit': [u'foo_supershipit'],
+                    u'maintainers': [u'foo_maintainer'],
+                },
+                u'foo/bar': {
+                    u'ignored': [u'bar_ignored'],
+                    u'supershipit': [u'bar_supershipit'],
+                    u'maintainers': [u'bar_maintainer'],
+                },
+                u'foo/bar/baz': {
+                    u'ignored': [u'baz_ignored'],
+                    u'supershipit': [u'baz_supershipit'],
+                    u'maintainers': [u'baz_maintainer'],
+                    u'support': u'community'
+                },
+            }
+        }
+
+        # send in a file that matches a prefix, but has an unknown extension
+        result = self.component_matcher.get_meta_for_file(u'foo/bar/baz.psx')
+
+        # make sure everything inherited
+        keys = [u'ignored', u'maintainer', u'supershipit']
+        names = [u'bar', u'baz', u'foo']
+        for key in keys:
+            expected = [x + '_' + key for x in names]
+
+            if key == u'ignored':
+                key = u'ignore'
+            if key == u'maintainer':
+                key = u'maintainers'
+
+            assert sorted(result[key]) == sorted(expected)
+
+        # make sure the support level is applied
+        assert result[u'support'] == u'community'
+
+    def test_get_meta_support_inheritance(self):
+        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+            u'files': {
+                u'foo': {
+                    u'ignored': [u'foo_ignored'],
+                    u'supershipit': [u'foo_supershipit'],
+                    u'maintainers': [u'foo_maintainer'],
+                },
+                u'foo/bar': {
+                    u'ignored': [u'bar_ignored'],
+                    u'supershipit': [u'bar_supershipit'],
+                    u'maintainers': [u'bar_maintainer'],
+                },
+                u'foo/bar/baz': {
+                    u'ignored': [u'baz_ignored'],
+                    u'supershipit': [u'baz_supershipit'],
+                    u'maintainers': [u'baz_maintainer'],
+                    u'support': u'core'
+                },
+            }
+        }
+
+        # send in a file that matches a prefix, but has an unknown extension
+        result = self.component_matcher.get_meta_for_file(u'foo/bar/baz.psx')
+
+        # make sure the support level is applied
+        assert result[u'support'] == u'core'
