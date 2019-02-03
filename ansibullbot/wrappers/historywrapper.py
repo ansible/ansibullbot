@@ -68,7 +68,10 @@ class HistoryWrapper(object):
                 u'history.pickle'
             )
 
-        self.cachedir = os.path.dirname(self.cachefile)
+        self.cachedir = os.path.join(
+            self.maincache,
+            os.path.dirname(self.cachefile)
+        )
         if u'issues' not in self.cachedir:
             logging.error(self.cachedir)
             if C.DEFAULT_BREAKPOINTS:
