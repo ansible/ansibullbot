@@ -60,6 +60,24 @@ files:
     packaging/:
 """
 
+EXAMPLE_ANCHORS = """
+---
+macros:
+    team_foo:
+        - larry
+        - curly
+        - moe
+    modules: lib/ansible/modules
+files:
+    $modules/topdir/: &topdir
+        labels: topdir
+    $modules/topdir/topfile:
+        <<: *topdir
+    docs/foo/bar: *topdir
+    test/foo/bar: *topdir
+"""
+
+
 
 class TestBotMetaIndexerBase(unittest.TestCase):
     def setUp(self):
@@ -229,3 +247,24 @@ class TestBotMetadataPropagation(TestBotMetaIndexerBase):
 
         # default value for support isn't set by botmeta
         self.assertNotIn(u'support', data[u'files'][u'lib/ansible/module_utils/other'])
+
+
+class TestBotMetadataParserAnchors(TestBotMetaIndexerBase):
+    def runTest(self):
+        data = BotMetadataParser.parse_yaml(EXAMPLE_ANCHORS)
+
+        # shortcuts
+        topdir = u'lib/ansible/modules/topdir'
+        dfile = u'docs/foo/bar'
+        mfile = u'lib/ansible/modules/topdir/topfile'
+
+        # labels should be automatic from the path(s)
+        assert u'docs' in data[u'files'][dfile][u'labels']
+
+        # children should inherit from their parent anchors
+        assert u'topdir' in data[u'files'][dfile][u'labels']
+        assert u'topdir' in data[u'files'][dfile][u'labels']
+
+        # we do not want pointers merging all data into the anchor
+        assert u'docs' not in data[u'files'][topdir][u'labels']
+        assert u'docs' not in data[u'files'][mfile][u'labels']
