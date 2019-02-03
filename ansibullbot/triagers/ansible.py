@@ -93,6 +93,7 @@ from ansibullbot.triagers.plugins.shipit import get_submitter_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
 from ansibullbot.triagers.plugins.small_patch import get_small_patch_facts
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
+from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 
@@ -1317,14 +1318,12 @@ class AnsibleTriage(DefaultTriager):
                 actions.newlabel.append(u'backport')
 
         # https://github.com/ansible/ansibullbot/issues/29
-        if self.meta[u'is_module']:
-            mmatches = self.meta[u'module_match']
-            if not isinstance(mmatches, list):
-                mmatches = [mmatches]
-            for mmatch in mmatches:
-                if mmatch.get(u'deprecated'):
-                    if u'deprecated' not in iw.labels:
-                        actions.newlabel.append(u'deprecated')
+        if self.meta['deprecated']:
+            if u'deprecated' not in iw.labels:
+                actions.newlabel.append(u'deprecated')
+        else:
+            if u'deprecated' in iw.labels:
+                actions.unlabel.append(u'deprecated')
 
         # https://github.com/ansible/ansibullbot/issues/406
         if iw.is_pullrequest():
@@ -2034,6 +2033,9 @@ class AnsibleTriage(DefaultTriager):
 
         # first time contributor?
         self.meta.update(get_contributor_facts(iw))
+
+        # is it deprecated?
+        self.meta.update(get_deprecation_facts(iw, self.meta))
 
         # need these keys to always exist
         if u'merge_commits' not in self.meta:
