@@ -714,10 +714,20 @@ class GithubWebScraper(object):
         return data
 
     def _parse_issue_summary_page(self, soup):
+
+        # 2019-02-02
+        #   <a id="issue_31602_link" class="link-gray-dark v-align-middle
+        #       no-underline h4 js-navigation-open" data-hovercard-type="issue"
+        #       data-hovercard-url="/ansible/ansible/issues/31602/ hovercard" 
+        #       href="/ansible/ansible/issues/31602">TITLE</a>
+
+
         data = {
-            u'issues': {}
+            u'issues': {},
+            u'next_page': None
         }
 
+        '''
         lis = soup.findAll(
             u'li',
             {u'class': lambda L: L and L.endswith(u'issue-row')}
@@ -830,13 +840,59 @@ class GithubWebScraper(object):
                     u'closed_at': closed_at,
                     u'merged_at': merged_at
                 }
+        '''
 
+        '''
         # next_page
         next_page = None
         next_a = soup.find(u'a', {u'class': [u'next_page']})
         if next_a:
             next_page = next_a.attrs[u'href']
         data[u'next_page'] = next_page
+        '''
+
+        # 2019-02-02
+        #   <a id="issue_31602_link" class="link-gray-dark v-align-middle
+        #       no-underline h4 js-navigation-open" data-hovercard-type="issue"
+        #       data-hovercard-url="/ansible/ansible/issues/31602/ hovercard" 
+        #       href="/ansible/ansible/issues/31602">TITLE</a>
+
+        refs = soup.findAll(
+            u'a',
+            {u'id': lambda L: L and L.startswith('issue_') and L.endswith(u'_link')}
+        )
+
+        for ref in refs:
+            issue = {
+                'type': ref.attrs['data-hovercard-type'],
+                'url': ref.attrs['href'],
+                'href': ref.attrs['href'],
+                'title': ref.text,
+                'number': int(ref.attrs['href'].split('/')[-1]),
+                'labels': [],
+                'created_at': None,
+            }
+
+            # the parent is a div containing all the other info
+            idiv = ref.parent
+
+            lspan = idiv.findAll('span')[0]
+            for a in lspan.findAll('a'):
+                issue['labels'].append(a.text)
+
+            oby = idiv.find('span', {'class': 'opened-by'})
+            issue['created_at'] = oby.find('relative-time').attrs['datetime']
+            issue['created_by'] = oby.find('a').text
+            #import epdb; epdb.st()
+
+            data['issues'][issue['number']] = issue.copy()
+
+
+        try:
+            data['next_page'] = soup.find('a', {'class': 'next_page'}).attrs['href']
+        except AttributeError:
+            pass
+        #import epdb; epdb.st()
 
         return data
 
