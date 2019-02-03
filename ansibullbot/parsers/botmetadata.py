@@ -16,6 +16,12 @@ from ansibullbot._text_compat import to_text
 __metaclass__ = type  # Turn all classes into new-style by default
 
 
+# https://github.com/ansible/ansibullbot/issues/1155#issuecomment-457731630
+class NoAliasDumper(yaml.Dumper):
+    def ignore_aliases(self, data):
+        return True
+
+
 class BotMetadataParser:
 
     @staticmethod
@@ -162,7 +168,9 @@ class BotMetadataParser:
         #   PARSE
         #################################
 
-        ydata = yaml.load(data, BotYAMLLoader)
+        # https://github.com/ansible/ansibullbot/issues/1155#issuecomment-457731630
+        ydata_orig = yaml.load(data, BotYAMLLoader)
+        ydata = yaml.load(yaml.dump(ydata_orig, Dumper=NoAliasDumper), BotYAMLLoader)
 
         # fix the team macros
         ydata = fix_teams(ydata)
