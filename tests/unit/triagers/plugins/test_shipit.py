@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import copy
+import shutil
+import tempfile
 import textwrap
 import unittest
 
@@ -645,7 +647,8 @@ class TestOwnerPR(unittest.TestCase):
         issue = IssueMock(u'/dev/null')
         issue.user.login = u'ElsA'
         issue.html_url = u'https://github.com/ansible/ansible/pull/123'
-        iw = IssueWrapper(cachedir="", issue=issue)
+        cachedir = tempfile.mkdtemp()
+        iw = IssueWrapper(cachedir=cachedir, issue=issue)
         iw.pr_files = [
             MockFile(u'lib/ansible/module_utils/foo/bar.py'),
             MockFile(u'lib/ansible/module_utils/baz/bar.py')
@@ -657,6 +660,7 @@ class TestOwnerPR(unittest.TestCase):
         iw._commits = []
         meta.update(get_component_match_facts(iw, CM, []))
         facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+        shutil.rmtree(cachedir)
 
         self.assertEqual(iw.submitter, u'ElsA')
         self.assertFalse(facts[u'owner_pr'])
