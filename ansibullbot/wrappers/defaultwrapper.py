@@ -452,7 +452,7 @@ class DefaultWrapper(object):
         """Extract templated data from an issue body"""
 
         if self.is_issue():
-            tfile = u'.github/ISSUE_TEMPLATE.md'
+            tfile = u'.github/ISSUE_TEMPLATE/bug_report.md'
         else:
             tfile = u'.github/PULL_REQUEST_TEMPLATE.md'
 
