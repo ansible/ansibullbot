@@ -46,14 +46,7 @@ def extract_template_sections(body, header=u'#####'):
     return sections
 
 
-def extract_template_data(body, issue_number=None, issue_class='issue', sections=SECTIONS):
-
-    # this is the final result to return
-    tdict = {}
-
-    if not body:
-        return tdict
-
+def fuzzy_find_sections(body, sections):
     upper_body = body.upper()
 
     # make a map of locations where each section starts
@@ -91,7 +84,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
         match_map = {}
         t = Template(sheader)
-        for section in SECTIONS:
+        for section in sections:
             try:
                 tofind = t.substitute(section=section)
             except Exception as e:
@@ -105,7 +98,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                 match_map[section] = match + 1
 
         # re-do for missing sections with less common header(s)
-        for section in SECTIONS:
+        for section in sections:
             if section in match_map:
                 continue
             for choice in choices:
@@ -115,9 +108,6 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                 if match != -1:
                     match_map[section] = match + 1
                     break
-
-        if not match_map:
-            return {}
 
     elif len(headers) <= 1:
         if headers and \
@@ -130,14 +120,14 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                 logging.error(u'breakpoint!')
                 import epdb; epdb.st()
 
-    # sort mapping by element id
+    # sort mapping by element id and inject itype if needed
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
-
     if match_map and u'ISSUE TYPE' not in [x[0] for x in match_map]:
         if match_map[0][1] > 10:
             match_map.insert(0, (u'ISSUE TYPE', 0))
-
+    
     # extract the sections based on their indexes
+    tdict = {}
     total_indexes = len(match_map) - 1
     for idx, x in enumerate(match_map):
 
@@ -153,6 +143,59 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
             # slice to the next section
             stop_index = match_map[idx+1][1]
             tdict[x[0]] = body[start_index:stop_index]
+
+    return tdict
+
+
+def find_sections(body):
+    # find possible sections by the default pattern
+    doubles = re.findall(r'##### [A-Z]+\s+[A-Z]+\r\n', body)
+    singles = re.findall(r'##### [A-Z]+\r\n', body)
+    for single in singles[:]:
+        for x in doubles:
+            if x.startswith(single):
+                singles.remove(single)
+    tofind = sorted(set(doubles + singles))
+
+    if len(tofind) <= 1:
+        return None
+
+    # map out the starting index for each section
+    match_map = {}
+    for tf in tofind:
+        match_map[tf] = body.index(tf)
+
+    # sort by index so we can read from one section to the next
+    match_map = sorted(match_map.items(), key=lambda x: x[1])
+
+    # extract each section from the body up to the next section
+    tdict = {}
+    for idm, mm in enumerate(match_map):
+        try:
+            tail = match_map[idm+1][1]
+        except IndexError:
+            tail = len(body)
+        content = body[mm[1]:tail]
+        content = content.replace(mm[0], '')
+        key = mm[0].replace('#', '').strip()
+        tdict[key] = content
+
+    return tdict
+
+
+def extract_template_data(body, issue_number=None, issue_class='issue', sections=None, find_extras=True):
+
+    if sections is None:
+        sections = SECTIONS
+
+    # pointless to parse a null body
+    if not body:
+        return tdict
+
+    # simple find or fuzzy find the sections within the body
+    tdict = find_sections(body) or fuzzy_find_sections(body, sections)
+    if not tdict:
+        return {}
 
     # lowercase the keys
     ndict = {}
