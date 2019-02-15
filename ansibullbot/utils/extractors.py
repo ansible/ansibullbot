@@ -533,7 +533,7 @@ class ModuleExtractor(object):
         """Grep the authors out of the module docstrings"""
 
         # 2019-02-15
-        if 'author' or 'authors' in self.docs:
+        if 'author' self.docs or 'authors' in self.docs:
             _authors = self.docs.get('author') or self.docs.get('authors')
             if _authors is None:
                 return []
