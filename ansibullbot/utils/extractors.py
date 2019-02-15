@@ -534,7 +534,7 @@ class ModuleExtractor(object):
         """Grep the authors out of the module docstrings"""
 
         # 2019-02-15
-        if 'author' self.docs or 'authors' in self.docs:
+        if 'author' in self.docs or 'authors' in self.docs:
             _authors = self.docs.get('author') or self.docs.get('authors')
             if _authors is None:
                 return []
@@ -551,7 +551,7 @@ class ModuleExtractor(object):
             return []
 
     def extract_github_id(self, author):
-        '''get github login(s) from a string'''
+        """Extract a set of github login(s) from a string."""
 
         # safegaurd against exceptions
         if author is None:
