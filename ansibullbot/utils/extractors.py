@@ -496,36 +496,37 @@ class ModuleExtractor(object):
 
     @property
     def docs(self):
+        if self._DOCSTRING is not None:
+            return self._DOCSTRING
+
+        documentation = u''
+        inphase = False
+        lines = to_text(self.filedata).split(u'\n')
+        for line in lines:
+            if u'DOCUMENTATION' in line:
+                inphase = True
+                continue
+            if inphase and (line.strip().endswith((u"'''", u'"""'))):
+                #phase = None
+                break
+            if inphase:
+                documentation += line + u'\n'
+    
+        self._DOCUMENTATION_RAW = documentation
+
+        # some docstrings don't pass yaml validation with PyYAML >= 4.2
+        try:
+            self._DOCSTRING = yaml.load(self._DOCUMENTATION_RAW)
+        except yaml.parser.ParserError as e:
+            #logging.debug(e)
+            logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
+        except yaml.scanner.ScannerError as e:
+            #logging.debug(e)
+            logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
+
+        # always cast to a dict for easier handling later
         if self._DOCSTRING is None:
-
-            documentation = u''
-            inphase = False
-            lines = to_text(self.filedata).split(u'\n')
-            for line in lines:
-                if u'DOCUMENTATION' in line:
-                    inphase = True
-                    continue
-                if inphase and (line.strip().endswith((u"'''", u'"""'))):
-                    #phase = None
-                    break
-                if inphase:
-                    documentation += line + u'\n'
-        
-            self._DOCUMENTATION_RAW = documentation
-
-            # some docstrings don't pass yaml validation with PyYAML >= 4.2
-            try:
-                self._DOCSTRING = yaml.load(self._DOCUMENTATION_RAW)
-            except yaml.parser.ParserError as e:
-                #logging.debug(e)
-                logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
-            except yaml.scanner.ScannerError as e:
-                #logging.debug(e)
-                logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
-
-            # always cast to a dict for easier handling later
-            if self._DOCSTRING is None:
-                self._DOCSTRING = {}
+            self._DOCSTRING = {}
 
         return self._DOCSTRING
 
