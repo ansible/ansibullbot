@@ -219,6 +219,15 @@ class AnsibleComponentMatcher(object):
             else:
                 _k = k
             ME = ModuleExtractor(os.path.join(checkoutdir, _k), email_cache=self.email_cache)
+
+            '''
+            try:
+                ME.authors
+            except AttributeError as e:
+                print(e)
+                import epdb; epdb.st()
+            '''
+
             if k not in self.BOTMETA[u'files']:
                 self.BOTMETA[u'files'][k] = {
                     u'deprecated': os.path.basename(k).startswith(u'_'),

@@ -466,6 +466,7 @@ class ModuleExtractor(object):
     _DOCUMENTATION_RAW = None
     _FILEDATA = None
     _METADATA = None
+    _DOCSTRING = None
 
     def __init__(self, filepath, email_cache=None):
         self.filepath = filepath
@@ -493,77 +494,63 @@ class ModuleExtractor(object):
             self._METADATA = self.get_module_metadata()
         return self._METADATA
 
+    @property
+    def docs(self):
+        if self._DOCSTRING is None:
+
+            documentation = u''
+            inphase = False
+            lines = to_text(self.filedata).split(u'\n')
+            for line in lines:
+                if u'DOCUMENTATION' in line:
+                    inphase = True
+                    continue
+                if inphase and (line.strip().endswith((u"'''", u'"""'))):
+                    #phase = None
+                    break
+                if inphase:
+                    documentation += line + u'\n'
+        
+            self._DOCUMENTATION_RAW = documentation
+
+            try:
+                self._DOCSTRING = yaml.load(self._DOCUMENTATION_RAW)
+            except:
+                self._DOCSTRING = {}
+
+            # always cast to a dict for easier handling later
+            if self._DOCSTRING is None:
+                self._DOCSTRING = {}
+
+        return self._DOCSTRING
+
     def get_module_authors(self):
         """Grep the authors out of the module docstrings"""
 
-        documentation = u''
-        inphase = False
+        # 2019-02-15
+        if 'author' or 'authors' in self.docs:
+            _authors = self.docs.get('author') or self.docs.get('authors')
+            if _authors is None:
+                return []
+            if not isinstance(_authors, list):
+                _authors = [_authors]
+            logins = set()
+            for author in _authors:
+                _logins = self.extract_github_id(author)
+                if _logins:
+                    logins = logins.union(_logins)
+            return list(logins)
 
-        lines = to_text(self.filedata).split(u'\n')
-        for line in lines:
-            if u'DOCUMENTATION' in line:
-                inphase = True
-                continue
-            if inphase and (line.strip().endswith((u"'''", u'"""'))):
-                #phase = None
-                break
-            if inphase:
-                documentation += line + u'\n'
-
-        if not documentation:
-            logging.debug(u'no documentation found in {}'.format(self.filepath))
+        else:
             return []
-
-        # clean out any other yaml besides author to save time
-        inphase = False
-        author_lines = u''
-        self._DOCUMENTATION_RAW = documentation
-        doc_lines = documentation.split(u'\n')
-        for idx, x in enumerate(doc_lines):
-            if x.startswith(u'author'):
-                #print("START ON %s" % x)
-                inphase = True
-                #continue
-            if inphase and not x.strip().startswith((u'-', u'author')):
-                #print("BREAK ON %s" % x)
-                inphase = False
-                break
-            if inphase:
-                author_lines += x + u'\n'
-
-        if not author_lines:
-            logging.debug(u'no author lines found in {}'.format(self.filepath))
-            return []
-
-        self._AUTHORS_RAW = author_lines
-        ydata = {}
-        try:
-            ydata = yaml.load(author_lines, BotYAMLLoader)
-            self._AUTHORS_DATA = ydata
-        except Exception as e:
-            print(e)
-            return []
-
-        # quit early if the yaml was not valid
-        if not ydata:
-            return []
-
-        # quit if the key was not found
-        if u'author' not in ydata:
-            return []
-
-        if type(ydata[u'author']) != list:
-            ydata[u'author'] = [ydata[u'author']]
-
-        authors = []
-        for author in ydata[u'author']:
-            github_ids = self.extract_github_id(author)
-            if github_ids:
-                authors.extend(github_ids)
-
-        return authors
 
     def extract_github_id(self, author):
+        '''get github login(s) from a string'''
+
+        # safegaurd against exceptions
+        if author is None:
+            return []
+
         authors = set()
 
         if u'ansible core team' in author.lower():
