@@ -190,7 +190,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # pointless to parse a null body
     if not body:
-        return tdict
+        return {}
 
     # simple find or fuzzy find the sections within the body
     tdict = find_sections(body) or fuzzy_find_sections(body, sections)
