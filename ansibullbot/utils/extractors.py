@@ -584,42 +584,54 @@ class ModuleExtractor(object):
         return list(authors)
 
     def get_module_metadata(self):
+
+        # no directories please
+        if os.path.isdir(self.filepath):
+            return {}
+        # no pycs please
+        if self.filepath.endswith('.pyc') or self.filepath.endswith('.pyo'):
+            return {}
+        # no meta in __init__.py files
+        if os.path.basename(self.filepath) == u'__init__.py':
+            return {}
+        # no point in parsing markdown
+        if self.filepath.endswith('.md'):
+            return {}
+        # no point in parsing ps1 or ps2
+        if self.filepath.endswith('.ps'):
+            return {}
+        if self.filepath.endswith('.ps1'):
+            return {}
+        if self.filepath.endswith('.ps2'):
+            return {}
+
         meta = {}
         rawmeta = b''
-
         inphase = False
         lines = self.filedata.split(b'\n')
         for line in lines:
-            if line.startswith(b'ANSIBLE_METADATA'):
+            if line.startswith(b'ANSIBLE_METADATA') or b'ANSIBLE_METADATA' in line:
+                #print(line)
+                rawmeta += line
                 inphase = True
-                #continue
-            if line.startswith(b'DOCUMENTATION'):
+                continue
+            if inphase and line.startswith(b'DOCUMENTATION'):
+                break
+            if inphase and line.startswith(b'from'):
+                break
+            if inphase and re.match(r'^[A-Za-z]', to_text(line)):
                 break
             if inphase:
+                #print(line)
                 rawmeta += line
 
+        _rawmeta = rawmeta[:]
         rawmeta = rawmeta.replace(b'ANSIBLE_METADATA =', b'', 1)
         rawmeta = rawmeta.strip()
+
         try:
-            meta = ast.literal_eval(rawmeta)
-            tmp_meta = {}
-            for k, v in meta.items():
-                if isinstance(k, six.binary_type):
-                    k = to_text(k)
-                if isinstance(v, six.binary_type):
-                    v = to_text(v)
-                if isinstance(v, list):
-                    tmp_list = []
-                    for i in v:
-                        if isinstance(i, six.binary_type):
-                            i = to_text(i)
-                        tmp_list.append(i)
-                    v = tmp_list
-                    del tmp_list
-                tmp_meta[k] = v
-            meta = tmp_meta
-            del tmp_meta
-        except (SyntaxError, ValueError):  # Py3: ValueError
-            pass
+            meta = ast.literal_eval(to_text(rawmeta))
+        except Exception as e:
+            logging.error(e)
 
         return meta
