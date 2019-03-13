@@ -920,6 +920,7 @@ class GithubWebScraper(object):
             else:
                 data[u'type'] = u'issue'
 
+        '''
         # <div class="state state-open">
         # <div class="state state-closed">
         state_div = soup.find(
@@ -938,6 +939,34 @@ class GithubWebScraper(object):
             data[u'state'] = u'closed'
             data[u'merged'] = True
         elif u'state-closed' in state_div.attrs[u'class']:
+            data[u'state'] = u'closed'
+            if data[u'type'] == u'pullrequest':
+                data[u'merged'] = False
+        else:
+            data[u'state'] = u'open'
+            if data[u'type'] == u'pullrequest':
+                data[u'merged'] = False
+        '''
+
+        #<span title="Status: Closed" class="State State--red  ">
+        #<span title="Status: Open" class="State State--green  ">
+        #<span title="Status: Merged" class="State State--purple  ">
+        state_span = soup.find(
+            u'span', {u'class': lambda L: L and
+                    L.lower().startswith(u'state state')}
+        )
+
+        if not state_span:
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error(u'breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception(u'no state div')
+
+        if u'merged' in state_span.attrs[u'title'].lower():
+            data[u'state'] = u'closed'
+            data[u'merged'] = True
+        elif u'closed' in state_span.attrs[u'title'].lower():
             data[u'state'] = u'closed'
             if data[u'type'] == u'pullrequest':
                 data[u'merged'] = False
