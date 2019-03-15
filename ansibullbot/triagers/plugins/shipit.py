@@ -220,7 +220,7 @@ def get_review_facts(issuewrapper, meta):
     return rfacts
 
 
-def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=[]):
+def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botnames=[]):
     """ Count shipits by maintainers/community/other """
 
     # supershipit - maintainers with isolated commit access
@@ -228,6 +228,7 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     # community - people who maintain file(s) in the same directory
     # other - anyone else who comments with shipit/+1/LGTM
 
+    meta = inmeta.copy()
     iw = issuewrapper
     nmeta = {
         u'shipit': False,
@@ -250,6 +251,12 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
     if not iw.is_pullrequest():
         return nmeta
 
+    # https://github.com/ansible/ansibullbot/issues/1147
+    meta[u'component_matches'] = [
+        x for x in meta.get(u'component_matches', [])
+        if not x[u'repo_filename'].startswith(u'changelogs/fragments/')
+    ]
+
     module_utils_files_owned = 0  # module_utils files for which submitter is maintainer
     if meta[u'is_module_util']:
         for f in iw.files:
@@ -264,9 +271,6 @@ def get_shipit_facts(issuewrapper, meta, module_indexer, core_team=[], botnames=
             if f.startswith(u'lib/ansible/modules') and iw.submitter in meta[u'component_maintainers']:
                 modules_files_owned += 1
     nmeta[u'owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
-
-    #if not meta['module_match']:
-    #    return nmeta
 
     # https://github.com/ansible/ansibullbot/issues/722
     if iw.wip:

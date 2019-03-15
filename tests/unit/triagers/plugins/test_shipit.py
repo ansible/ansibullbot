@@ -265,6 +265,33 @@ class TestSuperShipit(unittest.TestCase):
         assert afacts1[u'automerge'] == False
         assert afacts2[u'automerge'] == True
 
+    def test_supershipit_changelogs(self):
+        # a supershipit should count from a supershipiteer
+        # https://github.com/ansible/ansibullbot/issues/1147
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_comment('jane', 'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']},
+                {u'repo_filename': u'changelogs/fragments/000-foo-change.yml'}
+            ]
+        }
+        sfacts = get_shipit_facts(IW, meta, MI)
+
+        # don't let the plugin modify the meta
+        assert len(meta[u'component_matches']) == 2
+
+        assert sfacts[u'shipit']
+        assert sfacts[u'supershipit']
+        assert sfacts[u'shipit_actors'] == []
+        assert sfacts[u'shipit_actors_other'] == [u'jane']
+
 
 class TestShipitRebuildMerge(unittest.TestCase):
 
