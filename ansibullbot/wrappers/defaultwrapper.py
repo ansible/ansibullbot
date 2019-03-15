@@ -1108,19 +1108,19 @@ class DefaultWrapper(object):
                 url,
                 headers=headers
             )
-            jdata += json.loads(body)
+            _jdata = json.loads(body)
 
-            if isinstance(jdata, dict):
+            if isinstance(_jdata, dict):
                 logging.error(
                     u'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
                     u'resp.headers=%s | resp.status=%s',
-                    jdata.keys(), len(jdata),
+                    _jdata.keys(), len(_jdata),
                     hdrs, status,
                 )
 
-                is_rate_limited = u'rate' in jdata[u'message']
+                is_rate_limited = u'rate' in _jdata[u'message']
                 is_server_error = (
-                    u'Server Error' == jdata[u'message']
+                    u'Server Error' == _jdata[u'message']
                     or 500 <= status < 600
                 )
 
@@ -1134,6 +1134,8 @@ class DefaultWrapper(object):
                     "unknown error: GH responded with a dict "
                     "while a list of reviews was expected"
                 )
+
+            jdata += _jdata
 
             if not 'link' in hdrs:
                 break
