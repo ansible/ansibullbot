@@ -1079,7 +1079,6 @@ class DefaultWrapper(object):
 
         return self._pr_reviews
 
-    @RateLimited
     def get_reviews(self):
         # https://developer.github.com/
         #   early-access/graphql/enum/pullrequestreviewstate/
@@ -1090,37 +1089,61 @@ class DefaultWrapper(object):
             u'Accept': u'application/vnd.github.black-cat-preview+json',
         }
 
-        status, hdrs, body = self.instance._requester.requestJson(
-            u'GET',
-            reviews_url,
-            headers=headers
-        )
-        jdata = json.loads(body)
+        jdata = self.paginated_request(reviews_url, headers=headers)
+        return jdata
 
-        if isinstance(jdata, dict):
-            logging.error(
-                u'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
-                u'resp.headers=%s | resp.status=%s',
-                jdata.keys(), len(jdata),
-                hdrs, status,
+
+    @RateLimited
+    def paginated_request(self, url, headers=None):
+
+        if headers is None:
+            headers = {}
+
+        jdata = []
+        counter = 0
+        while True or counter <= 100:
+            counter += 1
+            status, hdrs, body = self.instance._requester.requestJson(
+                u'GET',
+                url,
+                headers=headers
             )
+            jdata += json.loads(body)
 
-            is_rate_limited = u'rate' in jdata[u'message']
-            is_server_error = (
-                u'Server Error' == jdata[u'message']
-                or 500 <= status < 600
-            )
+            if isinstance(jdata, dict):
+                logging.error(
+                    u'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
+                    u'resp.headers=%s | resp.status=%s',
+                    jdata.keys(), len(jdata),
+                    hdrs, status,
+                )
 
-            if is_rate_limited:
-                raise RateLimitError("rate limited")
+                is_rate_limited = u'rate' in jdata[u'message']
+                is_server_error = (
+                    u'Server Error' == jdata[u'message']
+                    or 500 <= status < 600
+                )
 
-            if is_server_error:
-                raise RateLimitError("server error")
+                if is_rate_limited:
+                    raise RateLimitError("rate limited")
 
-            raise RateLimitError(
-                "unknown error: GH responded with a dict "
-                "while a list of reviews was expected"
-            )
+                if is_server_error:
+                    raise RateLimitError("server error")
+
+                raise RateLimitError(
+                    "unknown error: GH responded with a dict "
+                    "while a list of reviews was expected"
+                )
+
+            if not 'link' in hdrs:
+                break
+            link = hdrs['link']
+            links = link.split(',')
+            np = [x for x in links if 'next' in x]
+            if not np:
+                break
+            url =  re.search('\<.*\>', np[0]).group()
+            url = url.replace('<', '').replace('>', '')
 
         return jdata
 

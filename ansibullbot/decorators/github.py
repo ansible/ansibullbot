@@ -187,7 +187,7 @@ def RateLimited(fn):
                 elif isinstance(e, httplib.BadStatusLine):
                     # https://github.com/ansible/ansibullbot/issues/602
                     stime = 2*60
-                elif getattr(e, 'status', None) >= 500:
+                elif getattr(e, 'status', 0) >= 500:
                     # https://github.com/ansible/ansibullbot/issues/1025
                     # https://sentry.io/red-hat-ansibullbot/ansibullbot/issues/804854465
                     stime = 2*60
