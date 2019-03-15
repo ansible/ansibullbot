@@ -32,11 +32,9 @@ import io
 import json
 import logging
 import os
-import shutil
 
 import pytz
 import requests
-import six
 
 from ansibullbot._json_compat import json_dump
 from ansibullbot._text_compat import to_bytes, to_text
@@ -499,26 +497,6 @@ class AnsibleTriage(DefaultTriager):
                         logging.info('needs_rebase')
                         for msg in self.meta[u'is_needs_rebase_msgs']:
                             logging.info('needs_rebase_msg: %s' % msg)
-
-                    # DEBUG!
-                    if self.meta.get(u'mergeable_state') == u'unknown' or \
-                            u'needs_rebase' in actions.newlabel or \
-                            u'needs_rebase' in actions.unlabel or \
-                            u'needs_revision' in actions.newlabel or \
-                            u'needs_revision' in actions.unlabel:
-                        rn = iw.repo_full_name
-                        summary = self.issue_summaries.get(rn, {}).\
-                            get(iw.number, None)
-                        if not summary:
-                            summary = self.gws.get_single_issue_summary(
-                                rn,
-                                iw.number,
-                                force=True
-                            )
-                        #pprint(summary)
-
-                        if self.meta.get(u'mergeable_state') == u'unknown':
-                            pprint(vars(actions))
 
                     pprint(vars(actions))
 

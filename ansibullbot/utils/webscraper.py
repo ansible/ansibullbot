@@ -718,7 +718,7 @@ class GithubWebScraper(object):
         # 2019-02-02
         #   <a id="issue_31602_link" class="link-gray-dark v-align-middle
         #       no-underline h4 js-navigation-open" data-hovercard-type="issue"
-        #       data-hovercard-url="/ansible/ansible/issues/31602/ hovercard" 
+        #       data-hovercard-url="/ansible/ansible/issues/31602/ hovercard"
         #       href="/ansible/ansible/issues/31602">TITLE</a>
 
 
@@ -854,7 +854,7 @@ class GithubWebScraper(object):
         # 2019-02-02
         #   <a id="issue_31602_link" class="link-gray-dark v-align-middle
         #       no-underline h4 js-navigation-open" data-hovercard-type="issue"
-        #       data-hovercard-url="/ansible/ansible/issues/31602/ hovercard" 
+        #       data-hovercard-url="/ansible/ansible/issues/31602/ hovercard"
         #       href="/ansible/ansible/issues/31602">TITLE</a>
 
         refs = soup.findAll(
@@ -951,9 +951,10 @@ class GithubWebScraper(object):
         #<span title="Status: Closed" class="State State--red  ">
         #<span title="Status: Open" class="State State--green  ">
         #<span title="Status: Merged" class="State State--purple  ">
+        #<span title="Status: Draft" class="State   ">
         state_span = soup.find(
             u'span', {u'class': lambda L: L and
-                    L.lower().startswith(u'state state')}
+                    L.lower().startswith(u'state ')}
         )
 
         if not state_span:
