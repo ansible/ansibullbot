@@ -604,6 +604,8 @@ class ModuleExtractor(object):
             return {}
         if self.filepath.endswith('.ps2'):
             return {}
+        if self.filepath.endswith('.rst'):
+            return {}
 
         meta = {}
         rawmeta = b''
@@ -632,6 +634,6 @@ class ModuleExtractor(object):
         try:
             meta = ast.literal_eval(to_text(rawmeta))
         except Exception as e:
-            logging.error(e)
+            logging.warning(e)
 
         return meta
