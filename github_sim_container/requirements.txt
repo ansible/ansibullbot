@@ -1,4 +1,0 @@
-logzero
-flask
-requests
-six
