@@ -183,11 +183,11 @@ class AnsibleTriage(DefaultTriager):
         super(AnsibleTriage, self).__init__()
 
         # get valid labels
-        logging.info('getting labels')
+        logging.info(u'getting labels')
         self.valid_labels = self.get_valid_labels(u"ansible/ansible")
 
         self._ansible_members = []
-        self._ansible_core_team = []
+        self._ansible_core_team = None
         self._botmeta_content = None
         self.botmeta = {}
         self.automerge_on = False
@@ -201,27 +201,35 @@ class AnsibleTriage(DefaultTriager):
         self.issue_summaries = {}
 
         # create the scraper for www data
-        logging.info('creating webscraper')
-        self.gws = GithubWebScraper(cachedir=self.cachedir_base)
+        logging.info(u'creating webscraper')
+        self.gws = GithubWebScraper(
+            cachedir=self.cachedir_base,
+            server=C.DEFAULT_GITHUB_URL
+        )
         if C.DEFAULT_GITHUB_TOKEN:
-            self.gqlc = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
+            logging.info(u'creating graphql client')
+            self.gqlc = GithubGraphQLClient(
+                C.DEFAULT_GITHUB_TOKEN,
+                server=C.DEFAULT_GITHUB_URL
+            )
         else:
             self.gqlc = None
 
         # clone ansible/ansible
         repo = u'https://github.com/ansible/ansible'
-        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo)
+        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit)
 
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer(
-            checkoutdir=gitrepo.checkoutdir
+            checkoutdir=gitrepo.checkoutdir,
+            commit=self.ansible_commit
         )
 
         logging.info('creating file indexer')
         self.file_indexer = FileIndexer(
             botmetafile=self.botmetafile,
-            gitrepo=gitrepo
+            gitrepo=gitrepo,
         )
 
         logging.info('creating module indexer')
@@ -237,12 +245,12 @@ class AnsibleTriage(DefaultTriager):
         self.component_matcher = AnsibleComponentMatcher(
             gitrepo=gitrepo,
             botmetafile=self.botmetafile,
-            email_cache=self.module_indexer.emails_cache
+            email_cache=self.module_indexer.emails_cache,
         )
 
         # instantiate shippable api
         logging.info('creating shippable wrapper')
-        spath = os.path.expanduser(u'~/.ansibullbot/cache/shippable.runs')
+        spath = os.path.join(self.cachedir_base, 'shippable.runs')
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
         self.SR.update()
 
@@ -266,7 +274,7 @@ class AnsibleTriage(DefaultTriager):
 
     @property
     def ansible_core_team(self):
-        if not self._ansible_core_team:
+        if self._ansible_core_team is None:
             teams = [
                 u'ansible-commit',
                 u'ansible-community',
@@ -1668,7 +1676,7 @@ class AnsibleTriage(DefaultTriager):
         self.gh = self._connect()
 
         logging.info('creating github connection wrapper')
-        self.ghw = GithubWrapper(self.gh)
+        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
 
         for repo in REPOS:
             # skip repos based on args
@@ -2442,6 +2450,9 @@ class AnsibleTriage(DefaultTriager):
                             help="pickup right after where the bot last stopped")
         parser.add_argument("--no_since", action="store_true",
                             help="Do not use the since keyword to fetch issues")
+
+        parser.add_argument('--commit', dest='ansible_commit',
+                            help="Use a specific commit for the indexers")
 
         return parser
 

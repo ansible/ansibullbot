@@ -97,6 +97,10 @@ def RateLimited(fn):
 
     def inner(*args, **kwargs):
 
+        # bypass this decorator for testing purposes
+        if not C.DEFAULT_RATELIMIT:
+            return fn(*args, **kwargs)
+
         success = False
         count = 0
         while not success:

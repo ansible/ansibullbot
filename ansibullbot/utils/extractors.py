@@ -559,6 +559,9 @@ class ModuleExtractor(object):
 
         authors = set()
 
+        if author is None:
+            return authors
+
         if u'ansible core team' in author.lower():
             authors.add(u'ansible')
         elif u'@' in author:

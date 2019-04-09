@@ -155,10 +155,9 @@ class HistoryWrapper(object):
                     matching_events.append(event)
                 elif type(actor) == list and event[u'actor'] in actor:
                     matching_events.append(event)
-                elif not actor:
-                    matching_events.append(event)
                 if len(matching_events) == maxcount:
                     break
+
         return matching_events
 
     def get_user_comments(self, username):
@@ -821,6 +820,9 @@ class ShippableHistory(object):
             if turl.endswith(u'/summary'):
                 turl = turl[:-8]
             run_id = turl.split(u'/')[-1]
+            if run_id == u'zuul.openstack.org':
+                continue
+
             if run_id in status:
                 rd = status[run_id]
             else:
@@ -866,6 +868,11 @@ class ShippableHistory(object):
             if x[u'event'] == u'labeled':
                 if x[u'label'] == u'ci_verified':
                     verified_idx = idx
+
+        # exit early if never verified
+        if verified_idx is None:
+            return None
+
         run_idx = None
         for idx, x in enumerate(self.history):
             if x[u'event'] == u'ci_run':

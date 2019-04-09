@@ -119,7 +119,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
             if u'travis-ci.org' in x[u'target_url']:
                 has_travis = True
                 continue
-            if u'shippable.com' in x[u'target_url']:
+            if x.get('context') == 'Shippable':
                 has_shippable = True
                 continue
 
@@ -133,7 +133,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         has_zuul = True
 
     ci_states = [x[u'state'] for x in ci_status
-                 if isinstance(x, dict) and u'shippable.com' in x[u'target_url']]
+                 if isinstance(x, dict) and x.get('context') == 'Shippable']
 
     if not ci_states:
         ci_state = None

@@ -342,6 +342,8 @@ urllib3==1.24.1 \
     # via requests, sentry-sdk
 wrapt==1.10.11 \
     --hash=sha256:d4d560d479f2c21e1b5443bbd15fe7ec4b37fe7e53d335d3b9b0a7b1226fe3c6
+logzero==1.5.0 \
+    --hash=sha256:818072e4fcb53a3f6fb4114a92f920e1135fe6f47bffd9dc2b6c4d10eedacf27
 
 # The following packages are considered to be unsafe in a requirements file:
 # pip

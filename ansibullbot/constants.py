@@ -220,6 +220,16 @@ DEFAULT_BREAKPOINTS = get_config(
     value_type='boolean'
 )
 
+# Use or don't use the ratelimiting decorator
+DEFAULT_RATELIMIT = get_config(
+    p,
+    DEFAULTS,
+    'ratelimit',
+    '%s_RATELIMIT' % PROG_NAME.upper(),
+    True,
+    value_type='boolean'
+)
+
 DEFAULT_GITHUB_URL = get_config(
     p,
     DEFAULTS,
@@ -265,6 +275,15 @@ DEFAULT_SHIPPABLE_TOKEN = get_config(
     value_type='string'
 )
 
+DEFAULT_SHIPPABLE_URL = get_config(
+    p,
+    DEFAULTS,
+    'shippable_url',
+    '%s_SHIPPABLE_URL' % PROG_NAME.upper(),
+    u'https://api.shippable.com',
+    value_type='string'
+)
+
 DEFAULT_NEEDS_INFO_WARN = get_config(
     p,
     'needs_info',
@@ -292,6 +311,7 @@ DEFAULT_STALE_WINDOW = get_config(
     7,
     value_type='int'
 )
+
 
 ###########################################
 #   METADATA RECEIVER

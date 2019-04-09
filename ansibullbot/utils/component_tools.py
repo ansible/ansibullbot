@@ -104,14 +104,15 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, email_cache=None, file_indexer=None):
+    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, commit=None, email_cache=None, file_indexer=None):
         self.botmetafile = botmetafile
         self.email_cache = email_cache
+        self.commit = commit
 
         if gitrepo:
             self.gitrepo = gitrepo
         else:
-            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=self.REPO)
+            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=self.REPO, commit=self.commit)
 
         if file_indexer:
             self.file_indexer = file_indexer
@@ -148,6 +149,8 @@ class AnsibleComponentMatcher(object):
 
         for fn in self.gitrepo.module_files:
             if os.path.isdir(fn):
+                continue
+            if not os.path.exists(fn):
                 continue
             mname = os.path.basename(fn)
             mname = mname.replace(u'.py', u'').replace(u'.ps1', u'')

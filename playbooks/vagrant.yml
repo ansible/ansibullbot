@@ -1,0 +1,13 @@
+- name: Install ansibullbot
+  hosts: ansibullbot.eng.ansible.com
+  become: true
+
+  roles:
+    - repo_epel
+    - yum_cron
+    - firewall
+    - fail2ban
+    - docker
+    - mongodb
+    - caddy
+    - ansibullbot

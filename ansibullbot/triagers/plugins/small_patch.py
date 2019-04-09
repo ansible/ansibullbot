@@ -19,7 +19,7 @@ def get_small_patch_facts(iw):
 
     small_chunks_changed = 0
 
-    for commit in iw.get_commits():
+    for commit in iw.commits:
         if iw.get_commit_files(commit) is None:
             # "Sorry, this diff is temporarily unavailable due to heavy server load."
             return sfacts
