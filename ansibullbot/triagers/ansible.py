@@ -183,7 +183,7 @@ class AnsibleTriage(DefaultTriager):
         super(AnsibleTriage, self).__init__()
 
         # get valid labels
-        logging.info('getting labels')
+        logging.info(u'getting labels')
         self.valid_labels = self.get_valid_labels(u"ansible/ansible")
 
         self._ansible_members = []
@@ -201,13 +201,13 @@ class AnsibleTriage(DefaultTriager):
         self.issue_summaries = {}
 
         # create the scraper for www data
-        logging.info('creating webscraper')
+        logging.info(u'creating webscraper')
         self.gws = GithubWebScraper(
             cachedir=self.cachedir_base,
             server=C.DEFAULT_GITHUB_URL
         )
         if C.DEFAULT_GITHUB_TOKEN:
-            logging.info('creating graphql client')
+            logging.info(u'creating graphql client')
             self.gqlc = GithubGraphQLClient(
                 C.DEFAULT_GITHUB_TOKEN,
                 server=C.DEFAULT_GITHUB_URL
