@@ -174,7 +174,9 @@ class TestComponentMatcher(TestCase):
         }
         result = self.component_matcher.get_meta_for_file(u'lib/ansible/modules/windows/win_ping.ps1')
         assert result[u'labels'] == [u'windoez']
-        expected_maintainers = sorted([u'cchurch', u'jborean93'])
+        #import epdb; epdb.st()
+        #expected_maintainers = sorted([u'cchurch', u'jborean93'])
+        expected_maintainers = sorted([u'jborean93'])
         assert sorted(result[u'maintainers']) == expected_maintainers
 
     def test_reduce_filepaths(self):
