@@ -820,7 +820,7 @@ class ShippableHistory(object):
             if turl.endswith(u'/summary'):
                 turl = turl[:-8]
             run_id = turl.split(u'/')[-1]
-            if run_id == 'zuul.openstack.org':
+            if run_id == u'zuul.openstack.org':
                 continue
 
             if run_id in status:

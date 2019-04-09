@@ -1402,7 +1402,7 @@ class DefaultWrapper(object):
         if not pdata or pdata[0] != sha:
 
             if self.pullrequest.head.repo:
-                url = self.pullrequest.head.repo.url + '/contents/' + filepath
+                url = self.pullrequest.head.repo.url + u'/contents/' + filepath
                 resp = self.pullrequest._requester.requestJson(
                     u"GET",
                     url,
