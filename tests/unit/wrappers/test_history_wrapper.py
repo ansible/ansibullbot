@@ -81,5 +81,5 @@ def test_get_no_component_commands():
     events = hw._find_events_by_actor('commented', None)
     ccommands = hw.get_component_commands(botnames=[])
 
-    assert len(events) == 0
+    assert len(events) == 1
     assert len(ccommands) == 0
