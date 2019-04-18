@@ -150,8 +150,10 @@ class HistoryWrapper(object):
         matching_events = []
         for event in self.history:
             if event[u'event'] == eventname or not eventname:
-                # allow actor to be a list or a string
-                if type(actor) != list and event[u'actor'] == actor:
+                # allow actor to be a list or a string or None
+                if actor is None:
+                    matching_events.append(event)
+                elif type(actor) != list and event[u'actor'] == actor:
                     matching_events.append(event)
                 elif type(actor) == list and event[u'actor'] in actor:
                     matching_events.append(event)
