@@ -101,6 +101,7 @@ class DefaultTriager(object):
 
         parser = self.create_parser()
         args = parser.parse_args()
+        self.args = args
 
         for x in vars(args):
             val = getattr(args, x)

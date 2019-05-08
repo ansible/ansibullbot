@@ -1238,7 +1238,7 @@ class AnsibleComponentMatcher(object):
 
             for prefix_path in prefix_paths:
                 if prefix_path in files:
-                    logging.info(u'found botmeta prefix: {}'.format(prefix_path))
+                    logging.debug(u'found botmeta prefix: {}'.format(prefix_path))
                     yield prefix_path
 
         # walk up the botmeta tree looking for meta to include
