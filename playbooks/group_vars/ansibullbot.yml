@@ -84,7 +84,7 @@ caddy_config_path: /etc/caddy
 caddy_log_path: /var/log/caddy
 caddy_user: caddy
 caddy_group: caddy
-caddy_download_custom_build: true
+caddy_download_custom_build: yes
 caddy_systemd_protect_home: 'false'
 
 # Firewall settings
