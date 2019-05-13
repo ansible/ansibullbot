@@ -1,8 +1,8 @@
 - name: Create dev ansibullbot instance
   hosts: localhost
   connection: local
-  gather_facts: false
-  become: false
+  gather_facts: no
+  become: no
 
   vars:
     botinstance_name: ansibullbot-dev
@@ -16,7 +16,7 @@
 
 - name: Install dev ansibullbot
   hosts: ansibullbot-dev
-  become: true
+  become: yes
 
   roles:
     - repo_epel

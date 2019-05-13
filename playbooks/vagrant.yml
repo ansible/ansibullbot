@@ -1,6 +1,6 @@
 - name: Install ansibullbot
   hosts: ansibullbot.eng.ansible.com
-  become: true
+  become: yes
 
   roles:
     - repo_epel

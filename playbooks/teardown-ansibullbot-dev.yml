@@ -1,8 +1,8 @@
 - name: Teardown dev ansibullbot instance
   hosts: localhost
   connection: local
-  gather_facts: false
-  become: false
+  gather_facts: no
+  become: no
 
   vars:
     botinstance_name: ansibullbot-dev

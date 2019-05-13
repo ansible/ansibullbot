@@ -1,15 +1,15 @@
 - name: Create ansibullbot instance
   hosts: localhost
   connection: local
-  gather_facts: false
-  become: false
+  gather_facts: no
+  become: no
 
   roles:
     - ansibullbot_instance
 
 - name: Install ansibullbot
   hosts: ansibullbot.eng.ansible.com
-  become: true
+  become: yes
 
   roles:
     - repo_epel
