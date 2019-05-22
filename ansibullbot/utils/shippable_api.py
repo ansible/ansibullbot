@@ -328,7 +328,7 @@ class ShippableRuns(object):
                 continue
 
             # shippable breaks sometimes ... gzip: stdin: not in gzip format
-            jdata = [x for x in jdata if 'path' in jdata]
+            jdata = [x for x in jdata if 'path' in x]
 
             for jid, td in enumerate(jdata):
 
