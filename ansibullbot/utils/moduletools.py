@@ -513,7 +513,7 @@ class ModuleIndexer(object):
                     pickle_dump((mtime, self.commits[k]), f)
 
     def last_commit_for_file(self, filepath):
-        if filepath in self.commits:
+        if filepath in self.commits and u'hash' in self.commits[filepath][0]:
             return self.commits[filepath][0][u'hash']
 
         # git log --pretty=format:'%H' -1

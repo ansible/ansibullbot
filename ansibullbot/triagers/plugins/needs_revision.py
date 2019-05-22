@@ -146,7 +146,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         ci_stale = True
     else:
         # https://github.com/ansible/ansibullbot/issues/935
-        ci_date = get_last_shippable_full_run_date(ci_status, shippable)
+        shippable_states = [x for x in ci_status
+                            if isinstance(x, dict) and x.get('context') == 'Shippable']
+        ci_date = get_last_shippable_full_run_date(shippable_states, shippable)
 
         # https://github.com/ansible/ansibullbot/issues/458
         if ci_date:
