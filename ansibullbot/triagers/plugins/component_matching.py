@@ -36,6 +36,7 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
         u'needs_component_message': False,
     }
 
+    skip_matching = False
     if iw.is_issue():
         t_component = iw.template_data.get(u'component name')
         cmeta[u'component_name'] = t_component
@@ -45,16 +46,20 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
                 logging.debug(u'component is None')
             elif t_component.lower() in BLACKLIST_COMPONENTS:
                 logging.debug(u'{} is a blacklisted component'.format(t_component))
-            return cmeta
+            skip_matching = True
 
     # Check if this PR is screwed up in some way
     cmeta.update(get_pr_quality_facts(iw))
     if cmeta[u'is_bad_pr']:
         return cmeta
 
-    # Try to match against something known ...
-    CM_MATCHES = component_matcher.match(iw)
-    cmeta[u'component_match_strategy'] = component_matcher.strategies
+    if skip_matching:
+        # we still need to proceed to process the component commands
+        CM_MATCHES = []
+    else:
+        # Try to match against something known ...
+        CM_MATCHES = component_matcher.match(iw)
+        cmeta[u'component_match_strategy'] = component_matcher.strategies
 
     # Reconcile with component commands ...
     if iw.is_issue():
