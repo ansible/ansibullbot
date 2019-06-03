@@ -856,7 +856,8 @@ class AnsibleComponentMatcher(object):
 
         if u'site-packages' in body:
             res = re.match(u'(.*)/site-packages/(.*)', body)
-            body = res.group(2)
+            if res:
+                body = res.group(2)
         if u'modules/core/' in body:
             body = body.replace(u'modules/core/', u'modules/')
         if u'modules/extras/' in body:
