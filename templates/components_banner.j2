@@ -1,7 +1,7 @@
 Files identified in the description:
 {% if meta['component_matches'] %}
 {% for x in meta['component_matches'] %}
-* {{ '[' + x['repo_filename'] + '](' + 'https://github.com/ansible/ansible/blob/devel/' + x['repo_filename'] + ')'}}
+* {{ '[`' + x['repo_filename'] + '`](' + 'https://github.com/ansible/ansible/blob/devel/' + x['repo_filename'] + ')'}}
 {% endfor %}
 {% else %}
 None
