@@ -718,6 +718,11 @@ class HistoryWrapper(object):
         for review in reviews:
             event = {}
 
+            # https://github.com/ansible/ansibullbot/issues/1207
+            # "ghost" users are deleted users and show up as NoneType
+            if review.get('User') is None:
+                continue
+
             if review[u'state'] == u'COMMENTED':
                 event[u'event'] = u'review_comment'
             elif review[u'state'] == u'CHANGES_REQUESTED':
