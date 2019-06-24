@@ -1194,8 +1194,7 @@ class DefaultWrapper(object):
         while self.pullrequest.mergeable_state == u'unknown':
             fetchcount += 1
             if fetchcount >= 10:
-                logging.error(u'exceeded fetch threshold for mstate')
-                #sys.exit(1)
+                logging.warning(u'exceeded fetch threshold for mstate')
                 return False
 
             logging.warning(
