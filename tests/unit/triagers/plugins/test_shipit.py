@@ -930,3 +930,42 @@ class TestReviewFacts(unittest.TestCase):
         self.assertTrue(facts[u'community_review'])
         self.assertFalse(facts[u'core_review'])
         self.assertFalse(facts[u'committer_review'])
+
+
+class TestAutomergeFacts(unittest.TestCase):
+
+    def test_automerge_changelog_fragment(self):
+        iw = IssueWrapperMock('ansible', 'ansible', 1)
+        iw._is_pullrequest = True
+        iw.pr_files = [
+            MockFile(u'lib/ansible/modules/foo/bar.py'),
+            MockFile(u'changelogs/fragments/00000-fragment.yaml')
+        ]
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_support': [u'community'],
+            u'is_backport': False,
+            u'merge_commits': False,
+            u'has_commit_mention': False,
+            u'is_needs_info': False,
+            u'has_shippable': True,
+            u'has_travis': False,
+            u'mergeable': True,
+            u'ci_stale': False,
+            u'ci_state': u'success',
+            u'shipit': True,
+            u'supershipit': False,
+            u'is_new_directory': False,
+            u'is_module': True,
+            u'module_match': {
+                u'namespace': u'foo',
+                u'maintainers': [u'ghuser1'],
+            },
+        }
+
+        afacts = get_automerge_facts(iw, meta)
+
+        self.assertTrue(afacts[u'automerge'])
