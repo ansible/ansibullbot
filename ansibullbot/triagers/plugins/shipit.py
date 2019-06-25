@@ -117,6 +117,8 @@ def get_automerge_facts(issuewrapper, meta):
                 if pr_file.deletions:
                     # new exception delete
                     continue
+            elif thisfn.startswith(u'changelogs/fragments/') and thisfn.endswith(('.yml', '.yaml')):
+                continue
             else:
                 # other file modified, pull-request must be checked by an human
                 return create_ameta(False, u'automerge !module file(s) test failed')
@@ -257,9 +259,10 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
         if not x[u'repo_filename'].startswith(u'changelogs/fragments/')
     ]
 
+    files = [f for f in iw.files if not f.startswith(u'changelogs/fragments/')]
     module_utils_files_owned = 0  # module_utils files for which submitter is maintainer
     if meta[u'is_module_util']:
-        for f in iw.files:
+        for f in files:
             if f.startswith(u'lib/ansible/module_utils') and f in module_indexer.botmeta[u'files']:
                 maintainers = module_indexer.botmeta[u'files'][f].get(u'maintainers', [])
                 if maintainers and (iw.submitter in maintainers):
@@ -267,10 +270,10 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
 
     modules_files_owned = 0
     if not meta[u'is_new_module']:
-        for f in iw.files:
+        for f in files:
             if f.startswith(u'lib/ansible/modules') and iw.submitter in meta[u'component_maintainers']:
                 modules_files_owned += 1
-    nmeta[u'owner_pr'] = modules_files_owned + module_utils_files_owned == len(iw.files)
+    nmeta[u'owner_pr'] = modules_files_owned + module_utils_files_owned == len(files)
 
     # https://github.com/ansible/ansibullbot/issues/722
     if iw.wip:
