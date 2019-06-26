@@ -816,6 +816,58 @@ class TestOwnerPR(unittest.TestCase):
         self.assertEqual(iw.submitter, u'mscherer')
         self.assertFalse(facts[u'owner_pr'])
 
+    def test_owner_pr_submitter_is_maintainer_one_module_file_updated_changelog(self):
+        """
+        Submitter is a maintainer: ensure owner_pr is set even if changelog fragment is present
+        """
+        BOTMETA = u"""
+        ---
+        macros:
+            modules: lib/ansible/modules
+        files:
+            $modules/foo/bar.py:
+                maintainers: ElsA Oliver
+        """
+
+        modules = {u'lib/ansible/modules/foo/bar.py': None}
+        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
+
+        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
+        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']), [u'ElsA', u'Oliver'])
+
+
+        datafile = u'tests/fixtures/shipit/2_issue.yml'
+        statusfile = u'tests/fixtures/shipit/2_prstatus.json'
+        with get_issue(datafile, statusfile) as iw:
+            iw.pr_files = [
+                MockFile(u'lib/ansible/modules/foo/bar.py'),
+                MockFile(u'changelogs/fragments/00000-fragment.yaml')
+            ]
+            # need to give the wrapper a list of known files to compare against
+            iw.file_indexer = FileIndexerMock()
+            iw.file_indexer.files.append(u'lib/ansible/modules/foo/bar.py')
+
+            # predefine what the matcher is going to return
+            CM = ComponentMatcherMock()
+            CM.expected_results = [
+                {
+                    u'repo_filename': u'lib/ansible/modules/foo/bar.py',
+                    u'labels': [],
+                    u'support': None,
+                    u'maintainers': [u'ElsA', u'Oliver'],
+                    u'notify': [u'ElsA', u'Oliver'],
+                    u'ignore': [],
+                }
+            ]
+
+            meta = self.meta.copy()
+            iw._commits = []
+            meta.update(get_component_match_facts(iw, CM, []))
+            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+
+            self.assertEqual(iw.submitter, u'ElsA')
+            self.assertTrue(facts[u'owner_pr'])
+
 
 class TestReviewFacts(unittest.TestCase):
 
@@ -878,3 +930,42 @@ class TestReviewFacts(unittest.TestCase):
         self.assertTrue(facts[u'community_review'])
         self.assertFalse(facts[u'core_review'])
         self.assertFalse(facts[u'committer_review'])
+
+
+class TestAutomergeFacts(unittest.TestCase):
+
+    def test_automerge_changelog_fragment(self):
+        iw = IssueWrapperMock('ansible', 'ansible', 1)
+        iw._is_pullrequest = True
+        iw.pr_files = [
+            MockFile(u'lib/ansible/modules/foo/bar.py'),
+            MockFile(u'changelogs/fragments/00000-fragment.yaml')
+        ]
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_support': [u'community'],
+            u'is_backport': False,
+            u'merge_commits': False,
+            u'has_commit_mention': False,
+            u'is_needs_info': False,
+            u'has_shippable': True,
+            u'has_travis': False,
+            u'mergeable': True,
+            u'ci_stale': False,
+            u'ci_state': u'success',
+            u'shipit': True,
+            u'supershipit': False,
+            u'is_new_directory': False,
+            u'is_module': True,
+            u'module_match': {
+                u'namespace': u'foo',
+                u'maintainers': [u'ghuser1'],
+            },
+        }
+
+        afacts = get_automerge_facts(iw, meta)
+
+        self.assertTrue(afacts[u'automerge'])
