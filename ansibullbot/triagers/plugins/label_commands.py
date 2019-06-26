@@ -36,6 +36,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
         u'easyfix',
         u'module',
         u'needs_triage',
+        u'needs_verified',
         u'test',
     ]
 
