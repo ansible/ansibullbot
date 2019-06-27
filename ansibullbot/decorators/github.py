@@ -135,7 +135,7 @@ def RateLimited(fn):
                 logging.warning('ssl error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except ReadTimeout as e:
-                logging.warning('read timeout: sleeping 2 minutes %s' % e)
+                logging.warning(u'read timeout: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except AttributeError as e:
                 if "object has no attribute 'decoded_content'" in e.message:
