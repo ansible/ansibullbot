@@ -16,6 +16,8 @@ import traceback
 import six
 from six.moves import http_client as httplib
 
+from requests.exceptions import ReadTimeout
+
 from ansibullbot._text_compat import to_text
 from ansibullbot.errors import RateLimitError
 
@@ -131,6 +133,9 @@ def RateLimited(fn):
                 time.sleep(2*60)
             except ssl.SSLError as e:
                 logging.warning('ssl error: sleeping 2 minutes %s' % e)
+                time.sleep(2*60)
+            except ReadTimeout as e:
+                logging.warning(u'read timeout: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except AttributeError as e:
                 if "object has no attribute 'decoded_content'" in e.message:
