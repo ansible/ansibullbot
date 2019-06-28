@@ -1055,7 +1055,7 @@ class AnsibleComponentMatcher(object):
         #   https://github.com/ansible/ansibullbot/issues/1053
         if u'lib/ansible/modules' in filename:
             mmatch = self.find_module_match(filename)
-            if len(mmatch) == 1 and mmatch[0][u'filename'] == filename:
+            if mmatch and len(mmatch) == 1 and mmatch[0][u'filename'] == filename:
                 meta[u'metadata'].update(mmatch[0][u'metadata'])
                 for k in u'authors', u'maintainers':
                     meta[k] += mmatch[0][k]
