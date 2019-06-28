@@ -150,6 +150,20 @@ def RateLimited(fn):
                         import epdb; epdb.st()
                     else:
                         raise Exception('unhandled message type')
+            except TypeError as e:
+                if "unsupported operand type(s) for -=" in e.message:
+                    stime = get_reset_time(fn, args)
+                    msg = 'retry type error: sleeping %s minutes %s' \
+                        % (stime / 60, e)
+                    logging.warning(msg)
+                    time.sleep(stime)
+                else:
+                    logging.error(e)
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error('breakpoint!')
+                        import epdb; epdb.st()
+                    else:
+                        raise Exception('unhandled message type')
             except Exception as e:
                 logging.error(e)
                 if hasattr(e, 'data') and e.data is not None and e.data.get('message'):
