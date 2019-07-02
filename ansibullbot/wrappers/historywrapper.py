@@ -720,7 +720,7 @@ class HistoryWrapper(object):
 
             # https://github.com/ansible/ansibullbot/issues/1207
             # "ghost" users are deleted users and show up as NoneType
-            if review.get('User') is None:
+            if review.get('user') is None:
                 continue
 
             if review[u'state'] == u'COMMENTED':
