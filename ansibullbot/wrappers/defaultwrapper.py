@@ -94,6 +94,7 @@ class DefaultWrapper(object):
         self._assignees = False
         self._comments = False
         self._committer_emails = False
+        self._committer_logins = False
         self._commits = False
         self._events = False
         self._history = False
@@ -1261,6 +1262,11 @@ class DefaultWrapper(object):
         files = commit.files
         return files
 
+    @RateLimited
+    def get_commit_login(self, commit):
+        login = commit.author.login
+        return login
+
     @property
     def merge_commits(self):
         # https://api.github.com/repos/ansible/ansible/pulls/91/commits
@@ -1281,6 +1287,14 @@ class DefaultWrapper(object):
                 self.committer_emails.append(commit.commit.author.email)
         return self._committer_emails
 
+    @property
+    def committer_logins(self):
+        if self._committer_logins is False:
+            self._committer_logins = []
+            for commit in self.commits:
+                self.committer_logins.append(self.get_commit_login(commit))
+        return self._committer_logins
+
     def merge(self):
 
         # https://developer.github.com/v3/repos/merging/
@@ -1298,7 +1312,10 @@ class DefaultWrapper(object):
         # have worked on this particular pullrequest
         emails = sorted(set(self.committer_emails))
 
-        if len(self.commits) == 1 or len(emails) == 1:
+        # unique list of github logins that made each commit
+        logins = sorted(set(self.committer_logins))
+
+        if len(self.commits) == 1 or len(emails) == 1 or len(logins) == 1:
             # squash single committer PRs
             merge_method = u'squash'
         elif (len(self.commits) == len(emails)) and len(self.commits) <= 10:
