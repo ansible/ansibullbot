@@ -243,6 +243,7 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
         u'shipit_count_maintainer': False,
         u'shipit_count_ansible': False,
         u'shipit_count_vtotal': False,
+        u'shipit_count_historical': False,
         u'shipit_actors': None,
         u'supershipit_actors': None,
         u'community_usernames': [],
@@ -317,6 +318,7 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
     shipit_actors_other = []
     supershipiteers_voted = set()
     rebuild_merge = False
+    shipits_historical = set()
 
     for event in iw.history.history:
 
@@ -345,6 +347,9 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
 
         if not is_approval(body):
             continue
+
+        # historical shipits (keep track of all of them, even if reset)
+        shipits_historical.add(actor)
 
         if actor in core_team and is_rebuild_merge(body):
             rebuild_merge = True
@@ -389,14 +394,17 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
         if iw.submitter not in shipit_actors:
             ansible_shipits += 1
             shipit_actors.append(iw.submitter)
+        shipits_historical.add(iw.submitter)
     elif iw.submitter in maintainers:
         if iw.submitter not in shipit_actors:
             maintainer_shipits += 1
             shipit_actors.append(iw.submitter)
+        shipits_historical.add(iw.submitter)
     elif iw.submitter in community:
         if iw.submitter not in shipit_actors:
             community_shipits += 1
             shipit_actors.append(iw.submitter)
+        shipits_historical.add(iw.submitter)
 
     nmeta[u'shipit_count_other'] = other_shipits
     nmeta[u'shipit_count_community'] = community_shipits
@@ -405,6 +413,8 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
     nmeta[u'shipit_actors'] = shipit_actors
     nmeta[u'shipit_actors_other'] = shipit_actors_other
     nmeta[u'community_usernames'] = sorted(community)
+    nmeta[u'shipit_count_historical'] = list(shipits_historical)
+    nmeta[u'shipit_count_htotal'] = len(list(shipits_historical))
 
     total = community_shipits + maintainer_shipits + ansible_shipits
     nmeta[u'shipit_count_vtotal'] = total + other_shipits
