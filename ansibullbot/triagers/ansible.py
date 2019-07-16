@@ -71,6 +71,7 @@ from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.community_workgroups import get_community_workgroup_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
+from ansibullbot.triagers.plugins.cross_references import get_cross_reference_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
 from ansibullbot.triagers.plugins.label_commands import get_waffling_overrides
@@ -1676,7 +1677,7 @@ class AnsibleTriage(DefaultTriager):
         self.gh = self._connect()
 
         logging.info('creating github connection wrapper')
-        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
+        self.ghw = GithubWrapper(self.gh, token=self.github_token, cachedir=self.cachedir_base)
 
         for repo in REPOS:
             # skip repos based on args
@@ -2022,6 +2023,9 @@ class AnsibleTriage(DefaultTriager):
 
         # is it deprecated?
         self.meta.update(get_deprecation_facts(iw, self.meta))
+
+        # does it have a pr or does it have an issue?
+        self.meta.update(get_cross_reference_facts(iw, self.meta))
 
         # need these keys to always exist
         if u'merge_commits' not in self.meta:

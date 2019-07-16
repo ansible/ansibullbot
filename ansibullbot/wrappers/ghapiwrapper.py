@@ -22,8 +22,11 @@ from ansibullbot.decorators.github import RateLimited
 
 
 class GithubWrapper(object):
-    def __init__(self, gh, cachedir=u'~/.ansibullbot/cache'):
+    def __init__(self, gh, token=None, username=None, password=None, cachedir=u'~/.ansibullbot/cache'):
         self.gh = gh
+        self.token = token
+        self.username = username
+        self.password = password
         self.cachedir = os.path.expanduser(cachedir)
         self.cachefile = os.path.join(self.cachedir, u'github.pickle')
 
@@ -37,6 +40,31 @@ class GithubWrapper(object):
 
     def get_rate_limit(self):
         return self.gh.get_rate_limit().raw_data
+
+    @RateLimited
+    def get_request(self, url):
+        '''Get an arbitrary API endpoint'''
+
+        accepts = [
+            u'application/json',
+            u'application/vnd.github.mockingbird-preview',
+            u'application/vnd.github.sailor-v-preview+json',
+            u'application/vnd.github.starfox-preview+json',
+            u'application/vnd.github.v3+json',
+        ]
+
+        headers = {
+            u'Accept': u','.join(accepts),
+            u'Authorization': u'Bearer %s' % self.token,
+        }
+
+        rr = requests.get(url, headers=headers)
+        data = rr.json()
+
+        if hasattr(rr, 'links') and rr.links:
+            import epdb; epdb.st()
+
+        return data
 
 
 class RepoWrapper(object):

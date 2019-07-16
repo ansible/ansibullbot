@@ -108,6 +108,7 @@ class DefaultWrapper(object):
         self._pr_reviews = False
         self._reactions = False
         self._template_data = None
+        self._timeline = False
         self._required_template_sections = []
         self.desired_labels = []
         self.desired_assignees = []
@@ -183,6 +184,10 @@ class DefaultWrapper(object):
         return self.current_comments
 
     @property
+    def url(self):
+        return self.instance.url
+
+    @property
     def raw_data_issue(self):
         if self._raw_data_issue is None:
             self._raw_data_issue = \
@@ -195,10 +200,44 @@ class DefaultWrapper(object):
             self._events = self.get_events()
         return self._events
 
+    '''
     @RateLimited
     def get_events(self):
         self.current_events = self.load_update_fetch(u'events')
         return self.current_events
+    '''
+
+
+    def get_events(self):
+        events_url = self.url + '/events'
+        events = self.github.get_request(events_url)
+        timeline_url = self.url + '/timeline'
+        timeline = self.github.get_request(timeline_url)
+
+        aggregated = events[:]
+        for te in timeline:
+            if u'id' not in te:
+                aggregated.append(te)
+                continue
+            if te[u'id'] not in [x[u'id'] for x in aggregated if x.get(u'id')]:
+                events.append(te)
+                continue
+
+        aggregated  = sorted(aggregated, key=lambda x: x[u'created_at'])
+        return aggregated
+
+    '''
+    @property
+    def timeline(self):
+        if self._timeline is False:
+            self._timeline = self.get_timeline()
+        return self._timeline
+
+    def get_timeline(self):
+        timline = self.load_update_fetch(u'timeline')
+        import epdb; epdb.st()
+        return timeline
+    '''
 
     #def get_commits(self):
     #    self.commits = self.load_update_fetch('commits')

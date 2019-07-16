@@ -30,10 +30,36 @@ from ansibullbot._text_compat import to_text
 #   https://developer.github.com/v3/issues/events/
 #   https://developer.github.com/v3/issues/comments/
 
+class Actor(object):
+    login = None
+
+
+class Event(object):
+    def __init__(self, raw_data, id=None):
+        self.id = id
+        self.raw_data = raw_data
+
+    @property
+    def created_at(self):
+        ts = self.raw_data.get(u'created_at')
+        ts = datetime.datetime.strptime(ts, u'%Y-%m-%dT%H:%M:%SZ')
+        return ts
+
+    @property
+    def event(self):
+        return self.raw_data.get('event')
+
+    @property
+    def actor(self):
+        actor = Actor()
+        actor.login = self.raw_data['actor']['login']
+        return actor
+
 
 class HistoryWrapper(object):
 
     def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
+
         self.issue = issue
         self.maincache = cachedir
         self._waffled_labels = None
@@ -602,9 +628,16 @@ class HistoryWrapper(object):
         reactions = self.issue.reactions
 
         processed_events = []
-        for event in events:
+        for ide,event in enumerate(events):
+
+            if isinstance(event, dict):
+                event = Event(
+                    event,
+                    id='%s_%s_%s' % (self.issue.repo_full_name, self.issue.number, ide)
+                )
 
             cdict = self.get_event_from_cache(event.id, cache)
+
             if cdict:
                 edict = cdict.copy()
             else:
