@@ -118,6 +118,11 @@ class MockRepo(object):
         self.repo_path = repo_path
 
 
+class GithubWrapperMock(object):
+    def get_request(self, url):
+        return []
+
+
 class TestSuperShipit(unittest.TestCase):
 
     def test_supershipit_shipit_facts(self):
@@ -675,7 +680,8 @@ class TestOwnerPR(unittest.TestCase):
         issue.user.login = u'ElsA'
         issue.html_url = u'https://github.com/ansible/ansible/pull/123'
         cachedir = tempfile.mkdtemp()
-        iw = IssueWrapper(cachedir=cachedir, issue=issue)
+        gh = GithubWrapperMock()
+        iw = IssueWrapper(cachedir=cachedir, issue=issue, github=gh)
         iw.pr_files = [
             MockFile(u'lib/ansible/module_utils/foo/bar.py'),
             MockFile(u'lib/ansible/module_utils/baz/bar.py')
