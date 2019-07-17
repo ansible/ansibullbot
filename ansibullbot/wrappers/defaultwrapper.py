@@ -209,8 +209,14 @@ class DefaultWrapper(object):
 
 
     def get_events(self):
+        '''Fetch a combined set of events and timeline'''
+
+        # events are the stable endpoint
         events_url = self.url + '/events'
         events = self.github.get_request(events_url)
+
+        # timeline contains additional items such as cross-references,
+        # but is still in preview mode
         timeline_url = self.url + '/timeline'
         timeline = self.github.get_request(timeline_url)
 
