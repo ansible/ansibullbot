@@ -107,6 +107,7 @@ class DefaultWrapper(object):
         self._pr_status = False
         self._pr_reviews = False
         self._reactions = False
+        self._repo_full_name = False
         self._template_data = None
         self._timeline = False
         self._required_template_sections = []
@@ -859,9 +860,21 @@ class DefaultWrapper(object):
         return self.instance.title
 
     @property
-    @RateLimited
     def repo_full_name(self):
-        return self.repo.repo.full_name
+        '''return the <org>/<repo> string'''
+
+        # prefer regex over making GET calls
+        if self._repo_full_name is False:
+            try:
+                url = self.url
+                full_name = re.search(r'repos\/\w+\/\w+\/', url).group()
+                full_name = full_name.replace('repos/', '')
+            except Exception as e:
+                full_name = self.repo.repo.full_name
+
+            self._repo_full_name = full_name
+
+        return self._repo_full_name
 
     @property
     def html_url(self):
