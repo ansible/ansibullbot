@@ -61,8 +61,9 @@ class GithubWrapper(object):
         rr = requests.get(url, headers=headers)
         data = rr.json()
 
-        if hasattr(rr, 'links') and rr.links:
-            import epdb; epdb.st()
+        if hasattr(rr, 'links') and rr.links and rr.links.get('next'):
+            _data = self.get_request(rr.links['next']['url'])
+            data += _data
 
         return data
 
