@@ -201,50 +201,28 @@ class DefaultWrapper(object):
             self._events = self.get_events()
         return self._events
 
-    '''
-    @RateLimited
     def get_events(self):
-        self.current_events = self.load_update_fetch(u'events')
-        return self.current_events
-    '''
+        '''return a combined set of events and timeline'''
 
+        events = []
+        for prop in ['events', 'timeline']:
+            data = self.load_update_fetch_rest(prop)
 
-    def get_events(self):
-        '''Fetch a combined set of events and timeline'''
+            for di,dd in enumerate(data):
+                if not dd.get(u'id'):
+                    # set id as graphql node_id OR make one up
+                    if u'node_id' in dd:
+                        dd[u'id'] = dd[u'node_id']
+                    else:
+                        dd[u'id'] = '%s/%s/%s/%s' % (self.repo_full_name, self.number, prop, di)
 
-        # events are the stable endpoint
-        events_url = self.url + '/events'
-        events = self.github.get_request(events_url)
+                ids = [x.get(u'id') for x in events]
+                if dd[u'id'] not in ids:
+                    events.append(dd)
 
-        # timeline contains additional items such as cross-references,
-        # but is still in preview mode
-        timeline_url = self.url + '/timeline'
-        timeline = self.github.get_request(timeline_url)
+        events = sorted(events, key=lambda x: x[u'created_at'])
 
-        aggregated = events[:]
-        for te in timeline:
-            if u'id' not in te:
-                aggregated.append(te)
-                continue
-            if te[u'id'] not in [x[u'id'] for x in aggregated if x.get(u'id')]:
-                events.append(te)
-                continue
-
-        aggregated  = sorted(aggregated, key=lambda x: x[u'created_at'])
-        return aggregated
-
-    '''
-    @property
-    def timeline(self):
-        if self._timeline is False:
-            self._timeline = self.get_timeline()
-        return self._timeline
-
-    def get_timeline(self):
-        timline = self.load_update_fetch(u'timeline')
-        import epdb; epdb.st()
-        return timeline
-    '''
+        return events
 
     #def get_commits(self):
     #    self.commits = self.load_update_fetch('commits')
@@ -321,6 +299,46 @@ class DefaultWrapper(object):
         # get rid of the bad dir
         shutil.rmtree(srcdir)
 
+    def load_update_fetch_rest(self, property_name):
+        '''Use python-requests instead of pygithub'''
+
+        cache_dir = os.path.join(
+            self.cachedir,
+            u'issues',
+            to_text(self.number),
+        )
+        cache_data = os.path.join(cache_dir, '%s_data.json' % property_name)
+        cache_meta = os.path.join(cache_dir, '%s_meta.json' % property_name)
+        logging.debug(cache_data)
+
+        meta = {}
+        fetch = False
+        if not os.path.exists(cache_data):
+            fetch = True
+        else:
+            with open(cache_meta, 'r') as f:
+                meta = json.loads(f.read())
+
+        if not fetch and (not meta or meta.get('updated_at', 0) < self.updated_at.isoformat()):
+            fetch = True
+
+        if fetch:
+            property_url = self.url + '/' + property_name
+            data = self.github.get_request(property_url)
+
+            with open(cache_meta, 'w') as f:
+                f.write(json.dumps({
+                    'updated_at': self.updated_at.isoformat(),
+                    'url': property_url
+                }))
+            with open(cache_data, 'w') as f:
+                f.write(json.dumps(data))
+        else:
+            with open(cache_data, 'r') as f:
+                data = json.loads(f.read())
+
+        return data
+
     @RateLimited
     def load_update_fetch(self, property_name, obj=None):
         '''Fetch a property for an issue object'''
@@ -346,7 +364,7 @@ class DefaultWrapper(object):
         pfile = os.path.join(
             self.cachedir,
             u'issues',
-            to_text(self.instance.number),
+            to_text(self.number),
             u'%s.pickle' % property_name
         )
         pdir = os.path.dirname(pfile)
@@ -869,6 +887,7 @@ class DefaultWrapper(object):
                 url = self.url
                 full_name = re.search(r'repos\/\w+\/\w+\/', url).group()
                 full_name = full_name.replace('repos/', '')
+                full_name = full_name.strip('/')
             except Exception as e:
                 full_name = self.repo.repo.full_name
 
