@@ -1484,6 +1484,12 @@ class AnsibleTriage(DefaultTriager):
             if comment not in actions.comments:
                 actions.comments.append(comment)
 
+        # https://github.com/ansible/ansibullbot/issues/924
+        for key in [u'has_pr', u'has_issue']:
+            if self.meta[key]:
+                if key not in iw.labels:
+                    actions.newlabel.append(key)
+
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 
