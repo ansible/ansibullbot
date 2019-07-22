@@ -209,6 +209,11 @@ class DefaultWrapper(object):
             data = self.load_update_fetch_rest(prop)
 
             for di,dd in enumerate(data):
+
+                # timeline comments do not have bodies
+                if dd.get(u'event') == u'commented' and not dd.get(u'body'):
+                    continue
+
                 if not dd.get(u'id'):
                     # set id as graphql node_id OR make one up
                     if u'node_id' in dd:
