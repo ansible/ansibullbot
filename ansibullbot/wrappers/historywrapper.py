@@ -58,6 +58,8 @@ class Event(object):
 
 class HistoryWrapper(object):
 
+    SCHEMA_VERSION = 1.1
+
     def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
 
         self.issue = issue
@@ -117,14 +119,24 @@ class HistoryWrapper(object):
                 logging.info(u'dumping newly created history cache')
                 self._dump_cache()
             else:
-                if cache[u'updated_at'] >= self.issue.instance.updated_at:
-                    logging.info(u'use cached history')
-                    self.history = cache[u'history']
-                else:
+
+                reprocess = False
+
+                # use a versioned schema to track changes
+                if not cache.get('version') or cache['version'] < self.SCHEMA_VERSION:
+                    reprocess = True
+
+                if cache[u'updated_at'] < self.issue.instance.updated_at:
+                    reprocess = True
+
+                if reprocess:
                     logging.info(u'history out of date, updating')
                     self.history = self.process()
                     logging.info(u'dumping newly created history cache')
                     self._dump_cache()
+
+                logging.info(u'use cached history')
+                self.history = cache[u'history']
 
         if exclude_users:
             tmp_history = [x for x in self.history]
@@ -151,6 +163,9 @@ class HistoryWrapper(object):
             logging.debug(e)
             logging.info(u'%s failed to load' % self.cachefile)
             cachedata = None
+
+        cachedata = self._fix_comments_with_no_body(cachedata)
+
         return cachedata
 
     def _dump_cache(self):
@@ -158,8 +173,11 @@ class HistoryWrapper(object):
             os.makedirs(self.cachedir)
 
         # keep the timestamp
-        cachedata = {u'updated_at': self.issue.instance.updated_at,
-                     u'history': self.history}
+        cachedata = {
+            u'version': self.SCHEMA_VERSION,
+            u'updated_at': self.issue.instance.updated_at,
+            u'history': self.history
+        }
 
         try:
             with open(self.cachefile, 'wb') as f:
@@ -171,6 +189,13 @@ class HistoryWrapper(object):
                 import epdb; epdb.st()
             else:
                 raise Exception(u'')
+
+    def _fix_comments_with_no_body(self, cachedata):
+        '''Make sure all comment events have a body key'''
+        for idx,x in enumerate(cachedata[u'history']):
+            if x['event'] == u'commented' and u'body' not in x:
+                cachedata[u'history'][idx][u'body'] = ''
+        return cachedata
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
@@ -305,7 +330,7 @@ class HistoryWrapper(object):
         for event in events:
             if event[u'actor'] in botnames:
                 continue
-            if event[u'event'] == u'commented':
+            if event[u'event'] == u'commented' and event.get(u'body'):
                 matched = False
                 lines = event[u'body'].split(u'\n')
                 for line in lines:
@@ -449,6 +474,8 @@ class HistoryWrapper(object):
         last_notification = None
         comments = [x for x in self.history if x[u'event'] == u'commented']
         for comment in comments:
+            if not comment.get(u'body'):
+                continue
             for un in username:
                 if un in comment[u'body']:
                     if not last_notification:
@@ -557,6 +584,8 @@ class HistoryWrapper(object):
                                                   botname,
                                                   maxcount=999)
         for comment in comments:
+            if not comment.get(u'body'):
+                continue
             if u'boilerplate:' in comment[u'body']:
                 lines = [x for x in comment[u'body'].split(u'\n')
                          if x.strip() and u'boilerplate:' in x]
@@ -582,6 +611,8 @@ class HistoryWrapper(object):
                                               botname,
                                               maxcount=999)
         for comment in comments:
+            if not comment.get(u'body'):
+                continue
             if u'boilerplate:' in comment[u'body']:
                 lines = [x for x in comment[u'body'].split(u'\n')
                          if x.strip() and u'boilerplate:' in x]
