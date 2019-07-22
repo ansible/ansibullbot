@@ -269,7 +269,10 @@ class RepoWrapper(object):
         )
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
-                issue = pickle_load(f)
+                try:
+                    issue = pickle_load(f)
+                except TypeError:
+                    return False
             return issue
         else:
             return False
