@@ -171,7 +171,7 @@ class GithubGraphQLClient(object):
 
         numbers = [x[u'number'] for x in summaries]
         if numbers:
-            missing = (x for x in xrange(1, numbers[-1]) if x not in numbers)
+            missing = (x for x in range(1, numbers[-1]) if x not in numbers)
         else:
             missing = []
         for x in missing:
@@ -226,7 +226,8 @@ class GithubGraphQLClient(object):
             query = templ.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS=issueparams, FIELDS=QUERY_FIELDS)
 
             payload = {
-                u'query': to_bytes(query, 'ascii', 'ignore').strip(),
+                #u'query': to_bytes(query, 'ascii', 'ignore').strip(),
+                u'query': to_text(query, 'ascii', 'ignore').strip(),
                 u'variables': u'{}',
                 u'operationName': None
             }
