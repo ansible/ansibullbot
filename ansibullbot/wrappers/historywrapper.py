@@ -40,6 +40,10 @@ class Event(object):
         self.raw_data = raw_data
 
     @property
+    def node_id(self):
+        return self.raw_data.get(u'node_id')
+
+    @property
     def created_at(self):
         ts = self.raw_data.get(u'created_at')
         ts = datetime.datetime.strptime(ts, u'%Y-%m-%dT%H:%M:%SZ')
@@ -47,13 +51,21 @@ class Event(object):
 
     @property
     def event(self):
-        return self.raw_data.get('event')
+        return self.raw_data.get(u'event')
 
     @property
     def actor(self):
         actor = Actor()
-        actor.login = self.raw_data['actor']['login']
+        actor.login = self.raw_data[u'actor'][u'login']
         return actor
+
+    @property
+    def commit_id(self):
+        return self.raw_data.get(u'commit_id')
+
+    @property
+    def commit_url(self):
+        return self.raw_data.get(u'commit_url')
 
 
 class HistoryWrapper(object):
@@ -146,6 +158,7 @@ class HistoryWrapper(object):
 
         self.fix_history_tz()
         self.history = self._fix_comments_with_no_body(self.history)
+        self.history = self._fix_commits_with_no_message(self.history)
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
     def get_rate_limit(self):
@@ -196,6 +209,12 @@ class HistoryWrapper(object):
         for idx,x in enumerate(events):
             if x['event'] == u'commented' and u'body' not in x:
                 events[idx][u'body'] = ''
+        return events
+
+    def _fix_commits_with_no_message(self, events):
+        for idx,x in enumerate(events):
+            if x['event'] == u'committed' and u'message' not in x:
+                events[idx][u'message'] = ''
         return events
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):

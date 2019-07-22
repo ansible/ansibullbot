@@ -210,6 +210,18 @@ class DefaultWrapper(object):
 
             for di,dd in enumerate(data):
 
+                # reviews do not have created_at keys
+                if not dd.get(u'created_at') and dd.get(u'submitted_at'):
+                    dd[u'created_at'] = dd[u'submitted_at']
+
+                # commits do not have created_at keys
+                if not dd.get(u'created_at') and dd.get('author'):
+                    dd[u'created_at'] = dd[u'author'][u'date']
+
+                # commits do not have actors
+                if not dd.get(u'actor'):
+                    dd[u'actor'] = {'login': None}
+
                 # timeline comments do not have bodies
                 if dd.get(u'event') == u'commented' and not dd.get(u'body'):
                     continue
