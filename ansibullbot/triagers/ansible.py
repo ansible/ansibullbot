@@ -1486,7 +1486,7 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/924
         for key in [u'has_pr', u'has_issue']:
-            if self.meta[key]:
+            if self.meta[u'needs_' + key]:
                 if key not in iw.labels:
                     actions.newlabel.append(key)
 
