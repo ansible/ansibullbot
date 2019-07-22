@@ -145,6 +145,7 @@ class HistoryWrapper(object):
                     self.history.remove(x)
 
         self.fix_history_tz()
+        self.history = self._fix_comments_with_no_body(self.history)
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
     def get_rate_limit(self):
@@ -164,7 +165,7 @@ class HistoryWrapper(object):
             logging.info(u'%s failed to load' % self.cachefile)
             cachedata = None
 
-        cachedata = self._fix_comments_with_no_body(cachedata)
+        cachedata[u'history'] = self._fix_comments_with_no_body(cachedata[u'history'])
 
         return cachedata
 
@@ -190,12 +191,12 @@ class HistoryWrapper(object):
             else:
                 raise Exception(u'')
 
-    def _fix_comments_with_no_body(self, cachedata):
+    def _fix_comments_with_no_body(self, events):
         '''Make sure all comment events have a body key'''
-        for idx,x in enumerate(cachedata[u'history']):
+        for idx,x in enumerate(events):
             if x['event'] == u'commented' and u'body' not in x:
-                cachedata[u'history'][idx][u'body'] = ''
-        return cachedata
+                events[idx][u'body'] = ''
+        return events
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
