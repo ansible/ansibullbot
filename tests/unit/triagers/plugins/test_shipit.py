@@ -111,6 +111,9 @@ class MockFile(object):
     def __init__(self, name, content=u''):
         self.filename = name
         self.content = content
+        self.additions = 0
+        self.deletions = 0
+        self.status = None
 
 
 class MockRepo(object):
@@ -291,6 +294,33 @@ class TestSuperShipit(unittest.TestCase):
 
         # don't let the plugin modify the meta
         assert len(meta[u'component_matches']) == 2
+
+        assert sfacts[u'shipit']
+        assert sfacts[u'supershipit']
+        assert sfacts[u'shipit_actors'] == []
+        assert sfacts[u'shipit_actors_other'] == [u'jane']
+
+    def test_supershipit_deletion_from_sanity_ignore(self):
+        '''supershipit should work when lines are deleted from ignore files'''
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW._is_pullrequest = True
+        IW.add_comment('jane', 'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']},
+                {u'repo_filename': u'changelogs/fragments/000-foo-change.yml'},
+                {u'repo_filename': u'test/sanity/validate-modules/ignore.txt'}
+            ]
+        }
+        sfacts = get_shipit_facts(IW, meta, MI)
+
+        # don't let the plugin modify the meta
+        assert len(meta[u'component_matches']) == 3
 
         assert sfacts[u'shipit']
         assert sfacts[u'supershipit']
@@ -975,3 +1005,74 @@ class TestAutomergeFacts(unittest.TestCase):
         afacts = get_automerge_facts(iw, meta)
 
         self.assertTrue(afacts[u'automerge'])
+
+    def test_automerge_deletion_from_ignore(self):
+        iw = IssueWrapperMock('ansible', 'ansible', 1)
+        iw._is_pullrequest = True
+        mfile = MockFile(u'test/sanity/validate-modules/ignore.txt')
+        mfile.deletions = 1
+        iw.pr_files = [mfile]
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_support': [u'community'],
+            u'is_backport': False,
+            u'merge_commits': False,
+            u'has_commit_mention': False,
+            u'is_needs_info': False,
+            u'has_shippable': True,
+            u'has_travis': False,
+            u'mergeable': True,
+            u'ci_stale': False,
+            u'ci_state': u'success',
+            u'shipit': True,
+            u'supershipit': False,
+            u'is_new_directory': False,
+            u'is_module': True,
+            u'module_match': {
+                u'namespace': u'foo',
+                u'maintainers': [u'ghuser1'],
+            },
+        }
+
+        afacts = get_automerge_facts(iw, meta)
+
+        self.assertTrue(afacts[u'automerge'])
+
+    def test_automerge_addition_to_ignore(self):
+        iw = IssueWrapperMock('ansible', 'ansible', 1)
+        iw._is_pullrequest = True
+        mfile = MockFile(u'test/sanity/validate-modules/ignore.txt')
+        mfile.addtions = 1
+        mfile.status = u'added'
+        iw.pr_files = [mfile]
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_support': [u'community'],
+            u'is_backport': False,
+            u'merge_commits': False,
+            u'has_commit_mention': False,
+            u'is_needs_info': False,
+            u'has_shippable': True,
+            u'has_travis': False,
+            u'mergeable': True,
+            u'ci_stale': False,
+            u'ci_state': u'success',
+            u'shipit': True,
+            u'supershipit': False,
+            u'is_new_directory': False,
+            u'is_module': True,
+            u'module_match': {
+                u'namespace': u'foo',
+                u'maintainers': [u'ghuser1'],
+            },
+        }
+
+        afacts = get_automerge_facts(iw, meta)
+
+        self.assertFalse(afacts[u'automerge'])

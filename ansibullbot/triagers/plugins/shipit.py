@@ -261,6 +261,14 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
     ]
 
     files = [f for f in iw.files if not f.startswith(u'changelogs/fragments/')]
+
+    # https://github.com/ansible/ansibullbot/issues/1238
+    meta[u'component_matches'] = [
+        x for x in meta.get(u'component_matches', [])
+        if not x[u'repo_filename'].startswith(u'test/sanity')
+    ]
+    files = [f for f in files if not f.startswith(u'test/sanity') and f.endswith(u'ignore.txt')]
+
     module_utils_files_owned = 0  # module_utils files for which submitter is maintainer
     if meta[u'is_module_util']:
         for f in files:
