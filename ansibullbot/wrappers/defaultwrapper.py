@@ -218,6 +218,10 @@ class DefaultWrapper(object):
                 if not dd.get(u'created_at') and dd.get('author'):
                     dd[u'created_at'] = dd[u'author'][u'date']
 
+                # commit comments do not have created_at keys
+                if not dd.get(u'created_at') and dd.get('comments'):
+                    dd[u'created_at'] = dd[u'comments'][0][u'created_at']
+
                 # commits do not have actors
                 if not dd.get(u'actor'):
                     dd[u'actor'] = {'login': None}
