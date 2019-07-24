@@ -751,6 +751,9 @@ class HistoryWrapper(object):
 
                 processed_events.append(edict)
 
+        # get rid of events with no created_at =(
+        processed_events = [x for x in processed_events if x.get(u'created_at')]
+
         # sort by created_at
         sorted_events = sorted(processed_events, key=itemgetter(u'created_at'))
 
