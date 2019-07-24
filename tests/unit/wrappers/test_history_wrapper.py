@@ -160,5 +160,7 @@ def test_ignore_events_without_dates_on_last_methods():
     res.append(hw.label_last_applied(u'needs_info'))
     res.append(hw.label_last_removed(u'needs_info'))
     res.append(hw.last_date_for_boilerplate(u'needs_info'))
+    res.append(hw.was_labeled(u'needs_info'))
+    res.append(hw.was_unlabeled(u'needs_info'))
 
     assert not [x for x in res if x is None]

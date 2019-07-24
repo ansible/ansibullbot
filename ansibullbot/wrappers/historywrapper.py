@@ -474,8 +474,6 @@ class HistoryWrapper(object):
         """When did person X last comment?"""
         last_date = None
         for event in reversed(self.history):
-            if not event.get(u'created_at'):
-                continue
             if type(username) != list:
                 if event[u'actor'] == username:
                     last_date = event[u'created_at']
@@ -496,8 +494,6 @@ class HistoryWrapper(object):
         last_notification = None
         comments = [x for x in self.history if x[u'event'] == u'commented']
         for comment in comments:
-            if not comment.get(u'created_at'):
-                continue
             if not comment.get(u'body'):
                 continue
             for un in username:
@@ -513,8 +509,6 @@ class HistoryWrapper(object):
         """When did person X last comment?"""
         last_date = None
         for event in reversed(self.history):
-            if not event.get(u'created_at'):
-                continue
             if event[u'event'] == u'commented':
                 if type(username) == list:
                     if event[u'actor'] in username:
@@ -528,8 +522,6 @@ class HistoryWrapper(object):
     def last_comment(self, username):
         last_comment = None
         for event in reversed(self.history):
-            if not event.get(u'created_at'):
-                continue
             if event[u'event'] == u'commented':
                 if type(username) == list:
                     if event[u'actor'] in username:
@@ -544,8 +536,6 @@ class HistoryWrapper(object):
         """Who commented last?"""
         last_commentor = None
         for event in reversed(self.history):
-            if not event.get(u'created_at'):
-                continue
             if event[u'event'] == u'commented':
                 last_commentor = event[u'actor']
                 break
@@ -555,8 +545,6 @@ class HistoryWrapper(object):
         """What date was a label last applied?"""
         last_date = None
         for event in reversed(self.history):
-            if not event.get(u'created_at'):
-                continue
             if event[u'event'] == u'labeled':
                 if event[u'label'] == label:
                     last_date = event[u'created_at']
@@ -577,8 +565,6 @@ class HistoryWrapper(object):
         """Were labels -ever- applied to this issue?"""
         labeled = False
         for event in self.history:
-            if not event.get(u'created_at'):
-                continue
             if bots:
                 if event[u'actor'] in bots:
                     continue
