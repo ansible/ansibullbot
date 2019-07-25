@@ -131,6 +131,9 @@ class TestSuperShipit(unittest.TestCase):
     def test_supershipit_shipit_facts(self):
         # a supershipit should count from a supershipiteer
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+        ]
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
         MI = ModuleIndexerMock([])
@@ -152,6 +155,10 @@ class TestSuperShipit(unittest.TestCase):
     def test_supershipit_shipit_on_all_files(self):
         # count all the supershipits
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+            MockFile(u'bar'),
+        ]
         IW._is_pullrequest = True
         IW.add_comment(u'jane', u'shipit')
         IW.add_comment(u'doe', u'shipit')
@@ -175,6 +182,10 @@ class TestSuperShipit(unittest.TestCase):
     def test_supershipit_shipit_not_all_files(self):
         # make sure there is supershipit for all files
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+            MockFile(u'bar'),
+        ]
         IW._is_pullrequest = True
         IW.add_comment(u'jane', u'shipit')
         MI = ModuleIndexerMock([])
@@ -197,6 +208,9 @@ class TestSuperShipit(unittest.TestCase):
     def test_maintainer_is_not_supershipit(self):
         # a maintainer should not be auto-added as a shipiteer
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+        ]
         IW._is_pullrequest = True
         IW.add_comment(u'janetainer', u'shipit')
         MI = ModuleIndexerMock([])
@@ -221,6 +235,9 @@ class TestSuperShipit(unittest.TestCase):
     def test_core_is_not_supershipit(self):
         # a core team member should not be auto-added as a shipiteer
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+        ]
         IW._is_pullrequest = True
         IW.add_comment('coreperson', 'shipit')
         MI = ModuleIndexerMock([])
@@ -243,6 +260,9 @@ class TestSuperShipit(unittest.TestCase):
     def test_automerge_community_only(self):
         # automerge should only be allowed if the support is 100% community
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+        ]
         IW._is_pullrequest = True
         meta1 = {
             u'is_module_util': False,
@@ -277,6 +297,10 @@ class TestSuperShipit(unittest.TestCase):
         # a supershipit should count from a supershipiteer
         # https://github.com/ansible/ansibullbot/issues/1147
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+            MockFile(u'changelogs/fragments/000-foo-change.yml'),
+        ]
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
         MI = ModuleIndexerMock([])
@@ -303,6 +327,13 @@ class TestSuperShipit(unittest.TestCase):
     def test_supershipit_deletion_from_sanity_ignore(self):
         '''supershipit should work when lines are deleted from ignore files'''
         IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+            MockFile(u'changelogs/fragments/000-foo-change.yml'),
+            MockFile(u'test/sanity/validate-modules/ignore.txt'),
+        ]
+        IW.pr_files[-1].additions = 0
+        IW.pr_files[-1].deletions = 1
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
         MI = ModuleIndexerMock([])
@@ -326,6 +357,38 @@ class TestSuperShipit(unittest.TestCase):
         assert sfacts[u'supershipit']
         assert sfacts[u'shipit_actors'] == []
         assert sfacts[u'shipit_actors_other'] == [u'jane']
+
+    def test_supershipit_addition_to_sanity_ignore(self):
+        '''supershipit should work when lines are deleted from ignore files'''
+        IW = IssueWrapperMock('ansible', 'ansible', 1)
+        IW.pr_files = [
+            MockFile(u'foo'),
+            MockFile(u'changelogs/fragments/000-foo-change.yml'),
+            MockFile(u'test/sanity/validate-modules/ignore.txt'),
+        ]
+        IW.pr_files[-1].additions = 1
+        IW.pr_files[-1].deletions = 0
+        IW._is_pullrequest = True
+        IW.add_comment('jane', 'shipit')
+        MI = ModuleIndexerMock([])
+        meta = {
+            u'is_module_util': False,
+            u'is_new_module': False,
+            u'is_needs_rebase': False,
+            u'is_needs_revision': False,
+            u'component_matches': [
+                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']},
+                {u'repo_filename': u'changelogs/fragments/000-foo-change.yml'},
+                {u'repo_filename': u'test/sanity/validate-modules/ignore.txt'}
+            ]
+        }
+        sfacts = get_shipit_facts(IW, meta, MI)
+
+        # don't let the plugin modify the meta
+        assert len(meta[u'component_matches']) == 3
+
+        assert not sfacts[u'shipit']
+        assert not sfacts[u'supershipit']
 
 
 class TestShipitRebuildMerge(unittest.TestCase):
