@@ -39,6 +39,7 @@ class HistoryWrapperMock(object):
 class IssueWrapperMock(object):
     _is_pullrequest = False
     _pr_files = []
+    pr_files = []
     _wip = False
     _history = None
     _submitter = 'bob'
