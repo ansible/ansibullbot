@@ -1109,7 +1109,7 @@ class TestAutomergeFacts(unittest.TestCase):
         iw = IssueWrapperMock('ansible', 'ansible', 1)
         iw._is_pullrequest = True
         mfile = MockFile(u'test/sanity/validate-modules/ignore.txt')
-        mfile.addtions = 1
+        mfile.additions = 1
         mfile.status = u'added'
         iw.pr_files = [mfile]
         meta = {
