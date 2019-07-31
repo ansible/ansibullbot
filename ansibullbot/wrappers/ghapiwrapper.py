@@ -19,6 +19,7 @@ from bs4 import BeautifulSoup
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
+from ansibullbot.errors import RateLimitError
 
 
 class GithubWrapper(object):
@@ -61,8 +62,13 @@ class GithubWrapper(object):
         rr = requests.get(url, headers=headers)
         data = rr.json()
 
-        if hasattr(rr, 'links') and rr.links and rr.links.get('next'):
-            _data = self.get_request(rr.links['next']['url'])
+        # handle ratelimits ...
+        if isinstance(data, dict) and data.get(u'message'):
+            if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+                raise RateLimitError()
+
+        if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
+            _data = self.get_request(rr.links[u'next'][u'url'])
             data += _data
 
         return data
