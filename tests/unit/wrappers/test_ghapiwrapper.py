@@ -44,4 +44,4 @@ def test_get_request_rate_limited():
     gw = GithubWrapper(gh, token=12345, cachedir=cachedir)
 
     with pytest.raises(RateLimitError):
-        rdata = gw.get_request('https://foo.bar.com/test')
+        rdata = gw.get_request(u'https://foo.bar.com/test')

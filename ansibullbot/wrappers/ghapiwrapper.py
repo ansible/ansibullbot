@@ -64,11 +64,11 @@ class GithubWrapper(object):
 
         # handle ratelimits ...
         if isinstance(data, dict) and data.get(u'message'):
-            if data[u'message'].lower().startswith('api rate limit exceeded'):
+            if data[u'message'].lower().startswith(u'api rate limit exceeded'):
                 raise RateLimitError()
 
-        if hasattr(rr, 'links') and rr.links and rr.links.get('next'):
-            _data = self.get_request(rr.links['next']['url'])
+        if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
+            _data = self.get_request(rr.links[u'next'][u'url'])
             data += _data
 
         return data
