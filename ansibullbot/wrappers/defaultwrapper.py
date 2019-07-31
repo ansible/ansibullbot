@@ -211,7 +211,7 @@ class DefaultWrapper(object):
             for di,dd in enumerate(data):
 
                 if not isinstance(dd, dict):
-                    logger.error('%s is not a dict' % dd)
+                    logging.error('%s is not a dict' % dd)
                     raise Exception
 
                 # reviews do not have created_at keys
