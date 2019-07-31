@@ -99,6 +99,9 @@ def RateLimited(fn):
 
     def inner(*args, **kwargs):
 
+        print('C.DEFAULT_RATELIMIT: %s' % C.DEFAULT_RATELIMIT)
+        print('C.DEFAULT_BREAKPOINTS: %s' % C.DEFAULT_BREAKPOINTS)
+
         # bypass this decorator for testing purposes
         if not C.DEFAULT_RATELIMIT:
             return fn(*args, **kwargs)
