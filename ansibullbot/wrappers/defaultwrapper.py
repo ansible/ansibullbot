@@ -210,6 +210,10 @@ class DefaultWrapper(object):
 
             for di,dd in enumerate(data):
 
+                if not isinstance(dd, dict):
+                    logger.error('%s is not a dict' % dd)
+                    raise Exception
+
                 # reviews do not have created_at keys
                 if not dd.get(u'created_at') and dd.get(u'submitted_at'):
                     dd[u'created_at'] = dd[u'submitted_at']
