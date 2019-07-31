@@ -350,6 +350,18 @@ class DefaultWrapper(object):
         if not fetch and (not meta or meta.get('updated_at', 0) < self.updated_at.isoformat()):
             fetch = True
 
+        # validate the data is not infected by ratelimit errors
+        if not fetch and property_name in ['events', 'timeline', 'comments']:
+            with open(cache_data, 'r') as f:
+                data = json.loads(f.read())
+
+            if isinstance(data, list):
+                bad_events = [x for x in data if not isinstance(x, dict)]
+                if bad_events:
+                    fetch = True
+            else:
+                fetch = True
+
         if fetch:
             property_url = self.url + '/' + property_name
             data = self.github.get_request(property_url)
@@ -361,9 +373,6 @@ class DefaultWrapper(object):
                 }))
             with open(cache_data, 'w') as f:
                 f.write(json.dumps(data))
-        else:
-            with open(cache_data, 'r') as f:
-                data = json.loads(f.read())
 
         return data
 
