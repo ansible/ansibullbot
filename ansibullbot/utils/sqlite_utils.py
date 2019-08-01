@@ -49,17 +49,28 @@ class AnsibullbotDatabase(object):
 
     def __init__(self, cachedir='/tmp'):
 
+        '''
         self.dbfile = os.path.join(
             os.path.expanduser(cachedir),
             'ansibot.db'
         )
         self.unc = u'sqlite:///' + self.dbfile
+        '''
+
+        unc = C.DEFAULT_DATABASE_UNC
+        if unc.startswith('sqlite:'):
+            self.dbfile = unc.replace('sqlite:///', '')
+            self.dbfile = os.path.expanduser(self.dbfile)
+            self.dbfile = os.path.abspath(self.dbfile)
+            unc = 'sqlite:///' + self.dbfile
+
+        self.unc = unc
 
         self.engine = create_engine(self.unc)
         self.session_maker = sessionmaker(bind=self.engine)
         self.session = self.session_maker()
 
-        if not os.path.exists(self.dbfile):
+        if self.dbfile and not os.path.exists(self.dbfile):
             Email.metadata.create_all(self.engine)
             Blame.metadata.create_all(self.engine)
             RateLimit.metadata.create_all(self.engine)

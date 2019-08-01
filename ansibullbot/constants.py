@@ -210,6 +210,16 @@ DEFAULT_DEBUG = get_config(
     value_type='string'
 )
 
+# the sqlite database unc
+DEFAULT_DATABASE_UNC = get_config(
+    p,
+    DEFAULTS,
+    'database_unc',
+    '%s_DEBUG' % PROG_NAME.upper(),
+    'sqlite:///~/.ansibullbot/ansibullbot.db',
+    value_type='string'
+)
+
 # We don't want breakpoints in production
 DEFAULT_BREAKPOINTS = get_config(
     p,
