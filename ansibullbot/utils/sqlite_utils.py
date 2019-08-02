@@ -46,6 +46,12 @@ class RateLimit(Base):
 
 class AnsibullbotDatabase(object):
 
+    '''A sqlite backed database to help with data caching [NOT CONFIG]'''
+
+
+    # Use this to set the filename and avoid having to deal with migration
+    VERSION = '0.1'
+
     def __init__(self, cachedir='/tmp'):
 
         unc = C.DEFAULT_DATABASE_UNC
@@ -56,7 +62,7 @@ class AnsibullbotDatabase(object):
             dbfiledir = os.path.dirname(self.dbfile)
             if not os.path.exists(dbfiledir):
                 os.makedirs(dbfiledir)
-            unc = 'sqlite:///' + self.dbfile
+            unc = 'sqlite:///' + self.dbfile + self.VERSION
 
         self.unc = unc
 
