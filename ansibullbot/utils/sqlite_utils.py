@@ -35,8 +35,6 @@ class Email(Base):
 class RateLimit(Base):
     __tablename__ = u'rate_limit'
     id = Column(Integer(), primary_key=True)
-    #core_limit = Column(Integer)
-    #core_limit_remaining = Column(Integer)
     username = Column(String)
     token = Column(String)
     rawjson = Column(String)
@@ -45,17 +43,10 @@ class RateLimit(Base):
     query_counter = Column(Integer)
 
 
+
 class AnsibullbotDatabase(object):
 
     def __init__(self, cachedir='/tmp'):
-
-        '''
-        self.dbfile = os.path.join(
-            os.path.expanduser(cachedir),
-            'ansibot.db'
-        )
-        self.unc = u'sqlite:///' + self.dbfile
-        '''
 
         unc = C.DEFAULT_DATABASE_UNC
         if unc.startswith('sqlite:'):
@@ -70,10 +61,9 @@ class AnsibullbotDatabase(object):
         self.session_maker = sessionmaker(bind=self.engine)
         self.session = self.session_maker()
 
-        if self.dbfile and not os.path.exists(self.dbfile):
-            Email.metadata.create_all(self.engine)
-            Blame.metadata.create_all(self.engine)
-            RateLimit.metadata.create_all(self.engine)
+        Email.metadata.create_all(self.engine)
+        Blame.metadata.create_all(self.engine)
+        RateLimit.metadata.create_all(self.engine)
 
     def set_rate_limit(self, username=None, token=None, rawjson=None):
 
