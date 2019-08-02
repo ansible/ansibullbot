@@ -13,8 +13,8 @@ from sqlalchemy.orm import sessionmaker
 import ansibullbot.constants as C
 
 
-
 Base = declarative_base()
+
 
 class Blame(Base):
     __tablename__ = u'blames'
@@ -53,6 +53,9 @@ class AnsibullbotDatabase(object):
             self.dbfile = unc.replace('sqlite:///', '')
             self.dbfile = os.path.expanduser(self.dbfile)
             self.dbfile = os.path.abspath(self.dbfile)
+            dbfiledir = os.path.dirname(self.dbfile)
+            if not os.path.exists(dbfiledir):
+                os.makedirs(dbfiledir)
             unc = 'sqlite:///' + self.dbfile
 
         self.unc = unc
