@@ -54,6 +54,7 @@ class AnsibullbotDatabase(object):
 
     def __init__(self, cachedir='/tmp'):
 
+        self.dbfile = None
         unc = C.DEFAULT_DATABASE_UNC
         if unc.startswith('sqlite:'):
             self.dbfile = unc.replace('sqlite:///', '')
@@ -62,7 +63,8 @@ class AnsibullbotDatabase(object):
             dbfiledir = os.path.dirname(self.dbfile)
             if not os.path.exists(dbfiledir):
                 os.makedirs(dbfiledir)
-            unc = 'sqlite:///' + self.dbfile + self.VERSION
+            self.dbfile += '_' + self.VERSION
+            unc = 'sqlite:///' + self.dbfile
 
         self.unc = unc
 
@@ -70,9 +72,24 @@ class AnsibullbotDatabase(object):
         self.session_maker = sessionmaker(bind=self.engine)
         self.session = self.session_maker()
 
-        Email.metadata.create_all(self.engine)
-        Blame.metadata.create_all(self.engine)
-        RateLimit.metadata.create_all(self.engine)
+        self.create_tables()
+
+    def delete_db_file(self):
+        os.remove(self.dbfile)
+
+    def create_tables(self):
+
+        retries = 0
+        while True and retries < 2:
+            try:
+                Email.metadata.create_all(self.engine)
+                Blame.metadata.create_all(self.engine)
+                RateLimit.metadata.create_all(self.engine)
+                break
+            except Exception as e:
+                retries += 1
+                if self.dbfile and os.path.exists(self.dbfile):
+                    self.delete_db_file()
 
     def set_rate_limit(self, username=None, token=None, rawjson=None):
 
