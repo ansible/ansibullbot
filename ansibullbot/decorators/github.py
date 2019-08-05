@@ -20,8 +20,12 @@ from requests.exceptions import ReadTimeout
 
 from ansibullbot._text_compat import to_text
 from ansibullbot.errors import RateLimitError
+from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
 import ansibullbot.constants as C
+
+
+ADB = AnsibullbotDatabase()
 
 
 def get_rate_limit():
@@ -45,7 +49,8 @@ def get_rate_limit():
                 )
                 response = rr.json()
                 success = True
-            except Exception:
+            except Exception as e:
+                logging.error(e)
                 time.sleep(60)
 
     else:
@@ -63,10 +68,13 @@ def get_rate_limit():
                 time.sleep(60)
 
     response = rr.json()
+    #print(response)
 
     if 'resources' not in response or 'core' not in response.get('resources', {}):
         logging.warning('Unable to fetch rate limit %r', response.get('message'))
         return False
+
+    ADB.set_rate_limit(username=username, token=token, rawjson=response)
 
     return response
 
@@ -107,7 +115,17 @@ def RateLimited(fn):
         count = 0
         while not success:
             count += 1
-            rl = get_rate_limit()
+
+            # use cached ratelimit data and a query counter to reduce api calls for rate_limit
+            rl = ADB.get_rate_limit_rawjson(token=C.DEFAULT_GITHUB_TOKEN)
+            qcounter = ADB.get_rate_limit_query_counter(token=C.DEFAULT_GITHUB_TOKEN)
+            if rl is None or qcounter is None or qcounter > 100 or (rl and rl['resources']['core']['remaining'] < 100):
+                rl = get_rate_limit()
+                ADB.set_rate_limit(token=C.DEFAULT_GITHUB_TOKEN, rawjson=rl)
+                qcounter = ADB.get_rate_limit_query_counter(token=C.DEFAULT_GITHUB_TOKEN)
+
+            logging.debug('qcounter: %s' % qcounter)
+            rl['resources']['core']['remaining'] -= qcounter            
 
             if rl:
                 func_name = fn.__name__ if six.PY3 else fn.func_name
