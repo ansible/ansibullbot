@@ -166,29 +166,6 @@ class HistoryWrapper(object):
 
         import epdb; epdb.st()
 
-    def get_issue_by_repopath_and_number(self, repo_path, number):
-
-        # get the repo if not already fetched
-        if repo_path not in self.repos:
-            self.repos[repo_path] = {
-                u'repo': self.ghw.get_repo(repo_path, verbose=False),
-                u'issues': {}
-            }
-
-        mrepo = self.repos[repo_path][u'repo']
-        missue = mrepo.get_issue(number)
-
-        if not missue:
-            return None
-
-        mw = IssueWrapper(
-            github=self.ghw,
-            repo=mrepo,
-            issue=missue,
-            cachedir=os.path.join(self.cachedir_base, repo_path)
-        )
-        return mw
-
     def get_rate_limit(self):
         return self.issue.repo.gh.get_rate_limit()
 
