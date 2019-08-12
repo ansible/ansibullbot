@@ -166,54 +166,6 @@ class HistoryWrapper(object):
 
         import epdb; epdb.st()
 
-    def build_history(self):
-        '''Set the history and merge other event sources'''
-        #iw = issuewrapper
-        #iw._history = False
-        #iw.history
-
-        if self.issue.migrated:
-            mi = self.get_migrated_issue(iw.migrated_from)
-            if mi:
-                iw.history.merge_history(mi.history.history)
-                iw._migrated_issue = mi
-
-        if self.issue.is_pullrequest():
-            self.merge_reviews(self.reviews)
-            self.merge_commits(self.commits)
-
-        return iw
-
-    def get_migrated_issue(self, migrated_issue):
-        if migrated_issue.startswith(u'https://'):
-            miparts = migrated_issue.split(u'/')
-            minumber = int(miparts[-1])
-            minamespace = miparts[-4]
-            mirepo = miparts[-3]
-            mirepopath = minamespace + u'/' + mirepo
-        elif u'#' in migrated_issue:
-            miparts = migrated_issue.split(u'#')
-            minumber = int(miparts[-1])
-            mirepopath = miparts[0]
-        elif u'/' in migrated_issue:
-            miparts = migrated_issue.split(u'/')
-            minumber = int(miparts[-1])
-            mirepopath = u'/'.join(miparts[0:2])
-        else:
-            print(migrated_issue)
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('unknown url type for migrated issue')
-
-        mw = self.get_issue_by_repopath_and_number(
-            mirepopath,
-            minumber
-        )
-
-        return mw
-
     def get_issue_by_repopath_and_number(self, repo_path, number):
 
         # get the repo if not already fetched
