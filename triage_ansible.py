@@ -38,7 +38,7 @@ def main():
     initialize_sentry()
 
     # Run the triager ...
-    AnsibleTriage().start()
+    AnsibleTriage(args=sys.argv[1:]).start()
 
 
 if __name__ == "__main__":

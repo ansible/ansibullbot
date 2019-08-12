@@ -96,17 +96,27 @@ class DefaultTriager(object):
         Triager().start()
     """
     ITERATION = 0
+    debug = False
+    cachedir_base = None
 
-    def __init__(self):
+    def __init__(self, args=None):
+
+        '''
+        self._args = args
+        import epdb; epdb.st()
 
         parser = self.create_parser()
-        args = parser.parse_args()
+        args = parser.parse_args(self._args)
         self.args = args
 
         for x in vars(args):
             val = getattr(args, x)
             setattr(self, x, val)
 
+        import epdb; epdb.st()
+        '''
+
+        '''
         self.last_run = None
 
         self.github_url = C.DEFAULT_GITHUB_URL
@@ -127,6 +137,7 @@ class DefaultTriager(object):
         # wrap the connection
         logging.info('creating api wrapper')
         self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
+        '''
 
     @classmethod
     def create_parser(cls):
@@ -438,29 +449,33 @@ class DefaultTriager(object):
         for comment in actions.comments:
             logging.info("acton: comment - " + comment)
             iw.add_comment(comment=comment)
+
         if actions.close:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             logging.info('action: close')
             iw.instance.edit(state='closed')
-            return
 
-        for unlabel in actions.unlabel:
-            logging.info('action: unlabel - ' + unlabel)
-            iw.remove_label(label=unlabel)
-        for newlabel in actions.newlabel:
-            logging.info('action: label - ' + newlabel)
-            iw.add_label(label=newlabel)
+        else:
 
-        for user in actions.assign:
-            logging.info('action: assign - ' + user)
-            iw.assign_user(user)
+            for unlabel in actions.unlabel:
+                logging.info('action: unlabel - ' + unlabel)
+                iw.remove_label(label=unlabel)
+            for newlabel in actions.newlabel:
+                logging.info('action: label - ' + newlabel)
+                iw.add_label(label=newlabel)
 
-        for user in actions.unassign:
-            logging.info('action: unassign - ' + user)
-            iw.unassign_user(user)
+            for user in actions.assign:
+                logging.info('action: assign - ' + user)
+                iw.assign_user(user)
 
-        if actions.merge:
-            iw.merge()
+            for user in actions.unassign:
+                logging.info('action: unassign - ' + user)
+                iw.unassign_user(user)
+
+            if actions.merge:
+                iw.merge()
+
+        iw = self.build_history(iw)
 
     #@RateLimited
     def is_pr_merged(self, number, repo):

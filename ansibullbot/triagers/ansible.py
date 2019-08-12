@@ -179,9 +179,40 @@ class AnsibleTriage(DefaultTriager):
         u'close_me'
     ]
 
-    def __init__(self):
+    def __init__(self, args=None):
 
         super(AnsibleTriage, self).__init__()
+
+        self._args = args
+
+        parser = self.create_parser()
+        args = parser.parse_args(self._args)
+        self.args = args
+
+        for x in vars(args):
+            val = getattr(args, x)
+            setattr(self, x, val)
+
+        self.last_run = None
+
+        self.github_url = C.DEFAULT_GITHUB_URL
+        self.github_user = C.DEFAULT_GITHUB_USERNAME
+        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
+        self.github_token = C.DEFAULT_GITHUB_TOKEN
+
+        # where to store junk
+        self.cachedir_base = os.path.expanduser(self.cachedir_base)
+
+        self.set_logger()
+        logging.info('starting bot')
+
+        # connect to github
+        logging.info('creating api connection')
+        self.gh = self._connect()
+
+        # wrap the connection
+        logging.info('creating api wrapper')
+        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
 
         # get valid labels
         logging.info(u'getting labels')
@@ -217,6 +248,7 @@ class AnsibleTriage(DefaultTriager):
             self.gqlc = None
 
         # clone ansible/ansible
+        logging.info(u'creating gitrepowrapper')
         repo = u'https://github.com/ansible/ansible'
         gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit)
 

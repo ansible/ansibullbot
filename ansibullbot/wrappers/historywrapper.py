@@ -136,9 +136,11 @@ class HistoryWrapper(object):
 
                 # use a versioned schema to track changes
                 if not cache.get('version') or cache['version'] < self.SCHEMA_VERSION:
+                    logging.info('history cache schema version behind')
                     reprocess = True
 
                 if cache[u'updated_at'] < self.issue.instance.updated_at:
+                    logging.info('history cache behind issue')
                     reprocess = True
 
                 if reprocess:
@@ -156,10 +158,84 @@ class HistoryWrapper(object):
                 if x[u'actor'] in exclude_users:
                     self.history.remove(x)
 
-        self.fix_history_tz()
+        #self.fix_history_tz()
         self.history = self._fix_comments_with_no_body(self.history)
         self.history = self._fix_commits_with_no_message(self.history)
+        self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
+
+        import epdb; epdb.st()
+
+    def build_history(self):
+        '''Set the history and merge other event sources'''
+        #iw = issuewrapper
+        #iw._history = False
+        #iw.history
+
+        if self.issue.migrated:
+            mi = self.get_migrated_issue(iw.migrated_from)
+            if mi:
+                iw.history.merge_history(mi.history.history)
+                iw._migrated_issue = mi
+
+        if self.issue.is_pullrequest():
+            self.merge_reviews(self.reviews)
+            self.merge_commits(self.commits)
+
+        return iw
+
+    def get_migrated_issue(self, migrated_issue):
+        if migrated_issue.startswith(u'https://'):
+            miparts = migrated_issue.split(u'/')
+            minumber = int(miparts[-1])
+            minamespace = miparts[-4]
+            mirepo = miparts[-3]
+            mirepopath = minamespace + u'/' + mirepo
+        elif u'#' in migrated_issue:
+            miparts = migrated_issue.split(u'#')
+            minumber = int(miparts[-1])
+            mirepopath = miparts[0]
+        elif u'/' in migrated_issue:
+            miparts = migrated_issue.split(u'/')
+            minumber = int(miparts[-1])
+            mirepopath = u'/'.join(miparts[0:2])
+        else:
+            print(migrated_issue)
+            if C.DEFAULT_BREAKPOINTS:
+                logging.error('breakpoint!')
+                import epdb; epdb.st()
+            else:
+                raise Exception('unknown url type for migrated issue')
+
+        mw = self.get_issue_by_repopath_and_number(
+            mirepopath,
+            minumber
+        )
+
+        return mw
+
+    def get_issue_by_repopath_and_number(self, repo_path, number):
+
+        # get the repo if not already fetched
+        if repo_path not in self.repos:
+            self.repos[repo_path] = {
+                u'repo': self.ghw.get_repo(repo_path, verbose=False),
+                u'issues': {}
+            }
+
+        mrepo = self.repos[repo_path][u'repo']
+        missue = mrepo.get_issue(number)
+
+        if not missue:
+            return None
+
+        mw = IssueWrapper(
+            github=self.ghw,
+            repo=mrepo,
+            issue=missue,
+            cachedir=os.path.join(self.cachedir_base, repo_path)
+        )
+        return mw
 
     def get_rate_limit(self):
         return self.issue.repo.gh.get_rate_limit()
@@ -183,6 +259,13 @@ class HistoryWrapper(object):
         return cachedata
 
     def _dump_cache(self):
+
+        # all events should have datetime.datetime types for created_at
+        if [x for x in self.history if not isinstance(x['created_at'], datetime.datetime)]:
+            msg = u'found a non-datetime created_at in events data'
+            logging.error(msg)
+            raise Exception(msg)
+
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
 
@@ -714,6 +797,11 @@ class HistoryWrapper(object):
                     edict[u'assignee'] = event.raw_data[u'assignee'][u'login']
                     edict[u'assigner'] = event.raw_data[u'assigner'][u'login']
 
+            #if isinstance(edict[u'created_at'], six.text_type):
+            #    edict[u'created_at'] = self.parse_timestamp(
+            #        edict[u'created_at']
+            #    )
+
             processed_events.append(edict)
 
         for comment in comments:
@@ -744,18 +832,34 @@ class HistoryWrapper(object):
                     edict[u'created_at'] = to_text(edict[u'created_at'])
 
                 # convert the timestamp the same way the lib does it
-                if isinstance(edict[u'created_at'], six.text_type):
-                    edict[u'created_at'] = self.parse_timestamp(
-                        edict[u'created_at']
-                    )
+                #if isinstance(edict[u'created_at'], six.text_type):
+                #    edict[u'created_at'] = self.parse_timestamp(
+                #        edict[u'created_at']
+                #    )
 
                 processed_events.append(edict)
 
         # get rid of events with no created_at =(
+        pe = processed_events[:]
         processed_events = [x for x in processed_events if x.get(u'created_at')]
+        if processed_events != pe:
+            import epdb; epdb.st()
 
-        # sort by created_at
-        sorted_events = sorted(processed_events, key=itemgetter(u'created_at'))
+        for idx,x in enumerate(processed_events):
+            if isinstance(x[u'created_at'], six.text_type):
+                processed_events[idx][u'created_at'] = self.parse_timestamp(
+                    x[u'created_at']
+                )
+
+        #import epdb; epdb.st()
+
+        try:
+            # sort by created_at
+            sorted_events = sorted(processed_events, key=itemgetter(u'created_at'))
+        except Exception as e:
+            print(e)
+            print('failed to sort events')
+            import epdb; epdb.st()
 
         # return ...
         return sorted_events
@@ -853,6 +957,24 @@ class HistoryWrapper(object):
     def fix_history_tz(self):
         '''History needs to be timezone aware!!!'''
         for idx, x in enumerate(self.history):
+            if not hasattr(x['created_at'], 'tzinfo'):
+                # convert string to datetime
+                if '+' in x['created_at']:
+                    # u'2019-08-12T09:44:01+00:00'
+                    ts = x['created_at'].split('+')[0]
+                    if '.' in ts:
+                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+                    else:
+                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
+                    #try:
+                    #    ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+                    #except Exception as e:
+                    #    print(e)
+                    #    import epdb; epdb.st()
+                    x['created_at'] = ts
+                    self.history[idx]['created_at'] = ts
+                else:
+                    import epdb; epdb.st()
             if not x[u'created_at'].tzinfo:
                 ats = pytz.utc.localize(x[u'created_at'])
                 self.history[idx][u'created_at'] = ats
