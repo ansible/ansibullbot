@@ -173,8 +173,6 @@ def needs_info_timeout_facts(iw, meta):
             if len(bp_comments_found) >= 1:
                 nif[u'needs_info_action'] = u'close'
     else:
-        if not la:
-            import epdb; epdb.st()
         delta = (now - la).days
         if delta > NI_WARN:
             nif[u'needs_info_action'] = u'warn'
