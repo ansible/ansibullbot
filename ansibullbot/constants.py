@@ -170,7 +170,6 @@ def load_config_file():
     p = configparser.ConfigParser()
 
     path0 = os.getenv("%s_CONFIG" % PROG_NAME.upper(), None)
-    #import epdb; epdb.st()
     if path0 is not None:
         path0 = os.path.expanduser(path0)
         if os.path.isdir(path0):
