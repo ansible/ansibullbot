@@ -13,10 +13,24 @@ import os
 import re
 import shutil
 import subprocess
+import time
+import urllib
 
 import github
+import pytz
 
 from ansibullbot.triagers.ansible import AnsibleTriage
+
+
+
+def unquote(string):
+    if hasattr(urllib, 'parse'):
+        res = urllib.parse(string)
+    else:
+        res = urllib.unquote(string)
+
+    return res
+    
 
 
 class IssueDatabase:
@@ -93,7 +107,7 @@ class IssueDatabase:
                 rdata = []
                 for comment in comments:
                     data = comment.copy()
-                    data['created_at'] = data['created_at'].isoformat().split('.')[0] + 'Z' 
+                    #data['created_at'] = data['created_at'].isoformat().split('.')[0] + 'Z' 
                     data['updated_at'] = data['created_at']
                     rdata.append(data)
                     #import epdb; epdb.st()
@@ -107,10 +121,13 @@ class IssueDatabase:
                 rdata = []
                 for event in events:
                     data = event.copy()
-                    data['created_at'] = data['created_at'].isoformat().split('.')[0] + 'Z' 
+                    #data['created_at'] = data['created_at'].isoformat().split('.')[0] + 'Z' 
                     data['updated_at'] = data['created_at']
                     rdata.append(data)
                     #import epdb; epdb.st()
+
+                #if rdata:
+                #    import epdb; epdb.st()
 
             elif parts[-1] in ['timeline']:
                 rdata = []
@@ -136,6 +153,7 @@ class IssueDatabase:
                             rdata = event.copy()
                             break
                 if rdata:
+
                     for k,v in rdata.items():
                         if k.endswith('_at') and isinstance(v, datetime.datetime):
                             rdata[k] = v.isoformat().split('.')[0] + 'Z'
@@ -145,7 +163,7 @@ class IssueDatabase:
                 rdata = {
                     'id': 1000,
                     'node_id': 1000,
-                    'updated_at': datetime.datetime.now().isoformat().split('.')[0] + 'Z',
+                    'updated_at': self._get_timestamp(),
                     'url': url.replace(':443', ''),
                     'name': org.title(),
                     'login': org,
@@ -219,13 +237,23 @@ class IssueDatabase:
             'id': 'xxxxxx',
             'state': 'open',
             'number': rq['number'],
-            'createdAt': datetime.datetime.now().isoformat(), 
-            'updatedAt': datetime.datetime.now().isoformat(),
+            'createdAt': self._get_timestamp(), 
+            'updatedAt': self._get_timestamp(),
             'repository': {'nameWithOwner': rq['owner'] + '/' + rq['name']},
             'url': 'https://github.com/%s/%s/%s/%s' % (rq['owner'], rq['name'], okey, rq['number'])
         }
 
         return resp
+
+
+    def _get_timestamp(self):
+        # 'created_at': datetime.datetime.now().isoformat().split('.')[0] + 'Z',
+        ts = datetime.datetime.utcnow()
+        ats = pytz.utc.localize(ts)
+        #import epdb; epdb.st()
+        rts = ats.isoformat().split('.')[0] + 'Z'
+        #import epdb; epdb.st()
+        return rts
 
     def _get_repo(self, repo):
         ds = {
@@ -243,8 +271,8 @@ class IssueDatabase:
             },
             'description': '',
             'url': 'https://api.github.com/repos/ansible/ansible',
-            'created_at': datetime.datetime.now().isoformat().split('.')[0] + 'Z',
-            'updated_at': datetime.datetime.now().isoformat().split('.')[0] + 'Z',
+            'created_at': self._get_timestamp(),
+            'updated_at': self._get_timestamp(),
         }
         return ds
 
@@ -290,6 +318,7 @@ class IssueDatabase:
 
         ix = self._get_issue_index(org=org, repo=repo, number=number, itype=itype)
         data = self.issues[ix].get(property_name)
+        '''
         if isinstance(data, set):
             data = list(data)[:]
         if isinstance(data, list):
@@ -305,6 +334,7 @@ class IssueDatabase:
                         import epdb; epdb.st()
         elif property_name.endswith('_at') and not isinstance(data, datetime.datetime):
             import epdb; epdb.st()
+        '''
 
         #print('KEY: %s' % property_name)
         #print('DATA: %s' % data)
@@ -334,8 +364,8 @@ class IssueDatabase:
                 'login': issue['user']['login']
             },
             'labels': list(issue['labels']),
-            'created_at': issue['created_at'].isoformat().split('.')[0] + 'Z',
-            'updated_at': issue['updated_at'].isoformat().split('.')[0] + 'Z',
+            'created_at': issue['created_at'],
+            'updated_at': issue['updated_at'],
             'closed_at': None,
             'closed_by': None,
             'author_association': "NONE"
@@ -352,6 +382,7 @@ class IssueDatabase:
         self.issues[ix]['title'] = title
 
     def add_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
+        label = unquote(label)
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         if label not in [x['name'] for x in self.issues[ix]['labels']]:
 
@@ -373,9 +404,10 @@ class IssueDatabase:
                 'html_url': 'https://github.com/%s' % login or ansibot,
                 'login': login or 'ansibot'
             }
-            event['created_at'] = created_at or datetime.datetime.now()
+            event['created_at'] = created_at or self._get_timestamp()
             self.issues[ix]['events'].append(event)
             self.issues[ix]['updated_at'] = event['created_at']
+            #import epdb; epdb.st()
 
     def add_issue_comment(self, comment, login=None, created_at=None, org=None, repo=None, number=None):
         ix = self._get_issue_index(org=org, repo=repo, number=number)
@@ -387,11 +419,12 @@ class IssueDatabase:
                 'html_url': 'https://github.com/%s' % login or 'ansibot',
                 'login': login or 'ansibot'
             },
-            'created_at': created_at or datetime.datetime.now()
+            'created_at': created_at or self._get_timestamp()
         }
         thiscomment['node_id'] = 'NODE' + str(thiscomment['id'])
         thiscomment['url'] = 'https://api.github.com/repos/%s/%s/issues/comments/%s' % (org, repo, thiscomment['id'])
         self.issues[ix]['comments'].append(thiscomment)
+        self.issues[ix]['updated_at'] = thiscomment['created_at']
 
         '''
         thisevent = thiscomment.copy()
@@ -403,10 +436,12 @@ class IssueDatabase:
         self.issues[ix]['updated_at'] = thisevent['created_at']
         '''
 
-        print('comment added to issue %s' % self.issues[ix]['number'])
+        if self.debug:
+            print('comment added to issue %s' % self.issues[ix]['number'])
 
 
     def remove_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
+        label = unquote(label)
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         if label in [x['name'] for x in self.issues[ix]['labels']]:
 
@@ -425,9 +460,12 @@ class IssueDatabase:
             event['event'] = 'unlabeled'
             event['label'] = ldata
             event['actor'] = {'login': login or 'ansibot'}
-            event['created_at'] = created_at or datetime.datetime.now()
+            event['created_at'] = created_at or self._get_timestamp()
             self.issues[ix]['events'].append(event)
             self.issues[ix]['updated_at'] = event['created_at']
+
+            if self.debug:
+                print('removed %s label from issue %s' % (label, self.issues[ix]['number']))
 
     def _get_empty_stub(self):
         stub = {
@@ -501,12 +539,12 @@ class IssueDatabase:
         if created_at:
             thisissue['created_at'] = created_at
         else:
-            thisissue['created_at'] = datetime.datetime.now()
+            thisissue['created_at'] = self._get_timestamp()
 
         if updated_at:
             thisissue['updated_at'] = updated_at
         else:
-            thisissue['updated_at'] = datetime.datetime.now()
+            thisissue['updated_at'] = self._get_timestamp()
 
         if login:
             thisissue['user']['login'] = login
@@ -721,8 +759,8 @@ class MockGithubIssue:
         #return self.comments
         _comments = ID.get_issue_property('comments', org=self._org, repo=self._repo, number=self.number)
         comments = [MockComment(x) for x in _comments]
-        if [x.created_at for x in comments if not isinstance(x.created_at, datetime.datetime)]:
-            import epdb; epdb.st()
+        #if [x.created_at for x in comments if not isinstance(x.created_at, datetime.datetime)]:
+        #    import epdb; epdb.st()
         return comments
 
     def get_events(self):
@@ -756,8 +794,8 @@ class MockGithubIssue:
     def events(self):
         events_raw = ID.get_issue_property('events', org=self._org, repo=self._repo, number=self.number)
         events = [MockEvent(x) for x in events_raw]
-        if [x.created_at for x in events if not isinstance(x.created_at, datetime.datetime)]:
-            import epdb; epdb.st()
+        #if [x.created_at for x in events if not isinstance(x.created_at, datetime.datetime)]:
+        #    import epdb; epdb.st()
         return events
 
     @property
@@ -879,8 +917,11 @@ class MockRequestsResponse:
 
     @property
     def text(self):
-        raw = json.dumps(self.json())
-        #import epdb; epdb.st()
+        try:
+            raw = json.dumps(self.json())
+        except Exception as e:
+            print(e)
+            import epdb; epdb.st()
         return raw
 
     @property
@@ -1101,17 +1142,27 @@ class TestIdempotence:
                 gh = MockGithub(login_or_token='abc123')
                 repo = gh.get_repo('ansible/ansible')
                 issue1 = repo.get_issue(1)
+                #time.sleep(1)
                 issue1.add_to_labels('needs_triage', login='ansibot')
+                #time.sleep(1)
                 issue1.add_to_labels('needs_info', login='ansibot')
+                #time.sleep(1)
                 issue1.add_to_labels('needs_template', login='ansibot')
+                #time.sleep(1)
                 issue1.add_to_labels('support:core', login='ansibot')
+                #time.sleep(1)
                 issue1.add_to_labels('affects_2.9', login='ansibot')
+                #time.sleep(1)
                 issue1.add_to_labels('bug', login='ansibot')
+                #time.sleep(1)
                 issue1.add_to_labels('module', login='ansibot')
+                #time.sleep(1)
                 issue1.add_to_labels('support:community', login='ansibot')
+                #time.sleep(1)
                 issue1.remove_from_labels('needs_triage', login='ansibot')
+                #time.sleep(1)
 
-                print(issue1.events)
+                #print(issue1.events)
                 #import epdb; epdb.st()
                 #return
 
@@ -1143,7 +1194,8 @@ class TestIdempotence:
                 AT = AnsibleTriage(args=bot_args)
                 for x in range(0, 3):
                     AT.run()
+                    #time.sleep(10)
                     #import epdb; epdb.st()
 
-                import epdb; epdb.st()
+                #import epdb; epdb.st()
                 print('DONE')
