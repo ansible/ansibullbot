@@ -124,7 +124,9 @@ class HistoryWrapper(object):
             self.history = self.process()
         else:
             """Building history is expensive and slow"""
-            cache = self._load_cache()
+            #cache = self._load_cache()
+            cache = None
+
             if not cache:
                 logging.info(u'empty history cache, rebuilding')
                 self.history = self.process()
@@ -164,7 +166,7 @@ class HistoryWrapper(object):
         self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
-        import epdb; epdb.st()
+        #import epdb; epdb.st()
 
     def get_rate_limit(self):
         return self.issue.repo.gh.get_rate_limit()
@@ -771,16 +773,27 @@ class HistoryWrapper(object):
         # get rid of events with no created_at =(
         pe = processed_events[:]
         processed_events = [x for x in processed_events if x.get(u'created_at')]
-        if processed_events != pe:
-            import epdb; epdb.st()
+        #if processed_events != pe:
+        #    import epdb; epdb.st()
 
+        processed_events = self._fix_history_tz(processed_events)
+
+        '''
         for idx,x in enumerate(processed_events):
-            if isinstance(x[u'created_at'], six.text_type):
-                processed_events[idx][u'created_at'] = self.parse_timestamp(
-                    x[u'created_at']
-                )
+            #if isinstance(x[u'created_at'], six.text_type):
+            #    processed_events[idx][u'created_at'] = self.parse_timestamp(
+            #        x[u'created_at']
+            #    )
+            if isinstance(x['created_at'], datetime.datetime):
+                continue
+            if not isinstance(x, dict):
+                import epdb; epdb.st()
+            processed_events[idx][u'created_at'] = self.parse_timestamp(
+                x[u'created_at']
+            )
 
         #import epdb; epdb.st()
+        '''
 
         try:
             # sort by created_at
@@ -795,8 +808,16 @@ class HistoryWrapper(object):
 
     def parse_timestamp(self, timestamp):
         # convert the timestamp the same way the lib does it
-        dt = GithubObject.GithubObject._makeDatetimeAttribute(timestamp)
-        return dt.value
+        try:
+            dt = GithubObject.GithubObject._makeDatetimeAttribute(timestamp)
+        except Exception as e:
+            print(e)
+            import epdb; epdb.st()
+        try:
+            return dt.value
+        except Exception as e:
+            print(e)
+            import epdb; epdb.st()
 
     def merge_commits(self, commits):
         for xc in commits:
@@ -883,8 +904,34 @@ class HistoryWrapper(object):
         # sort by created_at
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
+    def _fix_history_tz(self, history):
+        for idx, x in enumerate(history):
+            if not hasattr(x['created_at'], 'tzinfo'):
+                # convert string to datetime
+                if '+' in x['created_at']:
+                    # u'2019-08-12T09:44:01+00:00'
+                    ts = x['created_at'].split('+')[0]
+                    if '.' in ts:
+                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+                    else:
+                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
+                    #try:
+                    #    ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+                    #except Exception as e:
+                    #    print(e)
+                    #    import epdb; epdb.st()
+                    x['created_at'] = ts
+                    history[idx]['created_at'] = ts
+                else:
+                    import epdb; epdb.st()
+            if not x[u'created_at'].tzinfo:
+                ats = pytz.utc.localize(x[u'created_at'])
+                history[idx][u'created_at'] = ats
+        return history
+
     def fix_history_tz(self):
         '''History needs to be timezone aware!!!'''
+        '''
         for idx, x in enumerate(self.history):
             if not hasattr(x['created_at'], 'tzinfo'):
                 # convert string to datetime
@@ -907,6 +954,8 @@ class HistoryWrapper(object):
             if not x[u'created_at'].tzinfo:
                 ats = pytz.utc.localize(x[u'created_at'])
                 self.history[idx][u'created_at'] = ats
+        '''
+        self.history = self._fix_history_tz(self.history)
 
     def get_changed_labels(self, prefix=None, bots=[]):
         '''make a list of labels that have been set/unset'''
