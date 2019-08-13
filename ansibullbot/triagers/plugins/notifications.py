@@ -107,6 +107,5 @@ def get_notification_facts(issuewrapper, meta):
         set(nfacts[u'to_notify'])  # + nfacts[u'to_assign'])
     )
 
-    import epdb; epdb.st()
 
     return nfacts
