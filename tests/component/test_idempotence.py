@@ -26,16 +26,18 @@ class IssueDatabase:
     issues = []
 
     def __init__(self):
+        self.debug = False
         eventids = set()
         self.issues = []
         self.pickles = {}
 
     def get_url(self, url, method=None, headers=None, data=None):
-        print('#########################################')
-        print('# %s' % method or 'GET')
-        print('# %s' % url)
-        print('# %s' % headers)
-        print('#########################################')
+        if self.debug:
+            print('#########################################')
+            print('# %s' % method or 'GET')
+            print('# %s' % url)
+            print('# %s' % headers)
+            print('#########################################')
         rheaders = {}
         rdata = None
 
@@ -166,7 +168,9 @@ class IssueDatabase:
         if rdata is None:
             import epdb; epdb.st()
 
-        print('# %s' % rdata)
+        if self.debug:
+            print('# %s' % rdata)
+
         return rheaders,rdata
 
     def shippable_response(self, url):
@@ -1017,14 +1021,14 @@ class TestIdempotence:
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', True)
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'ansibot')
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234')
-    @mock.patch('ansibullbot.utils.moduletools.pickle_dump', mock_pickle_dump)
-    @mock.patch('ansibullbot.utils.moduletools.pickle_load', mock_pickle_load)
-    @mock.patch('ansibullbot.wrappers.defaultwrapper.pickle_dump', mock_pickle_dump)
-    @mock.patch('ansibullbot.wrappers.defaultwrapper.pickle_load', mock_pickle_load)
-    @mock.patch('ansibullbot.wrappers.ghapiwrapper.pickle_dump', mock_pickle_dump)
-    @mock.patch('ansibullbot.wrappers.ghapiwrapper.pickle_load', mock_pickle_load)
-    @mock.patch('ansibullbot.wrappers.historywrapper.pickle_dump', mock_pickle_dump)
-    @mock.patch('ansibullbot.wrappers.historywrapper.pickle_load', mock_pickle_load)
+    #@mock.patch('ansibullbot.utils.moduletools.pickle_dump', mock_pickle_dump)
+    #@mock.patch('ansibullbot.utils.moduletools.pickle_load', mock_pickle_load)
+    #@mock.patch('ansibullbot.wrappers.defaultwrapper.pickle_dump', mock_pickle_dump)
+    #@mock.patch('ansibullbot.wrappers.defaultwrapper.pickle_load', mock_pickle_load)
+    #@mock.patch('ansibullbot.wrappers.ghapiwrapper.pickle_dump', mock_pickle_dump)
+    #@mock.patch('ansibullbot.wrappers.ghapiwrapper.pickle_load', mock_pickle_load)
+    #@mock.patch('ansibullbot.wrappers.historywrapper.pickle_dump', mock_pickle_dump)
+    #@mock.patch('ansibullbot.wrappers.historywrapper.pickle_load', mock_pickle_load)
     #@mock.patch('ansibullbot.triagers.ansible.C')
     #@mock.patch('ansibullbot.triagers.defaulttriager.Github', MockGithub)
     @mock.patch('github.Requester.requests', MockRequests)
@@ -1048,7 +1052,10 @@ class TestIdempotence:
                 p.communicate()
 
             #shutil.copytree('/tmp/ansible.checkout', os.path.join(cachedir, 'ansible.checkout'))
-            p = subprocess.Popen('cp -Rp /tmp/ansible.checkout %s' % os.path.join(cachedir, 'ansible.checkout'), shell=True)
+            p = subprocess.Popen(
+                'cp -Rp /tmp/ansible.checkout %s' % os.path.join(cachedir, 'ansible.checkout'),
+                shell=True
+            )
             p.communicate()
 
             unc = 'sqlite:///' + cachedir + '/test.db'
