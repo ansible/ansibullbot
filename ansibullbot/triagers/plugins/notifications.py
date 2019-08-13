@@ -107,5 +107,4 @@ def get_notification_facts(issuewrapper, meta):
         set(nfacts[u'to_notify'])  # + nfacts[u'to_assign'])
     )
 
-
     return nfacts
