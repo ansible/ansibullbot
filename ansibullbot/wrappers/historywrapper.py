@@ -728,11 +728,6 @@ class HistoryWrapper(object):
                     edict[u'assignee'] = event.raw_data[u'assignee'][u'login']
                     edict[u'assigner'] = event.raw_data[u'assigner'][u'login']
 
-            #if isinstance(edict[u'created_at'], six.text_type):
-            #    edict[u'created_at'] = self.parse_timestamp(
-            #        edict[u'created_at']
-            #    )
-
             processed_events.append(edict)
 
         for comment in comments:
@@ -759,41 +754,11 @@ class HistoryWrapper(object):
                     u'content': reaction[u'content'],
                 }
 
-                if isinstance(edict[u'created_at'], six.binary_type):
-                    edict[u'created_at'] = to_text(edict[u'created_at'])
-
-                # convert the timestamp the same way the lib does it
-                #if isinstance(edict[u'created_at'], six.text_type):
-                #    edict[u'created_at'] = self.parse_timestamp(
-                #        edict[u'created_at']
-                #    )
-
                 processed_events.append(edict)
 
         # get rid of events with no created_at =(
-        pe = processed_events[:]
         processed_events = [x for x in processed_events if x.get(u'created_at')]
-        #if processed_events != pe:
-        #    import epdb; epdb.st()
-
         processed_events = self._fix_history_tz(processed_events)
-
-        '''
-        for idx,x in enumerate(processed_events):
-            #if isinstance(x[u'created_at'], six.text_type):
-            #    processed_events[idx][u'created_at'] = self.parse_timestamp(
-            #        x[u'created_at']
-            #    )
-            if isinstance(x['created_at'], datetime.datetime):
-                continue
-            if not isinstance(x, dict):
-                import epdb; epdb.st()
-            processed_events[idx][u'created_at'] = self.parse_timestamp(
-                x[u'created_at']
-            )
-
-        #import epdb; epdb.st()
-        '''
 
         try:
             # sort by created_at
