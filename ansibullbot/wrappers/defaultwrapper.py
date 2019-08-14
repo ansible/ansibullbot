@@ -993,7 +993,6 @@ class DefaultWrapper(object):
 
     @property
     def pullrequest(self):
-        import epdb; epdb.st()
         if not self._pr:
             logging.debug(u'@pullrequest.get_pullrequest #%s' % self.number)
             self._pr = self.repo.get_pullrequest(self.number)
