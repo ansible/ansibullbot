@@ -604,10 +604,6 @@ class MockRequestsResponse:
         return self.rdata
 
 
-
-
-
-
 class TestIdempotence:
 
     cachedir = None
@@ -628,12 +624,13 @@ class TestIdempotence:
     @mock.patch('github.Requester.requests', MockRequests)
     @mock.patch('ansibullbot.decorators.github.requests', MockRequests)
     @mock.patch('ansibullbot.triagers.ansible.requests', MockRequests)
+    @mock.patch('ansibullbot.triagers.defaulttriager.DefaultTriager.set_logger')
     @mock.patch('ansibullbot.utils.gh_gql_client.requests', MockRequests)
     @mock.patch('ansibullbot.utils.shippable_api.requests', MockRequests)
     @mock.patch('ansibullbot.wrappers.ghapiwrapper.requests', MockRequests)
     def test_noop(self, *args, **kwargs):
 
-        with tempfile.TemporaryDirectory(prefix='ansibot.test.') as cachedir:
+        with tempfile.TemporaryDirectory(prefix='ansibot.test.idem.') as cachedir:
 
             if not os.path.exists(cachedir):
                 os.makedirs(cachedir)
