@@ -24,6 +24,101 @@ import pytz
 from ansibullbot.triagers.ansible import AnsibleTriage
 
 
+# timeline
+#   commented
+#       * actor
+#       * author_association
+#       * body
+#       * created_at
+#       * event
+#       * html_url
+#       * id
+#       * issue_url
+#       * node_id
+#       * updated_at
+#       * url
+#       * user
+#   committed
+#       * author
+#       * comitter
+#       * event
+#       * html_url
+#       * message
+#       * node_id
+#       * parents
+#       * sha
+#       * tree
+#       * url
+#       * verification
+#   cross-referenced
+#       * source
+#       * created_at
+#       * updated_at
+#       * actor
+#       * event
+#   head_ref_force_pushed
+#       * actor
+#       * commit_id
+#       * commit_url
+#       * created_at
+#       * event
+#       * id
+#       * node_id
+#       * url
+#   labeled
+#       * actor
+#       * commit_id
+#       * commit_url
+#       * created_at
+#       * event
+#       * id
+#       * label
+#       * node_id
+#       * url
+#   mentioned
+#       * actor
+#       * commit_id
+#       * commit_url
+#       * created_at
+#       * event
+#       * id
+#       * label
+#       * node_id
+#       * url
+#   reviewed
+#       * _links
+#       * author_association
+#       * body
+#       * commit_id
+#       * event
+#       * html_url
+#       * id
+#       * node_id
+#       * pull_request_url
+#       * state
+#       * submitted_at
+#       * user
+#   subscribed
+#       * commit_id
+#       * commit_url
+#       * url
+#       * created_at
+#       * actor
+#       * id
+#       * node_id
+#       * event
+#   unlabeled
+#       * actor
+#       * commit_id
+#       * commit_url
+#       * created_at
+#       * event
+#       * id
+#       * label
+#       * node_id
+#       * url
+
+
 def unquote(string):
     '''py2+py3 compat unquoting'''
     if hasattr(urllib, 'parse'):
@@ -132,7 +227,19 @@ class IssueDatabase:
                     rdata.append(data)
 
             elif parts[-1] in ['timeline']:
+                org = parts[4]
+                repo = parts[5]
+                number = int(parts[-2])
+                issue = self.get_issue(org=org, repo=repo, number=number)
+                events = issue.get('timeline', [])[:]
                 rdata = []
+                for event in events:
+                    data = event.copy()
+                    #data['updated_at'] = data['created_at']
+                    rdata.append(data)
+
+                #import epdb; epdb.st()
+                #rdata = []
 
             elif parts[-1] in ['reactions']:
                 rdata = []
@@ -376,19 +483,23 @@ class IssueDatabase:
             }
             event['created_at'] = created_at or self._get_timestamp()
             self.issues[ix]['events'].append(event)
+            self.issues[ix]['timeline'].append(event)
             self.issues[ix]['updated_at'] = event['created_at']
 
     def add_issue_comment(self, comment, login=None, created_at=None, org=None, repo=None, number=None):
 
         # comments do not get added to events!!!
 
+        if login is None:
+            login = 'ansibot'
+
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         thiscomment = {
             'id': self._get_new_event_id(),
             'body': comment,
             'user': {
-                'url': 'https://api.github.com/users/%s' % login or 'ansibot',
-                'html_url': 'https://github.com/%s' % login or 'ansibot',
+                'url': 'https://api.github.com/users/%s' % login,
+                'html_url': 'https://github.com/%s' % login,
                 'login': login or 'ansibot'
             },
             'created_at': created_at or self._get_timestamp()
@@ -397,6 +508,22 @@ class IssueDatabase:
         thiscomment['url'] = 'https://api.github.com/repos/%s/%s/issues/comments/%s' % (org, repo, thiscomment['id'])
         self.issues[ix]['comments'].append(thiscomment)
         self.issues[ix]['updated_at'] = thiscomment['created_at']
+
+
+        tl = {
+            'author_association': 'MEMBER',
+            'actor': thiscomment['user'].copy(),
+            'user': thiscomment['user'].copy(),
+            'body': comment,
+            'created_at': thiscomment['created_at'],
+            'updated_at': thiscomment['created_at'],
+            'url': thiscomment['url'],
+            'id': thiscomment['id'],
+            'node_id': thiscomment['node_id'],
+            'issue_url': self.issues[ix]['url'],
+            'event': 'commented'
+        }
+        self.issues[ix]['timeline'].append(tl)
 
         if self.debug:
             print('comment added to issue %s' % self.issues[ix]['number'])
@@ -423,6 +550,7 @@ class IssueDatabase:
             event['actor'] = {'login': login or 'ansibot'}
             event['created_at'] = created_at or self._get_timestamp()
             self.issues[ix]['events'].append(event)
+            self.issues[ix]['timeline'].append(event)
             self.issues[ix]['updated_at'] = event['created_at']
 
             if self.debug:
@@ -531,6 +659,7 @@ class IssueDatabase:
 
 
 ID = IssueDatabase()
+ID.debug = True
 
 
 RESPONSES = {
