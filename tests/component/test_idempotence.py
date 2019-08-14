@@ -683,8 +683,15 @@ class TestIdempotence:
 
 
                 AT = AnsibleTriage(args=bot_args)
-                for x in range(0, 3):
+                for x in range(0, 2):
                     AT.run()
 
-                #import epdb; epdb.st()
-                print('DONE')
+                # /tmp/ansibot.test.isxYlS/ansible/ansible/issues/1/meta.json                
+                metafile = os.path.join(cachedir, 'ansible', 'ansible', 'issues', '1', 'meta.json')
+                assert os.path.exists(metafile)
+
+                with open(metafile, 'r') as f:
+                    meta = json.loads(f.read())
+
+                for k,v in meta['actions'].items():
+                    assert not v
