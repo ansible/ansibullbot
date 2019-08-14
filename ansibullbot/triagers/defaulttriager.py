@@ -100,44 +100,7 @@ class DefaultTriager(object):
     cachedir_base = None
 
     def __init__(self, args=None):
-
-        '''
-        self._args = args
-        import epdb; epdb.st()
-
-        parser = self.create_parser()
-        args = parser.parse_args(self._args)
-        self.args = args
-
-        for x in vars(args):
-            val = getattr(args, x)
-            setattr(self, x, val)
-
-        import epdb; epdb.st()
-        '''
-
-        '''
-        self.last_run = None
-
-        self.github_url = C.DEFAULT_GITHUB_URL
-        self.github_user = C.DEFAULT_GITHUB_USERNAME
-        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
-        self.github_token = C.DEFAULT_GITHUB_TOKEN
-
-        # where to store junk
-        self.cachedir_base = os.path.expanduser(self.cachedir_base)
-
-        self.set_logger()
-        logging.info('starting bot')
-
-        # connect to github
-        logging.info('creating api connection')
-        self.gh = self._connect()
-
-        # wrap the connection
-        logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
-        '''
+        pass
 
     @classmethod
     def create_parser(cls):
@@ -370,6 +333,7 @@ class DefaultTriager(object):
                     # put the user into a breakpoint to do live debug
                     action_meta['REDO'] = True
                     import epdb; epdb.st()
+
         elif self.always_pause:
             print("Skipping, but pause.")
             cont = input("Continue (Y/n/a/R/T/DEBUG)? ")
@@ -384,6 +348,7 @@ class DefaultTriager(object):
                 # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
+
         elif self.force_description_fixer:
             # FIXME: self.FIXED_ISSUES not defined since 1cf9674cd38edbd17aff906d72296c99043e5c13
             #        either define self.FIXED_ISSUES, either remove this method
