@@ -931,30 +931,6 @@ class HistoryWrapper(object):
 
     def fix_history_tz(self):
         '''History needs to be timezone aware!!!'''
-        '''
-        for idx, x in enumerate(self.history):
-            if not hasattr(x['created_at'], 'tzinfo'):
-                # convert string to datetime
-                if '+' in x['created_at']:
-                    # u'2019-08-12T09:44:01+00:00'
-                    ts = x['created_at'].split('+')[0]
-                    if '.' in ts:
-                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
-                    else:
-                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
-                    #try:
-                    #    ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
-                    #except Exception as e:
-                    #    print(e)
-                    #    import epdb; epdb.st()
-                    x['created_at'] = ts
-                    self.history[idx]['created_at'] = ts
-                else:
-                    import epdb; epdb.st()
-            if not x[u'created_at'].tzinfo:
-                ats = pytz.utc.localize(x[u'created_at'])
-                self.history[idx][u'created_at'] = ats
-        '''
         self.history = self._fix_history_tz(self.history)
 
     def get_changed_labels(self, prefix=None, bots=[]):
