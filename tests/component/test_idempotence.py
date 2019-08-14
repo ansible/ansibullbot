@@ -9,6 +9,7 @@ from backports import tempfile
 import argparse
 import datetime
 import json
+import logging
 import os
 import re
 import shutil
@@ -17,6 +18,7 @@ import time
 import urllib
 
 import github
+import pytest
 import pytz
 
 from ansibullbot.triagers.ansible import AnsibleTriage
@@ -604,6 +606,48 @@ class MockRequestsResponse:
         return self.rdata
 
 
+class MockLogger:
+    INFO = 'info'
+    DEBUG = 'debug'
+
+    @staticmethod
+    def info(message):
+        print('INFO %s' % message)
+
+    @staticmethod
+    def debug(message):
+        print('DEBUG %s' % message)
+
+    @staticmethod
+    def warn(message):
+        print('WARN %s' % message)
+
+    @staticmethod
+    def warn(message):
+        print('ERROR %s ' % message)
+
+    @staticmethod
+    def Formatter(format_string):
+        return None
+
+    @staticmethod
+    def getLogger():
+        return MockLogger()
+
+    def setLevel(self, level):
+        self.level = level
+
+    def addHandler(self, handler):
+        pass
+
+    @staticmethod
+    def StreamHandler():
+        return MockLogger()
+
+    def setFormatter(self, formatter):
+        pass
+
+
 class TestIdempotence:
 
     cachedir = None
@@ -614,8 +658,16 @@ class TestIdempotence:
             p = subprocess.Popen('git clone https://github.com/ansible/ansible /tmp/ansible.checkout', shell=True)
             p.communicate()
 
+        logging.level = logging.DEBUG
+
     def teardown(self):
-        print('teardown called!')
+        logging.level = logging.INFO
+
+    '''
+    @pytest.fixture(autouse=True)
+    def inject_fixtures(self, caplog):
+        self._caplog = caplog
+    '''
 
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', True)
@@ -624,7 +676,9 @@ class TestIdempotence:
     @mock.patch('github.Requester.requests', MockRequests)
     @mock.patch('ansibullbot.decorators.github.requests', MockRequests)
     @mock.patch('ansibullbot.triagers.ansible.requests', MockRequests)
-    @mock.patch('ansibullbot.triagers.defaulttriager.DefaultTriager.set_logger')
+    #@mock.patch('ansibullbot.triagers.defaulttriager.DefaultTriager.set_logger')
+    @mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger)
+    @mock.patch('ansibullbot.triagers.ansible.logging', MockLogger)
     @mock.patch('ansibullbot.utils.gh_gql_client.requests', MockRequests)
     @mock.patch('ansibullbot.utils.shippable_api.requests', MockRequests)
     @mock.patch('ansibullbot.wrappers.ghapiwrapper.requests', MockRequests)
