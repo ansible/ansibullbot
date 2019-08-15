@@ -52,6 +52,9 @@ from ansibullbot.triagers.ansible import AnsibleTriage
 #       * verification
 #   cross-referenced
 #       * source
+#           issue
+#               raw_data
+#           type: issue|?
 #       * created_at
 #       * updated_at
 #       * actor
@@ -119,6 +122,13 @@ from ansibullbot.triagers.ansible import AnsibleTriage
 #       * url
 
 
+def get_timestamp():
+    ts = datetime.datetime.utcnow()
+    ats = pytz.utc.localize(ts)
+    rts = ats.isoformat().split('.')[0] + 'Z'
+    return rts
+
+
 def unquote(string):
     '''py2+py3 compat unquoting'''
     if hasattr(urllib, 'parse'):
@@ -136,6 +146,12 @@ class IssueDatabase:
     eventids = set()
     pickles = {}
     issues = []
+
+    teams = {
+        'ansible-commit': ['jack', 'jill'],
+        'ansible-community': ['bob', 'billy'],
+        'ansible-commit-external': ['zerocool', 'acidburn']
+    } 
 
     def __init__(self):
         self.debug = False
@@ -249,9 +265,10 @@ class IssueDatabase:
 
             elif parts[-1] == 'members':
                 rdata = []
+                rdata = self._get_members()
 
             elif parts[-1] == 'teams':
-                rdata = []
+                rdata = self._get_teams()
 
             elif parts[-2] == 'events':
                 number = int(parts[-1])
@@ -271,7 +288,7 @@ class IssueDatabase:
                 rdata = {
                     'id': 1000,
                     'node_id': 1000,
-                    'updated_at': self._get_timestamp(),
+                    'updated_at': get_timestamp(),
                     'url': url.replace(':443', ''),
                     'name': org.title(),
                     'login': org,
@@ -346,20 +363,83 @@ class IssueDatabase:
             'id': 'xxxxxx',
             'state': 'open',
             'number': rq['number'],
-            'createdAt': self._get_timestamp(), 
-            'updatedAt': self._get_timestamp(),
+            'createdAt': get_timestamp(), 
+            'updatedAt': get_timestamp(),
             'repository': {'nameWithOwner': rq['owner'] + '/' + rq['name']},
             'url': 'https://github.com/%s/%s/%s/%s' % (rq['owner'], rq['name'], okey, rq['number'])
         }
 
         return resp
 
+    def _get_members(self):
+        data = []
+        members = set()
+        for k,v in self.teams.items():
+            for member in v:
+                members.add(member)
 
-    def _get_timestamp(self):
-        ts = datetime.datetime.utcnow()
-        ats = pytz.utc.localize(ts)
-        rts = ats.isoformat().split('.')[0] + 'Z'
-        return rts
+        members = sorted(list(members))
+
+        for idm,member in enumerate(members):
+            data.append({
+                'avatar_url': '',
+                'bio': '',
+                'blog': '',
+                'company': '',
+                'created_at': get_timestamp(),
+                'updated_at': get_timestamp(),
+                'email': 'foo@bar.com',
+                'events_url': 'https://api.github.com/users/%s/events{/privacy}' % member,
+                'followers': 0,
+                'followers_url': 'https://api.github.com/users/%s/followers' % member,
+                'following_url': 'https://api.github.com/users/%s/following{/other_user}' % member,
+                'gists_url': 'https://api.github.com/users/%s/gists{/gist_id}' % member,
+                'gravator"id': '',
+                'hireable': None,
+                'html_url': 'https://github.com/%s' % member,
+                'id': idm,
+                'location': '',
+                'login': member,
+                'name': member,
+                'node_id': 'NODEM%s' % idm,
+                'organizations_url': 'https://api.github.com/users/%s/orgs' % member,
+                'public_gists': 0,
+                'public_repos': 0,
+                'received_events_url': 'https://api.github.com/users/%s/received_events' % member,
+                'repos_url': 'https://api.github.com/users/%s/repos' % member,
+                'site_admin': False,
+                'starred_url': 'https://api.github.com/users/%s{/owner}{/repo}' % member,
+                'subscriptions_url': 'https://api.github.com/users/%s/subscription' % member,
+                'type': 'User',
+                'url': 'https://api.github.com/users/%s' % member
+            })
+
+        return data
+
+    def _get_teams(self):
+        rdata = []
+        keys = sorted(list(self.teams.keys()))
+        for idk,k in enumerate(keys):
+            v = self.teams[k]
+            team = {
+                'created_at': get_timestamp(),
+                'updated_at': get_timestamp(),
+                'description': '',
+                'id': idk,
+                'members_count': len(v),
+                'members_url': 'https://api.github.com/teams/%s/members{/member}' % idk,
+                'name': k,
+                'node_id': 'NODET%s' % idk,
+                'organization': {},
+                'permission': 'pull',
+                'privacy': 'secret',
+                'repos_count': 1,
+                'repositories_url': 'https://api.github.com/teams/%s/repos' % idk,
+                'slug': '',
+                'url': 'https://api.github.com/teams/%s' % idk
+            }
+            rdata.append(team)
+        return rdata
 
     def _get_repo(self, repo):
         ds = {
@@ -377,8 +457,8 @@ class IssueDatabase:
             },
             'description': '',
             'url': 'https://api.github.com/repos/ansible/ansible',
-            'created_at': self._get_timestamp(),
-            'updated_at': self._get_timestamp(),
+            'created_at': get_timestamp(),
+            'updated_at': get_timestamp(),
         }
         return ds
 
@@ -422,6 +502,13 @@ class IssueDatabase:
     def get_raw_data(self, issue):
         org = issue['url'].split('/')[4]
         repo = issue['url'].split('/')[5]
+
+        thistype = 'issues'
+        if issue['itype'].startswith('pull'):
+            html_url = 'https://github.com/%s/%s/pull/%s' % (org, repo, issue['number'])
+        else:
+            html_url = 'https://github.com/%s/%s/issues/%s' % (org, repo, issue['number'])
+
         rdata = {
             'id': issue.get('id'),
             'node_d': issue.get('node_id'),
@@ -436,7 +523,7 @@ class IssueDatabase:
             'comments': len(issue['comments']),
             'number': issue['number'],
             'url': issue['url'],
-            'html_url': 'https://github.com/%s/%s/issues/%s' % (org, repo, issue['number']),
+            'html_url': html_url,
             'user': {
                 'url': 'https://api.github.com/users/%s' % issue['user']['login'],
                 'login': issue['user']['login']
@@ -481,7 +568,7 @@ class IssueDatabase:
                 'html_url': 'https://github.com/%s' % login or ansibot,
                 'login': login or 'ansibot'
             }
-            event['created_at'] = created_at or self._get_timestamp()
+            event['created_at'] = created_at or get_timestamp()
             self.issues[ix]['events'].append(event)
             self.issues[ix]['timeline'].append(event)
             self.issues[ix]['updated_at'] = event['created_at']
@@ -502,7 +589,7 @@ class IssueDatabase:
                 'html_url': 'https://github.com/%s' % login,
                 'login': login or 'ansibot'
             },
-            'created_at': created_at or self._get_timestamp()
+            'created_at': created_at or get_timestamp()
         }
         thiscomment['node_id'] = 'NODE' + str(thiscomment['id'])
         thiscomment['url'] = 'https://api.github.com/repos/%s/%s/issues/comments/%s' % (org, repo, thiscomment['id'])
@@ -548,13 +635,40 @@ class IssueDatabase:
             event['event'] = 'unlabeled'
             event['label'] = ldata
             event['actor'] = {'login': login or 'ansibot'}
-            event['created_at'] = created_at or self._get_timestamp()
+            event['created_at'] = created_at or get_timestamp()
             self.issues[ix]['events'].append(event)
             self.issues[ix]['timeline'].append(event)
             self.issues[ix]['updated_at'] = event['created_at']
 
             if self.debug:
                 print('removed %s label from issue %s' % (label, self.issues[ix]['number']))
+
+    def add_cross_reference(self, login=None, created_at=None, org=None, repo=None, number=None, reference=None):
+        assert isinstance(number, int)
+        assert isinstance(reference, int)
+        src_ix = self._get_issue_index(org=org, repo=repo, number=number)
+        dst_ix = self._get_issue_index(org=org, repo=repo, number=reference)
+
+        src_issue = self.issues[src_ix]
+        dst_issue = self.issues[dst_ix]
+
+        src_raw = self.get_raw_data(src_issue)
+        dst_raw = self.get_raw_data(dst_issue)
+
+        cr_event = {
+            'actor': dst_raw['user'],
+            'event': 'cross-referenced',
+            'created_at': get_timestamp(),
+            'updated_at': get_timestamp(),
+            'source': {
+                'type': 'issue',
+                'issue': dst_raw
+            }
+        }
+
+        #dst_issue
+        #import epdb; epdb.st()
+        self.issues[src_ix]['timeline'].append(cr_event)
 
     def _get_empty_stub(self):
         stub = {
@@ -612,15 +726,8 @@ class IssueDatabase:
             else:
                 thisissue['number'] = [x for x in self.issues if x['org'] == thisissue['org'] and x['repo'] == thisissue['repo']][-1]['number'] + 1
 
-        if created_at:
-            thisissue['created_at'] = created_at
-        else:
-            thisissue['created_at'] = self._get_timestamp()
-
-        if updated_at:
-            thisissue['updated_at'] = updated_at
-        else:
-            thisissue['updated_at'] = self._get_timestamp()
+        thisissue['created_at'] = created_at or get_timestamp()
+        thisissue['updated_at'] = updated_at or get_timestamp()
 
         if login:
             thisissue['user']['login'] = login
@@ -652,7 +759,7 @@ class IssueDatabase:
         url += str(thisissue['number'])
         thisissue['url'] = url
 
-        thisissue['html_url'] = url.replace('api.github.com/repos', '')
+        thisissue['html_url'] = url.replace('api.github.com/repos', 'github.com')
         #import epdb; epdb.st()
 
         self.issues.append(thisissue)
@@ -792,12 +899,6 @@ class TestIdempotence:
     def teardown(self):
         logging.level = logging.INFO
 
-    '''
-    @pytest.fixture(autouse=True)
-    def inject_fixtures(self, caplog):
-        self._caplog = caplog
-    '''
-
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', True)
     @mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'ansibot')
@@ -805,7 +906,6 @@ class TestIdempotence:
     @mock.patch('github.Requester.requests', MockRequests)
     @mock.patch('ansibullbot.decorators.github.requests', MockRequests)
     @mock.patch('ansibullbot.triagers.ansible.requests', MockRequests)
-    #@mock.patch('ansibullbot.triagers.defaulttriager.DefaultTriager.set_logger')
     @mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger)
     @mock.patch('ansibullbot.triagers.ansible.logging', MockLogger)
     @mock.patch('ansibullbot.utils.gh_gql_client.requests', MockRequests)
@@ -859,8 +959,11 @@ class TestIdempotence:
                     '#### ANSIBLE VERSION',
                     '2.9.0'
                 ]
+                pbody = body[:]
+                pbody[3] = 'fixes #1'
                 ID.add_issue(body='\n'.join(body))
-
+                ID.add_issue(body='\n'.join(pbody), itype='pull', login='jeb')
+                ID.add_cross_reference(number=1, reference=2)
 
                 AT = AnsibleTriage(args=bot_args)
                 for x in range(0, 2):
