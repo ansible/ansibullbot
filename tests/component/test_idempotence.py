@@ -165,6 +165,7 @@ class IssueDatabase:
             print('# %s' % method or 'GET')
             print('# %s' % url)
             print('# %s' % headers)
+            print('# %s' % data)
             print('#########################################')
         rheaders = {}
         rdata = None
@@ -324,6 +325,9 @@ class IssueDatabase:
 
         # id, url, number, state, createdAt, updatedAt, repository, nameWithOwner
 
+        # query, repository, owner, ansible, issues, states, OPEN, first 100
+        #   id, url, number, state, createdAt, updatedAt, repository/nameWithOwner
+
         indata = data
         indata = indata.replace('\\n', ' ')
         indata = indata.replace('\\' , ' ')
@@ -345,29 +349,75 @@ class IssueDatabase:
             if word == 'pullRequest':
                 rq['pullRequest'] = True
 
-        resp = {
-            'data': {
-                'repository': {
+        if 'issue' in words:
+            resp = {
+                'data': {
+                    'repository': {
+                    }
                 }
             }
-        }
 
-        # if querying PRs and the number is not a PR, return None
-        okey = 'issue'
-        if rq.get('pullRequest'):
-            okey = 'pullRequest'
-            resp['data']['repository'][okey] = None 
-            return resp
+            # if querying PRs and the number is not a PR, return None
+            okey = 'issue'
+            if rq.get('pullRequest'):
+                okey = 'pullRequest'
+                resp['data']['repository'][okey] = None 
+                return resp
 
-        resp['data']['repository'][okey] = {
-            'id': 'xxxxxx',
-            'state': 'open',
-            'number': rq['number'],
-            'createdAt': get_timestamp(), 
-            'updatedAt': get_timestamp(),
-            'repository': {'nameWithOwner': rq['owner'] + '/' + rq['name']},
-            'url': 'https://github.com/%s/%s/%s/%s' % (rq['owner'], rq['name'], okey, rq['number'])
-        }
+            resp['data']['repository'][okey] = {
+                'id': 'xxxxxx',
+                'state': 'open',
+                'number': rq['number'],
+                'createdAt': get_timestamp(), 
+                'updatedAt': get_timestamp(),
+                'repository': {'nameWithOwner': rq['owner'] + '/' + rq['name']},
+                'url': 'https://github.com/%s/%s/%s/%s' % (rq['owner'], rq['name'], okey, rq['number'])
+            }
+
+        elif 'issues' in words or 'pullRequests' in words:
+
+            if 'issues' in words:
+                tkey = 'issues'
+            else:
+                tkey = 'pullRequests'
+
+            resp = {
+                'data': {
+                    'repository': {
+                        tkey: {
+                            'edges': [],
+                            'pageInfo': {
+                                'endCursor': 'abc1234',
+                                'startCursor': 'abc1234',
+                                'hasNextPage': False,
+                                'hasPreviousPage': False
+                            }
+                        }
+                    }
+                }
+            }
+
+            edges = []
+            for idx,x in enumerate(self.issues):
+                if tkey == 'pullRequests' and not x['itype'] == 'pull':
+                    continue
+                edge = {
+                    'node': {
+                        'createdAt': x['created_at'],
+                        'updatedAt': x['updated_at'],
+                        'id': idx,
+                        'number': x['number'],
+                        'state': x['state'].upper(),
+                        'url': x['html_url']
+                    }
+                }
+                edges.append(edge)
+
+            resp['data']['repository'][tkey]['edges'] = edges
+
+        else:
+            print(words)
+            import epdb; epdb.st()
 
         return resp
 
@@ -822,6 +872,10 @@ class MockRequestsResponse:
         self.rheaders, self.rdata = ID.get_url(self.url, headers=self.inheaders, data=indata, method=method)
 
     @property
+    def ok(self):
+        return True
+
+    @property
     def text(self):
         try:
             raw = json.dumps(self.json())
@@ -945,10 +999,11 @@ class TestIdempotence:
                     '--cachedir=%s' % cachedir,
                     '--logfile=%s' % os.path.join(cachedir, 'bot.log'),
                     '--no_since',
-                    '--id=1',
+                    #'--id=1',
                     '--force'
                 ]
 
+                # create a bug report
                 body = [
                     '#### ISSUE TYPE',
                     'bug report',
@@ -959,11 +1014,17 @@ class TestIdempotence:
                     '#### ANSIBLE VERSION',
                     '2.9.0'
                 ]
+                ID.add_issue(body='\n'.join(body))
+
+                # create a PR that fixes #1
                 pbody = body[:]
                 pbody[3] = 'fixes #1'
-                ID.add_issue(body='\n'.join(body))
                 ID.add_issue(body='\n'.join(pbody), itype='pull', login='jeb')
                 ID.add_cross_reference(number=1, reference=2)
+
+                # add more issues
+                for x in range(0, 10):
+                    ID.add_issue(body='\n'.join(body))
 
                 AT = AnsibleTriage(args=bot_args)
                 for x in range(0, 2):
