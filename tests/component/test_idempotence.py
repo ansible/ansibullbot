@@ -136,6 +136,21 @@ def get_timestamp():
     return rts
 
 
+def unquote(string):
+
+    # 'support%3Acore' -> support:core
+
+    if '%3A' not in string:
+        return string
+
+    res = urlparse(string)
+
+    if hasattr(res, 'path'):
+        res = res.path
+
+    return res
+
+
 class IssueDatabase:
 
     eventids = set()
@@ -344,7 +359,7 @@ class IssueDatabase:
             if word == 'pullRequest':
                 rq['pullRequest'] = True
 
-        if 'issue' in words:
+        if 'issue' in words or 'pullRequest' in words:
             resp = {
                 'data': {
                     'repository': {
@@ -352,9 +367,12 @@ class IssueDatabase:
                 }
             }
 
+            known_issues = [x['number'] for x in self.issues if x['itype'] == 'issue']
+            known_pulls = [x['number'] for x in self.issues if x['itype'] == 'pull']
+
             # if querying PRs and the number is not a PR, return None
             okey = 'issue'
-            if rq.get('pullRequest'):
+            if rq.get('pullRequest') and rq['number'] not in known_pulls:
                 okey = 'pullRequest'
                 resp['data']['repository'][okey] = None 
                 return resp
@@ -368,6 +386,9 @@ class IssueDatabase:
                 'repository': {'nameWithOwner': rq['owner'] + '/' + rq['name']},
                 'url': 'https://github.com/%s/%s/%s/%s' % (rq['owner'], rq['name'], okey, rq['number'])
             }
+
+        elif 'pullRequest' in words:
+            resp = None
 
         elif 'issues' in words or 'pullRequests' in words:
 
@@ -591,7 +612,7 @@ class IssueDatabase:
         self.issues[ix]['title'] = title
 
     def add_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
-        label = urlparse(label)
+        label = unquote(label)
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         if label not in [x['name'] for x in self.issues[ix]['labels']]:
 
@@ -662,7 +683,7 @@ class IssueDatabase:
 
 
     def remove_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
-        label = urlparse(label)
+        label = unquote(label)
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         if label in [x['name'] for x in self.issues[ix]['labels']]:
 
@@ -994,7 +1015,7 @@ class TestIdempotence:
                     '--cachedir=%s' % cachedir,
                     '--logfile=%s' % os.path.join(cachedir, 'bot.log'),
                     '--no_since',
-                    #'--id=1',
+                    '--id=1',
                     '--force'
                 ]
 
@@ -1019,8 +1040,9 @@ class TestIdempotence:
 
                 # add more issues
                 for x in range(0, 10):
-                    ID.add_issue(body='\n'.join(body))
+                    ID.add_issue(body='\n'.join(body), login='clouddev')
 
+                # instantiate the bot and run it twice
                 AT = AnsibleTriage(args=bot_args)
                 for x in range(0, 2):
                     AT.run()
@@ -1032,5 +1054,6 @@ class TestIdempotence:
                 with open(metafile, 'r') as f:
                     meta = json.loads(f.read())
 
+                # ensure no actions were created on the last run
                 for k,v in meta['actions'].items():
                     assert not v
