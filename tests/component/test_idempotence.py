@@ -23,6 +23,13 @@ import pytz
 
 from ansibullbot.triagers.ansible import AnsibleTriage
 
+try:
+    #py3
+    from urllib.parse import urlparse
+except ImportError:
+    #py2
+    from urllib import unquote as urlparse
+
 
 # timeline
 #   commented
@@ -127,18 +134,6 @@ def get_timestamp():
     ats = pytz.utc.localize(ts)
     rts = ats.isoformat().split('.')[0] + 'Z'
     return rts
-
-
-def unquote(string):
-    '''py2+py3 compat unquoting'''
-    if hasattr(urllib, 'parse'):
-        # py3
-        res = urllib.parse(string)
-    else:
-        # py2
-        res = urllib.unquote(string)
-
-    return res
 
 
 class IssueDatabase:
@@ -596,7 +591,7 @@ class IssueDatabase:
         self.issues[ix]['title'] = title
 
     def add_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
-        label = unquote(label)
+        label = urlparse(label)
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         if label not in [x['name'] for x in self.issues[ix]['labels']]:
 
@@ -667,7 +662,7 @@ class IssueDatabase:
 
 
     def remove_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
-        label = unquote(label)
+        label = urlparse(label)
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         if label in [x['name'] for x in self.issues[ix]['labels']]:
 
