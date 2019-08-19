@@ -464,7 +464,7 @@ class ShippableRuns(object):
             return resp
 
         try:
-            logging.debug(u'%s', url)
+            logging.debug(u'%s' % url)
             return _fetch(verb=verb)
         except RetryError as e:
             logging.error(e)
