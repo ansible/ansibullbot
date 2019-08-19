@@ -177,6 +177,8 @@ class IssueDatabase:
             print('# %s' % headers)
             print('# %s' % data)
             print('#########################################')
+        else:
+            print('# %s %s' % (method or 'GET', url))
         rheaders = {}
         rdata = None
 
@@ -1061,7 +1063,7 @@ class IssueDatabase:
 
 
 ID = IssueDatabase()
-ID.debug = True
+#ID.debug = True
 
 
 RESPONSES = {
@@ -1158,7 +1160,7 @@ class MockLogger:
         print('WARN %s' % message)
 
     @staticmethod
-    def warn(message):
+    def error(message):
         print('ERROR %s ' % message)
 
     @staticmethod
@@ -1166,7 +1168,7 @@ class MockLogger:
         return None
 
     @staticmethod
-    def getLogger():
+    def getLogger(*args, **kwargs):
         return MockLogger()
 
     def setLevel(self, level):
@@ -1207,6 +1209,14 @@ class TestIdempotence:
     @mock.patch('ansibullbot.triagers.ansible.requests', MockRequests)
     @mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger)
     @mock.patch('ansibullbot.triagers.ansible.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.component_tools.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.moduletools.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.shippable_api.logging', MockLogger)
+    @mock.patch('ansibullbot.wrappers.defaultwrapper.logging', MockLogger)
+    @mock.patch('ansibullbot.wrappers.historywrapper.logging', MockLogger)
+    #@mock.patch('ansibullbot.wrappers.issuewrapper.logging', MockLogger)
+    @mock.patch('ansibullbot.wrappers.ghapiwrapper.logging', MockLogger)
+    #@mock.patch('ansibullbot.wrappers.pullrequestwrapper.logging', MockLogger)
     @mock.patch('ansibullbot.utils.gh_gql_client.requests', MockRequests)
     @mock.patch('ansibullbot.utils.shippable_api.requests', MockRequests)
     @mock.patch('ansibullbot.wrappers.ghapiwrapper.requests', MockRequests)
