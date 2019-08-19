@@ -222,12 +222,21 @@ class IssueDatabase:
                 rdata = self._get_repo('ansible/ansible')
             elif url.endswith('repos/ansible/ansible/labels'):
                 rdata = []
+
             elif parts[-2] == 'issues':
                 org = parts[-4]
                 repo = parts[-3]
                 number = int(parts[-1])
                 issue = self.get_issue(org=org, repo=repo, number=number)
                 rdata = self.get_raw_data(issue)
+
+            elif parts[-2] == 'pulls':
+                org = parts[-4]
+                repo = parts[-3]
+                number = int(parts[-1])
+                issue = self.get_issue(org=org, repo=repo, number=number)
+                rdata = self.get_raw_data(issue, schema='pull')
+                #import epdb; epdb.st()
 
             elif parts[-1] in ['comments']:
                 org = parts[4]
@@ -318,6 +327,46 @@ class IssueDatabase:
                     'site_admin': False
                 }
 
+            elif parts[-1] == 'reviews':
+                rdata = []
+
+            elif parts[-1] == 'commits':
+                org = parts[4]
+                repo = parts[5]
+                number = int(parts[-2])
+                rdata = self.get_commits(org=org, repo=repo, number=number)
+
+            elif parts[-2] == 'commits':
+                org = parts[4]
+                repo = parts[5]
+                chash = parts[-1]
+
+                # ansible/ansible/commits/xxxx
+                # ansible/ansible/git/commits/xxxx
+
+                if parts[-3] != 'git':
+                    rdata = self.get_commit(org=org, repo=repo, chash=chash)
+                else:
+                    rdata = self.get_git_commit(org=org, repo=repo, chash=chash)
+                    #import epdb; epdb.st()
+
+            elif parts[-1] == 'files':
+                org = parts[4]
+                repo = parts[5]
+                number = int(parts[-2])
+                rdata = self.get_files(org=org, repo=repo, number=number)
+
+            elif parts[-2] == 'statuses':
+                # https://api.github.com/repos/ansible/ansible/statuses/1f45467df45e7d7a874073f0f4ae21f9c27bebd9
+                org = parts[4]
+                repo = parts[5]
+                sid = parts[-1]
+                rdata = self.get_pull_statuses(org, repo, sid)
+                #import epdb; epdb.st()
+
+            elif 'app.shippable.com' in parts:
+                import epdb; epdb.st()
+
 
         # pause if we don't know how to handle this url+method yet
         if rdata is None:
@@ -327,6 +376,26 @@ class IssueDatabase:
             print('# %s' % rdata)
 
         return rheaders,rdata
+
+    def get_pull_statuses(self, org, repo, sid):
+        statuses = []
+        sdata = {
+            'url': 'https://api.github.com/repos/ansible/ansible/statuses/JSTATUS_1',
+            'id': 'JSTATUS_1',
+            'node_id': 'NODEJSTATUS1',
+            'state': 'success',
+            'description': 'Run 1 status is SUCCESS. ',
+            'target_url': 'https://app.shippable.com/github/ansible/ansible/runs/1/summary',
+            'context': 'Shippable',
+            'created_at': get_timestamp(),
+            'updated_at': get_timestamp(),
+            'creator': {
+                'login': 'ansibot'
+            }
+        }
+        statuses.append(sdata)
+        #import epdb; epdb.st()
+        return statuses
 
     def shippable_response(self, url):
         return {}
@@ -528,6 +597,13 @@ class IssueDatabase:
         }
         return ds
 
+    def _get_new_issue_id(self):
+        if len(self.issues) == 0:
+            thisid = 1
+        else:
+            thisid = len(list(self.issues)) + 1
+        return thisid
+
     def _get_new_event_id(self):
         if len(self.eventids) == 0:
             thisid = 1
@@ -565,7 +641,7 @@ class IssueDatabase:
 
         return data
 
-    def get_raw_data(self, issue):
+    def get_raw_data(self, issue, schema='issue'):
         org = issue['url'].split('/')[4]
         repo = issue['url'].split('/')[5]
 
@@ -577,16 +653,18 @@ class IssueDatabase:
 
         rdata = {
             'id': issue.get('id'),
-            'node_d': issue.get('node_id'),
+            'node_id': issue.get('node_id') or 'NODEI%s' % issue.get('id'),
             'repository_url': 'https://api.github.com/repos/%s/%s' % (org, repo),
             'labels_url': 'https://api.github.com/repos/%s/%s/issues/%s/labels{/name}' % (org, repo, issue['number']),
             'comments_url': 'https://api.github.com/repos/%s/%s/issues/%s/events' % (org, repo, issue['number']),
             'events_url': 'https://api.github.com/repos/%s/%s/issues/%s/events' % (org, repo, issue['number']),
+            'assignee': None,
             'assignees': [],
             'state': issue['state'],
             'title': issue['title'],
             'body': issue['body'],
             'comments': len(issue['comments']),
+            'locked': False,
             'number': issue['number'],
             'url': issue['url'],
             'html_url': html_url,
@@ -601,7 +679,86 @@ class IssueDatabase:
             'closed_by': None,
             'author_association': "NONE"
         }
+
+        if schema.lower() in ['pull', 'pullrequest']:
+
+            rdata['url'] = rdata['url'].replace('issues', 'pull')
+            rdata['statuses_url'] = 'https://api.github.com/repos/%s/%s/statuses/PSTATUS_%s' % (issue['org'], issue['repo'], rdata['id'])
+            rdata['commits_url'] = rdata['url'] + '/commits'
+            rdata['comments_url'] = rdata['url'] + '/comments'
+            rdata['review_comments_url'] = rdata['url'] + '/comments'
+            rdata['review_comment_url'] = rdata['url'] + '/comments{/number}'
+            rdata['diff_url'] = rdata['url'] + '.diff'
+            rdata['merged_at'] = None
+            rdata['merge_commit_sha'] = None
+            rdata['merged'] = False
+            rdata['merged_by'] = None
+            rdata['mergeable'] = None
+            rdata['mergeable_state'] = "clean"
+            rdata['rebaseable'] = None
+            rdata['requested_reviewers'] = []
+            rdata['requested_teams'] = []
+            rdata['review_comments'] = 0
+            rdata['milestone'] = None
+            rdata['head'] = {}
+            rdata['base'] = {}
+            rdata['_links'] = {}
+            rdata['maintainer_can_modify'] = False
+            rdata['commits'] = len(issue['commits'])
+            rdata['additions'] = 1
+            rdata['deletions'] = 1
+            rdata['changed_files'] = 1
+
+            #if isinstance(rdata['statuses_url'], tuple):
+            #    import epdb; epdb.st()
+
         return rdata
+
+    def get_commits(self, org=None, repo=None, number=None):
+        ix = self._get_issue_index(org=org, repo=repo, number=number)
+        issue = self.issues[ix]
+        return issue.get('commits', [])
+
+    def get_commit(self, org=None, repo=None, chash=None):
+        for issue in self.issues:
+            if org and issue['org'] != org:
+                continue
+            if repo and issue['repo'] != repo:
+                continue
+
+            if 'commits' not in issue:
+                continue
+
+            for commit in issue['commits']:
+                if commit['sha'] == chash:
+                    return commit.copy()
+
+        #import epdb; epdb.st()
+        return None
+
+    def get_git_commit(self, org=None, repo=None, chash=None):
+
+        # git commits have a slightly different schema from other commits
+        # https://api.github.com/repos/ansible/ansible/git/commits/7e22c7482e85cc98e14c4cdbc8b8ffb543917425
+
+        thiscommit = self.get_commit(org=org, repo=repo, chash=chash)
+        if thiscommit is None:
+            return None
+
+        for k,v in thiscommit['commit'].items():
+            if isinstance(v, dict):
+                thiscommit[k] = v.copy()
+            else:
+                thiscommit[k] = v
+        thiscommit.pop('commit', None)
+        thiscommit.pop('comments_url', None)
+
+        return thiscommit
+
+    def get_files(self, org=None, repo=None, number=None):
+        ix = self._get_issue_index(org=org, repo=repo, number=number)
+        issue = self.issues[ix]
+        return issue.get('files', [])
 
     def set_issue_body(self, body, org=None, repo=None, number=None):
         ix = self._get_issue_index(org=org, repo=repo, nunmber=number, itype=itype)
@@ -739,6 +896,8 @@ class IssueDatabase:
     def _get_empty_stub(self):
         stub = {
             'itype': 'issue',
+            'node_id': None,
+            'id': None,
             'state': 'open',
             'number': None,
             'user': {'login': None},
@@ -768,10 +927,13 @@ class IssueDatabase:
                 created_at=None,
                 updated_at=None,
                 labels=None,
-                assignees=None
+                assignees=None,
+                commits=None,
+                files=None
             ):
 
         thisissue = self._get_empty_stub()
+        thisissue['id'] = self._get_new_issue_id()
 
         if itype:
             thisissue['itype'] = itype
@@ -797,9 +959,11 @@ class IssueDatabase:
 
         if login:
             thisissue['user']['login'] = login
+            thisissue['user']['url'] = 'https://api.github.com/users/%s' % login
             thisissue['created_by']['login'] = login
         else:
             thisissue['user']['login'] = 'jimbob'
+            thisissue['user']['url'] = 'https://api.github.com/users/jimbob'
             thisissue['created_by']['login'] = 'jimbob'
 
         if assignees:
@@ -827,6 +991,71 @@ class IssueDatabase:
 
         thisissue['html_url'] = url.replace('api.github.com/repos', 'github.com')
         #import epdb; epdb.st()
+
+        if commits:
+            thississue['commits'] = commits
+        elif itype and itype.startswith('pull'):
+            thisissue['commits'] = [
+                {
+                    'sha': 'd7e6a2eae2633a353e16f951a2c6a78c09db6953',
+                    'node_id': None,
+                    'commit': {
+                        'author': {
+                            'name': thisissue['user']['login'],
+                            'email': '%s@noreply.github.com' % thisissue['user']['login'],
+                            'date': get_timestamp(),
+                        },
+                        'committer': {
+                            'name': thisissue['user']['login'],
+                            'email': '%s@noreply.github.com' % thisissue['user']['login'],
+                            'date': get_timestamp(),
+                        },
+                        'message': 'test commit',
+                        'tree': {
+                            'sha': '25d360965b12b923aa7cc23c5db202ca25b17d9f',
+                            'url': 'https://api.github.com/repos/%s/%s/git/trees/25d360965b12b923aa7cc23c5db202ca25b17d9f' % (org, repo),
+                        },
+                        'url': 'https://api.github.com/repos/%s/%s/git/commits/d7e6a2eae2633a353e16f951a2c6a78c09db6953' % (org, repo),
+                        'comment_count': 0,
+                    },
+                    'url': 'https://api.github.com/repos/%s/%s/commits/d7e6a2eae2633a353e16f951a2c6a78c09db6953' % (org, repo),
+                    'html_url': 'https://github.com/%s/%s/commit/d7e6a2eae2633a353e16f951a2c6a78c09db6953' % (org, repo),
+                    'comments_url': 'https://api.github.com/repos/%s/%s/commits/d7e6a2eae2633a353e16f951a2c6a78c09db6953/comments' % (org, repo),
+                    'verification': {
+                        'verified': False,
+                        'reason': 'unsigned',
+                        'signature': None,
+                        'payload': None,
+                    },
+                    'author': thisissue['user'].copy(),
+                    'committer': thisissue['user'].copy(),
+                    'parents': [
+                        {
+                            'sha': '7e22c7482e85cc98e14c4cdbc8b8ffb543917425',
+                            'url': 'https://api.github.com/repos/%s/%s/commits/7e22c7482e85cc98e14c4cdbc8b8ffb543917425' % (org, repo),
+                            'html_url': 'https://github.com/%s/%s/commit/7e22c7482e85cc98e14c4cdbc8b8ffb543917425' % (org, repo),
+                        }
+                    ]
+                }
+            ]
+
+        if files:
+            thisissue['files'] = files
+        elif itype and itype.startswith('pull'):
+            thisissue['files'] = [
+                {
+                    'sha': '45b134231ef0f9c2a37c7896ea6f439d15982469',
+                    'filename': 'lib/ansible/modules/foo/bar.py',
+                    'status': 'added',
+                    'additions': 317,
+                    'deletions': 0,
+                    'changes': 317,
+                    'blob_url': 'https://github.com/%s/%s/blob/d7e6a2eae2633a353e16f951a2c6a78c09db6953/lib/ansible/modules/foo/bar.py' % (org, repo),
+                    'raw_url': 'https://github.com/%s/%s/blob/d7e6a2eae2633a353e16f951a2c6a78c09db6953/lib/ansible/modules/foo/bar.py' % (org, repo),
+                    'contents_url': 'https://api.github.com/repos/%s/%s/contents/lib/ansible/modules/foo/bar.py?ref=d7e6a2eae2633a353e16f951a2c6a78c09db6953' % (org, repo),
+                    'patch': ''
+                }
+            ]
 
         self.issues.append(thisissue)
 
@@ -1009,13 +1238,13 @@ class TestIdempotence:
                 bot_args = [
                     '--debug',
                     '--verbose',
-                    '--only_issues',
+                    #'--only_issues',
                     '--ignore_module_commits',
                     '--skip_module_repos',
                     '--cachedir=%s' % cachedir,
                     '--logfile=%s' % os.path.join(cachedir, 'bot.log'),
                     '--no_since',
-                    '--id=1',
+                    '--id=2',
                     '--force'
                 ]
 
@@ -1047,6 +1276,7 @@ class TestIdempotence:
                 for x in range(0, 2):
                     AT.run()
 
+                '''
                 # /tmp/ansibot.test.isxYlS/ansible/ansible/issues/1/meta.json                
                 metafile = os.path.join(cachedir, 'ansible', 'ansible', 'issues', '1', 'meta.json')
                 assert os.path.exists(metafile)
@@ -1057,3 +1287,4 @@ class TestIdempotence:
                 # ensure no actions were created on the last run
                 for k,v in meta['actions'].items():
                     assert not v
+                '''
