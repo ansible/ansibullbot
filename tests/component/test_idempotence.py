@@ -364,11 +364,6 @@ class IssueDatabase:
                 repo = parts[5]
                 sid = parts[-1]
                 rdata = self.get_pull_statuses(org, repo, sid)
-                #import epdb; epdb.st()
-
-            elif 'app.shippable.com' in parts:
-                import epdb; epdb.st()
-
 
         # pause if we don't know how to handle this url+method yet
         if rdata is None:
@@ -400,6 +395,11 @@ class IssueDatabase:
         return statuses
 
     def shippable_response(self, url):
+        # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&isPullRequest=True --> []
+        if 'api.shippable.com/runs' in url:
+            return []
+
+        import epdb; epdb.st()
         return {}
 
     def graphql_response(self, data):
@@ -1157,7 +1157,11 @@ class MockLogger:
 
     @staticmethod
     def warn(message):
-        print('WARN %s' % message)
+        print('WARNING %s' % message)
+
+    @staticmethod
+    def warning(message):
+        print('WARNING %s' % message)
 
     @staticmethod
     def error(message):
@@ -1210,8 +1214,13 @@ class TestIdempotence:
     @mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger)
     @mock.patch('ansibullbot.triagers.ansible.logging', MockLogger)
     @mock.patch('ansibullbot.utils.component_tools.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.extractors.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.file_tools.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.gh_gql_client.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.git_tools.logging', MockLogger)
     @mock.patch('ansibullbot.utils.moduletools.logging', MockLogger)
     @mock.patch('ansibullbot.utils.shippable_api.logging', MockLogger)
+    @mock.patch('ansibullbot.utils.version_tools.logging', MockLogger)
     @mock.patch('ansibullbot.wrappers.defaultwrapper.logging', MockLogger)
     @mock.patch('ansibullbot.wrappers.historywrapper.logging', MockLogger)
     #@mock.patch('ansibullbot.wrappers.issuewrapper.logging', MockLogger)
