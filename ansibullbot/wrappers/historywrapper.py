@@ -146,9 +146,9 @@ class HistoryWrapper(object):
                     self.history = self.process()
                     logging.info(u'dumping newly created history cache')
                     self._dump_cache()
-
-                logging.info(u'use cached history')
-                self.history = cache[u'history']
+                else:
+                    logging.info(u'use cached history')
+                    self.history = cache[u'history']
 
         if exclude_users:
             tmp_history = [x for x in self.history]
