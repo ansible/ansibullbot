@@ -1,28 +1,8 @@
 #!/usr/bin/env python
 
-import six
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
-
-from backports import tempfile
-
-import argparse
-import datetime
 import glob
 import json
-import logging
 import os
-import re
-import shutil
-import subprocess
-import time
-import urllib
-
-from pprint import pprint
-
-import github
-import pytest
-import pytz
 
 from tests.utils.componentmocks import BotMockManager
 

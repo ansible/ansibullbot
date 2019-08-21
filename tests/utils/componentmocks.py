@@ -6,22 +6,13 @@ from six.moves import mock
 
 from backports import tempfile
 
-import argparse
 import datetime
 import json
-import logging
 import os
-import re
 import shutil
 import subprocess
-import time
-import urllib
 
-import github
-import pytest
 import pytz
-
-from ansibullbot.triagers.ansible import AnsibleTriage
 
 try:
     #py3
@@ -471,7 +462,6 @@ class IssueDatabase:
                 }
             }
 
-            known_issues = [x['number'] for x in self.issues if x['itype'] == 'issue']
             known_pulls = [x['number'] for x in self.issues if x['itype'] == 'pull']
 
             # if querying PRs and the number is not a PR, return None
@@ -680,7 +670,6 @@ class IssueDatabase:
         org = issue['url'].split('/')[4]
         repo = issue['url'].split('/')[5]
 
-        thistype = 'issues'
         if issue['itype'].startswith('pull'):
             html_url = 'https://github.com/%s/%s/pull/%s' % (org, repo, issue['number'])
         else:
@@ -796,12 +785,12 @@ class IssueDatabase:
         return issue.get('files', [])
 
     def set_issue_body(self, body, org=None, repo=None, number=None):
-        ix = self._get_issue_index(org=org, repo=repo, nunmber=number, itype=itype)
+        ix = self._get_issue_index(org=org, repo=repo, nunmber=number)
         self.issues[ix]['body'] = body
         self.save_cache()
 
     def set_issue_title(self, title, org=None, repo=None, number=None):
-        ix = self._get_issue_index(org=org, repo=repo, number=number, itype=itype)
+        ix = self._get_issue_index(org=org, repo=repo, number=number)
         self.issues[ix]['title'] = title
         self.save_cache()
 
@@ -825,8 +814,8 @@ class IssueDatabase:
             event['event'] = 'labeled'
             event['label'] = ldata
             event['actor'] = {
-                'url': 'https://api.github.com/users/%s' % login or ansibot,
-                'html_url': 'https://github.com/%s' % login or ansibot,
+                'url': 'https://api.github.com/users/%s' % login or 'ansibot',
+                'html_url': 'https://github.com/%s' % login or 'ansibot',
                 'login': login or 'ansibot'
             }
             event['created_at'] = created_at or get_timestamp()
@@ -917,10 +906,10 @@ class IssueDatabase:
         src_ix = self._get_issue_index(org=org, repo=repo, number=number)
         dst_ix = self._get_issue_index(org=org, repo=repo, number=reference)
 
-        src_issue = self.issues[src_ix]
+        #src_issue = self.issues[src_ix]
         dst_issue = self.issues[dst_ix]
 
-        src_raw = self.get_raw_data(src_issue)
+        #src_raw = self.get_raw_data(src_issue)
         dst_raw = self.get_raw_data(dst_issue)
 
         cr_event = {
@@ -1040,7 +1029,7 @@ class IssueDatabase:
         #import epdb; epdb.st()
 
         if commits:
-            thississue['commits'] = commits
+            thisissue['commits'] = commits
         elif itype and itype.startswith('pull'):
             thisissue['commits'] = [
                 {
