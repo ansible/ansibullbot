@@ -50,6 +50,7 @@ class GithubWrapper(object):
             u'application/json',
             u'application/vnd.github.mockingbird-preview',
             u'application/vnd.github.sailor-v-preview+json',
+            u'application/vnd.github.squirrel-girl-preview+json',
             u'application/vnd.github.starfox-preview+json',
             u'application/vnd.github.v3+json',
         ]

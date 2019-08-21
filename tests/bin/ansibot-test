@@ -135,7 +135,7 @@ class IntegrationTest(object):
         self.sim = None
         self.target_path = os.path.join('tests', 'integration', 'targets', self.target)
         self.target_meta = self.read_target_meta(self.target)
-        self.tmpdir = tempfile.mkdtemp(prefix='/tmp/ansibot.test')
+        self.tmpdir = tempfile.mkdtemp(prefix='/tmp/ansibot.test.')
         self.checkoutsrc = checkoutsrc
 
         if self.checkoutsrc:
@@ -201,59 +201,69 @@ class IntegrationTest(object):
 
     def run_bot(self):
         '''Fork the bot and let it triage the issue(s)'''
-        logger.info('starting bot')
-        if not os.path.exists(self.tmpdir):
-            os.makedirs(self.tmpdir)
-        self.write_bot_config(directory=self.tmpdir)
-        logfile = os.path.join(self.tmpdir, 'bot.log')
-        cmd = [
-            'ANSIBULLBOT_CONFIG=%s/ansibullbot.cfg' % self.tmpdir,
-            './triage_ansible.py',
-            '--logfile=%s' % logfile,
-            '--commit=%s' % self.target_meta['ansible_commit'],
-            '--debug',
-            '--verbose',
-            '--skip_module_repos',
-            '--ignore_module_commits',
-            '--cachedir=%s' % os.path.join(self.tmpdir, 'cache'),
-            '--force',
-        ]
 
-        if 'numbers' in self.target_meta:
-            for number in self.target_meta['numbers']:
-                cmd.append('--id=%s' % number)
+        runcount = 1
+        #if idempotency_check:
+        if self.target_meta.get('idempotency_check', False):
+            runcount = 2
 
-        cmd = ' '.join(cmd)
-        logger.info(cmd)
+        for x in range(0, runcount):
 
-        runfile = os.path.join(self.tmpdir, 'run.sh')
-        with open(runfile, 'w') as f:
-            f.write('#!/bin/bash\n')
-            f.write(cmd + '\n')
+            logger.info('starting bot')
+            if not os.path.exists(self.tmpdir):
+                os.makedirs(self.tmpdir)
+            self.write_bot_config(directory=self.tmpdir)
+            logfile = os.path.join(self.tmpdir, 'bot.log')
+            cmd = [
+                'ANSIBULLBOT_CONFIG=%s/ansibullbot.cfg' % self.tmpdir,
+                './triage_ansible.py',
+                '--logfile=%s' % logfile,
+                '--commit=%s' % self.target_meta['ansible_commit'],
+                '--debug',
+                '--verbose',
+                '--skip_module_repos',
+                '--ignore_module_commits',
+                '--cachedir=%s' % os.path.join(self.tmpdir, 'cache'),
+                '--force',
+            ]
 
-        p = subprocess.Popen(
-            cmd,
-            shell=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
+            if 'numbers' in self.target_meta:
+                for number in self.target_meta['numbers']:
+                    cmd.append('--id=%s' % number)
 
-        output = []
+            cmd = ' '.join(cmd)
+            logger.info(cmd)
 
-        while True:
-            line = p.stdout.readline().rstrip()
-            logger.info(line)
-            output.append(line)
-            if line == '' and p.poll() != None:
-                break
+            runfile = os.path.join(self.tmpdir, 'run.sh')
+            with open(runfile, 'w') as f:
+                f.write('#!/bin/bash\n')
+                f.write(cmd + '\n')
 
-        if p.returncode != 0:
-            with open(logfile, 'r') as f:
-                for line in f.readlines():
-                    logger.error(line.rstrip())
-            import epdb; epdb.st()
+            p = subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
 
-        logger.info('bot returncode: %s' % p.returncode)
+            output = []
+
+            while True:
+                line = p.stdout.readline().rstrip()
+                logger.info(line)
+                output.append(line)
+                if line == '' and p.poll() != None:
+                    break
+
+            if p.returncode != 0:
+                with open(logfile, 'r') as f:
+                    for line in f.readlines():
+                        logger.error(line.rstrip())
+                #import epdb; epdb.st()
+                raise Exception('bot returned non-zero exit code')
+
+            logger.info('bot returncode: %s' % p.returncode)
+
         return (p.returncode, output, None)
 
     def kill_simulator(self):
@@ -283,25 +293,29 @@ class IntegrationTest(object):
 
         # /tmp/tmpstCSTB/cache/ansible/ansible/issues/47375/meta.json
         cachedir = os.path.join(self.tmpdir, 'cache')
-        metafiles = glob.glob('%s/*/*/*/*/meta.json' % cachedir)
 
-        for mf in metafiles:
-            logger.info(mf)
+        #if self.target_meta.get('idempotency_check', False):
+        #    import epdb; epdb.st()
+        
+        if self.target_meta.get('actions_check', False):
+            metafiles = glob.glob('%s/*/*/*/*/meta.json' % cachedir)
+            for mf in metafiles:
+                logger.info(mf)
 
-            paths = mf.split('/')
-            number = paths[-2]
-            repo = paths[-4]
-            org = paths[-5]
+                paths = mf.split('/')
+                number = paths[-2]
+                repo = paths[-4]
+                org = paths[-5]
 
-            with open(mf, 'r') as f:
-                meta = json.loads(f.read())
+                with open(mf, 'r') as f:
+                    meta = json.loads(f.read())
 
-            check_file = os.path.join(self.target_path, 'data', org, repo, number, 'meta.json')
-            logger.info(check_file)
-            with open(check_file, 'r') as f:
-                expected = json.loads(f.read())
+                check_file = os.path.join(self.target_path, 'data', org, repo, number, 'meta.json')
+                logger.info(check_file)
+                with open(check_file, 'r') as f:
+                    expected = json.loads(f.read())
 
-            assert meta['actions'] == expected['actions']
+                assert meta['actions'] == expected['actions']
 
 
 def main():
