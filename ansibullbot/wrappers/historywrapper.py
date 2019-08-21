@@ -124,10 +124,12 @@ class HistoryWrapper(object):
             self.history = self.process()
         else:
             """Building history is expensive and slow"""
-            #cache = self._load_cache()
-            cache = None
+            cache = self._load_cache()
 
-            if not cache:
+            #if self.issue.labels and self.issue.number == 1:
+            #    import epdb; epdb.st()
+
+            if not cache or not cache.get('history'):
                 logging.info(u'empty history cache, rebuilding')
                 self.history = self.process()
                 logging.info(u'dumping newly created history cache')
@@ -145,6 +147,11 @@ class HistoryWrapper(object):
                     logging.info('history cache behind issue')
                     reprocess = True
 
+                # FIXME the cache is getting wiped out by cross-refences,
+                #       so keeping this around as a failsafe
+                if len(cache['history']) < (len(self.issue.comments) + len(self.issue.labels)):
+                    reprocess = True
+
                 if reprocess:
                     logging.info(u'history out of date, updating')
                     self.history = self.process()
@@ -152,7 +159,7 @@ class HistoryWrapper(object):
                     self._dump_cache()
                 else:
                     logging.info(u'use cached history')
-                    self.history = cache[u'history']
+                    self.history = cache[u'history'][:]
 
         if exclude_users:
             tmp_history = [x for x in self.history]
@@ -160,13 +167,10 @@ class HistoryWrapper(object):
                 if x[u'actor'] in exclude_users:
                     self.history.remove(x)
 
-        #self.fix_history_tz()
-        self.history = self._fix_comments_with_no_body(self.history)
-        self.history = self._fix_commits_with_no_message(self.history)
+        self.history = self._fix_comments_with_no_body(self.history[:])
+        self.history = self._fix_commits_with_no_message(self.history[:])
         self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
-
-        #import epdb; epdb.st()
 
     def get_rate_limit(self):
         return self.issue.repo.gh.get_rate_limit()

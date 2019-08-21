@@ -261,6 +261,12 @@ class IssueDatabase:
                 rdata = self.get_raw_data(issue, schema='pull')
                 #import epdb; epdb.st()
 
+            elif parts[-2] == 'comments':
+                org = parts[-4]
+                repo = parts[-3]
+                commentid = int(parts[-1])
+                rdata = self.get_comment(org=org, repo=repo, commentid=commentid)
+
             elif parts[-1] in ['comments']:
                 org = parts[4]
                 repo = parts[5]
@@ -737,6 +743,17 @@ class IssueDatabase:
             #    import epdb; epdb.st()
 
         return rdata
+
+    def get_comment(self, org=None, repo=None, commentid=None):
+        for issue in self.issues:
+            if org and issue['org'] != org:
+                continue
+            if repo and issue['repo'] != repo:
+                continue
+
+            for comment in issue['comments']:
+                if comment['id'] == commentid:
+                    return comment.copy()
 
     def get_commits(self, org=None, repo=None, number=None):
         ix = self._get_issue_index(org=org, repo=repo, number=number)
