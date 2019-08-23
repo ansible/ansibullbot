@@ -872,6 +872,8 @@ class HistoryWrapper(object):
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
     def _fix_history_tz(self, history):
+
+        # make datetime objects for all
         for idx, x in enumerate(history):
             if not hasattr(x['created_at'], 'tzinfo'):
                 # convert string to datetime
@@ -888,13 +890,19 @@ class HistoryWrapper(object):
                     # 2017-01-17T06:27:21Z'
                     ts = datetime.datetime.strptime(x['created_at'], '%Y-%m-%dT%H:%M:%SZ')
                     history[idx]['created_at'] = ts
+                elif x['created_at'].endswith('Z'):
+                    ts = datetime.datetime.strptime(x['created_at'], '%Y-%m-%dT%H:%M:%SZ')
+                    history[idx]['created_at'] = ts
                 else:
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
-                        import epdb; epdb.st()
+                    ts = datetime.datetime.strptime(x['created_at'], '%Y-%m-%dT%H:%M:%S')
+                    history[idx]['created_at'] = ts
+
+        # set to UTC
+        for idx, x in enumerate(history):
             if not x[u'created_at'].tzinfo:
                 ats = pytz.utc.localize(x[u'created_at'])
                 history[idx][u'created_at'] = ats
+
         return history
 
     def fix_history_tz(self):
