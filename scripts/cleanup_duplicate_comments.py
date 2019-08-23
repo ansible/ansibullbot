@@ -47,6 +47,9 @@ def main():
     for idn,number in enumerate(numbers):
         logging.info('%s|%s issue %s' % (len(numbers), idn+1, number))
 
+        if number > 52979:
+            continue
+
         comments_url = 'https://api.github.com/repos/ansible/ansible/issues/%s/comments' % number
         comments = gh.get_request(comments_url)
 
@@ -74,8 +77,10 @@ def main():
 
                     pprint([[x['id'], x['body']] for x in dupes])
 
-                    if '<!--- boilerplate: notify --->' not in dupes[0]['body']:
-                        continue
+                    #if '<!--- boilerplate: notify --->' not in dupes[0]['body']:
+                    #    continue
+
+                    #import epdb; epdb.st()
 
                     for dupe in dupes[1:]:
                         gh.delete_request(dupe['url'])
