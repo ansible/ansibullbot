@@ -54,6 +54,7 @@ class TestIdempotence:
             pbody[3] = 'fixes #1'
             mm.issuedb.add_issue(body='\n'.join(pbody), itype='pull', login='jeb')
             mm.issuedb.add_cross_reference(number=1, reference=2)
+            mm.issuedb.add_reaction('+1', login='lovethis', number=2)
 
             # add more random issues
             for x in range(0, 5):
