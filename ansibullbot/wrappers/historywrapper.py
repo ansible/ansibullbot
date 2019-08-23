@@ -882,15 +882,16 @@ class HistoryWrapper(object):
                         ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
                     else:
                         ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
-                    #try:
-                    #    ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
-                    #except Exception as e:
-                    #    print(e)
-                    #    import epdb; epdb.st()
                     x['created_at'] = ts
                     history[idx]['created_at'] = ts
+                elif x['created_at'].endswith('Z'):
+                    # 2017-01-17T06:27:21Z'
+                    ts = datetime.datetime.strptime(x['created_at'], '%Y-%m-%dT%H:%M:%SZ')
+                    history[idx]['created_at'] = ts
                 else:
-                    import epdb; epdb.st()
+                    if C.DEFAULT_BREAKPOINTS:
+                        logging.error(u'breakpoint!')
+                        import epdb; epdb.st()
             if not x[u'created_at'].tzinfo:
                 ats = pytz.utc.localize(x[u'created_at'])
                 history[idx][u'created_at'] = ats
