@@ -6,8 +6,6 @@ import os
 import pytz
 from operator import itemgetter
 
-import six
-
 from github import GithubObject
 from ansibullbot.decorators.github import RateLimited
 
