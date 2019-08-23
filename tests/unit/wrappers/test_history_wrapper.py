@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
 import datetime
-import tempfile
+import pytz
+
+from backports import tempfile
 
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
@@ -164,3 +166,25 @@ def test_ignore_events_without_dates_on_last_methods():
     res.append(hw.was_unlabeled(u'needs_info'))
 
     assert not [x for x in res if x is None]
+
+
+def test__fix_history_tz():
+
+    with tempfile.TemporaryDirectory() as cachedir:
+
+        iw = IssueWrapperMock()
+        cachedir = tempfile.mkdtemp()
+        hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+
+        events = [
+            {'created_at': datetime.datetime.now()},
+            {'created_at': pytz.utc.localize(datetime.datetime.now())},
+            {'created_at': '2019-08-01T19:00:00'},
+            {'created_at': '2019-08-01T19:00:00Z'},
+            {'created_at': '2019-08-01T19:00:00+00:00'},
+        ]
+
+        fixed = hw._fix_history_tz(events)
+        for event in fixed:
+            assert hasattr(event['created_at'], 'tzinfo')
+            assert event['created_at'].tzinfo is not None
