@@ -510,32 +510,8 @@ class DefaultWrapper(object):
     @property
     def reactions(self):
         if self._reactions is False:
-            self._reactions = [x for x in self.get_reactions()]
+            self._reactions = self.load_update_fetch_rest('reactions')[:]
         return self._reactions
-
-    @RateLimited
-    def get_reactions(self):
-        # https://developer.github.com/v3/reactions/
-        if not self.current_reactions:
-            baseurl = self.instance.url
-            reactions_url = baseurl + u'/reactions'
-            headers = {
-                u'Accept': u'application/vnd.github.squirrel-girl-preview',
-            }
-            jdata = []
-            try:
-                resp = self.instance._requester.requestJson(
-                    u'GET',
-                    reactions_url,
-                    headers=headers
-                )
-                data = resp[2]
-                jdata = json.loads(data)
-            except Exception as e:
-                print(e)
-                pass
-            self.current_reactions = jdata
-        return self.current_reactions
 
     @RateLimited
     def get_submitter(self):
