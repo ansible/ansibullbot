@@ -98,7 +98,8 @@ def get_notification_facts(issuewrapper, meta):
                 continue
             if user in nfacts[u'to_assign']:
                 continue
-            if user not in current_assignees and iw.repo.repo.has_in_assignees(user):
+            #if user not in current_assignees and iw.repo.repo.has_in_assignees(user):
+            if user not in current_assignees and iw.repo.has_in_assignees(user):
                 nfacts[u'to_assign'].append(user)
 
     # prevent duplication

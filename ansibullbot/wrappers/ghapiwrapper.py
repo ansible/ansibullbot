@@ -94,6 +94,10 @@ class RepoWrapper(object):
 
         self._labels = False
 
+    def has_in_assignees(self, login):
+        logins = [x.login for x in self.assignees]
+        return login in logins
+
     @RateLimited
     def get_repo(self, repo_path):
         logging.getLogger(u'github.Requester').setLevel(logging.INFO)
@@ -177,30 +181,14 @@ class RepoWrapper(object):
     @property
     def labels(self):
         if self._labels is False:
-            self._labels = [x.name for x in self.get_labels()]
+            self._labels = self.load_update_fetch('labels')
         return self._labels
-
-    @RateLimited
-    def get_labels(self):
-        #return self.load_update_fetch('labels')
-        labels = []
-        for label in self.repo.get_labels():
-            labels.append(label)
-        return labels
 
     @property
     def assignees(self):
         if self._assignees is False:
             self._assignees = self.load_update_fetch(u'assignees')
         return self._assignees
-
-    '''
-    @RateLimited
-    def get_assignees(self):
-        if self._assignees is False:
-            self._assignees = self.load_update_fetch(u'assignees')
-        return self._assignees
-    '''
 
     def get_issues(self, since=None, state=u'open', itype=u'issue'):
 
