@@ -96,37 +96,11 @@ class DefaultTriager(object):
         Triager().start()
     """
     ITERATION = 0
+    debug = False
+    cachedir_base = None
 
-    def __init__(self):
-
-        parser = self.create_parser()
-        args = parser.parse_args()
-        self.args = args
-
-        for x in vars(args):
-            val = getattr(args, x)
-            setattr(self, x, val)
-
-        self.last_run = None
-
-        self.github_url = C.DEFAULT_GITHUB_URL
-        self.github_user = C.DEFAULT_GITHUB_USERNAME
-        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
-        self.github_token = C.DEFAULT_GITHUB_TOKEN
-
-        # where to store junk
-        self.cachedir_base = os.path.expanduser(self.cachedir_base)
-
-        self.set_logger()
-        logging.info('starting bot')
-
-        # connect to github
-        logging.info('creating api connection')
-        self.gh = self._connect()
-
-        # wrap the connection
-        logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
+    def __init__(self, args=None):
+        pass
 
     @classmethod
     def create_parser(cls):
@@ -359,6 +333,7 @@ class DefaultTriager(object):
                     # put the user into a breakpoint to do live debug
                     action_meta['REDO'] = True
                     import epdb; epdb.st()
+
         elif self.always_pause:
             print("Skipping, but pause.")
             cont = input("Continue (Y/n/a/R/T/DEBUG)? ")
@@ -373,6 +348,7 @@ class DefaultTriager(object):
                 # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
+
         elif self.force_description_fixer:
             # FIXME: self.FIXED_ISSUES not defined since 1cf9674cd38edbd17aff906d72296c99043e5c13
             #        either define self.FIXED_ISSUES, either remove this method
@@ -438,29 +414,33 @@ class DefaultTriager(object):
         for comment in actions.comments:
             logging.info("acton: comment - " + comment)
             iw.add_comment(comment=comment)
+
         if actions.close:
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             logging.info('action: close')
             iw.instance.edit(state='closed')
-            return
 
-        for unlabel in actions.unlabel:
-            logging.info('action: unlabel - ' + unlabel)
-            iw.remove_label(label=unlabel)
-        for newlabel in actions.newlabel:
-            logging.info('action: label - ' + newlabel)
-            iw.add_label(label=newlabel)
+        else:
 
-        for user in actions.assign:
-            logging.info('action: assign - ' + user)
-            iw.assign_user(user)
+            for unlabel in actions.unlabel:
+                logging.info('action: unlabel - ' + unlabel)
+                iw.remove_label(label=unlabel)
+            for newlabel in actions.newlabel:
+                logging.info('action: label - ' + newlabel)
+                iw.add_label(label=newlabel)
 
-        for user in actions.unassign:
-            logging.info('action: unassign - ' + user)
-            iw.unassign_user(user)
+            for user in actions.assign:
+                logging.info('action: assign - ' + user)
+                iw.assign_user(user)
 
-        if actions.merge:
-            iw.merge()
+            for user in actions.unassign:
+                logging.info('action: unassign - ' + user)
+                iw.unassign_user(user)
+
+            if actions.merge:
+                iw.merge()
+
+        self.build_history(iw)
 
     #@RateLimited
     def is_pr_merged(self, number, repo):
