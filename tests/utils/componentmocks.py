@@ -21,6 +21,13 @@ except ImportError:
     #py2
     from urllib import unquote as urlparse
 
+# reaction
+#   * content '+1'
+#   * id
+#   * node_id
+#   * user
+#       * url
+#       * login
 
 # timeline
 #   commented
@@ -307,7 +314,10 @@ class IssueDatabase:
                 #rdata = []
 
             elif parts[-1] in ['reactions']:
-                rdata = []
+                org = parts[4]
+                repo = parts[5]
+                number = int(parts[-2])
+                rdata = self.get_issue_property('reactions', org=org, repo=repo, number=number)
 
             elif parts[-1] == 'assignees':
                 rdata = []
@@ -810,6 +820,22 @@ class IssueDatabase:
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         self.issues[ix]['title'] = title
         self.save_cache()
+
+    def add_reaction(self, reaction, login=None, created_at=None, org=None, repo=None, number=None):
+        reaction = unquote(reaction)
+        ix = self._get_issue_index(org=org, repo=repo, number=number)
+        event = {
+            'content': reaction,
+            'created_at': created_at or get_timestamp(),
+            'id': self._get_new_event_id(),
+            'user': {
+                'login': login or 'ansibot',
+                'url': 'https://api.github.com/users/%s' % login or 'ansibot'
+            }
+        }
+        event['node_id'] = 'NODER%s' % event['id']
+        self.issues[ix]['reactions'].append(event)
+        self.issues[ix]['updated_at'] = event['created_at']
 
     def add_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
         label = unquote(label)
