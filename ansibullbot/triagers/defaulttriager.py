@@ -440,7 +440,7 @@ class DefaultTriager(object):
             if actions.merge:
                 iw.merge()
 
-        iw = self.build_history(iw)
+        self.build_history(iw)
 
     #@RateLimited
     def is_pr_merged(self, number, repo):
