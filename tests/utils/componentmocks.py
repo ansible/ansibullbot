@@ -835,6 +835,7 @@ class IssueDatabase:
         }
         event['node_id'] = 'NODER%s' % event['id']
         self.issues[ix]['reactions'].append(event)
+        self.issues[ix]['updated_at'] = event['created_at']
 
     def add_issue_label(self, label, login=None, created_at=None, org=None, repo=None, number=None):
         label = unquote(label)
