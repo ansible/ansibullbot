@@ -16,3 +16,6 @@ class RepoMock(object):
         return self.issues.get(issueid, None)
     def get_issues(self):
         return [issues[x] for x in issues.keys()]
+
+    def has_in_assignees(self, login):
+        return True
