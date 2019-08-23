@@ -277,7 +277,7 @@ class DefaultTriager(object):
 
         rw = self.ghw.get_repo(repo)
         vlabels = []
-        for vl in rw.get_labels():
+        for vl in rw.labels:
             vlabels.append(vl.name)
 
         return vlabels
