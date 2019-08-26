@@ -124,40 +124,13 @@ class HistoryWrapper(object):
             """Building history is expensive and slow"""
             cache = self._load_cache()
 
-            #if self.issue.labels and self.issue.number == 1:
-            #    import epdb; epdb.st()
-
-            if not cache or not cache.get('history'):
-                logging.info(u'empty history cache, rebuilding')
+            if not self.validate_cache(cache):
+                logging.info(u'history cache invalidated, rebuilding')
                 self.history = self.process()
-                logging.info(u'dumping newly created history cache')
                 self._dump_cache()
             else:
-
-                reprocess = False
-
-                # use a versioned schema to track changes
-                if not cache.get('version') or cache['version'] < self.SCHEMA_VERSION:
-                    logging.info('history cache schema version behind')
-                    reprocess = True
-
-                if cache[u'updated_at'] < self.issue.instance.updated_at:
-                    logging.info('history cache behind issue')
-                    reprocess = True
-
-                # FIXME the cache is getting wiped out by cross-refences,
-                #       so keeping this around as a failsafe
-                if len(cache['history']) < (len(self.issue.comments) + len(self.issue.labels)):
-                    reprocess = True
-
-                if reprocess:
-                    logging.info(u'history out of date, updating')
-                    self.history = self.process()
-                    logging.info(u'dumping newly created history cache')
-                    self._dump_cache()
-                else:
-                    logging.info(u'use cached history')
-                    self.history = cache[u'history'][:]
+                logging.info(u'use cached history')
+                self.history = cache[u'history'][:]
 
         if exclude_users:
             tmp_history = [x for x in self.history]
@@ -169,6 +142,42 @@ class HistoryWrapper(object):
         self.history = self._fix_commits_with_no_message(self.history[:])
         self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
+
+    def validate_cache(self, cache):
+
+        if cache is None:
+            return False
+
+        if not isinstance(cache, dict):
+            return False
+
+        if 'history' not in cache:
+            return False
+
+        if 'updated_at' not in cache:
+            return False
+
+        # use a versioned schema to track changes
+        if not cache.get('version') or cache['version'] < self.SCHEMA_VERSION:
+            logging.info('history cache schema version behind')
+            return False
+
+        if cache[u'updated_at'] < self.issue.instance.updated_at:
+            logging.info('history cache behind issue')
+            return False
+
+        # FIXME the cache is getting wiped out by cross-refences,
+        #       so keeping this around as a failsafe
+        if len(cache['history']) < (len(self.issue.comments) + len(self.issue.labels)):
+            return False
+
+        # FIXME label events seem to go missing, so force a rebuild
+        if 'needs_info' in self.issue.labels:
+            le = [x for x in cache['history'] if x['event'] == 'labeled' and x['label'] == 'needs_info']
+            if not le:
+                return False
+
+        return True
 
     def get_rate_limit(self):
         return self.issue.repo.gh.get_rate_limit()
