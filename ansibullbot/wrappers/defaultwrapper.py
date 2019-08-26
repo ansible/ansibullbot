@@ -327,6 +327,8 @@ class DefaultWrapper(object):
     def load_update_fetch_rest(self, property_name):
         '''Use python-requests instead of pygithub'''
 
+        data = None
+
         cache_dir = os.path.join(
             self.cachedir,
             u'issues',
@@ -361,6 +363,9 @@ class DefaultWrapper(object):
                     fetch = True
             else:
                 fetch = True
+
+        if data is None:
+            fetch = True
 
         if fetch:
             property_url = self.url + '/' + property_name
