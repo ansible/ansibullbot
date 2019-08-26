@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import datetime
+import logging
 import pytz
 import ansibullbot.constants as C
 
@@ -141,6 +142,13 @@ def needs_info_timeout_facts(iw, meta):
         return nif
 
     la = iw.history.label_last_applied(u'needs_info')
+
+    # https://github.com/ansible/ansibullbot/issues/1254
+    if la is None:
+        # iterate and log event event in history so we can debug this problem
+        for ide,event in enumerate(iw.history.history):
+            logging.debug('history (%s): %s' % (ide,  event))
+
     lr = iw.history.label_last_removed(u'needs_info')
     ni_bpd = iw.history.last_date_for_boilerplate(u'needs_info_base')
     md_bpd = iw.history.last_date_for_boilerplate(u'issue_missing_data')
