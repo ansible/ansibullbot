@@ -1349,23 +1349,27 @@ class DefaultWrapper(object):
     @RateLimited
     def get_commit_parents(self, commit):
         # https://github.com/ansible/ansibullbot/issues/391
-        parents = commit.commit.parents
+        cdata = self.github.get_cached_request(commit.url)
+        parents = cdata['parents']
         return parents
 
     @RateLimited
     def get_commit_message(self, commit):
         # https://github.com/ansible/ansibullbot/issues/391
-        msg = commit.commit.message
+        cdata = self.github.get_cached_request(commit.url)
+        msg = cdata['commit']['message']
         return msg
 
     @RateLimited
     def get_commit_files(self, commit):
-        files = commit.files
+        cdata = self.github.get_cached_request(commit.url)
+        files = cdata.get('files', [])
         return files
 
     @RateLimited
     def get_commit_login(self, commit):
-        login = commit.author.login
+        cdata = self.github.get_cached_request(commit.url)
+        login = cdata['author']['login']
         return login
 
     @property
