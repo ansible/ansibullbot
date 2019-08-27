@@ -125,7 +125,7 @@ class GithubWrapper(object):
         '''Get an arbitrary API endpoint'''
 
         headers = {
-            u'Accept': u','.join(self.accepts),
+            u'Accept': u','.join(self.accepts_headers),
             u'Authorization': u'Bearer %s' % self.token,
         }
 
