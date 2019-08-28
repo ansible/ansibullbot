@@ -207,7 +207,11 @@ class IssueDatabase:
             print('#########################################')
         else:
             print('# %s %s' % (method or 'GET', url))
-        rheaders = {}
+        rheaders = {
+            'Date': None,
+            'ETag': None,
+            'Last-Modified': None
+        }
         rdata = None
 
         parts = url.split('/')
@@ -1285,7 +1289,8 @@ class BotMockManager:
 
         # force sqlite to use the cachedir
         unc = 'sqlite:///' + self.cachedir + '/test.db'
-        mock.patch('ansibullbot.utils.sqlite_utils.C.DEFAULT_DATABASE_UNC', unc)
+        unc_mock = mock.patch('ansibullbot.utils.sqlite_utils.C.DEFAULT_DATABASE_UNC', unc)
+        self.mocks.append(unc_mock)
 
         # pre-create
         if not os.path.exists(self.cachedir):
