@@ -9,6 +9,19 @@ SMALL_CHUNKS_MAX_COUNT = 2
 RE_CHUNK = r'@@ -\d+,\d+ \+\d+,\d+ @@'
 
 
+class CommitFile:
+    def __init__(self, raw_data):
+        self.raw_data = raw_data
+
+    @property
+    def filename(self):
+        return self.raw_data.get('filename')
+
+    @property
+    def changes(self):
+        return self.raw_data.get('changes')
+
+
 def get_small_patch_facts(iw):
     sfacts = {
         u'is_small_patch': False
@@ -25,6 +38,10 @@ def get_small_patch_facts(iw):
             return sfacts
 
         for changed_file in iw.get_commit_files(commit):
+
+            if isinstance(changed_file, dict):
+                changed_file = CommitFile(changed_file)
+
             if changed_file.filename.startswith(u'test/'):
                 continue
 

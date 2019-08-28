@@ -3,13 +3,13 @@
 from __future__ import print_function
 
 import glob
+import gzip
+import json
 import logging
 import os
 import re
 import requests
 import shutil
-#import time
-#import urllib2
 from datetime import datetime
 
 import ansibullbot.constants as C
@@ -17,9 +17,13 @@ import ansibullbot.constants as C
 from bs4 import BeautifulSoup
 
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
-from ansibullbot._text_compat import to_text
+from ansibullbot._text_compat import to_text, to_bytes
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
+from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
+
+
+ADB = AnsibullbotDatabase()
 
 
 class GithubWrapper(object):
@@ -30,6 +34,19 @@ class GithubWrapper(object):
         self.password = password
         self.cachedir = os.path.expanduser(cachedir)
         self.cachefile = os.path.join(self.cachedir, u'github.pickle')
+        self.cached_requests_dir = os.path.join(self.cachedir, 'cached_requests')
+
+    @property
+    def accepts_headers(self):
+        accepts = [
+            u'application/json',
+            u'application/vnd.github.mockingbird-preview',
+            u'application/vnd.github.sailor-v-preview+json',
+            u'application/vnd.github.starfox-preview+json',
+            u'application/vnd.github.squirrel-girl-preview',
+            u'application/vnd.github.v3+json',
+        ]
+        return accepts
 
     @RateLimited
     def get_repo(self, repo_path, verbose=True):
@@ -43,20 +60,72 @@ class GithubWrapper(object):
         return self.gh.get_rate_limit().raw_data
 
     @RateLimited
+    def get_cached_request(self, url):
+
+        '''Use a combination of sqlite and ondisk caching to GET an api resource'''
+
+        url_parts = url.split('/')
+
+        cdf = os.path.join(self.cached_requests_dir, url.replace('https://', '') + '.json.gz')
+        cdd = os.path.dirname(cdf)
+        if not os.path.exists(cdd):
+            os.makedirs(cdd)
+
+        # FIXME - commits are static and can always be used from cache.
+        if url_parts[-2] == 'commits' and os.path.exists(cdf):
+            with gzip.open(cdf, 'r') as f:
+                data = json.loads(f.read())
+            return data
+
+        headers = {
+            u'Accept': u','.join(self.accepts_headers),
+            u'Authorization': u'Bearer %s' % self.token,
+        }
+
+        meta = ADB.get_github_api_request_meta(url, token=self.token)
+        if meta is None:
+            meta = {}
+
+        # https://developer.github.com/v3/#conditional-requests        
+        etag = meta.get('etag')
+        if etag and os.path.exists(cdf):
+            headers['If-None-Match'] = etag
+
+        rr = requests.get(url, headers=headers)
+
+        if rr.status_code == 304:
+            # not modified
+            with open(cdf, 'r') as f:
+                data = json.loads(f.read())
+        else:
+            data = rr.json()
+
+            # handle ratelimits ...
+            if isinstance(data, dict) and data.get(u'message'):
+                if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+                    raise RateLimitError()
+
+            # cache data to disk
+            logging.debug('write %s' % cdf)
+            with gzip.open(cdf, 'w') as f:
+                f.write(to_bytes(json.dumps(data)))
+
+        # save the meta
+        ADB.set_github_api_request_meta(url, rr.headers, cdf, token=self.token)
+
+        # pagination
+        if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
+            _data = self.get_request(rr.links[u'next'][u'url'])
+            data += _data
+
+        return data
+
+    @RateLimited
     def get_request(self, url):
         '''Get an arbitrary API endpoint'''
 
-        accepts = [
-            u'application/json',
-            u'application/vnd.github.mockingbird-preview',
-            u'application/vnd.github.sailor-v-preview+json',
-            u'application/vnd.github.starfox-preview+json',
-            u'application/vnd.github.squirrel-girl-preview',
-            u'application/vnd.github.v3+json',
-        ]
-
         headers = {
-            u'Accept': u','.join(accepts),
+            u'Accept': u','.join(self.accepts_headers),
             u'Authorization': u'Bearer %s' % self.token,
         }
 
@@ -68,6 +137,7 @@ class GithubWrapper(object):
             if data[u'message'].lower().startswith(u'api rate limit exceeded'):
                 raise RateLimitError()
 
+        # pagination
         if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
             _data = self.get_request(rr.links[u'next'][u'url'])
             data += _data
