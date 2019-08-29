@@ -707,10 +707,11 @@ class HistoryWrapper(object):
         for ide,event in enumerate(events):
 
             if isinstance(event, dict):
-                event = Event(
-                    event,
-                    id='%s_%s_%s' % (self.issue.repo_full_name, self.issue.number, ide)
-                )
+                if 'id' in event:
+                    thisid = event['id']
+                else:
+                    thisid = '%s_%s_%s' % (self.issue.repo_full_name, self.issue.number, ide)
+                event = Event(event, id=thisid)
 
             cdict = self.get_event_from_cache(event.id, cache)
 
