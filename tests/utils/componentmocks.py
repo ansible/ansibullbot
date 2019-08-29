@@ -11,6 +11,7 @@ import json
 import os
 import shutil
 import subprocess
+import uuid
 
 import pytz
 
@@ -207,10 +208,11 @@ class IssueDatabase:
             print('#########################################')
         else:
             print('# %s %s' % (method or 'GET', url))
+
         rheaders = {
-            'Date': None,
-            'ETag': None,
-            'Last-Modified': None
+            'Date': datetime.datetime.now().isoformat(),
+            'ETag': str(uuid.uuid4()),
+            'Last-Modified': datetime.datetime.now().isoformat()
         }
         rdata = None
 
@@ -398,6 +400,13 @@ class IssueDatabase:
                 repo = parts[5]
                 number = int(parts[-2])
                 rdata = self.get_files(org=org, repo=repo, number=number)
+
+            elif parts[6] == 'contents':
+                # https://api.github.com:443/repos/profleonard/ansible/contents/shippable.yml
+                org = parts[4]
+                repo = parts[5]
+                filename = '/'.join(parts[7:])
+                rdata = self.get_file_conent(org=org, repo=repo, filename=filename)
 
             elif parts[-2] == 'statuses':
                 # https://api.github.com/repos/ansible/ansible/statuses/1f45467df45e7d7a874073f0f4ae21f9c27bebd9
@@ -753,8 +762,33 @@ class IssueDatabase:
             rdata['deletions'] = 1
             rdata['changed_files'] = 1
 
-            #if isinstance(rdata['statuses_url'], tuple):
-            #    import epdb; epdb.st()
+            rdata['head'] = {
+                'label': None,
+                'ref': None,
+                'sha': 'sha1234567890',
+                'user': rdata['user'].copy(),
+                'repo': {
+                    'id': None,
+                    'node_id': 'NODER%s' % (rdata['user']['login'] + repo),
+                    'name': repo,
+                    'full_name': rdata['user']['login'] + '/' + repo,
+                    'url': 'https://api.github.com/repos/%s/%s' % (rdata['user']['login'], repo),
+                    'html_url': 'https://github.com/%s/%s' % (rdata['user']['login'], repo)
+                }
+            }
+
+            rdata['base'] = {
+                'label': '%s:devel' % repo,
+                'ref': 'devel',
+                'sha': 'sha1234567890',
+                'user': rdata['user'].copy(),
+                'repo': {
+                    'id': None,
+                    'node_id': 'NODER%s' % (org + repo),
+                    'full_name': org + '/' + repo,
+                    'url': 'https://api.github.com/repos/%s/%s' % (org, repo),
+                }
+            }
 
         return rdata
 
@@ -814,6 +848,25 @@ class IssueDatabase:
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         issue = self.issues[ix]
         return issue.get('files', [])
+
+    def get_file_conent(self, org=None, repo=None, filename=None):
+        if filename != 'travis.yml':
+            fdata = {
+                'name': os.path.basename(filename), 
+                'path': filename,
+                'sha': 'sha0003030303',
+                'url': 'https://api.github.com/repos/%s/%s/contents/%s?ref=devel' % (org, repo, filename),
+                'type': 'file',
+                'content': '',
+                'encoding': 'base64',
+            }
+        else:
+            fdata = {
+                'message': 'Not Found',
+                'documentation_url': 'https://developer.github.com/v3/repos/contents/#get-contents'
+            }
+        return fdata
+
 
     def set_issue_body(self, body, org=None, repo=None, number=None):
         ix = self._get_issue_index(org=org, repo=repo, nunmber=number)
@@ -975,6 +1028,43 @@ class IssueDatabase:
         self.issues[src_ix]['timeline'].append(cr_event)
 
         self.save_cache()
+
+    def add_issue_file(
+                self,
+                filename,
+                org=None,
+                repo=None,
+                number=None,
+                patch='',
+                commit_hash=None,
+                additions=0,
+                changes=0,
+                deletions=0,
+                sha=None,
+                status=None
+            ):
+
+        ix = self._get_issue_index(org=org, repo=repo, number=number)
+        issue = self.issues[ix]
+
+        if commit_hash is None:
+            commit_hash = 'cHASH0001'
+        if sha is None:
+            sha = 'cSHA0001'
+        fdata = {
+            'additions': additions,
+            'deletions': deletions,
+            'changes': changes,
+            'filename': filename,
+            'patch': patch,
+            'status': status,
+            'sha': sha,
+            'blob_url': 'https://github.com/%s/%s/blob/%s/%s' % (issue['org'], issue['repo'], commit_hash, filename),
+            'raw_url': 'https://github.com/%s/%s/blob/%s/%s' % (issue['org'], issue['repo'], commit_hash, filename),
+            'contents_url': 'https://github.com/%s/%s/contents/%s?ref=%s' % (issue['org'], issue['repo'], filename, commit_hash),
+        }
+
+        self.issues[ix]['files'].append(fdata)
 
     def _get_empty_stub(self):
         stub = {

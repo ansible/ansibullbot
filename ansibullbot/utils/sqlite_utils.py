@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import json
+import logging
 import os
 
 from sqlalchemy import create_engine
@@ -133,10 +134,19 @@ class AnsibullbotDatabase(object):
             'token': token,
             'headers': json.dumps(dict(headers))
         }
+
+        if token is None:
+            current = self.session.query(GitubApiRequest).filter(GithubApiRequest.url == url).first()
+        else:
+            current = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).filter(GithubApiRequest.token == token).first()
+
         meta = GithubApiRequest(**kwargs)
         self.session.merge(meta)
-        self.session.flush()
-        self.session.commit()
+        try:
+            self.session.flush()
+            self.session.commit()
+        except Exception as e:
+            logging.error(e)
 
     def set_rate_limit(self, username=None, token=None, rawjson=None):
 
