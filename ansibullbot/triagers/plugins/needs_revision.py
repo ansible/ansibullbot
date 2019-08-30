@@ -426,7 +426,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         u'has_commit_mention_notification': has_commit_mention_notification,
         u'merge_commits': merge_commits,
         u'has_merge_commit_notification': has_merge_commit_notification,
-        u'mergeable': iw.pullrequest.mergeable,
+        u'mergeable': iw.mergeable,
         u'mergeable_state': mstate,
         u'change_requested': change_requested,
         u'ci_state': ci_state,

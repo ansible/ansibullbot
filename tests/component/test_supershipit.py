@@ -7,6 +7,7 @@ import os
 import yaml
 
 from tests.utils.componentmocks import BotMockManager
+from tests.utils.componentmocks import get_custom_timestamp
 
 from ansibullbot.triagers.ansible import AnsibleTriage
 
@@ -23,6 +24,7 @@ class TestSuperShipit:
                 'automerge': True,
                 'files': {
                     'lib/ansible/modules/foo/bar.py': {
+                        'support': 'community',
                         'maintainers': 'zippy',
                         'supershipit': 'jiffy'
                     }
@@ -62,9 +64,17 @@ class TestSuperShipit:
                 '2.9.0'
             ]
 
-            mm.issuedb.add_issue(body='\n'.join(body), itype='pull', login='profleonard')
-            mm.issuedb.add_issue_file('test/sanity/ignore.txt', number=1, deletions=1)
+            ts = get_custom_timestamp()
+
+            # this one should get automerged because it only DELETEs from ignore.txt
+            mm.issuedb.add_issue(body='\n'.join(body), number=1, itype='pull', login='profleonard', created_at=ts)
+            mm.issuedb.add_issue_file('test/sanity/ignore.txt', number=1, deletions=1, created_at=ts)
             mm.issuedb.add_issue_comment('shipit', login='jiffy', number=1)
+
+            # this one should NOT get automerged because it ADDs to ignore.txt
+            mm.issuedb.add_issue(body='\n'.join(body), number=2, itype='pull', login='profleonard', created_at=ts)
+            mm.issuedb.add_issue_file('test/sanity/ignore.txt', number=2, additions=1, created_at=ts)
+            mm.issuedb.add_issue_comment('shipit', login='jiffy', number=2)
 
             AT = AnsibleTriage(args=bot_args)
             AT.run()
@@ -74,8 +84,21 @@ class TestSuperShipit:
             metafiles = sorted(metafiles)
             for mf in metafiles:
 
+                number = int(mf.split('/')[-2])
+
                 with open(mf, 'r') as f:
                     meta = json.loads(f.read())
 
-                import epdb; epdb.st()
+                print(mf)
+                print('shipit: %s' % ('shipit' in meta['actions']['newlabel']))
+                print('automerge: %s' % ('automerge' in meta['actions']['newlabel']))
+                print('merge: %s' % meta['actions']['merge'])
+                print('mergeable: %s' % meta['mergeable'])
+                print('mergeable_state: %s' % meta['mergeable_state'])
+                print('automege: %s' % meta['automerge'])
+                print('automerge_status: %s' % meta['automerge_status'])
 
+                if number == 1:
+                    assert meta['actions']['merge']
+                if number == 2:
+                    assert not meta['actions']['merge']

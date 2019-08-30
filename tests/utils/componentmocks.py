@@ -135,6 +135,14 @@ def get_timestamp():
     return rts
 
 
+def get_custom_timestamp(months=-1, days=-1):
+    today = datetime.datetime.today()
+    td = (months * 30) + (days)
+    newts = today - datetime.timedelta(days=(-1 * td))
+    rts = newts.isoformat().split('.')[0] + 'Z'
+    return rts
+
+
 def unquote(string):
 
     # 'support%3Acore' -> support:core
@@ -218,7 +226,17 @@ class IssueDatabase:
 
         parts = url.split('/')
 
-        if method == 'POST':
+        if method == 'PUT':
+
+            if parts[-1] == 'merge':
+                org = parts[4]
+                repo = parts[5]
+                number = int(parts[7])
+                rdata = self.merge_pull(org=org, repo=repo, number=number, data=data)
+            else:
+                import epdb; epdb.st()
+
+        elif method == 'POST':
             if url.endswith('/graphql'):
                 rdata = self.graphql_response(data)
             elif parts[-1] == 'comments':
@@ -426,6 +444,38 @@ class IssueDatabase:
             print('# %s' % rdata)
 
         return rheaders,rdata
+
+    def merge_pull(self, org=None, repo=None, number=None, data=None, login=None):
+        ix = self._get_issue_index(org=org, repo=repo, number=number, itype='pull')
+
+        ts = get_timestamp()
+        self.issues[ix]['updated_at'] = ts
+        self.issues[ix]['merged_at'] = ts
+        self.issues[ix]['closed_at'] = ts
+        self.issues[ix]['state'] = 'closed'
+        self.issues[ix]['merged'] = True
+
+        user = {
+            'login': (login or 'ansibot'),
+            'url': 'https://api.github.com/users/%s' % (login or 'ansibot')
+        }
+        self.issues[ix]['closed_by'] = user.copy()
+        self.issues[ix]['merged_by'] = user.copy()
+
+        eid = self._get_new_event_id()
+        event = {
+            'event': 'closed',
+            'actor': user.copy(),
+            'id': eid, 
+            'url': 'https://api.github.com/repos/%s/%s/issues/events/%s' % (org, repo, eid),
+            'commit_id': None,
+            'commit_url': None,
+            'created_at': ts
+        }
+        self.issues[ix]['events'].append(event)
+
+        # if resp[0] != 200 or u'successfully merged' not in resp[2]
+        return [None, 'successfully merged']
 
     def get_pull_statuses(self, org, repo, sid):
         statuses = []
@@ -746,7 +796,7 @@ class IssueDatabase:
             rdata['merge_commit_sha'] = None
             rdata['merged'] = False
             rdata['merged_by'] = None
-            rdata['mergeable'] = None
+            rdata['mergeable'] = True
             rdata['mergeable_state'] = "clean"
             rdata['rebaseable'] = None
             rdata['requested_reviewers'] = []
@@ -1041,10 +1091,13 @@ class IssueDatabase:
                 changes=0,
                 deletions=0,
                 sha=None,
-                status=None
+                status=None,
+                created_at=None
             ):
 
         ix = self._get_issue_index(org=org, repo=repo, number=number)
+        if ix is None:
+            import epdb; epdb.st()
         issue = self.issues[ix]
 
         if commit_hash is None:
@@ -1121,7 +1174,9 @@ class IssueDatabase:
         else:
             thisissue['repo'] = 'ansible'
 
-        if number is None:
+        if number is not None:
+            thisissue['number'] = number
+        else:
             if len(self.issues) == 0:
                 thisissue['number'] = 1
             else:
@@ -1163,7 +1218,6 @@ class IssueDatabase:
         thisissue['url'] = url
 
         thisissue['html_url'] = url.replace('api.github.com/repos', 'github.com')
-        #import epdb; epdb.st()
 
         if commits:
             thisissue['commits'] = commits
@@ -1176,12 +1230,12 @@ class IssueDatabase:
                         'author': {
                             'name': thisissue['user']['login'],
                             'email': '%s@noreply.github.com' % thisissue['user']['login'],
-                            'date': get_timestamp(),
+                            'date': thisissue['created_at'],
                         },
                         'committer': {
                             'name': thisissue['user']['login'],
                             'email': '%s@noreply.github.com' % thisissue['user']['login'],
-                            'date': get_timestamp(),
+                            'date': thisissue['created_at'],
                         },
                         'message': 'test commit',
                         'tree': {
@@ -1263,6 +1317,10 @@ class MockRequestsSession:
 
     def delete(self, url, allow_redirects=False, data=None, headers=None, timeout=None, verify=True):
         return MockRequestsResponse(url, inheaders=headers, indata=data, method='DELETE', issuedb=self.issuedb)
+
+    def put(self, url, allow_redirects=False, data=None, headers=None, timeout=None, verify=True):
+        # data: {"merge_method": "squash"}
+        return MockRequestsResponse(url, inheaders=headers, indata=data, method='PUT', issuedb=self.issuedb)
 
 
 class MockRequestsResponse:
@@ -1410,9 +1468,11 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234'))
         self.mocks.append(mock.patch('github.Requester.requests', self.mr))
         self.mocks.append(mock.patch('ansibullbot.decorators.github.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.triagers.ansible.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.ansible.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.triagers.ansible.requests', self.mr))
+        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.needs_revision.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.shipit.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.component_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.extractors.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.file_tools.logging', MockLogger))

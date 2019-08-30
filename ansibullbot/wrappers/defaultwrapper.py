@@ -1287,7 +1287,12 @@ class DefaultWrapper(object):
         return commits
 
     @property
+    def mergeable(self):
+        return self.pullrequest.mergeable
+
+    @property
     def mergeable_state(self):
+
         if not self.is_pullrequest() or self.pullrequest.state == u'closed':
             return None
 

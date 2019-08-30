@@ -85,7 +85,9 @@ def get_automerge_facts(issuewrapper, meta):
         return create_ameta(False, u'automerge ci_state test failed')
 
     # component support is a list of the support levels for each file
-    cs = sorted(set(meta.get(u'component_support', [])))
+    #cs = sorted(set(meta.get(u'component_support', [])))
+    cs = [x['support'] for x in meta['component_matches'] if not x['repo_filename'].endswith('/ignore.txt')]
+    cs = sorted(set(cs))
     if cs != [u'community']:
         return create_ameta(False, u'automerge community support test failed')
 
@@ -337,10 +339,13 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
 
     for event in iw.history.history:
 
+
         if event[u'event'] not in [u'commented', u'committed', u'review_approved', u'review_comment']:
             continue
         if event[u'actor'] in botnames:
             continue
+
+        logging.info('check %s "%s" for shipit' % (event['actor'], event.get('body')))
 
         # commits reset the counters
         if event[u'event'] == u'committed':
