@@ -88,7 +88,7 @@ def get_automerge_facts(issuewrapper, meta):
     #cs = sorted(set(meta.get(u'component_support', [])))
     cs = [x['support'] for x in meta.get('component_matches', []) if not x['repo_filename'].endswith('/ignore.txt')]
     cs = sorted(set(cs))
-    if cs != [u'community']:
+    if cs not in [[u'community'], []]:
         return create_ameta(False, u'automerge community support test failed')
 
     # extra checks for anything not covered by a supershipit
