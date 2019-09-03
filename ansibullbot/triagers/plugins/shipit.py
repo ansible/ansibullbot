@@ -86,7 +86,7 @@ def get_automerge_facts(issuewrapper, meta):
 
     # component support is a list of the support levels for each file
     #cs = sorted(set(meta.get(u'component_support', [])))
-    cs = [x['support'] for x in meta['component_matches'] if not x['repo_filename'].endswith('/ignore.txt')]
+    cs = [x['support'] for x in meta.get('component_matches', []) if not x['repo_filename'].endswith('/ignore.txt')]
     cs = sorted(set(cs))
     if cs != [u'community']:
         return create_ameta(False, u'automerge community support test failed')
