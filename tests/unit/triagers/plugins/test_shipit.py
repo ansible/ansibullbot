@@ -283,13 +283,16 @@ class TestSuperShipit(unittest.TestCase):
             u'shipit': True,
             u'supershipit': True,
             u'component_matches': [
-                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']}
+                {u'repo_filename': u'bar', u'supershipit': [u'jane', u'doe'], 'support': 'core'},
+                {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe'], 'support': 'community'},
             ]
         }
-        meta2 = meta1.copy()
+        meta2 = copy.deepcopy(meta1)
         meta2[u'component_support'] = [u'community', u'community']
-        afacts1 = get_automerge_facts(IW, meta1)
-        afacts2 = get_automerge_facts(IW, meta2)
+        meta2[u'component_matches'][0]['support'] = u'community'
+
+        afacts1 = get_automerge_facts(IW, meta1.copy())
+        afacts2 = get_automerge_facts(IW, meta2.copy())
 
         assert afacts1[u'automerge'] == False
         assert afacts2[u'automerge'] == True
@@ -1135,6 +1138,12 @@ class TestAutomergeFacts(unittest.TestCase):
                 u'namespace': u'foo',
                 u'maintainers': [u'ghuser1'],
             },
+            u'component_matches': [
+                {
+                    'repo_filename': 'test/sanity/validate-modules/ignore.txt',
+                    'support': 'core'
+                }
+            ]
         }
 
         afacts = get_automerge_facts(iw, meta)
