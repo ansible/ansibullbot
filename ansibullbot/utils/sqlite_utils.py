@@ -105,10 +105,14 @@ class AnsibullbotDatabase(object):
                     self.delete_db_file()
 
     def get_github_api_request_meta(self, url, token=None):
-        if token is None:
-            rl = self.session.query(GitubApiRequest).filter(GithubApiRequest.url == url).first()
-        else:
-            rl = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).filter(GithubApiRequest.token == token).first()
+        try:
+            if token is None:
+                rl = self.session.query(GitubApiRequest).filter(GithubApiRequest.url == url).first()
+            else:
+                rl = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).filter(GithubApiRequest.token == token).first()
+        except Exception as e:
+            logging.error(e)
+            return {}
 
         meta = {}
         if rl is not None:
@@ -135,10 +139,14 @@ class AnsibullbotDatabase(object):
             'headers': json.dumps(dict(headers))
         }
 
-        if token is None:
-            current = self.session.query(GitubApiRequest).filter(GithubApiRequest.url == url).first()
-        else:
-            current = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).filter(GithubApiRequest.token == token).first()
+        try:
+            if token is None:
+                current = self.session.query(GitubApiRequest).filter(GithubApiRequest.url == url).first()
+            else:
+                current = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).filter(GithubApiRequest.token == token).first()
+        except Exception as e:
+            logging.error(e)
+            return None
 
         meta = GithubApiRequest(**kwargs)
         self.session.merge(meta)
@@ -160,57 +168,69 @@ class AnsibullbotDatabase(object):
             'rawjson': json.dumps(rawjson),
             'query_counter': 0
         }
-        rl = RateLimit(**kwargs)
-        self.session.merge(rl)
-        self.session.flush()
-        self.session.commit()
+        try:
+            rl = RateLimit(**kwargs)
+            self.session.merge(rl)
+            self.session.flush()
+            self.session.commit()
 
-        self.reset_rate_limit_query_counter(username=username, token=token)
+            self.reset_rate_limit_query_counter(username=username, token=token)
+        except Exception as e:
+            logging.error(e)
+            return None
 
     def get_rate_limit_remaining(self, username=None, token=None):
 
         '''Get the core limit remaining by user/token'''
 
-        rl = None
-        rl = self.session.query(RateLimit).filter(RateLimit.token == token).first()
-        if rl is None or not hasattr(rl, 'core_rate_limit_remaining'):
+        try:
+            rl = None
+            rl = self.session.query(RateLimit).filter(RateLimit.token == token).first()
+            if rl is None or not hasattr(rl, 'core_rate_limit_remaining'):
+                return None
+            remaining = rl.core_rate_limit_remaining
+
+            if rl.query_counter is None:
+                rl.query_counter = 0
+            rl.query_counter += 1
+            self.session.merge(rl)
+            self.session.flush()
+            self.session.commit()
+
+            return remaining
+        except Exception as e:
+            logging.error(e)
             return None
-        remaining = rl.core_rate_limit_remaining
-
-        if rl.query_counter is None:
-            rl.query_counter = 0
-        rl.query_counter += 1
-        self.session.merge(rl)
-        self.session.flush()
-        self.session.commit()
-
-        return remaining
 
     def get_rate_limit_rawjson(self, username=None, token=None):
 
         '''Get the ratelimit json by user/token'''
 
-        rl = None
-        rl = self.session.query(RateLimit).filter(RateLimit.token == token).first()
-        if rl is None or not hasattr(rl, 'core_rate_limit_remaining'):
-            return None
-
-        data = None
         try:
-            data = rl.rawjson
-            data = json.loads(data)
+            rl = None
+            rl = self.session.query(RateLimit).filter(RateLimit.token == token).first()
+            if rl is None or not hasattr(rl, 'core_rate_limit_remaining'):
+                return None
+
+            data = None
+            try:
+                data = rl.rawjson
+                data = json.loads(data)
+            except Exception as e:
+                pass
+
+            # increment the counter to keep track of calls
+            if rl.query_counter is None:
+                rl.query_counter = 0
+            rl.query_counter += 1
+            self.session.merge(rl)
+            self.session.flush()
+            self.session.commit()
+
+            return data
         except Exception as e:
-            pass
-
-        # increment the counter to keep track of calls
-        if rl.query_counter is None:
-            rl.query_counter = 0
-        rl.query_counter += 1
-        self.session.merge(rl)
-        self.session.flush()
-        self.session.commit()
-
-        return data
+            logging.error(e)
+            return None
 
     def get_rate_limit_query_counter(self, username=None, token=None):
         counter = None
