@@ -11,6 +11,7 @@ import json
 import os
 import shutil
 import subprocess
+import uuid
 
 import pytz
 
@@ -134,6 +135,14 @@ def get_timestamp():
     return rts
 
 
+def get_custom_timestamp(months=-1, days=-1):
+    today = datetime.datetime.today()
+    td = (months * 30) + (days)
+    newts = today - datetime.timedelta(days=(-1 * td))
+    rts = newts.isoformat().split('.')[0] + 'Z'
+    return rts
+
+
 def unquote(string):
 
     # 'support%3Acore' -> support:core
@@ -207,16 +216,27 @@ class IssueDatabase:
             print('#########################################')
         else:
             print('# %s %s' % (method or 'GET', url))
+
         rheaders = {
-            'Date': None,
-            'ETag': None,
-            'Last-Modified': None
+            'Date': datetime.datetime.now().isoformat(),
+            'ETag': str(uuid.uuid4()),
+            'Last-Modified': datetime.datetime.now().isoformat()
         }
         rdata = None
 
         parts = url.split('/')
 
-        if method == 'POST':
+        if method == 'PUT':
+
+            if parts[-1] == 'merge':
+                org = parts[4]
+                repo = parts[5]
+                number = int(parts[7])
+                rdata = self.merge_pull(org=org, repo=repo, number=number, data=data)
+            else:
+                import epdb; epdb.st()
+
+        elif method == 'POST':
             if url.endswith('/graphql'):
                 rdata = self.graphql_response(data)
             elif parts[-1] == 'comments':
@@ -399,6 +419,13 @@ class IssueDatabase:
                 number = int(parts[-2])
                 rdata = self.get_files(org=org, repo=repo, number=number)
 
+            elif parts[6] == 'contents':
+                # https://api.github.com:443/repos/profleonard/ansible/contents/shippable.yml
+                org = parts[4]
+                repo = parts[5]
+                filename = '/'.join(parts[7:])
+                rdata = self.get_file_conent(org=org, repo=repo, filename=filename)
+
             elif parts[-2] == 'statuses':
                 # https://api.github.com/repos/ansible/ansible/statuses/1f45467df45e7d7a874073f0f4ae21f9c27bebd9
                 org = parts[4]
@@ -417,6 +444,38 @@ class IssueDatabase:
             print('# %s' % rdata)
 
         return rheaders,rdata
+
+    def merge_pull(self, org=None, repo=None, number=None, data=None, login=None):
+        ix = self._get_issue_index(org=org, repo=repo, number=number, itype='pull')
+
+        ts = get_timestamp()
+        self.issues[ix]['updated_at'] = ts
+        self.issues[ix]['merged_at'] = ts
+        self.issues[ix]['closed_at'] = ts
+        self.issues[ix]['state'] = 'closed'
+        self.issues[ix]['merged'] = True
+
+        user = {
+            'login': (login or 'ansibot'),
+            'url': 'https://api.github.com/users/%s' % (login or 'ansibot')
+        }
+        self.issues[ix]['closed_by'] = user.copy()
+        self.issues[ix]['merged_by'] = user.copy()
+
+        eid = self._get_new_event_id()
+        event = {
+            'event': 'closed',
+            'actor': user.copy(),
+            'id': eid, 
+            'url': 'https://api.github.com/repos/%s/%s/issues/events/%s' % (org, repo, eid),
+            'commit_id': None,
+            'commit_url': None,
+            'created_at': ts
+        }
+        self.issues[ix]['events'].append(event)
+
+        # if resp[0] != 200 or u'successfully merged' not in resp[2]
+        return [None, 'successfully merged']
 
     def get_pull_statuses(self, org, repo, sid):
         statuses = []
@@ -737,7 +796,7 @@ class IssueDatabase:
             rdata['merge_commit_sha'] = None
             rdata['merged'] = False
             rdata['merged_by'] = None
-            rdata['mergeable'] = None
+            rdata['mergeable'] = True
             rdata['mergeable_state'] = "clean"
             rdata['rebaseable'] = None
             rdata['requested_reviewers'] = []
@@ -753,8 +812,33 @@ class IssueDatabase:
             rdata['deletions'] = 1
             rdata['changed_files'] = 1
 
-            #if isinstance(rdata['statuses_url'], tuple):
-            #    import epdb; epdb.st()
+            rdata['head'] = {
+                'label': None,
+                'ref': None,
+                'sha': 'sha1234567890',
+                'user': rdata['user'].copy(),
+                'repo': {
+                    'id': None,
+                    'node_id': 'NODER%s' % (rdata['user']['login'] + repo),
+                    'name': repo,
+                    'full_name': rdata['user']['login'] + '/' + repo,
+                    'url': 'https://api.github.com/repos/%s/%s' % (rdata['user']['login'], repo),
+                    'html_url': 'https://github.com/%s/%s' % (rdata['user']['login'], repo)
+                }
+            }
+
+            rdata['base'] = {
+                'label': '%s:devel' % repo,
+                'ref': 'devel',
+                'sha': 'sha1234567890',
+                'user': rdata['user'].copy(),
+                'repo': {
+                    'id': None,
+                    'node_id': 'NODER%s' % (org + repo),
+                    'full_name': org + '/' + repo,
+                    'url': 'https://api.github.com/repos/%s/%s' % (org, repo),
+                }
+            }
 
         return rdata
 
@@ -814,6 +898,25 @@ class IssueDatabase:
         ix = self._get_issue_index(org=org, repo=repo, number=number)
         issue = self.issues[ix]
         return issue.get('files', [])
+
+    def get_file_conent(self, org=None, repo=None, filename=None):
+        if filename != 'travis.yml':
+            fdata = {
+                'name': os.path.basename(filename), 
+                'path': filename,
+                'sha': 'sha0003030303',
+                'url': 'https://api.github.com/repos/%s/%s/contents/%s?ref=devel' % (org, repo, filename),
+                'type': 'file',
+                'content': '',
+                'encoding': 'base64',
+            }
+        else:
+            fdata = {
+                'message': 'Not Found',
+                'documentation_url': 'https://developer.github.com/v3/repos/contents/#get-contents'
+            }
+        return fdata
+
 
     def set_issue_body(self, body, org=None, repo=None, number=None):
         ix = self._get_issue_index(org=org, repo=repo, nunmber=number)
@@ -976,6 +1079,46 @@ class IssueDatabase:
 
         self.save_cache()
 
+    def add_issue_file(
+                self,
+                filename,
+                org=None,
+                repo=None,
+                number=None,
+                patch='',
+                commit_hash=None,
+                additions=0,
+                changes=0,
+                deletions=0,
+                sha=None,
+                status=None,
+                created_at=None
+            ):
+
+        ix = self._get_issue_index(org=org, repo=repo, number=number)
+        if ix is None:
+            import epdb; epdb.st()
+        issue = self.issues[ix]
+
+        if commit_hash is None:
+            commit_hash = 'cHASH0001'
+        if sha is None:
+            sha = 'cSHA0001'
+        fdata = {
+            'additions': additions,
+            'deletions': deletions,
+            'changes': changes,
+            'filename': filename,
+            'patch': patch,
+            'status': status,
+            'sha': sha,
+            'blob_url': 'https://github.com/%s/%s/blob/%s/%s' % (issue['org'], issue['repo'], commit_hash, filename),
+            'raw_url': 'https://github.com/%s/%s/blob/%s/%s' % (issue['org'], issue['repo'], commit_hash, filename),
+            'contents_url': 'https://github.com/%s/%s/contents/%s?ref=%s' % (issue['org'], issue['repo'], filename, commit_hash),
+        }
+
+        self.issues[ix]['files'].append(fdata)
+
     def _get_empty_stub(self):
         stub = {
             'itype': 'issue',
@@ -1031,7 +1174,9 @@ class IssueDatabase:
         else:
             thisissue['repo'] = 'ansible'
 
-        if number is None:
+        if number is not None:
+            thisissue['number'] = number
+        else:
             if len(self.issues) == 0:
                 thisissue['number'] = 1
             else:
@@ -1073,7 +1218,6 @@ class IssueDatabase:
         thisissue['url'] = url
 
         thisissue['html_url'] = url.replace('api.github.com/repos', 'github.com')
-        #import epdb; epdb.st()
 
         if commits:
             thisissue['commits'] = commits
@@ -1086,12 +1230,12 @@ class IssueDatabase:
                         'author': {
                             'name': thisissue['user']['login'],
                             'email': '%s@noreply.github.com' % thisissue['user']['login'],
-                            'date': get_timestamp(),
+                            'date': thisissue['created_at'],
                         },
                         'committer': {
                             'name': thisissue['user']['login'],
                             'email': '%s@noreply.github.com' % thisissue['user']['login'],
-                            'date': get_timestamp(),
+                            'date': thisissue['created_at'],
                         },
                         'message': 'test commit',
                         'tree': {
@@ -1173,6 +1317,10 @@ class MockRequestsSession:
 
     def delete(self, url, allow_redirects=False, data=None, headers=None, timeout=None, verify=True):
         return MockRequestsResponse(url, inheaders=headers, indata=data, method='DELETE', issuedb=self.issuedb)
+
+    def put(self, url, allow_redirects=False, data=None, headers=None, timeout=None, verify=True):
+        # data: {"merge_method": "squash"}
+        return MockRequestsResponse(url, inheaders=headers, indata=data, method='PUT', issuedb=self.issuedb)
 
 
 class MockRequestsResponse:
@@ -1320,9 +1468,11 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234'))
         self.mocks.append(mock.patch('github.Requester.requests', self.mr))
         self.mocks.append(mock.patch('ansibullbot.decorators.github.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.triagers.ansible.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.ansible.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.triagers.ansible.requests', self.mr))
+        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.needs_revision.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.shipit.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.component_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.extractors.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.file_tools.logging', MockLogger))
@@ -1330,6 +1480,7 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.utils.git_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.moduletools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.shippable_api.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.version_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.wrappers.defaultwrapper.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.wrappers.historywrapper.logging', MockLogger))

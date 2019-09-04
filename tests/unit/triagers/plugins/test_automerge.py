@@ -145,6 +145,7 @@ class TestAutomergeFacts(unittest.TestCase):
                 {
                     u'repo_filename': u'foo',
                     u'supershipit': [u'jane', u'doe'],
+                    u'support': u'community'
                 }
             ],
             u'component_support': [u'community']
@@ -182,6 +183,7 @@ class TestAutomergeFacts(unittest.TestCase):
                 {
                     u'repo_filename': u'foo',
                     u'supershipit': [u'jane', u'doe'],
+                    u'support': u'community'
                 }
             ],
             u'component_support': [u'community']

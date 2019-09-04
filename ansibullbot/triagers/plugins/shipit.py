@@ -85,8 +85,10 @@ def get_automerge_facts(issuewrapper, meta):
         return create_ameta(False, u'automerge ci_state test failed')
 
     # component support is a list of the support levels for each file
-    cs = sorted(set(meta.get(u'component_support', [])))
-    if cs != [u'community']:
+    #cs = sorted(set(meta.get(u'component_support', [])))
+    cs = [x['support'] for x in meta.get('component_matches', []) if not x['repo_filename'].endswith('/ignore.txt')]
+    cs = sorted(set(cs))
+    if cs not in [[u'community'], []]:
         return create_ameta(False, u'automerge community support test failed')
 
     # extra checks for anything not covered by a supershipit
@@ -261,6 +263,21 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
     ]
 
     files = [f for f in iw.files if not f.startswith(u'changelogs/fragments/')]
+
+    # https://github.com/ansible/ansibullbot/issues/1238
+    meta[u'component_matches'] = [
+        x for x in meta.get(u'component_matches', [])
+        if not x[u'repo_filename'].startswith(u'test/sanity')
+    ]
+    files = [f for f in files if not (f.startswith(u'test/sanity') and f.endswith(u'ignore.txt'))]
+
+    # make sure only deletions from ignore.txt are allowed
+    for pr_file in iw.pr_files:
+        if (pr_file.filename.startswith(u'test/sanity') and pr_file.filename.endswith(u'ignore.txt')):
+            if pr_file.additions > 0:
+                logging.debug(u'failed shipit test for additions on %s' % pr_file.filename)
+                return nmeta
+
     module_utils_files_owned = 0  # module_utils files for which submitter is maintainer
     if meta[u'is_module_util']:
         for f in files:
@@ -322,10 +339,13 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
 
     for event in iw.history.history:
 
+
         if event[u'event'] not in [u'commented', u'committed', u'review_approved', u'review_comment']:
             continue
         if event[u'actor'] in botnames:
             continue
+
+        logging.info('check %s "%s" for shipit' % (event['actor'], event.get('body')))
 
         # commits reset the counters
         if event[u'event'] == u'committed':
