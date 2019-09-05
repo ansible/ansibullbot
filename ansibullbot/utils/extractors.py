@@ -405,57 +405,14 @@ def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
     # "resolved_by_pr 5136" --> 5136
     # "resolved_by_pr #5136" --> 5136
     # "resolved_by_pr https://github.com/ansible/ansible/issues/5136" --> 5136
-    # "resolved_by_pr https://github.com/ansible/ansible/issues/5136" --> 5136
     # "resolved_by_pr #5319." --> 5319
-    index = rawtext.find(command)
-    index += len(command)
-    data = rawtext[index:]
-    data = data.strip()
-    words = data.split()
+    # "resolved_by_pr: 61430" --> 61430
 
-    # remove non-digit chars
-    if words:
-        newword = u''
-        for char in words[0]:
-            if char.isdigit():
-                newword += to_text(char)
-        if newword:
-            words[0] = newword
-
-    if not words:
-        return None
-    number = words[0]
-
-    if number.isdigit():
-        number = int(number)
-    elif number.startswith(u'#'):
-        number = number[1:]
-        number = int(number)
-    elif number.startswith(u'http'):
-        urlparts = number.split(u'/')
-        number = urlparts[-1]
-        number = int(number)
-    elif rawtext.find(u'#'):
-        number = rawtext[rawtext.find(u'#'):]
-        number = number.replace(u'#', u'')
-        while number:
-            if not number[-1].isdigit():
-                number = number[:-1]
-            else:
-                break
-        try:
-            number = int(number)
-        except Exception:
-            number = None
-    else:
-        logging.error(u'NOT SURE HOW TO PARSE %s' % rawtext)
-        if C.DEFAULT_BREAKPOINTS:
-            logging.error(u'breakpoint!')
-            import epdb; epdb.st()
-        else:
-            raise Exception(u'parsing error')
-
-    return number
+    matches = re.findall(r'\d+', rawtext)
+    matches = [int(x) for x in matches]
+    if matches:
+        return matches[0]
+    return None
 
 
 class ModuleExtractor(object):
