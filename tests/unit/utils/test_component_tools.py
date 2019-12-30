@@ -446,7 +446,7 @@ class TestComponentMatcher(TestCase):
                 u'lib/ansible/modules/cloud/amazon/_s3.py'
             ],
             u'The new ldap_attr module.': [
-                u'lib/ansible/modules/net_tools/ldap/ldap_attr.py'
+                u'lib/ansible/modules/net_tools/ldap/_ldap_attr.py'
             ],
             u'- Ansible Core/Cisco ios_command module': [
                 u'lib/ansible/modules/network/ios/ios_command.py'
