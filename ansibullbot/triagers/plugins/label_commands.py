@@ -32,7 +32,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
     ]
 
     whitelist = [
-        u'docksite_pr',
+        u'docsite_pr',
         u'easyfix',
         u'module',
         u'needs_triage',
@@ -50,6 +50,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
     maintainers += module_indexer.all_maintainers
     maintainers = sorted(set(maintainers))
 
+    # iterate through the description and comments and look for label commands
     for ev in iw.history.history:
         if ev[u'actor'] in maintainers and ev[u'event'] == u'commented':
             if u'+label' in ev[u'body'] or u'-label' in ev[u'body']:
@@ -57,6 +58,10 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
                     if u'label' not in line:
                         continue
                     words = line.split()
+
+                    # https://github.com/ansible/ansibullbot/issues/1284
+                    if len(words) < 2:
+                        continue
 
                     label = words[1]
                     if label not in whitelist:
