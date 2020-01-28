@@ -1374,7 +1374,14 @@ class DefaultWrapper(object):
     @RateLimited
     def get_commit_login(self, commit):
         cdata = self.github.get_cached_request(commit.url)
+
+        # https://github.com/ansible/ansibullbot/issues/1265
+        # some commits are created from outside github and have no assocatied login
+        if ('author' in cdata and cdata['author'] is None) or \
+            ('author' not in cdata):
+            return ''
         login = cdata['author']['login']
+
         return login
 
     @property
