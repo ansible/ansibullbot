@@ -6,6 +6,8 @@ env:
 - TOXENV: python
 build:
   ci:
+  - pip install -U six
+
   - shippable_retry pip install -U tox>=3.6
   - tox --notest
 
