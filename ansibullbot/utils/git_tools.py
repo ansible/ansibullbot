@@ -23,6 +23,18 @@ class GitRepoWrapper(object):
         self.files_by_commit = {}
         self.update(force=True)
 
+    def exists(self, filename):
+        checkfile = os.path.join(self.checkoutdir, filename)
+        return os.path.exists(checkfile)
+
+    def isdir(self, filename):
+        checkfile = os.path.join(self.checkoutdir, filename)
+        return os.path.isdir(checkfile)
+
+    def islink(self, filename):
+        checkfile = os.path.join(self.checkoutdir, filename)
+        return os.path.islink(checkfile)
+
     @property
     def files(self):
         self.get_files()

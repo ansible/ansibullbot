@@ -175,8 +175,8 @@ class TestComponentMatcher(TestCase):
         result = self.component_matcher.get_meta_for_file(u'lib/ansible/modules/windows/win_ping.ps1')
         assert result[u'labels'] == [u'windoez']
         #import epdb; epdb.st()
-        #expected_maintainers = sorted([u'cchurch', u'jborean93'])
-        expected_maintainers = sorted([u'jborean93'])
+        expected_maintainers = sorted([u'cchurch', u'jborean93'])
+        #expected_maintainers = sorted([u'jborean93'])
         assert sorted(result[u'maintainers']) == expected_maintainers
 
     def test_reduce_filepaths(self):
@@ -406,7 +406,11 @@ class TestComponentMatcher(TestCase):
             u'tower_job_list module but I believe that also the other tower_* module have the same error':
                 [u'lib/ansible/modules/web_infrastructure/ansible_tower/tower_job_list.py'],
             #'F5 bigip (bigip_selfip)': [u'lib/ansible/modules/network/f5/bigip_selfip.py'],
-            u'ansible_modules_vsphere_guest': [u'lib/ansible/modules/cloud/vmware/_vsphere_guest.py'],
+            #u'ansible_modules_vsphere_guest': [
+            #    #u'lib/ansible/modules/cloud/vmware/_vsphere_guest.py'
+            #    u'lib/ansible/modules/cloud/vmware/vsphere_copy.py'
+            #    u'lib/ansible/modules/cloud/vmware/vsphere_file.py',
+            #],
             u'shell-module': [u'lib/ansible/modules/commands/shell.py'],
             u'the docker_volume command': [u'lib/ansible/modules/cloud/docker/docker_volume.py'],
             u'Azure Inventory Script - azure_rm.py': [],
@@ -418,14 +422,18 @@ class TestComponentMatcher(TestCase):
             u'`meta` module': [u'lib/ansible/modules/utilities/helper/meta.py'],
             #'`meta` module': [u'lib/ansible/modules/utilities/helper/meta.py'],
             u'`mysql_user` module': [u'lib/ansible/modules/database/mysql/mysql_user.py'],
-            u'`s3` module': [u'lib/ansible/modules/cloud/amazon/_s3.py'],
+            #u'`s3` module': [u'lib/ansible/modules/cloud/amazon/_s3.py'],
             u'`user` module': [u'lib/ansible/modules/system/user.py'],
             u'the "user" module': [u'lib/ansible/modules/system/user.py'],
             u'`ansible_module_ec2_ami_copy.py`': [u'lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],
             u'module: `include_vars `': [u'lib/ansible/modules/utilities/logic/include_vars.py'],
             u'rabbitmq_plugin  module': [u'lib/ansible/modules/messaging/rabbitmq/rabbitmq_plugin.py'],
             #'F5 bigip (bigip_selfip)': [u'lib/ansible/modules/network/f5/bigip_selfip.py'],
-            u'module: `vsphere_guest`': [u'lib/ansible/modules/cloud/vmware/_vsphere_guest.py'],
+            #u'module: `vsphere_guest`': [u'lib/ansible/modules/cloud/vmware/_vsphere_guest.py'],
+            #u'module: `vsphere_guest`': [
+            #    u'lib/ansible/modules/cloud/vmware/vsphere_copy.py'
+            #    u'lib/ansible/modules/cloud/vmware/vsphere_file.py',
+            #],
             u'Add to vmware_guest module, Clone to Virtual Machine task': [
                 u'lib/ansible/modules/cloud/vmware/vmware_guest.py'
             ],
@@ -439,12 +447,12 @@ class TestComponentMatcher(TestCase):
                 u'lib/ansible/modules/files/copy.py',
                 u'lib/ansible/modules/commands/shell.py'
             ],
-            u':\ndocker.py': [
-                u'lib/ansible/modules/cloud/docker/_docker.py'
-            ],
-            u': s3 module': [
-                u'lib/ansible/modules/cloud/amazon/_s3.py'
-            ],
+            #u':\ndocker.py': [
+            #    u'lib/ansible/modules/cloud/docker/_docker.py'
+            #],
+            #u': s3 module': [
+            #    u'lib/ansible/modules/cloud/amazon/_s3.py'
+            #],
             u'The new ldap_attr module.': [
                 u'lib/ansible/modules/net_tools/ldap/_ldap_attr.py'
             ],

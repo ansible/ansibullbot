@@ -148,9 +148,9 @@ class AnsibleComponentMatcher(object):
         self.load_meta()
 
         for fn in self.gitrepo.module_files:
-            if os.path.isdir(fn):
+            if self.gitrepo.isdir(fn):
                 continue
-            if not os.path.exists(fn):
+            if not self.gitrepo.exists(fn):
                 continue
             mname = os.path.basename(fn)
             mname = mname.replace(u'.py', u'').replace(u'.ps1', u'')
