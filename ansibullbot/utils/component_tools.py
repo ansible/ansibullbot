@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import copy
 import datetime
+import json
 import logging
 import os
 import re
@@ -9,13 +11,14 @@ import six
 
 from Levenshtein import jaro_winkler
 
+from ansibullbot._pickle_compat import pickle_dump
+from ansibullbot._pickle_compat import pickle_load
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.extractors import ModuleExtractor
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
-
 
 
 def make_prefixes(filename):
@@ -138,6 +141,83 @@ class AnsibleComponentMatcher(object):
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
 
+    def get_module_extractor_for_file(self, checkoutdir, filename):
+        ME = None
+        cdir = '/tmp/ansibot_module_extractor_cache'
+        if not os.path.exists(cdir):
+            os.makedirs(cdir)
+        cfile = os.path.join(cdir, '%s.pickle' % os.path.basename(filename))
+        if not os.path.exists(cfile):
+            ME = ModuleExtractor(os.path.join(checkoutdir, filename), email_cache=self.email_cache)
+            with open(cfile, 'wb') as f:
+                pickle_dump(ME, f)
+
+        if ME is None and os.path.exists(cfile):
+            with open(cfile, 'rb') as f:
+                ME = pickle_load(f)
+
+        return ME
+
+    def get_module_meta(self, checkoutdir, filename1, filename2):
+        cdir = '/tmp/ansibot_module_extractor_cache'
+        if not os.path.exists(cdir):
+            os.makedirs(cdir)
+        cfile = os.path.join(cdir, '%s.json' % os.path.basename(filename1))
+
+        bmeta = None
+        if not os.path.exists(cfile):
+            bmeta = {}
+            ME = self.get_module_extractor_for_file(checkoutdir, filename1) 
+            if filename1 not in self.BOTMETA[u'files']:
+                bmeta = {
+                    u'deprecated': os.path.basename(filename1).startswith(u'_'),
+                    u'labels': os.path.dirname(filename1).split(u'/'),
+                    u'authors': ME.authors,
+                    u'maintainers': ME.authors,
+                    u'maintainers_keys': [],
+                    u'notified': ME.authors,
+                    u'ignored': [],
+                    u'support': ME.metadata.get(u'supported_by', u'community'),
+                    u'metadata': ME.metadata.copy()
+                }
+            else:
+                bmeta = self.BOTMETA[u'files'][filename1].copy()
+                bmeta[u'metadata'] = ME.metadata.copy()
+                if u'notified' not in bmeta:
+                    bmeta[u'notified'] = []
+                if u'maintainers' not in bmeta:
+                    bmeta[u'maintainers'] = []
+                if not bmeta.get(u'supported_by'):
+                    bmeta[u'supported_by'] = ME.metadata.get(u'supported_by', u'community')
+                if u'authors' not in bmeta:
+                    bmeta[u'authors'] = []
+                for x in ME.authors:
+                    if x not in bmeta[u'authors']:
+                        bmeta[u'authors'].append(x)
+                    if x not in bmeta[u'maintainers']:
+                        bmeta[u'maintainers'].append(x)
+                    if x not in bmeta[u'notified']:
+                        bmeta[u'notified'].append(x)
+                if not bmeta.get(u'labels'):
+                    bmeta[u'labels'] = os.path.dirname(filename1).split(u'/')
+                bmeta[u'deprecated'] = os.path.basename(filename1).startswith(u'_')
+
+            # clean out the ignorees
+            if u'ignored' in bmeta:
+                for ignoree in bmeta[u'ignored']:
+                    for thiskey in [u'maintainers', u'notified']:
+                        while ignoree in bmeta[thiskey]:
+                            bmeta[thiskey].remove(ignoree)
+
+            with open(cfile, 'w') as f:
+                f.write(json.dumps(bmeta))
+
+        if bmeta is None:
+            with open(cfile, 'r') as f:
+                bmeta = json.loads(f.read())
+
+        return bmeta
+
     def index_files(self):
 
         self.BOTMETA = {}
@@ -221,7 +301,13 @@ class AnsibleComponentMatcher(object):
                     _k = k
             else:
                 _k = k
-            ME = ModuleExtractor(os.path.join(checkoutdir, _k), email_cache=self.email_cache)
+            logging.debug('extract %s' % k)
+            fmeta = self.get_module_meta(checkoutdir, k, _k)
+            self.BOTMETA['files'][k] = copy.deepcopy(fmeta)
+            self.MODULES[k].update(fmeta)
+
+            '''
+            ME = self.get_module_extractor_for_file(checkoutdir, _k) 
             if k not in self.BOTMETA[u'files']:
                 self.BOTMETA[u'files'][k] = {
                     u'deprecated': os.path.basename(k).startswith(u'_'),
@@ -266,6 +352,7 @@ class AnsibleComponentMatcher(object):
 
             # write back to the modules
             self.MODULES[k].update(self.BOTMETA[u'files'][k])
+            '''
 
     def load_meta(self):
         if self.botmetafile is not None:
