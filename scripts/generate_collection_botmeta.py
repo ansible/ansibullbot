@@ -40,19 +40,7 @@ from ansibullbot.utils.logs import set_logger
 
 set_logger(debug=True)
 
-'''
-logging.level = logging.DEBUG
-logFormatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
-rootLogger = logging.getLogger()
-rootLogger.setLevel(logging.DEBUG)
-consoleHandler = logging.StreamHandler()
-consoleHandler.setFormatter(logFormatter)
-rootLogger.addHandler(consoleHandler)
-'''
 
-
-
-PLUGINS_RE = re.compile(r'lib/ansible/(plugins|modules|module_utils)/.*$') #  FIXME, add inventory *scripts* and tests?
 GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 if GITHUB_TOKEN is None:
     GITHUB_TOKEN = C.DEFAULT_GITHUB_TOKEN
@@ -76,7 +64,8 @@ class AnsibotShim:
         self.cachedir = '/tmp/ansibot.cache'
         self.gitrepo = GitRepoWrapper(
             cachedir=self.cachedir,
-            repo='https://github.com/ansible/ansible'
+            repo='https://github.com/ansible/ansible',
+            commit='a76d78f6919f62698341be2f102297a2ce30897c'
         )
         self.component_matcher = AnsibleComponentMatcher(
             usecache=True,
@@ -229,10 +218,16 @@ def simplify_collection_botmeta(botmeta):
         # this file has new data so dump the stack
         logger.info(last_fp)
         cp = common_path(last_fp)
-        if last_fd:
-            nfm[cp] = copy.deepcopy(last_fd)
+
+        # sometimes the common path sucks ...
+        if cp == '/':
+            for _fp in last_fp:
+                nfm[_fp] = copy.deepcopy(last_fd)
         else:
-            nfm[cp] = None
+            if last_fd:
+                nfm[cp] = copy.deepcopy(last_fd)
+            else:
+                nfm[cp] = None
 
         # start a new stack
         last_fp = [fp]
