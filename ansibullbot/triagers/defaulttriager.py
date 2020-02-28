@@ -142,31 +142,6 @@ class DefaultTriager(object):
         return parser
 
     def set_logger(self):
-
-        '''        
-        if self.debug:
-            logging.level = logging.DEBUG
-        else:
-            logging.level = logging.INFO
-        logFormatter = \
-            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-        rootLogger = logging.getLogger()
-        if self.debug:
-            rootLogger.setLevel(logging.DEBUG)
-        else:
-            rootLogger.setLevel(logging.INFO)
-
-        logdir = os.path.dirname(self.logfile)
-        if logdir and not os.path.isdir(logdir):
-            os.makedirs(logdir)
-
-        fileHandler = WatchedFileHandler(self.logfile)
-        fileHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(fileHandler)
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(consoleHandler)
-        '''
         set_logger(debug=self.debug, logfile=self.logfile)
 
     def start(self):
