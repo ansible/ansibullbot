@@ -1,7 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-# (c) 2020 Matt Martz <matt@sivel.net>
-# GNU General Public License v3.0+ (see COPYING or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+# generate_collection_botmeta.py - a handy script to make botmeta files
+#
+# DESCRIPTION:
+#   Combining existing botmeta via ansibot's code and with the nwo
+#   scenario files, this script will emit appropriate BOTMETA files
+#   for the various repos that nwo specifies
+# 
+# USAGE:
+#   PYTHONPATH=. ./scripts/generate_collection_botmeta.py
+#
 
 import base64
 import copy
@@ -47,6 +56,7 @@ assert GITHUB_TOKEN, "GITHUB_TOKEN env var must be set to an oauth token with re
 
 
 def botmeta_list(inlist):
+    '''use the bot's expansion of space separated lists feature'''
     if not isinstance(inlist, list):
         return inlist
     # can't join words with spaces in them
@@ -56,7 +66,8 @@ def botmeta_list(inlist):
         return ' '.join(sorted([x.strip() for x in inlist if x.strip()]))
 
 
-class AnsibleBotmeta:
+class AnsibotShim:
+    '''A shim wrapper for ansibot's builtin functions'''
     def __init__(self):
         self.cachedir = '/tmp/ansibot.cache'
         self.gitrepo = GitRepoWrapper(
@@ -113,6 +124,9 @@ class AnsibleBotmeta:
 
 
 class NWOInfo:
+
+    '''NWO scenario helper'''
+
     _nwo = None
     _flatmap = None
 
@@ -122,6 +136,7 @@ class NWOInfo:
         self.ansibotmeta = ansibotmeta
 
     def compile(self):
+        '''build an internal mapping of all nwo meta'''
         migration_repo = self.g.get_repo('ansible-community/collection_migration')
         ansible_repo = self.g.get_repo('ansible/ansible')
 
@@ -151,56 +166,12 @@ class NWOInfo:
         return self._nwo.get(pluginfile)
 
     def collection_has_subdirs(self, ns):
+        '''was the collection flatmapped?'''
         return ns in self._flatmaps
 
 
-def read_ansible_botmeta(ansible_repo=None, nwo=None):
-
-    botmeta_collections = {}
-
-    # Read in botmeta from ansible/ansible
-    f = ansible_repo.get_contents(".github/BOTMETA.yml")
-    botmeta = yaml.safe_load(base64.b64decode(f.content))
-    for key, contents in botmeta['files'].items():
-
-        # Find which Schema contains this file
-        match = None
-        f = key.replace('$modules', 'lib/ansible/modules')
-        f = f.replace('$module_utils', 'lib/ansible/module_utils')
-        f = f.replace('$plugins', 'lib/ansible/plugins')
-        #if f in nwo:
-        import epdb; epdb.st()
-        if nwo.find(f):
-            # Rewrite path
-            # FIXME If community.general, keep module directory structure for modules only
-            plugin = f.replace('lib/ansible/modules', 'plugins/modules')
-            plugin = plugin.replace('lib/ansible/module_utils', 'plugins/module_utils')
-            plugin = plugin.replace('lib/ansible/plugins', 'plugins')
-            plugin = plugin.replace('test/integration/targets', 'tests/integration/targets')
-            plugin = plugin.replace('test/units', 'tests/units')
-
-            if not nwo[f] in botmeta_collections:
-                botmeta_collections[nwo[f]] = {}
-
-            botmeta_collections[nwo[f]][plugin] = contents
-          # Remove support
-          # Remove migrated_to
-          # or do we do this once over the whole data structure?
-
-        else:
-            # FIXME Maybe a directory, or regexp?
-            # If we expect BOTMETA to have migrated_to for each file, this may not happen for plugins
-            # Though may still happen for plugins
-
-            print ("Can't find " + f)
-        #else:
-            #q.q("'Couldn't find" + f)
-            #sys.exit()
-
-    return botmeta_collections
-
-
 def common_path(paths):
+    '''return the shortest common path for a list of paths'''
     if len(paths) == 1:
         return paths[0]
     cpaths = OrderedDict()
@@ -216,8 +187,8 @@ def common_path(paths):
     return '/'.join(cpaths.keys()) + '/'
 
 
-def reduce_collection_botmeta(botmeta):
-
+def simplify_collection_botmeta(botmeta):
+    '''use path inheritance to reduce the number of lines in meta'''
     nfm = {}
     last_fp = None
     last_fd = None
@@ -257,9 +228,6 @@ def reduce_collection_botmeta(botmeta):
         else:
             nfm[cp] = None
 
-        #if 'netvisor' in last_fp[0] and 'modules' in last_fp[0]:
-        #    import epdb; epdb.st()
-
         # start a new stack
         last_fp = [fp]
         last_fd = copy.deepcopy(fd)
@@ -293,12 +261,11 @@ def reduce_collection_botmeta(botmeta):
     return nbm
 
 
-def process_aggregated_list_of_files(g, nwo, ansibotmeta):
+def create_botmeta_for_collections(g, nwo, ansibotmeta):
 
-    # TODO
-    #   - missing keywords
-    #   - missing teams
+    '''Create botmeta for all known collections'''
 
+    # common map for plugin macros (not relative to collection path)
     filemacros = OrderedDict([
         ('lib/ansible/module_utils', '$module_utils'),
         ('lib/ansible/modules', '$modules'),
@@ -317,6 +284,7 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
         #('lib/ansible/plugins', '$plugins'),
     ]) 
 
+    # these meta keys don't need to live in botmeta
     topop = [
         'assign',
         'authors',
@@ -333,6 +301,7 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
         'topic',
     ]
 
+    # store a dict of botmeta for each collection here
     BOTMETAS = {}
 
     cdir = '/tmp/nwo.cache'
@@ -475,18 +444,19 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
 
     # reduce each file 
     for collection, cdata in BOTMETAS.items():
-        BOTMETAS[collection] = reduce_collection_botmeta(cdata)
+        BOTMETAS[collection] = simplify_collection_botmeta(cdata)
 
     ddir = '/tmp/botmeta'
     if os.path.exists(ddir):
         shutil.rmtree(ddir)
     os.makedirs(ddir)
 
+    # write out each repo's botmeta file
     for collection,cdata in BOTMETAS.items():
         fn = os.path.join(ddir, '%s.yml' % collection)
+        logger.info('write %s' % fn)
         with open(fn, 'w') as f:
             ruamel.yaml.dump(cdata, f, width=4096, Dumper=ruamel.yaml.RoundTripDumper)
-
 
 
 def main():
@@ -494,68 +464,10 @@ def main():
     g = Github(GITHUB_TOKEN)
     logger.info('instantiate nwoinfo')
     nwo = NWOInfo(g=g)
-    logger.info('instantiate ansibotmeta')
-    ansibotmeta = AnsibleBotmeta()
-    logger.info('process ...')
-    process_aggregated_list_of_files(g, nwo, ansibotmeta)
-    sys.exit(0)
-
-    ansible_repo = g.get_repo('ansible/ansible')
-    #globs = [p for p in nwo if '*' in p]
-    botmeta_collections = read_ansible_botmeta(ansible_repo=ansible_repo, nwo=nwo)
-
-
-    # FIXME Need to copy team_ macros across
-
-    # For each entry in botmeta
-    #   Given module_utils/postgres.py
-    #   Find in schema
-    #     # Known collection name
-              # new_bot_meta{collection}{'files'}{$new_path} = $data
-
-    print (yaml.dump(botmeta_collections))
-
-    sys.exit()
-
-    moves = {}
-    for f in ansible.get_contents('changelogs/fragments'):
-        for commit in ansible.get_commits(path=f.path):
-            files = [p.filename for p in commit.files]
-            plugins = [p for p in files if PLUGINS_RE.search(p)]
-            if not plugins:
-                continue
-
-            match = None
-            if plugins[0] in nwo:
-                match = plugins[0]
-            else:
-                try:
-                    for glob in globs:
-                        for plugin in plugins:
-                            if fnmatch.fnmatch(glob, plugin):
-                                match = glob
-                                raise StopIteration()
-                except StopIteration:
-                    pass
-
-            if match:
-                collection = nwo[match]
-                print('%s' % f.path, file=sys.stderr)
-                print(
-                    '    %s - %s' % (collection, match),
-                    file=sys.stderr
-                )
-
-                clog_data = yaml.safe_load(base64.b64decode(f.content))
-                moves[f.path] = {
-                    'collection': collection,
-                    'changelog': clog_data,
-                }
-
-                break
-
-    print(file=sys.stderr)
-    print(json.dumps(moves, sort_keys=True, indent=4))
+    logger.info('instantiate ansibot')
+    ansibot = AnsibotShim()
+    logger.info('create botmeta ...')
+    create_botmeta_for_collections(g, nwo, ansibot)
 
 
 if __name__ == "__main__":
