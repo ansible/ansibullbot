@@ -105,7 +105,9 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, commit=None, email_cache=None, file_indexer=None):
+    def __init__(self, gitrepo=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None):
+        self.usecache = usecache
+        self.cachedir = cachedir
         self.botmetafile = botmetafile
         self.email_cache = email_cache
         self.commit = commit
@@ -140,15 +142,19 @@ class AnsibleComponentMatcher(object):
         self.updated_at = datetime.datetime.now()
 
     def get_module_meta(self, checkoutdir, filename1, filename2):
-        cdir = '/tmp/ansibot_module_extractor_cache'
-        if not os.path.exists(cdir):
+
+        if self.cachedir:
+            cdir = os.path.join(self.cachedir, 'module_extractor_cache')
+        else:
+            cdir = '/tmp/ansibot_module_extractor_cache'
+        if not os.path.exists(cdir) and self.usecache:
             os.makedirs(cdir)
         cfile = os.path.join(cdir, '%s.json' % os.path.basename(filename1))
 
         bmeta = None
-        if not os.path.exists(cfile):
+        if not os.path.exists(cfile) or not self.usecache:
             bmeta = {}
-            ME = ModuleExtractor(os.path.join(checkoutdir, filename), email_cache=self.email_cache)
+            ME = ModuleExtractor(os.path.join(checkoutdir, filename1), email_cache=self.email_cache)
             if filename1 not in self.BOTMETA[u'files']:
                 bmeta = {
                     u'deprecated': os.path.basename(filename1).startswith(u'_'),
@@ -190,10 +196,11 @@ class AnsibleComponentMatcher(object):
                         while ignoree in bmeta[thiskey]:
                             bmeta[thiskey].remove(ignoree)
 
-            with open(cfile, 'w') as f:
-                f.write(json.dumps(bmeta))
+            if self.usecache:
+                with open(cfile, 'w') as f:
+                    f.write(json.dumps(bmeta))
 
-        if bmeta is None:
+        if bmeta is None and self.usecache:
             with open(cfile, 'r') as f:
                 bmeta = json.loads(f.read())
 

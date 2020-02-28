@@ -75,7 +75,9 @@ class AnsibotShim:
             repo='https://github.com/ansible/ansible'
         )
         self.component_matcher = AnsibleComponentMatcher(
+            usecache=True,
             gitrepo=self.gitrepo,
+            cachedir='/tmp/ansibot.cache.components',
             email_cache={}
         )
 
