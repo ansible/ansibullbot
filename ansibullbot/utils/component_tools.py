@@ -141,23 +141,6 @@ class AnsibleComponentMatcher(object):
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
 
-    def get_module_extractor_for_file(self, checkoutdir, filename):
-        ME = None
-        cdir = '/tmp/ansibot_module_extractor_cache'
-        if not os.path.exists(cdir):
-            os.makedirs(cdir)
-        cfile = os.path.join(cdir, '%s.pickle' % os.path.basename(filename))
-        if not os.path.exists(cfile):
-            ME = ModuleExtractor(os.path.join(checkoutdir, filename), email_cache=self.email_cache)
-            with open(cfile, 'wb') as f:
-                pickle_dump(ME, f)
-
-        if ME is None and os.path.exists(cfile):
-            with open(cfile, 'rb') as f:
-                ME = pickle_load(f)
-
-        return ME
-
     def get_module_meta(self, checkoutdir, filename1, filename2):
         cdir = '/tmp/ansibot_module_extractor_cache'
         if not os.path.exists(cdir):
@@ -167,7 +150,7 @@ class AnsibleComponentMatcher(object):
         bmeta = None
         if not os.path.exists(cfile):
             bmeta = {}
-            ME = self.get_module_extractor_for_file(checkoutdir, filename1) 
+            ME = ModuleExtractor(os.path.join(checkoutdir, filename), email_cache=self.email_cache)
             if filename1 not in self.BOTMETA[u'files']:
                 bmeta = {
                     u'deprecated': os.path.basename(filename1).startswith(u'_'),
