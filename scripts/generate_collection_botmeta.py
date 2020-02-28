@@ -16,7 +16,7 @@ import base64
 import copy
 import fnmatch
 import json
-import logging
+#import logging
 import os
 import re
 import shutil
@@ -36,8 +36,11 @@ import ruamel.yaml
 import ansibullbot.constants as C
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.utils.logs import set_logger
 
+set_logger(debug=True)
 
+'''
 logging.level = logging.DEBUG
 logFormatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
 rootLogger = logging.getLogger()
@@ -45,6 +48,7 @@ rootLogger.setLevel(logging.DEBUG)
 consoleHandler = logging.StreamHandler()
 consoleHandler.setFormatter(logFormatter)
 rootLogger.addHandler(consoleHandler)
+'''
 
 
 
