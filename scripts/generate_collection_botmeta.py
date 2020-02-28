@@ -18,6 +18,7 @@ import yaml  # pyyaml
 
 from collections import OrderedDict
 from collections import defaultdict
+from functools import lru_cache
 
 from github import Github  # pygithub
 from logzero import logger
@@ -62,6 +63,41 @@ class AnsibleBotmeta:
             gitrepo=self.gitrepo,
             email_cache={}
         )
+
+    def get_team(self, teamname):
+        if teamname.startswith('$'):
+            teamname = teamname.lstrip('$')
+        return self.component_matcher.BOTMETA['macros'].get(teamname, [])
+
+    def names_to_teams(self, namelist):
+        # self.component_matcher.BOTMETA['macros']
+        match_counts = {}
+        for macro,mnames in self.component_matcher.BOTMETA['macros'].items():
+            if not macro.startswith('team_'):
+                continue
+            
+            result = all(x in namelist for x in mnames)
+            if not result:
+                continue
+
+            if macro not in match_counts:
+                match_counts[macro] = 0
+            for name in namelist:
+                if name in mnames:
+                    match_counts[macro] += 1
+
+        if not match_counts:
+            return namelist
+
+        ranked = sorted(match_counts.items(), key=lambda x: x[1], reverse=True)
+        this_team = ranked[0][0]
+        this_team_members = self.component_matcher.BOTMETA['macros'][this_team]
+        for idx,x in enumerate(namelist):
+            if x in this_team_members:
+                namelist[idx] = '$%s' % this_team
+        namelist = sorted(set(namelist))
+        #import epdb; epdb.st()
+        return namelist
 
 
 class NWOInfo:
@@ -252,6 +288,17 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
                 if not v:
                     nmeta.pop(k, None)
 
+            # insert teams
+            for key in ['maintainers', 'notify']:
+                if key in nmeta:
+                    names = ansibotmeta.names_to_teams(nmeta[key])
+                    if names != nmeta[key]:
+                        nmeta[key] = names
+                        for name in names:
+                            if name.startswith('$team'):
+                                team = ansibotmeta.get_team(name)
+                                BOTMETAS[collection]['macros'][name.lstrip('$')] = team[:]
+
             # make stringy lists
             for k,v in copy.deepcopy(nmeta).items():
                 nmeta[k] = botmeta_list(v)
@@ -261,6 +308,13 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
                 BOTMETAS[collection]['files'][fn] = nmeta
             else:
                 BOTMETAS[collection]['files'][fn] = None
+
+    # make stringy lists for all the teams
+    for collection, cdata in BOTMETAS.items():
+        for macro,vals in cdata['macros'].items():
+            if not macro.startswith('team'):
+                continue
+            BOTMETAS[collection]['macros'][macro] = botmeta_list(vals)
 
     # switch filepaths to macros
     for collection, cdata in BOTMETAS.items():
@@ -281,9 +335,7 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
         for mkey in mkeys:
             mval = BOTMETAS[collection]['macros'][mkey]
             BOTMETAS[collection]['macros'].pop(mkey, None)
-            BOTMETAS[collection]['macros'][mkey] = mval
-
-    #def collection_has_subdirs(self, ns):
+            BOTMETAS[collection]['macros'][mkey.lstrip('$')] = mval
 
     ddir = '/tmp/botmeta'
     if os.path.exists(ddir):
