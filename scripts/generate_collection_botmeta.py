@@ -37,6 +37,7 @@ import ansibullbot.constants as C
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.logs import set_logger
+from ansibullbot.utils.botmeta import botmeta_list
 
 set_logger(debug=True)
 
@@ -45,17 +46,6 @@ GITHUB_TOKEN = os.getenv('GITHUB_TOKEN')
 if GITHUB_TOKEN is None:
     GITHUB_TOKEN = C.DEFAULT_GITHUB_TOKEN
 assert GITHUB_TOKEN, "GITHUB_TOKEN env var must be set to an oauth token with repo:read from https://github.com/settings/"
-
-
-def botmeta_list(inlist):
-    '''use the bot's expansion of space separated lists feature'''
-    if not isinstance(inlist, list):
-        return inlist
-    # can't join words with spaces in them
-    if [x for x in inlist if ' ' in x]:
-        return inlist
-    else:
-        return ' '.join(sorted([x.strip() for x in inlist if x.strip()]))
 
 
 class AnsibotShim:
@@ -165,145 +155,11 @@ class NWOInfo:
         return ns in self._flatmaps
 
 
-def common_path(paths):
-    '''return the shortest common path for a list of paths'''
-    if len(paths) == 1:
-        return paths[0]
-    cpaths = OrderedDict()
-    for path in paths:
-        pparts = path.split('/')
-        for ppart in pparts:
-            if ppart not in cpaths:
-                cpaths[ppart] = 0
-            cpaths[ppart] += 1
-    for cp,cval in copy.deepcopy(cpaths).items():
-        if cval != len(paths):
-            cpaths.pop(cp, None) 
-    return '/'.join(cpaths.keys()) + '/'
 
 
-def simplify_collection_botmeta(botmeta):
-    '''use path inheritance to reduce the number of lines in meta'''
-    nfm = {}
-    last_fp = None
-    last_fd = None
-    fpkeys = sorted(list(botmeta['files'].keys()))
-    for fp in fpkeys:
-        fd = botmeta['files'][fp]
-
-        if os.path.basename(fp) == '__init__.py':
-            continue
-
-        '''
-        # do not aggregate empty meta
-        if fd is None:
-            nfm[fp] = None
-            last_fp = None
-            last_fd = None
-            continue
-        '''
-
-        # no matches yet, so reset the stack ...
-        if last_fp is None:
-            last_fp = [fp]
-            last_fd = copy.deepcopy(fd)
-            continue
-
-        # another match. save it and continue on ...
-        if last_fd == fd:
-            last_fp.append(fp)
-            logger.info(fp)
-            continue
-
-        # this file has new data so dump the stack
-        logger.info(last_fp)
-        cp = common_path(last_fp)
-
-        # sometimes the common path sucks ...
-        if cp == '/':
-            for _fp in last_fp:
-                nfm[_fp] = copy.deepcopy(last_fd)
-        else:
-            if last_fd:
-                nfm[cp] = copy.deepcopy(last_fd)
-            else:
-                nfm[cp] = None
-
-        # start a new stack
-        last_fp = [fp]
-        last_fd = copy.deepcopy(fd)
-
-    # don't forget the last one ...
-    if last_fp is not None and last_fp[0] not in nfm:
-        nfm[last_fp[0]] = last_fd
-
-    # now get rid of subkeys that also come from parents 
-    for fp,fd in copy.deepcopy(nfm).items():
-        if not fd:
-            continue
-        for _fp,_fd in copy.deepcopy(nfm).items():
-            if fp == _fp:
-                continue
-            if not _fp.endswith('/'):
-                continue
-            if fp.startswith(_fp):
-                if fd == _fd:
-                    nfm.pop(fp, None)
-                    continue
-                if isinstance(fd, dict) and isinstance(_fd, dict):
-                    for key,val in _fd.items():
-                        if fd.get(key) == val:
-                            nfm[fp].pop(key, None)
-                break
-
-    nbm = copy.deepcopy(botmeta)
-    nbm['files'] = nfm
-
-    return nbm
-
-
-def create_botmeta_for_collections(g, nwo, ansibotmeta):
+def create_docs_master_list(g, nwo, ansibotmeta):
 
     '''Create botmeta for all known collections'''
-
-    # common map for plugin macros (not relative to collection path)
-    filemacros = OrderedDict([
-        ('lib/ansible/module_utils', '$module_utils'),
-        ('lib/ansible/modules', '$modules'),
-        ('lib/ansible/plugins/action', '$actions'),
-        ('lib/ansible/plugins/become', '$becomes'),
-        ('lib/ansible/plugins/callback', '$callbacks'),
-        ('lib/ansible/plugins/cliconf', '$cliconfs'),
-        ('lib/ansible/plugins/connection', '$connections'),
-        ('lib/ansible/plugins/doc_fragments', '$doc_fragments'),
-        ('lib/ansible/plugins/filter', '$filters'),
-        ('lib/ansible/plugins/httpapi', '$httpapis'),
-        ('lib/ansible/plugins/inventory', '$inventories'),
-        ('lib/ansible/plugins/lookup', '$lookups'),
-        ('lib/ansible/plugins/shell', '$shells'),
-        ('lib/ansible/plugins/terminal', '$terminals'),
-        #('lib/ansible/plugins', '$plugins'),
-    ]) 
-
-    # these meta keys don't need to live in botmeta
-    topop = [
-        'assign',
-        'authors',
-        'committers',
-        'metadata',
-        'migrated_to',
-        'name',
-        'namespace',
-        'namespace_maintainers',
-        'repo_filename',
-        'support',
-        'supported_by',
-        'subtopic',
-        'topic',
-    ]
-
-    # store a dict of botmeta for each collection here
-    BOTMETAS = {}
 
     cdir = '/tmp/nwo.cache'
     if not os.path.exists(cdir):
@@ -468,7 +324,7 @@ def main():
     logger.info('instantiate ansibot')
     ansibot = AnsibotShim()
     logger.info('create botmeta ...')
-    create_botmeta_for_collections(g, nwo, ansibot)
+    create_docs_master_list(g, nwo, ansibotmeta)
 
 
 if __name__ == "__main__":
