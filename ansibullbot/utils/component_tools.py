@@ -11,8 +11,6 @@ import six
 
 from Levenshtein import jaro_winkler
 
-from ansibullbot._pickle_compat import pickle_dump
-from ansibullbot._pickle_compat import pickle_load
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.extractors import ModuleExtractor
