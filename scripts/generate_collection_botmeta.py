@@ -66,6 +66,7 @@ class AnsibleBotmeta:
 
 class NWOInfo:
     _nwo = None
+    _flatmap = None
 
     def __init__(self, g=None, ansibotmeta=None):
         self.g = g
@@ -77,21 +78,18 @@ class NWOInfo:
         ansible_repo = self.g.get_repo('ansible/ansible')
 
         self._nwo = {}
+        self._flatmaps = set()
 
         # Read in migration scenarios
-
         for f in migration_repo.get_contents('scenarios/nwo'):
-            if f.path != "scenarios/nwo/community.yml":
-                # Initially only look at community.yml, may need others?
-                continue
             data = yaml.safe_load(base64.b64decode(f.content))
             namespace, ext = os.path.splitext(f.name)
             if ext != '.yml':
                 continue
             for collection, content in data.items():
-                if collection[0] == '_':
-                    continue
                 name = '%s.%s' % (namespace, collection)
+                if content.get('_options', {}).get('flatmap'):
+                    self._flatmaps.add(name)
                 for ptype, paths in content.items():
                     for relpath in paths:
                         if ptype in ('modules', 'module_utils'):
@@ -105,7 +103,7 @@ class NWOInfo:
         return self._nwo.get(pluginfile)
 
     def collection_has_subdirs(self, ns):
-        import epdb; epdb.st()
+        return ns in self._flatmaps
 
 
 def read_ansible_botmeta(ansible_repo=None, nwo=None):
@@ -175,11 +173,12 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
         ('lib/ansible/plugins/lookup', '$lookups'),
         ('lib/ansible/plugins/shell', '$shells'),
         ('lib/ansible/plugins/terminal', '$terminals'),
-        ('lib/ansible/plugins', '$plugins'),
+        #('lib/ansible/plugins', '$plugins'),
     ]) 
 
     topop = [
         'assign',
+        'authors',
         'committers',
         'metadata',
         'migrated_to',
@@ -214,7 +213,11 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
         dst = nwo.find(fn)
         if dst and dst != 'ansible._core':
             if dst not in BOTMETAS:
-                BOTMETAS[dst] = {'files': {}}
+                BOTMETAS[dst] = {
+                    'automerge': False,
+                    'files': {},
+                    'macros': {}
+                }
             BOTMETAS[dst]['files'][fn] = copy.deepcopy(fmeta)
 
     # clean up entries
@@ -261,13 +264,24 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
 
     # switch filepaths to macros
     for collection, cdata in BOTMETAS.items():
+        has_subdirs = nwo.collection_has_subdirs(collection)
         for fn,fmeta in copy.deepcopy(cdata['files']).items():
             nk = fn
             for fp, macro in filemacros.items():
                 if fn.startswith(fp):
-                    nk = nk.replace(fp, macro)
+                    BOTMETAS[collection]['macros'][macro] = 'plugins/%s' % os.path.basename(fp)
+                    if has_subdirs and 'module' in fn:
+                        nk = nk.replace(fp, macro)
+                    else:
+                        nk = os.path.join(macro, os.path.basename(fn))
             BOTMETAS[collection]['files'][nk] = copy.deepcopy(fmeta)
             BOTMETAS[collection]['files'].pop(fn, None)
+        # sort the macro keys
+        mkeys = sorted(list(BOTMETAS[collection]['macros'].keys()))
+        for mkey in mkeys:
+            mval = BOTMETAS[collection]['macros'][mkey]
+            BOTMETAS[collection]['macros'].pop(mkey, None)
+            BOTMETAS[collection]['macros'][mkey] = mval
 
     #def collection_has_subdirs(self, ns):
 
