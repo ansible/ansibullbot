@@ -287,54 +287,6 @@ class AnsibleComponentMatcher(object):
             self.BOTMETA['files'][k] = copy.deepcopy(fmeta)
             self.MODULES[k].update(fmeta)
 
-            '''
-            ME = self.get_module_extractor_for_file(checkoutdir, _k) 
-            if k not in self.BOTMETA[u'files']:
-                self.BOTMETA[u'files'][k] = {
-                    u'deprecated': os.path.basename(k).startswith(u'_'),
-                    u'labels': os.path.dirname(k).split(u'/'),
-                    u'authors': ME.authors,
-                    u'maintainers': ME.authors,
-                    u'maintainers_keys': [],
-                    u'notified': ME.authors,
-                    u'ignored': [],
-                    u'support': ME.metadata.get(u'supported_by', u'community'),
-                    u'metadata': ME.metadata.copy()
-                }
-            else:
-                bmeta = self.BOTMETA[u'files'][k].copy()
-                bmeta[u'metadata'] = ME.metadata.copy()
-                if u'notified' not in bmeta:
-                    bmeta[u'notified'] = []
-                if u'maintainers' not in bmeta:
-                    bmeta[u'maintainers'] = []
-                if not bmeta.get(u'supported_by'):
-                    bmeta[u'supported_by'] = ME.metadata.get(u'supported_by', u'community')
-                if u'authors' not in bmeta:
-                    bmeta[u'authors'] = []
-                for x in ME.authors:
-                    if x not in bmeta[u'authors']:
-                        bmeta[u'authors'].append(x)
-                    if x not in bmeta[u'maintainers']:
-                        bmeta[u'maintainers'].append(x)
-                    if x not in bmeta[u'notified']:
-                        bmeta[u'notified'].append(x)
-                if not bmeta.get(u'labels'):
-                    bmeta[u'labels'] = os.path.dirname(k).split(u'/')
-                bmeta[u'deprecated'] = os.path.basename(k).startswith(u'_')
-                self.BOTMETA[u'files'][k].update(bmeta)
-
-            # clean out the ignorees
-            if u'ignored' in self.BOTMETA[u'files'][k]:
-                for ignoree in self.BOTMETA[u'files'][k][u'ignored']:
-                    for thiskey in [u'maintainers', u'notified']:
-                        while ignoree in self.BOTMETA[u'files'][k][thiskey]:
-                            self.BOTMETA[u'files'][k][thiskey].remove(ignoree)
-
-            # write back to the modules
-            self.MODULES[k].update(self.BOTMETA[u'files'][k])
-            '''
-
     def load_meta(self):
         if self.botmetafile is not None:
             with open(self.botmetafile, 'rb') as f:
