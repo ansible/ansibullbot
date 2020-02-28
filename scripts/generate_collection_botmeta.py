@@ -49,7 +49,11 @@ assert GITHUB_TOKEN, "GITHUB_TOKEN env var must be set to an oauth token with re
 def botmeta_list(inlist):
     if not isinstance(inlist, list):
         return inlist
-    return ' '.join(sorted([x.strip() for x in inlist if x.strip()]))
+    # can't join words with spaces in them
+    if [x for x in inlist if ' ' in x]:
+        return inlist
+    else:
+        return ' '.join(sorted([x.strip() for x in inlist if x.strip()]))
 
 
 class AnsibleBotmeta:
@@ -63,6 +67,14 @@ class AnsibleBotmeta:
             gitrepo=self.gitrepo,
             email_cache={}
         )
+
+    def get_keywords(self, filename):
+        fdata = self.component_matcher.BOTMETA['files'].get(filename, {})
+        return fdata.get('keywords', [])
+
+    def get_labels(self, filename):
+        fdata = self.component_matcher.BOTMETA['files'].get(filename, {})
+        return fdata.get('labels', [])
 
     def get_team(self, teamname):
         if teamname.startswith('$'):
@@ -188,6 +200,11 @@ def read_ansible_botmeta(ansible_repo=None, nwo=None):
     return botmeta_collections
 
 
+def reduce_collection_botmeta(botmeta):
+    #import epdb; epdb.st()
+    return botmeta
+
+
 def process_aggregated_list_of_files(g, nwo, ansibotmeta):
 
     # TODO
@@ -261,6 +278,24 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
         for fn,fmeta in cdata['files'].items():
             nmeta = copy.deepcopy(fmeta)
 
+            '''
+            # keywords didn't bubble up through the bot
+            keywords = ansibotmeta.get_keywords(fn)
+            if keywords:
+                nmeta['keywords'] = keywords[:]
+            '''
+            
+            # is each ignored person even on the list?
+            if nmeta.get('ignore'): 
+                for user in nmeta['ignore']:
+                    found = False
+                    for key in ['assign', 'authors', 'maintainers', 'notify', 'namespace_maintainers']:
+                        if key in nmeta and user in nmeta[key]:
+                            found = True
+                            break
+                    if not found:
+                        nmeta['ignore'].remove(user)
+
             # dedupe notify and maintainers
             for user in nmeta['notify'][:]:
                 if user in nmeta['maintainers']:
@@ -276,6 +311,13 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
             # remove keys not suitable for botmeta
             for key in topop:
                 nmeta.pop(key, None)
+
+            # add explicit labels from botmeta
+            labels = ansibotmeta.get_labels(fn)
+            if labels:
+                for x in labels:
+                    if x not in nmeta['labels']:
+                        nmeta['labels'].append(x)
 
             # remove labels that are part of the path
             pparts = fn.split('/')
@@ -336,6 +378,10 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
             mval = BOTMETAS[collection]['macros'][mkey]
             BOTMETAS[collection]['macros'].pop(mkey, None)
             BOTMETAS[collection]['macros'][mkey.lstrip('$')] = mval
+
+    # reduce each file 
+    for collection, cdata in BOTMETAS.items():
+        nd = reduce_collection_botmeta(cdata)
 
     ddir = '/tmp/botmeta'
     if os.path.exists(ddir):
