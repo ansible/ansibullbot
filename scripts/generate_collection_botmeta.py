@@ -200,9 +200,97 @@ def read_ansible_botmeta(ansible_repo=None, nwo=None):
     return botmeta_collections
 
 
+def common_path(paths):
+    if len(paths) == 1:
+        return paths[0]
+    cpaths = OrderedDict()
+    for path in paths:
+        pparts = path.split('/')
+        for ppart in pparts:
+            if ppart not in cpaths:
+                cpaths[ppart] = 0
+            cpaths[ppart] += 1
+    for cp,cval in copy.deepcopy(cpaths).items():
+        if cval != len(paths):
+            cpaths.pop(cp, None) 
+    return '/'.join(cpaths.keys()) + '/'
+
+
 def reduce_collection_botmeta(botmeta):
-    #import epdb; epdb.st()
-    return botmeta
+
+    nfm = {}
+    last_fp = None
+    last_fd = None
+    fpkeys = sorted(list(botmeta['files'].keys()))
+    for fp in fpkeys:
+        fd = botmeta['files'][fp]
+
+        if os.path.basename(fp) == '__init__.py':
+            continue
+
+        '''
+        # do not aggregate empty meta
+        if fd is None:
+            nfm[fp] = None
+            last_fp = None
+            last_fd = None
+            continue
+        '''
+
+        # no matches yet, so reset the stack ...
+        if last_fp is None:
+            last_fp = [fp]
+            last_fd = copy.deepcopy(fd)
+            continue
+
+        # another match. save it and continue on ...
+        if last_fd == fd:
+            last_fp.append(fp)
+            logger.info(fp)
+            continue
+
+        # this file has new data so dump the stack
+        logger.info(last_fp)
+        cp = common_path(last_fp)
+        if last_fd:
+            nfm[cp] = copy.deepcopy(last_fd)
+        else:
+            nfm[cp] = None
+
+        #if 'netvisor' in last_fp[0] and 'modules' in last_fp[0]:
+        #    import epdb; epdb.st()
+
+        # start a new stack
+        last_fp = [fp]
+        last_fd = copy.deepcopy(fd)
+
+    # don't forget the last one ...
+    if last_fp is not None and last_fp[0] not in nfm:
+        nfm[last_fp[0]] = last_fd
+
+    # now get rid of subkeys that also come from parents 
+    for fp,fd in copy.deepcopy(nfm).items():
+        if not fd:
+            continue
+        for _fp,_fd in copy.deepcopy(nfm).items():
+            if fp == _fp:
+                continue
+            if not _fp.endswith('/'):
+                continue
+            if fp.startswith(_fp):
+                if fd == _fd:
+                    nfm.pop(fp, None)
+                    continue
+                if isinstance(fd, dict) and isinstance(_fd, dict):
+                    for key,val in _fd.items():
+                        if fd.get(key) == val:
+                            nfm[fp].pop(key, None)
+                break
+
+    nbm = copy.deepcopy(botmeta)
+    nbm['files'] = nfm
+
+    return nbm
 
 
 def process_aggregated_list_of_files(g, nwo, ansibotmeta):
@@ -358,6 +446,12 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
                 continue
             BOTMETAS[collection]['macros'][macro] = botmeta_list(vals)
 
+    # if maintainers is the only key, make it the entire value
+    for collection, cdata in BOTMETAS.items():
+        for fp,fd in cdata['files'].items():
+            if fd and list(fd.keys()) == ['maintainers']:
+                BOTMETAS[collection]['files'][fp] = fd['maintainers']
+
     # switch filepaths to macros
     for collection, cdata in BOTMETAS.items():
         has_subdirs = nwo.collection_has_subdirs(collection)
@@ -381,7 +475,7 @@ def process_aggregated_list_of_files(g, nwo, ansibotmeta):
 
     # reduce each file 
     for collection, cdata in BOTMETAS.items():
-        nd = reduce_collection_botmeta(cdata)
+        BOTMETAS[collection] = reduce_collection_botmeta(cdata)
 
     ddir = '/tmp/botmeta'
     if os.path.exists(ddir):

@@ -1122,6 +1122,7 @@ class AnsibleComponentMatcher(object):
             u'namespace_maintainers': [],
             u'metadata': {},
             u'migrated_to': None,
+            u'keywords': [],
         }
 
         populated = False
@@ -1176,6 +1177,8 @@ class AnsibleComponentMatcher(object):
                 meta[u'ignore'] += fdata[u'ignored']
             if u'migrated_to' in fdata and meta[u'migrated_to'] is None:
                 meta[u'migrated_to'] = fdata[u'migrated_to']
+            if u'keywords' in fdata:
+                meta[u'keywords'] += fdata[u'keywords']
 
             if u'support' in fdata:
                 if isinstance(fdata[u'support'], list):
