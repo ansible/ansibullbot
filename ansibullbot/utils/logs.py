@@ -18,12 +18,15 @@ def set_logger(debug=False, logfile=None):
         rootLogger.setLevel(logging.INFO)
 
     if logfile:
-        logdir = os.path.dirname(logfile)
-        if logdir and not os.path.isdir(logdir):
-            os.makedirs(logdir)
-        fileHandler = WatchedFileHandler(logfile)
-        fileHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(fileHandler)
+        try:
+            logdir = os.path.dirname(logfile)
+            if logdir and not os.path.isdir(logdir):
+                os.makedirs(logdir)
+            fileHandler = WatchedFileHandler(logfile)
+            fileHandler.setFormatter(logFormatter)
+            rootLogger.addHandler(fileHandler)
+        except Exception as e:
+            pass
 
     consoleHandler = logging.StreamHandler()
     consoleHandler.setFormatter(logFormatter)
