@@ -171,6 +171,8 @@ class IssueDatabase:
 
     def __init__(self, cachedir):
         self.cachedir = cachedir
+        if not os.path.exists(self.cachedir):
+            os.makedirs(self.cachedir)
         self.debug = False
         self.eventids = set()
         self.issues = []

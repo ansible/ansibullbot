@@ -2,6 +2,7 @@
 
 import glob
 import json
+import logging
 import os
 
 from tests.utils.componentmocks import BotMockManager
@@ -23,7 +24,7 @@ class TestIdempotence:
             mm.issuedb.debug = True
 
             bot_args = [
-                '--debug',
+                #'--debug',
                 '--verbose',
                 #'--only_issues',
                 '--ignore_module_commits',
@@ -88,3 +89,5 @@ class TestIdempotence:
                 # ensure no actions were created on the last run
                 for k,v in meta['actions'].items():
                     assert not v
+
+            logging.basicConfig()

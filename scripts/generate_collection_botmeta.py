@@ -324,7 +324,7 @@ def main():
     logger.info('instantiate ansibot')
     ansibot = AnsibotShim()
     logger.info('create botmeta ...')
-    create_docs_master_list(g, nwo, ansibotmeta)
+    create_docs_master_list(g, nwo, ansibot)
 
 
 if __name__ == "__main__":

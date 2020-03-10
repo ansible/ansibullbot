@@ -41,7 +41,10 @@ def get_rate_limit():
     if token:
         success = False
         while not success:
-            logging.debug(url)
+            try:
+                logging.debug(url)
+            except Exception as e:
+                pass
             try:
                 rr = requests.get(
                     url,
