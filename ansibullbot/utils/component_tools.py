@@ -251,6 +251,7 @@ class AnsibleComponentMatcher(object):
         logging.debug(cmd)
         (rc, so, se) = run_command(cmd, cwd=checkoutdir)
         if rc:
+            import epdb; epdb.st()
             raise Exception("'ansible-doc' command failed (%s, %s %s)" % (rc, so, se))
         lines = to_text(so).split(u'\n')
         for line in lines:
