@@ -262,7 +262,7 @@ def create_docs_master_list(g, nwo, ansibotmeta):
         ('lib/ansible/plugins/lookup', '$lookups'),
         ('lib/ansible/plugins/shell', '$shells'),
         ('lib/ansible/plugins/terminal', '$terminals'),
-        ('lib/ansible/plugins', '$plugins'),
+        #('lib/ansible/plugins', '$plugins'),
     ]) 
 
     topop = [
