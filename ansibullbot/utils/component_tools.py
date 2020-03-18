@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import copy
 import datetime
+import json
 import logging
 import os
 import re
@@ -15,7 +17,6 @@ from ansibullbot.utils.extractors import ModuleExtractor
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
-
 
 
 def make_prefixes(filename):
@@ -104,7 +105,9 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmetafile=None, cachedir=None, commit=None, email_cache=None, file_indexer=None):
+    def __init__(self, gitrepo=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None):
+        self.usecache = usecache
+        self.cachedir = cachedir
         self.botmetafile = botmetafile
         self.email_cache = email_cache
         self.commit = commit
@@ -137,6 +140,71 @@ class AnsibleComponentMatcher(object):
         self.indexed_at = datetime.datetime.now()
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
+
+    def get_module_meta(self, checkoutdir, filename1, filename2):
+
+        if self.cachedir:
+            cdir = os.path.join(self.cachedir, 'module_extractor_cache')
+        else:
+            cdir = '/tmp/ansibot_module_extractor_cache'
+        if not os.path.exists(cdir) and self.usecache:
+            os.makedirs(cdir)
+        cfile = os.path.join(cdir, '%s.json' % os.path.basename(filename1))
+
+        bmeta = None
+        if not os.path.exists(cfile) or not self.usecache:
+            bmeta = {}
+            ME = ModuleExtractor(os.path.join(checkoutdir, filename1), email_cache=self.email_cache)
+            if filename1 not in self.BOTMETA[u'files']:
+                bmeta = {
+                    u'deprecated': os.path.basename(filename1).startswith(u'_'),
+                    u'labels': os.path.dirname(filename1).split(u'/'),
+                    u'authors': ME.authors,
+                    u'maintainers': ME.authors,
+                    u'maintainers_keys': [],
+                    u'notified': ME.authors,
+                    u'ignored': [],
+                    u'support': ME.metadata.get(u'supported_by', u'community'),
+                    u'metadata': ME.metadata.copy()
+                }
+            else:
+                bmeta = self.BOTMETA[u'files'][filename1].copy()
+                bmeta[u'metadata'] = ME.metadata.copy()
+                if u'notified' not in bmeta:
+                    bmeta[u'notified'] = []
+                if u'maintainers' not in bmeta:
+                    bmeta[u'maintainers'] = []
+                if not bmeta.get(u'supported_by'):
+                    bmeta[u'supported_by'] = ME.metadata.get(u'supported_by', u'community')
+                if u'authors' not in bmeta:
+                    bmeta[u'authors'] = []
+                for x in ME.authors:
+                    if x not in bmeta[u'authors']:
+                        bmeta[u'authors'].append(x)
+                    if x not in bmeta[u'maintainers']:
+                        bmeta[u'maintainers'].append(x)
+                    if x not in bmeta[u'notified']:
+                        bmeta[u'notified'].append(x)
+                if not bmeta.get(u'labels'):
+                    bmeta[u'labels'] = os.path.dirname(filename1).split(u'/')
+                bmeta[u'deprecated'] = os.path.basename(filename1).startswith(u'_')
+
+            # clean out the ignorees
+            if u'ignored' in bmeta:
+                for ignoree in bmeta[u'ignored']:
+                    for thiskey in [u'maintainers', u'notified']:
+                        while ignoree in bmeta[thiskey]:
+                            bmeta[thiskey].remove(ignoree)
+
+            if self.usecache:
+                with open(cfile, 'w') as f:
+                    f.write(json.dumps(bmeta))
+
+        if bmeta is None and self.usecache:
+            with open(cfile, 'r') as f:
+                bmeta = json.loads(f.read())
+
+        return bmeta
 
     def index_files(self):
 
@@ -183,6 +251,7 @@ class AnsibleComponentMatcher(object):
         logging.debug(cmd)
         (rc, so, se) = run_command(cmd, cwd=checkoutdir)
         if rc:
+            import epdb; epdb.st()
             raise Exception("'ansible-doc' command failed (%s, %s %s)" % (rc, so, se))
         lines = to_text(so).split(u'\n')
         for line in lines:
@@ -221,51 +290,10 @@ class AnsibleComponentMatcher(object):
                     _k = k
             else:
                 _k = k
-            ME = ModuleExtractor(os.path.join(checkoutdir, _k), email_cache=self.email_cache)
-            if k not in self.BOTMETA[u'files']:
-                self.BOTMETA[u'files'][k] = {
-                    u'deprecated': os.path.basename(k).startswith(u'_'),
-                    u'labels': os.path.dirname(k).split(u'/'),
-                    u'authors': ME.authors,
-                    u'maintainers': ME.authors,
-                    u'maintainers_keys': [],
-                    u'notified': ME.authors,
-                    u'ignored': [],
-                    u'support': ME.metadata.get(u'supported_by', u'community'),
-                    u'metadata': ME.metadata.copy()
-                }
-            else:
-                bmeta = self.BOTMETA[u'files'][k].copy()
-                bmeta[u'metadata'] = ME.metadata.copy()
-                if u'notified' not in bmeta:
-                    bmeta[u'notified'] = []
-                if u'maintainers' not in bmeta:
-                    bmeta[u'maintainers'] = []
-                if not bmeta.get(u'supported_by'):
-                    bmeta[u'supported_by'] = ME.metadata.get(u'supported_by', u'community')
-                if u'authors' not in bmeta:
-                    bmeta[u'authors'] = []
-                for x in ME.authors:
-                    if x not in bmeta[u'authors']:
-                        bmeta[u'authors'].append(x)
-                    if x not in bmeta[u'maintainers']:
-                        bmeta[u'maintainers'].append(x)
-                    if x not in bmeta[u'notified']:
-                        bmeta[u'notified'].append(x)
-                if not bmeta.get(u'labels'):
-                    bmeta[u'labels'] = os.path.dirname(k).split(u'/')
-                bmeta[u'deprecated'] = os.path.basename(k).startswith(u'_')
-                self.BOTMETA[u'files'][k].update(bmeta)
-
-            # clean out the ignorees
-            if u'ignored' in self.BOTMETA[u'files'][k]:
-                for ignoree in self.BOTMETA[u'files'][k][u'ignored']:
-                    for thiskey in [u'maintainers', u'notified']:
-                        while ignoree in self.BOTMETA[u'files'][k][thiskey]:
-                            self.BOTMETA[u'files'][k][thiskey].remove(ignoree)
-
-            # write back to the modules
-            self.MODULES[k].update(self.BOTMETA[u'files'][k])
+            logging.debug('extract %s' % k)
+            fmeta = self.get_module_meta(checkoutdir, k, _k)
+            self.BOTMETA['files'][k] = copy.deepcopy(fmeta)
+            self.MODULES[k].update(fmeta)
 
     def load_meta(self):
         if self.botmetafile is not None:
@@ -1035,6 +1063,7 @@ class AnsibleComponentMatcher(object):
             u'namespace_maintainers': [],
             u'metadata': {},
             u'migrated_to': None,
+            u'keywords': [],
         }
 
         populated = False
@@ -1089,6 +1118,8 @@ class AnsibleComponentMatcher(object):
                 meta[u'ignore'] += fdata[u'ignored']
             if u'migrated_to' in fdata and meta[u'migrated_to'] is None:
                 meta[u'migrated_to'] = fdata[u'migrated_to']
+            if u'keywords' in fdata:
+                meta[u'keywords'] += fdata[u'keywords']
 
             if u'support' in fdata:
                 if isinstance(fdata[u'support'], list):

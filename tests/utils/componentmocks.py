@@ -171,6 +171,8 @@ class IssueDatabase:
 
     def __init__(self, cachedir):
         self.cachedir = cachedir
+        if not os.path.exists(self.cachedir):
+            os.makedirs(self.cachedir)
         self.debug = False
         self.eventids = set()
         self.issues = []
@@ -1425,7 +1427,6 @@ class BotMockManager:
         print('### STARTING MOCK MANAGER!!!')
         self.issuedb = None
         self.cachedir = None
-        #import epdb; epdb.st()
 
     def __enter__(self):
 
@@ -1470,6 +1471,7 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.decorators.github.requests', self.mr))
         self.mocks.append(mock.patch('ansibullbot.triagers.ansible.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.ansible.requests', self.mr))
+        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.contributors.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.plugins.needs_revision.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.plugins.shipit.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))

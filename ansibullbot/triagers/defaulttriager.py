@@ -26,7 +26,6 @@ import os
 import sys
 import time
 from datetime import datetime
-from logging.handlers import WatchedFileHandler
 from pprint import pprint
 
 from six.moves import input
@@ -43,6 +42,7 @@ from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.utils.descriptionfixer import DescriptionFixer
+from ansibullbot.utils.logs import set_logger
 
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath[::-1].index('ansibullbot')
@@ -142,28 +142,7 @@ class DefaultTriager(object):
         return parser
 
     def set_logger(self):
-        if self.debug:
-            logging.level = logging.DEBUG
-        else:
-            logging.level = logging.INFO
-        logFormatter = \
-            logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-        rootLogger = logging.getLogger()
-        if self.debug:
-            rootLogger.setLevel(logging.DEBUG)
-        else:
-            rootLogger.setLevel(logging.INFO)
-
-        logdir = os.path.dirname(self.logfile)
-        if logdir and not os.path.isdir(logdir):
-            os.makedirs(logdir)
-
-        fileHandler = WatchedFileHandler(self.logfile)
-        fileHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(fileHandler)
-        consoleHandler = logging.StreamHandler()
-        consoleHandler.setFormatter(logFormatter)
-        rootLogger.addHandler(consoleHandler)
+        set_logger(debug=self.debug, logfile=self.logfile)
 
     def start(self):
 
