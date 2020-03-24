@@ -178,7 +178,6 @@ class BotMetadataParser:
                     top_components = top.split(u'/')
                     child_components = child.split(u'/')
 
-                    #if common == top and top_components == child_components[:len(top_components)]:
                     _propagate(files, top, child, u'maintainers')
                     _propagate(files, top, child, u'ignored')
                     _propagate(files, top, child, u'labels')
