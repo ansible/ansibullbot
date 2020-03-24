@@ -1539,6 +1539,20 @@ class AnsibleTriage(DefaultTriager):
                 if key not in iw.labels:
                     actions.newlabel.append(key)
 
+        # collections!!!
+        if self.meta.get(u'is_collection'):
+            clabels = [u'collection']
+            for fqcn in self.meta[u'component_collection']:
+                clabel = u'collection:%s' % fqcn
+                clabels.append(clabel)
+            for clabel in clabels:
+                exists = clabel in iw.labels
+                unlabeled = iw.history.was_unlabeled(clabel)
+
+                # add it if a human did not remove it
+                if not exists and not unlabeled:
+                    actions.newlabel.append(clabel)
+
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 

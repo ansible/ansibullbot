@@ -9,6 +9,8 @@ import re
 
 import six
 
+import requests
+
 from Levenshtein import jaro_winkler
 
 from ansibullbot._text_compat import to_bytes, to_text
@@ -32,6 +34,8 @@ def make_prefixes(filename):
 class AnsibleComponentMatcher(object):
 
     BOTMETA = {}
+    GALAXY_FILES = {}
+    GALAXY_MANIFESTS = {}
     INDEX = {}
     REPO = u'https://github.com/ansible/ansible'
     STOPWORDS = [u'ansible', u'core', u'plugin']
@@ -138,6 +142,7 @@ class AnsibleComponentMatcher(object):
         self.update(refresh_botmeta=False)
 
     def update(self, email_cache=None, refresh_botmeta=True):
+        self.index_galaxy()
         if email_cache:
             self.email_cache = email_cache
         self.gitrepo.update()
@@ -145,6 +150,15 @@ class AnsibleComponentMatcher(object):
         self.indexed_at = datetime.datetime.now()
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
+
+    def index_galaxy(self):
+        url = 'https://sivel.eng.ansible.com/api/v1/collections/file_map'
+        rr = requests.get(url)
+        self.GALAXY_FILES = rr.json()
+
+        url = 'https://sivel.eng.ansible.com/api/v1/collections/list'
+        rr = requests.get(url)
+        self.GALAXY_MANIFESTS = rr.json()
 
     def get_module_meta(self, checkoutdir, filename1, filename2):
 
@@ -477,10 +491,35 @@ class AnsibleComponentMatcher(object):
                 if matched_filenames:
                     self.strategy = u'search_by_keywords!exact'
 
+            if not matched_filenames:
+                matched_filenames += self.search_by_galaxy(component)
+                if matched_filenames:
+                    self.strategy = u'search_by_galaxy'
+
             if matched_filenames:
                 matched_filenames += self.include_modules_from_test_targets(matched_filenames)
 
         return matched_filenames
+
+    def search_by_galaxy(self, component):
+        '''Is this a file belonging to a collection?'''
+
+        matches = []
+
+        candidates = []
+        for key in self.GALAXY_FILES.keys():
+            if component in key or key == component:
+                candidates.append(key)
+
+        # FIXME: need some better validation of the candidates ...
+
+        if candidates:
+            for cn in candidates:
+                for fqcn in self.GALAXY_FILES[cn]:
+                    matches.append('collection:%s' % fqcn)
+            matches = sorted(set(matches))
+
+        return matches
 
     def search_by_module_name(self, component):
         matches = []
@@ -1054,6 +1093,8 @@ class AnsibleComponentMatcher(object):
 
     def get_meta_for_file(self, filename):
         meta = {
+            u'collection': None,
+            u'collection_scm': None,
             u'repo_filename': filename,
             u'name': os.path.basename(filename).split(u'.')[0],
             u'notify': [],
@@ -1075,6 +1116,20 @@ class AnsibleComponentMatcher(object):
             u'migrated_to': None,
             u'keywords': [],
         }
+
+        if filename.startswith(u'collection:'):
+            fqcn = filename.replace(u'collection:', u'')
+            manifest = self.GALAXY_MANIFESTS.get(fqcn)
+            if manifest:
+                manifest = manifest[u'manifest'][u'collection_info']
+            meta[u'collection'] = fqcn
+            meta[u'migrated_to'] = fqcn
+            meta[u'support'] = u'community'
+            if manifest.get(u'repository'):
+                meta[u'collection_scm'] = manifest[u'repository']
+            elif manifest.get(u'issues'):
+                meta[u'collection_scm'] = manifest[u'issues']
+            return meta
 
         populated = False
         filenames = [filename, os.path.splitext(filename)[0]]
