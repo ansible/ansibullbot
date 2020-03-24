@@ -31,9 +31,12 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, botmetafile=None, gitrepo=None, commit=None):
+    def __init__(self, botmeta=None, botmetafile=None, gitrepo=None, commit=None):
         self.botmetafile = botmetafile
-        self.botmeta = {}
+        if botmeta:
+            self.botmeta = botmeta
+        else:
+            self.botmeta = {}
         self.CMAP = {}
         self.FILEMAP = {}
         self.match_cache = {}
@@ -44,17 +47,18 @@ class FileIndexer(ModuleIndexer):
 
     def parse_metadata(self):
 
-        if self.botmetafile is not None:
-            with open(self.botmetafile, 'rb') as f:
-                rdata = f.read()
-        else:
-            fp = u'.github/BOTMETA.yml'
-            rdata = self.get_file_content(fp)
-        if rdata:
-            logging.info('fileindexder parsing botmeta')
-            self.botmeta = BotMetadataParser.parse_yaml(rdata)
-        else:
-            self.botmeta = {}
+        if not self.botmeta:
+            if self.botmetafile is not None:
+                with open(self.botmetafile, 'rb') as f:
+                    rdata = f.read()
+            else:
+                fp = u'.github/BOTMETA.yml'
+                rdata = self.get_file_content(fp)
+            if rdata:
+                logging.info('fileindexder parsing botmeta')
+                self.botmeta = BotMetadataParser.parse_yaml(rdata)
+            else:
+                self.botmeta = {}
 
         # reshape meta into old format
         logging.info('reshape botmeta')

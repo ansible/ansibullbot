@@ -46,6 +46,8 @@ from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, 
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
+from ansibullbot.parsers.botmetadata import BotMetadataParser, BotYAMLLoader
+
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.git_tools import GitRepoWrapper
@@ -252,6 +254,15 @@ class AnsibleTriage(DefaultTriager):
         repo = u'https://github.com/ansible/ansible'
         gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit)
 
+        # load botmeta ... once!
+        logging.info('ansible triager loading botmeta')
+        if self.botmetafile is not None:
+            with open(self.botmetafile, 'rb') as f:
+                rdata = f.read()
+        else:
+            rdata = gitrepo.get_file_content(u'.github/BOTMETA.yml')
+        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer(
@@ -261,12 +272,14 @@ class AnsibleTriage(DefaultTriager):
 
         logging.info('creating file indexer')
         self.file_indexer = FileIndexer(
+            botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             gitrepo=gitrepo,
         )
 
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer(
+            botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             gh_client=self.gqlc,
             cachedir=self.cachedir_base,
@@ -277,6 +290,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating component matcher')
         self.component_matcher = AnsibleComponentMatcher(
             gitrepo=gitrepo,
+            botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             email_cache=self.module_indexer.emails_cache,
         )
@@ -337,13 +351,16 @@ class AnsibleTriage(DefaultTriager):
             # update shippable run data
             self.SR.update()
 
-        # is automerge allowed?
-        if self.botmetafile is not None:
-            with open(self.botmetafile, 'rb') as f:
-                self._botmeta_content = f.read()
-        else:
-            self._botmeta_content = self.file_indexer.get_file_content(u'.github/BOTMETA.yml')
-        self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
+        if not self.botmeta or self.ITERATION > 0:
+            # is automerge allowed?
+            if self.botmetafile is not None:
+                with open(self.botmetafile, 'rb') as f:
+                    self._botmeta_content = f.read()
+            else:
+                self._botmeta_content = self.file_indexer.get_file_content(u'.github/BOTMETA.yml')
+            logging.info('ansible triager [re]loading botmeta')
+            self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
+
         self.automerge_on = False
         if self.botmeta.get(u'automerge'):
             if self.botmeta[u'automerge'] in [u'Yes', u'yes', u'y', True, 1]:

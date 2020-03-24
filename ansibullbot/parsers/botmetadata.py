@@ -189,19 +189,19 @@ class BotMetadataParser:
         #################################
 
         # https://github.com/ansible/ansibullbot/issues/1155#issuecomment-457731630
-        logging.info('load yaml')
+        logging.info('botmeta: load yaml')
         ydata_orig = yaml.load(data, BotYAMLLoader)
         ydata = yaml.load(yaml.dump(ydata_orig, Dumper=NoAliasDumper), BotYAMLLoader)
 
         # fix the team macros
-        logging.info('fix teams')
+        logging.info('botmeta: fix teams')
         ydata = fix_teams(ydata)
 
         # fix the macro'ized file keys
-        logging.info('fix keys')
+        logging.info('botmeta: fix keys')
         ydata = fix_keys(ydata)
 
-        logging.info('iterate files')
+        logging.info('botmeta: iterate files')
         for k, v in ydata[u'files'].items():
             if v is None:
                 # convert empty val in dict
@@ -220,14 +220,15 @@ class BotMetadataParser:
             ydata[u'files'][k][u'maintainers_keys'] = [k]
 
         # replace macros in files section
-        logging.info('fix lists')
+        logging.info('botmeta: fix lists')
         ydata = fix_lists(ydata)
 
         # extend labels by filepath
-        logging.info('extend labels')
+        logging.info('botmeta: extend labels')
         ydata = extend_labels(ydata)
 
-        logging.info('propogate keys')
+        # key inheritance
+        logging.info('botmeta: propogate keys')
         propagate_keys(ydata)
 
         return ydata

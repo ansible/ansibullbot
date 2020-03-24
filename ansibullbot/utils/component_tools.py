@@ -105,10 +105,14 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None):
+    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None):
         self.usecache = usecache
         self.cachedir = cachedir
         self.botmetafile = botmetafile
+        if botmeta:
+            self.BOTMETA = botmeta
+        else:
+            self.BOTMETA = {}
         self.email_cache = email_cache
         self.commit = commit
 
@@ -121,6 +125,7 @@ class AnsibleComponentMatcher(object):
             self.file_indexer = file_indexer
         else:
             self.file_indexer = FileIndexer(
+                botmeta=self.BOTMETA,
                 botmetafile=self.botmetafile,
                 gitrepo=self.gitrepo
             )
@@ -130,13 +135,13 @@ class AnsibleComponentMatcher(object):
 
         self.indexed_at = False
         self.updated_at = None
-        self.update()
+        self.update(refresh_botmeta=False)
 
-    def update(self, email_cache=None):
+    def update(self, email_cache=None, refresh_botmeta=True):
         if email_cache:
             self.email_cache = email_cache
         self.gitrepo.update()
-        self.index_files()
+        self.index_files(refresh_botmeta=refresh_botmeta)
         self.indexed_at = datetime.datetime.now()
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
@@ -206,14 +211,15 @@ class AnsibleComponentMatcher(object):
 
         return bmeta
 
-    def index_files(self):
+    def index_files(self, refresh_botmeta=True):
 
-        self.BOTMETA = {}
+        #self.BOTMETA = {}
         self.MODULES = {}
         self.MODULE_NAMES = []
         self.MODULE_NAMESPACE_DIRECTORIES = []
 
-        self.load_meta()
+        if refresh_botmeta:
+            self.load_meta()
 
         for fn in self.gitrepo.module_files:
             if self.gitrepo.isdir(fn):
@@ -292,10 +298,14 @@ class AnsibleComponentMatcher(object):
                 _k = k
             logging.debug('extract %s' % k)
             fmeta = self.get_module_meta(checkoutdir, k, _k)
-            self.BOTMETA['files'][k] = copy.deepcopy(fmeta)
+            if k in self.BOTMETA[u'files']:
+                self.BOTMETA['files'][k].update(fmeta)
+            else:
+                self.BOTMETA['files'][k] = copy.deepcopy(fmeta)
             self.MODULES[k].update(fmeta)
 
     def load_meta(self):
+        logging.info('componentmatcher - [re]load botmeta')
         if self.botmetafile is not None:
             with open(self.botmetafile, 'rb') as f:
                 rdata = f.read()

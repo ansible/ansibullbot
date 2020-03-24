@@ -186,3 +186,9 @@ class GitRepoWrapper(object):
                         email_map[_email][u'commit_count_byfile'][fn] += 1
 
         return email_map
+
+    def get_file_content(self, filepath):
+        fp = os.path.join(self.checkoutdir, filepath)
+        with open(fp, 'r') as f:
+            fdata = f.read()
+        return fdata
