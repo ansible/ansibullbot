@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import copy
 import itertools
+import logging
 import os
 
 from string import Template
@@ -148,16 +150,36 @@ class BotMetadataParser:
         def propagate_keys(data):
             files = data[u'files']
             '''maintainers and ignored keys defined at a directory level are copied to subpath'''
-            for file1, file2 in itertools.combinations(files.keys(), 2):
-                # Python 2.7 doesn't provide os.path.commonpath
-                common = os.path.commonprefix([file1, file2])
-                top = min(file1, file2)
-                child = max(file1, file2)
 
-                top_components = top.split(u'/')
-                child_components = child.split(u'/')
+            iterfiles = {}
+            filenames = sorted(list(files.keys()))
+            parent = None
+            for idp,parent in enumerate(filenames):
 
-                if common == top and top_components == child_components[:len(top_components)]:
+                if parent not in iterfiles:
+                    iterfiles[parent] = []
+
+                started = False
+                for fn in filenames[idp:]:
+                    if parent == fn:
+                        continue
+                    if fn.startswith(parent):
+                        started = True
+                        iterfiles[parent].append(fn)
+                    elif started:
+                        break
+
+            for file1, files2 in iterfiles.items():
+                for file2 in files2:
+                    # Python 2.7 doesn't provide os.path.commonpath
+                    common = os.path.commonprefix([file1, file2])
+                    top = min(file1, file2)
+                    child = max(file1, file2)
+
+                    top_components = top.split(u'/')
+                    child_components = child.split(u'/')
+
+                    #if common == top and top_components == child_components[:len(top_components)]:
                     _propagate(files, top, child, u'maintainers')
                     _propagate(files, top, child, u'ignored')
                     _propagate(files, top, child, u'labels')
@@ -169,15 +191,19 @@ class BotMetadataParser:
         #################################
 
         # https://github.com/ansible/ansibullbot/issues/1155#issuecomment-457731630
+        logging.info('load yaml')
         ydata_orig = yaml.load(data, BotYAMLLoader)
         ydata = yaml.load(yaml.dump(ydata_orig, Dumper=NoAliasDumper), BotYAMLLoader)
 
         # fix the team macros
+        logging.info('fix teams')
         ydata = fix_teams(ydata)
 
         # fix the macro'ized file keys
+        logging.info('fix keys')
         ydata = fix_keys(ydata)
 
+        logging.info('iterate files')
         for k, v in ydata[u'files'].items():
             if v is None:
                 # convert empty val in dict
@@ -196,11 +222,14 @@ class BotMetadataParser:
             ydata[u'files'][k][u'maintainers_keys'] = [k]
 
         # replace macros in files section
+        logging.info('fix lists')
         ydata = fix_lists(ydata)
 
         # extend labels by filepath
+        logging.info('extend labels')
         ydata = extend_labels(ydata)
 
+        logging.info('propogate keys')
         propagate_keys(ydata)
 
         return ydata

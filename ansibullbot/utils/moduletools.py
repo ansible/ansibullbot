@@ -141,6 +141,7 @@ class ModuleIndexer(object):
         else:
             fp = u'.github/BOTMETA.yml'
             rdata = self.get_file_content(fp)
+        logging.info('moduleindexer parsing botmeta')
         self.botmeta = BotMetadataParser.parse_yaml(rdata)
 
         # load the modules

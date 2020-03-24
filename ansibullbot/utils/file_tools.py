@@ -51,11 +51,13 @@ class FileIndexer(ModuleIndexer):
             fp = u'.github/BOTMETA.yml'
             rdata = self.get_file_content(fp)
         if rdata:
+            logging.info('fileindexder parsing botmeta')
             self.botmeta = BotMetadataParser.parse_yaml(rdata)
         else:
             self.botmeta = {}
 
         # reshape meta into old format
+        logging.info('reshape botmeta')
         self.CMAP = {}
         for k, v in self.botmeta.get(u'files', {}).items():
             if not v:
