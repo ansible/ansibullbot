@@ -443,6 +443,11 @@ class AnsibleComponentMatcher(object):
         if component not in self.STOPWORDS and component not in self.STOPCHARS:
 
             if not matched_filenames:
+                matched_filenames += self.search_by_galaxy(component)
+                if matched_filenames:
+                    self.strategy = u'search_by_galaxy'
+
+            if not matched_filenames:
                 matched_filenames += self.search_by_keywords(component, exact=True)
                 if matched_filenames:
                     self.strategy = u'search_by_keywords'
@@ -491,11 +496,6 @@ class AnsibleComponentMatcher(object):
                 if matched_filenames:
                     self.strategy = u'search_by_keywords!exact'
 
-            if not matched_filenames:
-                matched_filenames += self.search_by_galaxy(component)
-                if matched_filenames:
-                    self.strategy = u'search_by_galaxy'
-
             if matched_filenames:
                 matched_filenames += self.include_modules_from_test_targets(matched_filenames)
 
@@ -508,7 +508,8 @@ class AnsibleComponentMatcher(object):
 
         candidates = []
         for key in self.GALAXY_FILES.keys():
-            if component in key or key == component:
+            if (component in key or key == component) and key.startswith('plugins'):
+                logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
                 candidates.append(key)
 
         # FIXME: need some better validation of the candidates ...
