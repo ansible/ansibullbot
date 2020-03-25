@@ -504,7 +504,6 @@ class IssueDatabase:
         if 'api.shippable.com/runs' in url:
             return []
 
-        import epdb; epdb.st()
         return {}
 
     def graphql_response(self, data):
