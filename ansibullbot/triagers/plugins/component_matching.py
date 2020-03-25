@@ -157,11 +157,14 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
     # welcome message to indicate which files the bot matched
     if iw.is_issue():
 
+        # We only want to add this comment in two scenarios:
+        #   * no other comments have been made yet
+        #   * the last comment had different files
+
         if len(iw.comments) == 0:
             cmeta[u'needs_component_message'] = True
 
         else:
-
             bpcs = iw.history.get_boilerplate_comments(
                 dates=True,
                 content=True,
@@ -169,10 +172,8 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
             )
             bpcs = [x for x in bpcs if x[1] == u'components_banner']
 
-            if not bpcs:
-                cmeta[u'needs_component_message'] = True
-            else:
-                # was the last list of files correct?
+            # was the last list of files correct?
+            if bpcs:
                 lbpc = bpcs[-1]
                 lbpc = lbpc[-1]
                 _filenames = []

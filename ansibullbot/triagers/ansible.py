@@ -2011,7 +2011,8 @@ class AnsibleTriage(DefaultTriager):
             )
         )
 
-        self.meta.update(get_notification_facts(iw, self.meta))
+        # who needs to be notified or assigned?
+        self.meta.update(get_notification_facts(iw, self.meta, botmeta=self.botmeta))
 
         # ci_verified and test results
         self.meta.update(
