@@ -264,14 +264,29 @@ class AnsibleComponentMatcher(object):
         self.MODULE_NAMES = (x for x in self.MODULE_NAMES if not x.startswith(u'__'))
         self.MODULE_NAMES = sorted(set(self.MODULE_NAMES))
 
+        # append module names from botmeta
+        bmodules = [x for x in self.BOTMETA[u'files'] if x.startswith(u'lib/ansible/modules')]
+        bmodules = [x for x in bmodules if x.endswith(u'.py') or x.endswith(u'.ps1')]
+        bmodules = [x for x in bmodules if u'__init__' not in x]
+        for bmodule in bmodules:
+            mn = os.path.basename(bmodule).replace(u'.py', u'').replace(u'.ps1', u'')
+            mn = mn.lstrip('_')
+            if mn not in self.MODULE_NAMES:
+                self.MODULE_NAMES.append(mn)
+            if bmodule not in self.MODULES:
+                self.MODULES[bmodule] = {
+                    'filename': bmodule,
+                    'repo_filename': bmodule,
+                    'name': mn
+                }
+
         # make a list of names by calling ansible-doc
         checkoutdir = self.gitrepo.checkoutdir
         checkoutdir = os.path.abspath(checkoutdir)
         cmd = u'. {}/hacking/env-setup; ansible-doc -t module -F'.format(checkoutdir)
         logging.debug(cmd)
         (rc, so, se) = run_command(cmd, cwd=checkoutdir)
-        if rc:
-            import epdb; epdb.st()
+        if rc != 0:
             raise Exception("'ansible-doc' command failed (%s, %s %s)" % (rc, so, se))
         lines = to_text(so).split(u'\n')
         for line in lines:
@@ -553,8 +568,6 @@ class AnsibleComponentMatcher(object):
 
             logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
             candidates.append(key)
-
-        import epdb; epdb.st()
 
         if candidates:
             for cn in candidates:
