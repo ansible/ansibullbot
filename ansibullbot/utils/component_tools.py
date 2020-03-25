@@ -116,7 +116,7 @@ class AnsibleComponentMatcher(object):
         if botmeta:
             self.BOTMETA = botmeta
         else:
-            self.BOTMETA = {}
+            self.BOTMETA = {u'files': {}}
         self.email_cache = email_cache
         self.commit = commit
 
