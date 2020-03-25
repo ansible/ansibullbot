@@ -435,9 +435,16 @@ class IssueDatabase:
                 sid = parts[-1]
                 rdata = self.get_pull_statuses(org, repo, sid)
 
+            elif parts[-1] == 'file_map':
+                rdata = {}
+
+            elif parts[-2] == 'collections' and parts[-1] == 'list':
+                rdata = {}
+
         # pause if we don't know how to handle this url+method yet
         if rdata is None:
             import epdb; epdb.st()
+            return None
 
         #if 'labels' in parts and not rdata:
         #    import epdb; epdb.st()
