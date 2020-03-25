@@ -187,8 +187,41 @@ class GitRepoWrapper(object):
 
         return email_map
 
-    def get_file_content(self, filepath):
+    def get_file_content(self, filepath, follow=False):
         fp = os.path.join(self.checkoutdir, filepath)
-        with open(fp, 'r') as f:
-            fdata = f.read()
-        return fdata
+        if os.path.exists(fp):
+            with open(fp, 'r') as f:
+                fdata = f.read()
+            return fdata
+
+        if not follow:
+            return None
+
+        # https://stackoverflow.com/a/1395463
+        #cmd = 'cd %s; git show HEAD^:%s' % (self.checkoutdir, filepath)
+
+        # https://stackoverflow.com/a/19727752
+        cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
+        logging.info(cmd)
+        (rc, so, se) = run_command(cmd)
+        lrev = so.strip().decode('utf-8')
+        cmd = 'cd %s; git show %s^:%s' % (self.checkoutdir, lrev, filepath)
+        (rc, so, se) = run_command(cmd)
+        logging.info(cmd)
+        #so = so.decode('utf-8').strip()
+        so = so.strip()
+        if so.decode('utf-8').endswith('.py'):
+            newpath = os.path.dirname(filepath)
+            newpath = os.path.join(newpath, so.decode('utf-8'))
+
+            cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, newpath)
+            logging.info(cmd)
+            (rc, so, se) = run_command(cmd)
+            lrev = so.strip().decode('utf-8')
+            cmd = 'cd %s; git show %s^:%s' % (self.checkoutdir, lrev, newpath)
+            logging.info(cmd)
+            (rc, so, se) = run_command(cmd)
+            #so = so.decode('utf-8').strip()
+            so = so.strip()
+
+        return so

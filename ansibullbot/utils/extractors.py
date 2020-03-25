@@ -425,8 +425,9 @@ class ModuleExtractor(object):
     _METADATA = None
     _DOCSTRING = None
 
-    def __init__(self, filepath, email_cache=None):
+    def __init__(self, filepath, filedata=None, email_cache=None):
         self.filepath = filepath
+        self._FILEDATA = filedata
         self.email_cache = email_cache
 
     @property
@@ -545,27 +546,28 @@ class ModuleExtractor(object):
 
     def get_module_metadata(self):
 
-        # no directories please
-        if os.path.isdir(self.filepath):
-            return {}
-        # no pycs please
-        if self.filepath.endswith('.pyc') or self.filepath.endswith('.pyo'):
-            return {}
-        # no meta in __init__.py files
-        if os.path.basename(self.filepath) == u'__init__.py':
-            return {}
-        # no point in parsing markdown
-        if self.filepath.endswith('.md'):
-            return {}
-        # no point in parsing ps1 or ps2
-        if self.filepath.endswith('.ps'):
-            return {}
-        if self.filepath.endswith('.ps1'):
-            return {}
-        if self.filepath.endswith('.ps2'):
-            return {}
-        if self.filepath.endswith('.rst'):
-            return {}
+        if self.filepath is not None:
+            # no directories please
+            if os.path.isdir(self.filepath):
+                return {}
+            # no pycs please
+            if self.filepath.endswith('.pyc') or self.filepath.endswith('.pyo'):
+                return {}
+            # no meta in __init__.py files
+            if os.path.basename(self.filepath) == u'__init__.py':
+                return {}
+            # no point in parsing markdown
+            if self.filepath.endswith('.md'):
+                return {}
+            # no point in parsing ps1 or ps2
+            if self.filepath.endswith('.ps'):
+                return {}
+            if self.filepath.endswith('.ps1'):
+                return {}
+            if self.filepath.endswith('.ps2'):
+                return {}
+            if self.filepath.endswith('.rst'):
+                return {}
 
         meta = {}
         rawmeta = b''

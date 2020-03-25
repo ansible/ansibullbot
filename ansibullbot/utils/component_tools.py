@@ -173,7 +173,12 @@ class AnsibleComponentMatcher(object):
         bmeta = None
         if not os.path.exists(cfile) or not self.usecache:
             bmeta = {}
-            ME = ModuleExtractor(os.path.join(checkoutdir, filename1), email_cache=self.email_cache)
+            efile = os.path.join(checkoutdir, filename1)
+            if not os.path.exists(efile):
+                fdata = self.gitrepo.get_file_content(filename1, follow=True)
+                ME = ModuleExtractor(None, filedata=fdata, email_cache=self.email_cache)
+            else:
+                ME = ModuleExtractor(os.path.join(checkoutdir, filename1), email_cache=self.email_cache)
             if filename1 not in self.BOTMETA[u'files']:
                 bmeta = {
                     u'deprecated': os.path.basename(filename1).startswith(u'_'),
@@ -457,6 +462,7 @@ class AnsibleComponentMatcher(object):
 
         if component not in self.STOPWORDS and component not in self.STOPCHARS:
 
+            '''
             if not matched_filenames:
                 matched_filenames += self.search_by_botmeta_migrated_to(component)
                 if matched_filenames:
@@ -466,6 +472,7 @@ class AnsibleComponentMatcher(object):
                 matched_filenames += self.search_by_galaxy(component)
                 if matched_filenames:
                     self.strategy = u'search_by_galaxy'
+            '''
 
             if not matched_filenames:
                 matched_filenames += self.search_by_keywords(component, exact=True)
@@ -1371,6 +1378,12 @@ class AnsibleComponentMatcher(object):
         if filename == u'test/sanity/pep8/legacy-files.txt' and not meta[u'support']:
             meta[u'support'] = u'community'
 
+        # get support from the module metadata ...
+        if meta.get(u'metadata'):
+            if meta[u'metadata'].get(u'supported_by'):
+                meta[u'support'] = meta[u'metadata'][u'supported_by']
+                meta[u'supported_by'] = meta[u'metadata'][u'supported_by']
+
         # fallback to core support
         if not meta[u'support']:
             meta[u'support'] = u'core'
@@ -1438,6 +1451,7 @@ class AnsibleComponentMatcher(object):
                     logging.info(u'supershipiteer: {}'.format(this_prefix))
                     meta[u'supershipit'].append(username)
 
+        #import epdb; epdb.st()
         return meta
 
     def find_module_match(self, pattern, exact=False):

@@ -293,6 +293,7 @@ class AnsibleTriage(DefaultTriager):
             botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             email_cache=self.module_indexer.emails_cache,
+            usecache=True
         )
 
         # instantiate shippable api
@@ -346,7 +347,7 @@ class AnsibleTriage(DefaultTriager):
             self.file_indexer.update()
 
             # update component matcher
-            self.component_matcher.update(email_cache=self.module_indexer.emails_cache)
+            self.component_matcher.update(email_cache=self.module_indexer.emails_cache, usecache=True)
 
             # update shippable run data
             self.SR.update()
