@@ -589,7 +589,11 @@ class AnsibleTriage(DefaultTriager):
             logging.info('executing %s' % pr)
             (rc, so, se) = run_command(pr)
             numbers = json.loads(to_text(so))
-            numbers = [int(x) for x in numbers]
+            if numbers:
+                if isinstance(numbers[0], dict) and 'number' in numbers[0]:
+                    numbers = [x['number'] for x in numbers]
+                else:
+                    numbers = [int(x) for x in numbers]
             logging.info(
                 u'%s numbers after running script' % len(numbers)
             )

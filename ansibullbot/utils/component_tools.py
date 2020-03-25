@@ -443,6 +443,11 @@ class AnsibleComponentMatcher(object):
         if component not in self.STOPWORDS and component not in self.STOPCHARS:
 
             if not matched_filenames:
+                matched_filenames += self.search_by_botmeta_migrated_to(component)
+                if matched_filenames:
+                    self.strategy = u'search_by_botmeta_migrated_to'
+
+            if not matched_filenames:
                 matched_filenames += self.search_by_galaxy(component)
                 if matched_filenames:
                     self.strategy = u'search_by_galaxy'
@@ -501,6 +506,36 @@ class AnsibleComponentMatcher(object):
 
         return matched_filenames
 
+    def search_by_botmeta_migrated_to(self, component):
+        '''Is this a file belonging to a collection?'''
+
+        matches = []
+
+        # check for matches in botmeta first in case there's a migrated_to key ...
+        botmeta_candidates = []
+        for bmkey in self.BOTMETA[u'files'].keys():
+            # skip tests because we dont want false positives
+            if not bmkey.startswith('lib/ansible'):
+                continue
+            if not self.BOTMETA[u'files'][bmkey].get(u'migrated_to'):
+                continue
+            if bmkey == component or os.path.basename(bmkey).replace('.py', '') == os.path.basename(component).replace('.py', ''):
+                mt = self.BOTMETA['files'][bmkey].get('migrated_to')[0]
+                #logging.info(u'matched %s to %s:%s' % (component, mt, bmkey))
+                migrated_file = None
+                for fn,gcollections in self.GALAXY_FILES.items():
+                    if mt not in gcollections:
+                        continue
+                    if os.path.basename(fn).replace('.py', '') != os.path.basename(component).replace('.py', ''):
+                        continue
+                    botmeta_candidates.append('collection:%s:%s' % (mt, fn))
+                    logging.info('matched %s to %s to %s:%s' % (component, bmkey, mt, fn))
+
+        if botmeta_candidates:
+            return botmeta_candidates
+
+        return matches
+
     def search_by_galaxy(self, component):
         '''Is this a file belonging to a collection?'''
 
@@ -508,16 +543,25 @@ class AnsibleComponentMatcher(object):
 
         candidates = []
         for key in self.GALAXY_FILES.keys():
-            if (component in key or key == component) and key.startswith('plugins'):
-                logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
-                candidates.append(key)
+            if not (component in key or key == component):
+                continue
+            if not key.startswith('plugins'):
+                continue
+            keybn = os.path.basename(key).replace('.py', '')
+            if keybn != component:
+                continue
 
-        # FIXME: need some better validation of the candidates ...
+            logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
+            candidates.append(key)
+
+        import epdb; epdb.st()
 
         if candidates:
             for cn in candidates:
                 for fqcn in self.GALAXY_FILES[cn]:
-                    matches.append('collection:%s' % fqcn)
+                    if fqcn.startswith('testing.'):
+                        continue
+                    matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
 
         return matches
@@ -1120,6 +1164,7 @@ class AnsibleComponentMatcher(object):
 
         if filename.startswith(u'collection:'):
             fqcn = filename.replace(u'collection:', u'')
+            fqcn = filename.split(u':')[1]
             manifest = self.GALAXY_MANIFESTS.get(fqcn)
             if manifest:
                 manifest = manifest[u'manifest'][u'collection_info']

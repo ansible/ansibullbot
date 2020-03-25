@@ -151,7 +151,8 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
         cmeta[u'component_collection'] = []
         cmeta[u'component_support'] = [u'community']
         for comp in [x for x in CM_MATCHES if x[u'repo_filename'].startswith(u'collection:')]:
-            cmeta[u'component_collection'].append(x[u'repo_filename'].replace(u'collection:', ''))
+            fqcn = x[u'repo_filename'].split(u':')[1]
+            cmeta[u'component_collection'].append(fqcn)
 
     # welcome message to indicate which files the bot matched
     if iw.is_issue():
