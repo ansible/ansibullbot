@@ -1138,6 +1138,7 @@ class DefaultWrapper(object):
     @property
     def new_files(self):
         new_files = [x for x in self.files if x not in self.file_indexer.files]
+        new_files = [x for x in new_files if not self.file_indexer.gitrepo.existed(x)]
         return new_files
 
     @property
