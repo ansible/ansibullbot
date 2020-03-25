@@ -23,6 +23,31 @@ class NoAliasDumper(yaml.Dumper):
         return True
 
 
+def compute_file_children(filenames):
+    '''Optimized version of itertools.combinations for parent+children combos'''
+
+    filenames = sorted(filenames)
+
+    iterfiles = {}
+    parent = None
+    for idp,parent in enumerate(filenames):
+
+        if parent not in iterfiles:
+            iterfiles[parent] = []
+
+        started = False
+        for fn in filenames[idp:]:
+            if parent == fn:
+                continue
+            if fn.startswith(parent):
+                started = True
+                iterfiles[parent].append(fn)
+            elif started:
+                break
+
+    return iterfiles
+
+
 class BotMetadataParser:
 
     @staticmethod
@@ -147,36 +172,15 @@ class BotMetadataParser:
                     files[child][field] = top_entries[:]
 
         def propagate_keys(data):
-            files = data[u'files']
             '''maintainers and ignored keys defined at a directory level are copied to subpath'''
 
-            iterfiles = {}
-            filenames = sorted(list(files.keys()))
-            parent = None
-            for idp,parent in enumerate(filenames):
-
-                if parent not in iterfiles:
-                    iterfiles[parent] = []
-
-                started = False
-                for fn in filenames[idp:]:
-                    if parent == fn:
-                        continue
-                    if fn.startswith(parent):
-                        started = True
-                        iterfiles[parent].append(fn)
-                    elif started:
-                        break
+            files = data[u'files']
+            iterfiles = compute_file_children(files.keys())
 
             for file1, files2 in iterfiles.items():
                 for file2 in files2:
-                    # Python 2.7 doesn't provide os.path.commonpath
-                    common = os.path.commonprefix([file1, file2])
                     top = min(file1, file2)
                     child = max(file1, file2)
-
-                    top_components = top.split(u'/')
-                    child_components = child.split(u'/')
 
                     _propagate(files, top, child, u'maintainers')
                     _propagate(files, top, child, u'ignored')
