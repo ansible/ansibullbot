@@ -145,11 +145,11 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
                 if u'/plugins/' in x:
                     cmeta[u'is_new_plugin'] = True
 
-    # is it a colleciton?
+    # is it a collection?
     if [x for x in CM_MATCHES if x[u'repo_filename'].startswith(u'collection:')]:
         cmeta[u'is_collection'] = True
         cmeta[u'component_collection'] = []
-        cmeta[u'component_support'] = [u'community']
+        #cmeta[u'component_support'] = [u'community']
         for comp in [x for x in CM_MATCHES if x[u'repo_filename'].startswith(u'collection:')]:
             fqcn = x[u'repo_filename'].split(u':')[1]
             cmeta[u'component_collection'].append(fqcn)

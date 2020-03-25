@@ -1451,7 +1451,6 @@ class AnsibleComponentMatcher(object):
                     logging.info(u'supershipiteer: {}'.format(this_prefix))
                     meta[u'supershipit'].append(username)
 
-        #import epdb; epdb.st()
         return meta
 
     def find_module_match(self, pattern, exact=False):
