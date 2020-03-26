@@ -141,7 +141,7 @@ class AnsibleComponentMatcher(object):
         self.updated_at = None
         self.update(refresh_botmeta=False)
 
-    def update(self, email_cache=None, refresh_botmeta=True):
+    def update(self, email_cache=None, refresh_botmeta=True, usecache=False):
         self.index_galaxy()
         if email_cache:
             self.email_cache = email_cache
