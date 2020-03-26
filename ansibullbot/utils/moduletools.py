@@ -73,7 +73,7 @@ class ModuleIndexer(object):
         u'imports': []
     }
 
-    def __init__(self, commits=True, blames=True, botmetafile=None, maintainers=None, gh_client=None, cachedir=u'~/.ansibullbot/cache', gitrepo=None):
+    def __init__(self, commits=True, blames=True, botmeta=None, botmetafile=None, maintainers=None, gh_client=None, cachedir=u'~/.ansibullbot/cache', gitrepo=None):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
@@ -81,7 +81,10 @@ class ModuleIndexer(object):
         self.get_commits = commits
         self.get_blames = blames
         self.botmetafile = botmetafile
-        self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
+        if botmeta:
+            self.botmeta = botmeta
+        else:
+            self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
         self.modules = {}  # keys: paths of files belonging to the repository
         self.maintainers = maintainers or {}
         self.importmap = {}
@@ -135,13 +138,15 @@ class ModuleIndexer(object):
 
     def parse_metadata(self):
 
-        if self.botmetafile is not None:
-            with open(self.botmetafile, 'rb') as f:
-                rdata = f.read()
-        else:
-            fp = u'.github/BOTMETA.yml'
-            rdata = self.get_file_content(fp)
-        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+        if not self.botmeta:
+            if self.botmetafile is not None:
+                with open(self.botmetafile, 'rb') as f:
+                    rdata = f.read()
+            else:
+                fp = u'.github/BOTMETA.yml'
+                rdata = self.get_file_content(fp)
+            logging.info('moduleindexer parsing botmeta')
+            self.botmeta = BotMetadataParser.parse_yaml(rdata)
 
         # load the modules
         logging.info(u'loading modules')

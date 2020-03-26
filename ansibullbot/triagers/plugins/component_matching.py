@@ -13,6 +13,7 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
     ]
 
     cmeta = {
+        u'is_collection': False,
         u'is_module': False,
         u'is_action_plugin': False,
         u'is_new_module': False,
@@ -33,6 +34,8 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
         u'component_namespace_maintainers': [],
         u'component_notifiers': [],
         u'component_support': [],
+        u'component_scm': None,
+        u'component_collection': None,
         u'needs_component_message': False,
     }
 
@@ -142,19 +145,35 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
                 if u'/plugins/' in x:
                     cmeta[u'is_new_plugin'] = True
 
+    # is it a collection?
+    if [x for x in CM_MATCHES if x[u'repo_filename'].startswith(u'collection:')]:
+        cmeta[u'is_collection'] = True
+        cmeta[u'component_collection'] = []
+        #cmeta[u'component_support'] = [u'community']
+        for comp in [x for x in CM_MATCHES if x[u'repo_filename'].startswith(u'collection:')]:
+            fqcn = x[u'repo_filename'].split(u':')[1]
+            cmeta[u'component_collection'].append(fqcn)
+
     # welcome message to indicate which files the bot matched
     if iw.is_issue():
+
+        # We only want to add this comment in two scenarios:
+        #   * no other comments have been made yet
+        #   * the last comment had different files
 
         if len(iw.comments) == 0:
             cmeta[u'needs_component_message'] = True
 
         else:
-
-            bpcs = iw.history.get_boilerplate_comments(dates=True, content=True, botnames=[u'ansibot', u'ansibotdev'])
+            bpcs = iw.history.get_boilerplate_comments(
+                dates=True,
+                content=True,
+                botnames=[u'ansibot', u'ansibotdev']
+            )
             bpcs = [x for x in bpcs if x[1] == u'components_banner']
 
+            # was the last list of files correct?
             if bpcs:
-                # was the last list of files correct?
                 lbpc = bpcs[-1]
                 lbpc = lbpc[-1]
                 _filenames = []

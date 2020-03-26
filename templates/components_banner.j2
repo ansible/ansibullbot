@@ -1,13 +1,17 @@
 Files identified in the description:
 {% if meta['component_matches'] %}
 {% for x in meta['component_matches'] %}
+{% if x['is_collection'] or x['repo_filename'].startswith('collection:') %}
+* {{ '[`' + x['repo_filename'] + '`](' + x['collection_scm'] + ')'}}
+{% else %}
 * {{ '[`' + x['repo_filename'] + '`](' + 'https://github.com/ansible/ansible/blob/devel/' + x['repo_filename'] + ')'}}
+{% endif %}
 {% endfor %}
 {% else %}
 None
 {% endif %}
 
-If these files are inaccurate, please update the `component name` section of the description or use the `!component` bot command.
+If these files are incorrect, please update the `component name` section of the description or use the `!component` bot command.
 
 [click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
 <!--- boilerplate: components_banner --->

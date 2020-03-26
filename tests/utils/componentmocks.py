@@ -435,9 +435,16 @@ class IssueDatabase:
                 sid = parts[-1]
                 rdata = self.get_pull_statuses(org, repo, sid)
 
+            elif parts[-1] == 'file_map':
+                rdata = {}
+
+            elif parts[-2] == 'collections' and parts[-1] == 'list':
+                rdata = {}
+
         # pause if we don't know how to handle this url+method yet
         if rdata is None:
             import epdb; epdb.st()
+            return None
 
         #if 'labels' in parts and not rdata:
         #    import epdb; epdb.st()
@@ -504,7 +511,6 @@ class IssueDatabase:
         if 'api.shippable.com/runs' in url:
             return []
 
-        import epdb; epdb.st()
         return {}
 
     def graphql_response(self, data):
@@ -1469,6 +1475,7 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234'))
         self.mocks.append(mock.patch('github.Requester.requests', self.mr))
         self.mocks.append(mock.patch('ansibullbot.decorators.github.requests', self.mr))
+        self.mocks.append(mock.patch('ansibullbot.parsers.botmetadata.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.ansible.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.ansible.requests', self.mr))
         self.mocks.append(mock.patch('ansibullbot.triagers.plugins.contributors.logging', MockLogger))
@@ -1476,6 +1483,7 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.triagers.plugins.shipit.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.component_tools.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.utils.component_tools.requests', self.mr))
         self.mocks.append(mock.patch('ansibullbot.utils.extractors.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.file_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.gh_gql_client.logging', MockLogger))

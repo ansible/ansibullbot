@@ -123,14 +123,6 @@ class GitRepoWrapper(object):
             files = [x.strip() for x in files if x.strip()]
             self._files = files
 
-    def get_file_content(self, filepath):
-        fpath = os.path.join(self.checkoutdir, filepath)
-        if not os.path.isfile(fpath):
-            return None
-        with io.open(fpath, 'r', encoding='utf-8') as f:
-            data = f.read()
-        return data
-
     def get_files_by_commit(self, commit):
 
         if commit not in self.files_by_commit:
@@ -186,3 +178,56 @@ class GitRepoWrapper(object):
                         email_map[_email][u'commit_count_byfile'][fn] += 1
 
         return email_map
+
+    def existed(self, filepath):
+        '''Did a file ever exist in this repo?'''
+
+        cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
+        logging.info(cmd)
+        (rc, so, se) = run_command(cmd)
+        lrev = so.strip().decode('utf-8')
+
+        if rc == 0 and lrev:
+            return True
+
+        return False
+
+    def get_file_content(self, filepath, follow=False):
+
+        fp = os.path.join(self.checkoutdir, filepath)
+        if os.path.exists(fp):
+            with io.open(fp, 'r', encoding='utf-8') as f:
+                data = f.read()
+            return data
+
+        if not follow:
+            return None
+
+        # https://stackoverflow.com/a/1395463
+        #cmd = 'cd %s; git show HEAD^:%s' % (self.checkoutdir, filepath)
+
+        # https://stackoverflow.com/a/19727752
+        cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
+        logging.info(cmd)
+        (rc, so, se) = run_command(cmd)
+        lrev = so.strip().decode('utf-8')
+        cmd = 'cd %s; git show %s^:%s' % (self.checkoutdir, lrev, filepath)
+        (rc, so, se) = run_command(cmd)
+        logging.info(cmd)
+        #so = so.decode('utf-8').strip()
+        so = so.strip()
+        if so.decode('utf-8').endswith('.py'):
+            newpath = os.path.dirname(filepath)
+            newpath = os.path.join(newpath, so.decode('utf-8'))
+
+            cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, newpath)
+            logging.info(cmd)
+            (rc, so, se) = run_command(cmd)
+            lrev = so.strip().decode('utf-8')
+            cmd = 'cd %s; git show %s^:%s' % (self.checkoutdir, lrev, newpath)
+            logging.info(cmd)
+            (rc, so, se) = run_command(cmd)
+            #so = so.decode('utf-8').strip()
+            so = so.strip()
+
+        return so

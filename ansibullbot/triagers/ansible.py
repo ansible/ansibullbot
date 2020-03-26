@@ -46,6 +46,8 @@ from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, 
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
+from ansibullbot.parsers.botmetadata import BotMetadataParser
+
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.git_tools import GitRepoWrapper
@@ -252,6 +254,15 @@ class AnsibleTriage(DefaultTriager):
         repo = u'https://github.com/ansible/ansible'
         gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit)
 
+        # load botmeta ... once!
+        logging.info('ansible triager loading botmeta')
+        if self.botmetafile is not None:
+            with open(self.botmetafile, 'rb') as f:
+                rdata = f.read()
+        else:
+            rdata = gitrepo.get_file_content(u'.github/BOTMETA.yml')
+        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+
         # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer(
@@ -261,12 +272,14 @@ class AnsibleTriage(DefaultTriager):
 
         logging.info('creating file indexer')
         self.file_indexer = FileIndexer(
+            botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             gitrepo=gitrepo,
         )
 
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer(
+            botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             gh_client=self.gqlc,
             cachedir=self.cachedir_base,
@@ -277,8 +290,10 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating component matcher')
         self.component_matcher = AnsibleComponentMatcher(
             gitrepo=gitrepo,
+            botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             email_cache=self.module_indexer.emails_cache,
+            usecache=True
         )
 
         # instantiate shippable api
@@ -332,18 +347,21 @@ class AnsibleTriage(DefaultTriager):
             self.file_indexer.update()
 
             # update component matcher
-            self.component_matcher.update(email_cache=self.module_indexer.emails_cache)
+            self.component_matcher.update(email_cache=self.module_indexer.emails_cache, usecache=True)
 
             # update shippable run data
             self.SR.update()
 
-        # is automerge allowed?
-        if self.botmetafile is not None:
-            with open(self.botmetafile, 'rb') as f:
-                self._botmeta_content = f.read()
-        else:
-            self._botmeta_content = self.file_indexer.get_file_content(u'.github/BOTMETA.yml')
-        self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
+        if not self.botmeta or self.ITERATION > 0:
+            # is automerge allowed?
+            if self.botmetafile is not None:
+                with open(self.botmetafile, 'rb') as f:
+                    self._botmeta_content = f.read()
+            else:
+                self._botmeta_content = self.file_indexer.get_file_content(u'.github/BOTMETA.yml')
+            logging.info('ansible triager [re]loading botmeta')
+            self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
+
         self.automerge_on = False
         if self.botmeta.get(u'automerge'):
             if self.botmeta[u'automerge'] in [u'Yes', u'yes', u'y', True, 1]:
@@ -572,7 +590,11 @@ class AnsibleTriage(DefaultTriager):
             logging.info('executing %s' % pr)
             (rc, so, se) = run_command(pr)
             numbers = json.loads(to_text(so))
-            numbers = [int(x) for x in numbers]
+            if numbers:
+                if isinstance(numbers[0], dict) and 'number' in numbers[0]:
+                    numbers = [x['number'] for x in numbers]
+                else:
+                    numbers = [int(x) for x in numbers]
             logging.info(
                 u'%s numbers after running script' % len(numbers)
             )
@@ -1522,6 +1544,20 @@ class AnsibleTriage(DefaultTriager):
                 if key not in iw.labels:
                     actions.newlabel.append(key)
 
+        # collections!!!
+        if self.meta.get(u'is_collection'):
+            clabels = [u'collection']
+            for fqcn in self.meta[u'component_collection']:
+                clabel = u'collection:%s' % fqcn
+                clabels.append(clabel)
+            for clabel in clabels:
+                exists = clabel in iw.labels
+                unlabeled = iw.history.was_unlabeled(clabel)
+
+                # add it if a human did not remove it
+                if not exists and not unlabeled:
+                    actions.newlabel.append(clabel)
+
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 
@@ -1975,7 +2011,8 @@ class AnsibleTriage(DefaultTriager):
             )
         )
 
-        self.meta.update(get_notification_facts(iw, self.meta))
+        # who needs to be notified or assigned?
+        self.meta.update(get_notification_facts(iw, self.meta, botmeta=self.botmeta))
 
         # ci_verified and test results
         self.meta.update(
