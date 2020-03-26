@@ -46,7 +46,7 @@ from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, 
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
-from ansibullbot.parsers.botmetadata import BotMetadataParser, BotYAMLLoader
+from ansibullbot.parsers.botmetadata import BotMetadataParser
 
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment

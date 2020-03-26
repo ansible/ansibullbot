@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import itertools
 import logging
 import os
 
@@ -29,7 +28,6 @@ def compute_file_children(filenames):
     filenames = sorted(filenames)
 
     iterfiles = {}
-    parent = None
     for idp,parent in enumerate(filenames):
 
         if parent not in iterfiles:

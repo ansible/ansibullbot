@@ -543,8 +543,6 @@ class AnsibleComponentMatcher(object):
                 continue
             if bmkey == component or os.path.basename(bmkey).replace('.py', '') == os.path.basename(component).replace('.py', ''):
                 mt = self.BOTMETA['files'][bmkey].get('migrated_to')[0]
-                #logging.info(u'matched %s to %s:%s' % (component, mt, bmkey))
-                migrated_file = None
                 for fn,gcollections in self.GALAXY_FILES.items():
                     if mt not in gcollections:
                         continue
@@ -1183,7 +1181,6 @@ class AnsibleComponentMatcher(object):
         }
 
         if filename.startswith(u'collection:'):
-            fqcn = filename.replace(u'collection:', u'')
             fqcn = filename.split(u':')[1]
             manifest = self.GALAXY_MANIFESTS.get(fqcn)
             if manifest:

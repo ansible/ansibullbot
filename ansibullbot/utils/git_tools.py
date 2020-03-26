@@ -123,14 +123,6 @@ class GitRepoWrapper(object):
             files = [x.strip() for x in files if x.strip()]
             self._files = files
 
-    def get_file_content(self, filepath):
-        fpath = os.path.join(self.checkoutdir, filepath)
-        if not os.path.isfile(fpath):
-            return None
-        with io.open(fpath, 'r', encoding='utf-8') as f:
-            data = f.read()
-        return data
-
     def get_files_by_commit(self, commit):
 
         if commit not in self.files_by_commit:
@@ -201,11 +193,12 @@ class GitRepoWrapper(object):
         return False
 
     def get_file_content(self, filepath, follow=False):
+
         fp = os.path.join(self.checkoutdir, filepath)
         if os.path.exists(fp):
-            with open(fp, 'r') as f:
-                fdata = f.read()
-            return fdata
+            with io.open(fp, 'r', encoding='utf-8') as f:
+                data = f.read()
+            return data
 
         if not follow:
             return None
