@@ -439,7 +439,21 @@ class AnsibleComponentMatcher(object):
 
     def _match_component(self, title, body, component):
         """Find matches for a single line"""
+
+        if not component:
+            return []
+
         matched_filenames = []
+
+        # sometimes we get urls ...
+        #   https://github.com/ansible/ansible/issues/68553
+        #   https//github.com/ansible/ansible/blob/devel/docs/docsite/rst/user_guide...
+        if component.startswith('http'):
+            if '/blob/' in component:
+                # chop off the branch+path
+                component = component.split('/blob/')[-1]
+                # chop off the path
+                component = component.split('/', 1)[-1]
 
         # context sets the path prefix to narrow the search window
         if u'module_util' in title.lower() or u'module_util' in component.lower():
@@ -456,9 +470,6 @@ class AnsibleComponentMatcher(object):
             context = u'lib/ansible/plugins/inventory'
         else:
             context = None
-
-        if not component:
-            return []
 
         if component not in self.STOPWORDS and component not in self.STOPCHARS:
 
