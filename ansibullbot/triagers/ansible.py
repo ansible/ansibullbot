@@ -101,8 +101,8 @@ from ansibullbot.parsers.botmetadata import BotMetadataParser
 
 REPOS = [
     u'ansible/ansible',
-    u'ansible/ansible-modules-core',
-    u'ansible/ansible-modules-extras'
+    #u'ansible/ansible-modules-core',
+    #u'ansible/ansible-modules-extras'
 ]
 
 MREPOS = [x for x in REPOS if u'modules' in x]
