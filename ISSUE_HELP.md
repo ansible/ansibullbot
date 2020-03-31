@@ -162,6 +162,7 @@ Command | Scope | Allowed | Description
 **<a name="cmd-remove-label">-label</a>** | issues pull requests | staff maintainers | Remove a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
 **<a name="cmd-rebuild_merge">rebuild_merge</a>** | pull requests | staff | Allow core team members to trigger CI, then the pull request is automatically merged if CI results are successful.
 **<a name="cmd-rebuild">/rebuild</a>** | pull requests | anyone | Allows anyone to re-trigger CI.
+**<a name="cmd-rebuild_failed">/rebuild_failed</a>** | pull requests | anyone | Allows anyone to re-trigger CI only on failed jobs [this is usually much faster than /rebuild].
 **<a name="cmd-component">!component</a>** | issues | anyone | Set, append or remove a file from the matched components. To set, use `!component =lib/ansible/foo/bar`. To add, use `!component +lib/ansible/foo/bar`. To remove, use `!component -lib/ansible/foo/bar`.
 **<a name="cmd-waffling">!waffling</a>** | all | maintainers | Disable waffling detection on a label. To use `!waffling <labelname>` on a separate line in a comment.
 

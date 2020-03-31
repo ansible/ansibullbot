@@ -89,7 +89,7 @@ def get_rebuild_facts(iw, meta, force=False):
         if not meta[u'shipit']:
             return rbmeta
 
-    rbmeta[u'needs_rebuild'] = True
+    rbmeta[u'needs_rebuild_all'] = True
 
     return rbmeta
 
@@ -143,7 +143,7 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     pr_status.sort(key=lambda x: x[0])
 
     if pr_status[-1][-1] != u'pending' and pr_status[-1][0] < last_command:
-        rbmerge_meta[u'needs_rebuild'] = True
+        rbmerge_meta[u'needs_rebuild_all'] = True
 
     if pr_status[-1][-1] == u'success' and pr_status[-1][0] > last_command:
         rbmerge_meta[u'admin_merge'] = True
@@ -152,11 +152,12 @@ def get_rebuild_merge_facts(iw, meta, core_team):
 
 
 # https://github.com/ansible/ansibullbot/issues/1161
-def get_rebuild_command_facts(iw, meta, core_team):
+def get_rebuild_command_facts(iw, meta, core_team, shippable):
     rbcommand = u'/rebuild'
 
     rbmerge_meta = {
         u'needs_rebuild': meta.get(u'needs_rebuild', False),
+        u'needs_rebuild_failed': meta.get(u'needs_rebuild_failed', False),
     }
 
     if not iw.is_pullrequest():
@@ -196,6 +197,6 @@ def get_rebuild_command_facts(iw, meta, core_team):
     pr_status.sort(key=lambda x: x[0])
 
     if pr_status[-1][-1] != u'pending' and pr_status[-1][0] < last_command:
-        rbmerge_meta[u'needs_rebuild'] = True
+        rbmerge_meta[u'needs_rebuild_failed'] = True
 
     return rbmerge_meta
