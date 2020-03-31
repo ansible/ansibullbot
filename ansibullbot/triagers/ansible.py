@@ -123,6 +123,7 @@ class AnsibleActions(DefaultActions):
         super(AnsibleActions, self).__init__()
         self.close_migrated = False
         self.rebuild = False
+        self.rebuild_failed = False
         self.cancel_ci = False
         self.cancel_ci_branch = False
 
@@ -1497,6 +1498,12 @@ class AnsibleTriage(DefaultTriager):
                 actions.newlabel.remove(u'stale_ci')
             if u'stale_ci' in iw.labels:
                 actions.unlabel.append(u'stale_ci')
+        elif self.meta[u'needs_rebuild_failed']:
+            actions.rebuild_failed = True
+            if u'stale_ci' in actions.newlabel:
+                actions.newlabel.remove(u'stale_ci')
+            if u'stale_ci' in iw.labels:
+                actions.unlabel.append(u'stale_ci')
 
         # https://github.com/ansible/ansibullbot/issues/640
         if not self.meta[u'is_bad_pr']:
@@ -2100,6 +2107,7 @@ class AnsibleTriage(DefaultTriager):
                 iw,
                 self.meta,
                 self.ansible_core_team,
+                self.SR
             )
         )
 
@@ -2450,6 +2458,16 @@ class AnsibleTriage(DefaultTriager):
                 logging.error(
                     u'rebuild: no shippable runid for {}'.format(iw.number)
                 )
+        elif actions.rebuild_failed:
+            runid = self.meta.get(u'ci_run_number')
+            if runid:
+                logging.info('Rebuilding CI %s for #%s' % (runid, iw.number))
+                self.SR.rebuild_failed(runid, issueurl=iw.html_url)
+            else:
+                logging.error(
+                    u'rebuild: no shippable runid for {}'.format(iw.number)
+                )
+
 
         if actions.cancel_ci:
             runid = self.meta.get(u'ci_run_number')
