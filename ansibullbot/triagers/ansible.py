@@ -70,6 +70,7 @@ from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_ci_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
+from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_command_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.community_workgroups import get_community_workgroup_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
@@ -2087,6 +2088,15 @@ class AnsibleTriage(DefaultTriager):
         # ci rebuild + merge
         self.meta.update(
             get_rebuild_merge_facts(
+                iw,
+                self.meta,
+                self.ansible_core_team,
+            )
+        )
+
+        # ci rebuild requested?
+        self.meta.update(
+            get_rebuild_command_facts(
                 iw,
                 self.meta,
                 self.ansible_core_team,
