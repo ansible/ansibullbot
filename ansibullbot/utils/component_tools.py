@@ -437,6 +437,16 @@ class AnsibleComponentMatcher(object):
 
         return component_matches
 
+    def search_ecosystem(self, component):
+        matched_filenames = []
+        if not matched_filenames:
+            matched_filenames += self.search_by_botmeta_migrated_to(component)
+
+        if not matched_filenames:
+            matched_filenames += self.search_by_galaxy(component)
+
+        return matched_filenames
+
     def _match_component(self, title, body, component):
         """Find matches for a single line"""
 
@@ -544,6 +554,15 @@ class AnsibleComponentMatcher(object):
 
         matches = []
 
+        # narrow searching to modules/utils/plugins
+        if component.startswith('lib/ansible') and not (
+                component.startswith('lib/ansible/plugins') or not
+                component.startswith('lib/ansible/module')):
+            return matches
+
+        if os.path.basename(component) == '__init__.py':
+            return matches
+
         # check for matches in botmeta first in case there's a migrated_to key ...
         botmeta_candidates = []
         for bmkey in self.BOTMETA[u'files'].keys():
@@ -552,12 +571,30 @@ class AnsibleComponentMatcher(object):
                 continue
             if not self.BOTMETA[u'files'][bmkey].get(u'migrated_to'):
                 continue
+
+            if u'modules/' in component and u'modules/' not in bmkey:
+                continue
+            if u'lookup' in component and u'lookup' not in bmkey:
+                continue
+            if u'filter' in component and u'filter' not in bmkey:
+                continue
+            if u'inventory' in component and u'inventory' not in bmkey:
+                continue
+
             if bmkey == component or os.path.basename(bmkey).replace('.py', '') == os.path.basename(component).replace('.py', ''):
                 mt = self.BOTMETA['files'][bmkey].get('migrated_to')[0]
                 for fn,gcollections in self.GALAXY_FILES.items():
                     if mt not in gcollections:
                         continue
                     if os.path.basename(fn).replace('.py', '') != os.path.basename(component).replace('.py', ''):
+                        continue
+                    if u'modules/' in component and u'modules/' not in fn:
+                        continue
+                    if u'lookup' in component and u'lookup' not in fn:
+                        continue
+                    if u'filter' in component and u'filter' not in fn:
+                        continue
+                    if u'inventory' in component and u'inventory' not in fn:
                         continue
                     botmeta_candidates.append('collection:%s:%s' % (mt, fn))
                     logging.info('matched %s to %s to %s:%s' % (component, bmkey, mt, fn))
@@ -571,6 +608,15 @@ class AnsibleComponentMatcher(object):
         '''Is this a file belonging to a collection?'''
 
         matches = []
+
+        # narrow searching to modules/utils/plugins
+        if component.startswith('lib/ansible') and not (
+                component.startswith('lib/ansible/plugins') or not
+                component.startswith('lib/ansible/module')):
+            return matches
+
+        if os.path.basename(component) == '__init__.py':
+            return matches
 
         candidates = []
         for key in self.GALAXY_FILES.keys():
@@ -592,6 +638,8 @@ class AnsibleComponentMatcher(object):
                         continue
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
+
+        #import epdb; epdb.st()
 
         return matches
 
@@ -1345,10 +1393,12 @@ class AnsibleComponentMatcher(object):
                 meta[u'supported_by'] = support_levels[keys[0]]
                 logging.debug(u'%s support == %s' % (keys[0], meta[u'supported_by']))
 
+        '''
         # new modules should default to "community" support
-        if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files:
+        if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files and not meta.get('migrated_to'):
             meta[u'support'] = u'community'
             meta[u'supported_by'] = u'community'
+        '''
 
         # test targets for modules should inherit from their modules
         if filename.startswith(u'test/integration/targets') and filename not in self.BOTMETA[u'files']:
@@ -1380,6 +1430,7 @@ class AnsibleComponentMatcher(object):
 
             # make new test targets community by default
             if not meta[u'support'] and not meta[u'supported_by']:
+                import epdb; epdb.st()
                 meta[u'support'] = u'community'
 
         # it's okay to remove things from legacy-files.txt

@@ -16,6 +16,8 @@ from tenacity import retry, wait_random, stop_after_attempt
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 
+import ansibullbot.constants as C
+
 
 QUERY_FIELDS = """
 id
@@ -86,6 +88,12 @@ query {
   }
 }
 """
+
+
+if C.DEFAULT_REQUESTS_CACHE:
+    import requests_cache
+    requests_cache.install_cache('/tmp/ansibot.requests.cache')
+#import epdb; epdb.st()
 
 
 class GithubGraphQLClient(object):

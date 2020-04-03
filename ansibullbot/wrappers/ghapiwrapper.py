@@ -326,6 +326,9 @@ class RepoWrapper(object):
         return issues
 
     def load_issue(self, number):
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return False
+
         pfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -343,6 +346,10 @@ class RepoWrapper(object):
             return False
 
     def load_pullrequest(self, number):
+
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return False
+
         pfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -364,6 +371,10 @@ class RepoWrapper(object):
             self.save_issue(issue)
 
     def save_issue(self, issue):
+
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return
+
         cfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -378,6 +389,10 @@ class RepoWrapper(object):
             pickle_dump(issue, f)
 
     def save_pullrequest(self, issue):
+
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return
+
         cfile = os.path.join(
             self.cachedir,
             u'issues',

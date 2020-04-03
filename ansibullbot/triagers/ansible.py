@@ -74,6 +74,7 @@ from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_command_facts
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from ansibullbot.triagers.plugins.community_workgroups import get_community_workgroup_facts
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
+from ansibullbot.triagers.plugins.collection_facts import get_collection_facts
 from ansibullbot.triagers.plugins.cross_references import get_cross_reference_facts
 from ansibullbot.triagers.plugins.filament import get_filament_facts
 from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
@@ -116,6 +117,18 @@ def get_major_minor(vstring):
     lver = LooseVersion(vstring)
     rval = u'.'.join([to_text(x) for x in lver.version[0:2]])
     return rval
+
+
+class MetaDict(dict):
+    def __setitem__(self, key, val):
+        # https://github.com/ansible/ansible/issues/68640
+        #if key == 'component_support' and val == ['community']:
+        #    import epdb; epdb.st()
+        dict.__setitem__(self, key, val)
+    def update(self, *args, **kwargs):
+        for k, v in dict(*args, **kwargs).items():
+            self[k] = v
+            self.__setitem__(k, v)
 
 
 class AnsibleActions(DefaultActions):
@@ -1555,7 +1568,7 @@ class AnsibleTriage(DefaultTriager):
         # collections!!!
         if self.meta.get(u'is_collection'):
             clabels = [u'collection']
-            for fqcn in self.meta[u'component_collection']:
+            for fqcn in self.meta[u'collection_fqcns']:
                 clabel = u'collection:%s' % fqcn
                 clabels.append(clabel)
             for clabel in clabels:
@@ -1900,8 +1913,11 @@ class AnsibleTriage(DefaultTriager):
             ]
             logging.info('%s numbers after checking type' % len(numbers))
 
-        # Use iterator to avoid requesting all issues upfront
         numbers = sorted(set([int(x) for x in numbers]))
+        if self.args.last and len(numbers) >= self.args.last:
+            numbers = numbers[self.args.last:]
+
+        # Use iterator to avoid requesting all issues upfront
         if self.sort == u'desc':
             numbers = [x for x in reversed(numbers)]
 
@@ -1928,7 +1944,8 @@ class AnsibleTriage(DefaultTriager):
         '''Do initial processing of the issue'''
 
         # clear the actions+meta
-        self.meta = copy.deepcopy(self.EMPTY_META)
+        #self.meta = copy.deepcopy(self.EMPTY_META)
+        self.meta = MetaDict()
 
         self.meta[u'state'] = iw.state
         self.meta[u'submitter'] = iw.submitter
@@ -1982,6 +1999,15 @@ class AnsibleTriage(DefaultTriager):
                 iw,
                 self.component_matcher,
                 self.valid_labels
+            )
+        )
+
+        # collections?
+        self.meta.update(
+            get_collection_facts(
+                iw,
+                self.component_matcher,
+                self.meta,
             )
         )
 
@@ -2561,6 +2587,8 @@ class AnsibleTriage(DefaultTriager):
                             help="pickup right after where the bot last stopped")
         parser.add_argument("--no_since", action="store_true",
                             help="Do not use the since keyword to fetch issues")
+        parser.add_argument("--last", type=int,
+                            help="triage the last N issues or PRs")
 
         parser.add_argument('--commit', dest='ansible_commit',
                             help="Use a specific commit for the indexers")
