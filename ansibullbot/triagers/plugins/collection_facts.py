@@ -7,6 +7,11 @@ import re
 
 def get_collection_facts(iw, component_matcher, meta):
 
+    if iw.is_issue():
+        is_backport = False
+    else:
+        is_backport = iw.pullrequest.base.ref != u'devel'
+
     cfacts = {
         'is_collection': False,
         'needs_collection_redirect': False,
@@ -34,11 +39,9 @@ def get_collection_facts(iw, component_matcher, meta):
     cfacts['collection_file_matches'] = copy.deepcopy(cmap)
 
     # should this be forwarded off to a collection repo?
-    if list([x for x in cmap.values() if x]):
+    if list([x for x in cmap.values() if x]) and not is_backport:
         cfacts['needs_collection_redirect'] = True
         cfacts['component_support'] = ['community']
-
-    #import epdb; epdb.st()
 
     if cfacts['is_collection']:
         import epdb; epdb.st()

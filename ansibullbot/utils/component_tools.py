@@ -563,6 +563,9 @@ class AnsibleComponentMatcher(object):
         if os.path.basename(component) == '__init__.py':
             return matches
 
+        if component.startswith('test/lib'):
+            return matches
+
         # check for matches in botmeta first in case there's a migrated_to key ...
         botmeta_candidates = []
         for bmkey in self.BOTMETA[u'files'].keys():
@@ -616,6 +619,9 @@ class AnsibleComponentMatcher(object):
             return matches
 
         if os.path.basename(component) == '__init__.py':
+            return matches
+
+        if component.startswith('test/lib'):
             return matches
 
         candidates = []
@@ -1430,7 +1436,7 @@ class AnsibleComponentMatcher(object):
 
             # make new test targets community by default
             if not meta[u'support'] and not meta[u'supported_by']:
-                import epdb; epdb.st()
+                #import epdb; epdb.st()
                 meta[u'support'] = u'community'
 
         # it's okay to remove things from legacy-files.txt
