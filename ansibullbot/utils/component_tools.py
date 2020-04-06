@@ -445,6 +445,19 @@ class AnsibleComponentMatcher(object):
         if not matched_filenames:
             matched_filenames += self.search_by_galaxy(component)
 
+        # fallback to searching for migrated directories ...
+        if not matched_filenames and component.startswith('lib/ansible/modules'):
+            dn = component.replace('lib/ansible/modules/', '')
+            dn = os.path.dirname(dn)
+            candidates = [x for x in self.GALAXY_FILES.keys() if dn in x]
+            fqcns = set()
+            for candidate in candidates:
+                for fqcn in self.GALAXY_FILES[candidate]:
+                    fqcns.add(fqcn)
+            for fqcn in fqcns:
+                matched_filenames.append('collection:%s:%s' % (fqcn, dn))
+            #import epdb; epdb.st()
+
         return matched_filenames
 
     def _match_component(self, title, body, component):
