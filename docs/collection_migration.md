@@ -12,6 +12,9 @@ Here are some links to read through and familiarize yourself with ...
 ## Why is ansibot directing me here?
 
 A. You made a change or filed an issue for a plugin|module file that no longer exists in github.com:ansible/ansible.
+
+or
+
 B. You created a new module.
 
 ## What should I do now?
