@@ -36,6 +36,8 @@ https://github.com/ansible/prmove
 For the reasons stated above, we will not be auto-migrating all the issues and PRs and need to take action to make sure they are being
 filed in the appropriate repositories.
 
+Pull requests do not need to be open when migrating, and there is no other reason to keep them open in the ansible/ansible repo.
+
 ## What if none of this makes sense to me?
 
 Please reach out via the typical communication channels: https://docs.ansible.com/ansible/latest/community/communication.html
