@@ -323,17 +323,6 @@ DEFAULT_STALE_WINDOW = get_config(
 )
 
 
-# Use requests_cache ?
-DEFAULT_REQUESTS_CACHE = get_config(
-    p,
-    DEFAULTS,
-    'requests_cache',
-    '%s_REQUESTS_CACHE' % PROG_NAME.upper(),
-    False,
-    value_type='boolean'
-)
-
-
 # Pickle the issue objects?
 DEFAULT_PICKLE_ISSUES = get_config(
     p,

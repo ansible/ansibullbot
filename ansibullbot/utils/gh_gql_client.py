@@ -90,12 +90,6 @@ query {
 """
 
 
-if C.DEFAULT_REQUESTS_CACHE:
-    import requests_cache
-    requests_cache.install_cache('/tmp/ansibot.requests.cache')
-#import epdb; epdb.st()
-
-
 class GithubGraphQLClient(object):
     baseurl = u'https://api.github.com/graphql'
 
