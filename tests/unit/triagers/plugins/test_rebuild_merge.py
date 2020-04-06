@@ -5,6 +5,8 @@ import logging
 import tempfile
 import unittest
 
+import pytest
+
 from tests.utils.issue_mock import IssueMock
 from tests.utils.repo_mock import RepoMock
 from tests.utils.helpers import get_issue
@@ -74,7 +76,8 @@ class TestRebuildMergeFacts(unittest.TestCase):
                 u'ci_run_number': 0
             }
             rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'])
-            assert rbfacts[u'needs_rebuild'] == True
+            #assert rbfacts[u'needs_rebuild'] == True
+            assert rbfacts[u'needs_rebuild_all'] == True
             assert rbfacts[u'admin_merge'] == False
 
     def test3(self):
