@@ -31,6 +31,11 @@ can either recreate your PR in the new repo, or try to setup the tool on your ow
 
 https://github.com/ansible/prmove
 
+## Why did the bot close my issue or PR?
+
+For the reasons stated above, we will not be auto-migrating all the issues and PRs and need to take action to make sure they are being
+filed in the appropriate repositories.
+
 ## What if none of this makes sense to me?
 
 Please reach out via the typical communication channels: https://docs.ansible.com/ansible/latest/community/communication.html
