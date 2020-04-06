@@ -43,7 +43,7 @@ def get_collection_facts(iw, component_matcher, meta):
         cfacts['needs_collection_redirect'] = True
         cfacts['component_support'] = ['community']
 
-    if cfacts['is_collection']:
-        import epdb; epdb.st()
+    #if cfacts['is_collection']:
+    #    import epdb; epdb.st()
 
     return cfacts
