@@ -2202,10 +2202,14 @@ class AnsibleTriage(DefaultTriager):
             else:
                 raise Exception('unknown url type for migrated issue')
 
-        mw = self.get_issue_by_repopath_and_number(
-            mirepopath,
-            minumber
-        )
+        # https://github.com/ansible/ansibullbot/issues/1303
+        try:
+            mw = self.get_issue_by_repopath_and_number(
+                mirepopath,
+                minumber
+            )
+        except Exception as e:
+            mw = None
 
         return mw
 
