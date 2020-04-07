@@ -14,8 +14,12 @@ def get_collection_facts(iw, component_matcher, meta):
 
     cfacts = {
         'is_collection': False,
+        # notification about collections and closure ...
+        'needs_collection_boilerplate': False,
+        # close it ...
         'needs_collection_redirect': False,
         'collection_redirects': [],
+        'collection_filemap': {},
         'collection_file_matches': {}
     }
 
@@ -32,10 +36,19 @@ def get_collection_facts(iw, component_matcher, meta):
                 if match.startswith('collection:'):
                     fqcns.add(match.split(':')[1])
 
+    cfacts['collection_filemap'] = copy.deepcopy(cmap)
+
     cfacts['collection_redirects'] = list(fqcns)
     cfacts['collection_fqcns'] = list(fqcns)
     if fqcns:
         cfacts['is_collection'] = True
+
+    # make urls for the bot comment
+    for k,v in cmap.items():
+        for idi,item in enumerate(v):
+            parts = item.split(':')
+            cmap[k][idi] = k + ' -> ' + 'https://galaxy.ansible.com/' + parts[1].replace('.', '/')
+
     cfacts['collection_file_matches'] = copy.deepcopy(cmap)
 
     # should this be forwarded off to a collection repo?
@@ -43,7 +56,8 @@ def get_collection_facts(iw, component_matcher, meta):
         cfacts['needs_collection_redirect'] = True
         cfacts['component_support'] = ['community']
 
-    #if cfacts['is_collection']:
-    #    import epdb; epdb.st()
+        if not iw.history.last_date_for_boilerplate('collection_migration'):
+            cfacts['needs_collection_boilerplate'] = True
 
+    import epdb; epdb.st()
     return cfacts

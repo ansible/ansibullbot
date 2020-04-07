@@ -1579,6 +1579,18 @@ class AnsibleTriage(DefaultTriager):
                 if not exists and not unlabeled:
                     actions.newlabel.append(clabel)
 
+        # collections!!!
+        if self.meta.get('needs_collection_redirect'):
+            actions.close = True
+            if self.meta.get('needs_collection_redirect'):
+                comment = self.render_boilerplate(
+                    self.meta,
+                    boilerplate=u'collection_migration'
+                )
+                actions.comments.append(comment)
+
+        #import epdb; epdb.st()
+
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 

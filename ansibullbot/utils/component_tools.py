@@ -449,13 +449,29 @@ class AnsibleComponentMatcher(object):
         if not matched_filenames and component.startswith('lib/ansible/modules'):
             dn = component.replace('lib/ansible/modules/', '')
             dn = os.path.dirname(dn)
-            candidates = [x for x in self.GALAXY_FILES.keys() if dn in x]
+            # match on directory name or prefix ...
+            candidates = [x for x in self.GALAXY_FILES.keys() if '/' + dn + '/' in x or '/' + dn + '_' in x]
+            '''
             fqcns = set()
             for candidate in candidates:
                 for fqcn in self.GALAXY_FILES[candidate]:
                     fqcns.add(fqcn)
             for fqcn in fqcns:
                 matched_filenames.append('collection:%s:%s' % (fqcn, dn))
+            #import epdb; epdb.st()
+            '''
+
+            fqcns = {}
+            for candidate in candidates:
+                for fqcn in self.GALAXY_FILES[candidate]:
+                    if fqcn not in fqcns:
+                        fqcns[fqcn] = 0
+                    fqcns[fqcn] += 1
+
+            if fqcns:
+                topchoice = sorted(list(fqcns.items()), key=lambda x: x[1], reverse=True)[0][0]
+                matched_filenames.append('collection:%s:%s' % (topchoice, dn))
+
             #import epdb; epdb.st()
 
         return matched_filenames
