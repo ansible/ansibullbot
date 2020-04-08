@@ -5,18 +5,25 @@ import datetime
 import json
 import logging
 import os
+import re
 import tarfile
 import zipfile
 
+import yaml
 import requests
 #import requests_cache
 
+from github import Github
+
 import ansibullbot.constants as C
+from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.utils.git_tools import GitRepoWrapper
 
 
 class GalaxyQueryTool:
 
+    GALAXY_FQCNS = None
+    GALAXY_FILES = None
     _collections = None
     _baseurl = 'https://galaxy.ansible.com'
     _gitrepos = None
@@ -38,10 +45,138 @@ class GalaxyQueryTool:
         self._checkout_index_file = os.path.join(self.cachedir, 'checkout_index.json')
 
         self._gitrepos = {}
-
         self._load_checkout_index()
 
+        self.index_ecosystem()
+        #self.index_galaxy()
+
         #self.index_collections()
+
+    def update(self):
+        pass
+
+    def index_ecosystem(self):
+        # index the ansible-collections org
+        token = C.DEFAULT_GITHUB_TOKEN
+        gh = Github(login_or_token=token)
+        gw = GithubWrapper(gh, cachedir=self.cachedir)
+        ac = gw.get_org('ansible-collections')
+
+        cloneurls = set()
+        for repo in ac.get_repos():
+            #print(repo)
+            cloneurls.add(repo.clone_url)
+        cloneurls = [x.replace('.git', '') for x in cloneurls]
+
+        for curl in cloneurls:
+            if curl.endswith('/overview'):
+                continue
+            if curl.endswith('/collection_template'):
+                continue
+            if curl.endswith('/.github'):
+                continue
+            if curl.endswith('/hub'):
+                continue
+            grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=False)
+
+            # is there a galaxy.yml at the root level?
+            if grepo.exists('galaxy.yml'):
+                meta = yaml.load(grepo.get_file_content('galaxy.yml'))
+                fqcn = '%s.%s' % (meta['namespace'], meta['name'])
+                self._gitrepos[fqcn] = grepo
+            else:
+                # multi-collection repos ... sigh.
+                galaxyfns = grepo.find('galaxy.yml')
+
+                if galaxyfns:
+                    for gfn in galaxyfns:
+                        meta = yaml.load(grepo.get_file_content(gfn))
+                        fqcn = '%s.%s' % (meta['namespace'], meta['name'])
+                        _grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=False, context=os.path.dirname(gfn))
+                        self._gitrepos[fqcn] = _grepo
+                else:
+
+                    fqcn = None
+                    bn = os.path.basename(curl)
+
+                    # enumerate the url?
+                    if '.' in bn:
+                        fqcn = bn
+
+                    # try the README?
+                    if fqcn is None:
+                        for fn in ['README.rst', 'README.md']:
+                            if fqcn:
+                                break
+                            if not grepo.exists(fn):
+                                continue
+                            fdata = grepo.get_file_content(fn)
+                            if not '.' in fdata:
+                                continue
+                            lines = fdata.split('\n')
+                            for line in lines:
+                                line = line.strip()
+                                if line.lower().startswith('ansible collection:'):
+                                    fqcn = line.split(':')[-1].strip()
+                                    break
+
+                    # lame ...
+                    if fqcn is None:
+                        fqcn = bn + '._community'
+
+                    self._gitrepos[fqcn] = grepo
+
+
+        # scrape the galaxy collections api
+        api_collections = {}
+        nexturl = self._baseurl + '/api/v2/collections/'
+        while nexturl:
+            rr = requests.get(nexturl)
+            jdata = rr.json()
+            nexturl = jdata.get('next_link')
+            if nexturl:
+                nexturl = self._baseurl + nexturl
+
+            for res in jdata.get('results', []):
+                fqcn = '%s.%s' % (res['namespace']['name'], res['name'])
+                if fqcn in self._gitrepos:
+                    continue
+                lv = res['latest_version']['href']
+                print(lv)
+                lvrr = requests.get(lv)
+                lvdata = lvrr.json()
+                rurl = lvdata.get('metadata', {}).get('repository')
+                if rurl is None:
+                    rurl = lvdata['download_url']
+                grepo = GitRepoWrapper(cachedir=self.cachedir, repo=rurl, rebase=False)
+                self._gitrepos[fqcn] = grepo
+
+        # reconcile all things ...
+        import epdb; epdb.st()
+    
+    def index_galaxy(self):
+        self.GALAXY_FQCNS = set()
+
+        url = 'https://sivel.eng.ansible.com/api/v1/collections/file_map'
+        rr = requests.get(url)
+        self.GALAXY_FILES = rr.json()
+
+        for k,v in self.GALAXY_FILES.items():
+            for fqcn in v:
+                self.GALAXY_FQCNS.add(fqcn)
+
+        url = 'https://sivel.eng.ansible.com/api/v1/collections/list'
+        rr = requests.get(url)
+        self.GALAXY_MANIFESTS = rr.json()
+
+        self._verify_galaxy_files()
+
+    def _verify_galaxy_files(self):
+        for k,v in self.GALAXY_FILES.items():
+            for fqcn in v:
+                if not self.collection_file_exists(fqcn, k):
+                    if fqcn in self.GALAXY_FILES[k]:
+                        self.GALAXY_FILES[k].remove(fqcn)
 
     def _load_checkout_index(self):
         ci = {}
@@ -65,7 +200,12 @@ class GalaxyQueryTool:
         if fqcn not in self._gitrepos:
 
             # reduce the number of requests ...
-            rurl = self._checkout_index.get(fqcn, {}).get('url')
+            try:
+                rurl = self._checkout_index.get(fqcn, {}).get('url')
+            except AttributeError as e:
+                print(e)
+                import epdb; epdb.st()
+
             if rurl is None:
                 # https://galaxy.ansible.com/api/v2/collections/devoperate/base/
                 curl = self._baseurl + '/api/v2/collections/' + fqcn.replace('.', '/') + '/'
@@ -194,3 +334,85 @@ class GalaxyQueryTool:
         results = sorted(results, key=lambda x: x['score'])
 
         return results
+
+    def search_galaxy(self, component):
+        '''Is this a file belonging to a collection?'''
+
+        matches = []
+
+        '''
+        # narrow searching to modules/utils/plugins
+        if component.startswith('lib/ansible') and not (
+                component.startswith('lib/ansible/plugins') or not
+                component.startswith('lib/ansible/module')):
+            return matches
+        '''
+
+        if os.path.basename(component) == '__init__.py':
+            return matches
+
+        if component.startswith('test/lib'):
+            return matches
+
+        candidates = []
+        for key in self.GALAXY_FILES.keys():
+            if not (component in key or key == component):
+                continue
+            if not key.startswith('plugins'):
+                continue
+            keybn = os.path.basename(key).replace('.py', '')
+            if keybn != component:
+                continue
+
+            logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
+            candidates.append(key)
+
+        if candidates:
+            for cn in candidates:
+                for fqcn in self.GALAXY_FILES[cn]:
+                    if fqcn.startswith('testing.'):
+                        continue
+                    matches.append('collection:%s:%s' % (fqcn, cn))
+            matches = sorted(set(matches))
+
+        import epdb; epdb.st()
+
+        return matches
+
+    def fuzzy_search_galaxy(self, component):
+
+        matched_filenames = []
+
+        # fallback to searching for migrated directories ...
+        if component.startswith('lib/ansible/modules'):
+            dn = component.replace('lib/ansible/modules/', '')
+            dn = os.path.dirname(dn)
+            # match on directory name or prefix ...
+            candidates = [x for x in self.GALAXY_FILES.keys() if '/' + dn + '/' in x or '/' + dn + '_' in x]
+            '''
+            fqcns = set()
+            for candidate in candidates:
+                for fqcn in self.GALAXY_FILES[candidate]:
+                    fqcns.add(fqcn)
+            for fqcn in fqcns:
+                matched_filenames.append('collection:%s:%s' % (fqcn, dn))
+            #import epdb; epdb.st()
+            '''
+
+            fqcns = {}
+            for candidate in candidates:
+                for fqcn in self.GALAXY_FILES[candidate]:
+                    if fqcn not in fqcns:
+                        fqcns[fqcn] = 0
+
+                    # is this file still actually there?
+                    if not self.GQT.collection_file_exists(fqcn, candidate):
+                        continue
+
+                    fqcns[fqcn] += 1
+
+            if fqcns:
+                topchoice = sorted(list(fqcns.items()), key=lambda x: x[1], reverse=True)[0][0]
+                matched_filenames.append('collection:%s:%s' % (topchoice, dn))
+
+        return matched_filenames

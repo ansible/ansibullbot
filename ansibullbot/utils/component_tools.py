@@ -147,7 +147,8 @@ class AnsibleComponentMatcher(object):
         self.update(refresh_botmeta=False)
 
     def update(self, email_cache=None, refresh_botmeta=True, usecache=False):
-        self.index_galaxy()
+        #self.index_galaxy()
+        self.GQT.update()
         if email_cache:
             self.email_cache = email_cache
         self.gitrepo.update()
@@ -156,6 +157,7 @@ class AnsibleComponentMatcher(object):
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
 
+    '''
     def index_galaxy(self):
         url = 'https://sivel.eng.ansible.com/api/v1/collections/file_map'
         rr = requests.get(url)
@@ -174,6 +176,7 @@ class AnsibleComponentMatcher(object):
                     if fqcn in self.GALAXY_FILES[k]:
                         self.GALAXY_FILES[k].remove(fqcn)
         #import epdb; epdb.st()
+    '''
 
     def get_module_meta(self, checkoutdir, filename1, filename2):
 
@@ -454,8 +457,6 @@ class AnsibleComponentMatcher(object):
 
     def search_ecosystem(self, component):
 
-        import epdb; epdb.st()
-
         matched_filenames = []
 
         # do not match on things that still exist in core
@@ -468,8 +469,13 @@ class AnsibleComponentMatcher(object):
 
         # see what is actually in galaxy ...
         if not matched_filenames:
-            matched_filenames += self.search_by_galaxy(component)
+            matched_filenames += self.GQT.search_galaxy(component)
 
+        # fallback to searching for migrated directories ...
+        if not matched_filenames and component.startswith('lib/ansible/modules'):
+            matched_filenames += self.GQT.fuzzy_search_galaxy(component)
+
+        """
         # fallback to searching for migrated directories ...
         if not matched_filenames and component.startswith('lib/ansible/modules'):
             dn = component.replace('lib/ansible/modules/', '')
@@ -503,6 +509,7 @@ class AnsibleComponentMatcher(object):
                 matched_filenames.append('collection:%s:%s' % (topchoice, dn))
 
             #import epdb; epdb.st()
+        """
 
         return matched_filenames
 
@@ -666,6 +673,7 @@ class AnsibleComponentMatcher(object):
 
         return matches
 
+    """
     def search_by_galaxy(self, component):
         '''Is this a file belonging to a collection?'''
 
@@ -707,6 +715,7 @@ class AnsibleComponentMatcher(object):
         #import epdb; epdb.st()
 
         return matches
+    """
 
     def search_by_module_name(self, component):
         matches = []

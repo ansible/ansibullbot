@@ -49,6 +49,12 @@ class GithubWrapper(object):
         return accepts
 
     @RateLimited
+    def get_org(self, org, verbose=True):
+        org = self.gh.get_organization(org)
+        #import epdb; epdb.st()
+        return org
+
+    @RateLimited
     def get_repo(self, repo_path, verbose=True):
         repo = RepoWrapper(self.gh, repo_path, verbose=verbose, cachedir=self.cachedir)
         return repo

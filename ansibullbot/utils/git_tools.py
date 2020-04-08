@@ -14,10 +14,11 @@ class GitRepoWrapper(object):
     checkoutdir = None
     _files = []
 
-    def __init__(self, cachedir, repo, commit=None, rebase=True):
+    def __init__(self, cachedir, repo, commit=None, rebase=True, context=None):
         self._needs_rebase = rebase
         self.repo = repo
         self.commit = commit
+        self.context = context
 
         # allow for null repos
         if repo:
@@ -43,24 +44,35 @@ class GitRepoWrapper(object):
     def exists(self, filename, loose=False):
         if self.checkoutdir is None:
             return False
-        checkfile = os.path.join(self.checkoutdir, filename)
+        if self.context:
+            checkfile = os.path.join(self.checkoutdir, self.context, filename)
+        else:
+            checkfile = os.path.join(self.checkoutdir, filename)
         if os.path.exists(checkfile):
             return True
         if not loose:
             return False
 
         for x in self._files:
+            if self.context and context not in x:
+                continue
             if x.endswith(filename):
                 return True
 
         return False
 
     def isdir(self, filename):
-        checkfile = os.path.join(self.checkoutdir, filename)
+        if self.context:
+            checkfile = os.path.join(self.checkoutdir, self.context, filename)
+        else:
+            checkfile = os.path.join(self.checkoutdir, filename)
         return os.path.isdir(checkfile)
 
     def islink(self, filename):
-        checkfile = os.path.join(self.checkoutdir, filename)
+        if self.context:
+            checkfile = os.path.join(self.checkoutdir, self.context, filename)
+        else:
+            checkfile = os.path.join(self.checkoutdir, filename)
         return os.path.islink(checkfile)
 
     @property
@@ -152,6 +164,8 @@ class GitRepoWrapper(object):
             (rc, so, se) = run_command(cmd)
             files = to_text(so).split(u'\n')
             files = [x.strip() for x in files if x.strip()]
+            if self.context:
+                self._files = [x for x in files if self.context in files]
             self._files = files
 
     def get_files_by_commit(self, commit):
@@ -213,6 +227,9 @@ class GitRepoWrapper(object):
     def existed(self, filepath):
         '''Did a file ever exist in this repo?'''
 
+        if self.context:
+            filepath = os.path.join(self.context, filepath)
+
         cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
         logging.info(cmd)
         (rc, so, se) = run_command(cmd)
@@ -262,3 +279,15 @@ class GitRepoWrapper(object):
             so = so.strip()
 
         return so
+
+    def find(self, pattern):
+        if pattern in self._files:
+            return pattern
+        matches = set()
+        for fn in self._files:
+            if self.context and self.context not in fn:
+                continue
+            if fn.endswith(pattern):
+                matches.add(fn)
+        #import epdb; epdb.st()
+        return matches
