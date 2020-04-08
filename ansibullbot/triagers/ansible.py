@@ -304,6 +304,7 @@ class AnsibleTriage(DefaultTriager):
 
         logging.info('creating component matcher')
         self.component_matcher = AnsibleComponentMatcher(
+            cachedir=self.cachedir_base,
             gitrepo=gitrepo,
             botmeta=self.botmeta,
             botmetafile=self.botmetafile,

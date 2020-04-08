@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import copy
+import datetime
 import json
 import logging
 import os
@@ -8,24 +9,108 @@ import tarfile
 import zipfile
 
 import requests
-import requests_cache
+#import requests_cache
+
+import ansibullbot.constants as C
+from ansibullbot.utils.git_tools import GitRepoWrapper
 
 
 class GalaxyQueryTool:
 
     _collections = None
     _baseurl = 'https://galaxy.ansible.com'
+    _gitrepos = None
+    _checkout_index_file = None
+    _checkout_index = None
 
     def __init__(self, cachedir=None):
-        self.cachedir = cachedir or '.cache'
+        if cachedir:
+            self.cachedir = os.path.join(cachedir, 'galaxy')
+        else:
+            self.cachedir = '.cache/galaxy'
         if not os.path.exists(self.cachedir):
             os.makedirs(self.cachedir)
         self.tarcache = os.path.join(self.cachedir, 'galaxy_tars')
         if not os.path.exists(self.tarcache):
             os.makedirs(self.tarcache)
         rq = os.path.join(self.cachedir, 'requests_cache')
-        requests_cache.install_cache(rq)
-        self.index_collections()
+        #requests_cache.install_cache(rq)
+        self._checkout_index_file = os.path.join(self.cachedir, 'checkout_index.json')
+
+        self._gitrepos = {}
+
+        self._load_checkout_index()
+
+        #self.index_collections()
+
+    def _load_checkout_index(self):
+        ci = {}
+        if os.path.exists(self._checkout_index_file):
+            with open(self._checkout_index_file, 'r') as f:
+                ci = json.loads(f.read())
+        for k,v in ci.items():
+            ci[k]['updated'] = datetime.datetime.strptime(v['updated'], '%Y-%m-%dT%H:%M:%S.%f')
+        self._checkout_index = copy.deepcopy(ci)
+
+    def _save_checkout_index(self):
+        ci = copy.deepcopy(self._checkout_index)
+        for k,v in ci.items():
+            ci[k]['updated'] = v['updated'].isoformat()
+        with open(self._checkout_index_file, 'w') as f:
+            f.write(json.dumps(ci))
+
+    def get_repo_for_collection(self, fqcn):
+        today = datetime.datetime.now()
+
+        if fqcn not in self._gitrepos:
+
+            # reduce the number of requests ...
+            rurl = self._checkout_index.get(fqcn, {}).get('url')
+            if rurl is None:
+                # https://galaxy.ansible.com/api/v2/collections/devoperate/base/
+                curl = self._baseurl + '/api/v2/collections/' + fqcn.replace('.', '/') + '/'
+                rr = requests.get(curl)
+                jdata = rr.json()
+                vurl = jdata['latest_version']['href']
+                rr2 = requests.get(vurl)
+                jdata2 = rr2.json()
+                rurl = jdata2.get('metadata', {}).get('repository')
+
+            # reduce the number of clones and rebases ...
+            needs_rebase = False
+            if fqcn not in self._checkout_index:
+                needs_rebase = True
+            elif not self._checkout_index.get(fqcn, {}).get('checkout'):
+                needs_rebase = True
+            elif not self._checkout_index.get(fqcn, {}).get('updated'):
+                needs_rebase = True
+            elif (today - self._checkout_index[fqcn]['updated']).days > 0:
+                needs_rebase = True
+
+            logging.info('checkout %s -> %s' % (fqcn, rurl))
+            grepo = GitRepoWrapper(cachedir=self.cachedir, repo=rurl, rebase=needs_rebase)
+            self._gitrepos[fqcn] = grepo
+
+            # keep the last updated time if not rebased ...
+            if needs_rebase:
+                updated = datetime.datetime.now()
+            else:
+                updated = self._checkout_index[fqcn]['updated']
+
+            self._checkout_index[fqcn] = {
+                'url': rurl,
+                'fqcn': fqcn,
+                'checkout': grepo.checkoutdir,
+                'updated': updated
+            }
+            self._save_checkout_index()
+
+        return self._gitrepos[fqcn]
+
+    def collection_file_exists(self, fqcn, filename):
+        repo = self.get_repo_for_collection(fqcn)
+        exists = repo.exists(filename, loose=True)
+        return exists
 
     def index_collections(self):
 

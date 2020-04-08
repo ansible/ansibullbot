@@ -457,11 +457,12 @@ class RepoWrapper(object):
                     raise Exception(u'unable to get %s' % property_name)
             events = [x for x in methodToCall()]
 
-        if write_cache or not os.path.isfile(pfile):
-            # need to dump the pickle back to disk
-            edata = [updated, events]
-            with open(pfile, 'wb') as f:
-                pickle_dump(edata, f)
+        if C.DEFAULT_PICKLE_ISSUES:
+            if write_cache or not os.path.isfile(pfile):
+                # need to dump the pickle back to disk
+                edata = [updated, events]
+                with open(pfile, 'wb') as f:
+                    pickle_dump(edata, f)
 
         return events
 

@@ -20,6 +20,8 @@ from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 
+from ansibullbot.utils.galaxy import GalaxyQueryTool
+
 
 def make_prefixes(filename):
     # make a byte by byte list of prefixes for this fp
@@ -134,6 +136,9 @@ class AnsibleComponentMatcher(object):
                 gitrepo=self.gitrepo
             )
 
+        # we need to query galaxy for a few things ...
+        self.GQT = GalaxyQueryTool(cachedir=self.cachedir)
+
         self.strategy = None
         self.strategies = []
 
@@ -159,6 +164,16 @@ class AnsibleComponentMatcher(object):
         url = 'https://sivel.eng.ansible.com/api/v1/collections/list'
         rr = requests.get(url)
         self.GALAXY_MANIFESTS = rr.json()
+
+        self._verify_galaxy_files()
+
+    def _verify_galaxy_files(self):
+        for k,v in self.GALAXY_FILES.items():
+            for fqcn in v:
+                if not self.GQT.collection_file_exists(fqcn, k):
+                    if fqcn in self.GALAXY_FILES[k]:
+                        self.GALAXY_FILES[k].remove(fqcn)
+        #import epdb; epdb.st()
 
     def get_module_meta(self, checkoutdir, filename1, filename2):
 
@@ -438,10 +453,20 @@ class AnsibleComponentMatcher(object):
         return component_matches
 
     def search_ecosystem(self, component):
+
+        import epdb; epdb.st()
+
         matched_filenames = []
+
+        # do not match on things that still exist in core
+        if self.file_indexer.gitrepo.exists(component):
+            return matched_filenames
+
+        # botmeta -should- be the source of truth, but it's proven not to be ...
         if not matched_filenames:
             matched_filenames += self.search_by_botmeta_migrated_to(component)
 
+        # see what is actually in galaxy ...
         if not matched_filenames:
             matched_filenames += self.search_by_galaxy(component)
 
@@ -466,6 +491,11 @@ class AnsibleComponentMatcher(object):
                 for fqcn in self.GALAXY_FILES[candidate]:
                     if fqcn not in fqcns:
                         fqcns[fqcn] = 0
+
+                    # is this file still actually there?
+                    if not self.GQT.collection_file_exists(fqcn, candidate):
+                        continue
+
                     fqcns[fqcn] += 1
 
             if fqcns:

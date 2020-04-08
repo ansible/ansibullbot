@@ -4,6 +4,8 @@ import copy
 import logging
 import re
 
+from pprint import pprint
+
 
 def get_collection_facts(iw, component_matcher, meta):
 
@@ -58,6 +60,8 @@ def get_collection_facts(iw, component_matcher, meta):
 
         if not iw.history.last_date_for_boilerplate('collection_migration'):
             cfacts['needs_collection_boilerplate'] = True
+
+    pprint(cfacts)
 
     import epdb; epdb.st()
     return cfacts

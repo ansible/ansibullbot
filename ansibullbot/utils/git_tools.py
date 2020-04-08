@@ -11,21 +11,49 @@ from ansibullbot.utils.systemtools import run_command
 
 class GitRepoWrapper(object):
 
+    checkoutdir = None
     _files = []
 
-    def __init__(self, cachedir, repo, commit=None):
+    def __init__(self, cachedir, repo, commit=None, rebase=True):
+        self._needs_rebase = rebase
         self.repo = repo
         self.commit = commit
+
+        # allow for null repos
+        if repo:
+            urlparts = repo.split('/')
+            urlparts = [x for x in urlparts if x and 'http' not in x]
+            path_parts = list([cachedir] + urlparts)
+            self.checkoutdir = os.path.join(*path_parts)
+            parent = os.path.dirname(self.checkoutdir)
+            if not os.path.exists(parent):
+                os.makedirs(parent)
+
+        '''
         self.checkoutdir = cachedir or u'~/.ansibullbot/cache'
-        self.checkoutdir = os.path.join(cachedir, u'ansible.checkout')
+        self.checkoutdir = os.path.join(cachedir, subdir)
         self.checkoutdir = os.path.expanduser(self.checkoutdir)
+        '''
+
         self.commits_by_email = None
         self.files_by_commit = {}
-        self.update(force=True)
+        if repo:
+            self.update(force=True)
 
-    def exists(self, filename):
+    def exists(self, filename, loose=False):
+        if self.checkoutdir is None:
+            return False
         checkfile = os.path.join(self.checkoutdir, filename)
-        return os.path.exists(checkfile)
+        if os.path.exists(checkfile):
+            return True
+        if not loose:
+            return False
+
+        for x in self._files:
+            if x.endswith(filename):
+                return True
+
+        return False
 
     def isdir(self, filename):
         checkfile = os.path.join(self.checkoutdir, filename)
@@ -53,7 +81,8 @@ class GitRepoWrapper(object):
             % (self.repo, self.checkoutdir)
         #if self.commit:
         #    import epdb; epdb.st()
-        (rc, so, se) = run_command(cmd)
+        logging.debug(cmd)
+        (rc, so, se) = run_command(cmd, env={'GIT_TERMINAL_PROMPT': 0, 'GIT_ASKPASS': '/bin/echo'})
         print(to_text(so) + to_text(se))
 
     def update(self, force=False):
@@ -76,7 +105,8 @@ class GitRepoWrapper(object):
 
             if so != self.commit:
                 cmd = "cd %s; git checkout %s" % (self.checkoutdir, self.commit)
-                (rc, so, se) = run_command(cmd)
+                logging.debug(cmd)
+                (rc, so, se) = run_command(cmd, env={'GIT_TERMINAL_PROMPT': 0, 'GIT_ASKPASS': '/bin/echo'})
                 changed = True
 
             if rc != 0:
@@ -87,7 +117,8 @@ class GitRepoWrapper(object):
             changed = False
 
             cmd = "cd %s ; git pull --rebase" % self.checkoutdir
-            (rc, so, se) = run_command(cmd)
+            logging.debug(cmd)
+            (rc, so, se) = run_command(cmd, env={'GIT_TERMINAL_PROMPT': 0, 'GIT_ASKPASS': '/bin/echo'})
             so = to_text(so)
             print(so + to_text(se))
 
@@ -109,7 +140,7 @@ class GitRepoWrapper(object):
         if not os.path.isdir(self.checkoutdir):
             self.create_checkout()
             changed = True
-        else:
+        elif self._needs_rebase:
             changed = self.update_checkout()
         return changed
 
