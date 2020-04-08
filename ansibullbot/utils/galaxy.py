@@ -13,6 +13,8 @@ import yaml
 import requests
 #import requests_cache
 
+from pprint import pprint
+
 from github import Github
 
 import ansibullbot.constants as C
@@ -51,6 +53,32 @@ class GalaxyQueryTool:
         #self.index_galaxy()
 
         #self.index_collections()
+
+    def _get_cached_url(self, url, days=0):
+        cachedir = os.path.join(self.cachedir, 'urls')
+        if not os.path.exists(cachedir):
+            os.makedirs(cachedir)
+        cachefile = os.path.join(cachedir, url.replace('/', '__'))
+        if os.path.exists(cachefile):
+            with open(cachefile, 'r') as f:
+                fdata = json.loads(f.read())
+            jdata = fdata['result']
+            ts = fdata['timestamp']
+            now = datetime.datetime.now()
+            ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+            if (now - ts).days <= days:
+                return jdata
+
+        rr = requests.get(url)
+        jdata = rr.json()
+
+        with open(cachefile, 'w') as f:
+            f.write(json.dumps({
+                'timestamp': datetime.datetime.now().isoformat(),
+                'result': jdata
+            }))
+
+        return jdata
 
     def update(self):
         pass
@@ -126,13 +154,13 @@ class GalaxyQueryTool:
 
                     self._gitrepos[fqcn] = grepo
 
-
         # scrape the galaxy collections api
         api_collections = {}
         nexturl = self._baseurl + '/api/v2/collections/'
         while nexturl:
-            rr = requests.get(nexturl)
-            jdata = rr.json()
+            #rr = requests.get(nexturl)
+            #jdata = rr.json()
+            jdata = self._get_cached_url(nexturl)
             nexturl = jdata.get('next_link')
             if nexturl:
                 nexturl = self._baseurl + nexturl
@@ -142,9 +170,10 @@ class GalaxyQueryTool:
                 if fqcn in self._gitrepos:
                     continue
                 lv = res['latest_version']['href']
-                print(lv)
-                lvrr = requests.get(lv)
-                lvdata = lvrr.json()
+                #print(lv)
+                #lvrr = requests.get(lv)
+                #lvdata = lvrr.json()
+                lvdata = self._get_cached_url(lv)
                 rurl = lvdata.get('metadata', {}).get('repository')
                 if rurl is None:
                     rurl = lvdata['download_url']
@@ -152,7 +181,13 @@ class GalaxyQueryTool:
                 self._gitrepos[fqcn] = grepo
 
         # reconcile all things ...
-        import epdb; epdb.st()
+        self.GALAXY_FQCNS = sorted(set(self._gitrepos.keys()))
+        self.GALAXY_FILES = {}
+        for fqcn,gr in self._gitrepos.items():
+            for fn in gr.files:
+                if fn not in self.GALAXY_FILES:
+                    self.GALAXY_FILES[fn] = set()
+                self.GALAXY_FILES[fn].add(fqcn)
     
     def index_galaxy(self):
         self.GALAXY_FQCNS = set()
@@ -351,21 +386,42 @@ class GalaxyQueryTool:
         if os.path.basename(component) == '__init__.py':
             return matches
 
-        if component.startswith('test/lib'):
-            return matches
+        #if component.startswith('test/lib'):
+        #    return matches
+
 
         candidates = []
-        for key in self.GALAXY_FILES.keys():
-            if not (component in key or key == component):
-                continue
-            if not key.startswith('plugins'):
-                continue
-            keybn = os.path.basename(key).replace('.py', '')
-            if keybn != component:
-                continue
+        patterns = [component]
 
-            logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
-            candidates.append(key)
+        if component.startswith('lib/ansible/modules'):
+            _component = component.replace('lib/ansible/modules/', 'plugins/modules/')
+            patterns.append(_component)
+            segments = _component.split('/')
+            if len(segments) > 3:
+                patterns.append(os.path.join('plugins', 'modules', os.path.basename(_component)))
+
+        for pattern in patterns:
+
+            if candidates:
+                break
+
+            for key in self.GALAXY_FILES.keys():
+                if not (pattern in key or key == pattern):
+                    continue
+                #if not key.startswith('plugins'):
+                #    continue
+                '''
+                keybn = os.path.basename(key).replace('.py', '')
+                if keybn != pattern:
+                    continue
+                '''
+
+                logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
+                candidates.append(key)
+                break
+
+        #pprint(candidates)
+        #import epdb; epdb.st()
 
         if candidates:
             for cn in candidates:
@@ -375,7 +431,7 @@ class GalaxyQueryTool:
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
 
-        import epdb; epdb.st()
+        #import epdb; epdb.st()
 
         return matches
 
