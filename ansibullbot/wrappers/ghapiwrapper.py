@@ -122,7 +122,10 @@ class GithubWrapper(object):
         # pagination
         if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
             _data = self.get_request(rr.links[u'next'][u'url'])
-            data += _data
+            if isinstance(data, list):
+                data += _data
+            else:
+                data.update(_data)
 
         return data
 
@@ -147,7 +150,10 @@ class GithubWrapper(object):
         if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
             _data = self.get_request(rr.links[u'next'][u'url'])
             try:
-                data += _data
+                if isinstance(data, list):
+                    data += _data
+                elif isinstance(data, dict):
+                    data.update(_data)
             except TypeError as e:
                 print(e)
                 import epdb; epdb.st()
