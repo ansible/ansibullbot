@@ -462,7 +462,7 @@ class GalaxyQueryTool:
                         fqcns[fqcn] = 0
 
                     # is this file still actually there?
-                    if not self.GQT.collection_file_exists(fqcn, candidate):
+                    if not self.collection_file_exists(fqcn, candidate):
                         continue
 
                     fqcns[fqcn] += 1

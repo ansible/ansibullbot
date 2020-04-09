@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import copy
+import json
 import logging
 import re
 
@@ -45,6 +46,14 @@ def get_collection_facts(iw, component_matcher, meta):
     if fqcns:
         cfacts['is_collection'] = True
 
+    with open('match_results.txt', 'a') as f:
+        f.write('#########################################################\n')
+        f.write('# %s\n' % (iw.html_url))
+        f.write('# component: %s\n' % (iw.template_data.get('component_raw')))
+        f.write('#########################################################\n')
+        f.write(json.dumps(cmap, indent=2) + '\n')
+    #import epdb; epdb.st()
+
     # make urls for the bot comment
     for k,v in cmap.items():
         for idi,item in enumerate(v):
@@ -63,5 +72,4 @@ def get_collection_facts(iw, component_matcher, meta):
 
     pprint(cfacts)
 
-    import epdb; epdb.st()
     return cfacts
