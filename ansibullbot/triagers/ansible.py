@@ -1581,16 +1581,20 @@ class AnsibleTriage(DefaultTriager):
                     actions.newlabel.append(clabel)
 
         # collections!!!
-        if self.meta.get('needs_collection_redirect'):
-            actions.close = True
-            if self.meta.get('needs_collection_redirect'):
-                comment = self.render_boilerplate(
-                    self.meta,
-                    boilerplate=u'collection_migration'
-                )
-                actions.comments.append(comment)
-
-        #import epdb; epdb.st()
+        if not self.meta.get('needs_collection_redirect') is True:
+            if 'needs_collection_redirect' in iw.labels:
+                actions.unlabel.append('needs_collection_redirect')
+        else:
+            if 'needs_collection_redirect' not in iw.labels:
+                actions.newlabel.append('needs_collection_redirect')
+            if self.botmeta['collection_redirect'] is True:
+                actions.close = True
+                if self.meta.get('needs_collection_redirect'):
+                    comment = self.render_boilerplate(
+                        self.meta,
+                        boilerplate=u'collection_migration'
+                    )
+                    actions.comments.append(comment)
 
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
