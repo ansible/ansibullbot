@@ -184,6 +184,8 @@ class GalaxyQueryTool:
         self.GALAXY_FQCNS = sorted(set(self._gitrepos.keys()))
         self.GALAXY_FILES = {}
         for fqcn,gr in self._gitrepos.items():
+            if fqcn.startswith('testing.'):
+                continue
             for fn in gr.files:
                 if fn not in self.GALAXY_FILES:
                     self.GALAXY_FILES[fn] = set()
@@ -385,6 +387,10 @@ class GalaxyQueryTool:
             'contrib/inventory': 'scripts/inventory',
             'lib/ansible/modules': 'plugins/modules',
             'lib/ansible/module_utils': 'plugins/module_utils',
+            'lib/ansible/plugins': 'plugins',
+            'test/integration': 'tests/integration',
+            'test/units/modules': 'tests/units/modules',
+            'test/units/module_utils': 'tests/units/module_utils',
         }
 
         for k,v in dirmap.items():
@@ -397,7 +403,21 @@ class GalaxyQueryTool:
                 segments = _component.split('/')
                 if len(segments) > 3:
                     patterns.append(os.path.join(v, os.path.basename(_component)))
+
+                # find parent folder for new modules ...
+                if v != 'plugins':
+                    patterns.append(os.path.dirname(_component))
+
                 break
+
+        #if component.startswith('lib/ansible/plugins'):
+        #    import epdb; epdb.st()
+
+        #if component.startswith('lib/ansible/modules'):
+        #    import epdb; epdb.st()
+
+        #if component.startswith('test/n') or component.startswith('tests/'):
+        #    import epdb; epdb.st()
 
         for pattern in patterns:
 
@@ -418,8 +438,8 @@ class GalaxyQueryTool:
         if candidates:
             for cn in candidates:
                 for fqcn in self.GALAXY_FILES[cn]:
-                    if fqcn.startswith('testing.'):
-                        continue
+                    #if fqcn.startswith('testing.'):
+                    #    continue
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
 
@@ -431,6 +451,7 @@ class GalaxyQueryTool:
 
         matched_filenames = []
 
+        """
         # fallback to searching for migrated directories ...
         if component.startswith('lib/ansible/modules'):
             dn = component.replace('lib/ansible/modules/', '')
@@ -462,5 +483,38 @@ class GalaxyQueryTool:
             if fqcns:
                 topchoice = sorted(list(fqcns.items()), key=lambda x: x[1], reverse=True)[0][0]
                 matched_filenames.append('collection:%s:%s' % (topchoice, dn))
+        """
+
+        #if 'amazon' in component:
+        #    import epdb; epdb.st()
+
+        if component.startswith('lib/ansible/modules'):
+            bn = os.path.basename(component)
+            bn = bn.replace('.py', '')
+            if '_' in bn:
+                bparts = bn.split('_')
+                for x in reversed(range(0, len(bparts))):
+                    prefix = '_'.join(bparts[:x])
+                    print(prefix)
+                    for key in self.GALAXY_FILES.keys():
+                        keybn = os.path.basename(key)
+                        if keybn.startswith(prefix):
+                            print('%s == %s' % (key, component))
+
+                            for fqcn in self.GALAXY_FILES[key]:
+                                #if fqcn.startswith('testing.'):
+                                #    continue
+                                #matched_filenames.append(key)
+                                matched_filenames.append('collection:%s:%s' % (fqcn, component))
+
+                            break
+                    if matched_filenames:
+                        break
+
+                #import epdb; epdb.st()
+
+        #if 'amazon' in component:
+        #    import epdb; epdb.st()
+
 
         return matched_filenames

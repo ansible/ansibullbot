@@ -49,14 +49,6 @@ def get_collection_facts(iw, component_matcher, meta):
     if fqcns:
         cfacts['is_collection'] = True
 
-    with open('match_results.txt', 'a') as f:
-        f.write('#########################################################\n')
-        f.write('# %s\n' % (iw.html_url))
-        f.write('# component: %s\n' % (iw.template_data.get('component_raw')))
-        f.write('#########################################################\n')
-        f.write(json.dumps(cmap, indent=2) + '\n')
-    #import epdb; epdb.st()
-
     # make urls for the bot comment
     for k,v in cmap.items():
         for idi,item in enumerate(v):
@@ -73,27 +65,17 @@ def get_collection_facts(iw, component_matcher, meta):
         if not iw.history.last_date_for_boilerplate('collection_migration'):
             cfacts['needs_collection_boilerplate'] = True
 
-    '''
-    if not is_backport:
-        if cmap and not cfacts['needs_collection_redirect'] and cfacts['is_collection']:
-            if 'lib/ansible/modules' in ''.join(cmap.keys()):
-                pprint(cmap)
-                import epdb; epdb.st()
-    '''
+    # loose matching for misc files ...
+    if not is_backport and fqcns and 'changelog' in ''.join(cmap.keys()):
+        missing = set()
+        for k,v in cmap.items():
+            if not k.startswith('changelogs/') and not k.startswith('test/units/') and not v:
+                missing.add(k)
+        if not missing:
+            cfacts['needs_collection_redirect'] = True
+            cfacts['component_support'] = ['community']
 
-    #if not is_backport and not cfacts['needs_collection_redirect'] and [x for x in cmap.values() if x]:
-    #    import epdb; epdb.st()
-
-    #if not is_backport:
-    #    import epdb; epdb.st()
-
-    #if not is_backport and 'contrib' in ''.join(cmap.keys()):
-    #    import epdb; epdb.st()
-
-    #if not is_backport and fqcns and not cfacts['needs_collection_redirect']:
-    #    import epdb; epdb.st()
-
-    #if not is_backport and 'lib/ansible/module_utils' in ''.join(cmap.keys()):
-    #    import epdb; epdb.st()
+            if not iw.history.last_date_for_boilerplate('collection_migration'):
+                cfacts['needs_collection_boilerplate'] = True
 
     return cfacts

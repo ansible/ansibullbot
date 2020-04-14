@@ -256,7 +256,7 @@ def main():
     for issue in sorted(mr.keys(), key=lambda x: int(x.split('/')[-1]), reverse=True):
         print(issue)
         number = int(issue.split('/')[-1])
-        #if number > 68508:
+        #if number != 68709:
         #    continue
         print(number)
         mfile = os.path.join('~/.ansibullbot/cache/ansible/ansible/issues/%s' % number, 'meta.json')
