@@ -375,30 +375,29 @@ class GalaxyQueryTool:
 
         matches = []
 
-        '''
-        # narrow searching to modules/utils/plugins
-        if component.startswith('lib/ansible') and not (
-                component.startswith('lib/ansible/plugins') or not
-                component.startswith('lib/ansible/module')):
-            return matches
-        '''
-
         if os.path.basename(component) == '__init__.py':
             return matches
-
-        #if component.startswith('test/lib'):
-        #    return matches
-
 
         candidates = []
         patterns = [component]
 
-        if component.startswith('lib/ansible/modules'):
-            _component = component.replace('lib/ansible/modules/', 'plugins/modules/')
-            patterns.append(_component)
-            segments = _component.split('/')
-            if len(segments) > 3:
-                patterns.append(os.path.join('plugins', 'modules', os.path.basename(_component)))
+        dirmap = {
+            'contrib/inventory': 'scripts/inventory',
+            'lib/ansible/modules': 'plugins/modules',
+            'lib/ansible/module_utils': 'plugins/module_utils',
+        }
+
+        for k,v in dirmap.items():
+            if component.startswith(k):
+                # look for the full path including subdirs ...
+                _component = component.replace(k + '/', v + '/')
+                patterns.append(_component)
+
+                # add the short path in case the collection does not have subdirs ...
+                segments = _component.split('/')
+                if len(segments) > 3:
+                    patterns.append(os.path.join(v, os.path.basename(_component)))
+                break
 
         for pattern in patterns:
 
@@ -408,13 +407,6 @@ class GalaxyQueryTool:
             for key in self.GALAXY_FILES.keys():
                 if not (pattern in key or key == pattern):
                     continue
-                #if not key.startswith('plugins'):
-                #    continue
-                '''
-                keybn = os.path.basename(key).replace('.py', '')
-                if keybn != pattern:
-                    continue
-                '''
 
                 logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
                 candidates.append(key)

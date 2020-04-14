@@ -10,10 +10,13 @@ from pprint import pprint
 
 def get_collection_facts(iw, component_matcher, meta):
 
-    if iw.is_issue():
-        is_backport = False
+    if isinstance(meta.get('is_backport'), bool):
+        is_backport = meta['is_backport']
     else:
-        is_backport = iw.pullrequest.base.ref != u'devel'
+        if iw.is_issue():
+            is_backport = False
+        else:
+            is_backport = iw.pullrequest.base.ref != u'devel'
 
     cfacts = {
         'is_collection': False,
@@ -70,6 +73,27 @@ def get_collection_facts(iw, component_matcher, meta):
         if not iw.history.last_date_for_boilerplate('collection_migration'):
             cfacts['needs_collection_boilerplate'] = True
 
-    pprint(cfacts)
+    '''
+    if not is_backport:
+        if cmap and not cfacts['needs_collection_redirect'] and cfacts['is_collection']:
+            if 'lib/ansible/modules' in ''.join(cmap.keys()):
+                pprint(cmap)
+                import epdb; epdb.st()
+    '''
+
+    #if not is_backport and not cfacts['needs_collection_redirect'] and [x for x in cmap.values() if x]:
+    #    import epdb; epdb.st()
+
+    #if not is_backport:
+    #    import epdb; epdb.st()
+
+    #if not is_backport and 'contrib' in ''.join(cmap.keys()):
+    #    import epdb; epdb.st()
+
+    #if not is_backport and fqcns and not cfacts['needs_collection_redirect']:
+    #    import epdb; epdb.st()
+
+    #if not is_backport and 'lib/ansible/module_utils' in ''.join(cmap.keys()):
+    #    import epdb; epdb.st()
 
     return cfacts
