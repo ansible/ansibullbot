@@ -78,4 +78,10 @@ def get_collection_facts(iw, component_matcher, meta):
             if not iw.history.last_date_for_boilerplate('collection_migration'):
                 cfacts['needs_collection_boilerplate'] = True
 
+    # allow users to override the redirect
+    cstatus = iw.history.command_status('needs_collection_redirect')
+    if cstatus is False:
+        cfacts['needs_collection_redirect'] = False
+        cfacts['needs_collection_boilerplate'] = False
+
     return cfacts
