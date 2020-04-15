@@ -405,8 +405,6 @@ class GalaxyQueryTool:
 
                 break
 
-        import epdb; epdb.st()
-
         #if component.startswith('lib/ansible/plugins'):
         #    import epdb; epdb.st()
 
