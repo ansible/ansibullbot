@@ -111,9 +111,10 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None):
+    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None, use_galaxy=False):
         self.usecache = usecache
         self.cachedir = cachedir
+        self.use_galaxy = use_galaxy
         self.botmetafile = botmetafile
         if botmeta:
             self.BOTMETA = botmeta
@@ -137,7 +138,10 @@ class AnsibleComponentMatcher(object):
             )
 
         # we need to query galaxy for a few things ...
-        self.GQT = GalaxyQueryTool(cachedir=self.cachedir)
+        if not use_galaxy:
+            self.GQT = None
+        else:
+            self.GQT = GalaxyQueryTool(cachedir=self.cachedir)
 
         self.strategy = None
         self.strategies = []
@@ -148,7 +152,8 @@ class AnsibleComponentMatcher(object):
 
     def update(self, email_cache=None, refresh_botmeta=True, usecache=False):
         #self.index_galaxy()
-        self.GQT.update()
+        if self.GQT is not None:
+            self.GQT.update()
         if email_cache:
             self.email_cache = email_cache
         self.gitrepo.update()
@@ -467,13 +472,14 @@ class AnsibleComponentMatcher(object):
         if not matched_filenames:
             matched_filenames += self.search_by_botmeta_migrated_to(component)
 
-        # see what is actually in galaxy ...
-        if not matched_filenames:
-            matched_filenames += self.GQT.search_galaxy(component)
+        if self.GQT is not None:
+            # see what is actually in galaxy ...
+            if not matched_filenames:
+                matched_filenames += self.GQT.search_galaxy(component)
 
-        # fallback to searching for migrated directories ...
-        if not matched_filenames and component.startswith('lib/ansible/modules'):
-            matched_filenames += self.GQT.fuzzy_search_galaxy(component)
+            # fallback to searching for migrated directories ...
+            if not matched_filenames and component.startswith('lib/ansible/modules'):
+                matched_filenames += self.GQT.fuzzy_search_galaxy(component)
 
         return matched_filenames
 
