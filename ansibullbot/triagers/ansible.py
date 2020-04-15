@@ -308,7 +308,8 @@ class AnsibleTriage(DefaultTriager):
             botmeta=self.botmeta,
             botmetafile=self.botmetafile,
             email_cache=self.module_indexer.emails_cache,
-            usecache=True
+            usecache=True,
+            use_galaxy=True
         )
 
         # instantiate shippable api

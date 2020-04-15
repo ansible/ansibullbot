@@ -412,6 +412,8 @@ class AnsibleComponentMatcher(object):
         # No matching necessary for PRs, but should provide consistent api
         if files:
             matched_filenames = files[:]
+        elif self.gitrepo.existed(component):
+            matched_filenames = [component]
         else:
             matched_filenames = []
             if component is None:
@@ -456,6 +458,7 @@ class AnsibleComponentMatcher(object):
         for fn in matched_filenames:
             component_matches.append(self.get_meta_for_file(fn))
 
+        #import epdb; epdb.st()
         return component_matches
 
     def search_ecosystem(self, component):
