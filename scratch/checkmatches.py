@@ -4,8 +4,6 @@ import datetime
 import json
 import os
 
-from pprint import pprint
-
 from ansibullbot.triagers.plugins.collection_facts import get_collection_facts
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.parsers.botmetadata import BotMetadataParser
@@ -36,7 +34,7 @@ class MockEvent:
     def created_at(self):
         ts = self._event['created_at']
         hyphens = [x for x in ts if x == '-']
-        if '+' in ts or len(hypens) > 2:
+        if '+' in ts or len(hyphens) > 2:
             ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S%z')
             #import epdb; epdb.st()
         else:
@@ -57,7 +55,6 @@ class MockEvent:
         return actor
 
 class MockComment(MockEvent):
-    pass
 
     @property
     def user(self):
@@ -88,23 +85,12 @@ class MockIssueInstance:
         ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
         return ts
 
-    '''
-    @property
-    def comments(self):
-        import epdb; epdb.st()
-
-    @property
-    def labels(self):
-        import epdb; epdb.st()
-    '''
-
 
 class MockIssueWrapper:
     def __init__(self, html_url, meta):
         self.html_url = html_url
         self.instance = MockIssueInstance(self.html_url, meta)
         self._meta = meta
-        #self._hw = HistoryWrapper(self, usecache=True, cachedir='/home/jtanner/.ansibullbot/cache')
         self._hw = None
     
     def is_issue(self):
@@ -170,8 +156,6 @@ def parse_match_results():
 
     with open('scratch/match_results.txt', 'r') as f:
         issue = None
-        thiscomponent = ''
-        thisjson = ''
         incomponent = False
         injson = False
         for line in f.readlines():
@@ -183,7 +167,7 @@ def parse_match_results():
                     'matches': None
                 }
                 injson = False
-                incomponet = False
+                incomponent = False
                 continue
             elif line.startswith('# component:'):
                 incomponent = True

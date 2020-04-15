@@ -25,7 +25,6 @@
 #     where the bot can't
 #   * different workflows should be a matter of enabling different plugins
 
-import copy
 import datetime
 from distutils.version import LooseVersion
 import io

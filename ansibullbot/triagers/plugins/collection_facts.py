@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 
 import copy
-import json
-import logging
-import re
-
-from pprint import pprint
 
 
 def get_collection_facts(iw, component_matcher, meta):

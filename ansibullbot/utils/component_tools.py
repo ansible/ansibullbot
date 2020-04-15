@@ -9,8 +9,6 @@ import re
 
 import six
 
-import requests
-
 from Levenshtein import jaro_winkler
 
 from ansibullbot._text_compat import to_bytes, to_text

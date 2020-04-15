@@ -11,9 +11,6 @@ import zipfile
 
 import yaml
 import requests
-#import requests_cache
-
-from pprint import pprint
 
 from github import Github
 
@@ -42,7 +39,7 @@ class GalaxyQueryTool:
         self.tarcache = os.path.join(self.cachedir, 'galaxy_tars')
         if not os.path.exists(self.tarcache):
             os.makedirs(self.tarcache)
-        rq = os.path.join(self.cachedir, 'requests_cache')
+        #rq = os.path.join(self.cachedir, 'requests_cache')
         #requests_cache.install_cache(rq)
         self._checkout_index_file = os.path.join(self.cachedir, 'checkout_index.json')
 
@@ -51,7 +48,6 @@ class GalaxyQueryTool:
 
         self.index_ecosystem()
         #self.index_galaxy()
-
         #self.index_collections()
 
     def _get_cached_url(self, url, days=0):
@@ -155,7 +151,6 @@ class GalaxyQueryTool:
                     self._gitrepos[fqcn] = grepo
 
         # scrape the galaxy collections api
-        api_collections = {}
         nexturl = self._baseurl + '/api/v2/collections/'
         while nexturl:
             #rr = requests.get(nexturl)
@@ -451,43 +446,6 @@ class GalaxyQueryTool:
 
         matched_filenames = []
 
-        """
-        # fallback to searching for migrated directories ...
-        if component.startswith('lib/ansible/modules'):
-            dn = component.replace('lib/ansible/modules/', '')
-            dn = os.path.dirname(dn)
-            # match on directory name or prefix ...
-            candidates = [x for x in self.GALAXY_FILES.keys() if '/' + dn + '/' in x or '/' + dn + '_' in x]
-            '''
-            fqcns = set()
-            for candidate in candidates:
-                for fqcn in self.GALAXY_FILES[candidate]:
-                    fqcns.add(fqcn)
-            for fqcn in fqcns:
-                matched_filenames.append('collection:%s:%s' % (fqcn, dn))
-            #import epdb; epdb.st()
-            '''
-
-            fqcns = {}
-            for candidate in candidates:
-                for fqcn in self.GALAXY_FILES[candidate]:
-                    if fqcn not in fqcns:
-                        fqcns[fqcn] = 0
-
-                    # is this file still actually there?
-                    if not self.collection_file_exists(fqcn, candidate):
-                        continue
-
-                    fqcns[fqcn] += 1
-
-            if fqcns:
-                topchoice = sorted(list(fqcns.items()), key=lambda x: x[1], reverse=True)[0][0]
-                matched_filenames.append('collection:%s:%s' % (topchoice, dn))
-        """
-
-        #if 'amazon' in component:
-        #    import epdb; epdb.st()
-
         if component.startswith('lib/ansible/modules'):
             bn = os.path.basename(component)
             bn = bn.replace('.py', '')
@@ -495,26 +453,16 @@ class GalaxyQueryTool:
                 bparts = bn.split('_')
                 for x in reversed(range(0, len(bparts))):
                     prefix = '_'.join(bparts[:x])
-                    print(prefix)
                     for key in self.GALAXY_FILES.keys():
                         keybn = os.path.basename(key)
                         if keybn.startswith(prefix):
-                            print('%s == %s' % (key, component))
+                            logging.info('%s == %s' % (key, component))
 
                             for fqcn in self.GALAXY_FILES[key]:
-                                #if fqcn.startswith('testing.'):
-                                #    continue
-                                #matched_filenames.append(key)
                                 matched_filenames.append('collection:%s:%s' % (fqcn, component))
 
                             break
                     if matched_filenames:
                         break
-
-                #import epdb; epdb.st()
-
-        #if 'amazon' in component:
-        #    import epdb; epdb.st()
-
 
         return matched_filenames

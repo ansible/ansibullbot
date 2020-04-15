@@ -375,9 +375,7 @@ class GithubGraphQLClient(object):
 # TESTING ...
 ###################################
 if __name__ == "__main__":
-    import ansibullbot.constants as C
     logging.basicConfig(level=logging.DEBUG)
     client = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
     summaries = client.get_all_summaries(u'ansible', u'ansible')
     ln = client.get_last_number(u'ansible/ansible')
-    #import epdb; epdb.st()
