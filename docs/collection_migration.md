@@ -17,6 +17,10 @@ or
 
 B. You created a new module.
 
+## What if ansibot made a mistake in deciding my issue or PR was for a file in a collection?
+
+Comment "!needs_collection_redirect" in the issue and the bot will override the redirect.
+
 ## What should I do now?
 
 1. Determine which collection+repo the file should live in now.
