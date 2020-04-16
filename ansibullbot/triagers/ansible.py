@@ -309,7 +309,7 @@ class AnsibleTriage(DefaultTriager):
             botmetafile=self.botmetafile,
             email_cache=self.module_indexer.emails_cache,
             usecache=True,
-            use_galaxy=True
+            use_galaxy=not self.args.ignore_galaxy
         )
 
         # instantiate shippable api
@@ -363,7 +363,11 @@ class AnsibleTriage(DefaultTriager):
             self.file_indexer.update()
 
             # update component matcher
-            self.component_matcher.update(email_cache=self.module_indexer.emails_cache, usecache=True)
+            self.component_matcher.update(
+                email_cache=self.module_indexer.emails_cache,
+                usecache=True,
+                use_galaxy=not self.args.ignore_galaxy
+            )
 
             # update shippable run data
             self.SR.update()
@@ -1599,6 +1603,9 @@ class AnsibleTriage(DefaultTriager):
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 
+        #if iw.number == 8:
+        #    import epdb; epdb.st()
+
         # check for waffling
         labels = sorted(set(actions.newlabel + actions.unlabel))
         for label in labels:
@@ -2609,6 +2616,9 @@ class AnsibleTriage(DefaultTriager):
 
         parser.add_argument('--commit', dest='ansible_commit',
                             help="Use a specific commit for the indexers")
+
+        parser.add_argument('--ignore_galaxy', action='store_true',
+                            help='do not index or search for components in galaxy')
 
         return parser
 

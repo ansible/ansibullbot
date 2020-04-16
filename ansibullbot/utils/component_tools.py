@@ -148,9 +148,9 @@ class AnsibleComponentMatcher(object):
         self.updated_at = None
         self.update(refresh_botmeta=False)
 
-    def update(self, email_cache=None, refresh_botmeta=True, usecache=False):
+    def update(self, email_cache=None, refresh_botmeta=True, usecache=False, use_galaxy=True):
         #self.index_galaxy()
-        if self.GQT is not None:
+        if self.GQT is not None and use_galaxy:
             self.GQT.update()
         if email_cache:
             self.email_cache = email_cache
@@ -412,6 +412,8 @@ class AnsibleComponentMatcher(object):
         # No matching necessary for PRs, but should provide consistent api
         if files:
             matched_filenames = files[:]
+        elif not component or component is None:
+            return []
         elif self.gitrepo.existed(component):
             matched_filenames = [component]
         else:
@@ -458,7 +460,9 @@ class AnsibleComponentMatcher(object):
         for fn in matched_filenames:
             component_matches.append(self.get_meta_for_file(fn))
 
-        #import epdb; epdb.st()
+        #if not component or component is None and component_matches:
+        #    import epdb; epdb.st()
+
         return component_matches
 
     def search_ecosystem(self, component):
