@@ -665,7 +665,7 @@ def get_last_shippable_full_run_date(ci_status, shippable):
 
     # query the api for all data on this runid
     try:
-        rdata = shippable.get_run_data(to_text(runid), usecache=False)
+        rdata = shippable.get_run_data(to_text(runid), usecache=True)
     except ShippableNoData:
         return None
 

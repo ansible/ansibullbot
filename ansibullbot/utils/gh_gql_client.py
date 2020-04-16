@@ -16,6 +16,8 @@ from tenacity import retry, wait_random, stop_after_attempt
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 
+import ansibullbot.constants as C
+
 
 QUERY_FIELDS = """
 id
@@ -373,9 +375,7 @@ class GithubGraphQLClient(object):
 # TESTING ...
 ###################################
 if __name__ == "__main__":
-    import ansibullbot.constants as C
     logging.basicConfig(level=logging.DEBUG)
     client = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
     summaries = client.get_all_summaries(u'ansible', u'ansible')
     ln = client.get_last_number(u'ansible/ansible')
-    #import epdb; epdb.st()

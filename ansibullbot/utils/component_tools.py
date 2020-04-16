@@ -9,8 +9,6 @@ import re
 
 import six
 
-import requests
-
 from Levenshtein import jaro_winkler
 
 from ansibullbot._text_compat import to_bytes, to_text
@@ -19,6 +17,8 @@ from ansibullbot.utils.extractors import ModuleExtractor
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
+
+from ansibullbot.utils.galaxy import GalaxyQueryTool
 
 
 def make_prefixes(filename):
@@ -109,9 +109,10 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None):
+    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None, use_galaxy=False):
         self.usecache = usecache
         self.cachedir = cachedir
+        self.use_galaxy = use_galaxy
         self.botmetafile = botmetafile
         if botmeta:
             self.BOTMETA = botmeta
@@ -134,6 +135,12 @@ class AnsibleComponentMatcher(object):
                 gitrepo=self.gitrepo
             )
 
+        # we need to query galaxy for a few things ...
+        if not use_galaxy:
+            self.GQT = None
+        else:
+            self.GQT = GalaxyQueryTool(cachedir=self.cachedir)
+
         self.strategy = None
         self.strategies = []
 
@@ -141,8 +148,10 @@ class AnsibleComponentMatcher(object):
         self.updated_at = None
         self.update(refresh_botmeta=False)
 
-    def update(self, email_cache=None, refresh_botmeta=True, usecache=False):
-        self.index_galaxy()
+    def update(self, email_cache=None, refresh_botmeta=True, usecache=False, use_galaxy=True):
+        #self.index_galaxy()
+        if self.GQT is not None and use_galaxy:
+            self.GQT.update()
         if email_cache:
             self.email_cache = email_cache
         self.gitrepo.update()
@@ -151,6 +160,7 @@ class AnsibleComponentMatcher(object):
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
 
+    '''
     def index_galaxy(self):
         url = 'https://sivel.eng.ansible.com/api/v1/collections/file_map'
         rr = requests.get(url)
@@ -159,6 +169,17 @@ class AnsibleComponentMatcher(object):
         url = 'https://sivel.eng.ansible.com/api/v1/collections/list'
         rr = requests.get(url)
         self.GALAXY_MANIFESTS = rr.json()
+
+        self._verify_galaxy_files()
+
+    def _verify_galaxy_files(self):
+        for k,v in self.GALAXY_FILES.items():
+            for fqcn in v:
+                if not self.GQT.collection_file_exists(fqcn, k):
+                    if fqcn in self.GALAXY_FILES[k]:
+                        self.GALAXY_FILES[k].remove(fqcn)
+        #import epdb; epdb.st()
+    '''
 
     def get_module_meta(self, checkoutdir, filename1, filename2):
 
@@ -391,6 +412,10 @@ class AnsibleComponentMatcher(object):
         # No matching necessary for PRs, but should provide consistent api
         if files:
             matched_filenames = files[:]
+        elif not component or component is None:
+            return []
+        elif self.gitrepo.existed(component):
+            matched_filenames = [component]
         else:
             matched_filenames = []
             if component is None:
@@ -435,7 +460,33 @@ class AnsibleComponentMatcher(object):
         for fn in matched_filenames:
             component_matches.append(self.get_meta_for_file(fn))
 
+        #if not component or component is None and component_matches:
+        #    import epdb; epdb.st()
+
         return component_matches
+
+    def search_ecosystem(self, component):
+
+        matched_filenames = []
+
+        # do not match on things that still exist in core
+        if self.file_indexer.gitrepo.exists(component):
+            return matched_filenames
+
+        # botmeta -should- be the source of truth, but it's proven not to be ...
+        if not matched_filenames:
+            matched_filenames += self.search_by_botmeta_migrated_to(component)
+
+        if self.GQT is not None:
+            # see what is actually in galaxy ...
+            if not matched_filenames:
+                matched_filenames += self.GQT.search_galaxy(component)
+
+            # fallback to searching for migrated directories ...
+            if not matched_filenames and component.startswith('lib/ansible/modules'):
+                matched_filenames += self.GQT.fuzzy_search_galaxy(component)
+
+        return matched_filenames
 
     def _match_component(self, title, body, component):
         """Find matches for a single line"""
@@ -544,6 +595,18 @@ class AnsibleComponentMatcher(object):
 
         matches = []
 
+        # narrow searching to modules/utils/plugins
+        if component.startswith('lib/ansible') and not (
+                component.startswith('lib/ansible/plugins') or not
+                component.startswith('lib/ansible/module')):
+            return matches
+
+        if os.path.basename(component) == '__init__.py':
+            return matches
+
+        if component.startswith('test/lib'):
+            return matches
+
         # check for matches in botmeta first in case there's a migrated_to key ...
         botmeta_candidates = []
         for bmkey in self.BOTMETA[u'files'].keys():
@@ -552,12 +615,30 @@ class AnsibleComponentMatcher(object):
                 continue
             if not self.BOTMETA[u'files'][bmkey].get(u'migrated_to'):
                 continue
+
+            if u'modules/' in component and u'modules/' not in bmkey:
+                continue
+            if u'lookup' in component and u'lookup' not in bmkey:
+                continue
+            if u'filter' in component and u'filter' not in bmkey:
+                continue
+            if u'inventory' in component and u'inventory' not in bmkey:
+                continue
+
             if bmkey == component or os.path.basename(bmkey).replace('.py', '') == os.path.basename(component).replace('.py', ''):
                 mt = self.BOTMETA['files'][bmkey].get('migrated_to')[0]
                 for fn,gcollections in self.GALAXY_FILES.items():
                     if mt not in gcollections:
                         continue
                     if os.path.basename(fn).replace('.py', '') != os.path.basename(component).replace('.py', ''):
+                        continue
+                    if u'modules/' in component and u'modules/' not in fn:
+                        continue
+                    if u'lookup' in component and u'lookup' not in fn:
+                        continue
+                    if u'filter' in component and u'filter' not in fn:
+                        continue
+                    if u'inventory' in component and u'inventory' not in fn:
                         continue
                     botmeta_candidates.append('collection:%s:%s' % (mt, fn))
                     logging.info('matched %s to %s to %s:%s' % (component, bmkey, mt, fn))
@@ -567,10 +648,23 @@ class AnsibleComponentMatcher(object):
 
         return matches
 
+    """
     def search_by_galaxy(self, component):
         '''Is this a file belonging to a collection?'''
 
         matches = []
+
+        # narrow searching to modules/utils/plugins
+        if component.startswith('lib/ansible') and not (
+                component.startswith('lib/ansible/plugins') or not
+                component.startswith('lib/ansible/module')):
+            return matches
+
+        if os.path.basename(component) == '__init__.py':
+            return matches
+
+        if component.startswith('test/lib'):
+            return matches
 
         candidates = []
         for key in self.GALAXY_FILES.keys():
@@ -593,7 +687,10 @@ class AnsibleComponentMatcher(object):
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
 
+        #import epdb; epdb.st()
+
         return matches
+    """
 
     def search_by_module_name(self, component):
         matches = []
@@ -1199,10 +1296,13 @@ class AnsibleComponentMatcher(object):
             meta[u'collection'] = fqcn
             meta[u'migrated_to'] = fqcn
             meta[u'support'] = u'community'
-            if manifest.get(u'repository'):
-                meta[u'collection_scm'] = manifest[u'repository']
-            elif manifest.get(u'issues'):
-                meta[u'collection_scm'] = manifest[u'issues']
+            manifest = self.GALAXY_MANIFESTS.get(fqcn)
+            if manifest:
+                manifest = manifest[u'manifest'][u'collection_info']
+                if manifest.get(u'repository'):
+                    meta[u'collection_scm'] = manifest[u'repository']
+                elif manifest.get(u'issues'):
+                    meta[u'collection_scm'] = manifest[u'issues']
             return meta
 
         populated = False
@@ -1345,10 +1445,12 @@ class AnsibleComponentMatcher(object):
                 meta[u'supported_by'] = support_levels[keys[0]]
                 logging.debug(u'%s support == %s' % (keys[0], meta[u'supported_by']))
 
+        '''
         # new modules should default to "community" support
-        if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files:
+        if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files and not meta.get('migrated_to'):
             meta[u'support'] = u'community'
             meta[u'supported_by'] = u'community'
+        '''
 
         # test targets for modules should inherit from their modules
         if filename.startswith(u'test/integration/targets') and filename not in self.BOTMETA[u'files']:
@@ -1380,6 +1482,7 @@ class AnsibleComponentMatcher(object):
 
             # make new test targets community by default
             if not meta[u'support'] and not meta[u'supported_by']:
+                #import epdb; epdb.st()
                 meta[u'support'] = u'community'
 
         # it's okay to remove things from legacy-files.txt

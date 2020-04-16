@@ -311,6 +311,7 @@ class HistoryWrapper(object):
 
         return groups
 
+
     def get_commands(self, username, command_keys, timestamps=False, uselabels=True, botnames=[]):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
@@ -950,6 +951,17 @@ class HistoryWrapper(object):
             return True
         else:
             return False
+
+    def command_status(self, command):
+        status = None
+        for event in self.history:
+            if 'body' not in event:
+                continue
+            if event['body'].strip() == command:
+                status = True
+            elif event['body'].strip() == '!' + command:
+                status = False
+        return status
 
 
 class ShippableHistory(object):

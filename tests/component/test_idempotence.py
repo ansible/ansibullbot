@@ -34,7 +34,8 @@ class TestIdempotence:
                 '--no_since',
                 #'--id=2',
                 #'--id=1',
-                '--force'
+                '--force',
+                '--ignore_galaxy'
             ]
 
             # create a bug report
@@ -88,6 +89,8 @@ class TestIdempotence:
 
                 # ensure no actions were created on the last run
                 for k,v in meta['actions'].items():
+                    #if v:
+                    #    import epdb; epdb.st()
                     assert not v
 
             logging.basicConfig()

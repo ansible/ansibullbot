@@ -46,7 +46,8 @@ class TestSuperShipit:
                 '--logfile=%s' % os.path.join(mm.cachedir, 'bot.log'),
                 '--no_since',
                 '--force',
-                '--botmetafile=%s' % bmfile
+                '--botmetafile=%s' % bmfile,
+                '--ignore_galaxy'
             ]
 
             # create a bug report

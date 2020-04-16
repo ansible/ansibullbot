@@ -49,6 +49,12 @@ class GithubWrapper(object):
         return accepts
 
     @RateLimited
+    def get_org(self, org, verbose=True):
+        org = self.gh.get_organization(org)
+        #import epdb; epdb.st()
+        return org
+
+    @RateLimited
     def get_repo(self, repo_path, verbose=True):
         repo = RepoWrapper(self.gh, repo_path, verbose=verbose, cachedir=self.cachedir)
         return repo
@@ -116,7 +122,10 @@ class GithubWrapper(object):
         # pagination
         if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
             _data = self.get_request(rr.links[u'next'][u'url'])
-            data += _data
+            if isinstance(data, list):
+                data += _data
+            else:
+                data.update(_data)
 
         return data
 
@@ -140,7 +149,14 @@ class GithubWrapper(object):
         # pagination
         if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
             _data = self.get_request(rr.links[u'next'][u'url'])
-            data += _data
+            try:
+                if isinstance(data, list):
+                    data += _data
+                elif isinstance(data, dict):
+                    data.update(_data)
+            except TypeError as e:
+                print(e)
+                import epdb; epdb.st()
 
         return data
 
@@ -326,6 +342,9 @@ class RepoWrapper(object):
         return issues
 
     def load_issue(self, number):
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return False
+
         pfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -343,6 +362,10 @@ class RepoWrapper(object):
             return False
 
     def load_pullrequest(self, number):
+
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return False
+
         pfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -364,6 +387,10 @@ class RepoWrapper(object):
             self.save_issue(issue)
 
     def save_issue(self, issue):
+
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return
+
         cfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -378,6 +405,10 @@ class RepoWrapper(object):
             pickle_dump(issue, f)
 
     def save_pullrequest(self, issue):
+
+        if not C.DEFAULT_PICKLE_ISSUES:
+            return
+
         cfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -438,11 +469,12 @@ class RepoWrapper(object):
                     raise Exception(u'unable to get %s' % property_name)
             events = [x for x in methodToCall()]
 
-        if write_cache or not os.path.isfile(pfile):
-            # need to dump the pickle back to disk
-            edata = [updated, events]
-            with open(pfile, 'wb') as f:
-                pickle_dump(edata, f)
+        if C.DEFAULT_PICKLE_ISSUES:
+            if write_cache or not os.path.isfile(pfile):
+                # need to dump the pickle back to disk
+                edata = [updated, events]
+                with open(pfile, 'wb') as f:
+                    pickle_dump(edata, f)
 
         return events
 

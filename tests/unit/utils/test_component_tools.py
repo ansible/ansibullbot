@@ -503,7 +503,7 @@ class TestComponentMatcherInheritance(TestCase):
         file_indexer.get_files()
         file_indexer.parse_metadata()
 
-        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=file_indexer)
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=file_indexer, use_galaxy=False)
 
     @classmethod
     def tearDownClass(cls):

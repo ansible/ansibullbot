@@ -172,8 +172,20 @@ class ShippableRuns(object):
             if rc == 400:
                 return None
 
+        # always use cache for finished jobs...
+        is_finished = False
+        if isinstance(jdata, list):
+            ts = [x.get('endedAt') for x in jdata]
+            if None not in ts:
+                is_finished = True
+        elif isinstance(jdata, dict) and jdata.get(u'endedAt'):
+            is_finished = True
+
         resp = None
-        if not os.path.isfile(gzfile) or not jdata or not usecache:
+        if not os.path.isfile(gzfile) or not jdata or (not usecache and not is_finished):
+
+            if os.path.isfile(gzfile):
+                import epdb; epdb.st()
 
             resp = self.fetch(url, timeout=timeout)
             if not resp:

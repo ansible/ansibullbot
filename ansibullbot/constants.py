@@ -323,6 +323,17 @@ DEFAULT_STALE_WINDOW = get_config(
 )
 
 
+# Pickle the issue objects?
+DEFAULT_PICKLE_ISSUES = get_config(
+    p,
+    DEFAULTS,
+    'requests_cache',
+    '%s_PICKLE_ISSUES' % PROG_NAME.upper(),
+    True,
+    value_type='boolean'
+)
+
+
 ###########################################
 #   METADATA RECEIVER
 ###########################################
