@@ -1600,6 +1600,11 @@ class AnsibleTriage(DefaultTriager):
                     )
                     actions.comments.append(comment)
 
+        # collections!!!
+        if self.meta.get('collection_fqcn_label_remove'):
+            for fqcn in self.meta['collection_fqcn_label_remove']:
+                actions.unlabel.append('collection:%s'% fqcn)
+
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 

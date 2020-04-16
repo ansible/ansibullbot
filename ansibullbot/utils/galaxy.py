@@ -405,6 +405,23 @@ class GalaxyQueryTool:
 
                 break
 
+        # hack in patterns for deprecated files
+        for x in patterns[:]:
+            if x.endswith('.py'):
+                bn = os.path.basename(x)
+                bd = os.path.dirname(x)
+                if bn.startswith('_'):
+                    bn = bn.replace('_', '', 1)
+                    patterns.append(os.path.join(bd, bn))
+
+        '''
+        patterns = sorted([x for x in patterns if not x.startswith('lib/')])
+        filenames = [x for x in patterns if x.endswith('.py')]
+        dirnames = [x for x in patterns if not x.endswith('.py')]
+        patterns = filenames + dirnames
+        import epdb; epdb.st()
+        '''
+
         #if component.startswith('lib/ansible/plugins'):
         #    import epdb; epdb.st()
 
@@ -427,9 +444,6 @@ class GalaxyQueryTool:
                 candidates.append(key)
                 break
 
-        #pprint(candidates)
-        #import epdb; epdb.st()
-
         if candidates:
             for cn in candidates:
                 for fqcn in self.GALAXY_FILES[cn]:
@@ -437,8 +451,6 @@ class GalaxyQueryTool:
                     #    continue
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
-
-        #import epdb; epdb.st()
 
         return matches
 
@@ -453,13 +465,18 @@ class GalaxyQueryTool:
                 bparts = bn.split('_')
                 for x in reversed(range(0, len(bparts))):
                     prefix = '_'.join(bparts[:x])
+                    if not prefix:
+                        continue
                     for key in self.GALAXY_FILES.keys():
                         keybn = os.path.basename(key)
                         if keybn.startswith(prefix):
-                            logging.info('%s == %s' % (key, component))
+                            logging.info('galaxy fuzzy match %s == %s' % (keybn, prefix))
+                            logging.info('galaxy fuzzy match %s == %s' % (key, component))
+                            #import epdb; epdb.st()
 
                             for fqcn in self.GALAXY_FILES[key]:
                                 matched_filenames.append('collection:%s:%s' % (fqcn, component))
+                                #matched_filenames.append('collection:%s:%s' % (fqcn, key))
 
                             break
                     if matched_filenames:

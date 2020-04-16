@@ -21,7 +21,8 @@ def get_collection_facts(iw, component_matcher, meta):
         'needs_collection_redirect': False,
         'collection_redirects': [],
         'collection_filemap': {},
-        'collection_file_matches': {}
+        'collection_file_matches': {},
+        'collection_fqcn_label_remove': set(),
     }
 
     cmap = {}
@@ -78,5 +79,14 @@ def get_collection_facts(iw, component_matcher, meta):
     if cstatus is False:
         cfacts['needs_collection_redirect'] = False
         cfacts['needs_collection_boilerplate'] = False
+
+    # clean up incorrect labels ...
+    for label in iw.labels:
+        if label.startswith('collection:'):
+            fqcn = label.split(':')[1]
+            if fqcn not in fqcns:
+                cfacts['collection_fqcn_label_remove'].add(fqcn)
+
+    cfacts['collection_fqcn_label_remove'] = list(cfacts['collection_fqcn_label_remove'])
 
     return cfacts
