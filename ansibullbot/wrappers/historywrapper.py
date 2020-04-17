@@ -256,6 +256,20 @@ class HistoryWrapper(object):
                 if len(matching_events) == maxcount:
                     break
 
+        """
+        # get rid of deleted comments
+        if active and eventname == u'commented':
+            cids = [x.id for x in self.issue.comments]
+            for me in matching_events[:]:
+                if me['id'] not in cids:
+                    print('remove %s' % me['id'])
+                    matching_events.remove(me)
+                else:
+                    print('%s in cids' % me['id'])
+            import epdb; epdb.st()
+        """
+
+        #import epdb; epdb.st()
         return matching_events
 
     def get_user_comments(self, username):
@@ -366,12 +380,24 @@ class HistoryWrapper(object):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
 
+        """
         comments = self._find_events_by_actor(
             u'commented',
             None,
             maxcount=999
         )
         events = sorted(comments, key=itemgetter(u'created_at'))
+        """
+
+        comments = self.issue.comments[:]
+        if botnames:
+            comments = [x for x in comments if x.user.login in botnames]
+        else:
+            comments = [x for x in comments if x.user.login == botname]
+        events = [
+            {'event': 'commented', 'body': x.body, 'created_at': x.created_at, 'actor': x.user.login}
+            for x in comments
+        ]
 
         for event in events:
             if event[u'actor'] in botnames:
@@ -621,14 +647,25 @@ class HistoryWrapper(object):
 
     def get_boilerplate_comments(self, botname='ansibot', botnames=None, dates=False, content=True):
         boilerplates = []
+        """
         if botnames:
             comments = self._find_events_by_actor(u'commented',
                                                   botnames,
-                                                  maxcount=999)
+                                                  maxcount=999,
+                                                  active=True)
         else:
             comments = self._find_events_by_actor(u'commented',
                                                   botname,
-                                                  maxcount=999)
+                                                  maxcount=999,
+                                                  active=True)
+        """
+        comments = self.issue.comments[:]
+        if botnames:
+            comments = [x for x in comments if x.user.login in botnames]
+        else:
+            comments = [x for x in comments if x.user.login == botname]
+        comments = [{'body': x.body, 'created_at': x.created_at} for x in comments]
+
         for comment in comments:
             if not comment.get(u'body'):
                 continue
@@ -651,11 +688,19 @@ class HistoryWrapper(object):
 
         return boilerplates
 
-    def get_boilerplate_comments_content(self, botname='ansibot', bfilter=None):
+    def get_boilerplate_comments_content(self, botname='ansibot', botnames=None, bfilter=None):
+        """
         boilerplates = []
         comments = self._find_events_by_actor(u'commented',
                                               botname,
                                               maxcount=999)
+        comments = self.issue.comments[:]
+        if botnames:
+            comments = [x for x in comments if x.user.login in botnames]
+        else:
+            comments = [x for x in comments if x.user.login == botname]
+        comments = [{'body': x.body, 'created_at': x.created_at} for x in comments]
+
         for comment in comments:
             if not comment.get(u'body'):
                 continue
@@ -669,6 +714,10 @@ class HistoryWrapper(object):
                 else:
                     boilerplates.append(comment[u'body'])
         return boilerplates
+        """
+        bpcs = self.get_boilerplate_comments(botname=botname, botnames=botnames)
+        bpcs = [x[-1] for x in bpcs]
+        return bpcs
 
     def last_date_for_boilerplate(self, boiler, botname='ansibot'):
         last_date = None
