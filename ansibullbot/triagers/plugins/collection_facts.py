@@ -32,6 +32,10 @@ def get_collection_facts(iw, component_matcher, meta):
 
     fqcns = set()
     for key in cmap.keys():
+        if key in iw.renamed_files.values():
+            continue
+        if key in iw.renamed_files:
+            continue
         cmap[key] = component_matcher.search_ecosystem(key)
         if cmap[key]:
             for match in cmap[key]:
@@ -47,6 +51,8 @@ def get_collection_facts(iw, component_matcher, meta):
 
     # make urls for the bot comment
     for k,v in cmap.items():
+        if v is None:
+            continue
         for idi,item in enumerate(v):
             parts = item.split(':')
             cmap[k][idi] = k + ' -> ' + 'https://galaxy.ansible.com/' + parts[1].replace('.', '/')
@@ -88,5 +94,7 @@ def get_collection_facts(iw, component_matcher, meta):
                 cfacts['collection_fqcn_label_remove'].add(fqcn)
 
     cfacts['collection_fqcn_label_remove'] = list(cfacts['collection_fqcn_label_remove'])
+
+    #import epdb; epdb.st()
 
     return cfacts

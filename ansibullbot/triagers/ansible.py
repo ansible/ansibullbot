@@ -1608,9 +1608,6 @@ class AnsibleTriage(DefaultTriager):
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 
-        #if iw.number == 8:
-        #    import epdb; epdb.st()
-
         # check for waffling
         labels = sorted(set(actions.newlabel + actions.unlabel))
         for label in labels:
