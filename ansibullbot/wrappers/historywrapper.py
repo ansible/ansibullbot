@@ -376,7 +376,7 @@ class HistoryWrapper(object):
 
         return commands
 
-    def get_component_commands(self, command_key='!component', botnames=[]):
+    def get_component_commands(self, command_key='!component', botname=None, botnames=[]):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
 
