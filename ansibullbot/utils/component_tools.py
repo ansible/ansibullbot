@@ -414,7 +414,7 @@ class AnsibleComponentMatcher(object):
             matched_filenames = files[:]
         elif not component or component is None:
             return []
-        elif self.gitrepo.existed(component):
+        elif ' ' not in component and '\n' not in component and self.gitrepo.existed(component):
             matched_filenames = [component]
         else:
             matched_filenames = []

@@ -458,6 +458,9 @@ class GalaxyQueryTool:
 
         matched_filenames = []
 
+        if component.endswith('__init__.py'):
+            return matched_filenames
+
         if component.startswith('lib/ansible/modules'):
             bn = os.path.basename(component)
             bn = bn.replace('.py', '')
