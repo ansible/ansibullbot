@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import copy
+import json
+import os
 
 
 def get_collection_facts(iw, component_matcher, meta):
@@ -21,6 +23,7 @@ def get_collection_facts(iw, component_matcher, meta):
         'needs_collection_redirect': False,
         'collection_redirects': [],
         'collection_filemap': {},
+        'collection_filemap_full': {},
         'collection_file_matches': {},
         'collection_fqcn_label_remove': set(),
     }
@@ -43,7 +46,6 @@ def get_collection_facts(iw, component_matcher, meta):
                     fqcns.add(match.split(':')[1])
 
     cfacts['collection_filemap'] = copy.deepcopy(cmap)
-
     cfacts['collection_redirects'] = list(fqcns)
     cfacts['collection_fqcns'] = list(fqcns)
     if fqcns:
@@ -94,7 +96,5 @@ def get_collection_facts(iw, component_matcher, meta):
                 cfacts['collection_fqcn_label_remove'].add(fqcn)
 
     cfacts['collection_fqcn_label_remove'] = list(cfacts['collection_fqcn_label_remove'])
-
-    #import epdb; epdb.st()
 
     return cfacts

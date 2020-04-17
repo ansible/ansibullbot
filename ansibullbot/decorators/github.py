@@ -219,6 +219,8 @@ def RateLimited(fn):
                         stime = 2*60
                     elif msg.lower() == 'issues are disabled for this repo':
                         return None
+                    elif 'The request could not be processed because too many files changed' in msg:
+                        stime = 2*60
                     else:
                         if C.DEFAULT_BREAKPOINTS:
                             logging.error('breakpoint!')

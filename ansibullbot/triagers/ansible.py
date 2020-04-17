@@ -353,6 +353,9 @@ class AnsibleTriage(DefaultTriager):
     def run(self):
         '''Primary execution method'''
 
+        ts1 = datetime.datetime.now()
+        icount = 0
+
         if self.ITERATION > 0:
             # update on each run to pull in new data
             logging.info('updating module indexer')
@@ -409,6 +412,8 @@ class AnsibleTriage(DefaultTriager):
                         logging.error('breakpoint!')
                         import epdb; epdb.st()
                     continue
+
+                icount += 1
 
                 self.COMPONENTS = []
                 self.meta = {}
@@ -585,6 +590,10 @@ class AnsibleTriage(DefaultTriager):
                         redo = True
 
                 logging.info(u'finished triage for %s' % to_text(iw))
+
+        ts2 = datetime.datetime.now()
+        td = (ts2 - ts1).total_seconds()
+        logging.info('triaged %s issues in %s seconds' % (icount, td))
 
     def eval_pr_param(self, pr):
         '''PR/ID can be a number, numberlist, script, jsonfile, or url'''

@@ -15,6 +15,8 @@ from ansibullbot.utils.systemtools import run_command
 
 class GitRepoWrapper(object):
 
+    _LREV_MAP = {}
+
     _is_git = True
     checkoutdir = None
     _files = []
@@ -134,6 +136,7 @@ class GitRepoWrapper(object):
         if changed or force or not self._is_git:
             self.get_files(force=True)
         self.commits_by_email = None
+        self._LREV_MAP = {}
 
     def update_checkout(self):
         """rebase + pull + update the checkout"""
@@ -269,18 +272,31 @@ class GitRepoWrapper(object):
 
         return email_map
 
+    def get_last_rev_for_file(self, filepath):
+
+        ''' Retrive last hash for a file if it ever existed '''
+
+        # https://stackoverflow.com/a/19727752
+        # https://stackoverflow.com/a/1395463
+
+        if filepath not in self._LREV_MAP:
+            cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
+            logging.info(cmd)
+            (rc, so, se) = run_command(cmd)
+            lrev = so.strip().decode('utf-8')
+            self._LREV_MAP[filepath] = lrev
+
+        return self._LREV_MAP[filepath]
+
+
     def existed(self, filepath):
         '''Did a file ever exist in this repo?'''
 
         if self.context:
             filepath = os.path.join(self.context, filepath)
 
-        cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
-        logging.info(cmd)
-        (rc, so, se) = run_command(cmd)
-        lrev = so.strip().decode('utf-8')
-
-        if rc == 0 and lrev:
+        lrev = self.get_last_rev_for_file(filepath)
+        if lrev:
             return True
 
         return False
@@ -296,31 +312,21 @@ class GitRepoWrapper(object):
         if not follow:
             return None
 
-        # https://stackoverflow.com/a/1395463
-        #cmd = 'cd %s; git show HEAD^:%s' % (self.checkoutdir, filepath)
+        lrev = self.get_last_rev_for_file(filepath)
 
-        # https://stackoverflow.com/a/19727752
-        cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
-        logging.info(cmd)
-        (rc, so, se) = run_command(cmd)
-        lrev = so.strip().decode('utf-8')
+        # https://stackoverflow.com/a/1395463
         cmd = 'cd %s; git show %s^:%s' % (self.checkoutdir, lrev, filepath)
         (rc, so, se) = run_command(cmd)
         logging.info(cmd)
-        #so = so.decode('utf-8').strip()
         so = so.strip()
         if so.decode('utf-8').endswith('.py'):
             newpath = os.path.dirname(filepath)
             newpath = os.path.join(newpath, so.decode('utf-8'))
+            lrev = self.get_last_rev_for_file(filepath)
 
-            cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, newpath)
-            logging.info(cmd)
-            (rc, so, se) = run_command(cmd)
-            lrev = so.strip().decode('utf-8')
             cmd = 'cd %s; git show %s^:%s' % (self.checkoutdir, lrev, newpath)
             logging.info(cmd)
             (rc, so, se) = run_command(cmd)
-            #so = so.decode('utf-8').strip()
             so = so.strip()
 
         return so

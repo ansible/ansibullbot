@@ -664,7 +664,7 @@ class HistoryWrapper(object):
             comments = [x for x in comments if x.user.login in botnames]
         else:
             comments = [x for x in comments if x.user.login == botname]
-        comments = [{'body': x.body, 'created_at': x.created_at} for x in comments]
+        comments = [{'body': x.body, 'created_at': pytz.utc.localize(x.created_at)} for x in comments]
 
         for comment in comments:
             if not comment.get(u'body'):

@@ -7,7 +7,7 @@ from logging.handlers import WatchedFileHandler
 def set_logger(debug=False, logfile=None):
 
     logFormatter = \
-        logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+            logging.Formatter("%(asctime)s %(levelname)s %(filename)s:%(funcName)s:%(lineno)d %(message)s")
     rootLogger = logging.getLogger()
 
     if debug:
