@@ -519,6 +519,9 @@ class AnsibleComponentMatcher(object):
             context = u'contrib/inventory'
         elif u'inventory plugin' in title.lower() or u'inventory plugin' in component.lower():
             context = u'lib/ansible/plugins/inventory'
+        elif u'integration test' in title.lower() or u'integration test' in component.lower():
+            context = u'test/integration/targets'
+            component = component.replace('integration test', '').strip()
         else:
             context = None
 

@@ -7,11 +7,21 @@ import os
 
 def get_collection_facts(iw, component_matcher, meta):
 
+    # Skip redirection of backports or <2.10 issues ...
     if isinstance(meta.get('is_backport'), bool):
         is_backport = meta['is_backport']
     else:
         if iw.is_issue():
-            is_backport = False
+            avparts = meta['ansible_version'].split('.')
+            major = int(avparts[0])
+            try:
+                minor = int(avparts[1])
+            except:
+                minor = 0
+            if major < 2 or (major == 2 and minor < 10):
+                is_backport = True
+            else:
+                is_backport = False
         else:
             is_backport = iw.pullrequest.base.ref != u'devel'
 
@@ -96,5 +106,7 @@ def get_collection_facts(iw, component_matcher, meta):
                 cfacts['collection_fqcn_label_remove'].add(fqcn)
 
     cfacts['collection_fqcn_label_remove'] = list(cfacts['collection_fqcn_label_remove'])
+
+    #import epdb; epdb.st()
 
     return cfacts
