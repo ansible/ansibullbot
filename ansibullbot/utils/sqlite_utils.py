@@ -133,7 +133,7 @@ class AnsibullbotDatabase(object):
             'url': url,
             'date': headers['Date'],
             'etag': headers['ETag'],
-            'last_modified': headers['Last-Modified'],
+            'last_modified': headers.get('Last-Modified'),
             'datafile': datafile,
             'token': token,
             'headers': json.dumps(dict(headers))

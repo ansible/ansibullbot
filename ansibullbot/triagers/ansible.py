@@ -398,7 +398,8 @@ class AnsibleTriage(DefaultTriager):
             return
 
         # loop through each repo made by collect_repos
-        for item in self.repos.items():
+        items = list(self.repos.items())
+        for item in items:
             repopath = item[0]
             repo = item[1][u'repo']
 
@@ -1949,13 +1950,13 @@ class AnsibleTriage(DefaultTriager):
             logging.info('%s numbers after checking type' % len(numbers))
 
         numbers = sorted(set([int(x) for x in numbers]))
-        if self.args.last and len(numbers) >= self.args.last:
-            numbers = numbers[self.args.last:]
-
-        # Use iterator to avoid requesting all issues upfront
         if self.sort == u'desc':
             numbers = [x for x in reversed(numbers)]
 
+        if self.args.last and len(numbers) > self.args.last:
+            numbers = numbers[0 - self.args.last:]
+
+        # Use iterator to avoid requesting all issues upfront
         self.repos[repo][u'issues'] = RepoIssuesIterator(
             self.repos[repo][u'repo'],
             numbers,
