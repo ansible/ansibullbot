@@ -392,16 +392,20 @@ class GalaxyQueryTool:
             if component.startswith(k):
                 # look for the full path including subdirs ...
                 _component = component.replace(k + '/', v + '/')
-                patterns.append(_component)
+                if _component not in dirmap and _component not in dirmap.values():
+                    patterns.append(_component)
 
                 # add the short path in case the collection does not have subdirs ...
                 segments = _component.split('/')
                 if len(segments) > 3:
-                    patterns.append(os.path.join(v, os.path.basename(_component)))
+                    thispath = os.path.join(v, os.path.basename(_component))
+                    if thispath not in dirmap and thispath not in dirmap.values():
+                        patterns.append(os.path.join(v, os.path.basename(_component)))
 
                 # find parent folder for new modules ...
                 if v != 'plugins':
-                    patterns.append(os.path.dirname(_component))
+                    if os.path.dirname(_component) not in dirmap and os.path.dirname(_component) not in dirmap.values():
+                        patterns.append(os.path.dirname(_component))
 
                 break
 
@@ -485,4 +489,5 @@ class GalaxyQueryTool:
                     if matched_filenames:
                         break
 
+        import epdb; epdb.st()
         return matched_filenames

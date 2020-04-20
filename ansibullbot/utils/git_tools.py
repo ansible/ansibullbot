@@ -49,6 +49,11 @@ class GitRepoWrapper(object):
             self.update(force=True)
 
     def exists(self, filename, loose=False):
+
+        if filename in self.files:
+            return True
+
+        '''
         if self.checkoutdir is None:
             return False
         if self.context:
@@ -65,6 +70,7 @@ class GitRepoWrapper(object):
                 continue
             if x.endswith(filename):
                 return True
+        '''
 
         return False
 

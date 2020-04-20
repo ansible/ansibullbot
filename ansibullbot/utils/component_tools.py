@@ -45,6 +45,7 @@ class AnsibleComponentMatcher(object):
     MODULES = {}
     MODULE_NAMES = []
     MODULE_NAMESPACE_DIRECTORIES = []
+    PREVIOUS_FILES = []
 
     # FIXME: THESE NEED TO GO INTO BOTMETA
     # ALSO SEE search_by_regex_generic ...
@@ -408,6 +409,7 @@ class AnsibleComponentMatcher(object):
 
         self.strategy = None
         self.strategies = []
+        matched_filenames = None
 
         # No matching necessary for PRs, but should provide consistent api
         if files:
@@ -459,28 +461,35 @@ class AnsibleComponentMatcher(object):
         matched_filenames = sorted(set(matched_filenames))
         for fn in matched_filenames:
             component_matches.append(self.get_meta_for_file(fn))
-
-        #if not component or component is None and component_matches:
-        #    import epdb; epdb.st()
+            if self.gitrepo.exists(fn):
+                component_matches[-1]['exists'] = True
+                component_matches[-1]['existed'] = True
+            elif self.gitrepo.existed(fn):
+                component_matches[-1]['exists'] = False
+                component_matches[-1]['existed'] = True
+            else:
+                component_matches[-1]['exists'] = False
+                component_matches[-1]['existed'] = False
 
         return component_matches
 
     def search_ecosystem(self, component):
 
+        # never search collections for files that still exist
+        if self.gitrepo.exists(component):
+            return []
+
         matched_filenames = []
 
-        # do not match on things that still exist in core
-        if self.file_indexer.gitrepo.exists(component):
-            return matched_filenames
-
+        '''
         # botmeta -should- be the source of truth, but it's proven not to be ...
         if not matched_filenames:
             matched_filenames += self.search_by_botmeta_migrated_to(component)
+        '''
 
         if self.GQT is not None:
             # see what is actually in galaxy ...
-            if not matched_filenames:
-                matched_filenames += self.GQT.search_galaxy(component)
+            matched_filenames += self.GQT.search_galaxy(component)
 
             # fallback to searching for migrated directories ...
             if not matched_filenames and component.startswith('lib/ansible/modules'):
