@@ -445,6 +445,9 @@ class AnsibleTriage(DefaultTriager):
                 # keep track of how many times this isssue has been re-done
                 loopcount = 0
 
+                # time each issue
+                its1 = datetime.datetime.now()
+
                 while redo:
 
                     # use the loopcount to check new data
@@ -590,7 +593,9 @@ class AnsibleTriage(DefaultTriager):
                     if action_meta[u'REDO']:
                         redo = True
 
-                logging.info(u'finished triage for %s' % to_text(iw))
+                its2 = datetime.datetime.now()
+                td = (its2 - its1).total_seconds()
+                logging.info(u'finished triage for %s in %ss' % (to_text(iw), td))
 
         ts2 = datetime.datetime.now()
         td = (ts2 - ts1).total_seconds()
