@@ -21,6 +21,10 @@ from ansibullbot.utils.git_tools import GitRepoWrapper
 
 class GalaxyQueryTool:
 
+    BLACKLIST = [
+        'alancoding.vmware'
+    ]
+
     GALAXY_FQCNS = None
     GALAXY_FILES = None
     _collections = None
@@ -162,6 +166,8 @@ class GalaxyQueryTool:
 
             for res in jdata.get('results', []):
                 fqcn = '%s.%s' % (res['namespace']['name'], res['name'])
+                if res.get('deprecated'):
+                    continue
                 if fqcn in self._gitrepos:
                     continue
                 lv = res['latest_version']['href']
@@ -386,7 +392,12 @@ class GalaxyQueryTool:
             'test/integration': 'tests/integration',
             'test/units/modules': 'tests/units/modules',
             'test/units/module_utils': 'tests/units/module_utils',
+            'test': 'tests'
         }
+
+        # we're not redirecting parent directories
+        if component.rstrip('/') in dirmap:
+            return []
 
         for k,v in dirmap.items():
             if component.startswith(k):
@@ -418,23 +429,6 @@ class GalaxyQueryTool:
                     bn = bn.replace('_', '', 1)
                     patterns.append(os.path.join(bd, bn))
 
-        '''
-        patterns = sorted([x for x in patterns if not x.startswith('lib/')])
-        filenames = [x for x in patterns if x.endswith('.py')]
-        dirnames = [x for x in patterns if not x.endswith('.py')]
-        patterns = filenames + dirnames
-        import epdb; epdb.st()
-        '''
-
-        #if component.startswith('lib/ansible/plugins'):
-        #    import epdb; epdb.st()
-
-        #if component.startswith('lib/ansible/modules'):
-        #    import epdb; epdb.st()
-
-        #if component.startswith('test/n') or component.startswith('tests/'):
-        #    import epdb; epdb.st()
-
         for pattern in patterns:
 
             if candidates:
@@ -453,6 +447,8 @@ class GalaxyQueryTool:
                 for fqcn in self.GALAXY_FILES[cn]:
                     #if fqcn.startswith('testing.'):
                     #    continue
+                    if fqcn in self.BLACKLIST:
+                        continue
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
 
@@ -475,18 +471,25 @@ class GalaxyQueryTool:
                     if not prefix:
                         continue
                     for key in self.GALAXY_FILES.keys():
+                        if key.startswith('roles/'):
+                            continue
                         keybn = os.path.basename(key)
-                        if keybn.startswith(prefix):
+                        if keybn.startswith(prefix + '_'):
+                            logging.info('galaxy fuzzy match %s startswith %s_' % (keybn, prefix))
                             logging.info('galaxy fuzzy match %s == %s' % (keybn, prefix))
                             logging.info('galaxy fuzzy match %s == %s' % (key, component))
                             #import epdb; epdb.st()
 
                             for fqcn in self.GALAXY_FILES[key]:
-                                matched_filenames.append('collection:%s:%s' % (fqcn, component))
-                                #matched_filenames.append('collection:%s:%s' % (fqcn, key))
-
+                                if fqcn in self.BLACKLIST:
+                                    continue
+                                #matched_filenames.append('collection:%s:%s' % (fqcn, component))
+                                matched_filenames.append('collection:%s:%s' % (fqcn, key))
                             break
-                    if matched_filenames:
-                        break
+
+                    #if matched_filenames:
+                    #    break
+
+        #import epdb; epdb.st()
 
         return matched_filenames
