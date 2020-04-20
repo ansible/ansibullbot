@@ -49,6 +49,8 @@ def get_collection_facts(iw, component_matcher, meta):
             continue
         if key in iw.renamed_files:
             continue
+        if component_matcher.gitrepo.exists(key):
+            continue
         cmap[key] = component_matcher.search_ecosystem(key)
         if cmap[key]:
             for match in cmap[key]:
