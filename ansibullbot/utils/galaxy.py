@@ -489,5 +489,4 @@ class GalaxyQueryTool:
                     if matched_filenames:
                         break
 
-        import epdb; epdb.st()
         return matched_filenames
