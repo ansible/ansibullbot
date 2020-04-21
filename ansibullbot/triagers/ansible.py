@@ -195,7 +195,7 @@ class AnsibleTriage(DefaultTriager):
         u'close_me'
     ]
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, update_checkouts=True):
 
         super(AnsibleTriage, self).__init__()
 
@@ -266,7 +266,7 @@ class AnsibleTriage(DefaultTriager):
         # clone ansible/ansible
         logging.info(u'creating gitrepowrapper')
         repo = u'https://github.com/ansible/ansible'
-        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit)
+        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit, rebase=update_checkouts)
 
         # load botmeta ... once!
         logging.info('ansible triager loading botmeta')

@@ -50,6 +50,7 @@ class AnsibleComponentMatcher(object):
     # FIXME: THESE NEED TO GO INTO BOTMETA
     # ALSO SEE search_by_regex_generic ...
     KEYWORDS = {
+        u'N/A': None,
         u'all': None,
         u'ansiballz': u'lib/ansible/executor/module_common.py',
         u'ansible-console': u'lib/ansible/cli/console.py',
@@ -68,10 +69,13 @@ class AnsibleComponentMatcher(object):
         u'become': u'lib/ansible/playbook/become.py',
         u'block': u'lib/ansible/playbook/block.py',
         u'blocks': u'lib/ansible/playbook/block.py',
+        u'bot': None,
         u'callback plugin': u'lib/ansible/plugins/callback',
         u'callback plugins': u'lib/ansible/plugins/callback',
+        u'callbacks': u'lib/ansible/plugins/callback',
+        u'cli': u'lib/ansible/cli',
         u'conditional': u'lib/ansible/playbook/conditional.py',
-        u'docs': u'docs',
+        u'docs': u'docs/',
         u'delegate_to': u'lib/ansible/playbook/task.py',
         u'facts': u'lib/ansible/module_utils/facts',
         u'galaxy': u'lib/ansible/galaxy',
