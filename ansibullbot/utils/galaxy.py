@@ -30,6 +30,8 @@ class GalaxyQueryTool:
         'alancoding.vmware',
         'alancoding.cloud',
         'fragmentedpacket.netbox_modules',
+        'launchdarkly_labs.collection',
+        'sshnaidm.podman',
         'tawr1024.netbox_modules',
     ]
 
