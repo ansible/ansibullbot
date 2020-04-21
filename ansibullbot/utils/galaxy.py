@@ -21,8 +21,16 @@ from ansibullbot.utils.git_tools import GitRepoWrapper
 
 class GalaxyQueryTool:
 
-    BLACKLIST = [
-        'alancoding.vmware'
+    BLACKLIST_PATHS = [
+        '.github',
+        'docs',
+    ]
+
+    BLACKLIST_FQCNS = [
+        'alancoding.vmware',
+        'alancoding.cloud',
+        'fragmentedpacket.netbox_modules',
+        'tawr1024.netbox_modules',
     ]
 
     GALAXY_FQCNS = None
@@ -378,6 +386,9 @@ class GalaxyQueryTool:
 
         matches = []
 
+        if component.rstrip('/') in self.BLACKLIST_PATHS:
+            return []
+
         if os.path.basename(component) == '__init__.py':
             return matches
 
@@ -386,13 +397,19 @@ class GalaxyQueryTool:
 
         dirmap = {
             'contrib/inventory': 'scripts/inventory',
+            'lib/ansible/plugins/action': 'plugins/action',
+            'lib/ansible/plugins/callback': 'plugins/callback',
+            'lib/ansible/plugins/connection': 'plugins/connection',
+            'lib/ansible/plugins/filter': 'plugins/filter',
+            'lib/ansible/plugins/inventory': 'plugins/inventory',
+            'lib/ansible/plugins/lookup': 'plugins/lookup',
             'lib/ansible/modules': 'plugins/modules',
             'lib/ansible/module_utils': 'plugins/module_utils',
             'lib/ansible/plugins': 'plugins',
             'test/integration': 'tests/integration',
             'test/units/modules': 'tests/units/modules',
             'test/units/module_utils': 'tests/units/module_utils',
-            'test': 'tests'
+            'test': 'tests',
         }
 
         # we're not redirecting parent directories
@@ -447,7 +464,7 @@ class GalaxyQueryTool:
                 for fqcn in self.GALAXY_FILES[cn]:
                     #if fqcn.startswith('testing.'):
                     #    continue
-                    if fqcn in self.BLACKLIST:
+                    if fqcn in self.BLACKLIST_FQCNS:
                         continue
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
@@ -457,6 +474,9 @@ class GalaxyQueryTool:
     def fuzzy_search_galaxy(self, component):
 
         matched_filenames = []
+
+        if component.rstrip('/') in self.BLACKLIST_PATHS:
+            return []
 
         if component.endswith('__init__.py'):
             return matched_filenames
@@ -481,7 +501,7 @@ class GalaxyQueryTool:
                             #import epdb; epdb.st()
 
                             for fqcn in self.GALAXY_FILES[key]:
-                                if fqcn in self.BLACKLIST:
+                                if fqcn in self.BLACKLIST_FQCNS:
                                     continue
                                 #matched_filenames.append('collection:%s:%s' % (fqcn, component))
                                 matched_filenames.append('collection:%s:%s' % (fqcn, key))
