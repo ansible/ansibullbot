@@ -105,7 +105,8 @@ class AnsibleComponentMatcher(object):
         u'setup': u'lib/ansible/modules/system/setup.py',
         u'task executor': u'lib/ansible/executor/task_executor.py',
         u'testing': u'test/',
-        u'validate-modules': u'test/sanity/validate-modules',
+        #u'validate-modules': u'test/sanity/validate-modules',
+        u'validate-modules': u'test/sanity/code-smell',
         u'vault': u'lib/ansible/parsing/vault',
         u'vault edit': u'lib/ansible/parsing/vault',
         u'vault documentation': u'lib/ansible/parsing/vault',
@@ -481,6 +482,9 @@ class AnsibleComponentMatcher(object):
 
         # never search collections for files that still exist
         if self.gitrepo.exists(component):
+            return []
+
+        if component.endswith('/') and self.gitrepo.exists(component.rstrip('/')):
             return []
 
         matched_filenames = []

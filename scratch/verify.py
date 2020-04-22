@@ -25,15 +25,26 @@ def main():
         with open(fn, 'r') as f:
             meta = json.loads(f.read())
         #pprint(meta)
+        print(meta['html_url'])
         newlabels = meta.get('actions', {}).get('newlabel', [])
-        if 'needs_collection_redirect' in newlabels:
-            redirected.add(number)
 
+        '''
         if len(newlabels) > 4:
             print('#######################')
             print('component: %s' % meta['template_data']['component_raw'])
             pprint(newlabels)
             pprint(meta['collection_filemap'])
+            #import epdb; epdb.st()
+        '''
+
+
+        if 'needs_collection_redirect' in newlabels:
+            print('#######################')
+            print('component: %s' % meta['template_data']['component_raw'])
+            pprint(newlabels)
+            pprint(meta['collection_filemap'])
+
+            redirected.add(number)
             import epdb; epdb.st()
 
     print('%s total tickets redirected' % len(list(redirected)))

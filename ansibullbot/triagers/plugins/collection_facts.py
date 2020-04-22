@@ -8,9 +8,11 @@ import os
 def get_collection_facts(iw, component_matcher, meta):
 
     # Skip redirection of backports or <2.10 issues ...
+    is_backport = False
     if isinstance(meta.get('is_backport'), bool):
         is_backport = meta['is_backport']
     else:
+        '''
         if iw.is_issue():
             avparts = meta['ansible_version'].split('.')
             major = int(avparts[0])
@@ -24,6 +26,10 @@ def get_collection_facts(iw, component_matcher, meta):
                 is_backport = False
         else:
             is_backport = iw.pullrequest.base.ref != u'devel'
+        '''
+        if not iw.is_issue():
+            is_backport = iw.pullrequest.base.ref != u'devel'
+
 
     cfacts = {
         'is_collection': False,

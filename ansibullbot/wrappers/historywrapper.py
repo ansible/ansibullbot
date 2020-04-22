@@ -229,6 +229,17 @@ class HistoryWrapper(object):
             else:
                 raise Exception(u'')
 
+    def get_json_comments(self):
+        comments = self.issue.comments[:]
+        #comments = [{'body': x.body, 'created_at': pytz.utc.localize(x.created_at)} for x in comments]
+        for idx,x in enumerate(comments):
+            ca = x.created_at
+            if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
+                ca = pytz.utc.localize(x.created_at)
+            nc = {'body': x.body, 'created_at': ca, 'user': {'login': x.user.login}}
+            comments[idx] = nc
+        return comments
+
     def _fix_comments_with_no_body(self, events):
         '''Make sure all comment events have a body key'''
         for idx,x in enumerate(events):
@@ -659,12 +670,19 @@ class HistoryWrapper(object):
                                                   maxcount=999,
                                                   active=True)
         """
+        '''
         comments = self.issue.comments[:]
         if botnames:
             comments = [x for x in comments if x.user.login in botnames]
         else:
             comments = [x for x in comments if x.user.login == botname]
         comments = [{'body': x.body, 'created_at': pytz.utc.localize(x.created_at)} for x in comments]
+        '''
+
+        if botname:
+            botnames = [botname]
+        comments = self.get_json_comments()
+        comments = [x for x in comments if x['user']['login'] in botnames] 
 
         for comment in comments:
             if not comment.get(u'body'):

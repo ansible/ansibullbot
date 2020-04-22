@@ -703,6 +703,8 @@ class AnsibleTriage(DefaultTriager):
         dmeta = meta.copy()
         dmeta[u'submitter'] = issuewrapper.submitter
         dmeta[u'title'] = issuewrapper.title
+        dmeta[u'body'] = issuewrapper.body
+        dmeta[u'filenames'] = issuewrapper.files
         dmeta[u'html_url'] = issuewrapper.html_url
         dmeta[u'created_at'] = to_text(issuewrapper.created_at.isoformat())
         dmeta[u'updated_at'] = to_text(issuewrapper.updated_at.isoformat())
