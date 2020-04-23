@@ -402,9 +402,9 @@ class HistoryWrapper(object):
 
         comments = self.issue.comments[:]
         if botnames:
-            comments = [x for x in comments if x.user.login in botnames]
+            comments = [x for x in comments if x.user.login not in botnames]
         else:
-            comments = [x for x in comments if x.user.login == botname]
+            comments = [x for x in comments if x.user.login != botname]
         events = [
             {'event': 'commented', 'body': x.body, 'created_at': x.created_at, 'actor': x.user.login}
             for x in comments
