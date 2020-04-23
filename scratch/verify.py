@@ -21,11 +21,11 @@ def main():
         fn = os.path.expanduser(fn)
         if not os.path.exists(fn):
             continue
-        print(fn)
+        #print(fn)
         with open(fn, 'r') as f:
             meta = json.loads(f.read())
-        #pprint(meta)
-        print(meta['html_url'])
+        ##pprint(meta)
+        #print(meta['html_url'])
         newlabels = meta.get('actions', {}).get('newlabel', [])
 
         '''
@@ -39,13 +39,16 @@ def main():
 
 
         if 'needs_collection_redirect' in newlabels:
-            print('#######################')
-            print('component: %s' % meta['template_data']['component_raw'])
+            print('\n#######################################################')
+            print(fn)
+            print(meta['html_url'])
+            print('component: %s' % meta['template_data'].get('component_raw'))
+            print('files: %s' % meta['filenames'])
             pprint(newlabels)
             pprint(meta['collection_filemap'])
 
             redirected.add(number)
-            import epdb; epdb.st()
+            #import epdb; epdb.st()
 
     print('%s total tickets redirected' % len(list(redirected)))
 

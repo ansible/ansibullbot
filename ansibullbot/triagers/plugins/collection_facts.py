@@ -30,7 +30,6 @@ def get_collection_facts(iw, component_matcher, meta):
         if not iw.is_issue():
             is_backport = iw.pullrequest.base.ref != u'devel'
 
-
     cfacts = {
         'is_collection': False,
         # notification about collections and closure ...
@@ -63,6 +62,13 @@ def get_collection_facts(iw, component_matcher, meta):
                 if match.startswith('collection:'):
                     fqcns.add(match.split(':')[1])
 
+    # do not redirect things that still exist
+    has_core_files = False
+    for key in cmap.keys():
+        if component_matcher.gitrepo.exists(key):
+            has_core_files = True
+            break
+
     cfacts['collection_filemap'] = copy.deepcopy(cmap)
     cfacts['collection_redirects'] = list(fqcns)
     cfacts['collection_fqcns'] = list(fqcns)
@@ -80,7 +86,8 @@ def get_collection_facts(iw, component_matcher, meta):
     cfacts['collection_file_matches'] = copy.deepcopy(cmap)
 
     # should this be forwarded off to a collection repo?
-    if list([x for x in cmap.values() if x]) and not is_backport:
+    if fqcns and not has_core_files and (not list([x for x in cmap.values() if not x])) and not is_backport:
+
         cfacts['needs_collection_redirect'] = True
         cfacts['component_support'] = ['community']
 

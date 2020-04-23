@@ -50,12 +50,14 @@ class AnsibleComponentMatcher(object):
     # FIXME: THESE NEED TO GO INTO BOTMETA
     # ALSO SEE search_by_regex_generic ...
     KEYWORDS = {
-        u'N/A': None,
-        u'all': None,
+        u'N/A': u'lib/ansible/cli/__init__.py',
+        u'n/a': u'lib/ansible/cli/__init__.py',
+        u'all': u'lib/ansible/cli/__init__.py',
         u'ansiballz': u'lib/ansible/executor/module_common.py',
         u'ansible-console': u'lib/ansible/cli/console.py',
         u'ansible-galaxy': u'lib/ansible/galaxy',
         u'ansible-inventory': u'lib/ansible/cli/inventory.py',
+        u'ansible logging': u'lib/ansible/plugins/callback/default.py',
         u'ansible-playbook': u'lib/ansible/playbook',
         u'ansible playbook': u'lib/ansible/playbook',
         u'ansible playbooks': u'lib/ansible/playbook',
@@ -69,14 +71,19 @@ class AnsibleComponentMatcher(object):
         u'become': u'lib/ansible/playbook/become.py',
         u'block': u'lib/ansible/playbook/block.py',
         u'blocks': u'lib/ansible/playbook/block.py',
-        u'bot': None,
+        u'bot': u'docs/docsite/rst/community/development_process.rst',
         u'callback plugin': u'lib/ansible/plugins/callback',
         u'callback plugins': u'lib/ansible/plugins/callback',
-        u'callbacks': u'lib/ansible/plugins/callback',
-        u'cli': u'lib/ansible/cli',
+        u'callbacks': u'lib/ansible/plugins/callback/__init__.py',
+        u'cli': u'lib/ansible/cli/__init__.py',
         u'conditional': u'lib/ansible/playbook/conditional.py',
-        u'docs': u'docs/',
+        u'core': 'lib/ansible/cli/__init__.py',
+        u'docs': u'docs/docsite/README.md',
+        u'docs.ansible.com': u'docs/docsite/README.md',
         u'delegate_to': u'lib/ansible/playbook/task.py',
+        u'ec2.py dynamic inventory script': 'contrib/inventory/ec2.py',
+        u'ec2 dynamic inventory script': 'contrib/inventory/ec2.py',
+        u'ec2 inventory script': 'contrib/inventory/ec2.py',
         u'facts': u'lib/ansible/module_utils/facts',
         u'galaxy': u'lib/ansible/galaxy',
         u'groupvars': u'lib/ansible/vars/hostvars.py',
@@ -87,6 +94,7 @@ class AnsibleComponentMatcher(object):
         u'integration tests': u'test/integration',
         u'inventory script': u'contrib/inventory',
         u'jinja2 template system': u'lib/ansible/template',
+        u'logging': u'lib/ansible/plugins/callback/default.py',
         u'module_utils': u'lib/ansible/module_utils',
         u'multiple modules': None,
         u'new module(s) request': None,
@@ -96,7 +104,9 @@ class AnsibleComponentMatcher(object):
         u'network_cli': u'lib/ansible/plugins/connection/network_cli.py',
         u'network_cli.py': u'lib/ansible/plugins/connection/network_cli.py',
         u'network modules': u'lib/ansible/modules/network',
+        u'nxos': u'lib/ansible/modules/network/nxos/__init__.py',
         u'paramiko': u'lib/ansible/plugins/connection/paramiko_ssh.py',
+        u'redis fact caching': u'lib/ansible/plugins/cache/redis.py',
         u'role': u'lib/ansible/playbook/role',
         u'roles': u'lib/ansible/playbook/role',
         u'ssh': u'lib/ansible/plugins/connection/ssh.py',
@@ -416,6 +426,8 @@ class AnsibleComponentMatcher(object):
         self.strategies = []
         matched_filenames = None
 
+        #import epdb; epdb.st()
+
         # No matching necessary for PRs, but should provide consistent api
         if files:
             matched_filenames = files[:]
@@ -522,6 +534,10 @@ class AnsibleComponentMatcher(object):
                 component = component.split('/blob/')[-1]
                 # chop off the path
                 component = component.split('/', 1)[-1]
+
+        # don't neeed to match if it's a known file ...
+        if self.gitrepo.exists(component.strip()):
+            return [component.strip()]
 
         # context sets the path prefix to narrow the search window
         if u'module_util' in title.lower() or u'module_util' in component.lower():

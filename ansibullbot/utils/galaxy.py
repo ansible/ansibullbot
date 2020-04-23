@@ -23,12 +23,19 @@ class GalaxyQueryTool:
 
     BLACKLIST_PATHS = [
         '.github',
+        '.github/FUNDING.yml',
+        '.github/lock.yml',
+        'CHANGELOG.md',
         'docs',
+        'lib/ansible/module_utils/basic.py',
+        'lib/ansible/module_utils/facts'
     ]
 
     BLACKLIST_FQCNS = [
         'alancoding.vmware',
         'alancoding.cloud',
+        'alancoding.awx',
+        'alikins.collection_inspect',
         'fragmentedpacket.netbox_modules',
         'launchdarkly_labs.collection',
         'sshnaidm.podman',
