@@ -85,6 +85,8 @@ class DefaultWrapper(object):
 
     TEMPLATE_HEADER = u'#####'
 
+    _RENAMED_FILES = None
+
     def __init__(self, github=None, repo=None, issue=None, cachedir=None, file_indexer=None):
         self.meta = {}
         self.cachedir = cachedir
@@ -1559,3 +1561,24 @@ class DefaultWrapper(object):
         if resp[0]:
             result = True
         return result
+
+    @property
+    def renamed_files(self):
+        ''' A map of renamed files to prevent other code from thinking these are new files '''
+
+        if self._RENAMED_FILES is not None:
+            return self._RENAMED_FILES
+
+        self._RENAMED_FILES = {}
+        if self.is_issue():
+            return self._RENAMED_FILES
+
+        for x in self.commits:
+            rd = x.raw_data
+            for filed in rd.get('files', []):
+                if filed.get('previous_filename'):
+                    src = filed['previous_filename']
+                    dst = filed['filename']
+                    self._RENAMED_FILES[dst] = src
+
+        return self._RENAMED_FILES

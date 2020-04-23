@@ -247,11 +247,14 @@ class ShippableRuns(object):
             logging.info(u'shippable: %s' % run_url)
             run_data = self._get_url(run_url, usecache=usecache)
             if run_data:
-                try:
-                    run_data = run_data[0]
-                except KeyError as e:
-                    logging.error(e)
-                    import epdb; epdb.st()
+                if isinstance(run_data, list):
+                    try:
+                        run_data = run_data[0]
+                    except KeyError as e:
+                        logging.error(e)
+                        import epdb; epdb.st()
+                elif isinstance(run_data, dict) and 'message' in run_data:
+                    run_data = {}
 
         return run_data
 

@@ -21,6 +21,27 @@ from ansibullbot.utils.git_tools import GitRepoWrapper
 
 class GalaxyQueryTool:
 
+    BLACKLIST_PATHS = [
+        '.github',
+        '.github/FUNDING.yml',
+        '.github/lock.yml',
+        'CHANGELOG.md',
+        'docs',
+        'lib/ansible/module_utils/basic.py',
+        'lib/ansible/module_utils/facts'
+    ]
+
+    BLACKLIST_FQCNS = [
+        'alancoding.vmware',
+        'alancoding.cloud',
+        'alancoding.awx',
+        'alikins.collection_inspect',
+        'fragmentedpacket.netbox_modules',
+        'launchdarkly_labs.collection',
+        'sshnaidm.podman',
+        'tawr1024.netbox_modules',
+    ]
+
     GALAXY_FQCNS = None
     GALAXY_FILES = None
     _collections = None
@@ -162,6 +183,8 @@ class GalaxyQueryTool:
 
             for res in jdata.get('results', []):
                 fqcn = '%s.%s' % (res['namespace']['name'], res['name'])
+                if res.get('deprecated'):
+                    continue
                 if fqcn in self._gitrepos:
                     continue
                 lv = res['latest_version']['href']
@@ -372,6 +395,9 @@ class GalaxyQueryTool:
 
         matches = []
 
+        if component.rstrip('/') in self.BLACKLIST_PATHS:
+            return []
+
         if os.path.basename(component) == '__init__.py':
             return matches
 
@@ -380,39 +406,54 @@ class GalaxyQueryTool:
 
         dirmap = {
             'contrib/inventory': 'scripts/inventory',
+            'lib/ansible/plugins/action': 'plugins/action',
+            'lib/ansible/plugins/callback': 'plugins/callback',
+            'lib/ansible/plugins/connection': 'plugins/connection',
+            'lib/ansible/plugins/filter': 'plugins/filter',
+            'lib/ansible/plugins/inventory': 'plugins/inventory',
+            'lib/ansible/plugins/lookup': 'plugins/lookup',
             'lib/ansible/modules': 'plugins/modules',
             'lib/ansible/module_utils': 'plugins/module_utils',
             'lib/ansible/plugins': 'plugins',
             'test/integration': 'tests/integration',
             'test/units/modules': 'tests/units/modules',
             'test/units/module_utils': 'tests/units/module_utils',
+            'test': 'tests',
         }
+
+        # we're not redirecting parent directories
+        if component.rstrip('/') in dirmap:
+            return []
 
         for k,v in dirmap.items():
             if component.startswith(k):
                 # look for the full path including subdirs ...
                 _component = component.replace(k + '/', v + '/')
-                patterns.append(_component)
+                if _component not in dirmap and _component not in dirmap.values():
+                    patterns.append(_component)
 
                 # add the short path in case the collection does not have subdirs ...
                 segments = _component.split('/')
                 if len(segments) > 3:
-                    patterns.append(os.path.join(v, os.path.basename(_component)))
+                    thispath = os.path.join(v, os.path.basename(_component))
+                    if thispath not in dirmap and thispath not in dirmap.values():
+                        patterns.append(os.path.join(v, os.path.basename(_component)))
 
                 # find parent folder for new modules ...
                 if v != 'plugins':
-                    patterns.append(os.path.dirname(_component))
+                    if os.path.dirname(_component) not in dirmap and os.path.dirname(_component) not in dirmap.values():
+                        patterns.append(os.path.dirname(_component))
 
                 break
 
-        #if component.startswith('lib/ansible/plugins'):
-        #    import epdb; epdb.st()
-
-        #if component.startswith('lib/ansible/modules'):
-        #    import epdb; epdb.st()
-
-        #if component.startswith('test/n') or component.startswith('tests/'):
-        #    import epdb; epdb.st()
+        # hack in patterns for deprecated files
+        for x in patterns[:]:
+            if x.endswith('.py'):
+                bn = os.path.basename(x)
+                bd = os.path.dirname(x)
+                if bn.startswith('_'):
+                    bn = bn.replace('_', '', 1)
+                    patterns.append(os.path.join(bd, bn))
 
         for pattern in patterns:
 
@@ -427,24 +468,27 @@ class GalaxyQueryTool:
                 candidates.append(key)
                 break
 
-        #pprint(candidates)
-        #import epdb; epdb.st()
-
         if candidates:
             for cn in candidates:
                 for fqcn in self.GALAXY_FILES[cn]:
                     #if fqcn.startswith('testing.'):
                     #    continue
+                    if fqcn in self.BLACKLIST_FQCNS:
+                        continue
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
-
-        #import epdb; epdb.st()
 
         return matches
 
     def fuzzy_search_galaxy(self, component):
 
         matched_filenames = []
+
+        if component.rstrip('/') in self.BLACKLIST_PATHS:
+            return []
+
+        if component.endswith('__init__.py'):
+            return matched_filenames
 
         if component.startswith('lib/ansible/modules'):
             bn = os.path.basename(component)
@@ -453,16 +497,28 @@ class GalaxyQueryTool:
                 bparts = bn.split('_')
                 for x in reversed(range(0, len(bparts))):
                     prefix = '_'.join(bparts[:x])
+                    if not prefix:
+                        continue
                     for key in self.GALAXY_FILES.keys():
+                        if key.startswith('roles/'):
+                            continue
                         keybn = os.path.basename(key)
-                        if keybn.startswith(prefix):
-                            logging.info('%s == %s' % (key, component))
+                        if keybn.startswith(prefix + '_'):
+                            logging.info('galaxy fuzzy match %s startswith %s_' % (keybn, prefix))
+                            logging.info('galaxy fuzzy match %s == %s' % (keybn, prefix))
+                            logging.info('galaxy fuzzy match %s == %s' % (key, component))
+                            #import epdb; epdb.st()
 
                             for fqcn in self.GALAXY_FILES[key]:
-                                matched_filenames.append('collection:%s:%s' % (fqcn, component))
-
+                                if fqcn in self.BLACKLIST_FQCNS:
+                                    continue
+                                #matched_filenames.append('collection:%s:%s' % (fqcn, component))
+                                matched_filenames.append('collection:%s:%s' % (fqcn, key))
                             break
-                    if matched_filenames:
-                        break
+
+                    #if matched_filenames:
+                    #    break
+
+        #import epdb; epdb.st()
 
         return matched_filenames

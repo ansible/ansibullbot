@@ -195,7 +195,7 @@ class AnsibleTriage(DefaultTriager):
         u'close_me'
     ]
 
-    def __init__(self, args=None):
+    def __init__(self, args=None, update_checkouts=True):
 
         super(AnsibleTriage, self).__init__()
 
@@ -266,7 +266,7 @@ class AnsibleTriage(DefaultTriager):
         # clone ansible/ansible
         logging.info(u'creating gitrepowrapper')
         repo = u'https://github.com/ansible/ansible'
-        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit)
+        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit, rebase=update_checkouts)
 
         # load botmeta ... once!
         logging.info('ansible triager loading botmeta')
@@ -353,6 +353,9 @@ class AnsibleTriage(DefaultTriager):
     def run(self):
         '''Primary execution method'''
 
+        ts1 = datetime.datetime.now()
+        icount = 0
+
         if self.ITERATION > 0:
             # update on each run to pull in new data
             logging.info('updating module indexer')
@@ -395,7 +398,8 @@ class AnsibleTriage(DefaultTriager):
             return
 
         # loop through each repo made by collect_repos
-        for item in self.repos.items():
+        items = list(self.repos.items())
+        for item in items:
             repopath = item[0]
             repo = item[1][u'repo']
 
@@ -409,6 +413,8 @@ class AnsibleTriage(DefaultTriager):
                         logging.error('breakpoint!')
                         import epdb; epdb.st()
                     continue
+
+                icount += 1
 
                 self.COMPONENTS = []
                 self.meta = {}
@@ -438,6 +444,9 @@ class AnsibleTriage(DefaultTriager):
 
                 # keep track of how many times this isssue has been re-done
                 loopcount = 0
+
+                # time each issue
+                its1 = datetime.datetime.now()
 
                 while redo:
 
@@ -584,7 +593,13 @@ class AnsibleTriage(DefaultTriager):
                     if action_meta[u'REDO']:
                         redo = True
 
-                logging.info(u'finished triage for %s' % to_text(iw))
+                its2 = datetime.datetime.now()
+                td = (its2 - its1).total_seconds()
+                logging.info(u'finished triage for %s in %ss' % (to_text(iw), td))
+
+        ts2 = datetime.datetime.now()
+        td = (ts2 - ts1).total_seconds()
+        logging.info('triaged %s issues in %s seconds' % (icount, td))
 
     def eval_pr_param(self, pr):
         '''PR/ID can be a number, numberlist, script, jsonfile, or url'''
@@ -687,7 +702,11 @@ class AnsibleTriage(DefaultTriager):
         # save the meta+actions
         dmeta = meta.copy()
         dmeta[u'submitter'] = issuewrapper.submitter
+        dmeta['number'] = issuewrapper.number
         dmeta[u'title'] = issuewrapper.title
+        dmeta[u'body'] = issuewrapper.body
+        dmeta[u'filenames'] = issuewrapper.files
+        dmeta[u'renamed_filenames'] = issuewrapper.renamed_files
         dmeta[u'html_url'] = issuewrapper.html_url
         dmeta[u'created_at'] = to_text(issuewrapper.created_at.isoformat())
         dmeta[u'updated_at'] = to_text(issuewrapper.updated_at.isoformat())
@@ -1600,11 +1619,13 @@ class AnsibleTriage(DefaultTriager):
                     )
                     actions.comments.append(comment)
 
+        # collections!!!
+        if self.meta.get('collection_fqcn_label_remove'):
+            for fqcn in self.meta['collection_fqcn_label_remove']:
+                actions.unlabel.append('collection:%s'% fqcn)
+
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
-
-        #if iw.number == 8:
-        #    import epdb; epdb.st()
 
         # check for waffling
         labels = sorted(set(actions.newlabel + actions.unlabel))
@@ -1938,13 +1959,13 @@ class AnsibleTriage(DefaultTriager):
             logging.info('%s numbers after checking type' % len(numbers))
 
         numbers = sorted(set([int(x) for x in numbers]))
-        if self.args.last and len(numbers) >= self.args.last:
-            numbers = numbers[self.args.last:]
-
-        # Use iterator to avoid requesting all issues upfront
         if self.sort == u'desc':
             numbers = [x for x in reversed(numbers)]
 
+        if self.args.last and len(numbers) > self.args.last:
+            numbers = numbers[0 - self.args.last:]
+
+        # Use iterator to avoid requesting all issues upfront
         self.repos[repo][u'issues'] = RepoIssuesIterator(
             self.repos[repo][u'repo'],
             numbers,

@@ -229,6 +229,17 @@ class HistoryWrapper(object):
             else:
                 raise Exception(u'')
 
+    def get_json_comments(self):
+        comments = self.issue.comments[:]
+        #comments = [{'body': x.body, 'created_at': pytz.utc.localize(x.created_at)} for x in comments]
+        for idx,x in enumerate(comments):
+            ca = x.created_at
+            if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
+                ca = pytz.utc.localize(x.created_at)
+            nc = {'body': x.body, 'created_at': ca, 'user': {'login': x.user.login}}
+            comments[idx] = nc
+        return comments
+
     def _fix_comments_with_no_body(self, events):
         '''Make sure all comment events have a body key'''
         for idx,x in enumerate(events):
@@ -256,6 +267,20 @@ class HistoryWrapper(object):
                 if len(matching_events) == maxcount:
                     break
 
+        """
+        # get rid of deleted comments
+        if active and eventname == u'commented':
+            cids = [x.id for x in self.issue.comments]
+            for me in matching_events[:]:
+                if me['id'] not in cids:
+                    print('remove %s' % me['id'])
+                    matching_events.remove(me)
+                else:
+                    print('%s in cids' % me['id'])
+            import epdb; epdb.st()
+        """
+
+        #import epdb; epdb.st()
         return matching_events
 
     def get_user_comments(self, username):
@@ -362,16 +387,28 @@ class HistoryWrapper(object):
 
         return commands
 
-    def get_component_commands(self, command_key='!component', botnames=[]):
+    def get_component_commands(self, command_key='!component', botname=None, botnames=[]):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
 
+        """
         comments = self._find_events_by_actor(
             u'commented',
             None,
             maxcount=999
         )
         events = sorted(comments, key=itemgetter(u'created_at'))
+        """
+
+        comments = self.issue.comments[:]
+        if botnames:
+            comments = [x for x in comments if x.user.login not in botnames]
+        else:
+            comments = [x for x in comments if x.user.login != botname]
+        events = [
+            {'event': 'commented', 'body': x.body, 'created_at': x.created_at, 'actor': x.user.login}
+            for x in comments
+        ]
 
         for event in events:
             if event[u'actor'] in botnames:
@@ -621,14 +658,32 @@ class HistoryWrapper(object):
 
     def get_boilerplate_comments(self, botname='ansibot', botnames=None, dates=False, content=True):
         boilerplates = []
+        """
         if botnames:
             comments = self._find_events_by_actor(u'commented',
                                                   botnames,
-                                                  maxcount=999)
+                                                  maxcount=999,
+                                                  active=True)
         else:
             comments = self._find_events_by_actor(u'commented',
                                                   botname,
-                                                  maxcount=999)
+                                                  maxcount=999,
+                                                  active=True)
+        """
+        '''
+        comments = self.issue.comments[:]
+        if botnames:
+            comments = [x for x in comments if x.user.login in botnames]
+        else:
+            comments = [x for x in comments if x.user.login == botname]
+        comments = [{'body': x.body, 'created_at': pytz.utc.localize(x.created_at)} for x in comments]
+        '''
+
+        if botname:
+            botnames = [botname]
+        comments = self.get_json_comments()
+        comments = [x for x in comments if x['user']['login'] in botnames] 
+
         for comment in comments:
             if not comment.get(u'body'):
                 continue
@@ -651,11 +706,19 @@ class HistoryWrapper(object):
 
         return boilerplates
 
-    def get_boilerplate_comments_content(self, botname='ansibot', bfilter=None):
+    def get_boilerplate_comments_content(self, botname='ansibot', botnames=None, bfilter=None):
+        """
         boilerplates = []
         comments = self._find_events_by_actor(u'commented',
                                               botname,
                                               maxcount=999)
+        comments = self.issue.comments[:]
+        if botnames:
+            comments = [x for x in comments if x.user.login in botnames]
+        else:
+            comments = [x for x in comments if x.user.login == botname]
+        comments = [{'body': x.body, 'created_at': x.created_at} for x in comments]
+
         for comment in comments:
             if not comment.get(u'body'):
                 continue
@@ -669,6 +732,10 @@ class HistoryWrapper(object):
                 else:
                     boilerplates.append(comment[u'body'])
         return boilerplates
+        """
+        bpcs = self.get_boilerplate_comments(botname=botname, botnames=botnames)
+        bpcs = [x[-1] for x in bpcs]
+        return bpcs
 
     def last_date_for_boilerplate(self, boiler, botname='ansibot'):
         last_date = None

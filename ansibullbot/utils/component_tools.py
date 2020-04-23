@@ -45,15 +45,19 @@ class AnsibleComponentMatcher(object):
     MODULES = {}
     MODULE_NAMES = []
     MODULE_NAMESPACE_DIRECTORIES = []
+    PREVIOUS_FILES = []
 
     # FIXME: THESE NEED TO GO INTO BOTMETA
     # ALSO SEE search_by_regex_generic ...
     KEYWORDS = {
-        u'all': None,
+        u'N/A': u'lib/ansible/cli/__init__.py',
+        u'n/a': u'lib/ansible/cli/__init__.py',
+        u'all': u'lib/ansible/cli/__init__.py',
         u'ansiballz': u'lib/ansible/executor/module_common.py',
         u'ansible-console': u'lib/ansible/cli/console.py',
         u'ansible-galaxy': u'lib/ansible/galaxy',
         u'ansible-inventory': u'lib/ansible/cli/inventory.py',
+        u'ansible logging': u'lib/ansible/plugins/callback/default.py',
         u'ansible-playbook': u'lib/ansible/playbook',
         u'ansible playbook': u'lib/ansible/playbook',
         u'ansible playbooks': u'lib/ansible/playbook',
@@ -67,11 +71,19 @@ class AnsibleComponentMatcher(object):
         u'become': u'lib/ansible/playbook/become.py',
         u'block': u'lib/ansible/playbook/block.py',
         u'blocks': u'lib/ansible/playbook/block.py',
+        u'bot': u'docs/docsite/rst/community/development_process.rst',
         u'callback plugin': u'lib/ansible/plugins/callback',
         u'callback plugins': u'lib/ansible/plugins/callback',
+        u'callbacks': u'lib/ansible/plugins/callback/__init__.py',
+        u'cli': u'lib/ansible/cli/__init__.py',
         u'conditional': u'lib/ansible/playbook/conditional.py',
-        u'docs': u'docs',
+        u'core': 'lib/ansible/cli/__init__.py',
+        u'docs': u'docs/docsite/README.md',
+        u'docs.ansible.com': u'docs/docsite/README.md',
         u'delegate_to': u'lib/ansible/playbook/task.py',
+        u'ec2.py dynamic inventory script': 'contrib/inventory/ec2.py',
+        u'ec2 dynamic inventory script': 'contrib/inventory/ec2.py',
+        u'ec2 inventory script': 'contrib/inventory/ec2.py',
         u'facts': u'lib/ansible/module_utils/facts',
         u'galaxy': u'lib/ansible/galaxy',
         u'groupvars': u'lib/ansible/vars/hostvars.py',
@@ -82,6 +94,7 @@ class AnsibleComponentMatcher(object):
         u'integration tests': u'test/integration',
         u'inventory script': u'contrib/inventory',
         u'jinja2 template system': u'lib/ansible/template',
+        u'logging': u'lib/ansible/plugins/callback/default.py',
         u'module_utils': u'lib/ansible/module_utils',
         u'multiple modules': None,
         u'new module(s) request': None,
@@ -91,7 +104,9 @@ class AnsibleComponentMatcher(object):
         u'network_cli': u'lib/ansible/plugins/connection/network_cli.py',
         u'network_cli.py': u'lib/ansible/plugins/connection/network_cli.py',
         u'network modules': u'lib/ansible/modules/network',
+        u'nxos': u'lib/ansible/modules/network/nxos/__init__.py',
         u'paramiko': u'lib/ansible/plugins/connection/paramiko_ssh.py',
+        u'redis fact caching': u'lib/ansible/plugins/cache/redis.py',
         u'role': u'lib/ansible/playbook/role',
         u'roles': u'lib/ansible/playbook/role',
         u'ssh': u'lib/ansible/plugins/connection/ssh.py',
@@ -100,7 +115,8 @@ class AnsibleComponentMatcher(object):
         u'setup': u'lib/ansible/modules/system/setup.py',
         u'task executor': u'lib/ansible/executor/task_executor.py',
         u'testing': u'test/',
-        u'validate-modules': u'test/sanity/validate-modules',
+        #u'validate-modules': u'test/sanity/validate-modules',
+        u'validate-modules': u'test/sanity/code-smell',
         u'vault': u'lib/ansible/parsing/vault',
         u'vault edit': u'lib/ansible/parsing/vault',
         u'vault documentation': u'lib/ansible/parsing/vault',
@@ -408,13 +424,16 @@ class AnsibleComponentMatcher(object):
 
         self.strategy = None
         self.strategies = []
+        matched_filenames = None
+
+        #import epdb; epdb.st()
 
         # No matching necessary for PRs, but should provide consistent api
         if files:
             matched_filenames = files[:]
         elif not component or component is None:
             return []
-        elif self.gitrepo.existed(component):
+        elif ' ' not in component and '\n' not in component and component.startswith('lib/') and self.gitrepo.existed(component):
             matched_filenames = [component]
         else:
             matched_filenames = []
@@ -459,28 +478,38 @@ class AnsibleComponentMatcher(object):
         matched_filenames = sorted(set(matched_filenames))
         for fn in matched_filenames:
             component_matches.append(self.get_meta_for_file(fn))
-
-        #if not component or component is None and component_matches:
-        #    import epdb; epdb.st()
+            if self.gitrepo.exists(fn):
+                component_matches[-1]['exists'] = True
+                component_matches[-1]['existed'] = True
+            elif self.gitrepo.existed(fn):
+                component_matches[-1]['exists'] = False
+                component_matches[-1]['existed'] = True
+            else:
+                component_matches[-1]['exists'] = False
+                component_matches[-1]['existed'] = False
 
         return component_matches
 
     def search_ecosystem(self, component):
 
+        # never search collections for files that still exist
+        if self.gitrepo.exists(component):
+            return []
+
+        if component.endswith('/') and self.gitrepo.exists(component.rstrip('/')):
+            return []
+
         matched_filenames = []
 
-        # do not match on things that still exist in core
-        if self.file_indexer.gitrepo.exists(component):
-            return matched_filenames
-
+        '''
         # botmeta -should- be the source of truth, but it's proven not to be ...
         if not matched_filenames:
             matched_filenames += self.search_by_botmeta_migrated_to(component)
+        '''
 
         if self.GQT is not None:
             # see what is actually in galaxy ...
-            if not matched_filenames:
-                matched_filenames += self.GQT.search_galaxy(component)
+            matched_filenames += self.GQT.search_galaxy(component)
 
             # fallback to searching for migrated directories ...
             if not matched_filenames and component.startswith('lib/ansible/modules'):
@@ -506,6 +535,10 @@ class AnsibleComponentMatcher(object):
                 # chop off the path
                 component = component.split('/', 1)[-1]
 
+        # don't neeed to match if it's a known file ...
+        if self.gitrepo.exists(component.strip()):
+            return [component.strip()]
+
         # context sets the path prefix to narrow the search window
         if u'module_util' in title.lower() or u'module_util' in component.lower():
             context = u'lib/ansible/module_utils'
@@ -519,6 +552,9 @@ class AnsibleComponentMatcher(object):
             context = u'contrib/inventory'
         elif u'inventory plugin' in title.lower() or u'inventory plugin' in component.lower():
             context = u'lib/ansible/plugins/inventory'
+        elif u'integration test' in title.lower() or u'integration test' in component.lower():
+            context = u'test/integration/targets'
+            component = component.replace('integration test', '').strip()
         else:
             context = None
 

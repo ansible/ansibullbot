@@ -176,7 +176,12 @@ def needs_info_timeout_facts(iw, meta):
         bp_comments = iw.history.get_boilerplate_comments()
         bp_comments_found = [c for c in bp_comments if c[0] == u'needs_info_base']
 
-        delta = (now - bpd).days
+        try:
+            delta = (now - bpd).days
+        except TypeError as e:
+            logging.error(e)
+            import epdb; epdb.st()
+
         if delta >= NI_EXPIRE:
             if len(bp_comments_found) >= 1:
                 nif[u'needs_info_action'] = u'close'

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
+import copy
 import datetime
+import glob
 import json
 import os
 
@@ -9,9 +11,13 @@ from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
+from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
+from ansibullbot.triagers.plugins.collection_facts import get_collection_facts
 
 from ansibullbot.utils.logs import set_logger
 set_logger()
+
+from pprint import pprint
 
 
 class MockActor:
@@ -87,14 +93,18 @@ class MockIssueInstance:
 
 
 class MockIssueWrapper:
-    def __init__(self, html_url, meta):
+    def __init__(self, html_url, meta, gitrepo):
         self.html_url = html_url
         self.instance = MockIssueInstance(self.html_url, meta)
         self._meta = meta
+        self._gitrepo = gitrepo
         self._hw = None
     
     def is_issue(self):
         return 'pull' not in self.html_url
+
+    def is_pullrequest(self):
+        return 'pull' in self.html_url
 
     @property
     def repo_path(self):
@@ -114,8 +124,46 @@ class MockIssueWrapper:
         return None
 
     @property
+    def files(self):
+        if self.is_issue():
+            return None
+        return self._meta.get('filenames', [])
+
+    @property
+    def new_files(self):
+        if self.is_issue():
+            return None
+        fns = self._meta.get('filenames', [])
+        fns = [x for x in fns if x not in self._gitrepo.files]
+        return fns
+
+    @property
+    def new_modules(self):
+        if self.is_issue():
+            return None
+        fns = self.new_files
+        fns = [x for x in fns if x.startswith('lib/ansible/modules')]
+        return fns
+
+    @property
+    def renamed_files(self):
+        return self._meta.get('renamed_filenames', [])
+
+    @property
     def template_data(self):
         return self._meta.get('template_data')
+
+    @property
+    def title(self):
+        return self._meta.get('title', '')
+
+    @property
+    def body(self):
+        return self._meta.get('body', '')
+
+    @property
+    def component(self):
+        return self.template_data.get('component name', '')
 
     @property
     def history(self):
@@ -148,6 +196,22 @@ class MockIssueWrapper:
     @property
     def reactions(self):
         return []
+
+
+def get_issues():
+    prefix = '~/.ansibullbot/cache/ansible/ansible/issues'
+    directories = glob.glob('%s/*' % os.path.expanduser(prefix))
+    numbers = [os.path.basename(x) for x in directories]
+    numbers = [int(x) for x in numbers if x.isdigit()]
+    numbers = sorted(numbers)
+
+    paths = []
+    for number in numbers:
+        fn = os.path.join(prefix, str(number), 'meta.json')
+        fn = os.path.expanduser(fn)
+        paths.append(fn)
+
+    return paths
 
 
 def parse_match_results():
@@ -219,12 +283,29 @@ def parse_match_results():
 
 def main():
 
+    tocheck = [
+        #32226,
+        #30361,
+        #31006,
+        #58674,
+        #63611,
+        #64320,
+        #66891,
+        #68784,
+        69010,
+    ]
+
     redirect = set()
     noredirect = set()
     nometa = set()
 
     cachedir = '/home/jtanner/.ansibullbot/cache'
-    gitrepo = GitRepoWrapper(cachedir=cachedir, repo='https://github.com/ansible/ansible', commit=None)
+    gitrepo = GitRepoWrapper(
+        cachedir=cachedir,
+        repo='https://github.com/ansible/ansible',
+        commit=None,
+        rebase=False
+    )
     rdata = gitrepo.get_file_content(u'.github/BOTMETA.yml')
     botmeta = BotMetadataParser.parse_yaml(rdata)
     cm = AnsibleComponentMatcher(
@@ -233,11 +314,15 @@ def main():
         botmeta=botmeta,
         botmetafile=None,
         email_cache=None,
-        usecache=True
+        usecache=True,
+        use_galaxy=True
     )
 
+
+    '''
     mr = parse_match_results()
     for issue in sorted(mr.keys(), key=lambda x: int(x.split('/')[-1]), reverse=True):
+
         print(issue)
         number = int(issue.split('/')[-1])
         #if number != 68709:
@@ -265,6 +350,53 @@ def main():
 
             #if not imeta['is_backport']:
             #    import epdb; epdb.st()
+    '''
+
+    mmap = {}
+
+    #gmatches = cm.search_ecosystem('contrib/inventory/ec2.py')
+    #import epdb; epdb.st()
+
+    mfiles = get_issues()
+    for mfile in mfiles:
+        with open(mfile, 'r') as f:
+            imeta = json.loads(f.read())
+        print(imeta['html_url'])
+        number = int(imeta['html_url'].split('/')[-1])
+        if number not in tocheck:
+            continue
+
+        newmeta = copy.deepcopy(imeta)
+        iw = MockIssueWrapper(imeta['html_url'], meta=newmeta, gitrepo=gitrepo)
+        #cmatches = cm.match_components(iw.title, iw.body, iw.component)
+        cmmeta = get_component_match_facts(iw, cm, [])
+        newmeta.update(cmmeta)
+        cfmeta = get_collection_facts(iw, cm, newmeta)
+
+        # check api deltas ...
+        #cm1 = cm.match(iw)
+        #cm2 = cm.match_components(iw.title, iw.body, iw.component, files=iw.files)
+        #import epdb; epdb.st()
+
+        print('component: %s' % iw.component)
+        print(cmmeta['component_filenames'])
+        #pprint(cfmeta)
+        cf2vals = [x for x in list(cfmeta['collection_filemap'].values()) if x]
+        cf1vals = [x for x in list(imeta['collection_filemap'].values()) if x]
+        '''
+        if cf1vals or cf2vals:
+            pprint(cf1vals)
+            pprint(cf2vals)
+            #import epdb; epdb.st()
+        '''
+        '''
+        if cf2vals != cf1vals:
+            pprint(cf1vals)
+            pprint(cf2vals)
+            import epdb; epdb.st()
+        '''
+        pprint(cfmeta)
+        import epdb; epdb.st()
 
     print('# %s total issues|PRs without meta' % len(list(nometa)))
     print('# %s total issues|PRs not redirected to collections' % len(list(noredirect)))
