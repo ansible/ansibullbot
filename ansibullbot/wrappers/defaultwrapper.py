@@ -1575,7 +1575,7 @@ class DefaultWrapper(object):
 
         for x in self.commits:
             rd = x.raw_data
-            for filed in rd['files']:
+            for filed in rd.get('files', []):
                 if filed.get('previous_filename'):
                     src = filed['previous_filename']
                     dst = filed['filename']
