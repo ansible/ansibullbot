@@ -739,7 +739,6 @@ class DefaultWrapper(object):
         """Deletes a label to the desired labels list"""
         if name in self.desired_labels:
             self.desired_labels.remove(name)
-        self.invalidate_cache()
 
     def is_labeled_for_interaction(self):
         """Returns True if issue is labeld for interaction"""
@@ -752,7 +751,6 @@ class DefaultWrapper(object):
         """Adds a boilerplate key to the desired comments list"""
         if boilerplate and boilerplate not in self.desired_comments:
             self.desired_comments.append(boilerplate)
-        self.invalidate_cache()
 
     def get_missing_sections(self):
         missing_sections = \
@@ -779,7 +777,6 @@ class DefaultWrapper(object):
     def add_comment(self, comment=None):
         """Adds a comment to the Issue using the GitHub API"""
         self.get_issue().create_comment(comment)
-        self.invalidate_cache()
 
     @RateLimited
     def remove_comment_by_id(self, commentid):
@@ -798,17 +795,14 @@ class DefaultWrapper(object):
             ok = self.github.delete_request(comment_url)
             if not ok:
                 raise Exception("failed to delete commentid %s for %s" % (commentid, self.html_url))
-        self.invalidate_cache()
 
     def set_desired_state(self, state):
         assert state in [u'open', u'closed']
         self.desired_state = state
-        self.invalidate_cache()
 
     def set_description(self, description):
         # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
         self.instance.edit(body=description)
-        self.invalidate_cache()
 
     @property
     def assignees(self):
@@ -839,21 +833,18 @@ class DefaultWrapper(object):
         if assignee not in self.desired_assignees \
                 and assignee in self.valid_assignees:
             self.desired_assignees.append(assignee)
-        self.invalidate_cache()
 
     def assign_user(self, user):
         assignees = [x for x in self.assignees]
         if user not in self.assignees:
             assignees.append(user)
             self._edit_assignees(assignees)
-        self.invalidate_cache()
 
     def unassign_user(self, user):
         assignees = [x for x in self.current_assignees]
         if user in self.assignees:
             assignees.remove(user)
             self._edit_assignees(assignees)
-        self.invalidate_cache()
 
     @RateLimited
     def _edit_assignees(self, assignees):
@@ -879,7 +870,6 @@ class DefaultWrapper(object):
             if headers[u'status'] != u'200 OK':
                 print(u'ERROR: failed to edit assignees')
                 sys.exit(1)
-        self.invalidate_cache()
 
     @RateLimited
     def _delete_comment_by_url(self, url):
@@ -891,7 +881,6 @@ class DefaultWrapper(object):
         if headers[u'status'] != u'204 No Content':
             print(u'ERROR: failed to remove %s' % url)
             sys.exit(1)
-        self.invalidate_cache()
         return True
 
     def is_pullrequest(self):
@@ -1300,9 +1289,6 @@ class DefaultWrapper(object):
                     import epdb; epdb.st()
                 else:
                     raise Exception(u'issue date != pr date')
-
-    def invalidate_cache(self):
-        import epdb; epdb.st()
 
     @property
     def commits(self):
