@@ -45,6 +45,11 @@ from ansibullbot.errors import RateLimitError
 import ansibullbot.constants as C
 
 
+class UnsetValue:
+    def __str__(self):
+        return "AnsibullbotUnsetValue()"
+
+
 class DefaultWrapper(object):
 
     ALIAS_LABELS = {
@@ -94,7 +99,7 @@ class DefaultWrapper(object):
         self.repo = repo
         self.instance = issue
         self._assignees = False
-        self._comments = False
+        self._comments = UnsetValue()
         self._committer_emails = False
         self._committer_logins = False
         self._commits = False
@@ -116,8 +121,6 @@ class DefaultWrapper(object):
         self.desired_labels = []
         self.desired_assignees = []
         self.current_events = []
-        self.current_comments = []
-        self.current_bot_comments = []
         self.last_bot_comment = None
         self.current_reactions = []
         self.desired_comments = []
@@ -163,28 +166,15 @@ class DefaultWrapper(object):
     @RateLimited
     def get_comments(self):
         """Returns all current comments of the PR"""
+ 
+        if isinstance(self._comments, UnsetValue):
+             self._comments = self.load_update_fetch(u'comments')
+ 
+ 
+        if len(self._comments) != self.instance.comments:
+            self._comments = self.load_update_fetch(u'comments', force=True)
 
-        comments = self.load_update_fetch(u'comments')
-
-        self.current_comments = [x for x in comments]
-        self.current_comments.reverse()
-
-        # look for any comments made by the bot
-        for idx, x in enumerate(self.current_comments):
-            body = x.body
-            lines = body.split(u'\n')
-            lines = [y.strip() for y in lines if y.strip()]
-
-            if lines[-1].startswith(u'<!---') \
-                    and lines[-1].endswith(u'--->') \
-                    and u'boilerplate:' in lines[-1]\
-                    and x.user.login == u'ansibot':
-
-                parts = lines[-1].split()
-                boilerplate = parts[2]
-                self.current_bot_comments.append(boilerplate)
-
-        return self.current_comments
+        return self._comments
 
     @property
     def url(self):
@@ -384,7 +374,7 @@ class DefaultWrapper(object):
         return data
 
     @RateLimited
-    def load_update_fetch(self, property_name, obj=None):
+    def load_update_fetch(self, property_name, obj=None, force=False):
         '''Fetch a property for an issue object'''
 
         # A pygithub issue object has methods such as ...
@@ -459,7 +449,7 @@ class DefaultWrapper(object):
                 raise Exception(u'property error')
 
         # pull all events if timestamp is behind or no events cached
-        if update or not events:
+        if update or not events or force:
             write_cache = True
             updated = self.get_current_time()
 
@@ -490,7 +480,7 @@ class DefaultWrapper(object):
                 events = [x for x in methodToCall()]
 
         if C.DEFAULT_PICKLE_ISSUES:
-            if write_cache or not os.path.isfile(pfile):
+            if write_cache or not os.path.isfile(pfile) or force:
                 # need to dump the pickle back to disk
                 edata = [updated, events]
                 with open(pfile, 'wb') as f:
@@ -749,6 +739,7 @@ class DefaultWrapper(object):
         """Deletes a label to the desired labels list"""
         if name in self.desired_labels:
             self.desired_labels.remove(name)
+        self.invalidate_cache()
 
     def is_labeled_for_interaction(self):
         """Returns True if issue is labeld for interaction"""
@@ -761,6 +752,7 @@ class DefaultWrapper(object):
         """Adds a boilerplate key to the desired comments list"""
         if boilerplate and boilerplate not in self.desired_comments:
             self.desired_comments.append(boilerplate)
+        self.invalidate_cache()
 
     def get_missing_sections(self):
         missing_sections = \
@@ -787,6 +779,7 @@ class DefaultWrapper(object):
     def add_comment(self, comment=None):
         """Adds a comment to the Issue using the GitHub API"""
         self.get_issue().create_comment(comment)
+        self.invalidate_cache()
 
     @RateLimited
     def remove_comment_by_id(self, commentid):
@@ -805,14 +798,17 @@ class DefaultWrapper(object):
             ok = self.github.delete_request(comment_url)
             if not ok:
                 raise Exception("failed to delete commentid %s for %s" % (commentid, self.html_url))
+        self.invalidate_cache()
 
     def set_desired_state(self, state):
         assert state in [u'open', u'closed']
         self.desired_state = state
+        self.invalidate_cache()
 
     def set_description(self, description):
         # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
         self.instance.edit(body=description)
+        self.invalidate_cache()
 
     @property
     def assignees(self):
@@ -843,18 +839,21 @@ class DefaultWrapper(object):
         if assignee not in self.desired_assignees \
                 and assignee in self.valid_assignees:
             self.desired_assignees.append(assignee)
+        self.invalidate_cache()
 
     def assign_user(self, user):
         assignees = [x for x in self.assignees]
         if user not in self.assignees:
             assignees.append(user)
             self._edit_assignees(assignees)
+        self.invalidate_cache()
 
     def unassign_user(self, user):
         assignees = [x for x in self.current_assignees]
         if user in self.assignees:
             assignees.remove(user)
             self._edit_assignees(assignees)
+        self.invalidate_cache()
 
     @RateLimited
     def _edit_assignees(self, assignees):
@@ -880,6 +879,7 @@ class DefaultWrapper(object):
             if headers[u'status'] != u'200 OK':
                 print(u'ERROR: failed to edit assignees')
                 sys.exit(1)
+        self.invalidate_cache()
 
     @RateLimited
     def _delete_comment_by_url(self, url):
@@ -891,6 +891,7 @@ class DefaultWrapper(object):
         if headers[u'status'] != u'204 No Content':
             print(u'ERROR: failed to remove %s' % url)
             sys.exit(1)
+        self.invalidate_cache()
         return True
 
     def is_pullrequest(self):
@@ -989,10 +990,14 @@ class DefaultWrapper(object):
 
     @property
     def comments(self):
-        #if self._comments is False:
-        #    self._comments = self.get_comments()
-        self._comments = self.load_update_fetch('comments')
+        '''
+        if isinstance(self._comments, UnsetValue):
+            self._comments = self.get_comments()
+        #import epdb; epdb.st()
+        #self._comments = self.load_update_fetch('comments')
         return self._comments
+        '''
+        return self.get_comments()
 
     @property
     def pullrequest(self):
@@ -1295,6 +1300,9 @@ class DefaultWrapper(object):
                     import epdb; epdb.st()
                 else:
                     raise Exception(u'issue date != pr date')
+
+    def invalidate_cache(self):
+        import epdb; epdb.st()
 
     @property
     def commits(self):

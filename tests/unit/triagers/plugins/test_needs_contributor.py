@@ -19,6 +19,7 @@ class TestNeedsContributorFacts(unittest.TestCase):
     def test_needs_contributor_command(self):
         datafile = u'tests/fixtures/needs_contributor/0_issue.yml'
         with get_issue(datafile, self.statusfile) as iw:
+            #import epdb; epdb.st()
             facts = get_needs_contributor_facts(AnsibleTriageMock(), iw, self.meta)
             self.assertTrue(facts[u'is_needs_contributor'])
 
