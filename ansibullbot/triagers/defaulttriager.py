@@ -62,6 +62,7 @@ class DefaultActions(object):
         self.newlabel = []
         self.unlabel = []
         self.comments = []
+        self.uncomment = []
         self.assign = []
         self.unassign = []
         self.close = False
@@ -389,6 +390,9 @@ class DefaultTriager(object):
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
+
+        for commentid in actions.uncomment:
+            iw.remove_comment_by_id(commentid)
 
         for comment in actions.comments:
             logging.info("acton: comment - " + comment)

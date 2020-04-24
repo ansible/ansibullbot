@@ -45,6 +45,11 @@ from ansibullbot.errors import RateLimitError
 import ansibullbot.constants as C
 
 
+class UnsetValue:
+    def __str__(self):
+        return "AnsibullbotUnsetValue()"
+
+
 class DefaultWrapper(object):
 
     ALIAS_LABELS = {
@@ -94,7 +99,7 @@ class DefaultWrapper(object):
         self.repo = repo
         self.instance = issue
         self._assignees = False
-        self._comments = False
+        self._comments = UnsetValue()
         self._committer_emails = False
         self._committer_logins = False
         self._commits = False
@@ -116,8 +121,6 @@ class DefaultWrapper(object):
         self.desired_labels = []
         self.desired_assignees = []
         self.current_events = []
-        self.current_comments = []
-        self.current_bot_comments = []
         self.last_bot_comment = None
         self.current_reactions = []
         self.desired_comments = []
@@ -163,28 +166,15 @@ class DefaultWrapper(object):
     @RateLimited
     def get_comments(self):
         """Returns all current comments of the PR"""
+ 
+        if isinstance(self._comments, UnsetValue):
+             self._comments = self.load_update_fetch(u'comments')
+ 
+ 
+        if len(self._comments) != self.instance.comments:
+            self._comments = self.load_update_fetch(u'comments', force=True)
 
-        comments = self.load_update_fetch(u'comments')
-
-        self.current_comments = [x for x in comments]
-        self.current_comments.reverse()
-
-        # look for any comments made by the bot
-        for idx, x in enumerate(self.current_comments):
-            body = x.body
-            lines = body.split(u'\n')
-            lines = [y.strip() for y in lines if y.strip()]
-
-            if lines[-1].startswith(u'<!---') \
-                    and lines[-1].endswith(u'--->') \
-                    and u'boilerplate:' in lines[-1]\
-                    and x.user.login == u'ansibot':
-
-                parts = lines[-1].split()
-                boilerplate = parts[2]
-                self.current_bot_comments.append(boilerplate)
-
-        return self.current_comments
+        return self._comments
 
     @property
     def url(self):
@@ -384,7 +374,7 @@ class DefaultWrapper(object):
         return data
 
     @RateLimited
-    def load_update_fetch(self, property_name, obj=None):
+    def load_update_fetch(self, property_name, obj=None, force=False):
         '''Fetch a property for an issue object'''
 
         # A pygithub issue object has methods such as ...
@@ -459,7 +449,7 @@ class DefaultWrapper(object):
                 raise Exception(u'property error')
 
         # pull all events if timestamp is behind or no events cached
-        if update or not events:
+        if update or not events or force:
             write_cache = True
             updated = self.get_current_time()
 
@@ -490,7 +480,7 @@ class DefaultWrapper(object):
                 events = [x for x in methodToCall()]
 
         if C.DEFAULT_PICKLE_ISSUES:
-            if write_cache or not os.path.isfile(pfile):
+            if write_cache or not os.path.isfile(pfile) or force:
                 # need to dump the pickle back to disk
                 edata = [updated, events]
                 with open(pfile, 'wb') as f:
@@ -788,6 +778,24 @@ class DefaultWrapper(object):
         """Adds a comment to the Issue using the GitHub API"""
         self.get_issue().create_comment(comment)
 
+    @RateLimited
+    def remove_comment_by_id(self, commentid):
+        if not isinstance(commentid, int):
+            raise Exception("commentIds must be integers!")
+        comment_url = os.path.join(
+            C.DEFAULT_GITHUB_URL,
+            'repos',
+            self.repo_full_name,
+            'issues',
+            'comments',
+            str(commentid)
+        )
+        current_data = self.github.get_request(comment_url)
+        if current_data and current_data.get('message') != 'Not Found':
+            ok = self.github.delete_request(comment_url)
+            if not ok:
+                raise Exception("failed to delete commentid %s for %s" % (commentid, self.html_url))
+
     def set_desired_state(self, state):
         assert state in [u'open', u'closed']
         self.desired_state = state
@@ -971,9 +979,7 @@ class DefaultWrapper(object):
 
     @property
     def comments(self):
-        if self._comments is False:
-            self._comments = self.get_comments()
-        return self._comments
+        return self.get_comments()
 
     @property
     def pullrequest(self):

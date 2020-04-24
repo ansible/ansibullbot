@@ -63,6 +63,8 @@ class PullRequestMock(object):
 class IssueMock(object):
     """Mocks a pygithub object with data from a yaml file"""
 
+    _private_comments = None
+
     def __init__(self, datafile):
         self.calls = []
         self.ydata = None
@@ -74,6 +76,13 @@ class IssueMock(object):
     @property
     def commits(self):
         return self._commits
+
+    @property
+    def comments(self):
+        #import epdb; epdb.st()
+        if isinstance(self._private_comments, int):
+            return self._private_comments
+        return len(self._private_comments)
 
     def load_data(self, datafile):
         ydata = None
@@ -89,7 +98,8 @@ class IssueMock(object):
         self.body = self.ydata.get('body', '')
         self.closed_at = None
         self.closed_by = None
-        self.comments = []
+        #self.comments = []
+        self._private_comments = []
         self._commits = []
         self.comments_url = None
         self.created_at = self.ydata.get('created_at')
@@ -139,7 +149,7 @@ class IssueMock(object):
                 comment.user = actor
                 comment.body = ev['body']
                 comment.created_at = ev['created_at']
-                self.comments.append(comment)
+                self._private_comments.append(comment)
 
             elif ev['event'] == 'committed':
                 commit = CommitTopMock()
@@ -194,7 +204,7 @@ class IssueMock(object):
 
     def get_comments(self, since=None):
         self.calls.append(('get_comments', since))
-        return list(self.comments)
+        return list(self._private_comments)
 
     def get_events(self):
         self.calls.append(('get_events'))
