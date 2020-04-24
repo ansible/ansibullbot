@@ -979,13 +979,6 @@ class DefaultWrapper(object):
 
     @property
     def comments(self):
-        '''
-        if isinstance(self._comments, UnsetValue):
-            self._comments = self.get_comments()
-        #import epdb; epdb.st()
-        #self._comments = self.load_update_fetch('comments')
-        return self._comments
-        '''
         return self.get_comments()
 
     @property
