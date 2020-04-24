@@ -231,10 +231,6 @@ class HistoryWrapper(object):
 
     def get_json_comments(self):
         comments = self.issue.comments[:]
-        #comments_cached = self.issue.load_update_fetch('comments')
-        #comments_rest = self.issue.load_update_fetch_rest('comments')
-        #comments = [{'body': x.body, 'created_at': pytz.utc.localize(x.created_at)} for x in comments]
-        #comments = comments_cached[:]
         for idx,x in enumerate(comments):
             ca = x.created_at
             if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
