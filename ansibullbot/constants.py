@@ -210,6 +210,16 @@ DEFAULT_DEBUG = get_config(
     value_type='string'
 )
 
+# who dat?
+DEFAULT_BOT_NAMES = get_config(
+    p,
+    DEFAULTS,
+    'bot_names',
+    '%s_DEBUG' % PROG_NAME.upper(),
+    ['ansibot', 'ansibotdev', 'ansibullbot'],
+    value_type='list'
+)
+
 # the sqlite database unc
 DEFAULT_DATABASE_UNC = get_config(
     p,

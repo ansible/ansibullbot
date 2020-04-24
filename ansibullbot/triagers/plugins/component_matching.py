@@ -165,11 +165,7 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
             cmeta[u'needs_component_message'] = True
 
         else:
-            bpcs = iw.history.get_boilerplate_comments(
-                dates=True,
-                content=True,
-                botnames=[u'ansibot', u'ansibotdev']
-            )
+            bpcs = iw.history.get_boilerplate_comments(dates=True, content=True)
             bpcs = [x for x in bpcs if x[1] == u'components_banner']
 
             # was the last list of files correct?
@@ -195,7 +191,7 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
 
 def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
     """Allow components to be set by bot commands"""
-    component_commands = iw.history.get_component_commands(botnames=[])
+    component_commands = iw.history.get_component_commands()
     component_filenames = [x[u'repo_filename'] for x in CM_MATCHES]
 
     for ccx in component_commands:
