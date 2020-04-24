@@ -160,6 +160,17 @@ class GithubWrapper(object):
 
         return data
 
+    @RateLimited
+    def delete_request(self, url):
+        headers = {
+            u'Accept': u','.join(self.accepts_headers),
+            u'Authorization': u'Bearer %s' % self.token,
+        }
+
+        rr = requests.delete(url, headers=headers)
+        return rr.ok
+
+
 
 class RepoWrapper(object):
     def __init__(self, gh, repo_path, verbose=True, cachedir=u'~/.ansibullbot/cache'):

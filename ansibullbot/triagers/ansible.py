@@ -94,6 +94,7 @@ from ansibullbot.triagers.plugins.shipit import get_shipit_facts
 from ansibullbot.triagers.plugins.shipit import get_submitter_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
 from ansibullbot.triagers.plugins.small_patch import get_small_patch_facts
+from ansibullbot.triagers.plugins.spam import get_spam_facts
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 
@@ -1624,6 +1625,11 @@ class AnsibleTriage(DefaultTriager):
             for fqcn in self.meta['collection_fqcn_label_remove']:
                 actions.unlabel.append('collection:%s'% fqcn)
 
+        # spam!!!
+        if self.meta.get(u'spam_comment_ids'):
+            for commentid in self.meta[u'spam_comment_ids']:
+                actions.uncomment.append(commentid)
+
         actions.newlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel]))
         actions.unlabel = sorted(set([to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel]))
 
@@ -2209,6 +2215,9 @@ class AnsibleTriage(DefaultTriager):
                 self.meta[u'migrated_issue_repo_path'] = None
                 self.meta[u'migrated_issue_number'] = None
                 self.meta[u'migrated_issue_state'] = None
+
+        # spam!
+        self.meta.update(get_spam_facts(iw, self.meta))
 
         # automerge
         self.meta.update(get_automerge_facts(iw, self.meta))

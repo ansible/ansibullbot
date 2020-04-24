@@ -788,6 +788,24 @@ class DefaultWrapper(object):
         """Adds a comment to the Issue using the GitHub API"""
         self.get_issue().create_comment(comment)
 
+    @RateLimited
+    def remove_comment_by_id(self, commentid):
+        if not isinstance(commentid, int):
+            raise Exception("commentIds must be integers!")
+        comment_url = os.path.join(
+            C.DEFAULT_GITHUB_URL,
+            'repos',
+            self.repo_full_name,
+            'issues',
+            'comments',
+            str(commentid)
+        )
+        current_data = self.github.get_request(comment_url)
+        if current_data and current_data.get('message') != 'Not Found':
+            ok = self.github.delete_request(comment_url)
+            if not ok:
+                raise Exception("failed to delete commentid %s for %s" % (commentid, self.html_url))
+
     def set_desired_state(self, state):
         assert state in [u'open', u'closed']
         self.desired_state = state
@@ -971,8 +989,9 @@ class DefaultWrapper(object):
 
     @property
     def comments(self):
-        if self._comments is False:
-            self._comments = self.get_comments()
+        #if self._comments is False:
+        #    self._comments = self.get_comments()
+        self._comments = self.load_update_fetch('comments')
         return self._comments
 
     @property
