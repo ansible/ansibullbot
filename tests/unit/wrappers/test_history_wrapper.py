@@ -90,9 +90,10 @@ def test_get_component_commands():
 
     cachedir = tempfile.mkdtemp()
     hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+    hw.BOTNAMES = []
 
     events = hw._find_events_by_actor('commented', None)
-    ccommands = hw.get_component_commands(botnames=[])
+    ccommands = hw.get_component_commands()
 
     assert len(events) > 0
     assert len(ccommands) > 0
@@ -107,9 +108,10 @@ def test_get_no_component_commands():
 
     cachedir = tempfile.mkdtemp()
     hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+    hw.BOTNAMES = []
 
     events = hw._find_events_by_actor('commented', None)
-    ccommands = hw.get_component_commands(botnames=[])
+    ccommands = hw.get_component_commands()
 
     assert len(events) == 1
     assert len(ccommands) == 0
@@ -157,6 +159,7 @@ def test_ignore_events_without_dates_on_last_methods():
 
     cachedir = tempfile.mkdtemp()
     hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+    hw.BOTNAMES = ['ansibot']
 
     res = []
     res.append(hw.label_last_applied(u'needs_info'))
@@ -165,6 +168,7 @@ def test_ignore_events_without_dates_on_last_methods():
     res.append(hw.was_labeled(u'needs_info'))
     res.append(hw.was_unlabeled(u'needs_info'))
 
+    #import epdb; epdb.st()
     assert not [x for x in res if x is None]
 
 
@@ -175,6 +179,7 @@ def test__fix_history_tz():
         iw = IssueWrapperMock()
         cachedir = tempfile.mkdtemp()
         hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+        hw.BOTNAMES = []
 
         events = [
             {'created_at': datetime.datetime.now()},

@@ -397,7 +397,7 @@ class HistoryWrapper(object):
         for event in events:
             #if event[u'actor'] in self.BOTNAMES:
             #    continue
-            if event[u'event'] == u'commented' and event.get(u'body'):
+            if event.get(u'body'):
                 matched = False
                 lines = event[u'body'].split(u'\n')
                 for line in lines:
@@ -679,6 +679,7 @@ class HistoryWrapper(object):
         for bp in bps:
             if bp[1] == boiler:
                 last_date = bp[0]
+        #import epdb; epdb.st()
         return last_date
 
     @RateLimited
