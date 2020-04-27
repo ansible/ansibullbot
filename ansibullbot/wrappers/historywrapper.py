@@ -34,8 +34,6 @@ class Actor(object):
 
 class Event(object):
 
-    BOTNAMES = C.DEFAULT_BOT_NAMES
-
     def __init__(self, raw_data, id=None):
         self.id = id
         self.raw_data = raw_data
@@ -72,6 +70,7 @@ class Event(object):
 class HistoryWrapper(object):
 
     SCHEMA_VERSION = 1.1
+    BOTNAMES = C.DEFAULT_BOT_NAMES
 
     def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
 
@@ -393,11 +392,11 @@ class HistoryWrapper(object):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
         events = self.get_json_comments()
-        events = [x for x in events if x['actor' not in self.BOTNAMES]]
+        events = [x for x in events if x['user']['login'] not in self.BOTNAMES]
 
         for event in events:
-            if event[u'actor'] in self.BOTNAMES:
-                continue
+            #if event[u'actor'] in self.BOTNAMES:
+            #    continue
             if event[u'event'] == u'commented' and event.get(u'body'):
                 matched = False
                 lines = event[u'body'].split(u'\n')

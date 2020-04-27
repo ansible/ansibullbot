@@ -2346,13 +2346,11 @@ class AnsibleTriage(DefaultTriager):
             maintainers,
             vcommands,
             uselabels=False,
-            botnames=self.BOTNAMES
         )
         meta[u'submitter_commands'] = iw.history.get_commands(
             iw.submitter,
             vcommands,
             uselabels=False,
-            botnames=self.BOTNAMES
         )
 
         # JIMI_SKIP!!!

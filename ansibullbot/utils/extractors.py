@@ -604,48 +604,48 @@ class ModuleExtractor(object):
 def get_template_data(iw):
     """Extract templated data from an issue body"""
 
-    if self.is_issue():
+    if iw.is_issue():
         tfile = u'.github/ISSUE_TEMPLATE/bug_report.md'
     else:
         tfile = u'.github/PULL_REQUEST_TEMPLATE.md'
 
     # use the fileindexer whenever possible to conserve ratelimits
-    if self.file_indexer:
-        tf_content = self.file_indexer.get_file_content(tfile)
+    if iw.file_indexer:
+        tf_content = iw.file_indexer.get_file_content(tfile)
     else:
         try:
-            tf = self.repo.get_file_contents(tfile)
+            tf = iw.repo.get_file_contents(tfile)
             tf_content = tf.decoded_content
         except Exception:
             logging.warning(u'repo does not have {}'.format(tfile))
             tf_content = u''
 
     # pull out the section names from the tempalte
-    tf_sections = extract_template_sections(tf_content, header=self.TEMPLATE_HEADER)
+    tf_sections = extract_template_sections(tf_content, header=iw.TEMPLATE_HEADER)
 
     # what is required?
-    self._required_template_sections = \
+    iw._required_template_sections = \
         [x.lower() for x in tf_sections.keys()
             if tf_sections[x][u'required']]
 
     # extract ...
     template_data = \
         extract_template_data(
-            self.instance.body,
-            issue_number=self.number,
-            issue_class=self.github_type,
+            iw.instance.body,
+            issue_number=iw.number,
+            issue_class=iw.github_type,
             sections=tf_sections.keys()
         )
 
     # try comments if the description was insufficient
     if len(template_data.keys()) <= 2:
-        s_comments = self.history.get_user_comments(self.submitter)
+        s_comments = iw.history.get_user_comments(iw.submitter)
         for s_comment in s_comments:
 
             _template_data = extract_template_data(
                 s_comment,
-                issue_number=self.number,
-                issue_class=self.github_type,
+                issue_number=iw.number,
+                issue_class=iw.github_type,
                 sections=tf_sections.keys()
             )
 
@@ -659,7 +659,7 @@ def get_template_data(iw):
     if u'ANSIBLE VERSION' in tf_sections and u'ansible version' not in template_data:
 
         # FIXME - abstract this into a historywrapper method
-        vlabels = [x for x in self.history.history if x[u'event'] == u'labeled']
+        vlabels = [x for x in iw.history.history if x[u'event'] == u'labeled']
         vlabels = [x for x in vlabels if x[u'actor'] not in [u'ansibot', u'ansibotdev']]
         vlabels = [x[u'label'] for x in vlabels if x[u'label'].startswith(u'affects_')]
         vlabels = [x for x in vlabels if x.startswith(u'affects_')]
@@ -671,13 +671,13 @@ def get_template_data(iw):
             template_data[u'ansible version'] = to_text(version)
 
     if u'COMPONENT NAME' in tf_sections and u'component name' not in template_data:
-        if self.is_pullrequest():
-            fns = self.files
+        if iw.is_pullrequest():
+            fns = iw.files
             if fns:
                 template_data[u'component name'] = u'\n'.join(fns)
                 template_data[u'component_raw'] = u'\n'.join(fns)
         else:
-            clabels = [x for x in self.labels if x.startswith(u'c:')]
+            clabels = [x for x in iw.labels if x.startswith(u'c:')]
             if clabels:
                 fns = []
                 for clabel in clabels:
@@ -699,7 +699,7 @@ def get_template_data(iw):
 
         while not itype:
 
-            for label in self.labels:
+            for label in iw.labels:
                 if label.startswith(u'bug'):
                     itype = u'bug'
                     break
@@ -712,8 +712,8 @@ def get_template_data(iw):
             if itype:
                 break
 
-            if self.is_pullrequest():
-                fns = self.files
+            if iw.is_pullrequest():
+                fns = iw.files
                 for fn in fns:
                     if fn.startswith(u'doc'):
                         itype = u'docs'
@@ -721,9 +721,9 @@ def get_template_data(iw):
             if itype:
                 break
 
-            msgs = [self.title, self.body]
-            if self.is_pullrequest():
-                msgs += [x[u'message'] for x in self.history.history if x[u'event'] == u'committed']
+            msgs = [iw.title, iw.body]
+            if iw.is_pullrequest():
+                msgs += [x[u'message'] for x in iw.history.history if x[u'event'] == u'committed']
 
             msgs = [x for x in msgs if x]
             msgs = [x.lower() for x in msgs]
@@ -754,17 +754,17 @@ def get_template_data(iw):
             # quit now
             break
 
-        if itype and itype == u'bug' and self.is_issue():
+        if itype and itype == u'bug' and iw.is_issue():
             template_data[u'issue type'] = u'bug report'
-        elif itype and itype == u'bug' and not self.is_issue():
+        elif itype and itype == u'bug' and not iw.is_issue():
             template_data[u'issue type'] = u'bugfix pullrequest'
-        elif itype and itype == u'feature' and self.is_issue():
+        elif itype and itype == u'feature' and iw.is_issue():
             template_data[u'issue type'] = u'feature idea'
-        elif itype and itype == u'feature' and not self.is_issue():
+        elif itype and itype == u'feature' and not iw.is_issue():
             template_data[u'issue type'] = u'feature pullrequest'
-        elif itype and itype == u'docs' and self.is_issue():
+        elif itype and itype == u'docs' and iw.is_issue():
             template_data[u'issue type'] = u'documentation report'
-        elif itype and itype == u'docs' and not self.is_issue():
+        elif itype and itype == u'docs' and not iw.is_issue():
             template_data[u'issue type'] = u'documenation pullrequest'
 
     return template_data
