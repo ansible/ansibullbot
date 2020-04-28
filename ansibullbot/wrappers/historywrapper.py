@@ -199,6 +199,7 @@ class HistoryWrapper(object):
             cachedata = None
 
         cachedata[u'history'] = self._fix_comments_with_no_body(cachedata[u'history'])
+        cachedata[u'history'] = self._fix_event_bytes(cachedata[u'history'])
 
         return cachedata
 
@@ -237,7 +238,7 @@ class HistoryWrapper(object):
             ca = x.created_at
             if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
                 ca = pytz.utc.localize(x.created_at)
-            nc = {'body': x.body, 'created_at': ca, 'user': {'login': x.user.login}}
+            nc = {u'body': x.body, u'created_at': ca, u'user': {u'login': x.user.login}}
             comments[idx] = nc
         return comments
 
@@ -245,7 +246,15 @@ class HistoryWrapper(object):
         '''Make sure all comment events have a body key'''
         for idx,x in enumerate(events):
             if x['event'] == u'commented' and u'body' not in x:
-                events[idx][u'body'] = ''
+                events[idx][u'body'] = u''
+        return events
+
+    def _fix_event_bytes(self, events):
+        '''Make sure all event values are strings and not bytes'''
+        for ide,event in enumerate(events):
+            for k,v in event.items():
+                if isinstance(v, bytes):
+                    events[ide][k] = v.decode('utf-8')
         return events
 
     def _fix_commits_with_no_message(self, events):
