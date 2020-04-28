@@ -599,3 +599,172 @@ class ModuleExtractor(object):
             logging.warning(e)
 
         return meta
+
+
+def get_template_data(iw):
+    """Extract templated data from an issue body"""
+
+    if iw.is_issue():
+        tfile = u'.github/ISSUE_TEMPLATE/bug_report.md'
+    else:
+        tfile = u'.github/PULL_REQUEST_TEMPLATE.md'
+
+    # use the fileindexer whenever possible to conserve ratelimits
+    if iw.file_indexer:
+        tf_content = iw.file_indexer.get_file_content(tfile)
+    else:
+        try:
+            tf = iw.repo.get_file_contents(tfile)
+            tf_content = tf.decoded_content
+        except Exception:
+            logging.warning(u'repo does not have {}'.format(tfile))
+            tf_content = u''
+
+    # pull out the section names from the tempalte
+    tf_sections = extract_template_sections(tf_content, header=iw.TEMPLATE_HEADER)
+
+    # what is required?
+    iw._required_template_sections = \
+        [x.lower() for x in tf_sections.keys()
+            if tf_sections[x][u'required']]
+
+    # extract ...
+    template_data = \
+        extract_template_data(
+            iw.instance.body,
+            issue_number=iw.number,
+            issue_class=iw.github_type,
+            sections=tf_sections.keys()
+        )
+
+    # try comments if the description was insufficient
+    if len(template_data.keys()) <= 2:
+        s_comments = iw.history.get_user_comments(iw.submitter)
+        for s_comment in s_comments:
+
+            _template_data = extract_template_data(
+                s_comment,
+                issue_number=iw.number,
+                issue_class=iw.github_type,
+                sections=tf_sections.keys()
+            )
+
+            if _template_data:
+                for k, v in _template_data.items():
+                    if not v:
+                        continue
+                    if v and (k not in template_data or not template_data.get(k)):
+                        template_data[k] = v
+
+    if u'ANSIBLE VERSION' in tf_sections and u'ansible version' not in template_data:
+
+        # FIXME - abstract this into a historywrapper method
+        vlabels = [x for x in iw.history.history if x[u'event'] == u'labeled']
+        vlabels = [x for x in vlabels if x[u'actor'] not in [u'ansibot', u'ansibotdev']]
+        vlabels = [x[u'label'] for x in vlabels if x[u'label'].startswith(u'affects_')]
+        vlabels = [x for x in vlabels if x.startswith(u'affects_')]
+
+        versions = [x.split(u'_')[1] for x in vlabels]
+        versions = [float(x) for x in versions]
+        if versions:
+            version = versions[-1]
+            template_data[u'ansible version'] = to_text(version)
+
+    if u'COMPONENT NAME' in tf_sections and u'component name' not in template_data:
+        if iw.is_pullrequest():
+            fns = iw.files
+            if fns:
+                template_data[u'component name'] = u'\n'.join(fns)
+                template_data[u'component_raw'] = u'\n'.join(fns)
+        else:
+            clabels = [x for x in iw.labels if x.startswith(u'c:')]
+            if clabels:
+                fns = []
+                for clabel in clabels:
+                    clabel = clabel.replace(u'c:', u'')
+                    fns.append(u'lib/ansible/' + clabel)
+                template_data[u'component name'] = u'\n'.join(fns)
+                template_data[u'component_raw'] = u'\n'.join(fns)
+
+            elif u'documentation' in template_data.get(u'issue type', u'').lower():
+                template_data[u'component name'] = u'docs'
+                template_data[u'component_raw'] = u'docs'
+
+    if u'ISSUE TYPE' in tf_sections and u'issue type' not in template_data:
+
+        # FIXME - turn this into a real classifier based on work done in
+        # jctanner/pr-triage repo.
+
+        itype = None
+
+        while not itype:
+
+            for label in iw.labels:
+                if label.startswith(u'bug'):
+                    itype = u'bug'
+                    break
+                elif label.startswith(u'feature'):
+                    itype = u'feature'
+                    break
+                elif label.startswith(u'doc'):
+                    itype = u'docs'
+                    break
+            if itype:
+                break
+
+            if iw.is_pullrequest():
+                fns = iw.files
+                for fn in fns:
+                    if fn.startswith(u'doc'):
+                        itype = u'docs'
+                        break
+            if itype:
+                break
+
+            msgs = [iw.title, iw.body]
+            if iw.is_pullrequest():
+                msgs += [x[u'message'] for x in iw.history.history if x[u'event'] == u'committed']
+
+            msgs = [x for x in msgs if x]
+            msgs = [x.lower() for x in msgs]
+
+            for msg in msgs:
+                if u'fix' in msg:
+                    itype = u'bug'
+                    break
+                if u'addresses' in msg:
+                    itype = u'bug'
+                    break
+                if u'broke' in msg:
+                    itype = u'bug'
+                    break
+                if u'add' in msg:
+                    itype = u'feature'
+                    break
+                if u'should' in msg:
+                    itype = u'feature'
+                    break
+                if u'please' in msg:
+                    itype = u'feature'
+                    break
+                if u'feature' in msg:
+                    itype = u'feature'
+                    break
+
+            # quit now
+            break
+
+        if itype and itype == u'bug' and iw.is_issue():
+            template_data[u'issue type'] = u'bug report'
+        elif itype and itype == u'bug' and not iw.is_issue():
+            template_data[u'issue type'] = u'bugfix pullrequest'
+        elif itype and itype == u'feature' and iw.is_issue():
+            template_data[u'issue type'] = u'feature idea'
+        elif itype and itype == u'feature' and not iw.is_issue():
+            template_data[u'issue type'] = u'feature pullrequest'
+        elif itype and itype == u'docs' and iw.is_issue():
+            template_data[u'issue type'] = u'documentation report'
+        elif itype and itype == u'docs' and not iw.is_issue():
+            template_data[u'issue type'] = u'documenation pullrequest'
+
+    return template_data

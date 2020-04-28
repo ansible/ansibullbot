@@ -99,6 +99,7 @@ class DefaultTriager(object):
     ITERATION = 0
     debug = False
     cachedir_base = None
+    BOTNAMES = C.DEFAULT_BOT_NAMES
 
     def __init__(self, args=None):
         pass

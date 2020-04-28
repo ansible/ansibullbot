@@ -33,6 +33,7 @@ class Actor(object):
 
 
 class Event(object):
+
     def __init__(self, raw_data, id=None):
         self.id = id
         self.raw_data = raw_data
@@ -69,6 +70,7 @@ class Event(object):
 class HistoryWrapper(object):
 
     SCHEMA_VERSION = 1.1
+    BOTNAMES = C.DEFAULT_BOT_NAMES
 
     def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
 
@@ -336,7 +338,7 @@ class HistoryWrapper(object):
         return groups
 
 
-    def get_commands(self, username, command_keys, timestamps=False, uselabels=True, botnames=[]):
+    def get_commands(self, username, command_keys, timestamps=False, uselabels=True):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
 
@@ -358,7 +360,7 @@ class HistoryWrapper(object):
         events = comments + labels + unlabels
         events = sorted(events, key=itemgetter(u'created_at'))
         for event in events:
-            if event[u'actor'] in botnames:
+            if event[u'actor'] in self.BOTNAMES:
                 continue
             if event[u'event'] == u'commented':
                 for y in command_keys:
@@ -386,33 +388,16 @@ class HistoryWrapper(object):
 
         return commands
 
-    def get_component_commands(self, command_key='!component', botname=None, botnames=[]):
+    def get_component_commands(self, command_key='!component'):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
-
-        """
-        comments = self._find_events_by_actor(
-            u'commented',
-            None,
-            maxcount=999
-        )
-        events = sorted(comments, key=itemgetter(u'created_at'))
-        """
-
-        comments = self.issue.comments[:]
-        if botnames:
-            comments = [x for x in comments if x.user.login not in botnames]
-        else:
-            comments = [x for x in comments if x.user.login != botname]
-        events = [
-            {'event': 'commented', 'body': x.body, 'created_at': x.created_at, 'actor': x.user.login}
-            for x in comments
-        ]
+        events = self.get_json_comments()
+        events = [x for x in events if x['user']['login'] not in self.BOTNAMES]
 
         for event in events:
-            if event[u'actor'] in botnames:
-                continue
-            if event[u'event'] == u'commented' and event.get(u'body'):
+            #if event[u'actor'] in self.BOTNAMES:
+            #    continue
+            if event.get(u'body'):
                 matched = False
                 lines = event[u'body'].split(u'\n')
                 for line in lines:
@@ -655,33 +640,11 @@ class HistoryWrapper(object):
                     break
         return labeled
 
-    def get_boilerplate_comments(self, botname='ansibot', botnames=None, dates=False, content=True):
+    def get_boilerplate_comments(self, dates=False, content=True):
         boilerplates = []
-        """
-        if botnames:
-            comments = self._find_events_by_actor(u'commented',
-                                                  botnames,
-                                                  maxcount=999,
-                                                  active=True)
-        else:
-            comments = self._find_events_by_actor(u'commented',
-                                                  botname,
-                                                  maxcount=999,
-                                                  active=True)
-        """
-        '''
-        comments = self.issue.comments[:]
-        if botnames:
-            comments = [x for x in comments if x.user.login in botnames]
-        else:
-            comments = [x for x in comments if x.user.login == botname]
-        comments = [{'body': x.body, 'created_at': pytz.utc.localize(x.created_at)} for x in comments]
-        '''
 
-        if botname:
-            botnames = [botname]
         comments = self.get_json_comments()
-        comments = [x for x in comments if x['user']['login'] in botnames] 
+        comments = [x for x in comments if x['user']['login'] in self.BOTNAMES] 
 
         for comment in comments:
             if not comment.get(u'body'):
@@ -705,43 +668,18 @@ class HistoryWrapper(object):
 
         return boilerplates
 
-    def get_boilerplate_comments_content(self, botname='ansibot', botnames=None, bfilter=None):
-        """
-        boilerplates = []
-        comments = self._find_events_by_actor(u'commented',
-                                              botname,
-                                              maxcount=999)
-        comments = self.issue.comments[:]
-        if botnames:
-            comments = [x for x in comments if x.user.login in botnames]
-        else:
-            comments = [x for x in comments if x.user.login == botname]
-        comments = [{'body': x.body, 'created_at': x.created_at} for x in comments]
-
-        for comment in comments:
-            if not comment.get(u'body'):
-                continue
-            if u'boilerplate:' in comment[u'body']:
-                lines = [x for x in comment[u'body'].split(u'\n')
-                         if x.strip() and u'boilerplate:' in x]
-                bp = lines[0].split()[2]
-                if bfilter:
-                    if bp == bfilter:
-                        boilerplates.append(comment[u'body'])
-                else:
-                    boilerplates.append(comment[u'body'])
-        return boilerplates
-        """
-        bpcs = self.get_boilerplate_comments(botname=botname, botnames=botnames)
+    def get_boilerplate_comments_content(self, bfilter=None):
+        bpcs = self.get_boilerplate_comments()
         bpcs = [x[-1] for x in bpcs]
         return bpcs
 
-    def last_date_for_boilerplate(self, boiler, botname='ansibot'):
+    def last_date_for_boilerplate(self, boiler):
         last_date = None
-        bps = self.get_boilerplate_comments(botname=botname, dates=True)
+        bps = self.get_boilerplate_comments(dates=True)
         for bp in bps:
             if bp[1] == boiler:
                 last_date = bp[0]
+        #import epdb; epdb.st()
         return last_date
 
     @RateLimited

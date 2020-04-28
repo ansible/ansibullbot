@@ -155,8 +155,11 @@ class GithubWrapper(object):
                 elif isinstance(data, dict):
                     data.update(_data)
             except TypeError as e:
-                print(e)
-                import epdb; epdb.st()
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error(u'breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception(e)
 
         return data
 
