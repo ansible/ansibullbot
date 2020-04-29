@@ -2501,7 +2501,7 @@ class AnsibleTriage(DefaultTriager):
             # try to go through the submitter's comments and look for the
             # first one that specifies a valid version
             cversion = None
-            for comment in iw.current_comments:
+            for comment in iw.comments:
                 if comment.user.login != iw.instance.user.login:
                     continue
                 xver = self.version_indexer.strip_ansible_version(comment.body)
