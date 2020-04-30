@@ -40,3 +40,8 @@ ANSIBULLBOT_SHIPPABLE_URL=http://localhost:5000 \
 ```
 
 With that setup, every request will cache to disk and subsequent runs will be much faster.
+
+
+## Testing Philosophy
+
+A lot of painstaking work has gone into the unit, component and integration tests in this project. We continue to strive for good test coverage. However, there are so many edgecases when dealing with the github api and the "fuzzy" nature of text analysis. To be absolutely sure your change has the desired effect, you should run the bot against LOTs of issues, if not ALL the issues. On top of that, you need to run it multiple times against some test issues to ensure the behavior is idempotent. A component test exists to check for idempotency, but it is fairly complex and can't be considered a gaurantee even if it passes.
