@@ -17,11 +17,26 @@ A repo as large as https://github.com/ansible/ansible has so many tickets that i
 
 #### Test Proxy
 
-A [proxy](https://github.com/jctanner/github-test-proxy) was created to assist with testing new ansibot changes across a large set of tickets. Typically, the way it's used is to invoke the bot with environment vars to override the github url used by all the underlying requestors.
+A [proxy](https://github.com/jctanner/github-test-proxy) was created to assist with testing new ansibot changes across a large set of tickets. Typically, the way it's used is to invoke the bot with environment vars to override the github url used by all the underlying requestors...
 
 
 ```
+# starting the proxy ...
+git clone https://github.com/jctanner/github-test-proxy
+cd github-test-proxy
+virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+PYTHONPATH=. bin/github-test-proxy --help
+PYTHONPATH=. bin/github-test-proxy proxy --debug --token=<GITHUBAPITOKEN> --shippable_token=<SHIPPABLETOKEN> --fixtures=/tmp/gproxy/fixtures --deltas=/tmp/gproxy/deltas
+```
+
+
+```
+# starting the bot ...
 ANSIBULLBOT_GITHUB_URL=http://localhosthost:5000 \
 ANSIBULLBOT_SHIPPABLE_URL=http://localhost:5000 \
 ./triage_ansible.py <args>`
 ```
+
+With that setup, every request will cache to disk and subsequent runs will be much faster.
