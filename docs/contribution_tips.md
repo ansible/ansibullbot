@@ -19,5 +19,9 @@ A repo as large as https://github.com/ansible/ansible has so many tickets that i
 
 A [proxy](https://github.com/jctanner/github-test-proxy) was created to assist with testing new ansibot changes across a large set of tickets. Typically, the way it's used is to invoke the bot with environment vars to override the github url used by all the underlying requestors.
 
-`ANSIBULLBOT_GITHUB_URL=http://localhosthost:5000 ANSIBULLBOT_SHIPPABLE_URL=http://localhost:5000 ./triage_ansible.py <args>`
 
+```
+ANSIBULLBOT_GITHUB_URL=http://localhosthost:5000 \
+ANSIBULLBOT_SHIPPABLE_URL=http://localhost:5000 \
+./triage_ansible.py <args>`
+```
