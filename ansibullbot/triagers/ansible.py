@@ -920,14 +920,6 @@ class AnsibleTriage(DefaultTriager):
                 actions.newlabel.append(u'needs_triage')
             actions.unlabel.append(u'triage')
 
-        # triage requirements met ...
-        if self.meta[u'maintainer_triaged']:
-            if u'needs_triage' in actions.newlabel:
-                actions.newlabel.remove(u'needs_triage')
-            if u'needs_triage' in iw.labels:
-                if u'needs_triage' not in actions.unlabel:
-                    actions.unlabel.append(u'needs_triage')
-
         # owner PRs
         if iw.is_pullrequest():
             if self.meta[u'owner_pr']:
@@ -2157,9 +2149,6 @@ class AnsibleTriage(DefaultTriager):
             )
         )
 
-        # triage from everyone else? ...
-        self.meta.update(self.get_triage_facts(iw, self.meta))
-
         # filament
         self.meta.update(get_filament_facts(iw, self.meta))
 
@@ -2433,44 +2422,6 @@ class AnsibleTriage(DefaultTriager):
                     wo = u'maintainer'
 
         return {u'waiting_on': wo}
-
-    def get_triage_facts(self, issuewrapper, meta):
-        tfacts = {
-            u'maintainer_triaged': False
-        }
-
-        '''
-        if not meta['module_match']:
-            return tfacts
-        if not meta['module_match'].get('metadata'):
-            return tfacts
-        if not meta['module_match']['metadata'].get('supported_by'):
-            return tfacts
-        if not meta['module_match'].get('maintainers'):
-            return tfacts
-        '''
-
-        if not meta.get(u'component_maintainers'):
-            return tfacts
-
-        iw = issuewrapper
-        #maintainers = [x for x in meta['module_match']['maintainers']]
-        maintainers = meta[u'component_maintainers'][:]
-        maintainers += [x for x in self.ansible_core_team]
-        maintainers = [x for x in maintainers if x != iw.submitter]
-        maintainers = sorted(set(maintainers))
-        if iw.history.has_commented(maintainers):
-            tfacts[u'maintainer_triaged'] = True
-        elif iw.history.has_labeled(maintainers):
-            tfacts[u'maintainer_triaged'] = True
-        elif iw.history.has_unlabeled(maintainers):
-            tfacts[u'maintainer_triaged'] = True
-        elif iw.is_pullrequest() and iw.history.has_reviewed(maintainers):
-            tfacts[u'maintainer_triaged'] = True
-        elif iw.history.was_self_assigned():
-            tfacts[u'maintainer_triaged'] = True
-
-        return tfacts
 
     def get_ansible_version_by_issue(self, iw):
         aversion = None
