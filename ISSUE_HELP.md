@@ -18,6 +18,7 @@ If at any time you think this bot is misbehaving (not for test failures), please
       * [network](#network)
     * [Non-module changes](#non-module-changes)
 * [For community maintainers](#for-community-maintainers)
+  * [How to disable notifications](#how-to-disable-notifications)
 * [For anyone else](#for-anyone-else)
 * [Commands](#commands)
 * [Labels](#labels)
@@ -130,6 +131,18 @@ The ansible core team approves these pull requests and it may take some time for
 :information_source: `Approve` pull request status is ignored, [`shipit`](#cmd-shipit) command must be used in order to approve a pull request.
 
 Thanks in advance for taking a look at issues and pull requests and for your ongoing maintenance. If you are unable to troubleshoot or review this issue/pull request with the information provided, please ping the submitter of the issue in a comment to let them know.
+
+### How to disable notifications
+If you wish to stop receiving notifications from Ansibullbot to issues and pull requests you need to add your github name into the `ignored` key under plugin you are no longer insterested in in the [BOTMETA.yml](https://github.com/ansible/ansible/blob/devel/.github/BOTMETA.yml) file and send a pull request against the [ansible/ansible](https://github.com/ansible/ansible) repository. See an example below:
+```yaml
+...
+$modules/cloud/amazon/:
+  ignored: erydo seiffert simplesteph nadirollo tedder joshsouza defionscode
+  maintainers: $team_aws
+...
+```
+
+If the plugin was migrated to a [collection](https://github.com/ansible-collections) you also need to add an ignore entry into `BOTMETA.yml` in the collection repository as well.
 
 ## For anyone else
 Reactions help us determine how many people are interested in a pull request or have run across a similar bug. Please leave a +1 [reaction](https://github.com/blog/2119-add-reactions-to-pull-requests-issues-and-comments) (:+1:) if that applies to you. Any additional details you can provide, such as your usecase, environment, steps to reproduce, or workarounds you have found, can help out with resolving issues or getting pull requests merged.
