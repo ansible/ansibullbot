@@ -14,7 +14,7 @@ ISSUE_TYPES = {u'bug_report': u'Bug Report',
                u'docs_report': u'Documentation Report'}
 
 TBASE = u'.github/'
-ITEMPLATE = TBASE + u'ISSUE_TEMPLATE.md'
+ITEMPLATE = TBASE + u'ISSUE_TEMPLATE.md'  # FIXME this file does not exist anymore
 PTEMPLATE = TBASE + u'PULL_REQUEST_TEMPLATE.md'
 
 
