@@ -1,0 +1,17 @@
+@{{ submitter }} The following file(s) in this pull request are bundled copies of modules used to support incidental tests and should not be updated:
+
+{% for fn, collections in test_support_plugins|dictsort %}
+* `{{ fn }}`
+    * {% if collections %}Possible match in the following collections: `{{ collections|join(', ') }}`{% else %}Could not find a match in collections.{% endif %}
+
+{% endfor %}
+
+Because the original module(s) have been migrated to collections, please re-submit this pull request in relevant collection repositories, typically under [https://github.com/ansible-collections](https://github.com/ansible-collections).
+
+If you need further assistence with identifying the correct repository, please stop by IRC or the mailing list:
+
+* IRC: #ansible on irc.freenode.net
+* mailing list: https://groups.google.com/forum/#!forum/ansible-project
+
+[click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
+<!--- boilerplate: test_support_plugins --->

@@ -95,6 +95,7 @@ from ansibullbot.triagers.plugins.shipit import get_submitter_facts
 from ansibullbot.triagers.plugins.shipit import needs_community_review
 from ansibullbot.triagers.plugins.small_patch import get_small_patch_facts
 from ansibullbot.triagers.plugins.spam import get_spam_facts
+from ansibullbot.triagers.plugins.test_support_plugins import get_test_support_plugins_facts
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 
@@ -1529,6 +1530,18 @@ class AnsibleTriage(DefaultTriager):
             if iw.age.days >= 5:
                 actions.close = True
 
+        # https://github.com/ansible/ansible/pull/68449
+        if self.meta[u'test_support_plugins']:
+            # should be fine to post just once, hopefully nobody will continue
+            # with the PR after this comment...
+            if not iw.history.last_date_for_boilerplate(u'test_support_plugins'):
+                comment = self.render_boilerplate(
+                    self.meta,
+                    boilerplate=u'test_support_plugins'
+                )
+                if comment not in actions.comments:
+                    actions.comments.append(comment)
+
         # https://github.com/ansible/ansibullbot/pull/664
         if self.meta[u'needs_rebuild']:
             actions.rebuild = True
@@ -2162,6 +2175,11 @@ class AnsibleTriage(DefaultTriager):
 
         # filament
         self.meta.update(get_filament_facts(iw, self.meta))
+
+        # test_support_plugins
+        self.meta.update(
+            get_test_support_plugins_facts(iw, self.component_matcher)
+        )
 
         # ci
         self.meta.update(get_ci_facts(iw))
