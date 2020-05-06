@@ -867,6 +867,13 @@ class DefaultWrapper(object):
             if pdata[0] < self.pullrequest.updated_at or force_fetch:
                 logging.info(u'fetching pr status: stale, previous from %s' % pdata[0])
                 jdata = self._fetch_api_url(surl)
+
+                if isinstance(jdata, dict):
+                    # https://github.com/ansible/ansibullbot/issues/959
+                    logging.error(u'Got the following error while fetching PR status: %s', jdata.get(u'message'))
+                    logging.error(jdata)
+                    return []
+
                 self.log_ci_status(jdata)
                 fetched = True
             else:
@@ -876,6 +883,7 @@ class DefaultWrapper(object):
         if not jdata:
             logging.info(u'fetching pr status: !data')
             jdata = self._fetch_api_url(surl)
+            # FIXME? should we self.log_ci_status(jdata) here too?
             fetched = True
 
         if fetched or not os.path.isfile(pfile):
