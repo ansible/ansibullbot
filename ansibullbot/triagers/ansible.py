@@ -811,8 +811,13 @@ class AnsibleTriage(DefaultTriager):
         )
         meta = {}
         if os.path.isfile(mfile):
-            with open(mfile, 'rb') as f:
-                meta = json.load(f)
+            try:
+                with open(mfile, 'rb') as f:
+                    meta = json.load(f)
+            except ValueError as e:
+                logging.error("Could not load json from '%s' because: '%s'. Removing the file...", f.name, e)
+                os.remove(mfile)
+                return {}
         return meta
 
     def dump_meta(self, issuewrapper, meta):
