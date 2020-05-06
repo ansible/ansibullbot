@@ -2388,12 +2388,16 @@ class AnsibleTriage(DefaultTriager):
 
             # extract the PR
             pr_number = extract_pr_number_from_comment(mc[-1])
-            # was it merged?
-            merged = self.is_pr_merged(pr_number, repo=iw.repo)
-            meta[u'resolved_by_pr'] = {
-                u'number': pr_number,
-                u'merged': merged
-            }
+            if pr_number is None:
+                # ignore resolved_by_pr command without actual number
+                logging.warning("Invalid resolved_by_pr command in '%s'", mc[-1])
+            else:
+                # was it merged?
+                merged = self.is_pr_merged(pr_number, repo=iw.repo)
+                meta[u'resolved_by_pr'] = {
+                    u'number': pr_number,
+                    u'merged': merged
+                }
 
         return meta
 
