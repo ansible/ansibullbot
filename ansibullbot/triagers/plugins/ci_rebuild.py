@@ -109,7 +109,7 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     if not iw.is_pullrequest():
         return rbmerge_meta
 
-    if meta[u'needs_rebuild_all']:
+    if rbmerge_meta[u'needs_rebuild'] and rbmerge_meta[u'needs_rebuild_all']:
         return rbmerge_meta
 
     if meta[u'is_needs_revision']:
@@ -168,7 +168,7 @@ def get_rebuild_command_facts(iw, meta):
     if not iw.is_pullrequest():
         return rbmerge_meta
 
-    if meta[u'needs_rebuild_failed']:
+    if rbmerge_meta[u'needs_rebuild'] and rbmerge_meta[u'needs_rebuild_failed']:
         return rbmerge_meta
 
     rbmerge_commands = iw.history.get_commands(None, [rbcommand], timestamps=True)
