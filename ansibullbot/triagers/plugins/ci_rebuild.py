@@ -89,6 +89,7 @@ def get_rebuild_facts(iw, meta, force=False):
         if not meta[u'shipit']:
             return rbmeta
 
+    rbmeta[u'needs_rebuild'] = True
     rbmeta[u'needs_rebuild_all'] = True
 
     return rbmeta
