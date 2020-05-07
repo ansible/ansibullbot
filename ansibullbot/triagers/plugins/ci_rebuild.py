@@ -65,6 +65,7 @@ def get_rebuild_facts(iw, meta, force=False):
 
     rbmeta = {
         u'needs_rebuild': False,
+        u'needs_rebuild_all': False,
     }
 
     if not iw.is_pullrequest():
@@ -108,7 +109,7 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     if not iw.is_pullrequest():
         return rbmerge_meta
 
-    if meta[u'needs_rebuild']:
+    if meta[u'needs_rebuild_all']:
         return rbmerge_meta
 
     if meta[u'is_needs_revision']:
@@ -155,6 +156,8 @@ def get_rebuild_merge_facts(iw, meta, core_team):
 
 # https://github.com/ansible/ansibullbot/issues/1161
 def get_rebuild_command_facts(iw, meta):
+    # FIXME this does not seem to differentiate between rebuild and
+    # rebuild_failed commands and effectively binding /rebuild to /rebuild_failed?
     rbcommand = u'/rebuild'
 
     rbmerge_meta = {
@@ -165,10 +168,9 @@ def get_rebuild_command_facts(iw, meta):
     if not iw.is_pullrequest():
         return rbmerge_meta
 
-    if meta[u'needs_rebuild']:
+    if meta[u'needs_rebuild_failed']:
         return rbmerge_meta
 
-    # everyone ...
     rbmerge_commands = iw.history.get_commands(None, [rbcommand], timestamps=True)
 
     # if no rbcommands, skip further processing
@@ -196,6 +198,7 @@ def get_rebuild_command_facts(iw, meta):
     pr_status.sort(key=lambda x: x[0])
 
     if pr_status[-1][-1] != u'pending' and pr_status[-1][0] < last_command:
+        rbmerge_meta[u'needs_rebuild'] = True
         rbmerge_meta[u'needs_rebuild_failed'] = True
 
     return rbmerge_meta
