@@ -34,7 +34,7 @@ PYTHONPATH=. bin/github-test-proxy proxy --debug --token=<GITHUBAPITOKEN> --ship
 
 ```
 # starting the bot ...
-ANSIBULLBOT_GITHUB_URL=http://localhosthost:5000 \
+ANSIBULLBOT_GITHUB_URL=http://localhost:5000 \
 ANSIBULLBOT_SHIPPABLE_URL=http://localhost:5000 \
 ./triage_ansible.py <args>`
 ```
