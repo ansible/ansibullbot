@@ -1535,7 +1535,7 @@ class AnsibleTriage(DefaultTriager):
                 actions.close = True
 
         # https://github.com/ansible/ansibullbot/pull/664
-        if self.meta[u'needs_rebuild']:
+        if self.meta[u'needs_rebuild_all']:
             actions.rebuild = True
             if u'stale_ci' in actions.newlabel:
                 actions.newlabel.remove(u'stale_ci')
@@ -2188,8 +2188,6 @@ class AnsibleTriage(DefaultTriager):
             get_rebuild_command_facts(
                 iw,
                 self.meta,
-                self.ansible_core_team,
-                self.SR
             )
         )
 
