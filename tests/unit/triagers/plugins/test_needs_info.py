@@ -66,3 +66,10 @@ class TestNeedsInfoTimeoutFacts(unittest.TestCase):
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
             self.assertEquals(facts[u'needs_info_action'], u'warn')
+
+    def test_warn_template(self):
+        datafile = u'tests/fixtures/needs_info/0_warn_template.yml'
+        with get_issue(datafile, self.statusfile) as iw:
+            facts = needs_info.needs_info_timeout_facts(iw, self.meta)
+
+            self.assertEquals(facts[u'needs_info_action'], u'warn')
