@@ -1,5 +1,5 @@
 {% if action == 'warn' %}
-{% if template_missing %}
+{% if template_missing or template_missing_sections %}
 @{{ submitter }} This {{ itype }} is waiting for you to provide the requested data in the description. Please edit the description or the {{ itype }} will be closed.
 {% else %}
 @{{ submitter }} This {{ itype }} is waiting for your response. Please respond or the {{ itype }} will be closed.

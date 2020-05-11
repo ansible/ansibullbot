@@ -185,6 +185,14 @@ def needs_info_timeout_facts(iw, meta):
         if delta >= NI_EXPIRE:
             if len(bp_comments_found) >= 1:
                 nif[u'needs_info_action'] = u'close'
+            else:
+                # NOTE even though NI_EXPIRE time passed, we should not close
+                # because no warning has been posted so just warn.
+                # This is to remedy https://github.com/ansible/ansibullbot/issues/1329.
+                nif[u'needs_info_action'] = u'warn'
+        elif delta > NI_WARN:
+            if len(bp_comments_found) == 0:
+                nif[u'needs_info_action'] = u'warn'
     else:
         delta = (now - la).days
         if delta > NI_WARN:
