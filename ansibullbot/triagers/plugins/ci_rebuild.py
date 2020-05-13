@@ -96,10 +96,22 @@ def get_rebuild_facts(iw, meta, force=False):
     return rbmeta
 
 
+def _get_last_command(iw, command, username):
+    # FIXME move this into historywrapper
+    commands = iw.history.get_commands(username, [command], timestamps=True)
+
+    if not commands:
+        return
+
+    # set timestamp for last time command was used
+    commands.sort(key=lambda x: x[0])
+    last_command = commands[-1][0]
+
+    return last_command
+
+
 # https://github.com/ansible/ansibullbot/issues/640
 def get_rebuild_merge_facts(iw, meta, core_team):
-    rbcommand = u'rebuild_merge'
-
     rbmerge_meta = {
         u'needs_rebuild': meta.get(u'needs_rebuild', False),
         u'needs_rebuild_all': meta.get(u'needs_rebuild_all', False),
@@ -118,15 +130,7 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     if meta[u'is_needs_rebase']:
         return rbmerge_meta
 
-    rbmerge_commands = iw.history.get_commands(core_team, [rbcommand], timestamps=True)
-
-    # if no rbcommands, skip further processing
-    if not rbmerge_commands:
-        return rbmerge_meta
-
-    # set timestamp for last time command was used
-    rbmerge_commands.sort(key=lambda x: x[0])
-    last_command = rbmerge_commands[-1][0]
+    last_command = _get_last_command(iw, u'rebuild_merge', core_team)
 
     # new commits should reset everything
     lc = iw.history.last_commit_date
@@ -156,30 +160,42 @@ def get_rebuild_merge_facts(iw, meta, core_team):
 
 # https://github.com/ansible/ansibullbot/issues/1161
 def get_rebuild_command_facts(iw, meta):
-    # FIXME this does not seem to differentiate between rebuild and
-    # rebuild_failed commands and effectively binding /rebuild to /rebuild_failed?
-    rbcommand = u'/rebuild'
-
     rbmerge_meta = {
         u'needs_rebuild': meta.get(u'needs_rebuild', False),
+        u'needs_rebuild_all': meta.get(u'needs_rebuild_all', False),
         u'needs_rebuild_failed': meta.get(u'needs_rebuild_failed', False),
     }
 
     if not iw.is_pullrequest():
         return rbmerge_meta
 
-    if rbmerge_meta[u'needs_rebuild'] and rbmerge_meta[u'needs_rebuild_failed']:
+    if meta[u'is_needs_revision']:
         return rbmerge_meta
 
-    rbmerge_commands = iw.history.get_commands(None, [rbcommand], timestamps=True)
-
-    # if no rbcommands, skip further processing
-    if not rbmerge_commands:
+    if meta[u'is_needs_rebase']:
         return rbmerge_meta
 
-    # set timestamp for last time command was used
-    rbmerge_commands.sort(key=lambda x: x[0])
-    last_command = rbmerge_commands[-1][0]
+    if rbmerge_meta[u'needs_rebuild'] and (rbmerge_meta[u'needs_rebuild_all'] or rbmerge_meta[u'needs_rebuild_failed']):
+        return rbmerge_meta
+
+    last_rebuild_failed_command = _get_last_command(iw, u'/rebuild_failed', None)
+    last_rebuild_command = _get_last_command(iw, u'/rebuild', None)
+
+    if last_rebuild_command is None and last_rebuild_failed_command is None:
+        return rbmerge_meta
+    elif last_rebuild_command is None and last_rebuild_failed_command is not None:
+        last_command = last_rebuild_failed_command
+        meta_key = u'needs_rebuild_failed'
+    elif last_rebuild_command is not None and last_rebuild_failed_command is None:
+        last_command = last_rebuild_command
+        meta_key = u'needs_rebuild_all'
+    else:
+        if last_rebuild_command >= last_rebuild_failed_command:
+            last_command = last_rebuild_command
+            meta_key = u'needs_rebuild_all'
+        else:
+            last_command = last_rebuild_failed_command
+            meta_key = u'needs_rebuild_failed'
 
     # new commits should reset everything
     lc = iw.history.last_commit_date
@@ -199,6 +215,6 @@ def get_rebuild_command_facts(iw, meta):
 
     if pr_status[-1][-1] != u'pending' and pr_status[-1][0] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
-        rbmerge_meta[u'needs_rebuild_failed'] = True
+        rbmerge_meta[meta_key] = True
 
     return rbmerge_meta

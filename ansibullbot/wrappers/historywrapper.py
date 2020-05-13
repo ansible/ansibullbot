@@ -375,9 +375,10 @@ class HistoryWrapper(object):
                 for y in command_keys:
                     if event[u'body'].startswith(u'_From @'):
                         continue
-                    if y != u'bot_broken' and u'bot_broken' in event[u'body']:
+                    l_body = event[u'body'].split()
+                    if y != u'bot_broken' and u'bot_broken' in l_body:
                         continue
-                    if y in event[u'body'] and not u'!' + y in event[u'body']:
+                    if y in l_body and not u'!' + y in l_body:
                         if timestamps:
                             commands.append((event[u'created_at'], y))
                         else:
