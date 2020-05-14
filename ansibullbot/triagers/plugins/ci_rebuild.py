@@ -132,6 +132,9 @@ def get_rebuild_merge_facts(iw, meta, core_team):
 
     last_command = _get_last_command(iw, u'rebuild_merge', core_team)
 
+    if last_command is None:
+        return rbmerge_meta
+
     # new commits should reset everything
     lc = iw.history.last_commit_date
     if lc and lc > last_command:
