@@ -7,6 +7,8 @@ import logging
 import os
 import re
 
+from collections import OrderedDict
+
 import six
 
 from Levenshtein import jaro_winkler
@@ -42,7 +44,7 @@ class AnsibleComponentMatcher(object):
     STOPCHARS = [u'"', "'", u'(', u')', u'?', u'*', u'`', u',', u':', u'?', u'-']
     BLACKLIST = [u'new module', u'new modules']
     FILE_NAMES = []
-    MODULES = {}
+    MODULES = OrderedDict()
     MODULE_NAMES = []
     MODULE_NAMESPACE_DIRECTORIES = []
     PREVIOUS_FILES = []
@@ -268,9 +270,7 @@ class AnsibleComponentMatcher(object):
         return bmeta
 
     def index_files(self, refresh_botmeta=True):
-
-        #self.BOTMETA = {}
-        self.MODULES = {}
+        self.MODULES = OrderedDict()
         self.MODULE_NAMES = []
         self.MODULE_NAMESPACE_DIRECTORIES = []
 
