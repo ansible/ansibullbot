@@ -918,7 +918,7 @@ class AnsibleTriage(DefaultTriager):
                 return
 
         # TRIAGE!!!
-        if u'needs_triage' not in iw.labels and not iw.history.was_unlabeled(u'needs_triage'):
+        if u'needs_triage' not in iw.labels and not iw.history.was_unlabeled(u'needs_triage') and not iw.history.was_unlabeled(u'triage'):
             actions.newlabel.append(u'needs_triage')
 
         # legacy "triage" -> "needs_triage"
