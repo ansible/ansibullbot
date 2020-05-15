@@ -23,6 +23,79 @@ from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.galaxy import GalaxyQueryTool
 
 
+MODULES_FLATTEN_MAP = {
+    'lib/ansible/modules/inventory/add_host.py': 'add_host.py',
+    'lib/ansible/modules/packaging/os/apt.py': 'apt.py',
+    'lib/ansible/modules/packaging/os/apt_key.py': 'lib/ansible/modules/apt_key.py',
+    'lib/ansible/modules/packaging/os/apt_repository.py': 'lib/ansible/modules/apt_repository.py',
+    'lib/ansible/modules/files/assemble.py': 'lib/ansible/modules/assemble.py',
+    'lib/ansible/modules/utilities/logic/assert.py': 'lib/ansible/modules/assert.py',
+    'lib/ansible/modules/utilities/logic/async_status.py': 'lib/ansible/modules/async_status.py',
+    'lib/ansible/modules/utilities/logic/async_wrapper.py': 'lib/ansible/modules/async_wrapper.py',
+    'lib/ansible/modules/files/blockinfile.py': 'lib/ansible/modules/blockinfile.py',
+    'lib/ansible/modules/commands/command.py': 'lib/ansible/modules/command.py',
+    'lib/ansible/modules/files/copy.py': 'lib/ansible/modules/copy.py',
+    'lib/ansible/modules/system/cron.py': 'lib/ansible/modules/cron.py',
+    'lib/ansible/modules/system/debconf.py': 'lib/ansible/modules/debconf.py',
+    'lib/ansible/modules/utilities/logic/debug.py': 'lib/ansible/modules/debug.py',
+    'lib/ansible/modules/packaging/os/dnf.py': 'lib/ansible/modules/dnf.py',
+    'lib/ansible/modules/packaging/os/dpkg_selections.py': 'lib/ansible/modules/dpkg_selections.py',
+    'lib/ansible/modules/commands/expect.py': 'lib/ansible/modules/expect.py',
+    'lib/ansible/modules/utilities/logic/fail.py': 'lib/ansible/modules/fail.py',
+    'lib/ansible/modules/files/fetch.py': 'lib/ansible/modules/fetch.py',
+    'lib/ansible/modules/files/file.py': 'lib/ansible/modules/file.py',
+    'lib/ansible/modules/files/find.py': 'lib/ansible/modules/find.py',
+    'lib/ansible/modules/system/gather_facts.py': 'lib/ansible/modules/gather_facts.py',
+    'lib/ansible/modules/net_tools/basics/get_url.py': 'lib/ansible/modules/get_url.py',
+    'lib/ansible/modules/system/getent.py': 'lib/ansible/modules/getent.py',
+    'lib/ansible/modules/source_control/git.py': 'lib/ansible/modules/git.py',
+    'lib/ansible/modules/system/group.py': 'lib/ansible/modules/group.py',
+    'lib/ansible/modules/inventory/group_by.py': 'lib/ansible/modules/group_by.py',
+    'lib/ansible/modules/system/hostname.py': 'lib/ansible/modules/hostname.py',
+    'lib/ansible/modules/utilities/logic/import_playbook.py': 'lib/ansible/modules/import_playbook.py',
+    'lib/ansible/modules/utilities/logic/import_role.py': 'lib/ansible/modules/import_role.py',
+    'lib/ansible/modules/utilities/logic/import_tasks.py': 'lib/ansible/modules/import_tasks.py',
+    'lib/ansible/modules/utilities/logic/include.py': 'lib/ansible/modules/include.py',
+    'lib/ansible/modules/utilities/logic/include_role.py': 'lib/ansible/modules/include_role.py',
+    'lib/ansible/modules/utilities/logic/include_tasks.py': 'lib/ansible/modules/include_tasks.py',
+    'lib/ansible/modules/utilities/logic/include_vars.py': 'lib/ansible/modules/include_vars.py',
+    'lib/ansible/modules/system/iptables.py': 'lib/ansible/modules/iptables.py',
+    'lib/ansible/modules/system/known_hosts.py': 'lib/ansible/modules/known_hosts.py',
+    'lib/ansible/modules/files/lineinfile.py': 'lib/ansible/modules/lineinfile.py',
+    'lib/ansible/modules/utilities/helper/meta.py': 'lib/ansible/modules/meta.py',
+    'lib/ansible/modules/packaging/os/package.py': 'lib/ansible/modules/package.py',
+    'lib/ansible/modules/packaging/os/package_facts.py': 'lib/ansible/modules/package_facts.py',
+    'lib/ansible/modules/utilities/logic/pause.py': 'lib/ansible/modules/pause.py',
+    'lib/ansible/modules/system/ping.py': 'lib/ansible/modules/ping.py',
+    'lib/ansible/modules/packaging/language/pip.py': 'lib/ansible/modules/pip.py',
+    'lib/ansible/modules/commands/raw.py': 'lib/ansible/modules/raw.py',
+    'lib/ansible/modules/system/reboot.py': 'lib/ansible/modules/reboot.py',
+    'lib/ansible/modules/files/replace.py': 'lib/ansible/modules/replace.py',
+    'lib/ansible/modules/packaging/os/rpm_key.py': 'lib/ansible/modules/rpm_key.py',
+    'lib/ansible/modules/commands/script.py': 'lib/ansible/modules/script.py',
+    'lib/ansible/modules/system/service.py': 'lib/ansible/modules/service.py',
+    'lib/ansible/modules/system/service_facts.py': 'lib/ansible/modules/service_facts.py',
+    'lib/ansible/modules/utilities/logic/set_fact.py': 'lib/ansible/modules/set_fact.py',
+    'lib/ansible/modules/utilities/logic/set_stats.py': 'lib/ansible/modules/set_stats.py',
+    'lib/ansible/modules/system/setup.py': 'lib/ansible/modules/setup.py',
+    'lib/ansible/modules/commands/shell.py': 'lib/ansible/modules/shell.py',
+    'lib/ansible/modules/net_tools/basics/slurp.py': 'lib/ansible/modules/slurp.py',
+    'lib/ansible/modules/files/stat.py': 'lib/ansible/modules/stat.py',
+    'lib/ansible/modules/source_control/subversion.py': 'lib/ansible/modules/subversion.py',
+    'lib/ansible/modules/system/sytemd.py': 'lib/ansible/modules/systemd.py',
+    'lib/ansible/modules/system/sysvinit.py': 'lib/ansible/modules/sysvinit.py',
+    'lib/ansible/modules/files/tempfile.py': 'lib/ansible/modules/tempfile.py',
+    'lib/ansible/modules/files/template.py': 'lib/ansible/modules/template.py',
+    'lib/ansible/modules/files/unarchive.py': 'lib/ansible/modules/unarchive.py',
+    'lib/ansible/modules/net_tools/basics/uri.py': 'lib/ansible/modules/uri.py',
+    'lib/ansible/modules/system/user.py': 'lib/ansible/modules/user.py',
+    'lib/ansible/modules/utilities/logic/wait_for.py': 'lib/ansible/modules/wait_for.py',
+    'lib/ansible/modules/utilities/logic/wait_for_connection.py': 'lib/ansible/modules/wait_for_connection.py',
+    'lib/ansible/modules/packaging/os/yum.py': 'lib/ansible/modules/yum.py',
+    'lib/ansible/modules/packaging/os/yum_repository.py': 'lib/ansible/modules/yum_repository.py',
+}
+
+
 def make_prefixes(filename):
     # make a byte by byte list of prefixes for this fp
     indexes = range(0, len(filename) + 1)
@@ -623,6 +696,10 @@ class AnsibleComponentMatcher(object):
 
             if matched_filenames:
                 matched_filenames += self.include_modules_from_test_targets(matched_filenames)
+
+        # mitigate flattening of the modules directory
+        if matched_filenames:
+            matched_filenames = [MODULES_FLATTEN_MAP.get(fn, fn) for fn in matched_filenames]
 
         return matched_filenames
 
