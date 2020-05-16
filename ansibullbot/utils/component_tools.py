@@ -546,6 +546,10 @@ class AnsibleComponentMatcher(object):
             if matched_filenames:
                 matched_filenames = self.reduce_filepaths(matched_filenames)
 
+        # mitigate flattening of the modules directory
+        if matched_filenames:
+            matched_filenames = [MODULES_FLATTEN_MAP.get(fn, fn) for fn in matched_filenames]
+
         # create metadata for each matched file
         component_matches = []
         matched_filenames = sorted(set(matched_filenames))
@@ -696,10 +700,6 @@ class AnsibleComponentMatcher(object):
 
             if matched_filenames:
                 matched_filenames += self.include_modules_from_test_targets(matched_filenames)
-
-        # mitigate flattening of the modules directory
-        if matched_filenames:
-            matched_filenames = [MODULES_FLATTEN_MAP.get(fn, fn) for fn in matched_filenames]
 
         return matched_filenames
 
@@ -1258,6 +1258,10 @@ class AnsibleComponentMatcher(object):
             mmatch = self.find_module_match(body)
             if mmatch:
                 if isinstance(mmatch, list) and len(mmatch) > 1:
+                    # another modules dir flattening mitigation
+                    if len(mmatch) == 2:
+                        if MODULES_FLATTEN_MAP.get(mmatch[1][u'repo_filename'], '') == mmatch[0][u'repo_filename']:
+                            return [mmatch[0][u'repo_filename']]
 
                     # only allow for exact prefix globbing here ...
                     if [x for x in mmatch if x[u'repo_filename'].startswith(body)]:
