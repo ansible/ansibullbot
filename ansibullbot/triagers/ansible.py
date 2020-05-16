@@ -1281,23 +1281,24 @@ class AnsibleTriage(DefaultTriager):
 
         # needs_info warn/close?
         if self.meta[u'is_needs_info'] and self.meta[u'needs_info_action']:
+            # FIXME the condition should be probably moved
+            if not (self.meta[u'component_match_strategy'] == [u'component_command'] and self.meta[u'template_missing_sections'] == [u'component name']):
+                if self.meta[u'needs_info_action'] == u'close':
+                    actions.close = True
 
-            if self.meta[u'needs_info_action'] == u'close':
-                actions.close = True
+                tvars = {
+                    u'submitter': iw.submitter,
+                    u'action': self.meta[u'needs_info_action'],
+                    u'itype': iw.github_type
+                }
+                tvars.update(self.meta)
 
-            tvars = {
-                u'submitter': iw.submitter,
-                u'action': self.meta[u'needs_info_action'],
-                u'itype': iw.github_type
-            }
-            tvars.update(self.meta)
+                comment = self.render_boilerplate(
+                    tvars,
+                    boilerplate=u'needs_info_base'
+                )
 
-            comment = self.render_boilerplate(
-                tvars,
-                boilerplate=u'needs_info_base'
-            )
-
-            actions.comments.append(comment)
+                actions.comments.append(comment)
 
         # notify?
         if not self.meta[u'is_bad_pr']:
