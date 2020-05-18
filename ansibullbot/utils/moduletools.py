@@ -1144,19 +1144,6 @@ class ModuleIndexer(object):
         maintainers = [x for x in maintainers if x.strip()]
         return maintainers
 
-    @staticmethod
-    def replace_ansible(maintainers, ansible_members, bots=[]):
-        '''Replace -ansible- with the -humans- in the org'''
-        newlist = []
-        for m in maintainers:
-            if m != u'ansible':
-                newlist.append(m)
-            else:
-                newlist += ansible_members
-        newlist = sorted(set(newlist))
-        newlist = [x for x in newlist if x not in bots]
-        return newlist
-
     def get_file_content(self, filepath):
         fpath = os.path.join(self.gitrepo.checkoutdir, filepath)
         if not os.path.isfile(fpath):

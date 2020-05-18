@@ -3,10 +3,21 @@
 import itertools
 import logging
 from fnmatch import fnmatch
-from ansibullbot.utils.moduletools import ModuleIndexer
-from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 
 import ansibullbot.constants as C
+
+
+def replace_ansible(maintainers, ansible_members, bots=[]):
+    '''Replace -ansible- with the -humans- in the org'''
+    newlist = []
+    for m in maintainers:
+        if m != u'ansible':
+            newlist.append(m)
+        else:
+            newlist += ansible_members
+    newlist = sorted(set(newlist))
+    newlist = [x for x in newlist if x not in bots]
+    return newlist
 
 
 def is_approval(body):
@@ -85,7 +96,6 @@ def get_automerge_facts(issuewrapper, meta):
         return create_ameta(False, u'automerge ci_state test failed')
 
     # component support is a list of the support levels for each file
-    #cs = sorted(set(meta.get(u'component_support', [])))
     cs = [x['support'] for x in meta.get('component_matches', []) if not x['repo_filename'].endswith('/ignore.txt')]
     cs = sorted(set(cs))
     if cs not in [[u'community'], []]:
@@ -165,9 +175,6 @@ def needs_community_review(meta, issue):
     if not mm:
         return False
 
-    #metadata = mm.get('metadata') or {}
-    #supported_by = metadata.get('supported_by')
-    #if supported_by != 'community':
     if meta[u'component_support'] != [u'community']:
         return False
 
@@ -313,12 +320,7 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
             supershipiteers_byuser[ss].append(cm[u'repo_filename'])
 
     maintainers = meta.get(u'component_maintainers', [])
-    maintainers = \
-        ModuleIndexer.replace_ansible(
-            maintainers,
-            core_team,
-            bots=botnames
-        )
+    maintainers = replace_ansible(maintainers, core_team, bots=botnames)
 
     # community is the other maintainers in the same namespace
     community = meta.get(u'component_namespace_maintainers', [])
@@ -338,8 +340,6 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
     shipits_historical = set()
 
     for event in iw.history.history:
-
-
         if event[u'event'] not in [u'commented', u'committed', u'review_approved', u'review_comment']:
             continue
         if event[u'actor'] in botnames:
@@ -483,23 +483,11 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
 
 
 def get_supported_by(issuewrapper, meta):
-
     # http://docs.ansible.com/ansible/modules_support.html
     # certified: maintained by the community and reviewed by Ansible core team.
     # community: maintained by the community at large.
     # core: maintained by the ansible core team.
     # network: maintained by the ansible network team.
-
-    '''
-    supported_by = 'core'
-    mmatch = meta.get('module_match')
-    if mmatch:
-        mmeta = mmatch.get('metadata', {})
-        if mmeta:
-            supported_by = mmeta.get('supported_by', 'core')
-    if meta['is_new_module']:
-        supported_by = 'community'
-    '''
 
     supported_by = u'core'
     if not meta.get(u'component_support'):
