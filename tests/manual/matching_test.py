@@ -152,7 +152,6 @@ def main():
     #GWS = GithubWebScraper(cachedir=CACHEDIR)
     MI = ModuleIndexer(cachedir=CACHEDIR, gh_client=GQLC, blames=False, commits=False)
 
-    #CM = ComponentMatcher(cachedir=CACHEDIR, module_indexer=MI, file_indexer=FI)
     CM = AnsibleComponentMatcher(cachedir=CACHEDIR)
 
     for k,v in MI.modules.items():

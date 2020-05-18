@@ -16,7 +16,6 @@ from Levenshtein import jaro_winkler
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.extractors import ModuleExtractor
-from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 
@@ -200,7 +199,7 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, file_indexer=None, use_galaxy=False):
+    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, use_galaxy=False):
         self.usecache = usecache
         self.cachedir = cachedir
         self.use_galaxy = use_galaxy
@@ -216,15 +215,6 @@ class AnsibleComponentMatcher(object):
             self.gitrepo = gitrepo
         else:
             self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=self.REPO, commit=self.commit)
-
-        if file_indexer:
-            self.file_indexer = file_indexer
-        else:
-            self.file_indexer = FileIndexer(
-                botmeta=self.BOTMETA,
-                botmetafile=self.botmetafile,
-                gitrepo=self.gitrepo
-            )
 
         # we need to query galaxy for a few things ...
         if not use_galaxy:
@@ -1379,6 +1369,17 @@ class AnsibleComponentMatcher(object):
                         new_matches.append(mr[u'repo_filename'])
         return new_matches
 
+    def _filenames_to_keys(self, filenames):
+        '''Match filenames to the keys in botmeta'''
+        ckeys = set()
+        for filen in filenames:
+            if filen in self.BOTMETA[u'files']:
+                ckeys.add(filen)
+            for key in self.BOTMETA[u'files'].keys():
+                if filen.startswith(key):
+                    ckeys.add(key)
+        return list(ckeys)
+
     def get_meta_for_file(self, filename):
         meta = {
             u'collection': None,
@@ -1431,7 +1432,7 @@ class AnsibleComponentMatcher(object):
             if pyfile in self.BOTMETA[u'files']:
                 filenames.append(pyfile)
 
-        botmeta_entries = self.file_indexer._filenames_to_keys(filenames)
+        botmeta_entries = self._filenames_to_keys(filenames)
         for bme in botmeta_entries:
             logging.debug(u'matched botmeta entry: %s' % bme)
 
