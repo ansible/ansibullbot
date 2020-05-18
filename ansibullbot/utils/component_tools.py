@@ -24,8 +24,8 @@ from ansibullbot.utils.galaxy import GalaxyQueryTool
 
 
 MODULES_FLATTEN_MAP = {
-    'lib/ansible/modules/inventory/add_host.py': 'add_host.py',
-    'lib/ansible/modules/packaging/os/apt.py': 'apt.py',
+    'lib/ansible/modules/inventory/add_host.py': 'lib/ansible/modules/add_host.py',
+    'lib/ansible/modules/packaging/os/apt.py': 'lib/ansible/modules/apt.py',
     'lib/ansible/modules/packaging/os/apt_key.py': 'lib/ansible/modules/apt_key.py',
     'lib/ansible/modules/packaging/os/apt_repository.py': 'lib/ansible/modules/apt_repository.py',
     'lib/ansible/modules/files/assemble.py': 'lib/ansible/modules/assemble.py',
