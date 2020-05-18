@@ -51,11 +51,7 @@ class TestComponentMatcher(TestCase):
         gitrepo = GitShallowRepo(cachedir=cachedir, repo=ComponentMatcher.REPO)
         gitrepo.update()
 
-        file_indexer = FileIndexer(gitrepo=gitrepo)
-        file_indexer.get_files()
-        file_indexer.parse_metadata()
-
-        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=file_indexer)
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo)
 
     @classmethod
     def tearDownClass(cls):
@@ -64,7 +60,7 @@ class TestComponentMatcher(TestCase):
 
     @pytest.mark.skip(reason="FIXME")    
     def test_get_meta_for_file_wildcard(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/plugins/action/junos': {
                     u'maintainers': [u'gundalow'],
@@ -78,7 +74,7 @@ class TestComponentMatcher(TestCase):
 
     @pytest.mark.skip(reason="FIXME")    
     def test_get_meta_for_file_wildcard_multiple(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/plugins/action/junos_config.py': {
                     u'maintainers': [u'privateip'],
@@ -100,7 +96,7 @@ class TestComponentMatcher(TestCase):
 
     @pytest.mark.skip(reason="FIXME")    
     def test_get_meta_for_file_pyfile(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/modules/packaging/os/yum.py': {
                     u'ignored': [u'verm666'],  # 'verm666' is also listed as an author of yum module
@@ -125,7 +121,7 @@ class TestComponentMatcher(TestCase):
         ])
 
     def test_get_meta_support_core_from_module(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/modules/packaging/os/yum.py': {
                     u'ignored': [u'verm666'],  # 'verm666' is also listed as an author of yum module
@@ -137,7 +133,7 @@ class TestComponentMatcher(TestCase):
         assert result[u'support'] == u'core'
 
     def test_get_meta_support_core_filter_plugin(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/plugins/filter/': {
                     u'support': u'community',
@@ -153,7 +149,7 @@ class TestComponentMatcher(TestCase):
         assert result[u'support'] == u'core'
 
     def test_get_meta_support_new_filter_plugin(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/plugins/filter/': {
                     u'support': u'community',
@@ -170,7 +166,7 @@ class TestComponentMatcher(TestCase):
 
     @pytest.mark.skip(reason="FIXME")
     def test_get_meta_for_file_powershell(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'lib/ansible/modules/windows/win_ping.py': {
                     u'maintainers': [u'jborean93'],
@@ -499,11 +495,7 @@ class TestComponentMatcherInheritance(TestCase):
         gitrepo = GitShallowRepo(cachedir=cachedir, repo=ComponentMatcher.REPO)
         gitrepo.update()
 
-        file_indexer = FileIndexer(gitrepo=gitrepo)
-        file_indexer.get_files()
-        file_indexer.parse_metadata()
-
-        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, file_indexer=file_indexer, use_galaxy=False)
+        cls.component_matcher = ComponentMatcher(email_cache={}, gitrepo=gitrepo, use_galaxy=False)
 
     @classmethod
     def tearDownClass(cls):
@@ -511,7 +503,7 @@ class TestComponentMatcherInheritance(TestCase):
         shutil.rmtree(cls.component_matcher.gitrepo.checkoutdir)
 
     def test_get_meta_for_known_file(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'foo': {
                     u'ignored': [u'foo_ignored'],
@@ -552,7 +544,7 @@ class TestComponentMatcherInheritance(TestCase):
         assert result[u'support'] == u'community'
 
     def test_get_meta_for_unknown_extension(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'foo': {
                     u'ignored': [u'foo_ignored'],
@@ -593,7 +585,7 @@ class TestComponentMatcherInheritance(TestCase):
         assert result[u'support'] == u'community'
 
     def test_get_meta_support_inheritance(self):
-        self.component_matcher.file_indexer.botmeta = self.component_matcher.BOTMETA = {
+        self.component_matcher.BOTMETA = {
             u'files': {
                 u'foo': {
                     u'ignored': [u'foo_ignored'],

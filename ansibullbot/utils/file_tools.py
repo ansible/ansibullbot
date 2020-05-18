@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import copy
 import logging
 import os
 import re
@@ -12,7 +11,6 @@ from textblob import TextBlob
 
 from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser
-from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.moduletools import ModuleIndexer
 
@@ -88,57 +86,6 @@ class FileIndexer(ModuleIndexer):
         files = [x for x in files if not x.startswith(u'.git')]
         self.files = files
 
-    def get_component_labels(self, files, valid_labels=[]):
-        '''Matches a filepath to the relevant c: labels'''
-        labels = [x for x in valid_labels if x.startswith(u'c:')]
-
-        clabels = []
-        for cl in labels:
-            cl = cl.replace(u'c:', u'', 1)
-            al = os.path.join(u'lib/ansible', cl)
-            if al.endswith(u'/'):
-                al = al.rstrip(u'/')
-            for f in files:
-                if not f:
-                    continue
-                if f.startswith(cl) or f.startswith(al):
-                    clabels.append(cl)
-
-        # use the more specific labels
-        clabels = sorted(set(clabels))
-        tmp_clabels = [x for x in clabels]
-        for cl in clabels:
-            for x in tmp_clabels:
-                if cl != x and x.startswith(cl):
-                    if cl in tmp_clabels:
-                        tmp_clabels.remove(cl)
-        if tmp_clabels != clabels:
-            clabels = [x for x in tmp_clabels]
-            clabels = sorted(set(clabels))
-
-        # Use botmeta
-        ckeys = self._filenames_to_keys(files)
-        for ckey in ckeys:
-            if not self.botmeta[u'files'].get(ckey):
-                continue
-            ckey_labels = self.botmeta[u'files'][ckey].get(u'labels', [])
-            for cklabel in ckey_labels:
-                if cklabel in valid_labels and cklabel not in clabels:
-                    clabels.append(cklabel)
-
-        return clabels
-
-    def _filenames_to_keys(self, filenames):
-        '''Match filenames to the keys in botmeta'''
-        ckeys = set()
-        for filen in filenames:
-            if filen in self.botmeta[u'files']:
-                ckeys.add(filen)
-            for key in self.botmeta[u'files'].keys():
-                if filen.startswith(key):
-                    ckeys.add(key)
-        return list(ckeys)
-
     def _string_to_cmap_key(self, text):
         text = text.lower()
         matches = []
@@ -165,44 +112,6 @@ class FileIndexer(ModuleIndexer):
             if toadd:
                 keywords.append(k)
         return keywords
-
-    def find_component_matches_by_file(self, filenames):
-        '''Make a list of component matches based on filenames'''
-
-        matches = []
-        for filen in filenames:
-            match = copy.deepcopy(self.DEFAULT_COMPONENT_MATCH)
-            match[u'filename'] = filen
-
-            ckeys = self._filenames_to_keys([filen])
-            ckeys = sorted(set(ckeys))
-
-            for ckey in ckeys:
-                cdata = self.botmeta[u'files'].get(ckey)
-                if not cdata:
-                    continue
-
-                if u'labels' in cdata:
-                    for label in cdata[u'labels']:
-                        if label not in match[u'labels']:
-                            match[u'labels'].append(label)
-
-                if u'support' in cdata:
-                    match[u'supported_by'] = cdata[u'support'][0]
-
-                if u'maintainers' in cdata:
-                    for user in cdata[u'maintainers']:
-                        if user not in match[u'owners']:
-                            match[u'owners'].append(user)
-
-                if u'notify' in cdata:
-                    for user in cdata[u'notify']:
-                        if user not in match[u'notify']:
-                            match[u'notify'].append(user)
-
-            matches.append(match)
-
-        return matches
 
     def find_component_match(self, title, body, template_data):
         '''Make a list of matching files for arbitrary text in an issue'''
