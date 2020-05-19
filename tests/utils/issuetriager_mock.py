@@ -32,21 +32,6 @@ class ModuleIndexerMock(object):
     def set_modules(self, modules):
         self.modules = {}
 
-    def find_match(self, name):
-        return self.match
-    def is_valid(self, name):
-        if self.match:
-            if self.match['name'] == name:
-                return True
-            else:
-                return False
-        else:
-            return False
-    def get_repository_for_module(self, name):
-        if self.match:
-            return self.match['repository']        
-        else:
-            return None
 
 class TriageIssuesMock(TriageIssues):
 
