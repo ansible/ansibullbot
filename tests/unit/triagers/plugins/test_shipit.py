@@ -3,18 +3,15 @@
 import copy
 import shutil
 import tempfile
-import textwrap
 import unittest
 
 import six
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
 
 import pytest
 
 from tests.utils.issue_mock import IssueMock
 from tests.utils.helpers import get_issue
-from tests.utils.module_indexer_mock import create_indexer
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 from ansibullbot.triagers.plugins.shipit import get_automerge_facts
 from ansibullbot.triagers.plugins.shipit import get_review_facts
@@ -87,23 +84,11 @@ class IssueWrapperMock(object):
             return 'https://github.com/%s/%s/issues/%s' % (self.org, self.repo, self.number)
 
 
-class ModuleIndexerMock(object):
+class GitRepoWrapperMock:
+    files = []
 
-    def __init__(self, namespace_maintainers):
-        self.namespace_maintainers = namespace_maintainers
-
-    def get_maintainers_for_namespace(self, namespace):
-        return self.namespace_maintainers
-
-
-class GitRepoMock:
     def existed(self, filename):
         return True
-
-
-class FileIndexerMock(object):
-    files = []
-    gitrepo = GitRepoMock()
 
 
 class MockFile(object):
@@ -135,7 +120,6 @@ class TestSuperShipit(unittest.TestCase):
         ]
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -145,7 +129,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI)
+        sfacts = get_shipit_facts(IW, meta, {})
         assert sfacts[u'shipit']
         assert sfacts[u'supershipit']
         assert sfacts[u'shipit_actors'] == []
@@ -161,7 +145,6 @@ class TestSuperShipit(unittest.TestCase):
         IW._is_pullrequest = True
         IW.add_comment(u'jane', u'shipit')
         IW.add_comment(u'doe', u'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -172,7 +155,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'bar', u'supershipit': [u'doe']}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI)
+        sfacts = get_shipit_facts(IW, meta, {})
         assert sfacts[u'shipit']
         assert sfacts[u'supershipit']
         assert sfacts[u'shipit_actors'] == []
@@ -187,7 +170,6 @@ class TestSuperShipit(unittest.TestCase):
         ]
         IW._is_pullrequest = True
         IW.add_comment(u'jane', u'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -198,7 +180,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'bar', u'supershipit': [u'doe']}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI)
+        sfacts = get_shipit_facts(IW, meta, {})
         assert not sfacts[u'shipit']
         assert not sfacts[u'supershipit']
         assert sfacts[u'shipit_actors_other'] == [u'jane']
@@ -212,7 +194,6 @@ class TestSuperShipit(unittest.TestCase):
         ]
         IW._is_pullrequest = True
         IW.add_comment(u'janetainer', u'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -223,7 +204,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'foo', u'maintainers': [u'janetainer']}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI)
+        sfacts = get_shipit_facts(IW, meta, {})
         assert not sfacts[u'shipit']
         assert not sfacts[u'supershipit']
         assert sfacts[u'shipit_actors'] == [u'janetainer']
@@ -239,7 +220,6 @@ class TestSuperShipit(unittest.TestCase):
         ]
         IW._is_pullrequest = True
         IW.add_comment('coreperson', 'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -249,7 +229,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'foo', u'supershipit': [u'jane', u'doe']}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI, core_team=[u'coreperson'])
+        sfacts = get_shipit_facts(IW, meta, {}, core_team=[u'coreperson'])
         assert not sfacts[u'supershipit']
         assert not sfacts[u'shipit']
         assert not sfacts[u'supershipit']
@@ -305,7 +285,6 @@ class TestSuperShipit(unittest.TestCase):
         ]
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -316,7 +295,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'changelogs/fragments/000-foo-change.yml'}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI)
+        sfacts = get_shipit_facts(IW, meta, {})
 
         # don't let the plugin modify the meta
         assert len(meta[u'component_matches']) == 2
@@ -338,7 +317,6 @@ class TestSuperShipit(unittest.TestCase):
         IW.pr_files[-1].deletions = 1
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -350,7 +328,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'test/sanity/validate-modules/ignore.txt'}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI)
+        sfacts = get_shipit_facts(IW, meta, {})
 
         # don't let the plugin modify the meta
         assert len(meta[u'component_matches']) == 3
@@ -372,7 +350,6 @@ class TestSuperShipit(unittest.TestCase):
         IW.pr_files[-1].deletions = 0
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -384,7 +361,7 @@ class TestSuperShipit(unittest.TestCase):
                 {u'repo_filename': u'test/sanity/validate-modules/ignore.txt'}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, MI)
+        sfacts = get_shipit_facts(IW, meta, {})
 
         # don't let the plugin modify the meta
         assert len(meta[u'component_matches']) == 3
@@ -402,7 +379,6 @@ class TestShipitRebuildMerge(unittest.TestCase):
         IW.add_file(u'foo', u'')
         IW.add_comment('jane', 'shipit')
         IW.add_comment('x', 'rebuild_merge')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -414,7 +390,7 @@ class TestShipitRebuildMerge(unittest.TestCase):
             ]
         }
         core_team = ['x']
-        sfacts = get_shipit_facts(IW, meta, MI, core_team=core_team)
+        sfacts = get_shipit_facts(IW, meta, {}, core_team=core_team)
 
         assert sfacts[u'shipit']
         assert not sfacts[u'supershipit']
@@ -433,7 +409,6 @@ class TestShipitRebuildMerge(unittest.TestCase):
         IW.add_file(u'foo', u'')
         IW.add_comment('jane', 'shipit')
         IW.add_comment('z', 'rebuild_merge')
-        MI = ModuleIndexerMock([])
         meta = {
             u'is_module_util': False,
             u'is_new_module': False,
@@ -445,7 +420,7 @@ class TestShipitRebuildMerge(unittest.TestCase):
             ]
         }
         core_team = ['x']
-        sfacts = get_shipit_facts(IW, meta, MI, core_team=core_team)
+        sfacts = get_shipit_facts(IW, meta, {}, core_team=core_team)
 
         assert not sfacts[u'shipit']
         assert not sfacts[u'supershipit']
@@ -480,13 +455,11 @@ class TestShipitFacts(unittest.TestCase):
         datafile = u'tests/fixtures/shipit/0_issue.yml'
         statusfile = u'tests/fixtures/shipit/0_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            namespace_maintainers = [u'LinusU', u'mscherer']
-
             _meta = self.meta.copy()
             _meta[u'component_maintainers'] = []
-            _meta[u'component_namespace_maintainers'] = namespace_maintainers[:]
+            _meta[u'component_namespace_maintainers'] = [u'LinusU', u'mscherer']
 
-            facts = get_shipit_facts(iw, _meta, ModuleIndexerMock(namespace_maintainers), core_team=[u'bcoca'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, _meta, {}, core_team=[u'bcoca'], botnames=[u'ansibot'])
 
             self.assertEqual(iw.submitter, u'mscherer')
             self.assertEqual([u'LinusU', u'mscherer'], facts[u'community_usernames'])
@@ -505,13 +478,11 @@ class TestShipitFacts(unittest.TestCase):
         datafile = u'tests/fixtures/shipit/1_issue.yml'
         statusfile = u'tests/fixtures/shipit/1_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            namespace_maintainers = [u'LinusU']
-
             _meta = self.meta.copy()
             _meta[u'component_maintainers'] = []
-            _meta[u'component_namespace_maintainers'] = namespace_maintainers[:]
+            _meta[u'component_namespace_maintainers'] = [u'LinusU']
 
-            facts = get_shipit_facts(iw, _meta, ModuleIndexerMock(namespace_maintainers), core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, _meta, {}, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
 
             self.assertEqual(iw.submitter, u'mscherer')
             self.assertEqual([u'LinusU'], facts[u'community_usernames'])
@@ -525,9 +496,7 @@ class TestShipitFacts(unittest.TestCase):
         datafile = u'tests/fixtures/shipit/1_issue.yml'
         statusfile = u'tests/fixtures/shipit/1_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            namespace_maintainers = [u'LinusU']
-
-            facts = get_shipit_facts(iw, meta, ModuleIndexerMock(namespace_maintainers), core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, meta, {}, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
 
             self.assertEqual(iw.submitter, u'mscherer')
             self.assertFalse(facts[u'community_usernames'])
@@ -588,30 +557,14 @@ class TestOwnerPR(unittest.TestCase):
         """
         Submitter is a maintainer: ensure owner_pr is set (only one file below module_utils updated)
         """
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $module_utils/foo/bar.py:
-                maintainers: ElsA Oliver
-        """
-
-        modules = {u'lib/ansible/module_utils/foo/bar.py': None}
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
-
-        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/foo/bar.py'][u'maintainers']), [u'ElsA', u'Oliver'])
-
-
+        botmeta_files = {'lib/ansible/module_utils/foo/bar.py': {'maintainers': ['ElsA', 'Oliver']}}
         datafile = u'tests/fixtures/shipit/2_issue.yml'
         statusfile = u'tests/fixtures/shipit/2_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
             iw.pr_files = [MockFile(u'lib/ansible/module_utils/foo/bar.py')]
             # need to give the wrapper a list of known files to compare against
-            iw.file_indexer = FileIndexerMock()
-            iw.file_indexer.files.append(u'lib/ansible/modules/foo/bar.py')
+            iw.gitrepo = GitRepoWrapperMock()
+            iw.gitrepo.files.append(u'lib/ansible/modules/foo/bar.py')
 
             # predefine what the matcher is going to return
             CM = ComponentMatcherMock()
@@ -629,7 +582,7 @@ class TestOwnerPR(unittest.TestCase):
             meta = self.meta.copy()
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
 
             self.assertEqual(iw.submitter, u'ElsA')
             self.assertTrue(facts[u'owner_pr'])
@@ -638,22 +591,7 @@ class TestOwnerPR(unittest.TestCase):
         """
         Submitter is a maintainer: ensure owner_pr is set (only one file below modules updated)
         """
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $modules/foo/bar.py:
-                maintainers: ElsA mscherer
-        """
-
-        modules = {u'lib/ansible/modules/foo/bar.py': None}
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
-
-        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']), [u'ElsA', u'mscherer'])
-
+        botmeta_files = {u'lib/ansible/modules/foo/bar.py': {u'maintainers': [u'ElsA', u'mscherer']}}
         CM = ComponentMatcherMock()
         CM.expected_results = [
             {
@@ -672,11 +610,11 @@ class TestOwnerPR(unittest.TestCase):
         statusfile = u'tests/fixtures/shipit/0_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
             iw.pr_files = [MockFile(u'lib/ansible/modules/foo/bar.py')]
-            iw.file_indexer = FileIndexerMock()
-            iw.file_indexer.files.append(u'lib/ansible/modules/foo/bar.py')
+            iw.gitrepo = GitRepoWrapperMock()
+            iw.gitrepo.files.append(u'lib/ansible/modules/foo/bar.py')
 
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca'], botnames=[u'ansibot'])
 
         self.assertEqual(iw.submitter, u'mscherer')
         self.assertTrue(facts[u'owner_pr'])
@@ -686,23 +624,7 @@ class TestOwnerPR(unittest.TestCase):
         """
         Submitter is a maintainer: pull request adds a new module: ensure owner_pr is False
         """
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $modules/foo/bar.py:
-                maintainers: ElsA mscherer
-        """
-
-        modules = {}  # new module
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
-
-        self.assertEqual(len(module_indexer.modules), 1)  # ensure only fake data are loaded
-        # Ensure that BOTMETA.yml updates doesn't interfere
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']), [u'ElsA', u'mscherer'])
-
+        botmeta_files = {u'lib/ansible/modules/foo/bar.py': {u'maintainers': [u'ElsA', u'mscherer']}}
         CM = ComponentMatcherMock()
         CM.expected_results = [
             {
@@ -721,37 +643,22 @@ class TestOwnerPR(unittest.TestCase):
         statusfile = u'tests/fixtures/shipit/0_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
             iw.pr_files = [MockFile(u'lib/ansible/modules/foo/bar.py')]
-            iw.file_indexer = FileIndexerMock()
+            iw.gitrepo = GitRepoWrapperMock()
 
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca'], botnames=[u'ansibot'])
 
         self.assertEqual(iw.submitter, u'mscherer')
         self.assertFalse(facts[u'owner_pr'])
 
-    #@unittest.skip('disabled')
     def test_owner_pr_submitter_is_not_maintainer_of_all_updated_files(self):
         """
         PR updates 2 files below module_utils, submitter is a maintainer from only one: ensure owner_pr isn't set
         """
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $module_utils/foo/bar.py:
-                maintainers: ElsA Oliver
-            $module_utils/baz/bar.py:
-                maintainers: TiTi ZaZa
-        """
-
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), {})
-
-        self.assertEqual(len(module_indexer.modules), 1)  # ensure only fake data are loaded
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/foo/bar.py'][u'maintainers']), [u'ElsA', u'Oliver'])
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/baz/bar.py'][u'maintainers']), [u'TiTi', u'ZaZa'])
-
+        botmeta_files = {
+            u'lib/ansible/module_utils/foo/bar.py': {u'maintainers': [u'ElsA', u'Oliver']},
+            u'lib/ansible/module_utils/baz/bar.py': {u'maintainers': [u'TiTi', u'ZaZa']},
+        }
         CM = ComponentMatcherMock()
         CM.expected_results = [
             {
@@ -782,13 +689,13 @@ class TestOwnerPR(unittest.TestCase):
             MockFile(u'lib/ansible/module_utils/foo/bar.py'),
             MockFile(u'lib/ansible/module_utils/baz/bar.py')
         ]
-        iw.file_indexer = FileIndexerMock()
+        iw.gitrepo = GitRepoWrapperMock()
         iw.repo = MockRepo(repo_path='ansible/ansible')
 
         meta = self.meta.copy()
         iw._commits = []
         meta.update(get_component_match_facts(iw, CM, []))
-        facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+        facts = get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
         shutil.rmtree(cachedir)
 
         self.assertEqual(iw.submitter, u'ElsA')
@@ -800,25 +707,10 @@ class TestOwnerPR(unittest.TestCase):
         submitter is a maintainer from both, check that owner_pr is set.
         Submitter is maintainer from module file.
         """
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $modules/foo/bar.py:
-                maintainers: ElsA mscherer
-            $module_utils/baz/bar.py:
-                maintainers: TiTi ZaZa
-        """
-
-        modules = {u'lib/ansible/modules/foo/bar.py': None}
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
-
-        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']), [u'ElsA', u'mscherer'])
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/baz/bar.py'][u'maintainers']), [u'TiTi', u'ZaZa'])
-
+        botmeta_files = {
+            u'lib/ansible/modules/foo/bar.py': {u'maintainers': [u'ElsA', u'mscherer']},
+            u'lib/ansible/module_utils/baz/bar.py': {u'maintainers': [u'TiTi', u'ZaZa']},
+        }
         CM = ComponentMatcherMock()
         CM.expected_results = [
             {
@@ -848,11 +740,12 @@ class TestOwnerPR(unittest.TestCase):
                 MockFile(u'lib/ansible/modules/foo/bar.py'),
                 MockFile(u'lib/ansible/module_utils/baz/bar.py')
             ]
-            iw.file_indexer = FileIndexerMock()
+            iw.gitrepo = GitRepoWrapperMock()
+            iw.gitrepo.files = [u'lib/ansible/modules/foo/bar.py', u'lib/ansible/module_utils/baz/bar.py']
 
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
 
         self.assertEqual(iw.submitter, u'mscherer')
         self.assertFalse(facts[u'owner_pr'])
@@ -864,25 +757,10 @@ class TestOwnerPR(unittest.TestCase):
         submitter is a maintainer from both, check that owner_pr is set.
         Submitter is maintainer from module_utils file.
         """
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $modules/foo/bar.py:
-                maintainers: ElsA ZaZa
-            $module_utils/baz/bar.py:
-                maintainers: TiTi mscherer
-        """
-
-        modules = {u'lib/ansible/modules/foo/bar.py': None}
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
-
-        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']), [u'ElsA', u'ZaZa'])
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/baz/bar.py'][u'maintainers']), [u'TiTi', u'mscherer'])
-
+        botmeta_files = {
+            u'lib/ansible/modules/foo/bar.py': {u'maintainers': [u'ElsA', u'ZaZa']},
+            u'lib/ansible/module_utils/baz/bar.py': {u'maintainers': [u'TiTi', u'mscherer']},
+        }
         CM = ComponentMatcherMock()
         CM.expected_results = [
             {
@@ -912,9 +790,8 @@ class TestOwnerPR(unittest.TestCase):
                 MockFile(u'lib/ansible/modules/foo/bar.py'),
                 MockFile(u'lib/ansible/module_utils/baz/bar.py')
             ]
-            iw.file_indexer = FileIndexerMock()
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca'], botnames=[u'ansibot'])
 
         self.assertEqual(iw.submitter, u'mscherer')
         self.assertFalse(facts[u'owner_pr'])
@@ -923,22 +800,7 @@ class TestOwnerPR(unittest.TestCase):
         """
         Submitter is a maintainer: ensure owner_pr is set even if changelog fragment is present
         """
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-        files:
-            $modules/foo/bar.py:
-                maintainers: ElsA Oliver
-        """
-
-        modules = {u'lib/ansible/modules/foo/bar.py': None}
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
-
-        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']), [u'ElsA', u'Oliver'])
-
-
+        botmeta_files = {u'lib/ansible/modules/foo/bar.py': {u'maintainers': [u'ElsA', u'Oliver']}}
         datafile = u'tests/fixtures/shipit/2_issue.yml'
         statusfile = u'tests/fixtures/shipit/2_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
@@ -947,8 +809,8 @@ class TestOwnerPR(unittest.TestCase):
                 MockFile(u'changelogs/fragments/00000-fragment.yaml')
             ]
             # need to give the wrapper a list of known files to compare against
-            iw.file_indexer = FileIndexerMock()
-            iw.file_indexer.files.append(u'lib/ansible/modules/foo/bar.py')
+            iw.gitrepo = GitRepoWrapperMock()
+            iw.gitrepo.files.append(u'lib/ansible/modules/foo/bar.py')
 
             # predefine what the matcher is going to return
             CM = ComponentMatcherMock()
@@ -966,7 +828,7 @@ class TestOwnerPR(unittest.TestCase):
             meta = self.meta.copy()
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca', u'mscherer'], botnames=[u'ansibot'])
 
             self.assertEqual(iw.submitter, u'ElsA')
             self.assertTrue(facts[u'owner_pr'])
@@ -982,34 +844,18 @@ class TestReviewFacts(unittest.TestCase):
         }
 
     def test_review_facts_are_defined_module_utils(self):
-        BOTMETA = u"""
-        ---
-        macros:
-            modules: lib/ansible/modules
-            module_utils: lib/ansible/module_utils
-        files:
-            $module_utils:
-              support: community
-            $modules/foo/bar.py:
-                maintainers: ElsA ZaZa
-            $module_utils/baz/bar.py:
-                maintainers: TiTi mscherer
-        """
-
-        modules = {u'lib/ansible/modules/foo/bar.py': None}
-        module_indexer = create_indexer(textwrap.dedent(BOTMETA), modules)
-
-        self.assertEqual(len(module_indexer.modules), 2)  # ensure only fake data are loaded
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/modules/foo/bar.py'][u'maintainers']),[u'ElsA', u'ZaZa'])
-        self.assertEqual(sorted(module_indexer.botmeta[u'files'][u'lib/ansible/module_utils/baz/bar.py'][u'maintainers']),[u'TiTi', u'mscherer'])
-
+        botmeta_files = {
+            u'lib/ansible/module_utils': {u'support': u'community'},
+            u'lib/ansible/modules/foo/bar.py': {u'maintainers': [u'ElsA', u'ZaZa']},
+            u'lib/ansible/module_utils/baz/bar.py': {u'maintainers': [u'TiTi', u'mscherer']},
+        }
         datafile = u'tests/fixtures/shipit/2_issue.yml'
         statusfile = u'tests/fixtures/shipit/2_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
             iw.pr_files = [MockFile(u'lib/ansible/module_utils/foo/bar.py')]
             # need to give the wrapper a list of known files to compare against
-            iw.file_indexer = FileIndexerMock()
-            iw.file_indexer.files.append(u'lib/ansible/modules/foo/bar.py')
+            iw.gitrepo = GitRepoWrapperMock()
+            iw.gitrepo.files.append(u'lib/ansible/modules/foo/bar.py')
 
             # predefine what the matcher is going to return
             CM = ComponentMatcherMock()
@@ -1027,7 +873,7 @@ class TestReviewFacts(unittest.TestCase):
             meta = self.meta.copy()
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            meta.update(get_shipit_facts(iw, meta, module_indexer, core_team=[u'bcoca'], botnames=[u'ansibot']))
+            meta.update(get_shipit_facts(iw, meta, botmeta_files, core_team=[u'bcoca'], botnames=[u'ansibot']))
             facts = get_review_facts(iw, meta)
 
         self.assertTrue(facts[u'community_review'])

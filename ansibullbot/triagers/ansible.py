@@ -225,7 +225,6 @@ class AnsibleTriage(DefaultTriager):
 
         self._ansible_members = []
         self._ansible_core_team = None
-        self._botmeta_content = None
         self.botmeta = {}
         self.automerge_on = False
 
@@ -255,46 +254,34 @@ class AnsibleTriage(DefaultTriager):
         # clone ansible/ansible
         logging.info(u'creating gitrepowrapper')
         repo = u'https://github.com/ansible/ansible'
-        gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit, rebase=update_checkouts)
+        self.gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit, rebase=update_checkouts)
+        self.gitrepo.update(force=True)
 
         # load botmeta ... once!
         logging.info('ansible triager loading botmeta')
-        if self.botmetafile is not None:
-            with open(self.botmetafile, 'rb') as f:
-                rdata = f.read()
-        else:
-            rdata = gitrepo.get_file_content(u'.github/BOTMETA.yml')
-        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+        self.load_botmeta()
 
         # set the indexers
         logging.info('creating version indexer')
-        self.version_indexer = AnsibleVersionIndexer(
-            checkoutdir=gitrepo.checkoutdir,
-        )
+        self.version_indexer = AnsibleVersionIndexer(checkoutdir=self.gitrepo.checkoutdir)
 
         logging.info('creating file indexer')
-        self.file_indexer = FileIndexer(
-            botmeta=self.botmeta,
-            botmetafile=self.botmetafile,
-            gitrepo=gitrepo,
-        )
+        self.file_indexer = FileIndexer(botmeta=self.botmeta, gitrepo=self.gitrepo)
 
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer(
             botmeta=self.botmeta,
-            botmetafile=self.botmetafile,
             gh_client=self.gqlc,
             cachedir=self.cachedir_base,
-            gitrepo=gitrepo,
+            gitrepo=self.gitrepo,
             commits=not self.ignore_module_commits
         )
 
         logging.info('creating component matcher')
         self.component_matcher = AnsibleComponentMatcher(
             cachedir=self.cachedir_base,
-            gitrepo=gitrepo,
+            gitrepo=self.gitrepo,
             botmeta=self.botmeta,
-            botmetafile=self.botmetafile,
             email_cache=self.module_indexer.emails_cache,
             usecache=True,
             use_galaxy=not self.args.ignore_galaxy
@@ -331,6 +318,15 @@ class AnsibleTriage(DefaultTriager):
             self._ansible_core_team = self.get_core_team(u'ansible', teams)
         return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
 
+    def load_botmeta(self):
+        if self.botmetafile is not None:
+            with open(self.botmetafile, 'rb') as f:
+                rdata = f.read()
+        else:
+            rdata = self.gitrepo.get_file_content(u'.github/BOTMETA.yml')
+        logging.info('ansible triager [re]loading botmeta')
+        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+
     def run(self):
         '''Primary execution method'''
 
@@ -339,33 +335,29 @@ class AnsibleTriage(DefaultTriager):
 
         if self.ITERATION > 0:
             # update on each run to pull in new data
+            logging.info('updating checkout')
+            self.gitrepo.update()
+
+            self.load_botmeta()
+
             logging.info('updating module indexer')
-            self.module_indexer.update()
+            self.module_indexer.update(botmeta=self.botmeta)
 
-            # update on each run to pull in new data
             logging.info('updating file indexer')
-            self.file_indexer.update()
+            self.file_indexer.update(botmeta=self.botmeta)
 
-            # update component matcher
+            logging.info('updating component matcher')
             self.component_matcher.update(
                 email_cache=self.module_indexer.emails_cache,
                 usecache=True,
-                use_galaxy=not self.args.ignore_galaxy
+                use_galaxy=not self.args.ignore_galaxy,
+                botmeta=self.botmeta,
             )
 
-            # update shippable run data
+            logging.info('updating shippable run data')
             self.SR.update()
 
-        if not self.botmeta or self.ITERATION > 0:
-            # is automerge allowed?
-            if self.botmetafile is not None:
-                with open(self.botmetafile, 'rb') as f:
-                    self._botmeta_content = f.read()
-            else:
-                self._botmeta_content = self.file_indexer.get_file_content(u'.github/BOTMETA.yml')
-            logging.info('ansible triager [re]loading botmeta')
-            self.botmeta = BotMetadataParser.parse_yaml(self._botmeta_content)
-
+        # is automerge allowed?
         self.automerge_on = False
         if self.botmeta.get(u'automerge'):
             if self.botmeta[u'automerge'] in [u'Yes', u'yes', u'y', True, 1]:
@@ -450,7 +442,7 @@ class AnsibleTriage(DefaultTriager):
                         repo=repo,
                         issue=issue,
                         cachedir=cachedir,
-                        file_indexer=self.file_indexer
+                        gitrepo=self.gitrepo,
                     )
 
                     if self.skip_no_update:
@@ -1933,7 +1925,7 @@ class AnsibleTriage(DefaultTriager):
             get_submitter_facts(
                 iw,
                 self.meta,
-                self.module_indexer,
+                self.module_indexer.emails_cache,
                 self.component_matcher
             )
         )
@@ -1941,14 +1933,14 @@ class AnsibleTriage(DefaultTriager):
         # shipit?
         self.meta.update(
             get_shipit_facts(
-                iw, self.meta, self.module_indexer,
+                iw, self.meta, self.module_indexer.botmeta[u'files'],
                 core_team=self.ansible_core_team, botnames=self.BOTNAMES
             )
         )
         self.meta.update(get_review_facts(iw, self.meta))
 
         # bot_status needed?
-        self.meta.update(get_bot_status_facts(iw, self.module_indexer, core_team=self.ansible_core_team, bot_names=self.BOTNAMES))
+        self.meta.update(get_bot_status_facts(iw, self.module_indexer.all_maintainers, core_team=self.ansible_core_team, bot_names=self.BOTNAMES))
 
         # who is this waiting on?
         self.meta.update(self.waiting_on(iw, self.meta))
@@ -1958,7 +1950,7 @@ class AnsibleTriage(DefaultTriager):
             get_label_command_facts(
                 iw,
                 self.meta,
-                self.module_indexer,
+                self.module_indexer.all_maintainers,
                 core_team=self.ansible_core_team,
                 valid_labels=self.valid_labels
             )
@@ -1969,7 +1961,7 @@ class AnsibleTriage(DefaultTriager):
             get_waffling_overrides(
                 iw,
                 self.meta,
-                self.module_indexer,
+                self.module_indexer.all_maintainers,
                 core_team=self.ansible_core_team,
                 valid_labels=self.valid_labels
             )

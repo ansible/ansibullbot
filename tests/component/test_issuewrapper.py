@@ -82,7 +82,7 @@ class GithubIssueMock(object):
         return u'xxxx-xx-xx:xx:xx:xx'
 
 
-class FileIndexerMock(object):
+class GitRepoWrapperMock(object):
     def get_file_content(self, filename):
         fd = [
             u"##### ISSUE TYPE",
@@ -110,7 +110,7 @@ class TestIssueWrapperBase(unittest.TestCase):
         # FIXME - this should return a wrapped issue
         gi = gr.get_issue(1)
         self.iw = IssueWrapper(github=gh, repo=gr, issue=gi, cachedir=cache)
-        self.iw.file_indexer = FileIndexerMock()
+        self.iw.gitrepo = GitRepoWrapperMock()
 
 
 

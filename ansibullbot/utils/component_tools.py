@@ -107,7 +107,7 @@ def make_prefixes(filename):
 
 class AnsibleComponentMatcher(object):
 
-    BOTMETA = {}
+    botmeta = {}
     GALAXY_FILES = {}
     GALAXY_MANIFESTS = {}
     INDEX = {}
@@ -121,7 +121,7 @@ class AnsibleComponentMatcher(object):
     MODULE_NAMESPACE_DIRECTORIES = []
     PREVIOUS_FILES = []
 
-    # FIXME: THESE NEED TO GO INTO BOTMETA
+    # FIXME: THESE NEED TO GO INTO botmeta
     # ALSO SEE search_by_regex_generic ...
     KEYWORDS = {
         u'N/A': u'lib/ansible/cli/__init__.py',
@@ -199,15 +199,11 @@ class AnsibleComponentMatcher(object):
         u'winrm': u'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmeta=None, botmetafile=None, usecache=False, cachedir=None, commit=None, email_cache=None, use_galaxy=False):
+    def __init__(self, gitrepo=None, botmeta=None, usecache=False, cachedir=None, commit=None, email_cache=None, use_galaxy=False):
         self.usecache = usecache
         self.cachedir = cachedir
         self.use_galaxy = use_galaxy
-        self.botmetafile = botmetafile
-        if botmeta:
-            self.BOTMETA = botmeta
-        else:
-            self.BOTMETA = {u'files': {}}
+        self.botmeta = botmeta if botmeta else {u'files': {}}
         self.email_cache = email_cache
         self.commit = commit
 
@@ -229,38 +225,17 @@ class AnsibleComponentMatcher(object):
         self.updated_at = None
         self.update(refresh_botmeta=False)
 
-    def update(self, email_cache=None, refresh_botmeta=True, usecache=False, use_galaxy=True):
-        #self.index_galaxy()
+    def update(self, email_cache=None, refresh_botmeta=True, usecache=False, use_galaxy=True, botmeta=None):
+        if botmeta is not None:
+            self.botmeta = botmeta
         if self.GQT is not None and use_galaxy:
             self.GQT.update()
         if email_cache:
             self.email_cache = email_cache
-        self.gitrepo.update()
-        self.index_files(refresh_botmeta=refresh_botmeta)
+        self.index_files()
         self.indexed_at = datetime.datetime.now()
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
-
-    '''
-    def index_galaxy(self):
-        url = 'https://sivel.eng.ansible.com/api/v1/collections/file_map'
-        rr = requests.get(url)
-        self.GALAXY_FILES = rr.json()
-
-        url = 'https://sivel.eng.ansible.com/api/v1/collections/list'
-        rr = requests.get(url)
-        self.GALAXY_MANIFESTS = rr.json()
-
-        self._verify_galaxy_files()
-
-    def _verify_galaxy_files(self):
-        for k,v in self.GALAXY_FILES.items():
-            for fqcn in v:
-                if not self.GQT.collection_file_exists(fqcn, k):
-                    if fqcn in self.GALAXY_FILES[k]:
-                        self.GALAXY_FILES[k].remove(fqcn)
-        #import epdb; epdb.st()
-    '''
 
     def get_module_meta(self, checkoutdir, filename1, filename2):
 
@@ -281,7 +256,7 @@ class AnsibleComponentMatcher(object):
                 ME = ModuleExtractor(None, filedata=fdata, email_cache=self.email_cache)
             else:
                 ME = ModuleExtractor(os.path.join(checkoutdir, filename1), email_cache=self.email_cache)
-            if filename1 not in self.BOTMETA[u'files']:
+            if filename1 not in self.botmeta[u'files']:
                 bmeta = {
                     u'deprecated': os.path.basename(filename1).startswith(u'_'),
                     u'labels': os.path.dirname(filename1).split(u'/'),
@@ -294,7 +269,7 @@ class AnsibleComponentMatcher(object):
                     u'metadata': ME.metadata.copy()
                 }
             else:
-                bmeta = self.BOTMETA[u'files'][filename1].copy()
+                bmeta = self.botmeta[u'files'][filename1].copy()
                 bmeta[u'metadata'] = ME.metadata.copy()
                 if u'notified' not in bmeta:
                     bmeta[u'notified'] = []
@@ -332,13 +307,10 @@ class AnsibleComponentMatcher(object):
 
         return bmeta
 
-    def index_files(self, refresh_botmeta=True):
+    def index_files(self):
         self.MODULES = OrderedDict()
         self.MODULE_NAMES = []
         self.MODULE_NAMESPACE_DIRECTORIES = []
-
-        if refresh_botmeta:
-            self.load_meta()
 
         for fn in self.gitrepo.module_files:
             if self.gitrepo.isdir(fn):
@@ -370,7 +342,7 @@ class AnsibleComponentMatcher(object):
         self.MODULE_NAMES = sorted(set(self.MODULE_NAMES))
 
         # append module names from botmeta
-        bmodules = [x for x in self.BOTMETA[u'files'] if x.startswith(u'lib/ansible/modules')]
+        bmodules = [x for x in self.botmeta[u'files'] if x.startswith(u'lib/ansible/modules')]
         bmodules = [x for x in bmodules if x.endswith(u'.py') or x.endswith(u'.ps1')]
         bmodules = [x for x in bmodules if u'__init__' not in x]
         for bmodule in bmodules:
@@ -432,24 +404,14 @@ class AnsibleComponentMatcher(object):
                 _k = k
             logging.debug('extract %s' % k)
             fmeta = self.get_module_meta(checkoutdir, k, _k)
-            if k in self.BOTMETA[u'files']:
-                self.BOTMETA['files'][k].update(fmeta)
+            if k in self.botmeta[u'files']:
+                self.botmeta['files'][k].update(fmeta)
             else:
-                self.BOTMETA['files'][k] = copy.deepcopy(fmeta)
+                self.botmeta['files'][k] = copy.deepcopy(fmeta)
             self.MODULES[k].update(fmeta)
 
-    def load_meta(self):
-        logging.info('componentmatcher - [re]load botmeta')
-        if self.botmetafile is not None:
-            with open(self.botmetafile, 'rb') as f:
-                rdata = f.read()
-        else:
-            fp = u'.github/BOTMETA.yml'
-            rdata = self.gitrepo.get_file_content(fp)
-        self.BOTMETA = BotMetadataParser.parse_yaml(rdata)
-
     def cache_keywords(self):
-        for k, v in self.BOTMETA[u'files'].items():
+        for k, v in self.botmeta[u'files'].items():
             if not v.get(u'keywords'):
                 continue
             for kw in v[u'keywords']:
@@ -712,11 +674,11 @@ class AnsibleComponentMatcher(object):
 
         # check for matches in botmeta first in case there's a migrated_to key ...
         botmeta_candidates = []
-        for bmkey in self.BOTMETA[u'files'].keys():
+        for bmkey in self.botmeta[u'files'].keys():
             # skip tests because we dont want false positives
             if not bmkey.startswith('lib/ansible'):
                 continue
-            if not self.BOTMETA[u'files'][bmkey].get(u'migrated_to'):
+            if not self.botmeta[u'files'][bmkey].get(u'migrated_to'):
                 continue
 
             if u'modules/' in component and u'modules/' not in bmkey:
@@ -729,7 +691,7 @@ class AnsibleComponentMatcher(object):
                 continue
 
             if bmkey == component or os.path.basename(bmkey).replace('.py', '') == os.path.basename(component).replace('.py', ''):
-                mt = self.BOTMETA['files'][bmkey].get('migrated_to')[0]
+                mt = self.botmeta['files'][bmkey].get('migrated_to')[0]
                 for fn,gcollections in self.GALAXY_FILES.items():
                     if mt not in gcollections:
                         continue
@@ -1373,9 +1335,9 @@ class AnsibleComponentMatcher(object):
         '''Match filenames to the keys in botmeta'''
         ckeys = set()
         for filen in filenames:
-            if filen in self.BOTMETA[u'files']:
+            if filen in self.botmeta[u'files']:
                 ckeys.add(filen)
-            for key in self.BOTMETA[u'files'].keys():
+            for key in self.botmeta[u'files'].keys():
                 if filen.startswith(key):
                     ckeys.add(key)
         return list(ckeys)
@@ -1429,7 +1391,7 @@ class AnsibleComponentMatcher(object):
         # powershell meta is in the python file
         if filename.endswith(u'.ps1'):
             pyfile = filename.replace(u'.ps1', u'.py')
-            if pyfile in self.BOTMETA[u'files']:
+            if pyfile in self.botmeta[u'files']:
                 filenames.append(pyfile)
 
         botmeta_entries = self._filenames_to_keys(filenames)
@@ -1456,7 +1418,7 @@ class AnsibleComponentMatcher(object):
         support_levels = {}
 
         for entry in botmeta_entries:
-            fdata = self.BOTMETA[u'files'][entry].copy()
+            fdata = self.botmeta[u'files'][entry].copy()
 
             if u'authors' in fdata:
                 meta[u'notify'] += fdata[u'authors']
@@ -1499,8 +1461,8 @@ class AnsibleComponentMatcher(object):
         paths = filename.split(u'/')
         for idx, x in enumerate(paths):
             thispath = u'/'.join(paths[:(0-idx)])
-            if thispath in self.BOTMETA[u'files']:
-                fdata = self.BOTMETA[u'files'][thispath].copy()
+            if thispath in self.botmeta[u'files']:
+                fdata = self.botmeta[u'files'][thispath].copy()
                 if u'support' in fdata:
                     if isinstance(fdata[u'support'], list):
                         support_levels[thispath] = fdata[u'support'][0]
@@ -1536,13 +1498,13 @@ class AnsibleComponentMatcher(object):
         # set namespace maintainers (skip !modules for now)
         if filename.startswith(u'lib/ansible/modules'):
             ns = meta.get(u'namespace')
-            keys = self.BOTMETA[u'files'].keys()
+            keys = self.botmeta[u'files'].keys()
             keys = [x for x in keys if x.startswith(os.path.join(u'lib/ansible/modules', ns))]
             ignored = []
 
             for key in keys:
-                meta[u'namespace_maintainers'] += self.BOTMETA[u'files'][key].get(u'maintainers', [])
-                ignored += self.BOTMETA[u'files'][key].get(u'ignored', [])
+                meta[u'namespace_maintainers'] += self.botmeta[u'files'][key].get(u'maintainers', [])
+                ignored += self.botmeta[u'files'][key].get(u'ignored', [])
 
             for ignoree in ignored:
                 while ignoree in meta[u'namespace_maintainers']:
@@ -1571,7 +1533,7 @@ class AnsibleComponentMatcher(object):
         '''
 
         # test targets for modules should inherit from their modules
-        if filename.startswith(u'test/integration/targets') and filename not in self.BOTMETA[u'files']:
+        if filename.startswith(u'test/integration/targets') and filename not in self.botmeta[u'files']:
             whitelist = [
                 u'labels',
                 u'ignore',
@@ -1644,13 +1606,13 @@ class AnsibleComponentMatcher(object):
 
         # walk up the botmeta tree looking for meta to include
         for this_prefix in get_prefix_paths(
-            meta.get(u'repo_filename'), self.BOTMETA[u'files'],
+            meta.get(u'repo_filename'), self.botmeta[u'files'],
         ):
 
             this_ignore = (
-                self.BOTMETA[u'files'][this_prefix].get(u'ignore') or
-                self.BOTMETA[u'files'][this_prefix].get(u'ignored') or
-                self.BOTMETA[u'files'][this_prefix].get(u'ignores') or
+                self.botmeta[u'files'][this_prefix].get(u'ignore') or
+                self.botmeta[u'files'][this_prefix].get(u'ignored') or
+                self.botmeta[u'files'][this_prefix].get(u'ignores') or
                 []
             )
 
@@ -1671,7 +1633,7 @@ class AnsibleComponentMatcher(object):
                         (username, this_prefix))
                     meta[u'maintainers'].remove(username)
 
-            this_supershipit = self.BOTMETA[u'files'][this_prefix].get(
+            this_supershipit = self.botmeta[u'files'][this_prefix].get(
                 u'supershipit', [],
             )
 

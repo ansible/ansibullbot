@@ -108,7 +108,7 @@ class AnsibleSupportReport(AnsibleTriage):
         ]
         lblacklist = []
 
-        filenames = sorted(self.file_indexer.files)
+        filenames = sorted(self.gitrepo.files)
         filenames = [x for x in filenames if not x.startswith('/')]
         filenames = [x for x in filenames if not '__pycache__' in x]
         filenames = [x for x in filenames if not x.endswith('.pyo')]

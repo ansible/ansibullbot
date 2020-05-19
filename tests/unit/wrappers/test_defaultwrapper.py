@@ -3,7 +3,6 @@
 import datetime
 import json
 import os
-#import tempfile
 
 import six
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
@@ -41,10 +40,6 @@ class GithubRepoWrapperMock:
         self.repo = GithubRepoMock()
 
 
-class FileIndexerMock:
-    pass
-
-
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', False)
 def test_get_events():
@@ -56,7 +51,6 @@ def test_get_events():
         github = GithubWrapperMock()
         repo = GithubRepoWrapperMock()
         issue = GithubIssueMock()
-        fi = FileIndexerMock()
 
         github.cache[u'https://github.com/ansible/ansible/issues/1/events'] = [
             {'event': 'labeled', 'created_at': datetime.datetime.now().isoformat()},
@@ -71,7 +65,7 @@ def test_get_events():
             repo=repo,
             issue=issue,
             cachedir=cachedir,
-            file_indexer=fi
+            gitrepo=repo,
         )
 
         events = dw.get_events()
@@ -94,7 +88,6 @@ def test_get_events_bad_cache_invalidate():
         github = GithubWrapperMock()
         repo = GithubRepoWrapperMock()
         issue = GithubIssueMock()
-        fi = FileIndexerMock()
 
         github.cache[u'https://github.com/ansible/ansible/issues/1/events'] = [
             {'event': 'labeled', 'created_at': datetime.datetime.now().isoformat()},
@@ -128,7 +121,7 @@ def test_get_events_bad_cache_invalidate():
             repo=repo,
             issue=issue,
             cachedir=cachedir,
-            file_indexer=fi
+            gitrepo=repo
         )
 
         events = dw.get_events()

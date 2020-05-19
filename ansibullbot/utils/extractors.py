@@ -610,8 +610,8 @@ def get_template_data(iw):
         tfile = u'.github/PULL_REQUEST_TEMPLATE.md'
 
     # use the fileindexer whenever possible to conserve ratelimits
-    if iw.file_indexer:
-        tf_content = iw.file_indexer.get_file_content(tfile)
+    if iw.gitrepo:
+        tf_content = iw.gitrepo.get_file_content(tfile)
     else:
         try:
             tf = iw.repo.get_file_contents(tfile)
