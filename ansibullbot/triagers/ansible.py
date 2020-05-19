@@ -283,7 +283,6 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer(
             checkoutdir=gitrepo.checkoutdir,
-            commit=self.ansible_commit
         )
 
         logging.info('creating file indexer')
