@@ -102,18 +102,8 @@ class GitRepoMock:
 
 
 class FileIndexerMock(object):
-
     files = []
     gitrepo = GitRepoMock()
-
-    def find_component_matches_by_file(self, filenames):
-        return []
-
-    def isnewdir(self, path):
-        return False
-
-    def get_component_labels(self, files, valid_labels=None):
-        return []
 
 
 class MockFile(object):

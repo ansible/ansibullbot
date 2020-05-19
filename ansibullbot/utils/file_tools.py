@@ -1,20 +1,14 @@
 #!/usr/bin/env python
 
 import logging
-import os
 import re
 
 import six
-
-from fuzzywuzzy import fuzz as fw_fuzz
-from textblob import TextBlob
 
 from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.moduletools import ModuleIndexer
-
-import ansibullbot.constants as C
 
 
 class FileIndexer(ModuleIndexer):
@@ -29,7 +23,7 @@ class FileIndexer(ModuleIndexer):
 
     files = []
 
-    def __init__(self, botmeta=None, botmetafile=None, gitrepo=None, commit=None):
+    def __init__(self, botmeta=None, botmetafile=None, gitrepo=None):
         self.botmetafile = botmetafile
         if botmeta:
             self.botmeta = botmeta
@@ -37,11 +31,8 @@ class FileIndexer(ModuleIndexer):
             self.botmeta = {}
         self.CMAP = {}
         self.FILEMAP = {}
-        self.match_cache = {}
         self.gitrepo = gitrepo
-        self.commit = commit
         self.update(force=True)
-        self.email_commits = {}
 
     def parse_metadata(self):
 
@@ -85,198 +76,6 @@ class FileIndexer(ModuleIndexer):
         files = [x.replace(self.gitrepo.checkoutdir + u'/', u'') for x in files]
         files = [x for x in files if not x.startswith(u'.git')]
         self.files = files
-
-    def _string_to_cmap_key(self, text):
-        text = text.lower()
-        matches = []
-        if text.endswith(u'.'):
-            text = text.rstrip(u'.')
-        if text in self.CMAP:
-            matches += self.CMAP[text]
-            return matches
-        elif (text + u's') in self.CMAP:
-            matches += self.CMAP[text + u's']
-            return matches
-        elif text.rstrip(u's') in self.CMAP:
-            matches += self.CMAP[text.rstrip(u's')]
-            return matches
-        return matches
-
-    def get_keywords_for_file(self, filename):
-        keywords = []
-        for k, v in self.CMAP.items():
-            toadd = False
-            for x in v:
-                if x == filename:
-                    toadd = True
-            if toadd:
-                keywords.append(k)
-        return keywords
-
-    def find_component_match(self, title, body, template_data):
-        '''Make a list of matching files for arbitrary text in an issue'''
-
-        # DistributionNotFound: The 'jinja2<2.9' distribution was not found and
-        #   is required by ansible
-        # File
-        # "/usr/lib/python2.7/site-packages/ansible/plugins/callback/foreman.py",
-        #   line 30, in <module>
-
-        STOPWORDS = [u'ansible', u'core', u'plugin']
-        STOPCHARS = [u'"', u"'", u'(', u')', u'?', u'*', u'`', u',']
-        matches = []
-
-        if u'Traceback (most recent call last)' in body:
-            lines = body.split(u'\n')
-            for line in lines:
-                line = line.strip()
-                if line.startswith(u'DistributionNotFound'):
-                    matches = [u'setup.py']
-                    break
-                elif line.startswith(u'File'):
-                    fn = line.split()[1]
-                    for SC in STOPCHARS:
-                        fn = fn.replace(SC, u'')
-                    if u'ansible_module_' in fn:
-                        fn = os.path.basename(fn)
-                        fn = fn.replace(u'ansible_module_', u'')
-                        matches = [fn]
-                    elif u'cli/playbook.py' in fn:
-                        fn = u'lib/ansible/cli/playbook.py'
-                    elif u'module_utils' in fn:
-                        idx = fn.find(u'module_utils/')
-                        fn = u'lib/ansible/' + fn[idx:]
-                    elif u'ansible/' in fn:
-                        idx = fn.find(u'ansible/')
-                        fn1 = fn[idx:]
-
-                        if u'bin/' in fn1:
-                            if not fn1.startswith(u'bin'):
-
-                                idx = fn1.find(u'bin/')
-                                fn1 = fn1[idx:]
-
-                                if fn1.endswith(u'.py'):
-                                    fn1 = fn1.rstrip(u'.py')
-
-                        elif u'cli/' in fn1:
-                            idx = fn1.find(u'cli/')
-                            fn1 = fn1[idx:]
-                            fn1 = u'lib/ansible/' + fn1
-
-                        elif u'lib' not in fn1:
-                            fn1 = u'lib/' + fn1
-
-                        if fn1 not in self.files:
-                            if C.DEFAULT_BREAKPOINTS:
-                                logging.error(u'breakpoint!')
-                                import epdb; epdb.st()
-            if matches:
-                return matches
-
-        craws = template_data.get(u'component_raw')
-        if craws is None:
-            return matches
-
-        # compare to component mapping
-        matches = self._string_to_cmap_key(craws)
-        if matches:
-            return matches
-
-        # do not re-process the same strings over and over again
-        if craws.lower() in self.match_cache:
-            return self.match_cache[craws.lower()]
-
-        # make ngrams from largest to smallest and recheck
-        blob = TextBlob(craws.lower())
-        wordcount = len(blob.tokens) + 1
-
-        for ng_size in reversed(xrange(2, wordcount)):
-            ngrams = [u' '.join(x) for x in blob.ngrams(ng_size)]
-            for ng in ngrams:
-
-                matches = self._string_to_cmap_key(ng)
-                if matches:
-                    self.match_cache[craws.lower()] = matches
-                    return matches
-
-        # https://pypi.python.org/pypi/fuzzywuzzy
-        matches = []
-        for cr in craws.lower().split(u'\n'):
-            ratios = []
-            for k in self.CMAP.keys():
-                ratio = fw_fuzz.ratio(cr, k)
-                ratios.append((ratio, k))
-            ratios = sorted(ratios, key=lambda tup: tup[0])
-            if ratios[-1][0] >= 90:
-                cnames = self.CMAP[ratios[-1][1]]
-                matches += cnames
-        if matches:
-            self.match_cache[craws.lower()] = matches
-            return matches
-
-        # try to match to repo files
-        if craws:
-            clines = craws.split(u'\n')
-            for craw in clines:
-                cparts = craw.replace(u'-', u' ')
-                cparts = cparts.split()
-
-                for idx, x in enumerate(cparts):
-                    for SC in STOPCHARS:
-                        if SC in x:
-                            x = x.replace(SC, u'')
-                    for SW in STOPWORDS:
-                        if x == SW:
-                            x = u''
-                    if x and u'/' not in x:
-                        x = u'/' + x
-                    cparts[idx] = x
-
-                cparts = [x.strip() for x in cparts if x.strip()]
-
-                for x in cparts:
-                    for f in self.files:
-                        if u'/modules/' in f:
-                            continue
-                        if u'test/' in f and u'test' not in craw:
-                            continue
-                        if u'galaxy' in f and u'galaxy' not in body:
-                            continue
-                        if u'dynamic inv' in body.lower() and u'contrib' not in f:
-                            continue
-                        if u'inventory' in f and u'inventory' not in body.lower():
-                            continue
-                        if u'contrib' in f and u'inventory' not in body.lower():
-                            continue
-
-                        try:
-                            f.endswith(x)
-                        except UnicodeDecodeError:
-                            continue
-
-                        fname = os.path.basename(f).split(u'.')[0]
-
-                        if f.endswith(x):
-                            if fname.lower() in body.lower():
-                                matches.append(f)
-                                break
-                        if f.endswith(x + u'.py'):
-                            if fname.lower() in body.lower():
-                                matches.append(f)
-                                break
-                        if f.endswith(x + u'.ps1'):
-                            if fname.lower() in body.lower():
-                                matches.append(f)
-                                break
-                        if os.path.dirname(f).endswith(x):
-                            if fname.lower() in body.lower():
-                                matches.append(f)
-                                break
-
-        logging.info(u'%s --> %s' % (craws, sorted(set(matches))))
-        self.match_cache[craws.lower()] = matches
-        return matches
 
     def get_filemap(self):
         '''Read filemap and make re matchers'''
@@ -347,63 +146,3 @@ class FileIndexer(ModuleIndexer):
                             labels.append(label)
 
         return labels
-
-    def get_filemap_users_for_files(self, files):
-        '''Get expected notifiees from the filemap'''
-        to_notify = []
-        to_assign = []
-
-        exclusive = False
-        for f in files:
-
-            if f is None:
-                continue
-
-            # only one match
-            if exclusive:
-                continue
-
-            for k, v in six.iteritems(self.FILEMAP):
-                if not v[u'inclusive'] and v[u'regex'].match(f):
-                    to_notify = v[u'notify']
-                    to_assign = v[u'assign']
-                    exclusive = True
-                    break
-
-                if u'notify' not in v and u'assign' not in v:
-                    continue
-
-                if v[u'regex'].match(f):
-                    for user in v[u'notify']:
-                        if user not in to_notify:
-                            to_notify.append(user)
-                    for user in v[u'assign']:
-                        if user not in to_assign:
-                            to_assign.append(user)
-
-        return to_notify, to_assign
-
-    def isnewdir(self, path):
-        if path in self.files:
-            return False
-        else:
-            return True
-
-    def commits_by_email(self, email):
-        if not isinstance(email, (list, tuple)):
-            email = [email]
-
-        if not self.email_commits:
-            cmd = u'cd {}; git log --format="%H %ae"'.format(self.gitrepo.checkoutdir)
-            (rc, so, se) = run_command(cmd)
-            commits = [x.split(None, 1)[::-1] for x in to_text(so).split(u'\n') if x]
-            for x in commits:
-                if x[0] not in self.email_commits:
-                    self.email_commits[x[0]] = []
-                self.email_commits[x[0]].append(x[1])
-
-        commits = []
-        for x in email:
-            commits += self.email_commits.get(x, [])
-
-        return commits
