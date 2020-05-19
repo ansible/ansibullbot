@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-import Levenshtein
 import ast
 import copy
 import datetime
-import fnmatch
 import io
 import logging
 import os
@@ -21,13 +19,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
-from ansibullbot._text_compat import to_bytes, to_text
+from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotMetadataParser, BotYAMLLoader
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.systemtools import run_command
-from ansibullbot.utils.webscraper import GithubWebScraper
-
-import ansibullbot.constants as C
 
 
 Base = declarative_base()
@@ -87,10 +82,7 @@ class ModuleIndexer(object):
             self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
         self.modules = {}  # keys: paths of files belonging to the repository
         self.maintainers = maintainers or {}
-        self.importmap = {}
-        self.scraper_cache = os.path.join(cachedir, u'ansible.modules.scraper')
-        self.scraper_cache = os.path.expanduser(self.scraper_cache)
-        self.gws = GithubWebScraper(cachedir=self.scraper_cache)
+        self.scraper_cache = os.path.expanduser(os.path.join(cachedir, u'ansible.modules.scraper'))
         self.gqlc = gh_client
         self.files = []
 
@@ -151,177 +143,6 @@ class ModuleIndexer(object):
         # load the modules
         logging.info(u'loading modules')
         self.get_ansible_modules()
-
-    def _find_match(self, pattern, exact=False):
-
-        logging.debug(u'exact:{} matching on {}'.format(exact, pattern))
-
-        matches = []
-
-        if isinstance(pattern, six.text_type):
-            pattern = to_text(to_bytes(pattern,'ascii', 'ignore'), 'ascii')
-
-        for k, v in six.iteritems(self.modules):
-            if v[u'name'] == pattern:
-                logging.debug(u'match {} on name: {}'.format(k, v[u'name']))
-                matches = [v]
-                break
-
-        if not matches:
-            # search by key ... aka the filepath
-            for k, v in six.iteritems(self.modules):
-                if k == pattern:
-                    logging.debug(u'match {} on key: {}'.format(k, k))
-                    matches = [v]
-                    break
-
-        if not matches and not exact:
-            # search by properties
-            for k, v in six.iteritems(self.modules):
-                for subkey in v.keys():
-                    if v[subkey] == pattern:
-                        logging.debug(u'match {} on subkey: {}'.format(k, subkey))
-                        matches.append(v)
-
-        if not matches and not exact:
-            # Levenshtein distance should workaround most typos
-            distance_map = {}
-            for k, v in six.iteritems(self.modules):
-                mname = v.get(u'name')
-                if not mname:
-                    continue
-                if isinstance(mname, six.text_type):
-                    mname = to_text(to_bytes(mname, 'ascii', 'ignore'), 'ascii')
-                try:
-                    res = Levenshtein.distance(pattern, mname)
-                except TypeError as e:
-                    logging.error(e)
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
-                        import epdb; epdb.st()
-                distance_map[mname] = [res, k]
-            res = sorted(distance_map.items(), key=lambda x: x[1], reverse=True)
-            if len(pattern) > 3 > res[-1][1]:
-                logging.debug(u'levenshtein ratio match: ({}) {} {}'.format(res[-1][-1], res[-1][0], pattern))
-                matches = [self.modules[res[-1][-1]]]
-
-        return matches
-
-    def find_match(self, pattern, exact=False):
-        '''Exact module name matching'''
-
-        logging.debug(u'find_match for "{}"'.format(pattern))
-
-        BLACKLIST = [
-            u'module_utils',
-            u'callback',
-            u'network modules',
-            u'networking modules'
-            u'windows modules'
-        ]
-
-        if not pattern or pattern is None:
-            return None
-
-        if pattern.lower() == u'core':
-            return None
-
-        '''
-        if 'docs.ansible.com' in pattern and '_module.html' in pattern:
-            # http://docs.ansible.com/ansible/latest/copy_module.html
-            # http://docs.ansible.com/ansible/latest/dev_guide/developing_modules.html
-            # http://docs.ansible.com/ansible/latest/postgresql_db_module.html
-            # [helm module](https//docs.ansible.com/ansible/2.4/helm_module.html)
-            # Windows module: win_robocopy\nhttp://docs.ansible.com/ansible/latest/win_robocopy_module.html
-            # Examples:\n* archive (https://docs.ansible.com/ansible/archive_module.html)\n* s3_sync (https://docs.ansible.com/ansible/s3_sync_module.html)
-            urls = re.findall(
-                'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+',
-                pattern
-            )
-            #urls = [x for x in urls if '_module.html' in x]
-            #if urls:
-            #    import epdb; epdb.st()
-            import epdb; epdb.st()
-        '''
-
-        # https://github.com/ansible/ansible/issues/19755
-        if pattern == u'setup':
-            pattern = u'system/setup.py'
-
-        if u'/facts.py' in pattern or u' facts.py' in pattern:
-            pattern = u'system/setup.py'
-
-        # https://github.com/ansible/ansible/issues/18527
-        #   docker-container -> docker_container
-        if u'-' in pattern:
-            pattern = pattern.replace(u'-', u'_')
-
-        if u'module_utils' in pattern:
-            # https://github.com/ansible/ansible/issues/20368
-            return None
-        elif u'callback' in pattern:
-            return None
-        elif u'lookup' in pattern:
-            return None
-        elif u'contrib' in pattern and u'inventory' in pattern:
-            return None
-        elif pattern.lower() in BLACKLIST:
-            return None
-        elif u'/' in pattern and not self._find_match(pattern, exact=True):
-            # https://github.com/ansible/ansible/issues/20520
-            if not pattern.startswith(u'lib/'):
-                keys = self.modules.keys()
-                for k in keys:
-                    if pattern in k:
-                        ppy = pattern + u'.py'
-                        if k.endswith(pattern) or k.endswith(ppy):
-                            return self.modules[k]
-        elif pattern.endswith(u'.py') and self._find_match(pattern, exact=False):
-            # https://github.com/ansible/ansible/issues/19889
-            candidate = self._find_match(pattern, exact=False)
-
-            if isinstance(candidate, list):
-                if len(candidate) == 1:
-                    candidate = candidate[0]
-
-            if candidate[u'filename'] == pattern:
-                return candidate
-
-        match = self._find_match(pattern, exact=exact)
-        if not match and not exact:
-            # check for just the basename
-            #   2617: ansible-s-extras/network/cloudflare_dns.py
-            bname = os.path.basename(pattern)
-            match = self._find_match(bname)
-
-            if not match:
-                # check for deprecated name
-                #   _fireball -> fireball
-                match = self._find_match(u'_' + bname)
-
-        # unique the results
-        if isinstance(match, list) and len(match) > 1:
-            _match = []
-            for m in match:
-                if m not in _match:
-                    _match.append(m)
-            match = _match[:]
-
-        return match
-
-    def is_valid(self, mname):
-        match = self.find_match(mname, exact=True)
-        if match:
-            return True
-        else:
-            return False
-
-    def get_repository_for_module(self, mname):
-        match = self.find_match(mname, exact=True)
-        if match:
-            return match[u'repository']
-        else:
-            return None
 
     def get_ansible_modules(self):
         """Make a list of known modules"""
@@ -612,99 +433,6 @@ class ModuleIndexer(object):
                     print(u'unknown: {}'.format(commit[u'email']))
                 self.commits[k][idc][u'login'] = self.emails_cache.get(login)
 
-    def get_emails_by_login(self, login):
-        res = self.session.query(Email).filter_by(login=login)
-        emails = [x.email for x in res.values()]
-        return emails
-
-    def _get_module_blames(self):
-        ''' Scrape the blame page for each module and store it '''
-
-        keys = sorted(self.modules.keys())
-
-        # scrape the data
-        for k in keys:
-
-            cpath = os.path.join(self.gitrepo.checkoutdir, k)
-            if not os.path.isfile(cpath):
-                self.committers[k] = {}
-                continue
-
-            ghash = self.last_commit_for_file(k)
-            pfile = os.path.join(
-                self.scraper_cache,
-                k.replace(u'/', u'_') + u'.blame.pickle'
-            )
-            sargs = [u'ansible', u'ansible', u'devel', k]
-
-            refresh = False
-            if not os.path.isfile(pfile):
-                refresh = True
-            else:
-                logging.debug(u'load {}'.format(pfile))
-                with open(pfile, 'rb') as f:
-                    pdata = pickle_load(f)
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
-                    import epdb; epdb.st()
-                if pdata[0] == ghash:
-                    self.committers[k] = pdata[1]
-                    if len(pdata) == 3:
-                        # use emailmap if available
-                        emailmap = pdata[2]
-                    else:
-                        emailmap = {}
-                else:
-                    refresh = True
-
-            if refresh:
-                if self.gqlc:
-                    logging.debug(u'graphql blame usernames {}'.format(pfile))
-                    uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*sargs)
-                else:
-                    emailmap = {}  # scrapping: emails not available
-                    logging.debug(u'www blame usernames {}'.format(pfile))
-                    uns = self.gws.get_usernames_from_filename_blame(*sargs)
-                self.committers[k] = uns
-                with open(pfile, 'wb') as f:
-                    pickle_dump((ghash, uns, emailmap), f)
-
-            for email, github_id in emailmap.items():
-                if email not in self.emails_cache:
-                    self.emails_cache[email] = github_id
-
-        # add scraped logins to the map
-        for k in keys:
-            for idx, x in enumerate(self.commits[k]):
-                if x[u'email'] in [u'@']:
-                    continue
-                if x[u'email'] not in self.emails_cache:
-                    self.emails_cache[x[u'email']] = None
-                if x[u'login']:
-                    self.emails_cache[x[u'email']] = x[u'login']
-                    continue
-
-                xhash = x[u'hash']
-                for ck, cv in six.iteritems(self.committers[k]):
-                    if xhash in cv:
-                        self.emails_cache[x[u'email']] = ck
-                        break
-
-        # fill in what we can ...
-        for k in keys:
-            for idx, x in enumerate(self.commits[k]):
-                if not x[u'login']:
-                    if x[u'email'] in [u'@']:
-                        continue
-                    if self.emails_cache[x[u'email']]:
-                        login = self.emails_cache[x[u'email']]
-                        xhash = x[u'hash']
-                        self.commits[k][idx][u'login'] = login
-                        if login not in self.committers[k]:
-                            self.committers[k][login] = []
-                        if xhash not in self.committers[k][login]:
-                            self.committers[k][login].append(xhash)
-
     def set_maintainers(self):
         '''Define the maintainers for each module'''
 
@@ -893,147 +621,6 @@ class ModuleIndexer(object):
 
         return list(authors)
 
-    def fuzzy_match(self, repo=None, title=None, component=None):
-        '''Fuzzy matching for modules'''
-
-        logging.debug(u'fuzzy match {}'.format(
-            to_text(to_bytes(component, 'ascii', 'ignore'), 'ascii'))
-        )
-
-        if component.lower() == u'core':
-            return None
-
-        # https://github.com/ansible/ansible/issues/18179
-        if u'validate-modules' in component:
-            return None
-
-        # https://github.com/ansible/ansible/issues/20368
-        if u'module_utils' in component:
-            return None
-
-        if u'new module' in component:
-            return None
-
-        # authorized_keys vs. authorized_key
-        if component and component.endswith(u's'):
-            tm = self.find_match(component[:-1])
-            if tm:
-                if not isinstance(tm, list):
-                    return tm[u'name']
-                elif len(tm) == 1:
-                    return tm[0][u'name']
-                else:
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
-                        import epdb; epdb.st()
-
-        match = None
-        known_modules = []
-
-        for k, v in six.iteritems(self.modules):
-            if v[u'name'] in [u'include']:
-                continue
-            known_modules.append(v[u'name'])
-
-        title = title.lower()
-        title = title.replace(u':', u'')
-        title_matches = [x for x in known_modules if x + u' module' in title]
-
-        if not title_matches:
-            title_matches = [x for x in known_modules
-                             if title.startswith(x + u' ')]
-            if not title_matches:
-                title_matches = \
-                    [x for x in known_modules if u' ' + x + u' ' in title]
-
-            if title_matches:
-                title_matches = [x for x in title_matches if x != u'at']
-
-        # don't do singular word matching in title for ansible/ansible
-        cmatches = None
-        if component:
-            cmatches = [x for x in known_modules if x in component]
-            cmatches = [x for x in cmatches if not u'_' + x in component]
-
-        # globs
-        if not cmatches and u'*' in component:
-            fmatches = [x for x in known_modules if fnmatch.fnmatch(x, component)]
-            if fmatches:
-                cmatches = fmatches[:]
-
-        if title_matches:
-            # use title ... ?
-            cmatches = [x for x in cmatches if x in title_matches and x not in [u'at']]
-
-        if cmatches:
-            if len(cmatches) >= 1 and (u'*' not in component and u'modules' not in component):
-                match = cmatches[0]
-            else:
-                match = cmatches[:]
-            if not match:
-                if u'docs.ansible.com' in component:
-                    pass
-                else:
-                    pass
-            logging.debug("module - component matches: %s" % cmatches)
-
-        if not match:
-            if len(title_matches) == 1:
-                match = title_matches[0]
-            else:
-                logging.debug("module - title matches: %s" % title_matches)
-
-        return match
-
-    def is_multi(self, rawtext):
-        '''Is the string a list or a glob of modules?'''
-        if rawtext:
-            lines = rawtext.split(u'\n')
-
-            # clean up lines
-            lines = [x.strip() for x in lines if x.strip()]
-            lines = [x for x in lines if len(x) > 2]
-
-            if len(lines) > 1:
-                return True
-
-            if lines:
-                if lines[0].strip().endswith(u'*'):
-                    return True
-
-        return False
-
-    # https://github.com/ansible/ansible-modules-core/issues/3831
-    def multi_match(self, rawtext):
-        '''Return a list of matches for a given glob or list of names'''
-        matches = []
-        lines = rawtext.split(u'\n')
-        lines = [x.strip() for x in lines if x.strip()]
-        for line in lines:
-            # is it an exact name, a path, a globbed name, a globbed path?
-            if line.endswith(u'*'):
-                thiskey = line.replace(u'*', u'')
-                keymatches = []
-                for k in self.modules.keys():
-                    if thiskey in k:
-                        keymatches.append(k)
-                for k in keymatches:
-                    matches.append(self.modules[k].copy())
-            else:
-                match = self.find_match(line)
-                if match:
-                    matches.append(match)
-
-        # unique the list
-        tmplist = []
-        for x in matches:
-            if x not in tmplist:
-                tmplist.append(x)
-        if matches != tmplist:
-            matches = [x for x in tmplist]
-
-        return matches
-
     def set_module_metadata(self):
         for k, v in six.iteritems(self.modules):
             if not v[u'filepath']:
@@ -1124,13 +711,6 @@ class ModuleIndexer(object):
         for path, metadata in self.botmeta[u'files'].items():
             maintainers.update(metadata.get(u'maintainers', []))
         return maintainers
-
-    @property
-    def all_authors(self):
-        authors = set()
-        for key, metadata in self.modules.items():
-            authors.update(metadata.get(u'authors', []))
-        return authors
 
     def get_maintainers_for_namespace(self, namespace):
         maintainers = []
