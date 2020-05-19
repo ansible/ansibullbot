@@ -2014,7 +2014,7 @@ class AnsibleTriage(DefaultTriager):
                 self.version_indexer.version_by_date(iw.created_at)
 
         self.meta[u'ansible_label_version'] = \
-            get_version_major_minor(version=self.meta[u'ansible_version'])
+            get_version_major_minor(self.meta[u'ansible_version'])
         logging.info('ansible version: %s' % self.meta[u'ansible_version'])
 
         # what is this?
