@@ -26,7 +26,6 @@
 #   * different workflows should be a matter of enabling different plugins
 
 import datetime
-from distutils.version import LooseVersion
 import io
 import json
 import logging
@@ -113,12 +112,6 @@ REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
 
 
-def get_major_minor(vstring):
-    '''Return an X.Y version'''
-    lver = LooseVersion(vstring)
-    rval = u'.'.join([to_text(x) for x in lver.version[0:2]])
-    return rval
-
 
 class MetaDict(dict):
     def __setitem__(self, key, val):
@@ -147,9 +140,6 @@ class AnsibleTriage(DefaultTriager):
     BOTNAMES = C.DEFAULT_BOT_NAMES
 
     COMPONENTS = []
-
-    EMPTY_META = {
-    }
 
     ISSUE_TYPES = {
         u'bug report': u'bug',
@@ -348,9 +338,6 @@ class AnsibleTriage(DefaultTriager):
             ]
             self._ansible_core_team = self.get_core_team(u'ansible', teams)
         return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
-
-    def get_rate_limit(self):
-        return self.gh.get_rate_limit().raw_data
 
     def run(self):
         '''Primary execution method'''
@@ -682,23 +669,6 @@ class AnsibleTriage(DefaultTriager):
                     u'https://github.com/%s' % rp,
                     cachefile=cachefile
                 )
-
-    def update_single_issue_summary(self, issuewrapper):
-        '''Force scrape the summary for an issue'''
-        number = issuewrapper.number
-        rp = issuewrapper.repo_full_name
-        if self.gqlc:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-        else:
-            self.issue_summaries[rp][to_text(number)] = \
-                self.gws.get_single_issue_summary(rp, number, force=True)
-
-    @RateLimited
-    def update_issue_object(self, issue):
-        issue.update()
-        return issue
 
     def save_meta(self, issuewrapper, meta, actions):
         # save the meta+actions
@@ -1993,22 +1963,10 @@ class AnsibleTriage(DefaultTriager):
 
         logging.info('getting repo objs for %s complete' % repo)
 
-    def get_updated_issues(self, since=None):
-        '''Get issues to work on'''
-        # this should return a list of issueids that changed since the last run
-        logging.info('start querying updated issues')
-
-        # these need to be tuples (namespace, repo, number)
-        issueids = []
-
-        logging.info('finished querying updated issues')
-        return issueids
-
     def process(self, iw):
         '''Do initial processing of the issue'''
 
         # clear the actions+meta
-        #self.meta = copy.deepcopy(self.EMPTY_META)
         self.meta = MetaDict()
 
         self.meta[u'state'] = iw.state
@@ -2492,10 +2450,6 @@ class AnsibleTriage(DefaultTriager):
             aversion = cversion
 
         return aversion
-
-    def get_version_major_minor(self, version):
-        assert version is not None
-        return get_major_minor(version)
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
