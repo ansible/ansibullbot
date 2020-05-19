@@ -15,31 +15,10 @@ from distutils.version import LooseVersion
 import ansibullbot.constants as C
 
 
-def list_to_version(inlist, cast_string=True, reverse=True, binary=False):
-    # [1,2,3] => "3.2.1"
-
-    if type(inlist) == tuple:
-        inlist = [x for x in inlist]
-
-    if binary:
-        # [2,1,0] => "1.1.0"
-        for idx, x in enumerate(inlist):
-            if x > 0:
-                inlist[idx] = 1
-    if cast_string:
-        inlist = [to_text(x) for x in inlist]
-    if reverse:
-        inlist = [x for x in reversed(inlist)]
-    vers = u'.'.join(inlist)
-    return vers
-
-
 class AnsibleVersionIndexer(object):
 
-    def __init__(self, checkoutdir, commit=None):
-        self.modules = {}
+    def __init__(self, checkoutdir):
         self.checkoutdir = checkoutdir
-        self.COMMIT = commit
         self.VALIDVERSIONS = None
         self.COMMITVERSIONS = None
         self.DATEVERSIONS = None
@@ -73,9 +52,6 @@ class AnsibleVersionIndexer(object):
 
     def _get_versions(self):
         self.VALIDVERSIONS = {}
-
-        # get devel's version
-        devel_version = self._get_devel_version()
 
         # branches
         cmd = u'cd %s;' % self.checkoutdir
@@ -481,4 +457,3 @@ class AnsibleVersionIndexer(object):
             aversion = self.ansible_version_by_commit(acommit)
 
         return aversion
-
