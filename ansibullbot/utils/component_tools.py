@@ -1341,6 +1341,14 @@ class AnsibleComponentMatcher(object):
                     ckeys.add(key)
         return list(ckeys)
 
+    def get_labels_for_files(self, files):
+        labels = []
+        for fn in files:
+            for label in self.get_meta_for_file(fn).get(u'labels', []):
+                if label not in [u'ansible', u'lib'] and label not in labels:
+                    labels.append(label)
+        return labels
+
     def get_meta_for_file(self, filename):
         meta = {
             u'collection': None,

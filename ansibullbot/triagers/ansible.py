@@ -53,7 +53,6 @@ from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
-from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.shippable_api import ShippableRuns
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.receiver_client import post_to_receiver
@@ -265,9 +264,6 @@ class AnsibleTriage(DefaultTriager):
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer(checkoutdir=self.gitrepo.checkoutdir)
 
-        logging.info('creating file indexer')
-        self.file_indexer = FileIndexer(botmeta=self.botmeta, gitrepo=self.gitrepo)
-
         logging.info('creating module indexer')
         self.module_indexer = ModuleIndexer(
             botmeta=self.botmeta,
@@ -342,9 +338,6 @@ class AnsibleTriage(DefaultTriager):
 
             logging.info('updating module indexer')
             self.module_indexer.update(botmeta=self.botmeta)
-
-            logging.info('updating file indexer')
-            self.file_indexer.update(botmeta=self.botmeta)
 
             logging.info('updating component matcher')
             self.component_matcher.update(
@@ -1114,10 +1107,9 @@ class AnsibleTriage(DefaultTriager):
         # use the filemap to add labels
         if not self.meta[u'is_bad_pr']:
             if iw.is_pullrequest() and not self.meta.get(u'merge_commits'):
-                fmap_labels = self.file_indexer.get_filemap_labels_for_files(iw.files)
+                fmap_labels = self.component_matcher.get_labels_for_files(iw.files)
                 for label in fmap_labels:
-                    if label in self.valid_labels and \
-                            label not in iw.labels:
+                    if label in self.valid_labels and label not in iw.labels:
                         # do not re-add these labels
                         if not iw.history.was_unlabeled(label):
                             actions.newlabel.append(label)
