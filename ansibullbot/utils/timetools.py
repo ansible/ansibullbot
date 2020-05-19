@@ -2,13 +2,6 @@
 
 import datetime
 import logging
-from github import GithubObject
-
-
-def timeobj_from_timestamp(timestamp):
-    """Parse a timestamp with pygithub"""
-    dt = GithubObject.GithubObject._makeDatetimeAttribute(timestamp)
-    return dt.value
 
 
 def strip_time_safely(tstring):
