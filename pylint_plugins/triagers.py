@@ -30,4 +30,4 @@ def transform(cls):
         add_dynamic_attr(cls, getattr(mod, cls.name))
 
 
-MANAGER.register_transform(scoped_nodes.Class, transform)
+MANAGER.register_transform(scoped_nodes.ClassDef, transform)
