@@ -13,7 +13,6 @@ import pytest
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher as ComponentMatcher
 from ansibullbot.utils.component_tools import make_prefixes
 from ansibullbot.utils.git_tools import GitRepoWrapper
-from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.systemtools import run_command
 
 
