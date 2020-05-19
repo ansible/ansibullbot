@@ -14,18 +14,15 @@ from ansibullbot.utils.systemtools import run_command
 
 
 class GitRepoWrapper(object):
-
-    _LREV_MAP = {}
-
-    _is_git = True
-    checkoutdir = None
-    _files = []
-
     def __init__(self, cachedir, repo, commit=None, rebase=True, context=None):
         self._needs_rebase = rebase
         self.repo = repo
         self.commit = commit
         self.context = context
+        self._lrev_map = {}
+        self._is_git = True
+        self.checkoutdir = None
+        self._files = []
 
         # allow for null repos
         if self.repo:
@@ -37,42 +34,13 @@ class GitRepoWrapper(object):
             if not os.path.exists(parent):
                 os.makedirs(parent)
 
-        '''
-        self.checkoutdir = cachedir or u'~/.ansibullbot/cache'
-        self.checkoutdir = os.path.join(cachedir, subdir)
-        self.checkoutdir = os.path.expanduser(self.checkoutdir)
-        '''
-
         self.commits_by_email = None
         self.files_by_commit = {}
         if repo:
             self.update(force=True)
 
     def exists(self, filename, loose=False):
-
-        if filename in self.files:
-            return True
-
-        '''
-        if self.checkoutdir is None:
-            return False
-        if self.context:
-            checkfile = os.path.join(self.checkoutdir, self.context, filename)
-        else:
-            checkfile = os.path.join(self.checkoutdir, filename)
-        if os.path.exists(checkfile):
-            return True
-        if not loose:
-            return False
-
-        for x in self._files:
-            if self.context and context not in x:
-                continue
-            if x.endswith(filename):
-                return True
-        '''
-
-        return False
+        return filename in self.files
 
     @property
     def isgit(self):
@@ -84,13 +52,6 @@ class GitRepoWrapper(object):
         else:
             checkfile = os.path.join(self.checkoutdir, filename)
         return os.path.isdir(checkfile)
-
-    def islink(self, filename):
-        if self.context:
-            checkfile = os.path.join(self.checkoutdir, self.context, filename)
-        else:
-            checkfile = os.path.join(self.checkoutdir, filename)
-        return os.path.islink(checkfile)
 
     @property
     def files(self):
@@ -108,7 +69,6 @@ class GitRepoWrapper(object):
 
     def create_checkout(self):
         """checkout ansible"""
-
         # cleanup
         if os.path.isdir(self.checkoutdir):
             shutil.rmtree(self.checkoutdir)
@@ -142,11 +102,10 @@ class GitRepoWrapper(object):
         if changed or force or not self._is_git:
             self.get_files(force=True)
         self.commits_by_email = None
-        self._LREV_MAP = {}
+        self._lrev_map = {}
 
     def update_checkout(self):
         """rebase + pull + update the checkout"""
-
         changed = False
 
         # get a specific commit or do a rebase
@@ -223,7 +182,6 @@ class GitRepoWrapper(object):
                 self._files.append(fp)
 
     def get_files_by_commit(self, commit):
-
         if commit not in self.files_by_commit:
             cmd = u'cd {}; git show --pretty="" --name-only {}'.format(self.checkoutdir, commit)
             (rc, so, se) = run_command(cmd)
@@ -279,25 +237,21 @@ class GitRepoWrapper(object):
         return email_map
 
     def get_last_rev_for_file(self, filepath):
-
         ''' Retrive last hash for a file if it ever existed '''
-
         # https://stackoverflow.com/a/19727752
         # https://stackoverflow.com/a/1395463
 
-        if filepath not in self._LREV_MAP:
+        if filepath not in self._lrev_map:
             cmd = 'cd %s; git rev-list --max-count=1 --all -- %s' % (self.checkoutdir, filepath)
             logging.info(cmd)
             (rc, so, se) = run_command(cmd)
             lrev = so.strip().decode('utf-8')
-            self._LREV_MAP[filepath] = lrev
+            self._lrev_map[filepath] = lrev
 
-        return self._LREV_MAP[filepath]
-
+        return self._lrev_map[filepath]
 
     def existed(self, filepath):
         '''Did a file ever exist in this repo?'''
-
         if self.context:
             filepath = os.path.join(self.context, filepath)
 
@@ -308,7 +262,6 @@ class GitRepoWrapper(object):
         return False
 
     def get_file_content(self, filepath, follow=False):
-
         fp = os.path.join(self.checkoutdir, filepath)
         if os.path.exists(fp):
             with io.open(fp, 'r', encoding='utf-8') as f:
@@ -346,5 +299,4 @@ class GitRepoWrapper(object):
                 continue
             if fn.endswith(pattern):
                 matches.add(fn)
-        #import epdb; epdb.st()
         return matches
