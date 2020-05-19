@@ -26,6 +26,7 @@
 #   * different workflows should be a matter of enabling different plugins
 
 import datetime
+from distutils.version import LooseVersion
 import io
 import json
 import logging
@@ -111,6 +112,12 @@ MREPOS = [x for x in REPOS if u'modules' in x]
 REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
 MREPO_CLOSE_WINDOW = 60
 
+
+def get_version_major_minor(vstring):
+    '''Return an X.Y version'''
+    lver = LooseVersion(vstring)
+    rval = u'.'.join([to_text(x) for x in lver.version[0:2]])
+    return rval
 
 
 class MetaDict(dict):
@@ -2007,9 +2014,7 @@ class AnsibleTriage(DefaultTriager):
                 self.version_indexer.version_by_date(iw.created_at)
 
         self.meta[u'ansible_label_version'] = \
-            self.get_version_major_minor(
-                version=self.meta[u'ansible_version']
-            )
+            get_version_major_minor(version=self.meta[u'ansible_version'])
         logging.info('ansible version: %s' % self.meta[u'ansible_version'])
 
         # what is this?
