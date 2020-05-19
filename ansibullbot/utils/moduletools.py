@@ -20,8 +20,7 @@ from sqlalchemy.orm import sessionmaker
 
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
-from ansibullbot.parsers.botmetadata import BotMetadataParser, BotYAMLLoader
-from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.parsers.botmetadata import BotYAMLLoader
 from ansibullbot.utils.systemtools import run_command
 
 
