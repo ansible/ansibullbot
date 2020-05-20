@@ -22,6 +22,7 @@ from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotYAMLLoader
 from ansibullbot.utils.systemtools import run_command
+from ansibullbot.utils.webscraper import GithubWebScraper
 
 
 Base = declarative_base()
@@ -78,6 +79,7 @@ class ModuleIndexer(object):
         self.maintainers = maintainers or {}
         self.gqlc = gh_client
         self.scraper_cache = os.path.expanduser(os.path.join(cachedir, u'ansible.modules.scraper'))
+        self.gws = GithubWebScraper(cachedir=self.scraper_cache)
         self.gitrepo = gitrepo
 
         self.modules = {}  # keys: paths of files belonging to the repository
