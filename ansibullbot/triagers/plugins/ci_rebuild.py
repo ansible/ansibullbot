@@ -172,12 +172,6 @@ def get_rebuild_command_facts(iw, meta):
     if not iw.is_pullrequest():
         return rbmerge_meta
 
-    if meta[u'is_needs_revision']:
-        return rbmerge_meta
-
-    if meta[u'is_needs_rebase']:
-        return rbmerge_meta
-
     if rbmerge_meta[u'needs_rebuild'] and (rbmerge_meta[u'needs_rebuild_all'] or rbmerge_meta[u'needs_rebuild_failed']):
         return rbmerge_meta
 
