@@ -31,8 +31,8 @@ import io
 import json
 import logging
 import os
+from pprint import pprint
 
-import pytz
 import requests
 
 from ansibullbot._json_compat import json_dump
@@ -40,7 +40,6 @@ from ansibullbot._text_compat import to_bytes, to_text
 
 import ansibullbot.constants as C
 
-from pprint import pprint
 from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, environment
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
@@ -55,7 +54,6 @@ from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
 from ansibullbot.utils.file_tools import FileIndexer
-from ansibullbot.utils.migrator import IssueMigrator
 from ansibullbot.utils.shippable_api import ShippableRuns
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.receiver_client import post_to_receiver
@@ -99,18 +97,10 @@ from ansibullbot.triagers.plugins.test_support_plugins import get_test_support_p
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 
-from ansibullbot.parsers.botmetadata import BotMetadataParser
-
 
 REPOS = [
     u'ansible/ansible',
-    #u'ansible/ansible-modules-core',
-    #u'ansible/ansible-modules-extras'
 ]
-
-MREPOS = [x for x in REPOS if u'modules' in x]
-REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
-MREPO_CLOSE_WINDOW = 60
 
 
 def get_version_major_minor(vstring):
@@ -316,10 +306,6 @@ class AnsibleTriage(DefaultTriager):
         self.SR = ShippableRuns(cachedir=spath, writecache=True)
         self.SR.update()
 
-        # issue migrator
-        logging.info('creating the issue migrator')
-        self.IM = IssueMigrator(C.DEFAULT_GITHUB_TOKEN)
-
         # resume is just an overload for the start-at argument
         resume = self.get_resume()
         if resume:
@@ -473,19 +459,18 @@ class AnsibleTriage(DefaultTriager):
                         if lmeta:
 
                             now = datetime.datetime.now()
-                            mod_repo = (iw.repo_full_name in MREPOS)
                             skip = False
 
                             if lmeta[u'updated_at'] == to_text(iw.updated_at.isoformat()):
                                 skip = True
 
-                            if skip and not mod_repo:
+                            if skip:
                                 if iw.is_pullrequest():
                                     ua = to_text(iw.pullrequest.updated_at.isoformat())
                                     if lmeta[u'updated_at'] < ua:
                                         skip = False
 
-                            if skip and not mod_repo:
+                            if skip:
 
                                 # re-check ansible/ansible after
                                 # a window of time since the last check.
@@ -512,7 +497,7 @@ class AnsibleTriage(DefaultTriager):
                                         skip = False
 
                             # was this in the stale list?
-                            if skip and not mod_repo:
+                            if skip:
                                 if iw.number in self.repos[repopath][u'stale']:
                                     skip = False
 
@@ -521,7 +506,7 @@ class AnsibleTriage(DefaultTriager):
                                 skip = False
 
                             # do a final check on the timestamp in meta
-                            if skip and not mod_repo:
+                            if skip:
                                 mts = strip_time_safely(lmeta[u'time'])
                                 delta = (now - mts).days
                                 if delta > C.DEFAULT_STALE_WINDOW:
@@ -532,23 +517,13 @@ class AnsibleTriage(DefaultTriager):
                                 logging.info(msg)
                                 continue
 
-                    # pre-processing for non-module repos
-                    if iw.repo_full_name not in MREPOS:
-                        # force an update on the PR data
-                        iw.update_pullrequest()
-                        # build the history
-                        self.build_history(iw)
+                    # force an update on the PR data
+                    iw.update_pullrequest()
+                    # build the history
+                    self.build_history(iw)
 
                     actions = AnsibleActions()
-                    if iw.repo_full_name not in MREPOS:
-                        # basic processing for ansible/ansible
-                        self.process(iw)
-                    else:
-                        # module repo processing ...
-                        self.run_module_repo_issue(iw, actions)
-                        # do nothing else on these repos
-                        redo = False
-                        continue
+                    self.process(iw)
 
                     # build up actions from the meta
                     self.create_actions(iw, actions)
@@ -561,7 +536,6 @@ class AnsibleTriage(DefaultTriager):
                         for fn in iw.files:
                             logging.info('component[f]: %s' % fn)
                     else:
-                        #logging.info('component[t]: %s' % iw.template_data.get('component name'))
                         for line in iw.template_data.get(u'component_raw', u'').split(u'\n'):
                             logging.info('component[t]: %s' % line)
                         for fn in self.meta[u'component_filenames']:
@@ -722,64 +696,6 @@ class AnsibleTriage(DefaultTriager):
             {u'user': namespace, u'repo': reponame, u'number': issuewrapper.number},
             dmeta
         )
-
-    def run_module_repo_issue(self, iw, actions):
-        ''' Module Repos are dead!!! '''
-
-        if iw.created_at >= REPOMERGEDATE:
-            # close new module issues+prs immediately
-            logging.info('module issue created -after- merge')
-            self.close_module_issue_with_message(iw, actions)
-            self.save_meta(iw, {u'updated_at': to_text(iw.updated_at.isoformat())}, {u'close': True})
-            return
-        else:
-            # process history
-            # - check if message was given, comment if not
-            # - if X days after message, close PRs, move issues.
-            logging.info('module issue created -before- merge')
-
-            lc = iw.history.last_date_for_boilerplate(u'repomerge')
-            if lc:
-                # needs to be tz aware
-                now = pytz.utc.localize(datetime.datetime.now())
-                lcdelta = (now - lc).days
-            else:
-                lcdelta = None
-
-            kwargs = {}
-            # missing the comment?
-            if lc:
-                kwargs[u'bp'] = u'repomerge'
-            else:
-                kwargs[u'bp'] = None
-
-            # should it be closed or not?
-            if iw.is_pullrequest():
-                if lc and lcdelta > MREPO_CLOSE_WINDOW:
-                    #kwargs['close'] = True
-                    self.close_module_issue_with_message(
-                        iw,
-                        actions,
-                        **kwargs
-                    )
-                elif not lc:
-                    # add the comment
-                    self.add_repomerge_comment(iw, actions)
-                else:
-                    # do nothing
-                    pass
-            else:
-                kwargs[u'close'] = False
-                if lc and lcdelta > MREPO_CLOSE_WINDOW:
-                    # move it for them
-                    self.move_issue(iw)
-                elif not lc:
-                    # add the comment
-                    self.add_repomerge_comment(iw, actions)
-                else:
-                    # do nothing
-                    pass
-            self.save_meta(iw, {u'updated_at': to_text(iw.updated_at.isoformat())}, None)
 
     def load_meta(self, issuewrapper):
         mfile = os.path.join(
@@ -1678,78 +1594,6 @@ class AnsibleTriage(DefaultTriager):
 
         return safe
 
-    def move_issue(self, issue):
-        '''Move an issue to ansible/ansible'''
-        # this should only happen >30 days -after- the repomerge
-
-        # load the cached data
-        mdata = {}
-        mfile = os.path.join(issue.cachedir, u'issues', to_text(issue.number), u'migration.json')
-        mdir = os.path.dirname(mfile)
-        if not os.path.isdir(mdir):
-            os.makedirs(mdir)
-        if os.path.isfile(mfile):
-            with open(mfile, 'rb') as f:
-                mdata = json.loads(f.read())
-
-        # resume from last checkpoint
-        if mdata:
-            self.IM.migration_map[issue.html_url] = mdata
-
-        try:
-            self.IM.migrate(issue.html_url, u'ansible/ansible')
-        except Exception as e:
-            logging.error(e)
-            if C.DEFAULT_BREAKPOINTS:
-                import epdb; epdb.st()
-
-        # cache the data in case of errors
-        mdata = self.IM.migration_map.get(issue.html_url)
-        with open(mfile, 'wb') as f:
-            f.write(json.dumps(mdata, indent=2))
-
-    def add_repomerge_comment(self, issue, actions, bp=u'repomerge'):
-        '''Add the comment without closing'''
-
-        # stubs for the comment templater
-        self.module_maintainers = []
-        self.module = None
-        self.template_data = {}
-        self.match = {}
-
-        comment = self.render_comment(boilerplate=bp)
-        actions.comments = [comment]
-
-        logging.info('url: %s' % issue.html_url)
-        logging.info('title: %s' % issue.title)
-        logging.info('component: %s' % self.template_data.get(u'component_raw'))
-        pprint(vars(actions))
-        action_meta = self.apply_actions(issue, actions)
-        return action_meta
-
-    def close_module_issue_with_message(self, issue, actions, bp=u'repomerge_new'):
-        '''After repomerge, new issues+prs in the mod repos should be closed'''
-        actions.close = True
-        actions.comments = []
-        actions.newlabel = []
-        actions.unlabel = []
-
-        # stubs for the comment templater
-        self.module_maintainers = []
-        self.module = None
-        self.template_data = {}
-        self.match = {}
-
-        comment = self.render_comment(boilerplate=bp)
-        actions.comments = [comment]
-
-        logging.info('url: %s' % issue.html_url)
-        logging.info('title: %s' % issue.title)
-        logging.info('component: %s' % self.template_data.get(u'component_raw'))
-        pprint(vars(actions))
-        action_meta = self.apply_actions(issue, actions)
-        return action_meta
-
     def get_stale_numbers(self, reponame):
         # https://github.com/ansible/ansibullbot/issues/458
 
@@ -1917,14 +1761,13 @@ class AnsibleTriage(DefaultTriager):
             logging.info('%s numbers after start-at' % len(numbers))
 
         # Get stale numbers if not targeting
-        if repo not in MREPOS:
-            if self.daemonize and self.repos[repo][u'loopcount'] > 0:
-                logging.info('checking for stale numbers')
-                stale = self.get_stale_numbers(repo)
-                self.repos[repo][u'stale'] = [int(x) for x in stale]
-                numbers += [int(x) for x in stale]
-                numbers = sorted(set(numbers))
-                logging.info('%s numbers after stale check' % len(numbers))
+        if self.daemonize and self.repos[repo][u'loopcount'] > 0:
+            logging.info('checking for stale numbers')
+            stale = self.get_stale_numbers(repo)
+            self.repos[repo][u'stale'] = [int(x) for x in stale]
+            numbers += [int(x) for x in stale]
+            numbers = sorted(set(numbers))
+            logging.info('%s numbers after stale check' % len(numbers))
 
         ################################################################
         # PRE-FILTERING TO PREVENT EXCESSIVE API CALLS
@@ -2516,7 +2359,7 @@ class AnsibleTriage(DefaultTriager):
                              " (NOTE: only useful if you have commit access to" \
                              " the repo in question.)"
 
-        parser.add_argument("--repo", "-r", type=str, choices=MREPOS,
+        parser.add_argument("--repo", "-r", type=str, choices=REPOS,
                             help="Github repo to triage (defaults to all)")
 
         parser.add_argument("--skip_no_update", action="store_true",
@@ -2560,10 +2403,6 @@ class AnsibleTriage(DefaultTriager):
 
         parser.add_argument("--ignore_module_commits", action="store_true",
                             help="Do not enumerate module commit logs")
-
-        # ALWAYS ON NOW
-        #parser.add_argument("--issue_component_matching", action="store_true",
-        #                    help="Try to enumerate the component labels for issues")
 
         parser.add_argument(
             "--pr", "--id", type=str,
