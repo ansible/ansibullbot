@@ -41,7 +41,6 @@ from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
-from ansibullbot.utils.descriptionfixer import DescriptionFixer
 from ansibullbot.utils.logs import set_logger
 
 basepath = os.path.dirname(__file__).split('/')
@@ -133,8 +132,6 @@ class DefaultTriager(object):
                             help="Always pause between prs|issues")
         parser.add_argument("--force_rate_limit", action="store_true",
                             help="debug: force the rate limit")
-        parser.add_argument("--force_description_fixer", action="store_true",
-                            help="Always invoke the description fixer")
         # useful for debugging
         parser.add_argument("--dump_actions", action="store_true",
                             help="serialize the actions to disk [/tmp/actions]")
@@ -285,11 +282,9 @@ class DefaultTriager(object):
         return comment
 
     def apply_actions(self, iw, actions):
-
         action_meta = {'REDO': False}
 
         if actions.count() > 0:
-
             if self.dump_actions:
                 self.dump_action_dict(iw, actions)
 
@@ -300,94 +295,33 @@ class DefaultTriager(object):
                     print("Running actions non-interactive as you forced.")
                     self.execute_actions(iw, actions)
                     return action_meta
-                cont = input("Take recommended actions (y/N/a/R/T/DEBUG)? ")
+                cont = input("Take recommended actions (y/N/a/R/DEBUG)? ")
                 if cont in ('a', 'A'):
                     sys.exit(0)
                 if cont in ('Y', 'y'):
                     self.execute_actions(iw, actions)
-                if cont == 'T':
-                    self.template_wizard(iw)
-                    action_meta['REDO'] = True
                 if cont in ('r', 'R'):
                     action_meta['REDO'] = True
                 if cont == 'DEBUG':
                     # put the user into a breakpoint to do live debug
                     action_meta['REDO'] = True
                     import epdb; epdb.st()
-
         elif self.always_pause:
             print("Skipping, but pause.")
-            cont = input("Continue (Y/n/a/R/T/DEBUG)? ")
+            cont = input("Continue (Y/n/a/R/DEBUG)? ")
             if cont in ('a', 'A', 'n', 'N'):
                 sys.exit(0)
-            if cont == 'T':
-                self.template_wizard(iw)
-                action_meta['REDO'] = True
             elif cont in ('r', 'R'):
                 action_meta['REDO'] = True
             elif cont == 'DEBUG':
                 # put the user into a breakpoint to do live debug
                 import epdb; epdb.st()
                 action_meta['REDO'] = True
-
-        elif self.force_description_fixer:
-            # FIXME: self.FIXED_ISSUES not defined since 1cf9674cd38edbd17aff906d72296c99043e5c13
-            #        either define self.FIXED_ISSUES, either remove this method
-            # FIXME force_description_fixer is not known by DefaultTriager (only
-            #       by AnsibleTriage): if not removed, move it to AnsibleTriage
-            if iw.html_url not in self.FIXED_ISSUES:
-                if self.meta['template_missing_sections']:
-                    changed = self.template_wizard(iw)
-                    if changed:
-                        action_meta['REDO'] = True
-                self.FIXED_ISSUES.append(iw.html_url)
         else:
             print("Skipping.")
 
         # let the upper level code redo this issue
         return action_meta
-
-    def template_wizard(self, iw):
-
-        DF = DescriptionFixer(iw, self.meta)
-
-        old = iw.body
-        old_lines = old.split('\n')
-        new = DF.new_description
-        new_lines = new.split('\n')
-
-        total_lines = len(new_lines)
-        if len(old_lines) > total_lines:
-            total_lines = len(old_lines)
-
-        if len(new_lines) < total_lines:
-            delta = total_lines - len(new_lines)
-            for x in xrange(0, delta):
-                new_lines.append('')
-
-        if len(old_lines) < total_lines:
-            delta = total_lines - len(old_lines)
-            for x in xrange(0, delta):
-                old_lines.append('')
-
-        line = '--------------------------------------------------------'
-        padding = 100
-        print("%s|%s" % (line.ljust(padding), line))
-        for c1, c2 in zip(old_lines, new_lines):
-            if len(c1) > padding:
-                c1 = c1[:padding-4]
-            if len(c2) > padding:
-                c2 = c2[:padding-4]
-            print("%s|%s" % (c1.rstrip().ljust(padding), c2.rstrip()))
-        print("%s|%s" % (line.rstrip().ljust(padding), line))
-
-        print('# ' + iw.html_url)
-        cont = input("Apply this new description? (Y/N) ")
-        if cont == 'Y':
-            iw.set_description(DF.new_description)
-            return True
-        else:
-            return False
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
