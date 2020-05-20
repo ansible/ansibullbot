@@ -31,8 +31,8 @@ import io
 import json
 import logging
 import os
+from pprint import pprint
 
-import pytz
 import requests
 
 from ansibullbot._json_compat import json_dump
@@ -40,7 +40,6 @@ from ansibullbot._text_compat import to_bytes, to_text
 
 import ansibullbot.constants as C
 
-from pprint import pprint
 from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, environment
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
@@ -98,15 +97,10 @@ from ansibullbot.triagers.plugins.test_support_plugins import get_test_support_p
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 
-from ansibullbot.parsers.botmetadata import BotMetadataParser
-
 
 REPOS = [
     u'ansible/ansible',
 ]
-
-REPOMERGEDATE = datetime.datetime(2016, 12, 6, 0, 0, 0)
-MREPO_CLOSE_WINDOW = 60
 
 
 def get_version_major_minor(vstring):
