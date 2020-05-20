@@ -1,30 +1,11 @@
 #!/usr/bin/env python
 
-import copy
-import shutil
-import tempfile
-import textwrap
 import unittest
 
 import six
 six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
 
-from tests.utils.issue_mock import IssueMock
-from tests.utils.helpers import get_issue
-from tests.utils.module_indexer_mock import create_indexer
-from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 from ansibullbot.triagers.plugins.shipit import get_automerge_facts
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
-
-
-class ComponentMatcherMock(object):
-
-    strategies = []
-    expected_results = []
-
-    def match(self, issuewrapper):
-        return self.expected_results
 
 
 class HistoryWrapperMock(object):
@@ -81,28 +62,10 @@ class IssueWrapperMock(object):
             return 'https://github.com/%s/%s/issues/%s' % (self.org, self.repo, self.number)
 
 
-class ModuleIndexerMock(object):
-
-    def __init__(self, namespace_maintainers):
-        self.namespace_maintainers = namespace_maintainers
-
-    def get_maintainers_for_namespace(self, namespace):
-        return self.namespace_maintainers
-
-
-class FileIndexerMock(object):
-    files = []
-
-
 class MockFile(object):
     def __init__(self, name, content=u''):
         self.filename = name
         self.content = content
-
-
-class MockRepo(object):
-    def __init__(self, repo_path):
-        self.repo_path = repo_path
 
 
 class TestAutomergeFacts(unittest.TestCase):
@@ -112,7 +75,6 @@ class TestAutomergeFacts(unittest.TestCase):
         IW = IssueWrapperMock('ansible', 'ansible', 1)
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'ci_stale': False,
             u'ci_state': u'success',
@@ -150,7 +112,6 @@ class TestAutomergeFacts(unittest.TestCase):
         IW = IssueWrapperMock('ansible', 'ansible', 1)
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
-        MI = ModuleIndexerMock([])
         meta = {
             u'ci_stale': False,
             u'ci_state': u'success',

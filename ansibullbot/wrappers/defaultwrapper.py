@@ -91,7 +91,7 @@ class DefaultWrapper(object):
 
     _RENAMED_FILES = None
 
-    def __init__(self, github=None, repo=None, issue=None, cachedir=None, file_indexer=None):
+    def __init__(self, github=None, repo=None, issue=None, cachedir=None, gitrepo=None):
         self.meta = {}
         self.cachedir = cachedir
         self.github = github
@@ -128,7 +128,7 @@ class DefaultWrapper(object):
         self.pr_status_raw = None
         self.pull_raw = None
         self.pr_files = None
-        self.file_indexer = file_indexer
+        self.gitrepo = gitrepo
 
         self.full_cachedir = os.path.join(
             self.cachedir,
@@ -958,8 +958,8 @@ class DefaultWrapper(object):
 
     @property
     def new_files(self):
-        new_files = [x for x in self.files if x not in self.file_indexer.files]
-        new_files = [x for x in new_files if not self.file_indexer.gitrepo.existed(x)]
+        new_files = [x for x in self.files if x not in self.gitrepo.files]
+        new_files = [x for x in new_files if not self.gitrepo.existed(x)]
         return new_files
 
     @property

@@ -1485,7 +1485,6 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.utils.component_tools.logging', MockLogger))
         #self.mocks.append(mock.patch('ansibullbot.utils.component_tools.requests', self.mr))
         self.mocks.append(mock.patch('ansibullbot.utils.extractors.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.file_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.gh_gql_client.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.git_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.moduletools.logging', MockLogger))

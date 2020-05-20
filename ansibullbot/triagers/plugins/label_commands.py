@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 
-def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], valid_labels=[]):
+def get_label_command_facts(issuewrapper, meta, all_maintainers, core_team=[], valid_labels=[]):
 
     iw = issuewrapper
     add_labels = []
@@ -47,7 +47,7 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
 
     iw = issuewrapper
     maintainers = [x for x in core_team]
-    maintainers += module_indexer.all_maintainers
+    maintainers += all_maintainers
     maintainers = sorted(set(maintainers))
 
     # iterate through the description and comments and look for label commands
@@ -96,14 +96,14 @@ def get_label_command_facts(issuewrapper, meta, module_indexer, core_team=[], va
     return fact
 
 
-def get_waffling_overrides(issuewrapper, meta, module_indexer, core_team=[], valid_labels=[]):
+def get_waffling_overrides(issuewrapper, meta, all_maintainers, core_team=[], valid_labels=[]):
 
     iw = issuewrapper
     overrides = []
 
     iw = issuewrapper
     maintainers = [x for x in core_team]
-    maintainers += module_indexer.all_maintainers
+    maintainers += all_maintainers
     maintainers = sorted(set(maintainers))
 
     for ev in iw.history.history:

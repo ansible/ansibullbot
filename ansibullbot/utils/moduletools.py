@@ -20,9 +20,9 @@ from sqlalchemy.orm import sessionmaker
 
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
-from ansibullbot.parsers.botmetadata import BotMetadataParser, BotYAMLLoader
-from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.parsers.botmetadata import BotYAMLLoader
 from ansibullbot.utils.systemtools import run_command
+from ansibullbot.utils.webscraper import GithubWebScraper
 
 
 Base = declarative_base()
@@ -68,28 +68,21 @@ class ModuleIndexer(object):
         u'imports': []
     }
 
-    def __init__(self, commits=True, blames=True, botmeta=None, botmetafile=None, maintainers=None, gh_client=None, cachedir=u'~/.ansibullbot/cache', gitrepo=None):
+    def __init__(self, commits=True, blames=True, botmeta=None, maintainers=None, gh_client=None, cachedir=u'~/.ansibullbot/cache', gitrepo=None):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
         '''
         self.get_commits = commits
         self.get_blames = blames
-        self.botmetafile = botmetafile
-        if botmeta:
-            self.botmeta = botmeta
-        else:
-            self.botmeta = {}  # BOTMETA.yml file with minor updates (macro rendered, empty default values fixed)
-        self.modules = {}  # keys: paths of files belonging to the repository
+        botmeta = botmeta if botmeta else {}
         self.maintainers = maintainers or {}
-        self.scraper_cache = os.path.expanduser(os.path.join(cachedir, u'ansible.modules.scraper'))
         self.gqlc = gh_client
-        self.files = []
+        self.scraper_cache = os.path.expanduser(os.path.join(cachedir, u'ansible.modules.scraper'))
+        self.gws = GithubWebScraper(cachedir=self.scraper_cache)
+        self.gitrepo = gitrepo
 
-        if gitrepo:
-            self.gitrepo = gitrepo
-        else:
-            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=u'https://github.com/ansible/ansible')
+        self.modules = {}  # keys: paths of files belonging to the repository
 
         # sqlalchemy
         unc = os.path.join(cachedir, u'ansible_module_indexer.db')
@@ -110,38 +103,11 @@ class ModuleIndexer(object):
         # map of email to github login
         self.emails_cache = {}
 
-        # load the bot meta
-        self.update(force=True)
+        self.update(botmeta)
 
-    def update(self, force=False):
-        '''Reload everything if there are new commits'''
-        changed = self.gitrepo.manage_checkout()
-        if changed or force:
-            self.get_files()
-            self.parse_metadata()
-
-    def get_files(self):
-        '''Cache a list of filenames in the checkout'''
-        cmd = u'cd {}; git ls-files'.format(self.gitrepo.checkoutdir)
-        (rc, so, se) = run_command(cmd)
-        files = to_text(so).split(u'\n')
-        files = [x.strip() for x in files if x.strip()]
-        self.files = files
-
-    def parse_metadata(self):
-
-        if not self.botmeta:
-            if self.botmetafile is not None:
-                with open(self.botmetafile, 'rb') as f:
-                    rdata = f.read()
-            else:
-                fp = u'.github/BOTMETA.yml'
-                rdata = self.get_file_content(fp)
-            logging.info('moduleindexer parsing botmeta')
-            self.botmeta = BotMetadataParser.parse_yaml(rdata)
-
-        # load the modules
-        logging.info(u'loading modules')
+    def update(self, botmeta=None):
+        if botmeta is not None:
+            self.botmeta = botmeta
         self.get_ansible_modules()
 
     def get_ansible_modules(self):
@@ -365,7 +331,7 @@ class ModuleIndexer(object):
         changed = False
         keys = sorted(self.modules.keys())
         for k in keys:
-            if k not in self.files:
+            if k not in self.gitrepo.files:
                 self.committers[k] = {}
                 continue
 
@@ -723,11 +689,3 @@ class ModuleIndexer(object):
                         maintainers.append(m)
         maintainers = [x for x in maintainers if x.strip()]
         return maintainers
-
-    def get_file_content(self, filepath):
-        fpath = os.path.join(self.gitrepo.checkoutdir, filepath)
-        if not os.path.isfile(fpath):
-            return None
-        with io.open(fpath, 'r', encoding='utf-8') as f:
-            data = f.read()
-        return data

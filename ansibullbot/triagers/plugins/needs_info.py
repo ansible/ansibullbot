@@ -13,21 +13,6 @@ def is_needsinfo(triager, issue):
     maintainers = [x for x in triager.ansible_members]
     maintainers += [x for x in triager.ansible_core_team]
 
-    '''
-    if triager.meta.get('module_match'):
-        maintainers += triager.meta['module_match'].get('maintainers', [])
-        ns = triager.meta['module_match'].get('namespace')
-        if ns:
-            maintainers += \
-                triager.module_indexer.get_maintainers_for_namespace(ns)
-        if triager.meta['module_match']['authors']:
-            maintainers += triager.meta['module_match']['authors']
-
-        rfn = triager.meta['module_match']['repo_filename']
-        if triager.module_indexer.committers.get(rfn):
-            maintainers += triager.module_indexer.committers.get(rfn).keys()
-    '''
-
     maintainers = sorted(
         set(
             [x for x in maintainers

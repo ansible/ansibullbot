@@ -36,6 +36,7 @@ class GitRepoWrapper(object):
 
         self.commits_by_email = None
         self.files_by_commit = {}
+
         if repo:
             self.update(force=True)
 

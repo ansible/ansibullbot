@@ -1,4 +1,4 @@
-def get_bot_status_facts(issuewrapper, module_indexer, core_team=[], bot_names=[]):
+def get_bot_status_facts(issuewrapper, all_maintainers, core_team=[], bot_names=[]):
     iw = issuewrapper
     bs = False
     for ev in iw.history.history:
@@ -8,7 +8,7 @@ def get_bot_status_facts(issuewrapper, module_indexer, core_team=[], bot_names=[
             if ev[u'actor'] not in bot_names:
                 if ev[u'actor'] in core_team or \
                         ev[u'actor'] == iw.submitter or \
-                        ev[u'actor'] in module_indexer.all_maintainers:
+                        ev[u'actor'] in all_maintainers:
                     bs = True
                     continue
         # <!--- boilerplate: bot_status --->

@@ -231,7 +231,7 @@ def get_review_facts(issuewrapper, meta):
     return rfacts
 
 
-def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botnames=[]):
+def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames=[]):
     """ Count shipits by maintainers/community/other """
 
     # supershipit - maintainers with isolated commit access
@@ -288,8 +288,8 @@ def get_shipit_facts(issuewrapper, inmeta, module_indexer, core_team=[], botname
     module_utils_files_owned = 0  # module_utils files for which submitter is maintainer
     if meta[u'is_module_util']:
         for f in files:
-            if f.startswith(u'lib/ansible/module_utils') and f in module_indexer.botmeta[u'files']:
-                maintainers = module_indexer.botmeta[u'files'][f].get(u'maintainers', [])
+            if f.startswith(u'lib/ansible/module_utils') and f in botmeta_files:
+                maintainers = botmeta_files[f].get(u'maintainers', [])
                 if maintainers and (iw.submitter in maintainers):
                     module_utils_files_owned += 1
 
@@ -506,7 +506,7 @@ def get_supported_by(issuewrapper, meta):
     return supported_by
 
 
-def get_submitter_facts(issuewrapper, meta, module_indexer, component_matcher):
+def get_submitter_facts(issuewrapper, meta, emails_cache, component_matcher):
     '''Summary stats of submitter's commit history'''
     sfacts = {
         u'submitter_previous_commits': 0,
@@ -516,7 +516,7 @@ def get_submitter_facts(issuewrapper, meta, module_indexer, component_matcher):
     login = issuewrapper.submitter
     all_emails = itertools.chain(
         component_matcher.email_cache.items(),
-        module_indexer.emails_cache.items(),
+        emails_cache.items(),
     )
 
     emails = set(k for k, v in all_emails if v == login)
