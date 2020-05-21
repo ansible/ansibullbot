@@ -254,7 +254,6 @@ class AnsibleTriage(DefaultTriager):
         logging.info(u'creating gitrepowrapper')
         repo = u'https://github.com/ansible/ansible'
         self.gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.ansible_commit, rebase=update_checkouts)
-        self.gitrepo.update(force=True)
 
         # load botmeta ... once!
         logging.info('ansible triager loading botmeta')
