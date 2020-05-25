@@ -241,7 +241,7 @@ class GithubGraphQLClient(object):
                 break
 
             # keep each edge/node/issue
-            for edge in data[u'data'][u'repository'][otype][u'edges']:
+            for edge in data.get(u'data', {}).get(u'repository', {}).get(otype, {}).get(u'edges', []):
                 node = edge[u'node']
                 self.update_node(node, otype.lower()[:-1], owner, repo)
                 nodes.append(node)
