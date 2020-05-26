@@ -80,7 +80,7 @@ MODULES_FLATTEN_MAP = {
     'lib/ansible/modules/net_tools/basics/slurp.py': 'lib/ansible/modules/slurp.py',
     'lib/ansible/modules/files/stat.py': 'lib/ansible/modules/stat.py',
     'lib/ansible/modules/source_control/subversion.py': 'lib/ansible/modules/subversion.py',
-    'lib/ansible/modules/system/sytemd.py': 'lib/ansible/modules/systemd.py',
+    'lib/ansible/modules/system/systemd.py': 'lib/ansible/modules/systemd.py',
     'lib/ansible/modules/system/sysvinit.py': 'lib/ansible/modules/sysvinit.py',
     'lib/ansible/modules/files/tempfile.py': 'lib/ansible/modules/tempfile.py',
     'lib/ansible/modules/files/template.py': 'lib/ansible/modules/template.py',
