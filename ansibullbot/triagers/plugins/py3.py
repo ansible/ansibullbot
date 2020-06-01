@@ -29,7 +29,7 @@ def get_python3_facts(issuewrapper):
 
     if ispy3:
         for comment in iw.comments:
-            if u'!python3' in comment.body:
+            if u'!python3' in comment[u'body']:
                 logging.info(u'!python3 override in comments')
                 ispy3 = False
                 break

@@ -43,22 +43,17 @@ class GithubRepoWrapperMock:
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', False)
 def test_get_events():
-
     '''Check basic event fetching and caching'''
-
     with tempfile.TemporaryDirectory() as cachedir:
-
         github = GithubWrapperMock()
         repo = GithubRepoWrapperMock()
         issue = GithubIssueMock()
 
-        github.cache[u'https://github.com/ansible/ansible/issues/1/events'] = [
-            {'event': 'labeled', 'created_at': datetime.datetime.now().isoformat()},
-            {'event': 'unlabeled', 'created_at': datetime.datetime.now().isoformat()},
-            {'event': 'comment', 'created_at': datetime.datetime.now().isoformat()}
+        github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'] = [
+            {'event': 'labeled', 'created_at':  '2020-05-31T10:02:20Z'},
+            {'event': 'unlabeled', 'created_at':  '2020-05-31T10:02:20Z'},
+            {'event': 'comment', 'created_at':  '2020-05-31T10:02:20Z'}
         ]
-
-        github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'] = []
 
         dw = DefaultWrapper(
             github=github,
@@ -68,11 +63,9 @@ def test_get_events():
             gitrepo=repo,
         )
 
-        events = dw.get_events()
+        events = dw.events
 
         assert len(events) == 3
-        assert os.path.exists(os.path.join(cachedir, 'issues', '1', 'events_meta.json'))
-        assert os.path.exists(os.path.join(cachedir, 'issues', '1', 'events_data.json'))
         assert os.path.exists(os.path.join(cachedir, 'issues', '1', 'timeline_meta.json'))
         assert os.path.exists(os.path.join(cachedir, 'issues', '1', 'timeline_data.json'))
 
@@ -80,25 +73,20 @@ def test_get_events():
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', False)
 def test_get_events_bad_cache_invalidate():
-
     '''Prevent bad data from leaking into events'''
-
     with tempfile.TemporaryDirectory() as cachedir:
-
         github = GithubWrapperMock()
         repo = GithubRepoWrapperMock()
         issue = GithubIssueMock()
 
-        github.cache[u'https://github.com/ansible/ansible/issues/1/events'] = [
-            {'event': 'labeled', 'created_at': datetime.datetime.now().isoformat()},
-            {'event': 'unlabeled', 'created_at': datetime.datetime.now().isoformat()},
-            {'event': 'comment', 'created_at': datetime.datetime.now().isoformat()}
+        github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'] = [
+            {'event': 'labeled', 'created_at': '2020-05-31T10:02:20Z'},
+            {'event': 'unlabeled', 'created_at': '2020-05-31T10:02:20Z'},
+            {'event': 'comment', 'created_at': '2020-05-31T10:02:20Z'}
         ]
 
-        github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'] = []
-
-        events_meta_cache = os.path.join(cachedir, 'issues', '1', 'events_meta.json')
-        events_data_cache = os.path.join(cachedir, 'issues', '1', 'events_data.json')
+        events_meta_cache = os.path.join(cachedir, 'issues', '1', 'timeline_meta.json')
+        events_data_cache = os.path.join(cachedir, 'issues', '1', 'timeline_data.json')
 
         os.makedirs(os.path.dirname(events_meta_cache))
 
@@ -106,12 +94,12 @@ def test_get_events_bad_cache_invalidate():
         # set a meta file that matches the timestamp for the issue so the cache is used
         with open(events_meta_cache, 'w') as f:
             f.write(json.dumps({
-                u'updated_at': issue.updated_at.isoformat(),
-                u'url': u'https://github.com/ansible/ansible/issues/1/events'
+                u'updated_at': '2020-05-31T10:02:20Z',
+                u'url': u'https://github.com/ansible/ansible/issues/1/timeline',
             }))
 
         # create a bad event to make sure the cache is invalidated and refetched
-        bad_events = github.cache[u'https://github.com/ansible/ansible/issues/1/events'][:]
+        bad_events = github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'][:]
         bad_events[0] = u'documentation_url'
         with open(events_data_cache, 'w') as f:
             f.write(json.dumps(bad_events))
@@ -124,6 +112,6 @@ def test_get_events_bad_cache_invalidate():
             gitrepo=repo
         )
 
-        events = dw.get_events()
+        events = dw.events
 
         assert len(events) == 3

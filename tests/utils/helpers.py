@@ -22,10 +22,9 @@ def get_issue(datafile, statusfile):
 
         # disable this completely
         iw.load_update_fetch = lambda x: []
+        iw.load_update_fetch_rest = lambda x: []
         # hook in here to avoid github api calls
-        iw._comments = issue._private_comments
-        iw._events = issue.events
-        iw._reactions = issue.reactions
+        iw.get_timeline = lambda: issue.events
         iw._commits = issue.commits
 
         # pre-load status to avoid github api calls
@@ -35,10 +34,6 @@ def get_issue(datafile, statusfile):
         # pre-create history to avoid github api calls
         history = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
         iw._history = history
-
-        # merge_commits(self, commits)
-        if issue.commits:
-            iw._history.merge_commits(issue.commits)
 
         yield iw
 

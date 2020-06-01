@@ -1,86 +1,39 @@
-#!/usr/bin/env python
-
 import datetime
 import logging
 import os
-import pytz
 from operator import itemgetter
 
-from github import GithubObject
-from ansibullbot.decorators.github import RateLimited
+import pytz
 
 import ansibullbot.constants as C
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 
-# historywrapper.py
-#
-#   HistoryWrapper - a tool to ask questions about an issue's history
-#
-#   This class will join the events and comments of an issue into
-#   an object that allows the user to make basic queries without
-#   having to iterate through events manaully.
-#
-#   Constructor Examples:
-#       hwrapper = HistoryWrapper(IssueWrapper)
-#       hwrapper = HistoryWrapper(PullRequestWrapper)
-#
-#   https://developer.github.com/v3/issues/events/
-#   https://developer.github.com/v3/issues/comments/
-
-class Actor(object):
-    login = None
-
-
-class Event(object):
-
-    def __init__(self, raw_data, id=None):
-        self.id = id
-        self.raw_data = raw_data
-
-    @property
-    def node_id(self):
-        return self.raw_data.get(u'node_id')
-
-    @property
-    def created_at(self):
-        ts = self.raw_data.get(u'created_at')
-        ts = datetime.datetime.strptime(ts, u'%Y-%m-%dT%H:%M:%SZ')
-        return ts
-
-    @property
-    def event(self):
-        return self.raw_data.get(u'event')
-
-    @property
-    def actor(self):
-        actor = Actor()
-        actor.login = self.raw_data[u'actor'][u'login']
-        return actor
-
-    @property
-    def commit_id(self):
-        return self.raw_data.get(u'commit_id')
-
-    @property
-    def commit_url(self):
-        return self.raw_data.get(u'commit_url')
-
 
 class HistoryWrapper(object):
+    """A tool to ask questions about an issue's history.
+
+    This class will join the events and comments of an issue into
+    an object that allows the user to make basic queries without
+    having to iterate through events manually.
+
+    Constructor Examples:
+        hwrapper = HistoryWrapper(IssueWrapper)
+        hwrapper = HistoryWrapper(PullRequestWrapper)
+
+    https://developer.github.com/v3/issues/timeline/
+    """
 
     SCHEMA_VERSION = 1.1
     BOTNAMES = C.DEFAULT_BOT_NAMES
 
-    def __init__(self, issue, usecache=True, cachedir=None, exclude_users=[]):
-
+    def __init__(self, issue, usecache=True, cachedir=None):
         self.issue = issue
-        self.maincache = cachedir
         self._waffled_labels = None
 
         if issue.repo.repo_path not in cachedir and u'issues' not in cachedir:
             self.cachefile = os.path.join(
-                self.maincache,
+                cachedir,
                 issue.repo.repo_path,
                 u'issues',
                 to_text(issue.instance.number),
@@ -88,7 +41,7 @@ class HistoryWrapper(object):
             )
         elif issue.repo.repo_path not in cachedir:
             self.cachefile = os.path.join(
-                self.maincache,
+                cachedir,
                 issue.repo.repo_path,
                 u'issues',
                 to_text(issue.instance.number),
@@ -96,20 +49,20 @@ class HistoryWrapper(object):
             )
         elif u'issues' not in cachedir:
             self.cachefile = os.path.join(
-                self.maincache,
+                cachedir,
                 u'issues',
                 to_text(issue.instance.number),
                 u'history.pickle'
             )
         else:
             self.cachefile = os.path.join(
-                self.maincache,
+                cachedir,
                 to_text(issue.instance.number),
                 u'history.pickle'
             )
 
         self.cachedir = os.path.join(
-            self.maincache,
+            cachedir,
             os.path.dirname(self.cachefile)
         )
         if u'issues' not in self.cachedir:
@@ -120,33 +73,22 @@ class HistoryWrapper(object):
             else:
                 raise Exception(u'')
 
-        if not usecache:
-            self.history = self.process()
-        else:
-            """Building history is expensive and slow"""
+        if usecache:
             cache = self._load_cache()
 
             if not self.validate_cache(cache):
                 logging.info(u'history cache invalidated, rebuilding')
-                self.history = self.process()
+                self.history = self.issue.events
                 self._dump_cache()
             else:
                 logging.info(u'use cached history')
-                self.history = cache[u'history'][:]
+                self.history = cache[u'history']
+        else:
+            self.history = self.issue.events
 
-        if exclude_users:
-            tmp_history = [x for x in self.history]
-            for x in tmp_history:
-                if x[u'actor'] in exclude_users:
-                    self.history.remove(x)
-
-        self.history = self._fix_comments_with_no_body(self.history[:])
-        self.history = self._fix_commits_with_no_message(self.history[:])
-        self.fix_history_tz()
         self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
     def validate_cache(self, cache):
-
         if cache is None:
             return False
 
@@ -170,7 +112,7 @@ class HistoryWrapper(object):
 
         # FIXME the cache is getting wiped out by cross-refences,
         #       so keeping this around as a failsafe
-        if len(cache['history']) < (len(self.issue.comments) + len(self.issue.labels)):
+        if len(cache['history']) < (len([x for x in cache['history'] if x['event'] == 'commented']) + len(self.issue.labels)):
             return False
 
         # FIXME label events seem to go missing, so force a rebuild
@@ -180,9 +122,6 @@ class HistoryWrapper(object):
                 return False
 
         return True
-
-    def get_rate_limit(self):
-        return self.issue.repo.gh.get_rate_limit()
 
     def _load_cache(self):
         if not os.path.isdir(self.cachedir):
@@ -198,18 +137,13 @@ class HistoryWrapper(object):
             logging.info(u'%s failed to load' % self.cachefile)
             cachedata = None
 
-        cachedata[u'history'] = self._fix_comments_with_no_body(cachedata[u'history'])
         cachedata[u'history'] = self._fix_event_bytes(cachedata[u'history'])
 
         return cachedata
 
     def _dump_cache(self):
-
-        # all events should have datetime.datetime types for created_at
-        if [x for x in self.history if not isinstance(x['created_at'], datetime.datetime)]:
-            msg = u'found a non-datetime created_at in events data'
-            logging.error(msg)
-            raise Exception(msg)
+        if any(x for x in self.history if not isinstance(x['created_at'], datetime.datetime)):
+            raise AssertionError(u'found a non-datetime created_at in events data')
 
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
@@ -234,20 +168,13 @@ class HistoryWrapper(object):
 
     def get_json_comments(self):
         comments = self.issue.comments[:]
-        for idx,x in enumerate(comments):
-            ca = x.created_at
+        for idx, x in enumerate(comments):
+            ca = x[u'created_at']
             if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
-                ca = pytz.utc.localize(x.created_at)
-            nc = {u'body': x.body, u'created_at': ca, u'user': {u'login': x.user.login}}
+                ca = pytz.utc.localize(x['created_at'])
+            nc = {u'body': x[u'body'], u'created_at': ca, u'user': {u'login': x[u'actor']}}
             comments[idx] = nc
         return comments
-
-    def _fix_comments_with_no_body(self, events):
-        '''Make sure all comment events have a body key'''
-        for idx,x in enumerate(events):
-            if x['event'] == u'commented' and u'body' not in x:
-                events[idx][u'body'] = u''
-        return events
 
     def _fix_event_bytes(self, events):
         '''Make sure all event values are strings and not bytes'''
@@ -257,11 +184,62 @@ class HistoryWrapper(object):
                     events[ide][k] = v.decode('utf-8')
         return events
 
-    def _fix_commits_with_no_message(self, events):
-        for idx,x in enumerate(events):
-            if x['event'] == u'committed' and u'message' not in x:
-                events[idx][u'message'] = ''
-        return events
+    def merge_commits(self, commits):
+        for xc in commits:
+            event = {}
+            event[u'id'] = xc.sha
+            if hasattr(xc.committer, u'login'):
+                event[u'actor'] = xc.committer.login
+            else:
+                event[u'actor'] = to_text(xc.committer)
+            event[u'created_at'] = pytz.utc.localize(xc.commit.committer.date)
+            event[u'event'] = u'committed'
+            event[u'message'] = xc.commit.message
+            self.history.append(event)
+        self.history = sorted(self.history, key=itemgetter(u'created_at'))
+
+    def merge_reviews(self, reviews):
+        for review in reviews:
+            event = {}
+
+            # https://github.com/ansible/ansibullbot/issues/1207
+            # "ghost" users are deleted users and show up as NoneType
+            if review.get('user') is None:
+                continue
+
+            if review[u'state'] == u'COMMENTED':
+                event[u'event'] = u'review_comment'
+            elif review[u'state'] == u'CHANGES_REQUESTED':
+                event[u'event'] = u'review_changes_requested'
+            elif review[u'state'] == u'APPROVED':
+                event[u'event'] = u'review_approved'
+            elif review[u'state'] == u'DISMISSED':
+                event[u'event'] = u'review_dismissed'
+            elif review[u'state'] == u'PENDING':
+                # ignore pending review
+                continue
+            else:
+                logging.error(u'unknown review state %s', review[u'state'])
+                continue
+
+            event[u'id'] = review[u'id']
+            event[u'actor'] = review[u'user'][u'login']
+            event[u'created_at'] = pytz.utc.localize(
+                    datetime.datetime.strptime(review[u'submitted_at'], u'%Y-%m-%dT%H:%M:%SZ')
+                )
+            if u'commit_id' in review:
+                event[u'commit_id'] = review[u'commit_id']
+            else:
+                event[u'commit_id'] = None
+            event[u'body'] = review.get(u'body')
+
+            self.history.append(event)
+        self.history = sorted(self.history, key=itemgetter(u'created_at'))
+
+    def merge_history(self, oldhistory):
+        '''Combine history from another issue [migration]'''
+        self.history += oldhistory
+        self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
@@ -290,7 +268,6 @@ class HistoryWrapper(object):
             import epdb; epdb.st()
         """
 
-        #import epdb; epdb.st()
         return matching_events
 
     def get_user_comments(self, username):
@@ -310,42 +287,8 @@ class HistoryWrapper(object):
             username,
             maxcount=999
         )
-        comments = [x[u'body'] for x in matching_events
-                    if searchterm in x[u'body'].lower()]
+        comments = [x[u'body'] for x in matching_events if searchterm in x[u'body'].lower()]
         return comments
-
-    def get_user_comments_groupby(self, username, groupby='d'):
-        '''Count comments for a user by day/week/month/year'''
-
-        comments = self._find_events_by_actor(
-            u'commented',
-            username,
-            maxcount=999
-        )
-        groups = {}
-        for comment in comments:
-            created = comment[u'created_at']
-            ts = None
-            if groupby == u'd':
-                # day
-                ts = u'%s-%s-%s' % (created.year, created.month, created.day)
-            elif groupby == u'w':
-                # week
-                ts = u'%s-%s' % (created.year, created.isocalendar()[1])
-            elif groupby == u'm':
-                # month
-                ts = u'%s-%s' % (created.year, created.month)
-            elif groupby == u'y':
-                # year
-                ts = u'%s' % created.year
-
-            if ts:
-                if ts not in groups:
-                    groups[ts] = 0
-                groups[ts] += 1
-
-        return groups
-
 
     def get_commands(self, username, command_keys, timestamps=False, uselabels=True):
         """Given a list of phrase keys, return a list of phrases used"""
@@ -405,8 +348,6 @@ class HistoryWrapper(object):
         events = [x for x in events if x['user']['login'] not in self.BOTNAMES]
 
         for event in events:
-            #if event[u'actor'] in self.BOTNAMES:
-            #    continue
             if event.get(u'body'):
                 matched = False
                 lines = event[u'body'].split(u'\n')
@@ -419,133 +360,19 @@ class HistoryWrapper(object):
 
         return commands
 
-    def is_referenced(self, username):
-        """Has this issue ever been referenced by another issue|PR?"""
-        matching_events = self._find_events_by_actor(u'referenced', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def is_mentioned(self, username):
-        """Has person X ever been mentioned in this issue?"""
-
-        matching_events = self._find_events_by_actor(u'mentioned', username)
-
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def has_viewed(self, username):
-        """Has person X ever interacted with issue in any way?"""
-        matching_events = self._find_events_by_actor(None, username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def has_commented(self, username):
-        """Has person X ever commented on this issue?"""
-        matching_events = self._find_events_by_actor(u'commented', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def has_labeled(self, username):
-        """Has person X ever labeled issue?"""
-        matching_events = self._find_events_by_actor(u'labeled', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def has_unlabeled(self, username):
-        """Has person X ever unlabeled issue?"""
-        matching_events = self._find_events_by_actor(u'unlabeled', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def has_reviewed(self, username):
-        """Has person X ever reviewed issue?"""
-        events = [
-            u'review_comment',
-            u'review_changes_requested',
-            u'review_approved',
-            u'review_dismissed'
-        ]
-        for x in events:
-            matching_events = self._find_events_by_actor(x, username)
-            if len(matching_events) > 0:
-                return True
-        return False
-
-    def has_subscribed(self, username):
-        """Has person X ever subscribed to this issue?"""
-        matching_events = self._find_events_by_actor(u'subscribed', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def was_self_assigned(self):
-        """Has anyone ever assigned self to this issue?"""
-        matching_events = self._find_events_by_actor(u'assigned', None)
-        for event in matching_events:
-            try:
-                if event[u'assignee'] == event[u'assigner']:
-                    return True
-            except KeyError:
-                continue
-
-        return False
-
     def was_assigned(self, username):
         """Has person X ever been assigned to this issue?"""
         matching_events = self._find_events_by_actor(u'assigned', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def was_unassigned(self, username):
-        """Has person X ever been unassigned from this issue?"""
-        matching_events = self._find_events_by_actor(u'unassigned', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
+        return len(matching_events) > 0
 
     def was_subscribed(self, username):
         """Has person X ever been subscribed to this issue?"""
         matching_events = self._find_events_by_actor(u'subscribed', username)
-        if len(matching_events) > 0:
-            return True
-        else:
-            return False
-
-    def last_viewed_at(self, username):
-        """When did person X last comment?"""
-        last_date = None
-        for event in reversed(self.history):
-            if type(username) != list:
-                if event[u'actor'] == username:
-                    last_date = event[u'created_at']
-                    #print("history - LAST DATE: %s" % last_date)
-            else:
-                if event[u'actor'] in username:
-                    last_date = event[u'created_at']
-                    #print("history - LAST DATE: %s" % last_date)
-            if last_date:
-                break
-        return last_date
+        return len(matching_events) > 0
 
     def last_notified(self, username):
         """When was this person pinged last in a comment?"""
-        if type(username) != list:
+        if not isinstance(username, list):
             username = [username]
         username = [u'@' + x for x in username]
         last_notification = None
@@ -562,20 +389,6 @@ class HistoryWrapper(object):
                             last_notification = comment[u'created_at']
         return last_notification
 
-    def last_commented_at(self, username):
-        """When did person X last comment?"""
-        last_date = None
-        for event in reversed(self.history):
-            if event[u'event'] == u'commented':
-                if type(username) == list:
-                    if event[u'actor'] in username:
-                        last_date = event[u'created_at']
-                elif event[u'actor'] == username:
-                    last_date = event[u'created_at']
-            if last_date:
-                break
-        return last_date
-
     def last_comment(self, username):
         last_comment = None
         for event in reversed(self.history):
@@ -588,15 +401,6 @@ class HistoryWrapper(object):
             if last_comment:
                 break
         return last_comment
-
-    def last_commentor(self):
-        """Who commented last?"""
-        last_commentor = None
-        for event in reversed(self.history):
-            if event[u'event'] == u'commented':
-                last_commentor = event[u'actor']
-                break
-        return last_commentor
 
     def label_last_applied(self, label):
         """What date was a label last applied?"""
@@ -671,7 +475,6 @@ class HistoryWrapper(object):
                     bpc.append(bp)
                     if content:
                         bpc.append(comment[u'body'])
-                    #boilerplates.append((comment['created_at'], bp))
                     boilerplates.append(bpc)
                 else:
                     boilerplates.append(bp)
@@ -679,6 +482,8 @@ class HistoryWrapper(object):
         return boilerplates
 
     def get_boilerplate_comments_content(self, bfilter=None):
+        # FIXME bfilter not used but a caller passes it in
+        # in ansibullbot/triagers/plugins/needs_revision.py
         bpcs = self.get_boilerplate_comments()
         bpcs = [x[-1] for x in bpcs]
         return bpcs
@@ -689,155 +494,7 @@ class HistoryWrapper(object):
         for bp in bps:
             if bp[1] == boiler:
                 last_date = bp[0]
-        #import epdb; epdb.st()
         return last_date
-
-    @RateLimited
-    def _raw_data_from_event(self, event):
-        raw_data = event.raw_data.copy()
-        return raw_data
-
-    def get_event_from_cache(self, eventid, cache):
-        if not cache:
-            return None
-        matches = [x for x in cache[u'history'] if x[u'id'] == eventid]
-        if matches:
-            return matches[0]
-        else:
-            return None
-
-    def process(self):
-        """Merge all events into chronological order"""
-
-        # FIXME - load this just once for later reference
-        cache = self._load_cache()
-
-        processed_events = []
-
-        events = self.issue.events
-        comments = self.issue.comments
-        reactions = self.issue.reactions
-
-        processed_events = []
-        for ide,event in enumerate(events):
-
-            if isinstance(event, dict):
-                if 'id' in event:
-                    thisid = event['id']
-                else:
-                    thisid = '%s_%s_%s' % (self.issue.repo_full_name, self.issue.number, ide)
-                event = Event(event, id=thisid)
-
-            cdict = self.get_event_from_cache(event.id, cache)
-
-            if cdict:
-                edict = cdict.copy()
-            else:
-                edict = {}
-                edict[u'id'] = event.id
-                if not hasattr(event.actor, u'login'):
-                    edict[u'actor'] = None
-                else:
-                    edict[u'actor'] = event.actor.login
-                edict[u'event'] = event.event
-                edict[u'created_at'] = event.created_at
-
-                if edict[u'event'] in [u'labeled', u'unlabeled']:
-                    raw_data = self._raw_data_from_event(event)
-                    edict[u'label'] = raw_data.get(u'label', {}).get(u'name', None)
-                elif edict[u'event'] == u'mentioned':
-                    pass
-                elif edict[u'event'] == u'subscribed':
-                    pass
-                elif edict[u'event'] == u'referenced':
-                    edict[u'commit_id'] = event.commit_id
-                elif edict[u'event'] == u'assigned':
-                    edict[u'assignee'] = event.raw_data[u'assignee'][u'login']
-                    edict[u'assigner'] = event.raw_data[u'assigner'][u'login']
-
-            processed_events.append(edict)
-
-        for comment in comments:
-            edict = {
-                u'id': comment.id,
-                u'event': u'commented',
-                u'actor': comment.user.login,
-                u'created_at': comment.created_at,
-                u'body': comment.body,
-            }
-            processed_events.append(edict)
-
-        for reaction in reactions:
-            # 2016-07-26T20:08:20Z
-            if not isinstance(reaction, dict):
-                # FIXME - not sure what's happening here
-                pass
-            else:
-                edict = {
-                    u'id': reaction[u'id'],
-                    u'event': u'reacted',
-                    u'created_at': reaction[u'created_at'],
-                    u'actor': reaction[u'user'][u'login'],
-                    u'content': reaction[u'content'],
-                }
-
-                processed_events.append(edict)
-
-        # get rid of events with no created_at =(
-        processed_events = [x for x in processed_events if x.get(u'created_at')]
-        processed_events = self._fix_history_tz(processed_events)
-
-        try:
-            # sort by created_at
-            sorted_events = sorted(processed_events, key=itemgetter(u'created_at'))
-        except Exception as e:
-            print(e)
-            print('failed to sort events')
-            import epdb; epdb.st()
-
-        # return ...
-        return sorted_events
-
-    def parse_timestamp(self, timestamp):
-        # convert the timestamp the same way the lib does it
-        try:
-            dt = GithubObject.GithubObject._makeDatetimeAttribute(timestamp)
-        except Exception as e:
-            print(e)
-            import epdb; epdb.st()
-        try:
-            return dt.value
-        except Exception as e:
-            print(e)
-            import epdb; epdb.st()
-
-    def merge_commits(self, commits):
-        for xc in commits:
-
-            '''
-            # 'Thu, 12 Jan 2017 15:06:46 GMT'
-            tfmt = '%a, %d %b %Y %H:%M:%S %Z'
-            ts = xc.last_modified
-            dts = datetime.datetime.strptime(ts, tfmt)
-            '''
-            # committer.date: "2016-12-19T08:05:45Z"
-            dts = xc.commit.committer.date
-            adts = pytz.utc.localize(dts)
-
-            event = {}
-            event[u'id'] = xc.sha
-            if hasattr(xc.committer, u'login'):
-                event[u'actor'] = xc.committer.login
-            else:
-                event[u'actor'] = to_text(xc.committer)
-            #event[u'created_at'] = dts
-            event[u'created_at'] = adts
-            event[u'event'] = u'committed'
-            event[u'message'] = xc.commit.message
-            self.history.append(event)
-
-        self.fix_history_tz()
-        self.history = sorted(self.history, key=itemgetter(u'created_at'))
 
     @property
     def last_commit_date(self):
@@ -847,100 +504,14 @@ class HistoryWrapper(object):
         else:
             return None
 
-    def merge_reviews(self, reviews):
-        for review in reviews:
-            event = {}
-
-            # https://github.com/ansible/ansibullbot/issues/1207
-            # "ghost" users are deleted users and show up as NoneType
-            if review.get('user') is None:
-                continue
-
-            if review[u'state'] == u'COMMENTED':
-                event[u'event'] = u'review_comment'
-            elif review[u'state'] == u'CHANGES_REQUESTED':
-                event[u'event'] = u'review_changes_requested'
-            elif review[u'state'] == u'APPROVED':
-                event[u'event'] = u'review_approved'
-            elif review[u'state'] == u'DISMISSED':
-                event[u'event'] = u'review_dismissed'
-            elif review[u'state'] == u'PENDING':
-                # ignore pending review
-                continue
-            else:
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception(u'unknown review state')
-
-            event[u'id'] = review[u'id']
-            event[u'actor'] = review[u'user'][u'login']
-            event[u'created_at'] = self.parse_timestamp(review[u'submitted_at'])
-            if u'commit_id' in review:
-                event[u'commit_id'] = review[u'commit_id']
-            else:
-                event[u'commit_id'] = None
-
-            # keep these for shipit analysis
-            event[u'body'] = review.get(u'body')
-
-            self.history.append(event)
-
-        self.fix_history_tz()
-        self.history = sorted(self.history, key=itemgetter(u'created_at'))
-
-    def merge_history(self, oldhistory):
-        '''Combine history from another issue [migration]'''
-        self.history += oldhistory
-        # sort by created_at
-        self.history = sorted(self.history, key=itemgetter(u'created_at'))
-
-    def _fix_history_tz(self, history):
-
-        # make datetime objects for all
-        for idx, x in enumerate(history):
-            if not hasattr(x['created_at'], 'tzinfo'):
-                # convert string to datetime
-                if '+' in x['created_at']:
-                    # u'2019-08-12T09:44:01+00:00'
-                    ts = x['created_at'].split('+')[0]
-                    if '.' in ts:
-                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
-                    else:
-                        ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
-                    x['created_at'] = ts
-                    history[idx]['created_at'] = ts
-                elif x['created_at'].endswith('Z'):
-                    # 2017-01-17T06:27:21Z'
-                    ts = datetime.datetime.strptime(x['created_at'], '%Y-%m-%dT%H:%M:%SZ')
-                    history[idx]['created_at'] = ts
-                elif x['created_at'].endswith('Z'):
-                    ts = datetime.datetime.strptime(x['created_at'], '%Y-%m-%dT%H:%M:%SZ')
-                    history[idx]['created_at'] = ts
-                else:
-                    ts = datetime.datetime.strptime(x['created_at'], '%Y-%m-%dT%H:%M:%S')
-                    history[idx]['created_at'] = ts
-
-        # set to UTC
-        for idx, x in enumerate(history):
-            if not x[u'created_at'].tzinfo:
-                ats = pytz.utc.localize(x[u'created_at'])
-                history[idx][u'created_at'] = ats
-
-        return history
-
-    def fix_history_tz(self):
-        '''History needs to be timezone aware!!!'''
-        self.history = self._fix_history_tz(self.history)
-
-    def get_changed_labels(self, prefix=None, bots=[]):
+    def get_changed_labels(self, prefix=None, bots=None):
         '''make a list of labels that have been set/unset'''
+        if bots is None:
+            bots = []
         labeled = []
         for event in self.history:
-            if bots:
-                if event[u'actor'] in bots:
-                    continue
+            if event[u'actor'] in bots:
+                continue
             if event[u'event'] in [u'labeled', u'unlabeled']:
                 if prefix:
                     if event[u'label'].startswith(prefix):
@@ -951,9 +522,7 @@ class HistoryWrapper(object):
 
     def label_is_waffling(self, label, limit=20):
         """ detect waffling on labels """
-
         #https://github.com/ansible/ansibullbot/issues/672
-
         if self._waffled_labels is None:
             self._waffled_labels = {}
             history = [x[u'label'] for x in self.history if u'label' in x]
@@ -979,7 +548,6 @@ class HistoryWrapper(object):
 
 
 class ShippableHistory(object):
-
     '''A helper to associate ci_verified labels to runs/commits'''
 
     def __init__(self, issuewrapper, shippable, ci_status):
@@ -990,7 +558,6 @@ class ShippableHistory(object):
         self.join_history()
 
     def join_history(self):
-
         this_history = [x for x in self.iw.history.history]
 
         status = {}
@@ -1017,9 +584,9 @@ class ShippableHistory(object):
             if not rd:
                 continue
 
-            ts = x[u'updated_at']
-            ts = datetime.datetime.strptime(ts, u'%Y-%m-%dT%H:%M:%SZ')
-            ts = pytz.utc.localize(ts)
+            ts = pytz.utc.localize(
+                datetime.datetime.strptime(x[u'updated_at'], u'%Y-%m-%dT%H:%M:%SZ')
+            )
 
             this_history.append(
                 {
@@ -1037,9 +604,7 @@ class ShippableHistory(object):
         self.history = this_history
 
     def info_for_last_ci_verified_run(self):
-
         '''Attempt to correlate the ci_label to a specific run'''
-
         # The ci_status for an issue will "rollover", meaning older instances
         # will go missing and can no longer be recalled. We just have to
         # assume in those cases that the ci_verified label was added on a very

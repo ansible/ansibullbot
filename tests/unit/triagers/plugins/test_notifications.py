@@ -1,7 +1,3 @@
-#! /usr/bin/env python
-
-import textwrap
-
 import pytest
 
 from ansibullbot.triagers.plugins.notifications import get_notification_facts
@@ -27,6 +23,7 @@ def iw(meta, statusfile):
     datafile = u'tests/fixtures/needs_contributor/0_issue.yml'
     with get_issue(datafile, statusfile) as iw:
         iw.get_assignees = lambda: []
+        iw._merge_commits = []
         iw.repo = RepoMock(meta[u'component_maintainers'] + meta[u'component_notifiers'])
         return iw
 
