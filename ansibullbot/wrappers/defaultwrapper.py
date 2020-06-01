@@ -175,7 +175,7 @@ class DefaultWrapper(object):
             event[u'id'] = dd[u'id']
             event[u'actor'] = dd[u'actor'][u'login']
             event[u'event'] = dd[u'event']
-            if isinstance(dd[u'created_at'], six.text_type):
+            if isinstance(dd[u'created_at'], six.string_types):
                 # FIXME
                 dd[u'created_at'] = datetime.datetime.strptime(dd[u'created_at'], u'%Y-%m-%dT%H:%M:%SZ')
             event[u'created_at'] = pytz.utc.localize(dd[u'created_at'])
