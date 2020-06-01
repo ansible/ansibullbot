@@ -899,6 +899,21 @@ class DefaultWrapper(object):
             self._history = HistoryWrapper(self, cachedir=self.cachedir)
         return self._history
 
+    @RateLimited
+    def update(self):
+        self.instance.update()
+        self._history = \
+            HistoryWrapper(self, cachedir=self.cachedir, usecache=True)
+        if self.is_pullrequest():
+            self.pullrequest.update()
+
+            if self.instance.updated_at > self.pullrequest.updated_at:
+                if C.DEFAULT_BREAKPOINTS:
+                    logging.error(u'breakpoint!')
+                    import epdb; epdb.st()
+                else:
+                    raise Exception(u'issue date != pr date')
+
     @property
     def commits(self):
         if self._commits is False:
