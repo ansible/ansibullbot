@@ -1,10 +1,10 @@
-#!/usr/bin/env python
+class LabelWafflingError(Exception):
+    """Label has been added/removed too many times"""
 
 
-# https://stackoverflow.com/a/1319675
 class RateLimitError(Exception):
     """Used to trigger the ratelimiting decorator"""
 
 
-class LabelWafflingError(Exception):
-    """Label has been added/removed too many times"""
+class ShippableNoData(Exception):
+    """Shippable did not return data"""

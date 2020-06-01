@@ -7,11 +7,11 @@ import os
 import pytz
 
 from ansibullbot._text_compat import to_text
+from ansibullbot.errors import ShippableNoData
 from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.shippable_api import has_commentable_data
 from ansibullbot.utils.shippable_api import ShippableRuns
 from ansibullbot.wrappers.historywrapper import ShippableHistory
-from ansibullbot.utils.shippable_api import ShippableNoData
 
 import ansibullbot.constants as C
 
