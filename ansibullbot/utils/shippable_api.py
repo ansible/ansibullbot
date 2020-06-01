@@ -1,10 +1,5 @@
-#!/usr/bin/env python
-
 # curl -H "Content-Type: application/json" -H "Authorization: apiToken XXXX"
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
-
-import ansibullbot.constants as C
-from ansibullbot._text_compat import to_text, to_bytes
 
 import datetime
 import gzip
@@ -12,14 +7,18 @@ import json
 import logging
 import os
 import re
-import requests_cache
 import shutil
 import time
 
 import six
 
 import requests
+import requests_cache
 from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
+
+import ansibullbot.constants as C
+from ansibullbot._text_compat import to_text, to_bytes
+from ansibullbot.errors import ShippableNoData
 
 
 ANSIBLE_PROJECT_ID = u'573f79d02a8192902e20e34b'
@@ -45,11 +44,6 @@ def has_commentable_data(test_results):
             commentable = True
             break
     return commentable
-
-
-class ShippableNoData(Exception):
-    def __init__(self,*args,**kwargs):
-        Exception.__init__(self,*args,**kwargs)
 
 
 class ShippableRuns(object):
