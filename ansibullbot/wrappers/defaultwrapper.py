@@ -182,7 +182,18 @@ class DefaultWrapper(object):
             event[u'event'] = dd[u'event']
             if isinstance(dd[u'created_at'], six.string_types):
                 # FIXME
-                dd[u'created_at'] = datetime.datetime.strptime(dd[u'created_at'], u'%Y-%m-%dT%H:%M:%SZ')
+                if u'+' in dd[u'created_at']:
+                    if u'.' in dd['created_at'].split(u'+')[0]:
+                        date_fmt = u'%Y-%m-%dT%H:%M:%S.%f'
+                    else:
+                        date_fmt = u'%Y-%m-%dT%H:%M:%S'
+                elif dd[u'created_at'].endswith(u'Z'):
+                    date_fmt = u'%Y-%m-%dT%H:%M:%SZ'
+                else:
+                    raise AssertionError(dd[u'created_at'])
+
+                dd[u'created_at'] = datetime.datetime.strptime(dd[u'created_at'], date_fmt)
+
             event[u'created_at'] = pytz.utc.localize(dd[u'created_at'])
 
             if dd[u'event'] in [u'labeled', u'unlabeled']:
