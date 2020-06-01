@@ -141,6 +141,11 @@ class DefaultWrapper(object):
     def _parse_events(self, events):
         processed_events = []
         for event_no, dd in enumerate(events):
+            if dd[u'event'] == u'committed':
+                # FIXME
+                # commits are added through HistoryWrapper.merge_commits()
+                continue
+
             # reviews do not have created_at keys
             if not dd.get(u'created_at') and dd.get(u'submitted_at'):
                 dd[u'created_at'] = dd[u'submitted_at']

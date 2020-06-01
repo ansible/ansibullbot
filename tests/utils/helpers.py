@@ -35,6 +35,10 @@ def get_issue(datafile, statusfile):
         history = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
         iw._history = history
 
+        # merge_commits(self, commits)
+        if issue.commits:
+            iw._history.merge_commits(issue.commits)
+
         yield iw
 
     finally:

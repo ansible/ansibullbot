@@ -44,7 +44,7 @@ class IssueMock(object):
     @property
     def commits(self):
         for x in self.events:
-            if not x['event'] == 'commented':
+            if not x['event'] == 'committed':
                 continue
             commit = CommitMock()
             commit.commit.committer.date = x['created_at']

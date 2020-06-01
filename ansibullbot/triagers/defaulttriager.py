@@ -358,6 +358,7 @@ class DefaultTriager(object):
             if actions.merge:
                 iw.merge()
 
+        # FIXME why?
         self.build_history(iw)
 
     #@RateLimited
