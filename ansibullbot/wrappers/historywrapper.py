@@ -143,6 +143,7 @@ class HistoryWrapper(object):
 
     def _dump_cache(self):
         if any(x for x in self.history if not isinstance(x['created_at'], datetime.datetime)):
+            logging.error(self.history)
             raise AssertionError(u'found a non-datetime created_at in events data')
 
         if not os.path.isdir(self.cachedir):
