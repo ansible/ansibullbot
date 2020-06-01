@@ -14,17 +14,16 @@ def get_spam_facts(issuewrapper, meta):
         'boilerplate: notify'
     ]
 
-    #comments = iw.load_update_fetch('comments')
     comments = iw.comments[:]
-    comments = [x for x in comments if x.user.login == 'ansibot']
+    comments = [x for x in comments if x[u'actor'] == 'ansibot']
 
     cdates = {}
     cmap = {}
     for comment in comments:
-        cdates[comment.id] = comment.created_at
-        if comment.body not in cmap:
-            cmap[comment.body] = set()
-        cmap[comment.body].add(comment.id)
+        cdates[comment[u'id']] = comment[u'created_at']
+        if comment[u'body'] not in cmap:
+            cmap[comment[u'body']] = set()
+        cmap[comment[u'body']].add(comment[u'id'])
 
     spamkeys = set()
     for k,v in cmap.items():

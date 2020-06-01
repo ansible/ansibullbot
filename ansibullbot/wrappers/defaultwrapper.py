@@ -17,31 +17,27 @@
 
 from __future__ import print_function
 
+import datetime
 import inspect
 import json
 import logging
 import operator
 import os
 import re
-import shutil
 import sys
 import time
-from datetime import datetime
 
+import github
+import pytz
 import six
 
-# remember to pip install PyGithub, kids!
-import github
-
+import ansibullbot.constants as C
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
-from ansibullbot.utils.extractors import get_template_data
-from ansibullbot.wrappers.historywrapper import HistoryWrapper
-
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
-
-import ansibullbot.constants as C
+from ansibullbot.utils.extractors import get_template_data
+from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
 
 class UnsetValue:
@@ -81,10 +77,6 @@ class DefaultWrapper(object):
         u"docs_report"
     ]
 
-    TOPIC_MAP = {u'amazon': u'aws',
-                 u'google': u'gce',
-                 u'network': u'networking'}
-
     REQUIRED_SECTIONS = []
 
     TEMPLATE_HEADER = u'#####'
@@ -98,34 +90,21 @@ class DefaultWrapper(object):
         self.repo = repo
         self.instance = issue
         self._assignees = False
-        self._comments = UnsetValue()
         self._committer_emails = False
         self._committer_logins = False
         self._commits = False
-        self._events = False
+        self._events = UnsetValue()
         self._history = False
         self._labels = False
         self._merge_commits = False
         self._migrated = None
         self._migrated_from = None
-        self._migrated_issue = None
         self._pr = False
         self._pr_status = False
         self._pr_reviews = False
-        self._reactions = False
         self._repo_full_name = False
         self._template_data = None
-        self._timeline = False
         self._required_template_sections = []
-        self.desired_labels = []
-        self.desired_assignees = []
-        self.current_events = []
-        self.last_bot_comment = None
-        self.current_reactions = []
-        self.desired_comments = []
-        self.current_state = u'open'
-        self.desired_state = u'open'
-        self.pr_status_raw = None
         self.pull_raw = None
         self.pr_files = None
         self.gitrepo = gitrepo
@@ -136,44 +115,7 @@ class DefaultWrapper(object):
             to_text(self.number)
         )
 
-        self.valid_assignees = []
-        #self.raw_data_issue = self.load_update_fetch('raw_data', obj='issue')
         self._raw_data_issue = None
-
-    def get_rate_limit(self):
-        return self.repo.gh.get_rate_limit()
-
-    def get_current_time(self):
-        return datetime.utcnow()
-
-    def save_issue(self):
-        pfile = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.instance.number),
-            u'issue.pickle'
-        )
-        pdir = os.path.dirname(pfile)
-
-        if not os.path.isdir(pdir):
-            os.makedirs(pdir)
-
-        logging.debug(u'dump %s' % pfile)
-        with open(pfile, 'wb') as f:
-            pickle_dump(self.instance, f)
-
-    @RateLimited
-    def get_comments(self):
-        """Returns all current comments of the PR"""
- 
-        if isinstance(self._comments, UnsetValue):
-             self._comments = self.load_update_fetch(u'comments')
- 
- 
-        if len(self._comments) != self.instance.comments:
-            self._comments = self.load_update_fetch(u'comments', force=True)
-
-        return self._comments
 
     @property
     def url(self):
@@ -182,67 +124,82 @@ class DefaultWrapper(object):
     @property
     def raw_data_issue(self):
         if self._raw_data_issue is None:
-            self._raw_data_issue = \
-                self.load_update_fetch(u'raw_data', obj=u'issue')
+            self._raw_data_issue = self.load_update_fetch(u'raw_data', obj=u'issue')
         return self._raw_data_issue
 
     @property
+    def comments(self):
+        return [x for x in self.history.history if x[u'event'] == 'commented']
+
+    @property
     def events(self):
-        if self._events is False:
-            self._events = self.get_events()
+        if isinstance(self._events, UnsetValue):
+            self._events = self._parse_events(self.get_timeline())
+
         return self._events
 
-    def get_events(self):
-        '''return a combined set of events and timeline'''
+    def _parse_events(self, events):
+        processed_events = []
+        for event_no, dd in enumerate(events):
+            if dd[u'event'] == u'committed':
+                # FIXME
+                # commits are added through HistoryWrapper.merge_commits()
+                continue
 
-        events = []
-        for prop in ['events', 'timeline']:
-            data = self.load_update_fetch_rest(prop)
+            # reviews do not have created_at keys
+            if not dd.get(u'created_at') and dd.get(u'submitted_at'):
+                dd[u'created_at'] = dd[u'submitted_at']
 
-            for di,dd in enumerate(data):
+            # commits do not have created_at keys
+            if not dd.get(u'created_at') and dd.get('author'):
+                dd[u'created_at'] = dd[u'author'][u'date']
 
-                if not isinstance(dd, dict):
-                    logging.error('%s is not a dict' % dd)
-                    raise Exception
+            # commit comments do not have created_at keys
+            if not dd.get(u'created_at') and dd.get('comments'):
+                dd[u'created_at'] = dd[u'comments'][0][u'created_at']
 
-                # reviews do not have created_at keys
-                if not dd.get(u'created_at') and dd.get(u'submitted_at'):
-                    dd[u'created_at'] = dd[u'submitted_at']
+            if not dd.get(u'created_at'):
+                raise AssertionError(dd)
 
-                # commits do not have created_at keys
-                if not dd.get(u'created_at') and dd.get('author'):
-                    dd[u'created_at'] = dd[u'author'][u'date']
+            # commits do not have actors
+            if not dd.get(u'actor'):
+                dd[u'actor'] = {'login': None}
 
-                # commit comments do not have created_at keys
-                if not dd.get(u'created_at') and dd.get('comments'):
-                    dd[u'created_at'] = dd[u'comments'][0][u'created_at']
+            # fix commits with no message
+            if dd[u'event'] == u'committed' and u'message' not in dd:
+                dd[u'message'] = u''
 
-                # commits do not have actors
-                if not dd.get(u'actor'):
-                    dd[u'actor'] = {'login': None}
+            if not dd.get(u'id'):
+                # set id as graphql node_id OR make one up
+                if u'node_id' in dd:
+                    dd[u'id'] = dd[u'node_id']
+                else:
+                    dd[u'id'] = '%s/%s/%s/%s' % (self.repo_full_name, self.number, 'timeline', event_no)
 
-                # timeline comments do not have bodies
-                if dd.get(u'event') == u'commented' and not dd.get(u'body'):
-                    continue
+            event = {}
+            event[u'id'] = dd[u'id']
+            event[u'actor'] = dd[u'actor'][u'login']
+            event[u'event'] = dd[u'event']
+            if isinstance(dd[u'created_at'], six.string_types):
+                # FIXME
+                dd[u'created_at'] = datetime.datetime.strptime(dd[u'created_at'], u'%Y-%m-%dT%H:%M:%SZ')
+            event[u'created_at'] = pytz.utc.localize(dd[u'created_at'])
 
-                if not dd.get(u'id'):
-                    # set id as graphql node_id OR make one up
-                    if u'node_id' in dd:
-                        dd[u'id'] = dd[u'node_id']
-                    else:
-                        dd[u'id'] = '%s/%s/%s/%s' % (self.repo_full_name, self.number, prop, di)
+            if dd[u'event'] in [u'labeled', u'unlabeled']:
+                event[u'label'] = dd.get(u'label', {}).get(u'name', None)
+            elif dd[u'event'] == u'referenced':
+                event[u'commit_id'] = dd[u'commit_id']
+            elif dd[u'event'] == u'assigned':
+                event[u'assignee'] = dd[u'assignee'][u'login']
+                event[u'assigner'] = event[u'actor']
+            elif dd[u'event'] == u'commented':
+                event[u'body'] = dd[u'body']
+            elif dd[u'event'] == u'cross-referenced':
+                event[u'source'] = dd[u'source']
 
-                ids = [x.get(u'id') for x in events]
-                if dd[u'id'] not in ids:
-                    events.append(dd)
+            processed_events.append(event)
 
-        events = sorted(events, key=lambda x: x[u'created_at'])
-
-        return events
-
-    #def get_commits(self):
-    #    self.commits = self.load_update_fetch('commits')
-    #    return self.commits
+        return sorted(processed_events, key=lambda x: x[u'created_at'])
 
     def get_files(self):
         self.files = self.load_update_fetch(u'files')
@@ -256,46 +213,13 @@ class DefaultWrapper(object):
         # fetch the url and parse to json
         return self.github.get_request(url)
 
-    def relocate_pickle_files(self):
-        '''Move files to the correct location to fix bad pathing'''
-        srcdir = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.instance.number)
-        )
-        destdir = os.path.join(
-            self.cachedir,
-            to_text(self.instance.number)
-        )
-
-        if not os.path.isdir(srcdir):
-            return True
-
-        if not os.path.isdir(destdir):
-            os.makedirs(destdir)
-
-        # move the files
-        pfiles = os.listdir(srcdir)
-        for pf in pfiles:
-            src = os.path.join(srcdir, pf)
-            dest = os.path.join(destdir, pf)
-            shutil.move(src, dest)
-
-        # get rid of the bad dir
-        shutil.rmtree(srcdir)
-
-    def load_update_fetch_rest(self, property_name):
+    def get_timeline(self):
         '''Use python-requests instead of pygithub'''
-
         data = None
 
-        cache_dir = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.number),
-        )
-        cache_data = os.path.join(cache_dir, '%s_data.json' % property_name)
-        cache_meta = os.path.join(cache_dir, '%s_meta.json' % property_name)
+        cache_dir = os.path.join(self.cachedir, u'issues', to_text(self.number))
+        cache_data = os.path.join(cache_dir, 'timeline_data.json')
+        cache_meta = os.path.join(cache_dir, 'timeline_meta.json')
         logging.debug(cache_data)
 
         if not os.path.exists(cache_dir):
@@ -313,7 +237,7 @@ class DefaultWrapper(object):
             fetch = True
 
         # validate the data is not infected by ratelimit errors
-        if not fetch and property_name in ['events', 'timeline', 'comments']:
+        if not fetch:
             with open(cache_data, 'r') as f:
                 data = json.loads(f.read())
 
@@ -328,13 +252,13 @@ class DefaultWrapper(object):
             fetch = True
 
         if fetch:
-            property_url = self.url + '/' + property_name
-            data = self.github.get_request(property_url)
+            url = self.url + '/timeline'
+            data = self.github.get_request(url)
 
             with open(cache_meta, 'w') as f:
                 f.write(json.dumps({
                     'updated_at': self.updated_at.isoformat(),
-                    'url': property_url
+                    'url': url
                 }))
             with open(cache_data, 'w') as f:
                 f.write(json.dumps(data))
@@ -419,7 +343,7 @@ class DefaultWrapper(object):
         # pull all events if timestamp is behind or no events cached
         if update or not events or force:
             write_cache = True
-            updated = self.get_current_time()
+            updated = datetime.datetime.utcnow()
 
             if not hasattr(baseobj, u'get_' + property_name) \
                     and hasattr(baseobj, property_name):
@@ -474,15 +398,12 @@ class DefaultWrapper(object):
         return assignee
 
     @property
-    def reactions(self):
-        if self._reactions is False:
-            self._reactions = self.load_update_fetch_rest('reactions')[:]
-        return self._reactions
-
-    @RateLimited
-    def get_submitter(self):
-        """Returns the submitter"""
-        return self.instance.user.login
+    def missing_template_sections(self):
+        td = self.template_data
+        expected_keys = [x.lower() for x in self._required_template_sections]
+        missing = [x for x in expected_keys
+                   if x not in td or not td[x]]
+        return missing
 
     @RateLimited
     def get_labels(self):
@@ -501,67 +422,6 @@ class DefaultWrapper(object):
         if self._template_data is None:
             self._template_data = self.get_template_data()
         return self._template_data
-
-    @property
-    def missing_template_sections(self):
-        td = self.template_data
-        expected_keys = [x.lower() for x in self._required_template_sections]
-        missing = [x for x in expected_keys
-                   if x not in td or not td[x]]
-        return missing
-
-    def resolve_desired_labels(self, desired_label):
-        for resolved_label, aliases in six.iteritems(self.ALIAS_LABELS):
-            if desired_label in aliases:
-                return resolved_label
-        return desired_label
-
-    def process_mutually_exclusive_labels(self, name=None):
-        resolved_name = self.resolve_desired_labels(name)
-        if resolved_name in self.MUTUALLY_EXCLUSIVE_LABELS:
-            for label in self.desired_labels:
-                resolved_label = self.resolve_desired_labels(label)
-                if resolved_label in self.MUTUALLY_EXCLUSIVE_LABELS:
-                    self.desired_labels.remove(label)
-
-    def add_desired_label(self, name=None, mutually_exclusive=[], force=False):
-        """Adds a label to the desired labels list"""
-        if name and name not in self.desired_labels:
-            if force:
-                self.desired_labels.append(name)
-            elif not mutually_exclusive:
-                self.process_mutually_exclusive_labels(name=name)
-                self.desired_labels.append(name)
-            else:
-                mutually_exclusive = \
-                    [x.replace(u' ', u'_') for x in mutually_exclusive]
-                me = [x for x in self.desired_labels if x in mutually_exclusive]
-                if len(me) == 0:
-                    self.desired_labels.append(name)
-
-    def pop_desired_label(self, name=None):
-        """Deletes a label to the desired labels list"""
-        if name in self.desired_labels:
-            self.desired_labels.remove(name)
-
-    def is_labeled_for_interaction(self):
-        """Returns True if issue is labeld for interaction"""
-        for current_label in self.get_current_labels():
-            if current_label in self.MANUAL_INTERACTION_LABELS:
-                return True
-        return False
-
-    def add_desired_comment(self, boilerplate=None):
-        """Adds a boilerplate key to the desired comments list"""
-        if boilerplate and boilerplate not in self.desired_comments:
-            self.desired_comments.append(boilerplate)
-
-    def get_missing_sections(self):
-        missing_sections = \
-            [x for x in self.REQUIRED_SECTIONS
-                if x not in self.template_data or
-                not self.template_data.get(x)]
-        return missing_sections
 
     def get_issue(self):
         """Gets the issue from the GitHub API"""
@@ -600,14 +460,6 @@ class DefaultWrapper(object):
             if not ok:
                 raise Exception("failed to delete commentid %s for %s" % (commentid, self.html_url))
 
-    def set_desired_state(self, state):
-        assert state in [u'open', u'closed']
-        self.desired_state = state
-
-    def set_description(self, description):
-        # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
-        self.instance.edit(body=description)
-
     @property
     def assignees(self):
         if self._assignees is False:
@@ -632,11 +484,6 @@ class DefaultWrapper(object):
 
         res = [x for x in assignees]
         return res
-
-    def add_desired_assignee(self, assignee):
-        if assignee not in self.desired_assignees \
-                and assignee in self.valid_assignees:
-            self.desired_assignees.append(assignee)
 
     def assign_user(self, user):
         assignees = [x for x in self.assignees]
@@ -675,18 +522,6 @@ class DefaultWrapper(object):
                 print(u'ERROR: failed to edit assignees')
                 sys.exit(1)
 
-    @RateLimited
-    def _delete_comment_by_url(self, url):
-        # https://developer.github.com/v3/issues/comments/#delete-a-comment
-        headers, data = self.instance._requester.requestJsonAndCheck(
-            u"DELETE",
-            url,
-        )
-        if headers[u'status'] != u'204 No Content':
-            print(u'ERROR: failed to remove %s' % url)
-            sys.exit(1)
-        return True
-
     def is_pullrequest(self):
         if self.github_type == u'pullrequest':
             return True
@@ -702,7 +537,7 @@ class DefaultWrapper(object):
     @property
     def age(self):
         created = self.created_at
-        now = datetime.now()
+        now = datetime.datetime.utcnow()
         age = now - created
         return age
 
@@ -713,7 +548,6 @@ class DefaultWrapper(object):
     @property
     def repo_full_name(self):
         '''return the <org>/<repo> string'''
-
         # prefer regex over making GET calls
         if self._repo_full_name is False:
             try:
@@ -738,13 +572,12 @@ class DefaultWrapper(object):
 
     @property
     def updated_at(self):
-
         # this is a hack to fix unit tests
         if self.instance is not None:
             if self.instance.updated_at is not None:
                 return self.instance.updated_at
 
-        return datetime.now()
+        return datetime.datetime.utcnow()
 
     @property
     def closed_at(self):
@@ -752,7 +585,6 @@ class DefaultWrapper(object):
 
     @property
     def merged_at(self):
-        # only pullrequest objects have merged_at
         return self.instance.merged_at
 
     @property
@@ -782,15 +614,10 @@ class DefaultWrapper(object):
         return self.instance.user.login
 
     @property
-    def comments(self):
-        return self.get_comments()
-
-    @property
     def pullrequest(self):
         if not self._pr:
             logging.debug(u'@pullrequest.get_pullrequest #%s' % self.number)
             self._pr = self.repo.get_pullrequest(self.number)
-            #self.repo.save_pullrequest(self._pr)
         return self._pr
 
     def update_pullrequest(self):
@@ -899,7 +726,6 @@ class DefaultWrapper(object):
 
     def log_ci_status(self, status_data):
         '''Keep track of historical CI statuses'''
-
         logfile = os.path.join(
             self.cachedir,
             u'issues',
@@ -1019,7 +845,6 @@ class DefaultWrapper(object):
 
     @RateLimited
     def paginated_request(self, url, headers=None):
-
         if headers is None:
             headers = {}
 
@@ -1076,8 +901,7 @@ class DefaultWrapper(object):
     @property
     def history(self):
         if self._history is False:
-            self._history = \
-                HistoryWrapper(self, cachedir=self.cachedir, usecache=True)
+            self._history = HistoryWrapper(self, cachedir=self.cachedir)
         return self._history
 
     @RateLimited
@@ -1114,7 +938,6 @@ class DefaultWrapper(object):
 
     @property
     def mergeable_state(self):
-
         if not self.is_pullrequest() or self.pullrequest.state == u'closed':
             return None
 
@@ -1316,9 +1139,9 @@ class DefaultWrapper(object):
                 self._migrated_from = migrated_issue
             else:
                 for comment in self.comments:
-                    if comment.body.lower().startswith(u'migrated from'):
+                    if comment[u'body'].lower().startswith(u'migrated from'):
                         self._migrated = True
-                        bparts = comment.body.split()
+                        bparts = comment[u'body'].split()
                         self._migrated_from = bparts[2]
                         break
         return self._migrated

@@ -22,10 +22,9 @@ def get_issue(datafile, statusfile):
 
         # disable this completely
         iw.load_update_fetch = lambda x: []
+        iw.load_update_fetch_rest = lambda x: []
         # hook in here to avoid github api calls
-        iw._comments = issue._private_comments
-        iw._events = issue.events
-        iw._reactions = issue.reactions
+        iw.get_timeline = lambda: issue.events
         iw._commits = issue.commits
 
         # pre-load status to avoid github api calls
