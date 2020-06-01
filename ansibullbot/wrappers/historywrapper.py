@@ -24,7 +24,7 @@ class HistoryWrapper(object):
     https://developer.github.com/v3/issues/timeline/
     """
 
-    SCHEMA_VERSION = 1.1
+    SCHEMA_VERSION = 1.2
     BOTNAMES = C.DEFAULT_BOT_NAMES
 
     def __init__(self, issue, usecache=True, cachedir=None):
