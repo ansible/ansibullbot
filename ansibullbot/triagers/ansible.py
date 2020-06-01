@@ -2269,9 +2269,9 @@ class AnsibleTriage(DefaultTriager):
             # first one that specifies a valid version
             cversion = None
             for comment in iw.comments:
-                if comment.user.login != iw.instance.user.login:
+                if comment[u'actor'] != iw.instance.user.login:
                     continue
-                xver = self.version_indexer.strip_ansible_version(comment.body)
+                xver = self.version_indexer.strip_ansible_version(comment[u'body'])
                 if self.version_indexer.is_valid_version(xver):
                     cversion = xver
                     break
