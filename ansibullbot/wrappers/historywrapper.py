@@ -8,6 +8,7 @@ import pytz
 import ansibullbot.constants as C
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
+from ansibullbot.utils.timetools import strip_time_safely
 
 
 class HistoryWrapper(object):
@@ -225,9 +226,7 @@ class HistoryWrapper(object):
 
             event[u'id'] = review[u'id']
             event[u'actor'] = review[u'user'][u'login']
-            event[u'created_at'] = pytz.utc.localize(
-                    datetime.datetime.strptime(review[u'submitted_at'], u'%Y-%m-%dT%H:%M:%SZ')
-                )
+            event[u'created_at'] = pytz.utc.localize(strip_time_safely(review[u'submitted_at']))
             if u'commit_id' in review:
                 event[u'commit_id'] = review[u'commit_id']
             else:
@@ -585,9 +584,7 @@ class ShippableHistory(object):
             if not rd:
                 continue
 
-            ts = pytz.utc.localize(
-                datetime.datetime.strptime(x[u'updated_at'], u'%Y-%m-%dT%H:%M:%SZ')
-            )
+            ts = pytz.utc.localize(strip_time_safely(x[u'updated_at']))
 
             this_history.append(
                 {

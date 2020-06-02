@@ -1,13 +1,9 @@
-#!/usr/bin/env python
-
 import copy
 import datetime
 import json
 import logging
 import os
-import re
 import tarfile
-import zipfile
 
 import yaml
 import requests
@@ -17,6 +13,7 @@ from github import Github
 import ansibullbot.constants as C
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.utils.git_tools import GitRepoWrapper
+from ansibullbot.utils.timetools import strip_time_safely
 
 
 class GalaxyQueryTool:
@@ -95,7 +92,7 @@ class GalaxyQueryTool:
             jdata = fdata['result']
             ts = fdata['timestamp']
             now = datetime.datetime.now()
-            ts = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S.%f')
+            ts = strip_time_safely(ts)
             if (now - ts).days <= days:
                 return jdata
 
@@ -252,7 +249,7 @@ class GalaxyQueryTool:
             with open(self._checkout_index_file, 'r') as f:
                 ci = json.loads(f.read())
         for k,v in ci.items():
-            ci[k]['updated'] = datetime.datetime.strptime(v['updated'], '%Y-%m-%dT%H:%M:%S.%f')
+            ci[k]['updated'] = strip_time_safely(v['updated'])
         self._checkout_index = copy.deepcopy(ci)
 
     def _save_checkout_index(self):

@@ -1490,6 +1490,7 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.utils.moduletools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.shippable_api.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.utils.timetools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.version_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.wrappers.defaultwrapper.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.wrappers.historywrapper.logging', MockLogger))

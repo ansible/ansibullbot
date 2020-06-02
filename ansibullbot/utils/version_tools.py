@@ -1,16 +1,13 @@
-#!/usr/bin/env python
-
-import datetime
 import logging
 import os
 import re
 import subprocess
 
+from distutils.version import StrictVersion, LooseVersion
+
 from ansibullbot._text_compat import to_text
 from ansibullbot.utils.systemtools import run_command
-
-from distutils.version import StrictVersion
-from distutils.version import LooseVersion
+from ansibullbot.utils.timetools import strip_time_safely
 
 import ansibullbot.constants as C
 
@@ -430,10 +427,7 @@ class AnsibleVersionIndexer(object):
                 self.DATEVERSIONS.append(parts)
 
         last_commit_date = self.DATEVERSIONS[0][0]
-        last_commit_date = datetime.datetime.strptime(
-            last_commit_date,
-            u'%Y-%m-%d'
-        )
+        last_commit_date = strip_time_safely(last_commit_date)
 
         # use last commit version if older than incoming date
         if dateobj >= last_commit_date:

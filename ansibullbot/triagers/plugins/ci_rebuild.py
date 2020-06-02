@@ -1,7 +1,6 @@
-#!/usr/bin/env python
-
-import datetime
 import pytz
+
+from ansibullbot.utils.timetools import strip_time_safely
 
 
 def status_to_date_and_runid(status, keepstate=False):
@@ -27,9 +26,7 @@ def status_to_date_and_runid(status, keepstate=False):
         if runid.isdigit():
             target = runid
 
-    # pytz.utc.localize(dts)
-    ts = datetime.datetime.strptime(created_at, u'%Y-%m-%dT%H:%M:%SZ')
-    ts = pytz.utc.localize(ts)
+    ts = pytz.utc.localize(strip_time_safely(created_at))
 
     if keepstate:
         return ts, target, status[u'state']
