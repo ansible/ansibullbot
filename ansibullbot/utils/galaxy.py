@@ -218,7 +218,7 @@ class GalaxyQueryTool:
                 if fn not in self.GALAXY_FILES:
                     self.GALAXY_FILES[fn] = set()
                 self.GALAXY_FILES[fn].add(fqcn)
-    
+
     def index_galaxy(self):
         self.GALAXY_FQCNS = set()
 
@@ -445,9 +445,11 @@ class GalaxyQueryTool:
                 # add the short path in case the collection does not have subdirs ...
                 segments = _component.split('/')
                 if len(segments) > 3:
-                    thispath = os.path.join(v, os.path.basename(_component))
-                    if thispath not in dirmap and thispath not in dirmap.values():
-                        patterns.append(os.path.join(v, os.path.basename(_component)))
+                    basename = os.path.basename(_component)
+                    if not basename == 'common.py':  # too many false positives
+                        thispath = os.path.join(v, basename)
+                        if thispath not in dirmap and thispath not in dirmap.values():
+                            patterns.append(thispath)
 
                 # find parent folder for new modules ...
                 if v != 'plugins':
@@ -466,14 +468,14 @@ class GalaxyQueryTool:
                     patterns.append(os.path.join(bd, bn))
 
         for pattern in patterns:
-
             if candidates:
                 break
 
             for key in self.GALAXY_FILES.keys():
                 if not (pattern in key or key == pattern):
                     continue
-
+                if pattern == 'plugins/modules/':  # false positives
+                    continue
                 logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
                 candidates.append(key)
                 break
