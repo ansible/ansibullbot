@@ -1,7 +1,6 @@
 # curl -H "Content-Type: application/json" -H "Authorization: apiToken XXXX"
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
-import datetime
 import gzip
 import json
 import logging
@@ -19,6 +18,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text, to_bytes
 from ansibullbot.errors import ShippableNoData
+from ansibullbot.utils.timetools import strip_time_safely
 
 
 ANSIBLE_PROJECT_ID = u'573f79d02a8192902e20e34b'
@@ -87,11 +87,7 @@ class ShippableRuns(object):
                 if k.endswith(u'At'):
                     # 2017-02-07T00:27:06.482Z
                     if v:
-                        ds = datetime.datetime.strptime(
-                            v,
-                            u'%Y-%m-%dT%H:%M:%S.%fZ'
-                        )
-                        self.runs[idx][k] = ds
+                        self.runs[idx][k] = strip_time_safely(v)
 
     def get_pullrequest_runs(self, number):
         '''All runs for the given PR number'''

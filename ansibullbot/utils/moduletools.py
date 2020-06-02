@@ -1,8 +1,5 @@
-#!/usr/bin/env python
-
 import ast
 import copy
-import datetime
 import io
 import logging
 import os
@@ -22,6 +19,7 @@ from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotYAMLLoader
 from ansibullbot.utils.systemtools import run_command
+from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.webscraper import GithubWebScraper
 
 
@@ -294,11 +292,7 @@ class ModuleIndexer(object):
                     if line.startswith(u'Date:'):
                         dstr = line.split(u':', 1)[1].strip()
                         dstr = u' '.join(dstr.split(u' ')[:-1])
-                        ds = datetime.datetime.strptime(
-                            to_text(dstr),
-                            u'%a %b %d %H:%M:%S %Y'
-                        )
-                        commit[u'date'] = ds
+                        commit[u'date'] = strip_time_safely(to_text(dstr))
                         self.commits[k].append(commit)
 
                 with open(pfile, 'wb') as f:

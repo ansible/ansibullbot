@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import datetime
 import logging
 import os
@@ -9,8 +7,8 @@ import pytz
 from ansibullbot._text_compat import to_text
 from ansibullbot.errors import ShippableNoData
 from ansibullbot.triagers.plugins.shipit import is_approval
-from ansibullbot.utils.shippable_api import has_commentable_data
-from ansibullbot.utils.shippable_api import ShippableRuns
+from ansibullbot.utils.shippable_api import has_commentable_data, ShippableRuns
+from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.wrappers.historywrapper import ShippableHistory
 
 import ansibullbot.constants as C
@@ -152,7 +150,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
         # https://github.com/ansible/ansibullbot/issues/458
         if ci_date:
-            ci_date = datetime.datetime.strptime(ci_date, u'%Y-%m-%dT%H:%M:%S.%fZ')
+            ci_date = strip_time_safely(ci_date)
             ci_delta = (datetime.datetime.now() - ci_date).days
             if ci_delta > 7:
                 ci_stale = True
@@ -454,7 +452,7 @@ def changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
     for actor, review in user_reviews.items():
         if review[u'state'] == u'CHANGES_REQUESTED':
             if actor in shipits:
-                review_time = datetime.datetime.strptime(review[u'submitted_at'], u'%Y-%m-%dT%H:%M:%SZ')
+                review_time = strip_time_safely(review[u'submitted_at'])
                 review_time = pytz.utc.localize(review_time)
                 shipit_time = shipits[actor]
                 if review_time < shipit_time:
@@ -463,7 +461,7 @@ def changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
                     continue
 
             if ready_for_review:
-                review_time = datetime.datetime.strptime(review[u'submitted_at'], u'%Y-%m-%dT%H:%M:%SZ')
+                review_time = strip_time_safely(review[u'submitted_at'])
                 review_time = pytz.utc.localize(review_time)
                 if review[u'commit_id'] != last_commit and review_time < ready_for_review:
                     # ignore review older than ready_for_review comment wrote by submitter
@@ -729,4 +727,3 @@ def get_runid_from_status(status):
             return int(x)
 
     return None
-

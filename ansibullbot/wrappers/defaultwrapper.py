@@ -37,6 +37,7 @@ from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
 from ansibullbot.utils.extractors import get_template_data
+from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
 
@@ -181,18 +182,7 @@ class DefaultWrapper(object):
             event[u'actor'] = dd[u'actor'][u'login']
             event[u'event'] = dd[u'event']
             if isinstance(dd[u'created_at'], six.string_types):
-                # FIXME
-                if u'+' in dd[u'created_at']:
-                    if u'.' in dd['created_at'].split(u'+')[0]:
-                        date_fmt = u'%Y-%m-%dT%H:%M:%S.%f'
-                    else:
-                        date_fmt = u'%Y-%m-%dT%H:%M:%S'
-                elif dd[u'created_at'].endswith(u'Z'):
-                    date_fmt = u'%Y-%m-%dT%H:%M:%SZ'
-                else:
-                    raise AssertionError(dd[u'created_at'])
-
-                dd[u'created_at'] = datetime.datetime.strptime(dd[u'created_at'], date_fmt)
+                dd[u'created_at'] = strip_time_safely(dd[u'created_at'])
 
             event[u'created_at'] = pytz.utc.localize(dd[u'created_at'])
 
