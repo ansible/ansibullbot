@@ -19,7 +19,6 @@ def strip_time_safely(tstring):
             break
         except ValueError as e:
             logging.debug(e)
-            pass
     if res is None:
         logging.error(u'{} could not be stripped'.format(tstring))
         raise Exception(u'{} could not be stripped'.format(tstring))
