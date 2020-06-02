@@ -32,12 +32,25 @@ class GalaxyQueryTool:
     ]
 
     BLACKLIST_FQCNS = [
-        'alancoding.vmware',
-        'alancoding.cloud',
+        #'frankshen01.testfortios', # not till they are allocated to fortinet.fortios
         'alancoding.awx',
+        'alancoding.cloud',
+        'alancoding.vmware',
         'alikins.collection_inspect',
+        'arillso.test_do_not_use',
+        'felixfontein.tools',
         'fragmentedpacket.netbox_modules',
+        'gavinfish.azuretest',
         'launchdarkly_labs.collection',
+        'lukasjuhrich.ceph_ansible',
+        'mattclay.aws',
+        'mnecas.ovirt',
+        'ovirt.ovirt_collection',
+        'schmots1.ontap',
+        'sh4d1.scaleway',
+        'shanemcd.kubernetes',
+        'sivel.jinja2',
+        'sshnaidm.cloud',
         'sshnaidm.podman',
         'tawr1024.netbox_modules',
     ]
