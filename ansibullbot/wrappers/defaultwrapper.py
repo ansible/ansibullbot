@@ -74,9 +74,6 @@ class DefaultWrapper(object):
         self._raw_data_issue = None
         self._renamed_files = None
 
-    def __str__(self):
-        return self.instance.html_url
-
     @property
     def url(self):
         return self.instance.url

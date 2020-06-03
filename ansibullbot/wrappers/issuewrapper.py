@@ -22,4 +22,5 @@ from .defaultwrapper import DefaultWrapper
 
 @six.python_2_unicode_compatible
 class IssueWrapper(DefaultWrapper):
-    pass
+    def __str__(self):
+        return self.instance.html_url
