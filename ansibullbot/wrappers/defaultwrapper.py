@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # This file is part of Ansible
 #
 # Ansible is free software: you can redistribute it and/or modify
@@ -27,7 +25,6 @@ import re
 import sys
 import time
 
-import github
 import pytz
 import six
 
@@ -47,54 +44,19 @@ class UnsetValue:
 
 
 class DefaultWrapper(object):
-
-    ALIAS_LABELS = {
-        u'core_review': [
-            u'core_review_existing'
-        ],
-        u'community_review': [
-            u'community_review_existing',
-            u'community_review_new',
-            u'community_review_owner_pr',
-        ],
-        u'shipit': [
-            u'shipit_owner_pr'
-        ],
-        u'needs_revision': [
-            u'needs_revision_not_mergeable'
-        ],
-        u'pending_action': [
-            u'pending_action_close_me',
-            u'pending_maintainer_unknown'
-        ]
-    }
-
-    MANUAL_INTERACTION_LABELS = [
-    ]
-
-    MUTUALLY_EXCLUSIVE_LABELS = [
-        u"bug_report",
-        u"feature_idea",
-        u"docs_report"
-    ]
-
-    REQUIRED_SECTIONS = []
-
-    TEMPLATE_HEADER = u'#####'
-
-    _RENAMED_FILES = None
-
     def __init__(self, github=None, repo=None, issue=None, cachedir=None, gitrepo=None):
-        self.meta = {}
-        self.cachedir = cachedir
         self.github = github
         self.repo = repo
         self.instance = issue
-        self._assignees = False
+        self.cachedir = cachedir
+        self.gitrepo = gitrepo
+
+        self.meta = {}
+        self._assignees = UnsetValue
         self._committer_emails = False
         self._committer_logins = False
         self._commits = False
-        self._events = UnsetValue()
+        self._events = UnsetValue
         self._history = False
         self._labels = False
         self._merge_commits = False
@@ -108,15 +70,12 @@ class DefaultWrapper(object):
         self._required_template_sections = []
         self.pull_raw = None
         self.pr_files = None
-        self.gitrepo = gitrepo
-
-        self.full_cachedir = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.number)
-        )
-
+        self.full_cachedir = os.path.join(self.cachedir, u'issues', to_text(self.number))
         self._raw_data_issue = None
+        self._renamed_files = None
+
+    def __str__(self):
+        return self.instance.html_url
 
     @property
     def url(self):
@@ -134,8 +93,8 @@ class DefaultWrapper(object):
 
     @property
     def events(self):
-        if isinstance(self._events, UnsetValue):
-            self._events = self._parse_events(self.get_timeline())
+        if self._events is UnsetValue:
+            self._events = self._parse_events(self._get_timeline())
 
         return self._events
 
@@ -210,21 +169,16 @@ class DefaultWrapper(object):
         self.review_comments = self.load_update_fetch(u'review_comments')
         return self.review_comments
 
-    def _fetch_api_url(self, url):
-        # fetch the url and parse to json
-        return self.github.get_request(url)
-
-    def get_timeline(self):
+    def _get_timeline(self):
         '''Use python-requests instead of pygithub'''
         data = None
 
-        cache_dir = os.path.join(self.cachedir, u'issues', to_text(self.number))
-        cache_data = os.path.join(cache_dir, 'timeline_data.json')
-        cache_meta = os.path.join(cache_dir, 'timeline_meta.json')
+        cache_data = os.path.join(self.full_cachedir, 'timeline_data.json')
+        cache_meta = os.path.join(self.full_cachedir, 'timeline_meta.json')
         logging.debug(cache_data)
 
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
+        if not os.path.exists(self.full_cachedir):
+            os.makedirs(self.full_cachedir)
 
         meta = {}
         fetch = False
@@ -288,12 +242,7 @@ class DefaultWrapper(object):
         update = False
         write_cache = False
 
-        pfile = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.number),
-            u'%s.pickle' % property_name
-        )
+        pfile = os.path.join(self.full_cachedir, u'%s.pickle' % property_name)
         pdir = os.path.dirname(pfile)
         logging.debug(pfile)
 
@@ -381,23 +330,6 @@ class DefaultWrapper(object):
 
         return events
 
-    def get_assignee(self):
-        assignee = None
-        if self.instance.assignee is None:
-            pass
-        elif type(self.instance.assignee) != list:
-            assignee = self.instance.assignee.login
-        else:
-            assignee = []
-            for x in self.instance.assignee:
-                assignee.append(x.login)
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception(u'exception')
-        return assignee
-
     @property
     def missing_template_sections(self):
         td = self.template_data
@@ -463,28 +395,9 @@ class DefaultWrapper(object):
 
     @property
     def assignees(self):
-        if self._assignees is False:
-            self._assignees = self.get_assignees()
+        if self._assignees is UnsetValue:
+            self._assignees = [x.login for x in self.instance.assignees]
         return self._assignees
-
-    def get_assignees(self):
-        # https://developer.github.com/v3/issues/assignees/
-        # https://developer.github.com/changes/2016-5-27-multiple-assignees/
-        # https://github.com/PyGithub/PyGithub/pull/469
-        # the pygithub issue object only offers a single assignee (right now)
-
-        assignees = []
-        if not hasattr(self.instance, u'assignees'):
-            raw_assignees = self.raw_data_issue[u'assignees']
-            assignees = \
-                [x.login for x in self.instance._makeListOfClassesAttribute(
-                    github.NamedUser.NamedUser,
-                    raw_assignees).value]
-        else:
-            assignees = [x.login for x in self.instance.assignees]
-
-        res = [x for x in assignees]
-        return res
 
     def assign_user(self, user):
         assignees = [x for x in self.assignees]
@@ -493,7 +406,7 @@ class DefaultWrapper(object):
             self._edit_assignees(assignees)
 
     def unassign_user(self, user):
-        assignees = [x for x in self.current_assignees]
+        assignees = [x for x in self.assignees]
         if user in self.assignees:
             assignees.remove(user)
             self._edit_assignees(assignees)
@@ -524,16 +437,10 @@ class DefaultWrapper(object):
                 sys.exit(1)
 
     def is_pullrequest(self):
-        if self.github_type == u'pullrequest':
-            return True
-        else:
-            return False
+        return self.github_type == u'pullrequest'
 
     def is_issue(self):
-        if self.github_type == u'issue':
-            return True
-        else:
-            return False
+        return self.github_type == u'issue'
 
     @property
     def age(self):
@@ -675,12 +582,7 @@ class DefaultWrapper(object):
         rd = self.pullrequest_raw_data
         surl = rd[u'statuses_url']
 
-        pfile = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.number),
-            u'pr_status.pickle'
-        )
+        pfile = os.path.join(self.full_cachedir, u'pr_status.pickle')
         pdir = os.path.dirname(pfile)
         if not os.path.isdir(pdir):
             os.makedirs(pdir)
@@ -694,7 +596,7 @@ class DefaultWrapper(object):
             # is the data stale?
             if pdata[0] < self.pullrequest.updated_at or force_fetch:
                 logging.info(u'fetching pr status: stale, previous from %s' % pdata[0])
-                jdata = self._fetch_api_url(surl)
+                jdata = self.github.get_request(surl)
 
                 if isinstance(jdata, dict):
                     # https://github.com/ansible/ansibullbot/issues/959
@@ -710,7 +612,7 @@ class DefaultWrapper(object):
         # missing?
         if not jdata:
             logging.info(u'fetching pr status: !data')
-            jdata = self._fetch_api_url(surl)
+            jdata = self.github.get_request(surl)
             # FIXME? should we self.log_ci_status(jdata) here too?
             fetched = True
 
@@ -727,12 +629,7 @@ class DefaultWrapper(object):
 
     def log_ci_status(self, status_data):
         '''Keep track of historical CI statuses'''
-        logfile = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.number),
-            u'pr_status_log.json'
-        )
+        logfile = os.path.join(self.full_cachedir, u'pr_status_log.json')
 
         jdata = {}
         if os.path.isfile(logfile):
@@ -813,7 +710,6 @@ class DefaultWrapper(object):
     @property
     def labels(self):
         if self._labels is False:
-            logging.debug(u'_labels == False')
             self._labels = [x for x in self.get_labels()]
         return self._labels
 
@@ -842,7 +738,6 @@ class DefaultWrapper(object):
 
         jdata = self.paginated_request(reviews_url, headers=headers)
         return jdata
-
 
     @RateLimited
     def paginated_request(self, url, headers=None):
@@ -964,16 +859,11 @@ class DefaultWrapper(object):
 
     @property
     def wip(self):
-        '''Is this a WIP?'''
         if self.title.startswith(u'WIP'):
             return True
         elif u'[WIP]' in self.title:
             return True
         return False
-
-    @property
-    def incoming_repo(self):
-        return self.pullrequest.head.repo
 
     @property
     def incoming_repo_exists(self):
@@ -985,10 +875,6 @@ class DefaultWrapper(object):
             return self.pullrequest.head.repo.full_name
         except TypeError:
             return None
-
-    @property
-    def incoming_repo_branch(self):
-        return self.pullrequest.head.ref
 
     @property
     def from_fork(self):
@@ -1059,7 +945,6 @@ class DefaultWrapper(object):
         return self._committer_logins
 
     def merge(self):
-
         # https://developer.github.com/v3/repos/merging/
         # def merge(self, commit_message=github.GithubObject.NotSet)
 
@@ -1149,7 +1034,6 @@ class DefaultWrapper(object):
 
     def pullrequest_filepath_exists(self, filepath):
         ''' Check if a file exists on the submitters branch '''
-
         # https://github.com/ansible/ansibullbot/issues/406
 
         # https://developer.github.com/v3/repos/contents/
@@ -1164,12 +1048,7 @@ class DefaultWrapper(object):
         sha = self.pullrequest.head.sha
         pdata = None
         resp = None
-        cachefile = os.path.join(
-            self.cachedir,
-            u'issues',
-            to_text(self.number),
-            u'shippable_yml.pickle'
-        )
+        cachefile = os.path.join(self.full_cachedir, u'shippable_yml.pickle')
 
         try:
             if os.path.isfile(cachefile):
@@ -1207,13 +1086,12 @@ class DefaultWrapper(object):
     @property
     def renamed_files(self):
         ''' A map of renamed files to prevent other code from thinking these are new files '''
+        if self._renamed_files is not None:
+            return self._renamed_files
 
-        if self._RENAMED_FILES is not None:
-            return self._RENAMED_FILES
-
-        self._RENAMED_FILES = {}
+        self._renamed_files = {}
         if self.is_issue():
-            return self._RENAMED_FILES
+            return self._renamed_files
 
         for x in self.commits:
             rd = x.raw_data
@@ -1221,6 +1099,6 @@ class DefaultWrapper(object):
                 if filed.get('previous_filename'):
                     src = filed['previous_filename']
                     dst = filed['filename']
-                    self._RENAMED_FILES[dst] = src
+                    self._renamed_files[dst] = src
 
-        return self._RENAMED_FILES
+        return self._renamed_files

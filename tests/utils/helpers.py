@@ -24,7 +24,7 @@ def get_issue(datafile, statusfile):
         iw.load_update_fetch = lambda x: []
         iw.load_update_fetch_rest = lambda x: []
         # hook in here to avoid github api calls
-        iw.get_timeline = lambda: issue.events
+        iw._get_timeline = lambda: issue.events
         iw._commits = issue.commits
 
         # pre-load status to avoid github api calls

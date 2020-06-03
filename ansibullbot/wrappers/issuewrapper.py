@@ -1,5 +1,3 @@
-#!/usr/bin/python
-#
 # This file is part of Ansible
 #
 # Ansible is free software: you can redistribute it and/or modify
@@ -24,16 +22,4 @@ from .defaultwrapper import DefaultWrapper
 
 @six.python_2_unicode_compatible
 class IssueWrapper(DefaultWrapper):
-
-    REQUIRED_SECTIONS = [
-        u'issue type',
-        u'component name',
-        u'ansible version',
-        u'summary'
-    ]
-
-    def noop(self):
-        pass
-
-    def __str__(self):
-        return self.instance.html_url
+    pass
