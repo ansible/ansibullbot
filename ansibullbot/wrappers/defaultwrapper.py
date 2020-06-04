@@ -62,6 +62,7 @@ class DefaultWrapper(object):
         self._merge_commits = False
         self._migrated = None
         self._migrated_from = None
+        self._migrated_issue = None
         self._pr = False
         self._pr_status = False
         self._pr_reviews = False
