@@ -1,20 +1,15 @@
-#!/usr/bin/env python
-
 import ast
 import logging
 import operator
 import os
 import re
-#import shlex
-import yaml
-#from jinja2 import Template
 from string import Template
 
 import six
+import yaml
 
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_bytes, to_text
-from ansibullbot.parsers.botmetadata import BotYAMLLoader
 
 
 SECTIONS = [u'ISSUE TYPE', u'COMPONENT NAME', u'PLUGIN NAME',
@@ -23,8 +18,10 @@ SECTIONS = [u'ISSUE TYPE', u'COMPONENT NAME', u'PLUGIN NAME',
             u'STEPS TO REPRODUCE', u'EXPECTED RESULTS',
             u'ACTUAL RESULTS', u'ADDITIONAL INFORMATION']
 
+TEMPLATE_HEADER = u'#####'
 
-def extract_template_sections(body, header=u'#####'):
+
+def extract_template_sections(body, header=TEMPLATE_HEADER):
     ''' Get the section names from a .github/*.md file in a repo'''
 
     sections = {}
@@ -465,21 +462,18 @@ class ModuleExtractor(object):
                 inphase = True
                 continue
             if inphase and (line.strip().endswith((u"'''", u'"""'))):
-                #phase = None
                 break
             if inphase:
                 documentation += line + u'\n'
-    
+
         self._DOCUMENTATION_RAW = documentation
 
         # some docstrings don't pass yaml validation with PyYAML >= 4.2
         try:
             self._DOCSTRING = yaml.load(self._DOCUMENTATION_RAW)
         except yaml.parser.ParserError as e:
-            #logging.debug(e)
             logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
         except yaml.scanner.ScannerError as e:
-            #logging.debug(e)
             logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
 
         # always cast to a dict for easier handling later
@@ -575,7 +569,6 @@ class ModuleExtractor(object):
         lines = self.filedata.split(b'\n')
         for line in lines:
             if line.startswith(b'ANSIBLE_METADATA') or b'ANSIBLE_METADATA' in line:
-                #print(line)
                 rawmeta += line
                 inphase = True
                 continue
@@ -586,10 +579,8 @@ class ModuleExtractor(object):
             if inphase and re.match(r'^[A-Za-z]', to_text(line)):
                 break
             if inphase:
-                #print(line)
                 rawmeta += line
 
-        _rawmeta = rawmeta[:]
         rawmeta = rawmeta.replace(b'ANSIBLE_METADATA =', b'', 1)
         rawmeta = rawmeta.strip()
 
@@ -621,7 +612,7 @@ def get_template_data(iw):
             tf_content = u''
 
     # pull out the section names from the tempalte
-    tf_sections = extract_template_sections(tf_content, header=iw.TEMPLATE_HEADER)
+    tf_sections = extract_template_sections(tf_content, header=TEMPLATE_HEADER)
 
     # what is required?
     iw._required_template_sections = \

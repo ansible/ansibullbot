@@ -22,7 +22,7 @@ def statusfile():
 def iw(meta, statusfile):
     datafile = u'tests/fixtures/needs_contributor/0_issue.yml'
     with get_issue(datafile, statusfile) as iw:
-        iw.get_assignees = lambda: []
+        iw._assignees = []
         iw._merge_commits = []
         iw.repo = RepoMock(meta[u'component_maintainers'] + meta[u'component_notifiers'])
         return iw
