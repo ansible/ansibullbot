@@ -12,7 +12,6 @@ import time
 import six
 
 import requests
-import requests_cache
 from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
 
 import ansibullbot.constants as C
@@ -33,38 +32,26 @@ TIMEOUT = 5  # seconds
 
 def has_commentable_data(test_results):
     # https://github.com/ansible/ansibullbot/issues/421
-    commentable = False
     if not test_results:
-        return commentable
+        return False
     for tr in test_results:
         if tr.get(u'contents', {}).get(u'failureDetails', []):
-            commentable = True
-            break
+            return True
         if tr.get(u'contents', {}).get(u'results', []):
-            commentable = True
-            break
-    return commentable
+            return True
+    return False
 
 
 class ShippableRuns(object):
     '''An abstraction for the shippable API'''
 
-    def __init__(self, url=ANSIBLE_RUNS_URL, cachedir=None, cache=False,
-                 writecache=True):
-
-        self.writecache = writecache
-        if cachedir:
-            self.cachedir = cachedir
-        else:
-            self.cachedir = u'/tmp/shippable.cache'
+    def __init__(self, cachedir, url=ANSIBLE_RUNS_URL):
+        self.cachedir = cachedir
         self.url = url
-        if cache:
-            requests_cache.install_cache(self.cachedir)
 
         self.provider_id = u'562dbd9710c5980d003b0451'
         self.subscription_org_name = u'ansible'
         self.project_name = u'ansible'
-        self.run_meta = []
 
     def update(self):
         '''Fetch the latest data then send for processing'''
@@ -77,10 +64,8 @@ class ShippableRuns(object):
             except Exception as e:
                 logging.error(e)
                 time.sleep(2*60)
-        self._process_raw_data()
 
-    def _process_raw_data(self):
-        '''Iterate through and fix data'''
+        # Fix data
         self.runs = [x for x in self._rawdata]
         for idx, x in enumerate(self.runs):
             for k, v in six.iteritems(x):
@@ -89,7 +74,7 @@ class ShippableRuns(object):
                     if v:
                         self.runs[idx][k] = strip_time_safely(v)
 
-    def get_pullrequest_runs(self, number):
+    def _get_pullrequest_runs(self, number):
         '''All runs for the given PR number'''
         nruns = []
         for x in self.runs:
@@ -99,7 +84,7 @@ class ShippableRuns(object):
 
     def get_last_completion(self, number):
         '''Timestamp of last job completion for given PR number'''
-        nruns = self.get_pullrequest_runs(number)
+        nruns = self._get_pullrequest_runs(number)
         if not nruns:
             return None
         ts = sorted([x[u'endedAt'] for x in nruns if x[u'endedAt']])
@@ -107,19 +92,6 @@ class ShippableRuns(object):
             return ts[-1]
         else:
             return None
-
-    def get_updated_since(self, since):
-        updated = []
-        for x in self.runs:
-            try:
-                if x[u'createdAt'] > since or \
-                        x[u'startedAt'] > since or \
-                        x[u'endedAt'] > since:
-                    updated.append(x[u'pullRequestNumber'])
-            except Exception:
-                pass
-        updated = sorted(set(updated))
-        return updated
 
     def _load_cache_file(self, cfile):
         with gzip.open(cfile, 'r') as f:
@@ -139,7 +111,6 @@ class ShippableRuns(object):
         cdir = os.path.join(self.cachedir, u'.raw')
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
-        #cfile = url.replace(u'https://api.shippable.com/', u'')
         cfile = url.replace(SHIPPABLE_URL + '/', u'')
         cfile = cfile.replace(u'/', u'_')
         cfile = os.path.join(cdir, cfile + u'.json')
@@ -173,11 +144,10 @@ class ShippableRuns(object):
 
         resp = None
         if not os.path.isfile(gzfile) or not jdata or (not usecache and not is_finished):
-
             if os.path.isfile(gzfile):
-                import epdb; epdb.st()
+                logging.error(gzfile)
 
-            resp = self.fetch(url, timeout=timeout)
+            resp = self._fetch(url, timeout=timeout)
             if not resp:
                 return None
 
@@ -188,27 +158,21 @@ class ShippableRuns(object):
                 self._write_cache_file(gzfile, [resp.status_code, {}])
                 return None
 
-        self.check_response(resp)
+        self._check_response(resp)
 
         if not jdata:
-            #import epdb; epdb.st()
             if C.DEFAULT_BREAKPOINTS:
                 logging.error(u'breakpoint!')
                 import epdb; epdb.st()
             else:
-                import epdb; epdb.st()
-                #raise Exception(u'no json data')
-                raise ShippableNoData()
+                raise ShippableNoData
 
         return jdata
 
     def get_run_data(self, run_id, usecache=False):
-
         # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
-
         if len(run_id) == 24:
             # https://api.shippable.com/runs/58caf30337380a0800e31219
-            #run_url = u'https://api.shippable.com/runs/' + run_id
             run_url = SHIPPABLE_URL + '/runs/' + run_id
             logging.info(u'shippable: %s' % run_url)
             run_data = self._get_url(run_url, usecache=usecache)
@@ -227,7 +191,6 @@ class ShippableRuns(object):
             '''
 
             # https://github.com/ansible/ansibullbot/issues/982
-            #run_url = u'https://api.shippable.com/runs'
             run_url = SHIPPABLE_URL + '/runs'
             run_url += u'?'
             run_url += u'projectIds=%s' % ANSIBLE_PROJECT_ID
@@ -242,41 +205,13 @@ class ShippableRuns(object):
                         run_data = run_data[0]
                     except KeyError as e:
                         logging.error(e)
-                        import epdb; epdb.st()
                 elif isinstance(run_data, dict) and 'message' in run_data:
                     run_data = {}
 
         return run_data
 
-    def get_all_run_metadata(self, usecache=True):
-        #url = u'https://api.shippable.com/runs'
-        url = SHIPPABLE_URL + '/runs'
-        run_data = self._get_url(url, usecache=usecache)
-        return run_data
-
-    def map_runid(self, runid):
-        if not self.run_meta:
-            self.run_meta = self.get_all_run_metadata(usecache=False)
-        for x in self.run_meta:
-            if x[u'id'] == runid:
-                return runid
-            elif x[u'runNumber'] == runid:
-                return x[u'id']
-
-        # try again with fresh meta
-        self.run_meta = self.get_all_run_metadata(usecache=False)
-        for x in self.run_meta:
-            if x[u'id'] == runid:
-                return runid
-            elif x[u'runNumber'] == runid:
-                return x[u'id']
-
-        return None
-
     def get_test_results(self, run_id, usecache=False, filter_paths=[]):
-
         '''Fetch and munge the test results into proper json'''
-
         # statusCode(s):
         #   80: failed
         #   80: timeout
@@ -305,14 +240,11 @@ class ShippableRuns(object):
         commitSha = run_data[u'commitSha']
 
         results = []
-        #url = u'https://api.shippable.com/jobs?runIds=%s' % run_id
         url = SHIPPABLE_URL + '/jobs?runIds=%s' % run_id
         rdata = self._get_url(url, usecache=usecache)
 
-        for rix, rd in enumerate(rdata):
-
+        for rd in rdata:
             job_id = rd.get(u'id')
-            #job_number = rd.get('jobNumber')
 
             dkey = u'%s.%s' % (rd[u'runNumber'], rd[u'jobNumber'])
             if dkey not in CVMAP:
@@ -324,7 +256,6 @@ class ShippableRuns(object):
 
             CVMAP[dkey][u'statusCode'] = rd[u'statusCode']
 
-            #jurl = u'https://api.shippable.com/jobs/%s/jobTestReports' % job_id
             jurl = SHIPPABLE_URL + '/jobs/%s/jobTestReports' % job_id
             jdata = self._get_url(jurl, usecache=usecache)
 
@@ -335,15 +266,14 @@ class ShippableRuns(object):
             # shippable breaks sometimes ... gzip: stdin: not in gzip format
             jdata = [x for x in jdata if 'path' in x]
 
-            for jid, td in enumerate(jdata):
+            for td in jdata:
 
                 if filter_paths:
                     try:
                         matches = [x.match(td[u'path']) for x in fps]
                         matches = [x for x in matches if x]
                     except Exception as e:
-                        print(e)
-                        import epdb; epdb.st()
+                        logging.error(e)
                 else:
                     matches = True
 
@@ -389,22 +319,20 @@ class ShippableRuns(object):
 
         return run_data, commitSha, results, ci_verified
 
-    def get_run_id(self, run_number):
-        """trigger a new run"""
+    def _get_run_id(self, run_number):
         run_url = u"%s&runNumbers=%s" % (self.url, run_number)
-        response = self.fetch(run_url, timeout=TIMEOUT)
+        response = self._fetch(run_url, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)
-        self.check_response(response)
+        self._check_response(response)
         run_id = response.json()[0][u'id']
         logging.debug(run_id)
         return run_id
 
     def rebuild(self, run_number, issueurl=None, rerunFailedOnly=False):
         """trigger a new run"""
-
         # always pass the runId in a dict() to requests
-        run_id = self.get_run_id(run_number)
+        run_id = self._get_run_id(run_number)
         data = {u'runId': run_id}
 
         # failed jobs only
@@ -412,10 +340,10 @@ class ShippableRuns(object):
             data[u'rerunFailedOnly'] = True
 
         newbuild_url = u"%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
-        response = self.fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)
+        response = self._fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST %r to %r (%r)" % (data, newbuild_url, issueurl))
-        self.check_response(response)
+        self._check_response(response)
         return response
 
     def rebuild_failed(self, run_number, issueurl=None):
@@ -424,23 +352,19 @@ class ShippableRuns(object):
 
     def cancel(self, run_number, issueurl=None):
         """cancel existing run"""
-
         # always pass the runId in a dict() to requests
-        run_id = self.get_run_id(run_number)
+        run_id = self._get_run_id(run_number)
         data = {u'runId': run_id}
 
         cancel_url = u"%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
-        response = self.fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
+        response = self._fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST %r to %r (%r)" % (data, cancel_url, issueurl))
-        self.check_response(response)
+        self._check_response(response)
         return response
 
     def cancel_branch_runs(self, branch):
         """Cancel all Shippable runs on a given branch"""
-        #run_url = u'https://api.shippable.com/runs?projectIds=%s&branch=%s&' \
-        #          u'status=waiting,queued,processing,started' \
-        #          % (ANSIBLE_PROJECT_ID, branch)
         run_url = SHIPPABLE_URL + '/runs?projectIds=%s&branch=%s&' \
                   u'status=waiting,queued,processing,started' \
                   % (ANSIBLE_PROJECT_ID, branch)
@@ -456,10 +380,10 @@ class ShippableRuns(object):
             if run_number:
                 self.cancel(run_number)
 
-    def fetch(self, url, verb='get', **kwargs):
+    def _fetch(self, url, verb='get', **kwargs):
         """return response or None in case of failure, try twice"""
         @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
-        def _fetch(verb='get'):
+        def _inner_fetch(verb='get'):
             headers = {
                 'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
             }
@@ -478,11 +402,11 @@ class ShippableRuns(object):
 
         try:
             logging.debug(u'%s' % url)
-            return _fetch(verb=verb)
+            return _inner_fetch(verb=verb)
         except RetryError as e:
             logging.error(e)
 
-    def check_response(self, response):
+    def _check_response(self, response):
         if response and response.status_code == 404:
             if C.DEFAULT_BREAKPOINTS:
                 logging.error(u'breakpoint!')

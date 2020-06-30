@@ -285,7 +285,7 @@ class AnsibleTriage(DefaultTriager):
         # instantiate shippable api
         logging.info('creating shippable wrapper')
         spath = os.path.join(self.cachedir_base, 'shippable.runs')
-        self.SR = ShippableRuns(cachedir=spath, writecache=True)
+        self.SR = ShippableRuns(cachedir=spath)
         self.SR.update()
 
         # resume is just an overload for the start-at argument
