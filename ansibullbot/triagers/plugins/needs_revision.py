@@ -32,10 +32,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     needs_rebase = False
     needs_rebase_msgs = []
     has_shippable = False
-    has_landscape = False
-    has_travis = False
-    has_travis_notification = False
-    has_zuul = False
     ci_state = None
     ci_stale = None
     mstate = None
@@ -65,10 +61,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         u'has_commit_mention': has_commit_mention,
         u'has_commit_mention_notification': has_commit_mention_notification,
         u'has_shippable': has_shippable,
-        u'has_landscape': has_landscape,
-        u'has_travis': has_travis,
-        u'has_travis_notification': has_travis_notification,
-        u'has_zuul': has_zuul,
         u'merge_commits': merge_commits,
         u'has_merge_commit_notification': has_merge_commit_notification,
         u'mergeable': None,
@@ -101,24 +93,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     #   success/pending/failure/... ?
     ci_status = iw.pullrequest_status
 
-    # check if this has shippable and or travis
+    # check if this has shippable
     if ci_status:
         for x in ci_status:
-            if u'travis-ci.org' in x[u'target_url']:
-                has_travis = True
-                continue
             if x.get('context') == 'Shippable':
                 has_shippable = True
                 continue
-
-    # code quality hooks
-    if [x for x in ci_status if isinstance(x, dict) and
-            u'landscape.io' in x[u'target_url']]:
-        has_landscape = True
-
-    if [x for x in ci_status if isinstance(x, dict) and
-            u'zuul' in x[u'target_url']]:
-        has_zuul = True
 
     ci_states = [x[u'state'] for x in ci_status
                  if isinstance(x, dict) and x.get('context') == 'Shippable']
@@ -321,16 +301,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         if u'commit_msg_mentions' in bpcs:
             has_commit_mention_notification = True
 
-    if has_travis:
-        needs_rebase = True
-        needs_rebase_msgs.append(u'travis-ci found in status')
-
-        # 'has_travis_notification': has_travis_notification,
-        if u'travis_notify' in bpcs:
-            has_travis_notification = True
-        else:
-            has_travis_notification = False
-
     # keep track of who deleted their repo/branch
     if iw.pullrequest.head.repo:
         has_remote_repo = True
@@ -401,9 +371,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         u'is_needs_rebase': needs_rebase,
         u'is_needs_rebase_msgs': needs_rebase_msgs,
         u'has_shippable': has_shippable,
-        u'has_landscape': has_landscape,
-        u'has_travis': has_travis,
-        u'has_travis_notification': has_travis_notification,
         u'has_commit_mention': has_commit_mention,
         u'has_commit_mention_notification': has_commit_mention_notification,
         u'merge_commits': merge_commits,
