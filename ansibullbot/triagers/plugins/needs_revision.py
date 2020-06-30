@@ -1,20 +1,19 @@
 import datetime
 import logging
-import os
 
 import pytz
 
 from ansibullbot._text_compat import to_text
 from ansibullbot.errors import ShippableNoData
 from ansibullbot.triagers.plugins.shipit import is_approval
-from ansibullbot.utils.shippable_api import has_commentable_data, ShippableRuns
+from ansibullbot.utils.shippable_api import has_commentable_data
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.wrappers.historywrapper import ShippableHistory
 
 import ansibullbot.constants as C
 
 
-def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
+def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     # Thanks @adityacs for this PR. This PR requires revisions, either
     # because it fails to build or by reviewer request. Please make the
     # suggested revisions. When you are done, please comment with text
@@ -78,8 +77,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         u'ci_state': ci_state,
         u'ci_stale': ci_stale,
         u'reviews': None,
-        #'www_reviews': None,
-        #'www_summary': None,
         u'ready_for_review': ready_for_review,
         u'has_shippable_yaml': has_shippable_yaml,
         u'has_shippable_yaml_notification': has_shippable_yaml_notification,
@@ -95,16 +92,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     bpcs = iw.history.get_boilerplate_comments()
     bpcs = [x[0] for x in bpcs]
 
-    # Scrape web data for debug purposes
-    #rfn = iw.repo_full_name
-    #www_summary = triager.gws.get_single_issue_summary(rfn, iw.number)
-    #www_reviews = triager.gws.scrape_pullrequest_review(rfn, iw.number)
-
     maintainers = [x for x in triager.ansible_core_team
                    if x not in triager.BOTNAMES]
 
-    #if meta.get('module_match'):
-    #    maintainers += meta['module_match'].get('maintainers', [])
     maintainers += meta.get(u'component_maintainers', [])
 
     # get the exact state from shippable ...
@@ -146,7 +136,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         # https://github.com/ansible/ansibullbot/issues/935
         shippable_states = [x for x in ci_status
                             if isinstance(x, dict) and x.get('context') == 'Shippable']
-        ci_date = get_last_shippable_full_run_date(shippable_states, shippable)
+        ci_date = _get_last_shippable_full_run_date(shippable_states, shippable)
 
         # https://github.com/ansible/ansibullbot/issues/458
         if ci_date:
@@ -167,7 +157,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
     # clean/unstable/dirty/unknown
     if mstate != u'clean':
-
         if ci_state == u'failure':
             needs_revision = True
             needs_revision_msgs.append(u'ci failure')
@@ -191,12 +180,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
             if ci_state == u'pending' and u'needs_revision' in iw.labels:
                 needs_revision = True
                 needs_rebase_msgs.append(u'keep label till test finished')
-
     else:
-
-        #current_hash = None
-        #pending_reviews = []
-        #hash_reviews = {}
         user_reviews = {}
         shipits = {}  # key: actor, value: created_at
 
@@ -276,7 +260,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
                         continue
 
         # This is a complicated algo ... sigh
-        user_reviews = get_review_state(
+        user_reviews = _get_review_state(
             iw.reviews,
             iw.submitter,
             number=iw.number,
@@ -285,7 +269,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
 
         if user_reviews:
             last_commit = iw.commits[-1].sha
-            change_requested = changes_requested_by(user_reviews, shipits, last_commit, ready_for_review)
+            change_requested = _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review)
             if change_requested:
                 needs_revision = True
                 needs_revision_msgs.append(
@@ -430,8 +414,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
         u'ci_state': ci_state,
         u'ci_stale': ci_stale,
         u'reviews': iw.reviews,
-        #'www_summary': www_summary,
-        #'www_reviews': www_reviews,
         u'ready_for_review_date': ready_for_review,
         u'ready_for_review': bool(ready_for_review),
         u'has_shippable_yaml': has_shippable_yaml,
@@ -447,7 +429,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable=None):
     return rmeta
 
 
-def changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
+def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
     outstanding = set()
     for actor, review in user_reviews.items():
         if review[u'state'] == u'CHANGES_REQUESTED':
@@ -478,7 +460,7 @@ def changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
     return list(outstanding)
 
 
-def get_review_state(reviews, submitter, number=None, store=False):
+def _get_review_state(reviews, submitter, number=None, store=False):
     '''Calculate the final review state for each reviewer'''
 
     # final review state for each reviewer
@@ -529,13 +511,11 @@ def get_review_state(reviews, submitter, number=None, store=False):
     return user_reviews
 
 
-def get_shippable_run_facts(iw, meta, shippable=None):
+def get_shippable_run_facts(iw, meta, shippable):
     '''Does an issue need the test result comment?'''
-
     # https://github.com/ansible/ansibullbot/issues/312
     # https://github.com/ansible/ansibullbot/issues/404
     # https://github.com/ansible/ansibullbot/issues/418
-
     rmeta = {
         u'shippable_test_results': None,
         u'ci_verified': None,
@@ -547,10 +527,6 @@ def get_shippable_run_facts(iw, meta, shippable=None):
         return rmeta
     if meta[u'ci_state'] != u'failure':
         return rmeta
-
-    if not shippable:
-        spath = os.path.expanduser(u'~/.ansibullbot/cache/shippable.runs')
-        shippable = ShippableRuns(cachedir=spath)
 
     ci_status = iw.pullrequest_status
     ci_verified = None
@@ -577,23 +553,16 @@ def get_shippable_run_facts(iw, meta, shippable=None):
 
     # do validation so that we're not stepping on toes
     if u'ci_verified' in iw.labels and not ci_verified:
-
         sh = ShippableHistory(iw, shippable, ci_status)
         vinfo = sh.info_for_last_ci_verified_run()
-
         if vinfo:
             if last_run == vinfo[u'run_id']:
                 ci_verified = True
-            else:
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
-                    import epdb; epdb.st()
 
     # no results means no notification required
     if len(shippable_test_results) < 1:
         needs_testresult_notification = False
     else:
-
         s_bpcs = iw.history.get_boilerplate_comments_content(
             bfilter='shippable_test_result'
         )
@@ -617,6 +586,7 @@ def get_shippable_run_facts(iw, meta, shippable=None):
     # https://github.com/ansible/ansibullbot/issues/421
     if rmeta[u'needs_testresult_notification']:
         hcd = has_commentable_data(shippable_test_results)
+        # FIXME needs_testresult_notification = hcd ???
         rmeta[u'needs_testresult_notification'] = hcd
 
     rmeta = {
@@ -628,11 +598,9 @@ def get_shippable_run_facts(iw, meta, shippable=None):
     return rmeta
 
 
-def get_last_shippable_full_run_date(ci_status, shippable):
+def _get_last_shippable_full_run_date(ci_status, shippable):
     '''Map partial re-runs back to their last full run date'''
-
     # https://github.com/ansible/ansibullbot/issues/935
-
     # (Epdb) pp [x['target_url'] for x in ci_status]
     # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
     # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
@@ -640,12 +608,11 @@ def get_last_shippable_full_run_date(ci_status, shippable):
     # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
     # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
     # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
-
     if shippable is None:
         return None
 
     # extract and unique the run ids from the target urls
-    runids = [get_runid_from_status(x) for x in ci_status]
+    runids = [_get_runid_from_status(x) for x in ci_status]
 
     # get rid of duplicates and sort
     runids = sorted(set(runids))
@@ -689,7 +656,6 @@ def get_last_shippable_full_run_date(ci_status, shippable):
         # get the old timestamp
         rundata[u'created_at'] = rjdata.get(u'createdAt')
         # get the new batchid
-        #rundata['rerun_batch_id'] = rjdata.get('propertyBag', {}).get('originalRunId')
         pbag = rjdata.get(u'propertyBag')
         if pbag:
             rundata[u'rerun_batch_id'] = pbag.get(u'originalRunId')
@@ -700,7 +666,7 @@ def get_last_shippable_full_run_date(ci_status, shippable):
     return rundata[u'created_at']
 
 
-def get_runid_from_status(status):
+def _get_runid_from_status(status):
     # (Epdb) pp [(x['target_url'], x['description']) for x in ci_status]
     # [(u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
     # u'Run 16560 status is SUCCESS. '),
