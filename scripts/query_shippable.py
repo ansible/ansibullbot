@@ -10,7 +10,7 @@ from pprint import pprint
 from lib.utils.shippable_api import ShippableRuns
 
 spath = os.path.expanduser('~/.ansibullbot/cache/shippable.runs')
-SR = ShippableRuns(cache=False, cachedir=spath)
+SR = ShippableRuns(cachedir=spath)
 SR.update()
 
 logging.basicConfig(level=logging.DEBUG)

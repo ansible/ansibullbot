@@ -550,7 +550,7 @@ def get_shippable_run_facts(iw, meta, shippable=None):
 
     if not shippable:
         spath = os.path.expanduser(u'~/.ansibullbot/cache/shippable.runs')
-        shippable = ShippableRuns(cachedir=spath, writecache=True)
+        shippable = ShippableRuns(cachedir=spath)
 
     ci_status = iw.pullrequest_status
     ci_verified = None
