@@ -79,7 +79,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta[u'component_maintainers'] = [u'robinro']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta)
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, None)
 
                 self.assertFalse(facts[u'is_needs_revision'])
                 self.assertFalse(facts[u'stale_reviews'])
@@ -107,7 +107,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta[u'component_maintainers'] = [u'mkrizek']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta)
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, None)
 
                 self.assertFalse(facts[u'is_needs_revision'])
 
@@ -134,7 +134,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta[u'component_maintainers'] = [u'mkrizek', u'jctanner']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta)
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, None)
 
                 self.assertTrue(facts[u'is_needs_revision'])
 
