@@ -15,7 +15,7 @@ import pytz
 from tests.utils.issue_mock import IssueMock
 from tests.utils.repo_mock import RepoMock
 from tests.utils.helpers import get_issue
-from ansibullbot.triagers.plugins.needs_revision import changes_requested_by, get_needs_revision_facts, get_review_state
+from ansibullbot.triagers.plugins.needs_revision import _changes_requested_by, get_needs_revision_facts, _get_review_state
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
@@ -168,7 +168,7 @@ class TestReviewMethods(TestCase):
             review[u'commit_id'] = u'569597fac8175e6c63cbb415080ce42f9992a0c9'
         submitter = u'submitter'
 
-        filtered = get_review_state(reviews, submitter)
+        filtered = _get_review_state(reviews, submitter)
 
         self.assertEqual(filtered[u'reviewer0'][u'state'], u'COMMENTED')
         self.assertEqual(filtered[u'reviewer1'][u'state'], u'CHANGES_REQUESTED')
@@ -182,7 +182,7 @@ class TestReviewMethods(TestCase):
         }
 
         last_commit = u'dce73fdee311d5e74a7d59fd301320943f69d49f'
-        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review=None)
+        requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review=None)
         self.assertEqual(sorted(requested_by), [u'reviewer3', u'reviewer4'])
 
     def test_review_older_than_ready_for_review(self):
@@ -197,7 +197,7 @@ class TestReviewMethods(TestCase):
         ]
         submitter = u'submitter'
 
-        filtered = get_review_state(reviews, submitter)
+        filtered = _get_review_state(reviews, submitter)
 
         self.assertEqual(filtered[u'reviewer0'][u'state'], u'CHANGES_REQUESTED')
 
@@ -205,7 +205,7 @@ class TestReviewMethods(TestCase):
         last_commit = u'dce73fdee311d5e74a7d59fd301320943f69d49f'
         ready_for_review = self.make_time(u'2017-02-02T00:00:00Z')
 
-        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review)
+        requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review)
         self.assertFalse(requested_by)  # CHANGES_REQUESTED review ignored
 
     def test_ready_for_review_older_than_review(self):
@@ -220,7 +220,7 @@ class TestReviewMethods(TestCase):
         ]
         submitter = u'submitter'
 
-        filtered = get_review_state(reviews, submitter)
+        filtered = _get_review_state(reviews, submitter)
 
         self.assertEqual(filtered[u'reviewer0'][u'state'], u'CHANGES_REQUESTED')
 
@@ -228,7 +228,7 @@ class TestReviewMethods(TestCase):
         last_commit = u'dce73fdee311d5e74a7d59fd301320943f69d49f'
         ready_for_review = self.make_time(u'2017-01-01T00:00:00Z')
 
-        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review)
+        requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review)
         self.assertEqual(requested_by, [u'reviewer0'])  # HANGES_REQUESTED review isn't ignored
 
     def test_review_older_than_ready_for_review_PR_not_updated(self):
@@ -245,14 +245,14 @@ class TestReviewMethods(TestCase):
         ]
         submitter = u'submitter'
 
-        filtered = get_review_state(reviews, submitter)
+        filtered = _get_review_state(reviews, submitter)
 
         self.assertEqual(filtered[u'reviewer0'][u'state'], u'CHANGES_REQUESTED')
 
         shipits = {}
         ready_for_review = self.make_time(u'2017-02-02T00:00:00Z')
 
-        requested_by = changes_requested_by(filtered, shipits, last_commit, ready_for_review)
+        requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review)
         self.assertEqual(requested_by, [u'reviewer0'])  # HANGES_REQUESTED review isn't ignored
 
     @staticmethod
