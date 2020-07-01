@@ -1,6 +1,7 @@
 # curl -H "Content-Type: application/json" -H "Authorization: apiToken XXXX"
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
+import datetime
 import json
 import logging
 import os
@@ -91,8 +92,6 @@ class ShippableRuns(object):
             return ts[-1]
         else:
             return None
-
-
 
     def _get_url(self, url, usecache=False, timeout=TIMEOUT):
         cdir = os.path.join(self.cachedir, u'.raw')
@@ -367,6 +366,28 @@ class ShippableRuns(object):
             if run_number:
                 self.cancel(run_number)
 
+    def get_states(self, ci_status):
+        # https://github.com/ansible/ansibullbot/issues/935
+        return [
+            x for x in ci_status
+            if isinstance(x, dict) and x.get('context') == 'Shippable'
+        ]
+
+    def get_state(self, states):
+        if states:
+            return states[0].get('state')
+
+    def is_stale(self, states):
+        ci_date = self._get_last_shippable_full_run_date(states)
+
+        # https://github.com/ansible/ansibullbot/issues/458
+        if ci_date:
+            ci_date = strip_time_safely(ci_date)
+            ci_delta = (datetime.datetime.now() - ci_date).days
+            return ci_delta > 7
+
+        return False
+
     def _fetch(self, url, verb='get', **kwargs):
         """return response or None in case of failure, try twice"""
         @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
@@ -400,3 +421,97 @@ class ShippableRuns(object):
                 import epdb; epdb.st()
             else:
                 raise Exception(u'shippable 404')
+
+    def _get_last_shippable_full_run_date(self, ci_status):
+        '''Map partial re-runs back to their last full run date'''
+        # https://github.com/ansible/ansibullbot/issues/935
+        # (Epdb) pp [x['target_url'] for x in ci_status]
+        # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+        # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+        # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
+        # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+        # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+        # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
+
+        # extract and unique the run ids from the target urls
+        runids = [_get_runid_from_status(x) for x in ci_status]
+
+        # get rid of duplicates and sort
+        runids = sorted(set(runids))
+
+        # always use the numerically higher run id
+        runid = runids[-1]
+
+        # build a datastructure to hold the info collected
+        rundata = {
+            u'runid': runid,
+            u'created_at': None,
+            u'rerun_batch_id': None,
+            u'rerun_batch_createdat': None
+        }
+
+        # query the api for all data on this runid
+        try:
+            rdata = self.get_run_data(to_text(runid), usecache=True)
+        except ShippableNoData:
+            return None
+
+        # whoops ...
+        if rdata is None:
+            return None
+
+        # get the referenced run for the last runid if it exists
+        pbag = rdata.get(u'propertyBag')
+        if pbag:
+            rundata[u'rerun_batch_id'] = pbag.get(u'originalRunId')
+
+        # keep the timestamp too
+        rundata[u'created_at'] = rdata.get(u'createdAt')
+
+        # if it had a rerunbatchid it was a partial run and
+        # we need to go get the date on the original run
+        while rundata[u'rerun_batch_id']:
+            # the original run data
+            rjdata = self.get_run_data(rundata[u'rerun_batch_id'])
+            # swap the timestamp
+            rundata[u'rerun_batch_createdat'] = rundata[u'created_at']
+            # get the old timestamp
+            rundata[u'created_at'] = rjdata.get(u'createdAt')
+            # get the new batchid
+            pbag = rjdata.get(u'propertyBag')
+            if pbag:
+                rundata[u'rerun_batch_id'] = pbag.get(u'originalRunId')
+            else:
+                rundata[u'rerun_batch_id'] = None
+
+        # return only the timestamp from the last full run
+        return rundata[u'created_at']
+
+
+def _get_runid_from_status(status):
+    # (Epdb) pp [(x['target_url'], x['description']) for x in ci_status]
+    # [(u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
+    # u'Run 16560 status is SUCCESS. '),
+    # (u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
+    # u'Run 16560 status is PROCESSING. '),
+    # (u'https://app.shippable.com/github/ansible/ansible/runs/16560',
+    # u'Run 16560 status is WAITING. ')]
+
+    # (Epdb) pp [x['target_url'] for x in ci_status]
+    # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
+    # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
+
+    paths = status[u'target_url'].split(u'/')
+    if paths[-1].isdigit():
+        return int(paths[-1])
+    if paths[-2].isdigit():
+        return int(paths[-2])
+    for x in status[u'description'].split():
+        if x.isdigit():
+            return int(x)
+
+    return None

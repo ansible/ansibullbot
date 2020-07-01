@@ -44,6 +44,12 @@ class AnsibleTriageMock(object):
     def ansible_core_team(self):
         return [u'bcoca']
 
+
+class ShippableRunsMock(object):
+    def get_states(self, pullrequest_status):
+        return []
+
+
 class TestNeedsRevisionFacts(TestCase):
 
     def setUp(self):
@@ -79,7 +85,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta[u'component_maintainers'] = [u'robinro']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, None)
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableRunsMock())
 
                 self.assertFalse(facts[u'is_needs_revision'])
                 self.assertFalse(facts[u'stale_reviews'])
@@ -107,7 +113,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta[u'component_maintainers'] = [u'mkrizek']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, None)
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableRunsMock())
 
                 self.assertFalse(facts[u'is_needs_revision'])
 
@@ -134,7 +140,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta[u'component_maintainers'] = [u'mkrizek', u'jctanner']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, None)
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableRunsMock())
 
                 self.assertTrue(facts[u'is_needs_revision'])
 

@@ -3,8 +3,6 @@ import logging
 
 import pytz
 
-from ansibullbot._text_compat import to_text
-from ansibullbot.errors import ShippableNoData
 from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.shippable_api import has_commentable_data
 from ansibullbot.utils.timetools import strip_time_safely
@@ -31,15 +29,15 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     has_merge_commit_notification = False
     needs_rebase = False
     needs_rebase_msgs = []
-    has_shippable = False
     ci_state = None
-    ci_stale = None
+    ci_stale = True
     mstate = None
     change_requested = None
     ready_for_review = None
     has_commit_mention = False
     has_commit_mention_notification = False
 
+    has_shippable = False
     has_shippable_yaml = None
     has_shippable_yaml_notification = None
 
@@ -89,45 +87,13 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
 
     maintainers += meta.get(u'component_maintainers', [])
 
-    # get the exact state from shippable ...
-    #   success/pending/failure/... ?
-    ci_status = iw.pullrequest_status
+    ci_states = shippable.get_states(iw.pullrequest_status)
+    if ci_states:
+        has_shippable = True
+        ci_stale = shippable.is_stale(ci_states)
+        ci_state = shippable.get_state(ci_states)
 
-    # check if this has shippable
-    if ci_status:
-        for x in ci_status:
-            if x.get('context') == 'Shippable':
-                has_shippable = True
-                continue
-
-    ci_states = [x[u'state'] for x in ci_status
-                 if isinstance(x, dict) and x.get('context') == 'Shippable']
-
-    if not ci_states:
-        ci_state = None
-    else:
-        ci_state = ci_states[0]
     logging.info(u'ci_state == %s' % ci_state)
-
-    # decide if the CI run is "stale"
-    if not has_shippable:
-        ci_stale = True
-    else:
-        # https://github.com/ansible/ansibullbot/issues/935
-        shippable_states = [x for x in ci_status
-                            if isinstance(x, dict) and x.get('context') == 'Shippable']
-        ci_date = _get_last_shippable_full_run_date(shippable_states, shippable)
-
-        # https://github.com/ansible/ansibullbot/issues/458
-        if ci_date:
-            ci_date = strip_time_safely(ci_date)
-            ci_delta = (datetime.datetime.now() - ci_date).days
-            if ci_delta > 7:
-                ci_stale = True
-            else:
-                ci_stale = False
-        else:
-            ci_stale = False
 
     # clean/unstable/dirty/unknown
     mstate = iw.mergeable_state
@@ -136,6 +102,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     logging.info(u'mergeable_state == %s' % mstate)
 
     # clean/unstable/dirty/unknown
+    # FIXME ci_state related to shippable? make it general?
     if mstate != u'clean':
         if ci_state == u'failure':
             needs_revision = True
@@ -563,100 +530,3 @@ def get_shippable_run_facts(iw, meta, shippable):
     }
 
     return rmeta
-
-
-def _get_last_shippable_full_run_date(ci_status, shippable):
-    '''Map partial re-runs back to their last full run date'''
-    # https://github.com/ansible/ansibullbot/issues/935
-    # (Epdb) pp [x['target_url'] for x in ci_status]
-    # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
-    if shippable is None:
-        return None
-
-    # extract and unique the run ids from the target urls
-    runids = [_get_runid_from_status(x) for x in ci_status]
-
-    # get rid of duplicates and sort
-    runids = sorted(set(runids))
-
-    # always use the numerically higher run id
-    runid = runids[-1]
-
-    # build a datastructure to hold the info collected
-    rundata = {
-        u'runid': runid,
-        u'created_at': None,
-        u'rerun_batch_id': None,
-        u'rerun_batch_createdat': None
-    }
-
-    # query the api for all data on this runid
-    try:
-        rdata = shippable.get_run_data(to_text(runid), usecache=True)
-    except ShippableNoData:
-        return None
-
-    # whoops ...
-    if rdata is None:
-        return None
-
-    # get the referenced run for the last runid if it exists
-    pbag = rdata.get(u'propertyBag')
-    if pbag:
-        rundata[u'rerun_batch_id'] = pbag.get(u'originalRunId')
-
-    # keep the timestamp too
-    rundata[u'created_at'] = rdata.get(u'createdAt')
-
-    # if it had a rerunbatchid it was a partial run and
-    # we need to go get the date on the original run
-    while rundata[u'rerun_batch_id']:
-        # the original run data
-        rjdata = shippable.get_run_data(rundata[u'rerun_batch_id'])
-        # swap the timestamp
-        rundata[u'rerun_batch_createdat'] = rundata[u'created_at']
-        # get the old timestamp
-        rundata[u'created_at'] = rjdata.get(u'createdAt')
-        # get the new batchid
-        pbag = rjdata.get(u'propertyBag')
-        if pbag:
-            rundata[u'rerun_batch_id'] = pbag.get(u'originalRunId')
-        else:
-            rundata[u'rerun_batch_id'] = None
-
-    # return only the timestamp from the last full run
-    return rundata[u'created_at']
-
-
-def _get_runid_from_status(status):
-    # (Epdb) pp [(x['target_url'], x['description']) for x in ci_status]
-    # [(u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
-    # u'Run 16560 status is SUCCESS. '),
-    # (u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
-    # u'Run 16560 status is PROCESSING. '),
-    # (u'https://app.shippable.com/github/ansible/ansible/runs/16560',
-    # u'Run 16560 status is WAITING. ')]
-
-    # (Epdb) pp [x['target_url'] for x in ci_status]
-    # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
-
-    paths = status[u'target_url'].split(u'/')
-    if paths[-1].isdigit():
-        return int(paths[-1])
-    if paths[-2].isdigit():
-        return int(paths[-2])
-    for x in status[u'description'].split():
-        if x.isdigit():
-            return int(x)
-
-    return None
