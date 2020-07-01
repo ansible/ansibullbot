@@ -82,9 +82,6 @@ def get_automerge_facts(issuewrapper, meta):
     if not meta[u'has_shippable']:
         return create_ameta(False, u'automerge has_shippable test failed')
 
-    if meta[u'has_travis']:
-        return create_ameta(False, u'automerge has_travis test failed')
-
     if not meta[u'mergeable']:
         return create_ameta(False, u'automerge mergeable test failed')
 
@@ -163,9 +160,6 @@ def needs_community_review(meta, issue):
         return False
 
     if not meta[u'has_shippable']:
-        return False
-
-    if meta[u'has_travis']:
         return False
 
     if not meta[u'mergeable']:

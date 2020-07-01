@@ -938,18 +938,6 @@ class AnsibleTriage(DefaultTriager):
                 if u'needs_rebase' in iw.labels:
                     actions.unlabel.append(u'needs_rebase')
 
-        # travis-ci.org ...
-        if iw.is_pullrequest():
-            if self.meta[u'has_travis'] and \
-                    not self.meta[u'has_travis_notification']:
-                tvars = {u'submitter': iw.submitter}
-                comment = self.render_boilerplate(
-                    tvars,
-                    boilerplate=u'travis_notify'
-                )
-                if comment not in actions.comments:
-                    actions.comments.append(comment)
-
         # shippable failures shippable_test_result
         if iw.is_pullrequest() and not self.meta[u'is_bad_pr']:
             if self.meta[u'ci_state'] == u'failure' and \
@@ -979,7 +967,7 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/293
         if iw.is_pullrequest():
-            if not self.meta[u'has_shippable'] and not self.meta[u'has_travis']:
+            if not self.meta[u'has_shippable']:
                 if u'needs_ci' not in iw.labels:
                     actions.newlabel.append(u'needs_ci')
             else:
