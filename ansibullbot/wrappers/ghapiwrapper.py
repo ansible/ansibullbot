@@ -3,7 +3,6 @@
 from __future__ import print_function
 
 import glob
-import gzip
 import json
 import logging
 import os
@@ -17,9 +16,10 @@ import ansibullbot.constants as C
 from bs4 import BeautifulSoup
 
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
-from ansibullbot._text_compat import to_text, to_bytes
+from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
+from ansibullbot.utils.file_tools import read_gzip_json_file, write_gzip_json_file
 from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
 
@@ -51,7 +51,6 @@ class GithubWrapper(object):
     @RateLimited
     def get_org(self, org, verbose=True):
         org = self.gh.get_organization(org)
-        #import epdb; epdb.st()
         return org
 
     @RateLimited
@@ -79,9 +78,7 @@ class GithubWrapper(object):
 
         # FIXME - commits are static and can always be used from cache.
         if url_parts[-2] == 'commits' and os.path.exists(cdf):
-            with gzip.open(cdf, 'r') as f:
-                data = json.loads(f.read())
-            return data
+            return read_gzip_json_file(cdf)
 
         headers = {
             u'Accept': u','.join(self.accepts_headers),
@@ -113,8 +110,7 @@ class GithubWrapper(object):
 
             # cache data to disk
             logging.debug('write %s' % cdf)
-            with gzip.open(cdf, 'w') as f:
-                f.write(to_bytes(json.dumps(data)))
+            write_gzip_json_file(cdf, data)
 
         # save the meta
         ADB.set_github_api_request_meta(url, rr.headers, cdf, token=self.token)
