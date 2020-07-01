@@ -274,7 +274,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         has_remote_repo = False
 
     # https://github.com/ansible/ansibullbot/issues/406
-    has_shippable_yaml = iw.pullrequest_filepath_exists(u'shippable.yml')
+    has_shippable_yaml = iw.pullrequest_filepath_exists(shippable.required_file)
     if not has_shippable_yaml:
         needs_rebase = True
         needs_rebase_msgs.append(u'missing shippable.yml')
