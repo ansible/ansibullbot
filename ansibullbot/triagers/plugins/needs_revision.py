@@ -30,7 +30,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     needs_rebase = False
     needs_rebase_msgs = []
     ci_state = None
-    ci_stale = None
+    ci_stale = True
     mstate = None
     change_requested = None
     ready_for_review = None
@@ -87,7 +87,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
 
     maintainers += meta.get(u'component_maintainers', [])
 
-    # decide if the CI run is "stale"
     ci_states = shippable.get_states(iw.pullrequest_status)
     if ci_states:
         has_shippable = True
