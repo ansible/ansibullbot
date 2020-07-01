@@ -91,8 +91,8 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     if ci_states:
         has_shippable = True
         ci_stale = shippable.is_stale(ci_states)
+        ci_state = shippable.get_state(ci_states)
 
-    ci_state = shippable.get_state(ci_states)
     logging.info(u'ci_state == %s' % ci_state)
 
     # clean/unstable/dirty/unknown
