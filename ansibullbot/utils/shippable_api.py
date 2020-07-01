@@ -1,12 +1,10 @@
 # curl -H "Content-Type: application/json" -H "Authorization: apiToken XXXX"
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
-import gzip
 import json
 import logging
 import os
 import re
-import shutil
 import time
 
 import six
@@ -15,8 +13,9 @@ import requests
 from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
 
 import ansibullbot.constants as C
-from ansibullbot._text_compat import to_text, to_bytes
+from ansibullbot._text_compat import to_text
 from ansibullbot.errors import ShippableNoData
+from ansibullbot.utils.file_tools import compress_gzip_file, read_gzip_json_file, write_gzip_json_file
 from ansibullbot.utils.timetools import strip_time_safely
 
 
@@ -93,19 +92,7 @@ class ShippableRuns(object):
         else:
             return None
 
-    def _load_cache_file(self, cfile):
-        with gzip.open(cfile, 'r') as f:
-            jdata = json.loads(f.read())
-        return jdata
 
-    def _write_cache_file(self, cfile, data):
-        with gzip.open(cfile, 'w') as f:
-            f.write(to_bytes(json.dumps(data)))
-
-    def _compress_cache_file(self, cfile, gzfile):
-        with open(cfile, 'r') as f_in, gzip.open(gzfile, 'w') as f_out:
-            shutil.copyfileobj(f_in, f_out)
-        os.remove(cfile)
 
     def _get_url(self, url, usecache=False, timeout=TIMEOUT):
         cdir = os.path.join(self.cachedir, u'.raw')
@@ -118,13 +105,13 @@ class ShippableRuns(object):
 
         # transparently compress old logs
         if os.path.isfile(cfile) and not os.path.isfile(gzfile):
-            self._compress_cache_file(cfile, gzfile)
+            compress_gzip_file(cfile, gzfile)
 
         rc = None
         jdata = None
         if os.path.isfile(gzfile):
             try:
-                fdata = self._load_cache_file(gzfile)
+                fdata = read_gzip_json_file(gzfile)
                 rc = fdata[0]
                 jdata = fdata[1]
             except ValueError:
@@ -153,9 +140,9 @@ class ShippableRuns(object):
 
             if resp.status_code != 400:
                 jdata = resp.json()
-                self._write_cache_file(gzfile, [resp.status_code, jdata])
+                write_gzip_json_file(gzfile, [resp.status_code, jdata])
             else:
-                self._write_cache_file(gzfile, [resp.status_code, {}])
+                write_gzip_json_file(gzfile, [resp.status_code, {}])
                 return None
 
         self._check_response(resp)
