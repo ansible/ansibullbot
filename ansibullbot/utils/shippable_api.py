@@ -220,10 +220,7 @@ class ShippableRuns(object):
 
         # https://github.com/ansible/ansibullbot/issues/472
         if not run_data:
-            return run_data, None, [], False
-
-        # need this for ci_verified association
-        commitSha = run_data[u'commitSha']
+            return [], False
 
         results = []
         url = SHIPPABLE_URL + '/jobs?runIds=%s' % run_id
@@ -253,7 +250,6 @@ class ShippableRuns(object):
             jdata = [x for x in jdata if 'path' in x]
 
             for td in jdata:
-
                 if filter_paths:
                     try:
                         matches = [x.match(td[u'path']) for x in fps]
@@ -303,7 +299,7 @@ class ShippableRuns(object):
                         ci_verified = False
                         break
 
-        return run_data, commitSha, results, ci_verified
+        return results, ci_verified
 
     def _get_run_id(self, run_number):
         run_url = u"%s&runNumbers=%s" % (self.url, run_number)

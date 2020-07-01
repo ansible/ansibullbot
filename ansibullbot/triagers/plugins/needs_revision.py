@@ -211,7 +211,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
             iw.reviews,
             iw.submitter,
             number=iw.number,
-            store=True
         )
 
         if user_reviews:
@@ -394,7 +393,7 @@ def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
     return list(outstanding)
 
 
-def _get_review_state(reviews, submitter, number=None, store=False):
+def _get_review_state(reviews, submitter, number=None):
     '''Calculate the final review state for each reviewer'''
 
     # final review state for each reviewer
@@ -478,7 +477,8 @@ def get_shippable_run_facts(iw, meta, shippable):
         last_run = last_run[-1]
 
     # filter by the last run id
-    (run_data, commitSha, shippable_test_results, ci_verified) = \
+    # FIXME this needs to be split into two methods
+    shippable_test_results, ci_verified = \
         shippable.get_test_results(
             last_run,
             usecache=True,
