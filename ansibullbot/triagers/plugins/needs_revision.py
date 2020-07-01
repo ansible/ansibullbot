@@ -90,9 +90,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     ci_states = shippable.get_states(iw.pullrequest_status)
     if ci_states:
         has_shippable = True
-        ci_state = shippable.get_state(ci_states)
-        logging.info(u'ci_state == %s' % ci_state)
         ci_stale = shippable.is_stale(ci_states)
+
+    ci_state = shippable.get_state(ci_states)
+    logging.info(u'ci_state == %s' % ci_state)
 
     # clean/unstable/dirty/unknown
     mstate = iw.mergeable_state

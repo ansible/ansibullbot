@@ -374,8 +374,8 @@ class ShippableRuns(object):
         ]
 
     def get_state(self, states):
-        state = states[0]['state']
-        return state
+        if states:
+            return states[0].get('state')
 
     def is_stale(self, states):
         ci_date = self._get_last_shippable_full_run_date(states)
