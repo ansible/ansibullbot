@@ -5,8 +5,6 @@
 import glob
 import gzip
 import json
-import subprocess
-
 import six
 
 from flask import Flask
