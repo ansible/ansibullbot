@@ -3,6 +3,7 @@
 # $ curl -v -X POST --header "Content-Type: application/json" -d@summaries.json 'http://localhost:5001/summaries?user=ansible&repo=ansible'
 
 import glob
+import gzip
 import json
 import subprocess
 
@@ -341,11 +342,9 @@ def logs(issue=None):
                 log_lines = log_lines + f.readlines()
         # consume the compressed logs too if looking for a specific issue
         elif issue and lf.endswith('.gz'):
-            cmd = 'zcat %s' % lf
-            p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            so,se = p.communicate()
-            lines = so.split('\n')
-            log_lines = lines + log_lines
+            with gzip.open(lf, 'rb') as zf:
+                file_data = zf.readlines()
+            log_lines.extend(file_data)
 
     # if the caller doesn't want a specific issue, get the tail of the log and all tracebacks
     if not issue:
