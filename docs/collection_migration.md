@@ -4,10 +4,11 @@
 
 Here are some links to read through and familiarize yourself with ...
 
-* https://www.ansible.com/blog/getting-started-with-ansible-collections
-* https://docs.ansible.com/ansible/devel/user_guide/collections_using.html
-* https://docs.ansible.com/ansible/devel/dev_guide/developing_collections.html
-* https://github.com/ansible-collections/overview/blob/master/README.rst
+* [Blog post about collections](https://www.ansible.com/blog/getting-started-with-ansible-collections)
+* [Docs on using collections](https://docs.ansible.com/ansible/devel/user_guide/collections_using.html)
+* [Docs on developing collections](https://docs.ansible.com/ansible/devel/dev_guide/developing_collections.html)
+* [Docs on contributing to collections](https://docs.ansible.com/ansible/devel/community/contributing_maintained_collections.html)
+* [Main ansible-collections org README](https://github.com/ansible-collections/overview/blob/master/README.rst)
 
 ## Why is ansibot directing me here?
 
