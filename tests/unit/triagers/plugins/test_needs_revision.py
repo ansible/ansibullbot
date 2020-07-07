@@ -46,6 +46,9 @@ class AnsibleTriageMock(object):
 
 
 class ShippableRunsMock(object):
+    def __init__(self):
+        self.required_file = u'shippable.yml'
+
     def get_states(self, pullrequest_status):
         return []
 

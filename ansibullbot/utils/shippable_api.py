@@ -52,6 +52,9 @@ class ShippableRuns(object):
         self.provider_id = u'562dbd9710c5980d003b0451'
         self.subscription_org_name = u'ansible'
         self.project_name = u'ansible'
+        # FIXME might be a list of files in the future
+        # FIXME might be a class attribute
+        self.required_file = u'shippable.yml'
 
     def update(self):
         '''Fetch the latest data then send for processing'''

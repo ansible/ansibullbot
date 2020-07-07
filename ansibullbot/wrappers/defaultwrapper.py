@@ -1046,7 +1046,8 @@ class DefaultWrapper(object):
         sha = self.pullrequest.head.sha
         pdata = None
         resp = None
-        cachefile = os.path.join(self.full_cachedir, u'shippable_yml.pickle')
+        cache_file_name = filepath.replace('.', '_').replace('/', '_') + '.pickle'
+        cachefile = os.path.join(self.full_cachedir, cache_file_name)
 
         try:
             if os.path.isfile(cachefile):
