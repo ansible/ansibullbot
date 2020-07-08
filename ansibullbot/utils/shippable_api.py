@@ -85,6 +85,22 @@ class ShippableRuns(object):
                 nruns.append(x)
         return nruns
 
+    def get_last_run_id(self, status):
+        last_run = self.get_states(status)[0]
+        target_url = last_run.get('target_url')
+
+        if target_url is None:
+            raise ValueError('Could not get run ID from state: "%s"' % last_run)
+
+        target_url = target_url.split(u'/')
+
+        if target_url[-1] == u'summary':
+            # https://app.shippable.com/github/ansible/ansible/runs/21001/summary
+            return target_url[-2]
+        else:
+            # https://app.shippable.com/github/ansible/ansible/runs/21001
+            return target_url[-1]
+
     def get_last_completion(self, number):
         '''Timestamp of last job completion for given PR number'''
         nruns = self._get_pullrequest_runs(number)
