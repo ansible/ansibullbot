@@ -30,7 +30,7 @@ ANSIBLE_RUNS_URL = u'%s/runs?projectIds=%s&isPullRequest=True' % (
 TIMEOUT = 5  # seconds
 
 
-def has_commentable_data(test_results):
+def _has_commentable_data(test_results):
     # https://github.com/ansible/ansibullbot/issues/421
     if not test_results:
         return False
@@ -301,6 +301,11 @@ class ShippableRuns(object):
                     elif not td[u'contents'][u'verified']:
                         ci_verified = False
                         break
+
+        # https://github.com/ansible/ansibullbot/issues/421
+        # FIXME is this hack for shippable or will this be common for other CI providers?
+        if not _has_commentable_data(results):
+            results = []
 
         return results, ci_verified
 

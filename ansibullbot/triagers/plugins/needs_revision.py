@@ -4,7 +4,6 @@ import logging
 import pytz
 
 from ansibullbot.triagers.plugins.shipit import is_approval
-from ansibullbot.utils.shippable_api import has_commentable_data
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.wrappers.historywrapper import ShippableHistory
 
@@ -469,6 +468,7 @@ def get_shippable_run_facts(iw, meta, shippable):
     # find the last chronological run id
     #   https://app.shippable.com/github/ansible/ansible/runs/21001/summary
     #   https://app.shippable.com/github/ansible/ansible/runs/21001
+    # FIXME move into shippable.get_last_run_id()
     last_run = [x[u'target_url'] for x in ci_status if x.get(u'context', u'') == u'Shippable'][0]
     last_run = last_run.split(u'/')
     if last_run[-1] == u'summary':
@@ -516,12 +516,6 @@ def get_shippable_run_facts(iw, meta, shippable):
                 needs_testresult_notification = True
         else:
             needs_testresult_notification = True
-
-    # https://github.com/ansible/ansibullbot/issues/421
-    if rmeta[u'needs_testresult_notification']:
-        hcd = has_commentable_data(shippable_test_results)
-        # FIXME needs_testresult_notification = hcd ???
-        rmeta[u'needs_testresult_notification'] = hcd
 
     rmeta = {
         u'shippable_test_results': shippable_test_results,
