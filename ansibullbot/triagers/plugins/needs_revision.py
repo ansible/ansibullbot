@@ -448,49 +448,34 @@ def get_shippable_run_facts(iw, meta, shippable):
     # https://github.com/ansible/ansibullbot/issues/312
     # https://github.com/ansible/ansibullbot/issues/404
     # https://github.com/ansible/ansibullbot/issues/418
-    rmeta = {
-        u'shippable_test_results': None,
-        u'ci_verified': None,
-        u'needs_testresult_notification': None
-    }
-
     # should only be here if the run state is failed ...
-    if not meta[u'has_shippable']:
-        return rmeta
-    if meta[u'ci_state'] != u'failure':
-        return rmeta
+    if not meta[u'has_shippable'] or meta[u'ci_state'] != u'failure':
+        return {
+            u'shippable_test_results': None,
+            u'ci_verified': None,
+            u'needs_testresult_notification': None
+        }
 
-    ci_status = iw.pullrequest_status
-    ci_verified = None
-    shippable_test_results = None
     needs_testresult_notification = False
 
-    # find the last chronological run id
-    #   https://app.shippable.com/github/ansible/ansible/runs/21001/summary
-    #   https://app.shippable.com/github/ansible/ansible/runs/21001
-    # FIXME move into shippable.get_last_run_id()
-    last_run = [x[u'target_url'] for x in ci_status if x.get(u'context', u'') == u'Shippable'][0]
-    last_run = last_run.split(u'/')
-    if last_run[-1] == u'summary':
-        last_run = last_run[-2]
-    else:
-        last_run = last_run[-1]
+    ci_status = iw.pullrequest_status
+    last_run_id = shippable.get_last_run_id(ci_status)
 
     # filter by the last run id
     # FIXME this needs to be split into two methods
     shippable_test_results, ci_verified = \
         shippable.get_test_results(
-            last_run,
+            last_run_id,
             usecache=True,
             filter_paths=[u'/testresults/ansible-test-.*.json'],
-    )
+        )
 
     # do validation so that we're not stepping on toes
     if u'ci_verified' in iw.labels and not ci_verified:
         sh = ShippableHistory(iw, shippable, ci_status)
         vinfo = sh.info_for_last_ci_verified_run()
         if vinfo:
-            if last_run == vinfo[u'run_id']:
+            if last_run_id == vinfo[u'run_id']:
                 ci_verified = True
 
     # no results means no notification required
@@ -500,7 +485,6 @@ def get_shippable_run_facts(iw, meta, shippable):
         s_bpcs = iw.history.get_boilerplate_comments_content(
             bfilter='shippable_test_result'
         )
-
         if s_bpcs:
             # was this specific result shown?
             job_ids = [x[u'job_id'] for x in shippable_test_results]
@@ -517,10 +501,8 @@ def get_shippable_run_facts(iw, meta, shippable):
         else:
             needs_testresult_notification = True
 
-    rmeta = {
+    return {
         u'shippable_test_results': shippable_test_results,
         u'ci_verified': ci_verified,
         u'needs_testresult_notification': needs_testresult_notification
     }
-
-    return rmeta
