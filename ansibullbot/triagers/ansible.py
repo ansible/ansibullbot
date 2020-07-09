@@ -1955,7 +1955,7 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # ci
-        self.meta.update(get_ci_facts(iw, self.SR))
+        self.meta.update(get_ci_facts(iw))
 
         # ci rebuilds
         self.meta.update(get_rebuild_facts(iw, self.meta))
@@ -1966,7 +1966,6 @@ class AnsibleTriage(DefaultTriager):
                 iw,
                 self.meta,
                 self.ansible_core_team,
-                self.SR,
             )
         )
 
@@ -1975,7 +1974,6 @@ class AnsibleTriage(DefaultTriager):
             get_rebuild_command_facts(
                 iw,
                 self.meta,
-                self.SR,
             )
         )
 

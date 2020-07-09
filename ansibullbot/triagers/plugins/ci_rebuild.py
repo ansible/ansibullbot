@@ -1,4 +1,7 @@
-def get_ci_facts(iw, shippable):
+from ansibullbot.utils.shippable_api import ShippableRuns
+
+
+def get_ci_facts(iw):
     cifacts = {
         u'ci_run_number': None
     }
@@ -6,7 +9,7 @@ def get_ci_facts(iw, shippable):
     if not iw.is_pullrequest():
         return cifacts
 
-    last_run = shippable.get_processed_last_run(iw.pullrequest_status)
+    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
 
     return {'ci_run_number': last_run[u'last_run_id']}
 
@@ -57,7 +60,7 @@ def _get_last_command(iw, command, username):
 
 
 # https://github.com/ansible/ansibullbot/issues/640
-def get_rebuild_merge_facts(iw, meta, core_team, shippable):
+def get_rebuild_merge_facts(iw, meta, core_team):
     rbmerge_meta = {
         u'needs_rebuild': meta.get(u'needs_rebuild', False),
         u'needs_rebuild_all': meta.get(u'needs_rebuild_all', False),
@@ -86,7 +89,7 @@ def get_rebuild_merge_facts(iw, meta, core_team, shippable):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    last_run = shippable.get_processed_last_run(iw.pullrequest_status)
+    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
 
     if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
@@ -99,7 +102,7 @@ def get_rebuild_merge_facts(iw, meta, core_team, shippable):
 
 
 # https://github.com/ansible/ansibullbot/issues/1161
-def get_rebuild_command_facts(iw, meta, shippable):
+def get_rebuild_command_facts(iw, meta):
     rbmerge_meta = {
         u'needs_rebuild': meta.get(u'needs_rebuild', False),
         u'needs_rebuild_all': meta.get(u'needs_rebuild_all', False),
@@ -136,7 +139,7 @@ def get_rebuild_command_facts(iw, meta, shippable):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    last_run = shippable.get_processed_last_run(iw.pullrequest_status)
+    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
 
     if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True

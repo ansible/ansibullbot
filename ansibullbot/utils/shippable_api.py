@@ -86,8 +86,9 @@ class ShippableRuns(object):
                 nruns.append(x)
         return nruns
 
-    def get_processed_last_run(self, pullrequest_status):
-        last_run = self.get_states(pullrequest_status)[0].copy()
+    @classmethod
+    def get_processed_last_run(cls, pullrequest_status):
+        last_run = cls.get_states(pullrequest_status)[0].copy()
         target_url = last_run.get('target_url')
 
         if target_url is None:
@@ -401,15 +402,16 @@ class ShippableRuns(object):
             run_number = r.get(u'runNumber', None)
             if run_number:
                 self.cancel(run_number)
-
-    def get_states(self, ci_status):
+    @classmethod
+    def get_states(cls, ci_status):
         # https://github.com/ansible/ansibullbot/issues/935
         return [
             x for x in ci_status
             if isinstance(x, dict) and x.get('context') == 'Shippable'
         ]
 
-    def get_state(self, states):
+    @classmethod
+    def get_state(cls, states):
         if states:
             return states[0].get('state')
 
