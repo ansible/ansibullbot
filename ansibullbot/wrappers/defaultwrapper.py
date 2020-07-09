@@ -512,7 +512,7 @@ class DefaultWrapper(object):
     def submitter(self):
         # auto-migrated issue by ansibot{-dev}
         # figure out the original submitter
-        if self.instance.user.login.startswith(u'ansibot'):
+        if self.instance.user.login in C.DEFAULT_BOT_NAMES:
             m = re.match(u'From @(.*) on', self.instance.body)
             if m:
                 return m.group(1)

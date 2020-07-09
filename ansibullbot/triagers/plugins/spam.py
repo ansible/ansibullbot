@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+import ansibullbot.constants as C
 
 
 def get_spam_facts(issuewrapper, meta):
@@ -15,7 +15,7 @@ def get_spam_facts(issuewrapper, meta):
     ]
 
     comments = iw.comments[:]
-    comments = [x for x in comments if x[u'actor'] == 'ansibot']
+    comments = [x for x in comments if x[u'actor'] in C.DEFAULT_BOT_NAMES]
 
     cdates = {}
     cmap = {}
