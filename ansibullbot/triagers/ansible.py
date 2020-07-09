@@ -675,10 +675,16 @@ class AnsibleTriage(DefaultTriager):
         rfn_parts = rfn.split(u'/', 1)
         namespace = rfn_parts[0]
         reponame = rfn_parts[1]
+
+        # trying to prove my hypothesis for https://github.com/ansible/ansibullbot/issues/1355
+        dmeta_copy = dmeta.copy()
+        dmeta_copy[u'collection_filemap'] = None
+        dmeta_copy[u'collection_file_matches'] = None
+
         post_to_receiver(
             u'metadata',
             {u'user': namespace, u'repo': reponame, u'number': issuewrapper.number},
-            dmeta
+            dmeta_copy
         )
 
     def load_meta(self, issuewrapper):
