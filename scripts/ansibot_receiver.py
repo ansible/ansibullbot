@@ -16,7 +16,7 @@ from werkzeug.exceptions import BadRequest
 
 app = Flask(__name__)
 app.config['MONGO_DBNAME'] = 'ansibot_reciever'
-app.config['MONGO_URI'] = 'mongodb://localhost:27017'
+app.config['MONGO_URI'] = 'mongodb://localhost:27017/ansibot_reciever'
 mongo = PyMongo(app)
 
 
