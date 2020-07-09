@@ -8,6 +8,7 @@ import os
 import re
 import time
 
+import pytz
 import six
 
 import requests
@@ -85,8 +86,8 @@ class ShippableRuns(object):
                 nruns.append(x)
         return nruns
 
-    def get_last_run_id(self, status):
-        last_run = self.get_states(status)[0]
+    def get_processed_last_run(self, pullrequest_status):
+        last_run = self.get_states(pullrequest_status)[0].copy()
         target_url = last_run.get('target_url')
 
         if target_url is None:
@@ -96,10 +97,25 @@ class ShippableRuns(object):
 
         if target_url[-1] == u'summary':
             # https://app.shippable.com/github/ansible/ansible/runs/21001/summary
-            return target_url[-2]
+            last_run_id = target_url[-2]
         else:
             # https://app.shippable.com/github/ansible/ansible/runs/21001
-            return target_url[-1]
+            last_run_id = target_url[-1]
+
+        try:
+            int(last_run_id)
+        except ValueError:
+            # strip new id out of the description
+            run_id = last_run.get('description', '').split()[1]
+            if runid.isdigit():
+                last_run_id = runid
+            else:
+                raise ValueError('Could not get run ID from state: "%s"' % last_run)
+
+        last_run[u'created_at'] = pytz.utc.localize(strip_time_safely(last_run.get(u'created_at')))
+        last_run[u'updated_at'] = pytz.utc.localize(strip_time_safely(last_run.get(u'updated_at')))
+        last_run[u'last_run_id'] = last_run_id
+        return last_run
 
     def get_last_completion(self, number):
         '''Timestamp of last job completion for given PR number'''

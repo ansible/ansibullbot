@@ -459,7 +459,8 @@ def get_shippable_run_facts(iw, meta, shippable):
     needs_testresult_notification = False
 
     ci_status = iw.pullrequest_status
-    last_run_id = shippable.get_last_run_id(ci_status)
+    last_run = shippable.get_processed_last_run(ci_status)
+    last_run_id = last_run[u'last_run_id']
 
     # filter by the last run id
     # FIXME this needs to be split into two methods
