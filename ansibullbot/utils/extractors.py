@@ -651,7 +651,7 @@ def get_template_data(iw):
 
         # FIXME - abstract this into a historywrapper method
         vlabels = [x for x in iw.history.history if x[u'event'] == u'labeled']
-        vlabels = [x for x in vlabels if x[u'actor'] not in [u'ansibot', u'ansibotdev']]
+        vlabels = [x for x in vlabels if x[u'actor'] not in C.DEFAULT_BOT_NAMES]
         vlabels = [x[u'label'] for x in vlabels if x[u'label'].startswith(u'affects_')]
         vlabels = [x for x in vlabels if x.startswith(u'affects_')]
 
