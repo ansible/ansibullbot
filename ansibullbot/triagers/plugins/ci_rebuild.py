@@ -1,37 +1,4 @@
-import pytz
-
-from ansibullbot.utils.timetools import strip_time_safely
-
-
-def status_to_date_and_runid(status, keepstate=False):
-    """convert pr status to a tuple of date and runid"""
-
-    # https://github.com/ansible/ansibullbot/issues/934
-    if not status.get(u'context', u'') == u'Shippable':
-        return None
-
-    created_at = status.get(u'created_at')
-    target = status.get(u'target_url')
-    if target.endswith(u'/summary'):
-        target = target.split(u'/')[-2]
-    else:
-        target = target.split(u'/')[-1]
-
-    try:
-        int(target)
-    except ValueError:
-        # strip new id out of the description
-        runid = status[u'description']
-        runid = runid.split()[1]
-        if runid.isdigit():
-            target = runid
-
-    ts = pytz.utc.localize(strip_time_safely(created_at))
-
-    if keepstate:
-        return ts, target, status[u'state']
-    else:
-        return ts, target
+from ansibullbot.utils.shippable_api import ShippableRuns
 
 
 def get_ci_facts(iw):
@@ -42,24 +9,12 @@ def get_ci_facts(iw):
     if not iw.is_pullrequest():
         return cifacts
 
-    pr_status = [x for x in iw.pullrequest_status]
-    ci_run_ids = []
-    for x in pr_status:
-        date_and_runid = status_to_date_and_runid(x)
-        if date_and_runid is not None:
-            ci_run_ids.append(date_and_runid)
+    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
 
-    if not ci_run_ids:
-        return cifacts
-
-    ci_run_ids.sort(key=lambda x: x[0])
-    last_run = ci_run_ids[-1][1]
-
-    return {'ci_run_number': last_run}
+    return {'ci_run_number': last_run[u'last_run_id']}
 
 
 def get_rebuild_facts(iw, meta, force=False):
-
     rbmeta = {
         u'needs_rebuild': False,
         u'needs_rebuild_all': False,
@@ -134,22 +89,13 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    pr_status = []
-    for x in iw.pullrequest_status:
-        date_and_runid = status_to_date_and_runid(x, keepstate=True)
-        if date_and_runid is not None:
-            pr_status.append(date_and_runid)
+    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
 
-    if not pr_status:
-        return rbmerge_meta
-
-    pr_status.sort(key=lambda x: x[0])
-
-    if pr_status[-1][-1] != u'pending' and pr_status[-1][0] < last_command:
+    if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
         rbmerge_meta[u'needs_rebuild_all'] = True
 
-    if pr_status[-1][-1] == u'success' and pr_status[-1][0] > last_command:
+    if last_run[u'state'] == u'success' and last_run[u'created_at'] > last_command:
         rbmerge_meta[u'admin_merge'] = True
 
     return rbmerge_meta
@@ -193,18 +139,9 @@ def get_rebuild_command_facts(iw, meta):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    pr_status = []
-    for x in iw.pullrequest_status:
-        date_and_runid = status_to_date_and_runid(x, keepstate=True)
-        if date_and_runid is not None:
-            pr_status.append(date_and_runid)
+    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
 
-    if not pr_status:
-        return rbmerge_meta
-
-    pr_status.sort(key=lambda x: x[0])
-
-    if pr_status[-1][-1] != u'pending' and pr_status[-1][0] < last_command:
+    if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
         rbmerge_meta[meta_key] = True
 
