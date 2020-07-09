@@ -107,8 +107,8 @@ class ShippableRuns(object):
         except ValueError:
             # strip new id out of the description
             run_id = last_run.get('description', '').split()[1]
-            if runid.isdigit():
-                last_run_id = runid
+            if run_id.isdigit():
+                last_run_id = run_id
             else:
                 raise ValueError('Could not get run ID from state: "%s"' % last_run)
 
