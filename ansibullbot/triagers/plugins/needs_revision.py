@@ -5,7 +5,6 @@ import pytz
 
 from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.timetools import strip_time_safely
-from ansibullbot.wrappers.historywrapper import ShippableHistory
 
 import ansibullbot.constants as C
 
@@ -458,9 +457,8 @@ def get_shippable_run_facts(iw, meta, shippable):
 
     needs_testresult_notification = False
 
-    ci_status = iw.pullrequest_status
-    last_run = shippable.get_processed_last_run(ci_status)
-    last_run_id = last_run[u'last_run_id']
+    last_run = shippable.get_processed_last_run(iw.pullrequest_status)
+    last_run_id = last_run[u'run_id']
 
     # filter by the last run id
     # FIXME this needs to be split into two methods
@@ -473,11 +471,14 @@ def get_shippable_run_facts(iw, meta, shippable):
 
     # do validation so that we're not stepping on toes
     if u'ci_verified' in iw.labels and not ci_verified:
-        sh = ShippableHistory(iw, shippable, ci_status)
-        vinfo = sh.info_for_last_ci_verified_run()
-        if vinfo:
-            if last_run_id == vinfo[u'run_id']:
-                ci_verified = True
+        ci_verified_last_applied = iw.history.label_last_applied(u'ci_verified')
+        for ci_run in iw.pullrequest_status:
+            ci_run_updated_at = pytz.utc.localize(strip_time_safely(ci_run[u'updated_at']))
+            if ci_run_updated_at <= ci_verified_last_applied:
+                last_ci_verified_run = shippable.get_processed_run(ci_run)
+                if last_run_id == last_ci_verified_run[u'run_id']:
+                    ci_verified = True
+                break
 
     # no results means no notification required
     if len(shippable_test_results) < 1:
