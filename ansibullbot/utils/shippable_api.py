@@ -87,17 +87,11 @@ class ShippableRuns(object):
         return nruns
 
     @classmethod
-    def get_processed_last_run(cls, pullrequest_status):
-        last_run = cls.get_states(pullrequest_status)[0]
-        return cls.get_processed_run(last_run)
-
-    @classmethod
-    def get_processed_run(cls, run):
-        run = run.copy()
-        target_url = run.get('target_url')
+    def get_run_id_from_status(cls, status):
+        target_url = status.get('target_url')
 
         if target_url is None:
-            raise ValueError('Could not get run ID from state: "%s"' % run)
+            raise ValueError('Could not get run ID from state: "%s"' % status)
 
         target_url = target_url.split(u'/')
 
@@ -111,10 +105,22 @@ class ShippableRuns(object):
         try:
             int(run_id)
         except ValueError:
-            # strip new id out of the description
-            run_id = run.get('description', '').split()[1]
+            # 'Run 16560 status is WAITING. '
+            run_id = status.get('description', '').split()[1]
             if not run_id.isdigit():
-                raise ValueError('Could not get run ID from state: "%s"' % run)
+                raise ValueError('Could not get run ID from state: "%s"' % status)
+
+        return run_id
+
+    @classmethod
+    def get_processed_last_run(cls, pullrequest_status):
+        last_run = cls.get_states(pullrequest_status)[0]
+        return cls.get_processed_run(last_run)
+
+    @classmethod
+    def get_processed_run(cls, run):
+        run = run.copy()
+        run_id = cls.get_run_id_from_status(run)
 
         run[u'created_at'] = pytz.utc.localize(strip_time_safely(run.get(u'created_at')))
         run[u'updated_at'] = pytz.utc.localize(strip_time_safely(run.get(u'updated_at')))
@@ -405,6 +411,7 @@ class ShippableRuns(object):
             run_number = r.get(u'runNumber', None)
             if run_number:
                 self.cancel(run_number)
+
     @classmethod
     def get_states(cls, ci_status):
         # https://github.com/ansible/ansibullbot/issues/935
@@ -466,16 +473,8 @@ class ShippableRuns(object):
     def _get_last_shippable_full_run_date(self, ci_status):
         '''Map partial re-runs back to their last full run date'''
         # https://github.com/ansible/ansibullbot/issues/935
-        # (Epdb) pp [x['target_url'] for x in ci_status]
-        # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-        # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-        # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
-        # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-        # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-        # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
-
         # extract and unique the run ids from the target urls
-        runids = [_get_runid_from_status(x) for x in ci_status]
+        runids = [self.get_run_id_from_status(x) for x in ci_status]
 
         # get rid of duplicates and sort
         runids = sorted(set(runids))
@@ -527,32 +526,3 @@ class ShippableRuns(object):
 
         # return only the timestamp from the last full run
         return rundata[u'created_at']
-
-
-def _get_runid_from_status(status):
-    # (Epdb) pp [(x['target_url'], x['description']) for x in ci_status]
-    # [(u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
-    # u'Run 16560 status is SUCCESS. '),
-    # (u'https://app.shippable.com/runs/58cb6ad937380a0800e36940',
-    # u'Run 16560 status is PROCESSING. '),
-    # (u'https://app.shippable.com/github/ansible/ansible/runs/16560',
-    # u'Run 16560 status is WAITING. ')]
-
-    # (Epdb) pp [x['target_url'] for x in ci_status]
-    # [u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67039/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67039',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037/summary',
-    # u'https://app.shippable.com/github/ansible/ansible/runs/67037']
-
-    paths = status[u'target_url'].split(u'/')
-    if paths[-1].isdigit():
-        return int(paths[-1])
-    if paths[-2].isdigit():
-        return int(paths[-2])
-    for x in status[u'description'].split():
-        if x.isdigit():
-            return int(x)
-
-    return None
