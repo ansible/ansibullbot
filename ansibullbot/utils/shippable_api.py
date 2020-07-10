@@ -88,35 +88,38 @@ class ShippableRuns(object):
 
     @classmethod
     def get_processed_last_run(cls, pullrequest_status):
-        last_run = cls.get_states(pullrequest_status)[0].copy()
-        target_url = last_run.get('target_url')
+        last_run = cls.get_states(pullrequest_status)[0]
+        return cls.get_processed_run(last_run)
+
+    @classmethod
+    def get_processed_run(cls, run):
+        run = run.copy()
+        target_url = run.get('target_url')
 
         if target_url is None:
-            raise ValueError('Could not get run ID from state: "%s"' % last_run)
+            raise ValueError('Could not get run ID from state: "%s"' % run)
 
         target_url = target_url.split(u'/')
 
         if target_url[-1] == u'summary':
             # https://app.shippable.com/github/ansible/ansible/runs/21001/summary
-            last_run_id = target_url[-2]
+            run_id = target_url[-2]
         else:
             # https://app.shippable.com/github/ansible/ansible/runs/21001
-            last_run_id = target_url[-1]
+            run_id = target_url[-1]
 
         try:
-            int(last_run_id)
+            int(run_id)
         except ValueError:
             # strip new id out of the description
-            run_id = last_run.get('description', '').split()[1]
-            if run_id.isdigit():
-                last_run_id = run_id
-            else:
-                raise ValueError('Could not get run ID from state: "%s"' % last_run)
+            run_id = run.get('description', '').split()[1]
+            if not run_id.isdigit():
+                raise ValueError('Could not get run ID from state: "%s"' % run)
 
-        last_run[u'created_at'] = pytz.utc.localize(strip_time_safely(last_run.get(u'created_at')))
-        last_run[u'updated_at'] = pytz.utc.localize(strip_time_safely(last_run.get(u'updated_at')))
-        last_run[u'last_run_id'] = last_run_id
-        return last_run
+        run[u'created_at'] = pytz.utc.localize(strip_time_safely(run.get(u'created_at')))
+        run[u'updated_at'] = pytz.utc.localize(strip_time_safely(run.get(u'updated_at')))
+        run[u'run_id'] = run_id
+        return run
 
     def get_last_completion(self, number):
         '''Timestamp of last job completion for given PR number'''

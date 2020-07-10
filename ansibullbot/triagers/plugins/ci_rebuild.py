@@ -11,7 +11,7 @@ def get_ci_facts(iw):
 
     last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
 
-    return {'ci_run_number': last_run[u'last_run_id']}
+    return {'ci_run_number': last_run[u'run_id']}
 
 
 def get_rebuild_facts(iw, meta, force=False):
