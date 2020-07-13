@@ -210,7 +210,7 @@ class ShippableRuns(object):
             run_url += u'&'
             run_url += u'runNumbers=%s' % run_id
 
-        logging.info(u'shippable: %s', run_url)
+        logging.info(u'shippable: %s' % run_url)
         run_data = self._get_url(run_url, usecache=usecache)
         if run_data:
             if isinstance(run_data, list):
