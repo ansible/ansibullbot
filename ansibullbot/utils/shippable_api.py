@@ -237,7 +237,7 @@ class ShippableRuns(object):
         CVMAP = {}
 
         # get the run metdata
-        logging.info(u'shippable: get %s run data', run_id)
+        logging.info(u'shippable: get %s run data' % run_id)
         run_data = self._get_run_data(run_id, usecache=usecache)
 
         # flip to the real runid
@@ -380,7 +380,7 @@ class ShippableRuns(object):
                   u'status=waiting,queued,processing,started' \
                   % (ANSIBLE_PROJECT_ID, branch)
 
-        logging.info(u'shippable: %s', run_url)
+        logging.info(u'shippable: %s' % run_url)
         try:
             run_data = self._get_url(run_url)
         except ShippableNoData:
@@ -476,20 +476,20 @@ def _fetch(url, verb='get', **kwargs):
             'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
         }
 
-        logging.info(u'%s %s', verb, url)
+        logging.info(u'%s %s' % (verb, url))
         http_method = getattr(requests, verb)
         resp = http_method(url, headers=headers, **kwargs)
-        logging.info(u'shippable status code: %s', resp.status_code)
-        logging.info(u'shippable reason: %s', resp.reason)
+        logging.info(u'shippable status code: %s' % resp.status_code)
+        logging.info(u'shippable reason: %s' % resp.reason)
 
         if resp.status_code not in [200, 302, 400]:
-            logging.error(u'RC: %s', resp.status_code)
+            logging.error(u'RC: %s' % resp.status_code)
             raise TryAgain
 
         return resp
 
     try:
-        logging.debug(u'%s', url)
+        logging.debug(u'%s' % url)
         return _inner_fetch(verb=verb)
     except RetryError as e:
         logging.error(e)
