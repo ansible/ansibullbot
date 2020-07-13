@@ -27,6 +27,10 @@ ANSIBLE_RUNS_URL = u'%s/runs?projectIds=%s&isPullRequest=True' % (
     SHIPPABLE_URL,
     ANSIBLE_PROJECT_ID
 )
+NEW_BUILD_URL = u"%s/projects/%s/newBuild" % (
+    SHIPPABLE_URL,
+    ANSIBLE_PROJECT_ID
+)
 
 TIMEOUT = 5  # seconds
 
@@ -46,9 +50,8 @@ def _has_commentable_data(test_results):
 class ShippableRuns(object):
     '''An abstraction for the shippable API'''
 
-    def __init__(self, cachedir, url=ANSIBLE_RUNS_URL):
-        self.cachedir = cachedir
-        self.url = url
+    def __init__(self, cachedir):
+        self.cachedir = os.path.join(cachedir, 'shippable.runs')
 
         self.provider_id = u'562dbd9710c5980d003b0451'
         self.subscription_org_name = u'ansible'
@@ -61,7 +64,7 @@ class ShippableRuns(object):
         '''Fetch the latest data then send for processing'''
         success = False
         while not success:
-            resp = requests.get(self.url)
+            resp = requests.get(ANSIBLE_RUNS_URL)
             try:
                 self._rawdata = resp.json()
                 success = True
@@ -135,8 +138,6 @@ class ShippableRuns(object):
         ts = sorted([x[u'endedAt'] for x in nruns if x[u'endedAt']])
         if ts:
             return ts[-1]
-        else:
-            return None
 
     def _get_url(self, url, usecache=False, timeout=TIMEOUT):
         cdir = os.path.join(self.cachedir, u'.raw')
@@ -178,7 +179,7 @@ class ShippableRuns(object):
             if os.path.isfile(gzfile):
                 logging.error(gzfile)
 
-            resp = self._fetch(url, timeout=timeout)
+            resp = _fetch(url, timeout=timeout)
             if not resp:
                 return None
 
@@ -189,66 +190,46 @@ class ShippableRuns(object):
                 write_gzip_json_file(gzfile, [resp.status_code, {}])
                 return None
 
-        self._check_response(resp)
+        _check_response(resp)
 
         if not jdata:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise ShippableNoData
+            raise ShippableNoData
 
         return jdata
 
-    def get_run_data(self, run_id, usecache=False):
-        # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
+    def _get_run_data(self, run_id, usecache=False):
         if len(run_id) == 24:
             # https://api.shippable.com/runs/58caf30337380a0800e31219
             run_url = SHIPPABLE_URL + '/runs/' + run_id
-            logging.info(u'shippable: %s' % run_url)
-            run_data = self._get_url(run_url, usecache=usecache)
         else:
-            '''
-            # https://github.com/ansible/ansibullbot/issues/513
-            run_url = 'https://api.shippable.com/runs'
-            run_url += '?'
-            run_url += 'providerIds=%s' % self.provider_id
-            run_url += '&'
-            run_url += 'subscriptionOrgNames=%s' % self.subscription_org_name
-            run_url += '&'
-            run_url += 'projectNames=%s' % self.project_name
-            run_url += '&'
-            run_url += 'runNumbers=%s' % run_id
-            '''
-
             # https://github.com/ansible/ansibullbot/issues/982
+            # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
             run_url = SHIPPABLE_URL + '/runs'
             run_url += u'?'
             run_url += u'projectIds=%s' % ANSIBLE_PROJECT_ID
             run_url += u'&'
             run_url += u'runNumbers=%s' % run_id
 
-            logging.info(u'shippable: %s' % run_url)
-            run_data = self._get_url(run_url, usecache=usecache)
-            if run_data:
-                if isinstance(run_data, list):
-                    try:
-                        run_data = run_data[0]
-                    except KeyError as e:
-                        logging.error(e)
-                elif isinstance(run_data, dict) and 'message' in run_data:
-                    run_data = {}
+        logging.info(u'shippable: %s' % run_url)
+        run_data = self._get_url(run_url, usecache=usecache)
+        if run_data:
+            if isinstance(run_data, list):
+                try:
+                    run_data = run_data[0]
+                except KeyError as e:
+                    logging.error(e)
+            elif isinstance(run_data, dict) and 'message' in run_data:
+                run_data = {}
 
         return run_data
 
-    def get_test_results(self, run_id, usecache=False, filter_paths=[]):
+    def get_test_results(self, run_id, usecache=False, filter_paths=None):
         '''Fetch and munge the test results into proper json'''
         # statusCode(s):
         #   80: failed
         #   80: timeout
         #   30: success
         #   20: processing
-
         if filter_paths:
             fps = [re.compile(x) for x in filter_paths]
 
@@ -257,7 +238,7 @@ class ShippableRuns(object):
 
         # get the run metdata
         logging.info(u'shippable: get %s run data' % run_id)
-        run_data = self.get_run_data(run_id, usecache=usecache)
+        run_data = self._get_run_data(run_id, usecache=usecache)
 
         # flip to the real runid
         if run_data and run_data[u'id'] != run_id:
@@ -272,8 +253,6 @@ class ShippableRuns(object):
         rdata = self._get_url(url, usecache=usecache)
 
         for rd in rdata:
-            job_id = rd.get(u'id')
-
             dkey = u'%s.%s' % (rd[u'runNumber'], rd[u'jobNumber'])
             if dkey not in CVMAP:
                 CVMAP[dkey] = {
@@ -284,6 +263,7 @@ class ShippableRuns(object):
 
             CVMAP[dkey][u'statusCode'] = rd[u'statusCode']
 
+            job_id = rd.get(u'id')
             jurl = SHIPPABLE_URL + '/jobs/%s/jobTestReports' % job_id
             jdata = self._get_url(jurl, usecache=usecache)
 
@@ -324,7 +304,7 @@ class ShippableRuns(object):
         ci_verified = False
         if run_data[u'statusCode'] == 80:
             ci_verified = True
-            for k, v in CVMAP.items():
+            for v in CVMAP.values():
                 if v[u'statusCode'] == 30:
                     continue
                 if v[u'statusCode'] != 80:
@@ -340,7 +320,7 @@ class ShippableRuns(object):
                     if u'verified' not in td[u'contents']:
                         ci_verified = False
                         break
-                    elif not td[u'contents'][u'verified']:
+                    if not td[u'contents'][u'verified']:
                         ci_verified = False
                         break
 
@@ -352,11 +332,11 @@ class ShippableRuns(object):
         return results, ci_verified
 
     def _get_run_id(self, run_number):
-        run_url = u"%s&runNumbers=%s" % (self.url, run_number)
-        response = self._fetch(run_url, timeout=TIMEOUT)
+        run_url = u"%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
+        response = _fetch(run_url, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)
-        self._check_response(response)
+        _check_response(response)
         run_id = response.json()[0][u'id']
         logging.debug(run_id)
         return run_id
@@ -371,11 +351,10 @@ class ShippableRuns(object):
         if rerunFailedOnly:
             data[u'rerunFailedOnly'] = True
 
-        newbuild_url = u"%s/projects/%s/newBuild" % (SHIPPABLE_URL, ANSIBLE_PROJECT_ID)
-        response = self._fetch(newbuild_url, verb='post', data=data, timeout=TIMEOUT)
+        response = _fetch(NEW_BUILD_URL, verb='post', data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST %r to %r (%r)" % (data, newbuild_url, issueurl))
-        self._check_response(response)
+        _check_response(response)
         return response
 
     def rebuild_failed(self, run_number, issueurl=None):
@@ -389,10 +368,10 @@ class ShippableRuns(object):
         data = {u'runId': run_id}
 
         cancel_url = u"%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
-        response = self._fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
+        response = _fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST %r to %r (%r)" % (data, cancel_url, issueurl))
-        self._check_response(response)
+        _check_response(response)
         return response
 
     def cancel_branch_runs(self, branch):
@@ -420,11 +399,6 @@ class ShippableRuns(object):
             if isinstance(x, dict) and x.get('context') == 'Shippable'
         ]
 
-    @classmethod
-    def get_state(cls, states):
-        if states:
-            return states[0].get('state')
-
     def is_stale(self, states):
         ci_date = self._get_last_shippable_full_run_date(states)
 
@@ -435,40 +409,6 @@ class ShippableRuns(object):
             return ci_delta > 7
 
         return False
-
-    def _fetch(self, url, verb='get', **kwargs):
-        """return response or None in case of failure, try twice"""
-        @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
-        def _inner_fetch(verb='get'):
-            headers = {
-                'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
-            }
-
-            logging.info(u'%s %s' % (verb, url))
-            http_method = getattr(requests, verb)
-            resp = http_method(url, headers=headers, **kwargs)
-            logging.info(u'shippable status code: %s' % resp.status_code)
-            logging.info(u'shippable reason: %s' % resp.reason)
-
-            if resp.status_code not in [200, 302, 400]:
-                logging.error(u'RC: %s', resp.status_code)
-                raise TryAgain
-
-            return resp
-
-        try:
-            logging.debug(u'%s' % url)
-            return _inner_fetch(verb=verb)
-        except RetryError as e:
-            logging.error(e)
-
-    def _check_response(self, response):
-        if response and response.status_code == 404:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception(u'shippable 404')
 
     def _get_last_shippable_full_run_date(self, ci_status):
         '''Map partial re-runs back to their last full run date'''
@@ -492,7 +432,7 @@ class ShippableRuns(object):
 
         # query the api for all data on this runid
         try:
-            rdata = self.get_run_data(to_text(runid), usecache=True)
+            rdata = self._get_run_data(to_text(runid), usecache=True)
         except ShippableNoData:
             return None
 
@@ -512,7 +452,7 @@ class ShippableRuns(object):
         # we need to go get the date on the original run
         while rundata[u'rerun_batch_id']:
             # the original run data
-            rjdata = self.get_run_data(rundata[u'rerun_batch_id'])
+            rjdata = self._get_run_data(rundata[u'rerun_batch_id'])
             # swap the timestamp
             rundata[u'rerun_batch_createdat'] = rundata[u'created_at']
             # get the old timestamp
@@ -526,3 +466,35 @@ class ShippableRuns(object):
 
         # return only the timestamp from the last full run
         return rundata[u'created_at']
+
+
+def _fetch(url, verb='get', **kwargs):
+    """return response or None in case of failure, try twice"""
+    @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
+    def _inner_fetch(verb='get'):
+        headers = {
+            'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
+        }
+
+        logging.info(u'%s %s' % (verb, url))
+        http_method = getattr(requests, verb)
+        resp = http_method(url, headers=headers, **kwargs)
+        logging.info(u'shippable status code: %s' % resp.status_code)
+        logging.info(u'shippable reason: %s' % resp.reason)
+
+        if resp.status_code not in [200, 302, 400]:
+            logging.error(u'RC: %s' % resp.status_code)
+            raise TryAgain
+
+        return resp
+
+    try:
+        logging.debug(u'%s' % url)
+        return _inner_fetch(verb=verb)
+    except RetryError as e:
+        logging.error(e)
+
+
+def _check_response(response):
+    if response and response.status_code == 404:
+        raise Exception(u'shippable 404')
