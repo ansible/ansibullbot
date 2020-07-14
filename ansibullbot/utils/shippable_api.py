@@ -1,7 +1,6 @@
 # curl -H "Content-Type: application/json" -H "Authorization: apiToken XXXX"
 # https://api.shippable.com/projects/573f79d02a8192902e20e34b | jq .
 
-import datetime
 import json
 import logging
 import os
@@ -16,7 +15,7 @@ from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
 
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text
-from ansibullbot.errors import ShippableNoData
+from ansibullbot.ci.base import BaseCI
 from ansibullbot.utils.file_tools import compress_gzip_file, read_gzip_json_file, write_gzip_json_file
 from ansibullbot.utils.timetools import strip_time_safely
 
@@ -35,33 +34,22 @@ NEW_BUILD_URL = u"%s/projects/%s/newBuild" % (
 TIMEOUT = 5  # seconds
 
 
-def _has_commentable_data(test_results):
-    # https://github.com/ansible/ansibullbot/issues/421
-    if not test_results:
-        return False
-    for tr in test_results:
-        if tr.get(u'contents', {}).get(u'failureDetails', []):
-            return True
-        if tr.get(u'contents', {}).get(u'results', []):
-            return True
-    return False
+class ShippableNoData(Exception):
+    """Shippable did not return data"""
 
 
-class ShippableRuns(object):
-    '''An abstraction for the shippable API'''
+class ShippableCI(BaseCI):
+
+    state_context = u'Shippable'
 
     def __init__(self, cachedir):
         self.cachedir = os.path.join(cachedir, 'shippable.runs')
 
-        self.provider_id = u'562dbd9710c5980d003b0451'
-        self.subscription_org_name = u'ansible'
-        self.project_name = u'ansible'
-        # FIXME might be a list of files in the future
-        # FIXME might be a class attribute
-        self.required_file = u'shippable.yml'
+    @property
+    def required_file(self):
+        return u'shippable.yml'
 
     def update(self):
-        '''Fetch the latest data then send for processing'''
         success = False
         while not success:
             resp = requests.get(ANSIBLE_RUNS_URL)
@@ -72,7 +60,6 @@ class ShippableRuns(object):
                 logging.error(e)
                 time.sleep(2*60)
 
-        # Fix data
         self.runs = [x for x in self._rawdata]
         for idx, x in enumerate(self.runs):
             for k, v in six.iteritems(x):
@@ -81,16 +68,8 @@ class ShippableRuns(object):
                     if v:
                         self.runs[idx][k] = strip_time_safely(v)
 
-    def _get_pullrequest_runs(self, number):
-        '''All runs for the given PR number'''
-        nruns = []
-        for x in self.runs:
-            if x[u'commitUrl'].endswith(u'/' + to_text(number)):
-                nruns.append(x)
-        return nruns
-
-    @classmethod
-    def get_run_id_from_status(cls, status):
+    @staticmethod
+    def _get_run_id_from_status(status):
         target_url = status.get('target_url')
 
         if target_url is None:
@@ -116,28 +95,24 @@ class ShippableRuns(object):
         return run_id
 
     @classmethod
-    def get_processed_last_run(cls, pullrequest_status):
-        last_run = cls.get_states(pullrequest_status)[0]
-        return cls.get_processed_run(last_run)
-
-    @classmethod
     def get_processed_run(cls, run):
         run = run.copy()
-        run_id = cls.get_run_id_from_status(run)
+        run_id = cls._get_run_id_from_status(run)
 
         run[u'created_at'] = pytz.utc.localize(strip_time_safely(run.get(u'created_at')))
         run[u'updated_at'] = pytz.utc.localize(strip_time_safely(run.get(u'updated_at')))
         run[u'run_id'] = run_id
         return run
 
-    def get_last_completion(self, number):
-        '''Timestamp of last job completion for given PR number'''
-        nruns = self._get_pullrequest_runs(number)
+    def get_last_completion_date(self, pr_number):
+        nruns = []
+        for x in self.runs:
+            if x[u'commitUrl'].endswith(u'/' + to_text(pr_number)):
+                nruns.append(x)
         if not nruns:
             return None
-        ts = sorted([x[u'endedAt'] for x in nruns if x[u'endedAt']])
-        if ts:
-            return ts[-1]
+        nruns = sorted([x[u'endedAt'] for x in nruns if x[u'endedAt']])
+        return nruns[-1]
 
     def _get_url(self, url, usecache=False, timeout=TIMEOUT):
         cdir = os.path.join(self.cachedir, u'.raw')
@@ -326,10 +301,11 @@ class ShippableRuns(object):
 
         # https://github.com/ansible/ansibullbot/issues/421
         # FIXME is this hack for shippable or will this be common for other CI providers?
-        if not _has_commentable_data(results):
-            results = []
+        for tr in results:
+            if tr.get(u'contents', {}).get(u'failureDetails', []) or tr.get(u'contents', {}).get(u'results', []):
+                return results, ci_verified
 
-        return results, ci_verified
+        return [], ci_verified
 
     def _get_run_id(self, run_number):
         run_url = u"%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
@@ -341,27 +317,26 @@ class ShippableRuns(object):
         logging.debug(run_id)
         return run_id
 
-    def rebuild(self, run_number, issueurl=None, rerunFailedOnly=False):
+    def rebuild(self, run_number, failed_only=False):
         """trigger a new run"""
         # always pass the runId in a dict() to requests
         run_id = self._get_run_id(run_number)
         data = {u'runId': run_id}
 
-        # failed jobs only
-        if rerunFailedOnly:
+        if failed_only:
             data[u'rerunFailedOnly'] = True
 
         response = _fetch(NEW_BUILD_URL, verb='post', data=data, timeout=TIMEOUT)
         if not response:
-            raise Exception("Unable to POST %r to %r (%r)" % (data, newbuild_url, issueurl))
+            raise Exception("Unable to POST %r to %r" % (data, newbuild_url))
         _check_response(response)
         return response
 
-    def rebuild_failed(self, run_number, issueurl=None):
+    def rebuild_failed(self, run_number):
         """trigger a new run"""
-        return self.rebuild(run_number, issueurl=issueurl, rerunFailedOnly=True)
+        return self.rebuild(run_number, failed_only=True)
 
-    def cancel(self, run_number, issueurl=None):
+    def cancel(self, run_number):
         """cancel existing run"""
         # always pass the runId in a dict() to requests
         run_id = self._get_run_id(run_number)
@@ -370,11 +345,11 @@ class ShippableRuns(object):
         cancel_url = u"%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
         response = _fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
         if not response:
-            raise Exception("Unable to POST %r to %r (%r)" % (data, cancel_url, issueurl))
+            raise Exception("Unable to POST %r to %r" % (data, cancel_url))
         _check_response(response)
         return response
 
-    def cancel_branch_runs(self, branch):
+    def cancel_on_branch(self, branch):
         """Cancel all Shippable runs on a given branch"""
         run_url = SHIPPABLE_URL + '/runs?projectIds=%s&branch=%s&' \
                   u'status=waiting,queued,processing,started' \
@@ -391,30 +366,11 @@ class ShippableRuns(object):
             if run_number:
                 self.cancel(run_number)
 
-    @classmethod
-    def get_states(cls, ci_status):
-        # https://github.com/ansible/ansibullbot/issues/935
-        return [
-            x for x in ci_status
-            if isinstance(x, dict) and x.get('context') == 'Shippable'
-        ]
-
-    def is_stale(self, states):
-        ci_date = self._get_last_shippable_full_run_date(states)
-
-        # https://github.com/ansible/ansibullbot/issues/458
-        if ci_date:
-            ci_date = strip_time_safely(ci_date)
-            ci_delta = (datetime.datetime.now() - ci_date).days
-            return ci_delta > 7
-
-        return False
-
-    def _get_last_shippable_full_run_date(self, ci_status):
+    def get_last_full_run_date(self, ci_status):
         '''Map partial re-runs back to their last full run date'''
         # https://github.com/ansible/ansibullbot/issues/935
         # extract and unique the run ids from the target urls
-        runids = [self.get_run_id_from_status(x) for x in ci_status]
+        runids = [self._get_run_id_from_status(x) for x in ci_status]
 
         # get rid of duplicates and sort
         runids = sorted(set(runids))
@@ -465,7 +421,7 @@ class ShippableRuns(object):
                 rundata[u'rerun_batch_id'] = None
 
         # return only the timestamp from the last full run
-        return rundata[u'created_at']
+        return strip_time_safely(rundata[u'created_at'])
 
 
 def _fetch(url, verb='get', **kwargs):

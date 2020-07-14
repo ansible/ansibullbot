@@ -53,7 +53,7 @@ from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
-from ansibullbot.utils.shippable_api import ShippableRuns
+from ansibullbot.utils.shippable_api import ShippableCI
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.receiver_client import post_to_receiver
 from ansibullbot.utils.webscraper import GithubWebScraper
@@ -282,10 +282,9 @@ class AnsibleTriage(DefaultTriager):
             use_galaxy=not self.args.ignore_galaxy
         )
 
-        # instantiate shippable api
-        logging.info('creating shippable wrapper')
-        self.SR = ShippableRuns(self.cachedir_base)
-        self.SR.update()
+        logging.info('creating CI wrapper')
+        self.ci = ShippableCI(self.cachedir_base)
+        self.ci.update()
 
         # resume is just an overload for the start-at argument
         resume = self.get_resume()
@@ -345,8 +344,8 @@ class AnsibleTriage(DefaultTriager):
                 botmeta=self.botmeta,
             )
 
-            logging.info('updating shippable run data')
-            self.SR.update()
+            logging.info('updating CI run data')
+            self.ci.update()
 
         # is automerge allowed?
         self.automerge_on = False
@@ -468,13 +467,13 @@ class AnsibleTriage(DefaultTriager):
                                     skip = False
 
                                 # if last process time is older than
-                                # last completion time on shippable, we need
-                                # to reprocess because the ci status has
+                                # last completion time on CI, we need
+                                # to reprocess because the CI status has
                                 # probabaly changed.
                                 if skip and iw.is_pullrequest():
                                     ua = to_text(iw.pullrequest.updated_at.isoformat())
                                     mua = strip_time_safely(lmeta[u'updated_at'])
-                                    lsr = self.SR.get_last_completion(iw.number)
+                                    lsr = self.ci.get_last_completion_date(iw.number)
                                     if (lsr and lsr > mua) or \
                                             ua > lmeta[u'updated_at']:
                                         skip = False
@@ -947,7 +946,7 @@ class AnsibleTriage(DefaultTriager):
                 if u'needs_rebase' in iw.labels:
                     actions.unlabel.append(u'needs_rebase')
 
-        # shippable failures shippable_test_result
+        # comments with CI failures
         if iw.is_pullrequest() and not self.meta[u'is_bad_pr']:
             if self.meta[u'ci_state'] == u'failure' and \
                     self.meta[u'needs_testresult_notification']:
@@ -1282,8 +1281,6 @@ class AnsibleTriage(DefaultTriager):
         # https://github.com/ansible/ansibullbot/issues/406
         if iw.is_pullrequest():
             if not self.meta[u'has_shippable_yaml']:
-
-                # no_shippable_yaml
                 if not self.meta[u'has_shippable_yaml_notification']:
                     tvars = {u'submitter': iw.submitter}
                     comment = self.render_boilerplate(
@@ -1881,7 +1878,7 @@ class AnsibleTriage(DefaultTriager):
                 self,
                 iw,
                 self.meta,
-                shippable=self.SR
+                self.ci
             )
         )
 
@@ -1899,7 +1896,7 @@ class AnsibleTriage(DefaultTriager):
 
         # ci_verified and test results
         self.meta.update(
-            get_shippable_run_facts(iw, self.meta, shippable=self.SR)
+            get_shippable_run_facts(iw, self.meta, self.ci)
         )
 
         # needsinfo?
@@ -2295,7 +2292,7 @@ class AnsibleTriage(DefaultTriager):
             runid = self.meta.get(u'ci_run_number')
             if runid:
                 logging.info('Rebuilding CI %s for #%s' % (runid, iw.number))
-                self.SR.rebuild(runid, issueurl=iw.html_url)
+                self.ci.rebuild(runid)
             else:
                 logging.error(
                     u'rebuild: no shippable runid for {}'.format(iw.number)
@@ -2304,18 +2301,17 @@ class AnsibleTriage(DefaultTriager):
             runid = self.meta.get(u'ci_run_number')
             if runid:
                 logging.info('Rebuilding CI %s for #%s' % (runid, iw.number))
-                self.SR.rebuild_failed(runid, issueurl=iw.html_url)
+                self.ci.rebuild_failed(runid)
             else:
                 logging.error(
                     u'rebuild: no shippable runid for {}'.format(iw.number)
                 )
 
-
         if actions.cancel_ci:
             runid = self.meta.get(u'ci_run_number')
             if runid:
                 logging.info('Cancelling CI %s for #%s' % (runid, iw.number))
-                self.SR.cancel(runid, issueurl=iw.html_url)
+                self.ci.cancel(runid)
             else:
                 logging.error(
                     u'cancel: no shippable runid for {}'.format(iw.number)
@@ -2323,7 +2319,7 @@ class AnsibleTriage(DefaultTriager):
 
         if actions.cancel_ci_branch:
             branch = iw.pullrequest.head.repo
-            self.SR.cancel_branch_runs(branch)
+            self.ci.cancel_on_branch(branch)
 
     def render_comment(self, boilerplate=None):
         """Renders templates into comments using the boilerplate as filename"""

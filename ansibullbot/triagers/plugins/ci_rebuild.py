@@ -1,4 +1,4 @@
-from ansibullbot.utils.shippable_api import ShippableRuns
+from ansibullbot.utils.shippable_api import ShippableCI
 
 
 def get_ci_facts(iw):
@@ -9,7 +9,7 @@ def get_ci_facts(iw):
     if not iw.is_pullrequest():
         return cifacts
 
-    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
+    last_run = ShippableCI.get_processed_run(iw.pullrequest_status_by_context(ShippableCI.state_context)[0])
 
     return {'ci_run_number': last_run[u'run_id']}
 
@@ -89,7 +89,7 @@ def get_rebuild_merge_facts(iw, meta, core_team):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
+    last_run = ShippableCI.get_processed_run(iw.pullrequest_status_by_context(ShippableCI.state_context)[0])
 
     if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
@@ -139,7 +139,7 @@ def get_rebuild_command_facts(iw, meta):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    last_run = ShippableRuns.get_processed_last_run(iw.pullrequest_status)
+    last_run = ShippableCI.get_processed_run(iw.pullrequest_status_by_context(ShippableCI.state_context)[0])
 
     if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
