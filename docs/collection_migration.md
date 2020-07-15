@@ -39,6 +39,31 @@ can either recreate your PR in the new repo, or try to setup the tool on your ow
 
 https://github.com/ansible/prmove
 
+### Moving PRs manually
+
+When moving PRs, you need to know that some things changed. This affects paths where content has to be placed, and Python imports that have to be changed.
+
+The following list mentions the most important path changes, in the format "ansible/ansible path -> collection repo path". It assumes that a collection is in the root of its repository; if that's not the case (i.e. there is no directory `plugins`), you need to add more directories.
+
+- `lib/ansible/module_utils/` → `plugins/module_utils/`
+- `lib/ansible/modules/` → `plugins/modules/`
+- `lib/ansible/plugins/` → `plugins/`
+- `test/units/module_utils/` → `tests/unit/plugins/module_utils/`
+- `test/units/modules/` → `tests/unit/plugins/modules/`
+- `test/units/plugins/` → `tests/unit/plugins/`
+- `test/integration/targets/` → `tests/integration/targets/`
+- `test/sanity/ignore.txt` → `tests/sanity/ignore-2.*.txt`
+
+The next list contains a mapping of Python imports. It assumes that the collection from what something is imported is called `foo.bar`.
+
+- `import ansible.module_utils.` → `import ansible_collections.foo.bar.plugins.module_utils.`
+- `import ansible.modules.` → `import ansible_collections.foo.bar.plugins.modules.` (should only happen in unit tests)
+- `import ansible.plugins.` → `import ansible_collections.foo.bar.plugins.` (should only happen in unit tests)
+
+Imports of content not moved from ansible/ansible have to stay as before. Only content moved to collections needs to be imported this way.
+
+Finally, if your PR does deprecate an option, a feature, a module, or a plugin, there have been slight changes (in that you need to specify the collection name in some cases) as well. The syntax for all kind of deprecations is mentioned [here](https://github.com/ansible-collections/overview/issues/45#issuecomment-645619042). For modules, and in-code deprecations, `ansible-test sanity` will also tell you if you missed something.
+
 ## Why did the bot close my issue or PR?
 
 For the reasons stated above, we will not be auto-migrating all the issues and PRs and need to take action to make sure they are being
