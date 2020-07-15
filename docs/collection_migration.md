@@ -22,6 +22,20 @@ B. You created a new module.
 
 Comment "!needs_collection_redirect" in the issue and the bot will override the redirect.
 
+## How to manually find out which collection something was moved to?
+
+The main reference is the YAML file [lib/ansible/config/ansible_builtin_runtime.yml](https://github.com/ansible/ansible/blob/devel/lib/ansible/config/ansible_builtin_runtime.yml) - it is ansible-base's internal reference and used for backwards compatibility.
+
+If you want to manually find out where some content was moved, simply search that file for the name of the module, plugin, or module_utils (without the file extension). For example, search for `openssl_certificate` if you want to know where `lib/ansible/modules/crypto/openssl_certificate.py` was moved to. You should find an entry looking like this:
+```.yaml
+
+    openssl_certificate:
+      redirect: community.crypto.x509_certificate
+```
+This means that the `openssl_certificate` module is now in the `community.crypto` collection, and is called `x509_certificate` in it.
+
+To find where the collection is hosted, you can find it on [Ansible Galaxy](https://galaxy.ansible.com/). The easiest way is to go to `https://galaxy.ansible.com/community/crypto`, with `community` and `crypto` replaced by the namespace and name of the collection, respectively. The collections should have a "Repo" and/or "Issue Tracker" link, which should guide you to the home of the collection.
+
 ## What should I do now?
 
 1. Determine which collection+repo the file should live in now.
