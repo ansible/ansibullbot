@@ -472,7 +472,7 @@ def get_shippable_run_facts(iw, meta, shippable):
     # do validation so that we're not stepping on toes
     if u'ci_verified' in iw.labels and not ci_verified:
         ci_verified_last_applied = iw.history.label_last_applied(u'ci_verified')
-        for ci_run in iw.pullrequest_status:
+        for ci_run in shippable.get_states(iw.pullrequest_status):
             ci_run_updated_at = pytz.utc.localize(strip_time_safely(ci_run[u'updated_at']))
             if ci_run_updated_at <= ci_verified_last_applied:
                 last_ci_verified_run = shippable.get_processed_run(ci_run)
