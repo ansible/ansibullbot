@@ -55,7 +55,7 @@ https://github.com/ansible/prmove
 
 ### Moving PRs manually
 
-When moving PRs, you need to know that some things changed. This affects paths where content has to be placed, and Python imports that have to be changed.
+When moving PRs, you need to know that some things have changed. This affects paths where content has to be placed, and Python imports that have to be changed.
 
 The following list mentions the most important path changes, in the format "ansible/ansible path -> collection repo path". It assumes that a collection is in the root of its repository; if that's not the case (i.e. there is no directory `plugins`), you need to add more directories.
 
