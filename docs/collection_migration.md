@@ -74,7 +74,7 @@ The next list contains a mapping of Python imports. It assumes that the collecti
 - `import ansible.modules.` → `import ansible_collections.foo.bar.plugins.modules.` (should only happen in unit tests)
 - `import ansible.plugins.` → `import ansible_collections.foo.bar.plugins.` (should only happen in unit tests)
 
-Imports of content not moved from ansible/ansible have to stay as before. Only content moved to collections needs to be imported this way.
+Imports of content still in ansible/ansible stay as before. Only content moved to collections needs to be imported this way.
 
 Finally, if your PR does deprecate an option, a feature, a module, or a plugin, there have been slight changes (in that you need to specify the collection name in some cases) as well. The syntax for all kind of deprecations is mentioned [here](https://github.com/ansible-collections/overview/issues/45#issuecomment-645619042). For modules, and in-code deprecations, `ansible-test sanity` will also tell you if you missed something.
 
