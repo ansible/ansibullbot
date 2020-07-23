@@ -68,7 +68,7 @@ The following list mentions the most important path changes, in the format "ansi
 - `test/integration/targets/` → `tests/integration/targets/`
 - `test/sanity/ignore.txt` → `tests/sanity/ignore-2.*.txt`
 
-The next list contains a mapping of Python imports. It assumes that the collection from what something is imported is called `foo.bar`.
+The next list contains a mapping of Python imports. This mapping needs to be used if the file that is imported was moved from ansible/ansible to a collection. You can see what has been left in ansible/ansible by looking at https://github.com/ansible/ansible/tree/devel/lib/ansible/module_utils/. The `foo.bar` below has to be replaced with the collection name the content that you need to import has been moved to. Usually this is the collection where you create the PR, but it could also be another collection. For example, network modules/plugins often import shared code from `ansible.netcommon` (see what it contains [here](https://github.com/ansible-collections/ansible.netcommon/tree/main/plugins/module_utils)).
 
 - `import ansible.module_utils.` → `import ansible_collections.foo.bar.plugins.module_utils.`
 - `import ansible.modules.` → `import ansible_collections.foo.bar.plugins.modules.` (should only happen in unit tests)
