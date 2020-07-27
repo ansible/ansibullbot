@@ -19,7 +19,6 @@ import datetime
 import inspect
 import json
 import logging
-import operator
 import os
 import re
 import sys
@@ -544,35 +543,6 @@ class DefaultWrapper(object):
         return self.pull_raw
 
     def get_pullrequest_status(self, force_fetch=False):
-
-        def sort_unique_statuses(statuses):
-            '''reduce redundant statuses to the final run for each id'''
-            result = []
-            groups = []
-            thisgroup = []
-            for idx, x in enumerate(statuses):
-                if not thisgroup:
-                    thisgroup.append(x)
-                    if idx == len(statuses) - 1:
-                        groups.append(thisgroup)
-                    continue
-                else:
-                    if thisgroup[-1][u'target_url'] == x[u'target_url']:
-                        thisgroup.append(x)
-                    else:
-                        groups.append(thisgroup)
-                        thisgroup = []
-                        thisgroup.append(x)
-
-                    if idx == len(statuses) - 1:
-                        groups.append(thisgroup)
-
-            for group in groups:
-                group.sort(key=operator.itemgetter(u'updated_at'))
-                result.append(group[-1])
-
-            return result
-
         fetched = False
         jdata = None
         pdata = None
@@ -620,9 +590,6 @@ class DefaultWrapper(object):
             with open(pfile, 'wb') as f:
                 pickle_dump(pdata, f)
 
-        # remove intermediate duplicates
-        #jdata = sort_unique_statuses(jdata)
-
         return jdata
 
     def log_ci_status(self, status_data):
@@ -668,6 +635,12 @@ class DefaultWrapper(object):
         if self._pr_status is False:
             self._pr_status = self.get_pullrequest_status(force_fetch=False)
         return self._pr_status
+
+    def pullrequest_status_by_context(self, context):
+        return [
+            s for s in self.pullrequest_status
+            if isinstance(s, dict) and s.get('context') == context
+        ]
 
     @property
     def files(self):

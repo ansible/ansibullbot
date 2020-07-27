@@ -4,7 +4,3 @@ class LabelWafflingError(Exception):
 
 class RateLimitError(Exception):
     """Used to trigger the ratelimiting decorator"""
-
-
-class ShippableNoData(Exception):
-    """Shippable did not return data"""

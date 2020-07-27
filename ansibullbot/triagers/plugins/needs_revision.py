@@ -9,6 +9,9 @@ from ansibullbot.utils.timetools import strip_time_safely
 import ansibullbot.constants as C
 
 
+CI_STALE_DAYS = 7
+
+
 def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     # Thanks @adityacs for this PR. This PR requires revisions, either
     # because it fails to build or by reviewer request. Please make the
@@ -28,7 +31,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     needs_rebase = False
     needs_rebase_msgs = []
     ci_state = None
-    ci_stale = True
+    ci_stale = False
     mstate = None
     change_requested = None
     ready_for_review = None
@@ -85,10 +88,12 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
 
     maintainers += meta.get(u'component_maintainers', [])
 
-    ci_states = shippable.get_states(iw.pullrequest_status)
+    ci_states = iw.pullrequest_status_by_context(shippable.state_context)
     if ci_states:
         has_shippable = True
-        ci_stale = shippable.is_stale(ci_states)
+        ci_date = shippable.get_last_full_run_date(ci_states)
+        if ci_date:
+            ci_stale = (datetime.datetime.now() - ci_date).days > CI_STALE_DAYS
         ci_state = ci_states[0].get('state')
 
     logging.info(u'ci_state == %s' % ci_state)
@@ -100,7 +105,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     logging.info(u'mergeable_state == %s' % mstate)
 
     # clean/unstable/dirty/unknown
-    # FIXME ci_state related to shippable? make it general?
     if mstate != u'clean':
         if ci_state == u'failure':
             needs_revision = True
@@ -111,7 +115,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
             needs_rebase = True
             needs_revision_msgs.append(u'mergeable state is dirty')
             needs_rebase_msgs.append(u'mergeable state is dirty')
-
         elif mstate == u'unknown':
             # if tests are still running, this needs to be ignored.
             if ci_state not in [u'pending']:
@@ -119,7 +122,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
                 needs_revision_msgs.append(u'mergeable state is unknown')
                 needs_rebase = True
                 needs_rebase_msgs.append(u'mergeable state is unknown')
-
         elif mstate == u'unstable':
             # reduce the label churn
             if ci_state == u'pending' and u'needs_revision' in iw.labels:
@@ -457,11 +459,10 @@ def get_shippable_run_facts(iw, meta, shippable):
 
     needs_testresult_notification = False
 
-    last_run = shippable.get_processed_last_run(iw.pullrequest_status)
+    last_run = shippable.get_processed_run(iw.pullrequest_status_by_context(shippable.state_context)[0])
     last_run_id = last_run[u'run_id']
 
     # filter by the last run id
-    # FIXME this needs to be split into two methods
     shippable_test_results, ci_verified = \
         shippable.get_test_results(
             last_run_id,
@@ -472,7 +473,8 @@ def get_shippable_run_facts(iw, meta, shippable):
     # do validation so that we're not stepping on toes
     if u'ci_verified' in iw.labels and not ci_verified:
         ci_verified_last_applied = iw.history.label_last_applied(u'ci_verified')
-        for ci_run in shippable.get_states(iw.pullrequest_status):
+        # NOTE this assumes iw.pullrequest_status_by_context is sorted, latest first
+        for ci_run in iw.pullrequest_status_by_context(shippable.state_context):
             ci_run_updated_at = pytz.utc.localize(strip_time_safely(ci_run[u'updated_at']))
             if ci_run_updated_at <= ci_verified_last_applied:
                 last_ci_verified_run = shippable.get_processed_run(ci_run)

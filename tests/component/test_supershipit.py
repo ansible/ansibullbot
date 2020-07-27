@@ -15,11 +15,7 @@ from ansibullbot.triagers.ansible import AnsibleTriage
 class TestSuperShipit:
 
     def test_supershipit(self, *args, **kwargs):
-
         with BotMockManager() as mm:
-
-            #mm.issuedb.debug = True
-
             botmeta = {
                 'automerge': True,
                 'files': {
