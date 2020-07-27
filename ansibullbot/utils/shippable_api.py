@@ -112,7 +112,8 @@ class ShippableCI(BaseCI):
         if not nruns:
             return None
         nruns = sorted([x[u'endedAt'] for x in nruns if x[u'endedAt']])
-        return nruns[-1]
+        if nruns:
+            return nruns[-1]
 
     def _get_url(self, url, usecache=False, timeout=TIMEOUT):
         cdir = os.path.join(self.cachedir, u'.raw')
