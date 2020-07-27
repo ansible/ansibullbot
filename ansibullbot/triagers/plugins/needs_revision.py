@@ -449,17 +449,24 @@ def get_shippable_run_facts(iw, meta, shippable):
     # https://github.com/ansible/ansibullbot/issues/312
     # https://github.com/ansible/ansibullbot/issues/404
     # https://github.com/ansible/ansibullbot/issues/418
+
+    shippable_facts = {
+        u'shippable_test_results': None,
+        u'ci_verified': None,
+        u'needs_testresult_notification': None
+    }
+
     # should only be here if the run state is failed ...
     if not meta[u'has_shippable'] or meta[u'ci_state'] != u'failure':
-        return {
-            u'shippable_test_results': None,
-            u'ci_verified': None,
-            u'needs_testresult_notification': None
-        }
+        return shippable_facts
 
     needs_testresult_notification = False
 
-    last_run = shippable.get_processed_run(iw.pullrequest_status_by_context(shippable.state_context)[0])
+    ci_states = iw.pullrequest_status_by_context(shippable.state_context)
+    if not ci_states:
+        return shippable_facts
+
+    last_run = shippable.get_processed_run(ci_states[0])
     last_run_id = last_run[u'run_id']
 
     # filter by the last run id
