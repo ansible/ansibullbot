@@ -1,5 +1,5 @@
-Files identified in the description:
 {% if meta['component_matches'] %}
+Files identified in the description:
 {% for x in meta['component_matches'] %}
 {% if x['is_collection'] or x['repo_filename'].startswith('collection:') %}
 * {{ '[`' + x['repo_filename']|string + '`](' + x['collection_scm']|string + ')'}}
@@ -8,7 +8,7 @@ Files identified in the description:
 {% endif %}
 {% endfor %}
 {% else %}
-None
+No files were identified in the description
 {% endif %}
 
 If these files are incorrect, please update the `component name` section of the description or use the `!component` bot command.

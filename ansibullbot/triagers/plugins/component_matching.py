@@ -183,7 +183,8 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
                             _filenames.append(m.group(1))
                 _filenames = sorted(set(_filenames))
                 expected = sorted(set([x[u'repo_filename'] for x in CM_MATCHES]))
-                if _filenames != expected:
+                # https://github.com/ansible/ansibullbot/issues/1301
+                if expected and _filenames != expected:
                     cmeta[u'needs_component_message'] = True
 
     return cmeta
