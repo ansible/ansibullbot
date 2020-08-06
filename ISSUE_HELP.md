@@ -215,7 +215,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-stale_ci">stale_ci</a>** | pull requests | yes | Added when the last CI result is older than one week. When a pull request is closed and reopened, the CI is triggered again. In some case, the bot will automatically trigger the CI when a pull request is labeled with both [`shipit`](#label-shipit) and `stale_ci`.
 **<a name="label-stale_review">stale_review</a>** | pull requests | no | Added when submitter made some updates after a reviewer requested some changes, if the submitter updates are older than seven days and the reviewer didn't update their review.
 **<a name="label-test">test</a>** | pull requests | no | Identify pull requests related to tests.
-**<a name="label-waiting_on_contributor">waiting_on_contributor</a>** | issues pull requests | no | Identify issues for which help is needed
+**<a name="label-waiting_on_contributor">waiting_on_contributor</a>** | issues pull requests | no | The feature or fix would be accepted, but there are no plans to actively work on it.
 **<a name="label-WIP">WIP</a>** | pull requests | yes | Identify pull requests which are not ready (from the submitter point of view) to be merged.
 
 Some labels are used to categorize issues and pull requests:
