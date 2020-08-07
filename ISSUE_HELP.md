@@ -202,6 +202,7 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-merge_commit">merge_commit</a>** | pull requests | no | Added to pull requests containing at least one merge commit. Pull requests must not contain merge commit.
 **<a name="label-module">module</a>** | pull requests | no | Identify pull requests updating existing modules.
 **<a name="label-needs_ci">needs_ci</a>** | pull requests | no | Identify pull requests for which CI status is missing. When a pull request is closed and reopened or when new commits are updated, the CI is triggered again.
+**<a name="label-needs_collection_redirect">needs_collection_redirect</a>** | issue or pull requests | no | [Collection Migration Docs](https://github.com/ansible/ansibullbot/blob/master/docs/collection_migration.md)
 **<a name="label-needs_info">needs_info</a>** | issues | yes | Identify issues for which reviewer requested further information.
 **<a name="label-needs_maintainer">needs_maintainer</a>** | pull requests | no | Ansibullbot is unable to identify authors or maintainers of the related module. Check `author` field format in [`DOCUMENTATION block`](http://docs.ansible.com/ansible/devel/dev_guide/developing_modules_documenting.html#documentation-block).
 **<a name="label-needs_rebase">needs_rebase</a>** | pull requests | yes | Pull requests which are out of sync with ansible/ansible's `devel` branch. Please review the [rebase guide](http://docs.ansible.com/ansible/devel/dev_guide/developing_rebasing.html) for further information.
