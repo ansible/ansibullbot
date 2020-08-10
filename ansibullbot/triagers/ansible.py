@@ -1495,6 +1495,7 @@ class AnsibleTriage(DefaultTriager):
                 actions.newlabel.append('needs_collection_redirect')
             if self.botmeta['collection_redirect'] is True:
                 actions.close = True
+                actions.newlabel.append('bot_closed')
                 if self.meta.get('needs_collection_redirect'):
                     comment = self.render_boilerplate(
                         self.meta,
