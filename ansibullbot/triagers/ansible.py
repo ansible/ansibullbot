@@ -135,6 +135,8 @@ class AnsibleTriage(DefaultTriager):
 
     BOTNAMES = C.DEFAULT_BOT_NAMES
 
+    CLOSING_LABELS = ['bot_closed']
+
     COMPONENTS = []
 
     ISSUE_TYPES = {
