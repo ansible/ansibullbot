@@ -337,7 +337,7 @@ class DefaultTriager(object):
 
         if actions.close:
             for newlabel in actions.newlabel:
-                if newlabel in CLOSING_LABELS:
+                if newlabel in self.CLOSING_LABELS:
                     logging.info('action: label - ' + newlabel)
                     iw.add_label(label=newlabel)
 
