@@ -99,6 +99,7 @@ class DefaultTriager(object):
     debug = False
     cachedir_base = None
     BOTNAMES = C.DEFAULT_BOT_NAMES
+    CLOSING_LABELS = []
 
     def __init__(self, args=None):
         pass
@@ -333,13 +334,18 @@ class DefaultTriager(object):
             logging.info("acton: comment - " + comment)
             iw.add_comment(comment=comment)
 
+
         if actions.close:
+            for newlabel in actions.newlabel:
+                if newlabel in self.CLOSING_LABELS:
+                    logging.info('action: label - ' + newlabel)
+                    iw.add_label(label=newlabel)
+
             # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             logging.info('action: close')
             iw.instance.edit(state='closed')
 
         else:
-
             for unlabel in actions.unlabel:
                 logging.info('action: unlabel - ' + unlabel)
                 iw.remove_label(label=unlabel)
