@@ -26,11 +26,13 @@
 #   * different workflows should be a matter of enabling different plugins
 
 import datetime
-from distutils.version import LooseVersion
 import io
 import json
 import logging
 import os
+
+from copy import deepcopy
+from distutils.version import LooseVersion
 from pprint import pprint
 
 import requests
@@ -657,7 +659,7 @@ class AnsibleTriage(DefaultTriager):
         dmeta[u'labels'] = issuewrapper.labels
         dmeta[u'assignees'] = issuewrapper.assignees
         if issuewrapper.history:
-            dmeta[u'history'] = issuewrapper.history.history
+            dmeta[u'history'] = deepcopy(issuewrapper.history.history)
             for idx, x in enumerate(dmeta[u'history']):
                 dmeta[u'history'][idx][u'created_at'] = \
                     to_text(x[u'created_at'].isoformat())
