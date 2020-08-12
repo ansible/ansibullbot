@@ -132,7 +132,7 @@ class GalaxyQueryTool:
                 continue
             if curl.endswith('/hub'):
                 continue
-            grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=True)
+            grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=False)
 
             # is there a galaxy.yml at the root level?
             if grepo.exists('galaxy.yml'):
@@ -147,7 +147,7 @@ class GalaxyQueryTool:
                     for gfn in galaxyfns:
                         meta = yaml.load(grepo.get_file_content(gfn))
                         fqcn = '%s.%s' % (meta['namespace'], meta['name'])
-                        _grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=True, context=os.path.dirname(gfn))
+                        _grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=False, context=os.path.dirname(gfn))
                         self._gitrepos[fqcn] = _grepo
                 else:
 
@@ -205,7 +205,7 @@ class GalaxyQueryTool:
                 rurl = lvdata.get('metadata', {}).get('repository')
                 if rurl is None:
                     rurl = lvdata['download_url']
-                grepo = GitRepoWrapper(cachedir=self.cachedir, repo=rurl, rebase=True)
+                grepo = GitRepoWrapper(cachedir=self.cachedir, repo=rurl, rebase=False)
                 self._gitrepos[fqcn] = grepo
 
         # reconcile all things ...
