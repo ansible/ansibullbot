@@ -182,10 +182,8 @@ class GalaxyQueryTool:
                     self._gitrepos[fqcn] = grepo
 
         # scrape the galaxy collections api
-        nexturl = self._baseurl + '/api/v2/collections/'
+        nexturl = self._baseurl + '/api/v2/collections/?page_size=1000'
         while nexturl:
-            #rr = requests.get(nexturl)
-            #jdata = rr.json()
             jdata = self._get_cached_url(nexturl)
             nexturl = jdata.get('next_link')
             if nexturl:
@@ -198,9 +196,6 @@ class GalaxyQueryTool:
                 if fqcn in self._gitrepos:
                     continue
                 lv = res['latest_version']['href']
-                #print(lv)
-                #lvrr = requests.get(lv)
-                #lvdata = lvrr.json()
                 lvdata = self._get_cached_url(lv)
                 rurl = lvdata.get('metadata', {}).get('repository')
                 if rurl is None:
