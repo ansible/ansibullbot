@@ -826,14 +826,13 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append(u'owner_pr')
 
         # REVIEWS
-        if not iw.wip:
-            for rtype in [u'core_review', u'committer_review', u'community_review']:
-                if self.meta[rtype]:
-                    if rtype not in iw.labels:
-                        actions.newlabel.append(rtype)
-                else:
-                    if rtype in iw.labels:
-                        actions.unlabel.append(rtype)
+        for rtype in [u'core_review', u'committer_review', u'community_review']:
+            if self.meta[rtype]:
+                if rtype not in iw.labels:
+                    actions.newlabel.append(rtype)
+            else:
+                if rtype in iw.labels:
+                    actions.unlabel.append(rtype)
 
         # WIPs
         if iw.is_pullrequest():
