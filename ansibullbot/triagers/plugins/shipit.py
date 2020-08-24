@@ -198,6 +198,8 @@ def get_review_facts(issuewrapper, meta):
     iw = issuewrapper
     if not iw.is_pullrequest():
         return rfacts
+    if iw.wip:
+        return rfacts
     if meta[u'shipit']:
         return rfacts
     if meta[u'is_needs_info']:
