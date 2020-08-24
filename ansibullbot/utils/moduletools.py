@@ -154,10 +154,6 @@ class ModuleIndexer(object):
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
 
-        # parse metadata
-        logging.debug(u'set module metadata')
-        self.set_module_metadata()
-
         # parse imports
         logging.debug(u'set module imports')
         self.set_module_imports()
@@ -580,60 +576,6 @@ class ModuleIndexer(object):
                 authors.add(github_id)
 
         return list(authors)
-
-    def set_module_metadata(self):
-        for k, v in six.iteritems(self.modules):
-            if not v[u'filepath']:
-                continue
-            mfile = os.path.join(self.gitrepo.checkoutdir, v[u'filepath'])
-            if not mfile.endswith(u'.py'):
-                # metadata is only the .py files ...
-                ext = mfile.split(u'.')[-1]
-                mfile = mfile.replace(u'.' + ext, u'.py', 1)
-
-            self.modules[k][u'metadata'].update(self.get_module_metadata(mfile))
-
-    def get_module_metadata(self, module_file):
-        meta = {}
-
-        if not os.path.isfile(module_file):
-            return meta
-
-        rawmeta = u''
-        inphase = False
-        with io.open(module_file, 'r', encoding='utf-8') as f:
-            for line in f:
-                if line.startswith(u'ANSIBLE_METADATA'):
-                    inphase = True
-                if line.startswith(u'DOCUMENTATION'):
-                    break
-                if inphase:
-                    rawmeta += line
-        rawmeta = rawmeta.replace(u'ANSIBLE_METADATA =', u'', 1)
-        rawmeta = rawmeta.strip()
-        try:
-            meta = ast.literal_eval(rawmeta)
-            tmp_meta = {}
-            for k, v in meta.items():
-                if isinstance(k, six.binary_type):
-                    k = to_text(k)
-                if isinstance(v, six.binary_type):
-                    v = to_text(v)
-                if isinstance(v, list):
-                    tmp_list = []
-                    for i in v:
-                        if isinstance(i, six.binary_type):
-                            i = to_text(i)
-                        tmp_list.append(i)
-                    v = tmp_list
-                    del tmp_list
-                tmp_meta[k] = v
-            meta = tmp_meta
-            del tmp_meta
-        except SyntaxError:
-            pass
-
-        return meta
 
     def set_module_imports(self):
         for k, v in six.iteritems(self.modules):

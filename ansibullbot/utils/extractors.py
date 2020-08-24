@@ -416,7 +416,6 @@ class ModuleExtractor(object):
     _AUTHORS_RAW = None
     _DOCUMENTATION_RAW = None
     _FILEDATA = None
-    _METADATA = None
     _DOCSTRING = None
 
     def __init__(self, filepath, filedata=None, email_cache=None):
@@ -439,12 +438,6 @@ class ModuleExtractor(object):
         if self._AUTHORS is None:
             self._AUTHORS = self.get_module_authors()
         return self._AUTHORS
-
-    @property
-    def metadata(self):
-        if self._METADATA is None:
-            self._METADATA = self.get_module_metadata()
-        return self._METADATA
 
     @property
     def docs(self):
@@ -534,59 +527,6 @@ class ModuleExtractor(object):
                 authors.add(github_id)
 
         return list(authors)
-
-    def get_module_metadata(self):
-
-        if self.filepath is not None:
-            # no directories please
-            if os.path.isdir(self.filepath):
-                return {}
-            # no pycs please
-            if self.filepath.endswith('.pyc') or self.filepath.endswith('.pyo'):
-                return {}
-            # no meta in __init__.py files
-            if os.path.basename(self.filepath) == u'__init__.py':
-                return {}
-            # no point in parsing markdown
-            if self.filepath.endswith('.md'):
-                return {}
-            # no point in parsing ps1 or ps2
-            if self.filepath.endswith('.ps'):
-                return {}
-            if self.filepath.endswith('.ps1'):
-                return {}
-            if self.filepath.endswith('.ps2'):
-                return {}
-            if self.filepath.endswith('.rst'):
-                return {}
-
-        meta = {}
-        rawmeta = b''
-        inphase = False
-        lines = self.filedata.split(b'\n')
-        for line in lines:
-            if line.startswith(b'ANSIBLE_METADATA') or b'ANSIBLE_METADATA' in line:
-                rawmeta += line
-                inphase = True
-                continue
-            if inphase and line.startswith(b'DOCUMENTATION'):
-                break
-            if inphase and line.startswith(b'from'):
-                break
-            if inphase and re.match(r'^[A-Za-z]', to_text(line)):
-                break
-            if inphase:
-                rawmeta += line
-
-        rawmeta = rawmeta.replace(b'ANSIBLE_METADATA =', b'', 1)
-        rawmeta = rawmeta.strip()
-
-        try:
-            meta = ast.literal_eval(to_text(rawmeta))
-        except Exception as e:
-            logging.warning(e)
-
-        return meta
 
 
 def get_template_data(iw):
