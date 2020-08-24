@@ -146,13 +146,7 @@ def fuzzy_find_sections(body, sections):
 
 def find_sections(body):
     # find possible sections by the default pattern
-    doubles = re.findall(r'##### [A-Z]+\s+[A-Z]+\r\n', body)
-    singles = re.findall(r'##### [A-Z]+\r\n', body)
-    for single in singles[:]:
-        for x in doubles:
-            if x.startswith(single):
-                singles.remove(single)
-    tofind = sorted(set(doubles + singles))
+    tofind = sorted(set(re.findall(r'##### [A-Z\s]+\r\n', body)))
 
     if len(tofind) <= 1:
         return None
