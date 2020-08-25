@@ -181,6 +181,10 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
                         m = re.match(u'\[(\S+)\].*', parts[1])
                         if m:
                             _filenames.append(m.group(1))
+                        else:
+                            # https://github.com/ansible/ansibullbot/pull/1425/
+                            if 'None' not in parts[1]:
+                                _filenames.append(parts[1])
                 _filenames = sorted(set(_filenames))
                 expected = sorted(set([x[u'repo_filename'] for x in CM_MATCHES]))
                 if _filenames != expected:
