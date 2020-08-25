@@ -263,7 +263,10 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                             v = v.replace(u'module', u' ')
 
             # remove useless chars
-            v = clean_bad_characters(v)
+            exclude = None
+            if k == u'component name':
+                exclude = [u'__']
+            v = clean_bad_characters(v, exclude=exclude)
 
             # clean up empty lines
             vlines = v.split(u'\n')
@@ -318,7 +321,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
 
     # quick clean and add raw component to the dict
     component_raw = remove_markdown_comments(component_raw)
-    component_raw = clean_bad_characters(component_raw, exclude=None)
+    component_raw = clean_bad_characters(component_raw, exclude=[u'__'])
     component_raw = u'\n'.join([x.strip() for x in component_raw.split(u'\n') if x.strip()])
     component_raw = u'\n'.join([x for x in component_raw.split(u'\n') if not x.startswith(u'#')])
     tdict[u'component_raw'] = component_raw
