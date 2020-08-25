@@ -639,10 +639,13 @@ class AnsibleComponentMatcher(object):
                 matched_filenames += self.search_by_filepath(component, context=context)
                 if matched_filenames:
                     self.strategy = u'search_by_filepath'
+                # NOTE not needed with flatten modules dir?
+                """
                 if not matched_filenames:
                     matched_filenames += self.search_by_filepath(component, partial=True)
                     if matched_filenames:
                         self.strategy = u'search_by_filepath[partial]'
+                """
 
             if not matched_filenames:
                 matched_filenames += self.search_by_keywords(component, exact=False)
