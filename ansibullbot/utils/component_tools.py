@@ -1354,6 +1354,7 @@ class AnsibleComponentMatcher(object):
             u'collection': None,
             u'collection_scm': None,
             u'repo_filename': filename,
+            u'repo_link': None,
             u'name': os.path.basename(filename).split(u'.')[0],
             u'notify': [],
             u'assign': [],
@@ -1374,6 +1375,9 @@ class AnsibleComponentMatcher(object):
             u'migrated_to': None,
             u'keywords': [],
         }
+
+        if self.gitrepo.exists(filename):
+            meta['repo_link'] = '%s/blob/devel/%s' % (self.gitrepo.repo, filename)
 
         if filename.startswith(u'collection:'):
             fqcn = filename.split(u':')[1]
