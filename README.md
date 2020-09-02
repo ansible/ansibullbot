@@ -1,4 +1,4 @@
-[![Run Status](https://api.shippable.com/projects/573f79d02a8192902e20e350/badge?branch=master)](https://app.shippable.com/github/ansible/ansibullbot/dashboard) [![Coverage Badge](https://api.shippable.com/projects/573f79d02a8192902e20e350/coverageBadge?branch=master)](https://app.shippable.com/github/ansible/ansibullbot/dashboard)
+[![Build Status](https://dev.azure.com/ansible/ansibullbot/_apis/build/status/ansible.ansibullbot?branchName=master)](https://dev.azure.com/ansible/ansibullbot/_build/latest?definitionId=12&branchName=master) [![codecov](https://codecov.io/gh/ansible/ansibullbot/branch/master/graph/badge.svg)](https://codecov.io/gh/ansible/ansibullbot)
 
 See the Ansibullbot Project Board for what is being worked on:  [![Project Board](https://img.shields.io/github/issues/ansible/ansibullbot.svg)](https://github.com/ansible/ansibullbot/projects/1)
 
