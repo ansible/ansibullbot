@@ -1,0 +1,47 @@
+trigger:
+  - master
+
+pr:
+  - master
+
+pool:
+  vmImage: 'ubuntu-18.04'
+
+jobs:
+  - job: python
+    displayName: Python
+    variables:
+      TOXENV: python
+    strategy:
+      matrix:
+        2.7:
+          python_version: 2.7
+        3.7:
+          python_version: 3.7
+    steps:
+      - task: UsePythonVersion@0
+        inputs:
+          versionSpec: $(python_version)
+        displayName: Install Python $(python_version)
+      - script: PATH="$HOME/.local/bin:$PATH" pip install --disable-pip-version-check --user tox
+        displayName: Install tox
+      - script: PATH="$HOME/.local/bin:$PATH" tox --notest
+        displayName: Run tox --notest
+      - script: PATH="$HOME/.local/bin:$PATH" tox
+        displayName: Run tox
+      - script: PATH="$HOME/.local/bin:$PATH" tox -e report-coverage
+        condition: succeededOrFailed()
+        displayName: Report Coverage
+      - task: PublishTestResults@2
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFiles: 'shippable/testresults/pytest.xml'
+          pathToSources: '$(System.DefaultWorkingDirectory)'
+        displayName: Publish Test Results
+      - task: PublishCodeCoverageResults@1
+        condition: succeededOrFailed()
+        inputs:
+          codeCoverageTool: Cobertura
+          summaryFileLocation: 'shippable/codecoverage/pytest-cov.xml'
+          pathToSources: '$(System.DefaultWorkingDirectory)'
+        displayName: Publish Coverage Results
