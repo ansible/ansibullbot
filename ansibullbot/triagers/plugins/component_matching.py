@@ -178,7 +178,10 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
                         # escaped lines screw up the regex here
                         line = line.replace(u'`', u'')
                         parts = line.split()
-                        m = re.match(u'\[(\S+)\].*', parts[1])
+                        try:
+                            m = re.match(u'\[(\S+)\].*', parts[1])
+                        except IndexError:
+                            continue
                         if m:
                             _filenames.append(m.group(1))
                         else:
