@@ -228,7 +228,7 @@ def reconcile_component_commands(iw, component_matcher, CM_MATCHES):
                 continue
 
             action = filen[0]
-            filen = filen[1:]
+            filen = filen[1:].strip()
 
             if action == u'+' and filen not in component_filenames:
                 component_filenames.append(filen)
