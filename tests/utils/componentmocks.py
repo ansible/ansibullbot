@@ -166,8 +166,7 @@ class IssueDatabase:
     teams = {
         'ansible-commit': ['jack', 'jill'],
         'ansible-community': ['bob', 'billy'],
-        'ansible-commit-external': ['zerocool', 'acidburn']
-    } 
+    }
 
     def __init__(self, cachedir):
         self.cachedir = cachedir
