@@ -264,18 +264,16 @@ class AnsibleComponentMatcher(object):
                     u'maintainers_keys': [],
                     u'notified': ME.authors,
                     u'ignored': [],
-                    u'support': ME.metadata.get(u'supported_by', u'community'),
-                    u'metadata': ME.metadata.copy()
+                    u'support': u'community',
                 }
             else:
                 bmeta = self.botmeta[u'files'][filename1].copy()
-                bmeta[u'metadata'] = ME.metadata.copy()
                 if u'notified' not in bmeta:
                     bmeta[u'notified'] = []
                 if u'maintainers' not in bmeta:
                     bmeta[u'maintainers'] = []
                 if not bmeta.get(u'supported_by'):
-                    bmeta[u'supported_by'] = ME.metadata.get(u'supported_by', u'community')
+                    bmeta[u'supported_by'] = u'community'
                 if u'authors' not in bmeta:
                     bmeta[u'authors'] = []
                 for x in ME.authors:
@@ -1416,14 +1414,9 @@ class AnsibleComponentMatcher(object):
         if u'lib/ansible/modules' in filename:
             mmatch = self.find_module_match(filename)
             if mmatch and len(mmatch) == 1 and mmatch[0][u'filename'] == filename:
-                meta[u'metadata'].update(mmatch[0][u'metadata'])
                 for k in u'authors', u'maintainers':
                     meta[k] += mmatch[0][k]
                 meta[u'notify'] += mmatch[0][u'notified']
-
-            if meta[u'metadata']:
-                if meta[u'metadata'][u'supported_by']:
-                    meta[u'support'] = meta[u'metadata'][u'supported_by']
 
         # reconcile the delta between a child and it's parents
         support_levels = {}
@@ -1579,12 +1572,6 @@ class AnsibleComponentMatcher(object):
         # it's okay to remove things from legacy-files.txt
         if filename == u'test/sanity/pep8/legacy-files.txt' and not meta[u'support']:
             meta[u'support'] = u'community'
-
-        # get support from the module metadata ...
-        if meta.get(u'metadata'):
-            if meta[u'metadata'].get(u'supported_by'):
-                meta[u'support'] = meta[u'metadata'][u'supported_by']
-                meta[u'supported_by'] = meta[u'metadata'][u'supported_by']
 
         # fallback to core support
         if not meta[u'support']:
