@@ -310,7 +310,6 @@ class AnsibleTriage(DefaultTriager):
             teams = [
                 u'ansible-commit',
                 u'ansible-community',
-                u'ansible-commit-external'
             ]
             self._ansible_core_team = self.get_core_team(u'ansible', teams)
         return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
