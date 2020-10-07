@@ -264,18 +264,16 @@ class AnsibleComponentMatcher(object):
                     u'maintainers_keys': [],
                     u'notified': ME.authors,
                     u'ignored': [],
-                    u'support': ME.metadata.get(u'supported_by', u'community'),
-                    u'metadata': ME.metadata.copy()
+                    u'support': u'community',
                 }
             else:
                 bmeta = self.botmeta[u'files'][filename1].copy()
-                bmeta[u'metadata'] = ME.metadata.copy()
                 if u'notified' not in bmeta:
                     bmeta[u'notified'] = []
                 if u'maintainers' not in bmeta:
                     bmeta[u'maintainers'] = []
                 if not bmeta.get(u'supported_by'):
-                    bmeta[u'supported_by'] = ME.metadata.get(u'supported_by', u'community')
+                    bmeta[u'supported_by'] = u'community'
                 if u'authors' not in bmeta:
                     bmeta[u'authors'] = []
                 for x in ME.authors:
