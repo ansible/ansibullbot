@@ -15,7 +15,7 @@
     - ansibullbot_instance
 
 - name: Install dev ansibullbot
-  hosts: ansibullbot-dev
+  hosts: ansibullbot-dev.eng.ansible.com
   become: yes
 
   roles:
