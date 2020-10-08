@@ -6,8 +6,6 @@ import pytz
 from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.timetools import strip_time_safely
 
-import ansibullbot.constants as C
-
 
 CI_STALE_DAYS = 7
 
@@ -96,13 +94,13 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
             ci_stale = (datetime.datetime.now() - ci_date).days > CI_STALE_DAYS
         ci_state = ci_states[0].get('state')
 
-    logging.info(u'ci_state == %s' % ci_state)
+    logging.info(u'ci_state == %s', ci_state)
 
     # clean/unstable/dirty/unknown
     mstate = iw.mergeable_state
     if not mstate:
         mstate = u'unknown'
-    logging.info(u'mergeable_state == %s' % mstate)
+    logging.info(u'mergeable_state == %s', mstate)
 
     # clean/unstable/dirty/unknown
     if mstate != u'clean':
@@ -159,18 +157,15 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
                         continue
 
                 if event[u'event'] == u'commented':
-
                     if is_approval(event[u'body']):
                         shipits[event[u'actor']] = event[u'created_at']
-
                     if u'!needs_revision' in event[u'body']:
                         needs_revision = False
                         needs_revision_msgs.append(
                             u'[%s] !needs_revision' % event[u'actor']
                         )
                         continue
-
-                    if u'needs_revision' in event[u'body'] and \
+                    if any(line.startswith(u'needs_revision') for line in event[u'body'].splitlines()) and \
                             u'!needs_revision' not in event[u'body']:
                         needs_revision = True
                         needs_revision_msgs.append(
@@ -210,7 +205,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         user_reviews = _get_review_state(
             iw.reviews,
             iw.submitter,
-            number=iw.number,
         )
 
         if user_reviews:
@@ -268,20 +262,14 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
             has_commit_mention_notification = True
 
     # keep track of who deleted their repo/branch
-    if iw.pullrequest.head.repo:
-        has_remote_repo = True
-    else:
-        has_remote_repo = False
+    has_remote_repo = bool(iw.pullrequest.head.repo)
 
     # https://github.com/ansible/ansibullbot/issues/406
     has_shippable_yaml = iw.pullrequest_filepath_exists(shippable.required_file)
     if not has_shippable_yaml:
         needs_rebase = True
         needs_rebase_msgs.append(u'missing shippable.yml')
-        if u'no_shippable_yaml' in bpcs:
-            has_shippable_yaml_notification = True
-        else:
-            has_shippable_yaml_notification = False
+        has_shippable_yaml_notification = u'no_shippable_yaml' in bpcs
 
     # stale reviews
     if user_reviews:
@@ -325,10 +313,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         needs_revision = True
         needs_revision_msgs.append(u'multiple new modules')
 
-    logging.info(u'mergeable_state is %s' % mstate)
-    logging.info(u'needs_rebase is %s' % needs_rebase)
-    logging.info(u'needs_revision is %s' % needs_revision)
-    logging.info(u'ready_for_review is %s' % ready_for_review)
+    logging.info(u'mergeable_state is %s', mstate)
+    logging.info(u'needs_rebase is %s', needs_rebase)
+    logging.info(u'needs_revision is %s', needs_revision)
+    logging.info(u'ready_for_review is %s', ready_for_review)
 
     rmeta = {
         u'committer_count': committer_count,
@@ -386,14 +374,12 @@ def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
 
             outstanding.add(actor)
         elif review[u'state'] not in [u'APPROVED', u'COMMENTED']:
-            logging.error(u'%s unhandled' % review[u'state'])
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
-                import epdb; epdb.st()
+            logging.error(u'%s unhandled', review[u'state'])
+
     return list(outstanding)
 
 
-def _get_review_state(reviews, submitter, number=None):
+def _get_review_state(reviews, submitter):
     '''Calculate the final review state for each reviewer'''
 
     # final review state for each reviewer
@@ -436,10 +422,7 @@ def _get_review_state(reviews, submitter, number=None):
                 pass
 
             else:
-                logging.error(u'%s not handled yet' % state)
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
-                    import epdb; epdb.st()
+                logging.error(u'%s not handled yet', state)
 
     return user_reviews
 
