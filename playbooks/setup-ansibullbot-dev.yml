@@ -19,6 +19,7 @@
   become: yes
 
   roles:
+    - authorized_keys
     - repo_epel
     - yum_cron
     - firewall

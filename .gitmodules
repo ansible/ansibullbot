@@ -25,3 +25,6 @@
 [submodule "playbooks/roles/caddy"]
 	path = playbooks/roles/caddy
 	url = https://github.com/samdoran/ansible-role-caddy.git
+[submodule "playbooks/roles/authorized_keys"]
+	path = playbooks/roles/authorized_keys
+	url = https://github.com/samdoran/ansible-role-authorized-keys.git
