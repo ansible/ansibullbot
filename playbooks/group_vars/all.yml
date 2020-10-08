@@ -14,13 +14,6 @@ botinstance_ssh_keys:
       h6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPu\
       Jzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5"
 
-  - name: jtanner
-    key_material:
-      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC8FEp2Kr8lD0Sp7kfbUWWHTT/ilD0Tup2Wh8K1HGN8usZk4O6dAVZJHUp35DcCj8JV5l5zr\
-      dO7o+PHvlkYigC/y/17dsAsTC0MZeHAA0p8aFhJv08+l8JF4WIAt34OrMZ2UePblO27/XTIm6MvynBye6BwDQ/GFQKebPyU4GBamy9IIqW1RC\
-      upMj6P04GYDGpQMjYTgtHZD5xstUFWxs0ybEvbpQZglGNuD6E7+8xApqZrMX6hgFglWmxMPzJZxIirzZ/TWRW0eEZ7r468I5HJcFGO8/qe1xB\
-      v8BYWGFt9L6tVNTLi9gI3lbxv87O0ksQ2c37nBvZ+2h2xQoIJDkuf"
-
   - name: tower2_deploy
     key_material:
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCk3j+kA6cfWin+Gq7RWZ1JQdpTbwEwpDPMN2GZy3uksDKnG8c+lXvfXhrtJ1XtQQmta06J8o\
