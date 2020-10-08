@@ -84,3 +84,37 @@ firewall_allowed_tcp_ports:
 # Docker
 docker_users:
   - "{{ ansibullbot_user }}"
+
+authorized_keys:
+  - user: centos
+    comment: mkrizek@x240
+    key:
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCdIcSGGFCk4VLylSLCKHYoLK1vOEU9ebxJn5dtBY1MRAdEL7dDWzwfoovXzxkHWXOWYDWL2a\
+      yZJHUmFfN9JVAg20FYNitU+PZlZs/H8xuWNjL4SbgOq6oBbZAHQnQ5EO0N2rfOMJXC5XEqAEDZVfOvJJt9qcPoBizMFIiTRT/yU47QFo7z3SGC\
+      buMOEE9wZU+VFX8KKwHp1jP37dvLNBh/bdUwvo6RTpk7aUN8zv3BvAjUeT/hC6bbqMw4ibvWp/HbzKHFPBWp5mimIr/j2AbFLnY+c9T2/MJ1Fe\
+      JIDeNC+uNR/J12XD2WQyUp4QowCsZMCKEkhNDVtm05yM5n+OV9"
+
+  - user: centos
+    comment: sdoran@aws_work
+    key:
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfJ88NuTDKSpYq+wrDCd+AKg2l1jqg0qgXxjiNXwaEUOUllb5II0uin7xh/6jl9hLRbwVO\
+      e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
+      h6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPu\
+      Jzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5"
+
+  - user: "{{ ansibullbot_user }}"
+    comment: mkrizek@x240
+    key:
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCdIcSGGFCk4VLylSLCKHYoLK1vOEU9ebxJn5dtBY1MRAdEL7dDWzwfoovXzxkHWXOWYDWL2a\
+      yZJHUmFfN9JVAg20FYNitU+PZlZs/H8xuWNjL4SbgOq6oBbZAHQnQ5EO0N2rfOMJXC5XEqAEDZVfOvJJt9qcPoBizMFIiTRT/yU47QFo7z3SGC\
+      buMOEE9wZU+VFX8KKwHp1jP37dvLNBh/bdUwvo6RTpk7aUN8zv3BvAjUeT/hC6bbqMw4ibvWp/HbzKHFPBWp5mimIr/j2AbFLnY+c9T2/MJ1Fe\
+      JIDeNC+uNR/J12XD2WQyUp4QowCsZMCKEkhNDVtm05yM5n+OV9"
+
+  - user: "{{ ansibullbot_user }}"
+    comment: sdoran@aws_work
+    key:
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfJ88NuTDKSpYq+wrDCd+AKg2l1jqg0qgXxjiNXwaEUOUllb5II0uin7xh/6jl9hLRbwVO\
+      e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
+      h6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPu\
+      Jzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5"
+
