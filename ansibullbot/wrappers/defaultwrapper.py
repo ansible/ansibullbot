@@ -343,14 +343,10 @@ class DefaultWrapper(object):
             labels.append(label.name)
         return labels
 
-    def get_template_data(self):
-        """Extract templated data from an issue body"""
-        return get_template_data(self)
-
     @property
     def template_data(self):
         if self._template_data is None:
-            self._template_data = self.get_template_data()
+            self._template_data = get_template_data(self)
         return self._template_data
 
     def get_issue(self):
