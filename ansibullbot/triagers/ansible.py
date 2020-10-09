@@ -1802,7 +1802,7 @@ class AnsibleTriage(DefaultTriager):
         self.meta[u'submitter'] = iw.submitter
 
         # extract template data
-        self.template_data = iw.get_template_data()
+        self.template_data = iw.template_data
 
         # set the issue type
         ITYPE = self.template_data.get(u'issue type')
@@ -2239,7 +2239,7 @@ class AnsibleTriage(DefaultTriager):
     def get_ansible_version_by_issue(self, iw):
         aversion = None
 
-        rawdata = iw.get_template_data().get(u'ansible version', u'')
+        rawdata = iw.template_data.get(u'ansible version', u'')
         if rawdata:
             aversion = self.version_indexer.strip_ansible_version(rawdata)
 
