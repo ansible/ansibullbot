@@ -94,13 +94,13 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
             ci_stale = (datetime.datetime.now() - ci_date).days > CI_STALE_DAYS
         ci_state = ci_states[0].get('state')
 
-    logging.info(u'ci_state == %s', ci_state)
+    logging.info(u'ci_state == %s' % ci_state)
 
     # clean/unstable/dirty/unknown
     mstate = iw.mergeable_state
     if not mstate:
         mstate = u'unknown'
-    logging.info(u'mergeable_state == %s', mstate)
+    logging.info(u'mergeable_state == %s' % mstate)
 
     # clean/unstable/dirty/unknown
     if mstate != u'clean':
@@ -313,10 +313,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         needs_revision = True
         needs_revision_msgs.append(u'multiple new modules')
 
-    logging.info(u'mergeable_state is %s', mstate)
-    logging.info(u'needs_rebase is %s', needs_rebase)
-    logging.info(u'needs_revision is %s', needs_revision)
-    logging.info(u'ready_for_review is %s', ready_for_review)
+    logging.info(u'mergeable_state is %s' % mstate)
+    logging.info(u'needs_rebase is %s' % needs_rebase)
+    logging.info(u'needs_revision is %s' % needs_revision)
+    logging.info(u'ready_for_review is %s' % ready_for_review)
 
     rmeta = {
         u'committer_count': committer_count,
@@ -374,7 +374,7 @@ def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
 
             outstanding.add(actor)
         elif review[u'state'] not in [u'APPROVED', u'COMMENTED']:
-            logging.error(u'%s unhandled', review[u'state'])
+            logging.error(u'%s unhandled' % review[u'state'])
 
     return list(outstanding)
 
@@ -422,7 +422,7 @@ def _get_review_state(reviews, submitter):
                 pass
 
             else:
-                logging.error(u'%s not handled yet', state)
+                logging.error(u'%s not handled yet' % state)
 
     return user_reviews
 
