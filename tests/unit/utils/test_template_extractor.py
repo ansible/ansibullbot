@@ -15,12 +15,10 @@ class TestTemplateExtraction(unittest.TestCase):
             u'section three'
         ]
         body = u'\r\n'.join(body)
-        issue_number = 0
         issue_class = u'issue'
         sections = [u'ONE', u'TWO', u'THREE']
         tdata = extract_template_data(
-            body, issue_number=issue_number,
-            issue_class=issue_class, sections=sections
+            body, issue_class=issue_class, sections=sections
         )
         assert tdata.get(u'one') == u'section one'
         assert tdata.get(u'two') == u'section two'
@@ -38,12 +36,10 @@ class TestTemplateExtraction(unittest.TestCase):
             u'the widget module does not work for me!!!'
         ]
         body = u'\r\n'.join(body)
-        issue_number = 0
         issue_class = u'issue'
         sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
-            body, issue_number=issue_number,
-            issue_class=issue_class, sections=sections
+            body, issue_class=issue_class, sections=sections
         )
         assert tdata.get(u'ansible version') == u'1.9.x'
         assert tdata.get(u'issue type') == u'bug report'
@@ -63,12 +59,10 @@ class TestTemplateExtraction(unittest.TestCase):
             u'the widget module does not work for me!!!'
         ]
         body = u'\r\n'.join(body)
-        issue_number = 0
         issue_class = u'issue'
         sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
-            body, issue_number=issue_number,
-            issue_class=issue_class, sections=sections
+            body, issue_class=issue_class, sections=sections
         )
         assert tdata.get(u'ansible version') == u'1.9.x'
         assert tdata.get(u'issue type') == u'bug report'
@@ -89,12 +83,10 @@ class TestTemplateExtraction(unittest.TestCase):
             u'the widget AND thingamig modules are broken!!!'
         ]
         body = u'\r\n'.join(body)
-        issue_number = 0
         issue_class = u'issue'
         sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
-            body, issue_number=issue_number,
-            issue_class=issue_class, sections=sections
+            body, issue_class=issue_class, sections=sections
         )
         assert tdata.get(u'ansible version') == u'1.9.x'
         assert tdata.get(u'issue type') == u'bug report'
@@ -119,12 +111,10 @@ class TestTemplateExtraction(unittest.TestCase):
             u'the widget AND thingamig modules are broken!!!'
         ]
         body = u'\r\n'.join(body)
-        issue_number = 0
         issue_class = u'issue'
         sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
-            body, issue_number=issue_number,
-            issue_class=issue_class, sections=sections
+            body, issue_class=issue_class, sections=sections
         )
 
         #import epdb; epdb.st()
@@ -148,12 +138,10 @@ class TestTemplateExtraction(unittest.TestCase):
             u'the widget AND thingamig modules are broken!!!'
         ]
         body = u'\r\n'.join(body)
-        issue_number = 0
         issue_class = u'issue'
         sections = [u'ISSUE TYPE', u'COMPONENT NAME', u'ANSIBLE VERSION', u'SUMMARY']
         tdata = extract_template_data(
-            body, issue_number=issue_number,
-            issue_class=issue_class, sections=sections
+            body, issue_class=issue_class, sections=sections
         )
         assert tdata.get(u'ansible version') == u'1.9.x'
         assert tdata.get(u'issue type') == u'bug report'
