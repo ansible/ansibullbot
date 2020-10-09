@@ -136,7 +136,7 @@ def fuzzy_find_sections(body, sections):
 
 def find_sections(body):
     # find possible sections by the default pattern
-    tofind = sorted(set(re.findall(r'##### [A-Z\s]+\r\n', body)))
+    tofind = sorted(set(re.findall(r'##### [\/A-Z\s]+\r\n', body)))
 
     if len(tofind) <= 1:
         return None
@@ -165,7 +165,6 @@ def find_sections(body):
 
 
 def extract_template_data(body, issue_class='issue', sections=None):
-
     if sections is None:
         sections = SECTIONS
 
@@ -305,6 +304,9 @@ def extract_template_data(body, issue_class='issue', sections=None):
                     v = u'docs pull request'
                 elif k == u'issue type' and v != u'test pull request' and u'test' in v.lower():
                     v = u'test pull request'
+
+        if v == 'paste below':
+            v = ''
 
         # save
         tdict[k] = v

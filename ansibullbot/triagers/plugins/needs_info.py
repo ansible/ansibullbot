@@ -72,11 +72,10 @@ def needs_info_template_facts(iw, meta):
         expected = [u'issue type', u'ansible version', u'component name']
 
     for exp in expected:
-        if exp not in iw.template_data:
-            if itype == u'feature idea' and exp == u'ansible version':
-                pass
-            else:
-                missing.append(exp)
+        if itype == u'feature idea' and exp == u'ansible version':
+            continue
+        if exp not in iw.template_data or not iw.template_data[exp]:
+            missing.append(exp)
 
     if missing:
         nifacts[u'template_missing_sections'] = missing
