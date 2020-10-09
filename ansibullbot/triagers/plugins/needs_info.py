@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import datetime
 import logging
 import pytz
@@ -7,7 +5,6 @@ import ansibullbot.constants as C
 
 
 def is_needsinfo(triager, issue):
-
     needs_info = False
 
     maintainers = [x for x in triager.ansible_members]
@@ -23,18 +20,12 @@ def is_needsinfo(triager, issue):
     )
 
     for event in issue.history.history:
-
         if needs_info and \
                 event[u'actor'] == issue.submitter and \
                 event[u'event'] == u'commented':
 
-            #print('%s set false' % event['actor'])
             needs_info = False
             continue
-
-        #if event['actor'] in triager.BOTNAMES or \
-        #        event['actor'] not in maintainers:
-        #    continue
 
         # allow anyone to trigger needs_info
         if event[u'actor'] in triager.BOTNAMES:
@@ -42,21 +33,17 @@ def is_needsinfo(triager, issue):
 
         if event[u'event'] == u'labeled':
             if event[u'label'] == u'needs_info':
-                #print('%s set true' % event['actor'])
                 needs_info = True
                 continue
         if event[u'event'] == u'unlabeled':
             if event[u'label'] == u'needs_info':
-                #print('%s set false' % event['actor'])
                 needs_info = False
                 continue
         if event[u'event'] == u'commented':
             if u'!needs_info' in event[u'body']:
-                #print('%s set false' % event['actor'])
                 needs_info = False
                 continue
-            elif u'needs_info' in event[u'body']:
-                #print('%s set true' % event['actor'])
+            if u'needs_info' in event[u'body']:
                 needs_info = True
                 continue
 
@@ -165,7 +152,6 @@ def needs_info_timeout_facts(iw, meta):
             delta = (now - bpd).days
         except TypeError as e:
             logging.error(e)
-            import epdb; epdb.st()
 
         if delta >= NI_EXPIRE:
             if len(bp_comments_found) >= 1:

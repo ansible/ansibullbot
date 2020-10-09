@@ -64,7 +64,7 @@ def fuzzy_find_sections(body, sections):
             after = upper_body[v + len(k)]
             header = before + u'${section}' + after
             headers.append(header)
-        except Exception as e:
+        except Exception:
             pass
 
     # pick the most common header and re-search with it
@@ -83,11 +83,7 @@ def fuzzy_find_sections(body, sections):
             try:
                 tofind = t.substitute(section=section)
             except Exception as e:
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception(u'substitution failed: %s' % to_text(e))
+                raise Exception(u'substitution failed: %s' % to_text(e))
             match = upper_body.find(tofind)
             if match != -1:
                 match_map[section] = match + 1
@@ -110,17 +106,13 @@ def fuzzy_find_sections(body, sections):
                  u':' not in headers[0] and
                  u'*' not in headers[0]):
             return {}
-        else:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
-                import epdb; epdb.st()
 
     # sort mapping by element id and inject itype if needed
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
     if match_map and u'ISSUE TYPE' not in [x[0] for x in match_map]:
         if match_map[0][1] > 10:
             match_map.insert(0, (u'ISSUE TYPE', 0))
-    
+
     # extract the sections based on their indexes
     tdict = {}
     total_indexes = len(match_map) - 1
@@ -172,7 +164,7 @@ def find_sections(body):
     return tdict
 
 
-def extract_template_data(body, issue_number=None, issue_class='issue', sections=None, find_extras=True):
+def extract_template_data(body, issue_class='issue', sections=None):
 
     if sections is None:
         sections = SECTIONS
@@ -249,7 +241,7 @@ def extract_template_data(body, issue_number=None, issue_class='issue', sections
                     # https://github.com/ansible/ansibullbot/issues/198
                     # https://github.com/ansible/ansible-modules-core/issues/4159
                     # https://github.com/ansible/ansible-modules-core/issues/5328
-                    reg = re.compile(u'\S+_module')
+                    reg = re.compile(r'\S+_module')
                     match = reg.match(v)
                     if match:
                         v = v[match.pos:match.end()]
@@ -393,7 +385,7 @@ def _remove_markdown_comments(rawtext):
     return u''.join(cleaned)
 
 
-def extract_pr_number_from_comment(rawtext, command='resolved_by_pr'):
+def extract_pr_number_from_comment(rawtext):
     # "resolved_by_pr 5136" --> 5136
     # "resolved_by_pr #5136" --> 5136
     # "resolved_by_pr https://github.com/ansible/ansible/issues/5136" --> 5136
@@ -457,9 +449,9 @@ class ModuleExtractor(object):
         # some docstrings don't pass yaml validation with PyYAML >= 4.2
         try:
             self._DOCSTRING = yaml.load(self._DOCUMENTATION_RAW)
-        except yaml.parser.ParserError as e:
+        except yaml.parser.ParserError:
             logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
-        except yaml.scanner.ScannerError as e:
+        except yaml.scanner.ScannerError:
             logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
 
         # always cast to a dict for easier handling later
@@ -548,15 +540,15 @@ def get_template_data(iw):
     tf_sections = extract_template_sections(tf_content, header=TEMPLATE_HEADER)
 
     # what is required?
-    iw._required_template_sections = \
-        [x.lower() for x in tf_sections.keys()
-            if tf_sections[x][u'required']]
+    iw._required_template_sections = [
+        x.lower() for x in tf_sections.keys()
+        if tf_sections[x][u'required']
+    ]
 
     # extract ...
     template_data = \
         extract_template_data(
             iw.instance.body,
-            issue_number=iw.number,
             issue_class=iw.github_type,
             sections=tf_sections.keys()
         )
@@ -568,7 +560,6 @@ def get_template_data(iw):
 
             _template_data = extract_template_data(
                 s_comment,
-                issue_number=iw.number,
                 issue_class=iw.github_type,
                 sections=tf_sections.keys()
             )
@@ -627,10 +618,10 @@ def get_template_data(iw):
                 if label.startswith(u'bug'):
                     itype = u'bug'
                     break
-                elif label.startswith(u'feature'):
+                if label.startswith(u'feature'):
                     itype = u'feature'
                     break
-                elif label.startswith(u'doc'):
+                if label.startswith(u'doc'):
                     itype = u'docs'
                     break
             if itype:

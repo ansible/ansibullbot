@@ -35,7 +35,6 @@ class TestModuleMatching(unittest.TestCase):
             # extract fields from the body
             td = extract_template_data(
                 v['body'],
-                issue_number=key,
                 issue_class=None
             )
 
