@@ -2,11 +2,15 @@
 # Post message to Slack
 
 import argparse
-import ConfigParser
 import os
 import requests
 
 from subprocess import Popen, PIPE
+
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 
 def get_config(args):
@@ -19,7 +23,7 @@ def get_config(args):
     if args.config_file:
         config_file_path = args.config_file
 
-    ini_file = ConfigParser.ConfigParser()
+    ini_file = configparser.ConfigParser()
     ini_file.read(config_file_path)
     return ini_file
 
