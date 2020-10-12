@@ -62,7 +62,7 @@ def needs_info_template_facts(iw, meta):
     if not iw.template_data:
         nifacts[u'template_missing'] = True
 
-    itype = iw.template_data.get(u'issue type')
+    itype = iw.template_data.get(u'issue type', '')
     missing = []
 
     # theoretically we only need to know the issue type for a PR
@@ -72,7 +72,7 @@ def needs_info_template_facts(iw, meta):
         expected = [u'issue type', u'ansible version', u'component name']
 
     for exp in expected:
-        if itype == u'feature idea' and exp == u'ansible version':
+        if itype.lower() in (u'feature idea', u'documentation report') and exp == u'ansible version':
             continue
         if exp not in iw.template_data or not iw.template_data[exp]:
             missing.append(exp)
