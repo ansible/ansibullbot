@@ -72,9 +72,10 @@ def needs_info_template_facts(iw, meta):
         if itype.lower() not in (u'feature idea', u'documentation report'):
             expected.append(u'ansible version')
 
+    component_match_strategy = meta.get(u'component_match_strategy', []) or []
     for exp in expected:
         if exp not in iw.template_data or not iw.template_data[exp]:
-            if exp == u'component name' and u'component_command' in meta.get(u'component_match_strategy', []):
+            if exp == u'component name' and u'component_command' in component_match_strategy:
                 continue
             missing.append(exp)
 
