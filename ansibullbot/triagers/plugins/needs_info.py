@@ -74,7 +74,7 @@ def needs_info_template_facts(iw, meta):
 
     for exp in expected:
         if exp not in iw.template_data or not iw.template_data[exp]:
-            if exp == u'component name' and u'component_command' in meta[u'component_match_strategy']:
+            if exp == u'component name' and u'component_command' in meta.get(u'component_match_strategy', []):
                 continue
             missing.append(exp)
 
