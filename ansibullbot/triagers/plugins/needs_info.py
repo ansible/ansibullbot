@@ -66,15 +66,17 @@ def needs_info_template_facts(iw, meta):
     missing = []
 
     # theoretically we only need to know the issue type for a PR
-    if iw.is_pullrequest():
-        expected = [u'issue type']
-    else:
-        expected = [u'issue type', u'ansible version', u'component name']
+    expected = [u'issue type']
+    if not iw.is_pullrequest():
+        expected.append(u'component name')
+        if itype.lower() not in (u'feature idea', u'documentation report'):
+            expected.append(u'ansible version')
 
+    component_match_strategy = meta.get(u'component_match_strategy', []) or []
     for exp in expected:
-        if itype.lower() in (u'feature idea', u'documentation report') and exp == u'ansible version':
-            continue
         if exp not in iw.template_data or not iw.template_data[exp]:
+            if exp == u'component name' and u'component_command' in component_match_strategy:
+                continue
             missing.append(exp)
 
     if missing:
