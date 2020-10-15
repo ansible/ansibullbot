@@ -93,7 +93,7 @@ def get_reset_time(fn, args):
     if rl:
         # The time at which the current rate limit window resets
         # in UTC epoch seconds. [ex. 1483405983]
-        logging.debug('rate_limit: %s' % to_text(six))
+        logging.debug('rate_limit: %s' % to_text(rl))
         reset_time = rl['resources']['core']['reset'] - time.time()
         reset_time = int(reset_time)
         if reset_time < 1:
