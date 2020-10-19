@@ -1,6 +1,7 @@
 version: '3.3'
 services:
   rabbit:
+    restart: always
     hostname: rabbit
     image: rabbitmq:latest
     environment:
@@ -12,6 +13,7 @@ services:
       ansibot_nw:
         ipv4_address: 172.20.0.2
   schemavalidator:
+    restart: always
     hostname: schemavalidator
     image: schemavalidator
     build:
@@ -31,6 +33,7 @@ services:
       CELERY_MONGODB_BACKEND_DATABASE: schemavalidator
       CELERY_MONGODB_BACKEND_COLLECTION: results
   database:
+    restart: always
     hostname: mongo
     image: mongo:latest
     ports:
