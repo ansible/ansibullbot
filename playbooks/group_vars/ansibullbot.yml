@@ -72,6 +72,10 @@ firewall_allowed_tcp_ports:
   - 80
   - 443
 
+firewall_firewalld_rules:
+  - zone: public
+    masquerade: yes
+
 # Docker
 docker_users:
   - "{{ ansibullbot_user }}"
@@ -108,4 +112,3 @@ authorized_keys:
       e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
       h6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPu\
       Jzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5"
-
