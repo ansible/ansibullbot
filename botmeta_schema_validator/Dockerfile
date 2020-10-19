@@ -1,4 +1,4 @@
-FROM python:2
+FROM python:3.8.5
 MAINTAINER James Tanner <tanner.jc@gmail.com>
 
 ENV PYTHONUNBUFFERED 1
@@ -12,4 +12,3 @@ RUN ln -s /opt/server/src/ansibullbot ansibullbot
 #COPY ../ ansibullbot
 EXPOSE 5000
 CMD ["python", "flaskapp.py"]
-
