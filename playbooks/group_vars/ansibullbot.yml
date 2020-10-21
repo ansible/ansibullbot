@@ -58,13 +58,10 @@ ansibullbot_sentry_url: !vault |
           373238326163396130616162616363643832
 
 # Caddy settings
-caddy_root: /usr/share/caddy
-caddy_config_path: /etc/caddy
-caddy_log_path: /var/log/caddy
-caddy_user: caddy
-caddy_group: caddy
-caddy_download_custom_build: yes
-caddy_systemd_protect_home: 'false'
+caddy_global_config_options:
+  - order cgi last
+caddy_plugins:
+  - github.com/aksdb/caddy-cgi/v2
 
 # Firewall settings
 firewall_allowed_tcp_ports:
