@@ -58,6 +58,8 @@ ansibullbot_sentry_url: !vault |
           373238326163396130616162616363643832
 
 # Caddy settings
+ansibullbot_caddy_log_path: /var/log/caddy
+caddy_root: /usr/share/caddy
 caddy_global_config_options:
   - order cgi last
 caddy_plugins:
