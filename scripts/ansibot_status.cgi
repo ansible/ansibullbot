@@ -159,7 +159,7 @@ rdata += "<br>\n"
 
 # force error on full disk
 if int(pdata['disk'].replace('%', '')) > 98:
-    print 'Status: 500 No disk space left'
-    print
+    print('Status: 500 No disk space left')
+    print()
 else:
-    print rdata
+    print(rdata)
