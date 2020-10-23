@@ -59,7 +59,10 @@ ansibullbot_sentry_url: !vault |
 
 # Caddy settings
 ansibullbot_caddy_log_path: /var/log/caddy
+caddy_user: caddy
+caddy_group: caddy
 caddy_root: /usr/share/caddy
+caddy_default_port: 443
 caddy_global_config_options:
   - order cgi last
 caddy_plugins:
@@ -74,10 +77,6 @@ firewall_allowed_tcp_ports:
 firewall_firewalld_rules:
   - zone: public
     masquerade: yes
-
-# Docker
-docker_users:
-  - "{{ ansibullbot_user }}"
 
 authorized_keys:
   - user: centos
