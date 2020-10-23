@@ -19,3 +19,4 @@
     - mongodb
     - caddy
     - ansibullbot
+    - authorized_keys

@@ -19,7 +19,6 @@
   become: yes
 
   roles:
-    - authorized_keys
     - repo_epel
     - yum_cron
     - firewall
@@ -27,3 +26,4 @@
     - mongodb
     - caddy
     - ansibullbot
+    - authorized_keys
