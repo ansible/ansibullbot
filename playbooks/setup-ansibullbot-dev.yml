@@ -9,7 +9,7 @@
     botinstance_dns_entries:
       - type: A
         record: ansibullbot-dev.eng.ansible.com
-        value: "{{ _elastic_ip.public_ip }}"
+        value: "{{ elastic_ip.public_ip }}"
 
   roles:
     - ansibullbot_instance
