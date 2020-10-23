@@ -101,6 +101,7 @@ from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 
 REPOS = [
     u'ansible/ansible',
+    u'ansible/ansible-azp',
 ]
 
 

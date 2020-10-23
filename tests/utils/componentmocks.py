@@ -275,6 +275,8 @@ class IssueDatabase:
                 rdata = self.shippable_response(url)
             elif url.endswith('repos/ansible/ansible'):
                 rdata = self._get_repo('ansible/ansible')
+            elif url.endswith('repos/ansible/ansible-azp'):
+                rdata = self._get_repo('ansible/ansible-azp')
             elif url.endswith('repos/ansible/ansible/labels'):
                 rdata = []
 
