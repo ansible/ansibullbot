@@ -1,16 +1,4 @@
 ansible_user: centos
-
-ansibullbot_options:
-  - daemonize
-  - daemonize_interval={{ ansibullbot_daemonize_interval }}
-  - debug
-  - force
-  - logfile {{ ansibullbot_log_path }}
-  - resume
-  - skip_no_update
-  - skip_no_update_timeout
-  - verbose
-
 ansibullbot_receiver_enabled: true
 
 ansibullbot_github_password: !vault |
