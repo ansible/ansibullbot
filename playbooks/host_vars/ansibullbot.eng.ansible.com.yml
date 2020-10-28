@@ -1,2 +1,13 @@
-ansibullbot_sentry_server_name: orangemontana
+ansibullbot_sentry_server_name: ansibullbot
 ansibullbot_fqdn: ansibullbot.eng.ansible.com
+ansibullbot_options:
+  - daemonize
+  - daemonize_interval={{ ansibullbot_daemonize_interval }}
+  - debug
+  - force
+  - logfile {{ ansibullbot_log_path }}
+  - resume
+  - repo ansible/ansible
+  - skip_no_update
+  - skip_no_update_timeout
+  - verbose
