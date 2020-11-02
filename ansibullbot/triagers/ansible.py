@@ -1646,10 +1646,6 @@ class AnsibleTriage(DefaultTriager):
             if self.skiprepo:
                 if repo in self.skiprepo:
                     continue
-            if self.skip_module_repos and u'module' in repo:
-                continue
-            if self.module_repos_only and u'module' not in repo:
-                continue
 
             if self.pr:
                 numbers = self.eval_pr_param(self.pr)
@@ -2347,11 +2343,6 @@ class AnsibleTriage(DefaultTriager):
 
         parser.add_argument("--collect_only", action="store_true",
                             help="stop after caching issues")
-
-        parser.add_argument("--skip_module_repos", action="store_true",
-                            help="ignore the module repos")
-        parser.add_argument("--module_repos_only", action="store_true",
-                            help="only process the module repos")
 
         parser.add_argument("--sort", default='desc', choices=[u'asc', u'desc'],
                             help="Direction to sort issues [desc=9-0 asc=0-9]")
