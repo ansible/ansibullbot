@@ -738,16 +738,15 @@ class AnsibleTriage(DefaultTriager):
             if bot_broken_unlabel:
                 bot_broken_commands.append((bot_broken_label, u'!bot_broken'))
 
-            last_bot_broken = sorted(bot_broken_commands, key=lambda x: x[0])[-1]
-            if last_bot_broken:
-                if last_bot_broken[1] == u'bot_broken':
-                    logging.warning(u'bot broken!')
-                    if u'bot_broken' not in iw.labels:
-                        actions.newlabel.append(u'bot_broken')
-                    return
-                else:
-                    if u'bot_broken' in iw.labels:
-                        actions.unlabel.append(u'bot_broken')
+            last_bot_broken = sorted(bot_broken_commands, key=lambda x: x[0])[-1:]
+            if last_bot_broken[-1:] == u'bot_broken':
+                logging.warning(u'bot broken!')
+                if u'bot_broken' not in iw.labels:
+                    actions.newlabel.append(u'bot_broken')
+                return
+            else:
+                if u'bot_broken' in iw.labels:
+                    actions.unlabel.append(u'bot_broken')
 
             if u'bot_skip' in self.meta[u'maintainer_commands'] or \
                     u'bot_skip' in self.meta[u'submitter_commands']:
