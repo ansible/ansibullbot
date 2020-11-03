@@ -9,5 +9,4 @@ ansibullbot_options:
   - resume
   - repo ansible/ansible
   - skip_no_update
-  - skip_no_update_timeout
   - verbose

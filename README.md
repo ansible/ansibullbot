@@ -11,24 +11,25 @@ If you are looking for help, please see the [ISSUE HELP](ISSUE_HELP.md)
 # Ansibull Github Issue/Pullrequest Bot
 
 ```
-$ ./triage.py --help
-
+$ ./triage_ansible.py --help
 usage: triage_ansible.py [-h] [--cachedir CACHEDIR_BASE] [--logfile LOGFILE]
                          [--daemonize]
                          [--daemonize_interval DAEMONIZE_INTERVAL] [--debug]
                          [--verbose] [--dry-run] [--force] [--pause]
-                         [--force_rate_limit] [--force_description_fixer]
-                         [--dump_actions] [--botmetafile BOTMETAFILE]
-                         [--repo {ansible/ansible-modules-core,ansible/ansible-modules-extras}]
-                         [--skip_no_update] [--skip_no_update_timeout]
-                         [--collect_only] [--skip_module_repos]
-                         [--module_repos_only] [--sort {asc,desc}]
-                         [--skiprepo SKIPREPO] [--only_prs] [--only_issues]
-                         [--only_open] [--only_closed] [--safe_force]
+                         [--force_rate_limit] [--dump_actions]
+                         [--botmetafile BOTMETAFILE]
+                         [--repo {ansible/ansible,ansible/ansible-azp}]
+                         [--skip_no_update] [--collect_only]
+                         [--skip_module_repos] [--module_repos_only]
+                         [--sort {asc,desc}] [--skiprepo SKIPREPO]
+                         [--only_prs] [--only_issues] [--only_open]
+                         [--only_closed] [--safe_force]
                          [--safe_force_script SAFE_FORCE_SCRIPT]
                          [--ignore_state] [--ignore_bot_broken]
                          [--ignore_module_commits] [--pr PR]
                          [--start-at START_AT] [--resume] [--no_since]
+                         [--last LAST] [--commit ANSIBLE_COMMIT]
+                         [--ignore_galaxy]
 
 Triage issue and pullrequest queues for Ansible. (NOTE: only useful if you
 have commit access to the repo in question.)
@@ -46,16 +47,12 @@ optional arguments:
   --force, -f           Do not ask questions
   --pause, -p           Always pause between prs|issues
   --force_rate_limit    debug: force the rate limit
-  --force_description_fixer
-                        Always invoke the description fixer
   --dump_actions        serialize the actions to disk [/tmp/actions]
   --botmetafile BOTMETAFILE
                         Use this filepath for botmeta instead of from the repo
-  --repo {ansible/ansible-modules-core,ansible/ansible-modules-extras}, -r {ansible/ansible-modules-core,ansible/ansible-modules-extras}
+  --repo {ansible/ansible,ansible/ansible-azp}, -r {ansible/ansible,ansible/ansible-azp}
                         Github repo to triage (defaults to all)
   --skip_no_update      skip processing if updated_at hasn't changed
-  --skip_no_update_timeout
-                        ignore skip logic if last processed >=7 days ago
   --collect_only        stop after caching issues
   --skip_module_repos   ignore the module repos
   --module_repos_only   only process the module repos
@@ -78,5 +75,9 @@ optional arguments:
                         Start triage at the specified pr|issue
   --resume              pickup right after where the bot last stopped
   --no_since            Do not use the since keyword to fetch issues
+  --last LAST           triage the last N issues or PRs
+  --commit ANSIBLE_COMMIT
+                        Use a specific commit for the indexers
+  --ignore_galaxy       do not index or search for components in galaxy
 ```
 

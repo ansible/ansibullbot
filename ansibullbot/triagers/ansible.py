@@ -2345,9 +2345,6 @@ class AnsibleTriage(DefaultTriager):
         parser.add_argument("--skip_no_update", action="store_true",
                             help="skip processing if updated_at hasn't changed")
 
-        parser.add_argument("--skip_no_update_timeout", action="store_true",
-                            help="ignore skip logic if last processed >={} days ago".format(C.DEFAULT_STALE_WINDOW))
-
         parser.add_argument("--collect_only", action="store_true",
                             help="stop after caching issues")
 
