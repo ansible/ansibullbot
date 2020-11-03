@@ -329,7 +329,7 @@ class ShippableCI(BaseCI):
 
         response = _fetch(NEW_BUILD_URL, verb='post', data=data, timeout=TIMEOUT)
         if not response:
-            raise Exception("Unable to POST %r to %r" % (data, newbuild_url))
+            raise Exception("Unable to POST %r to %r" % (data, NEW_BUILD_URL))
         _check_response(response)
         return response
 
