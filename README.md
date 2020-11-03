@@ -20,7 +20,6 @@ usage: triage_ansible.py [-h] [--cachedir CACHEDIR_BASE] [--logfile LOGFILE]
                          [--botmetafile BOTMETAFILE]
                          [--repo {ansible/ansible,ansible/ansible-azp}]
                          [--skip_no_update] [--collect_only]
-                         [--skip_module_repos] [--module_repos_only]
                          [--sort {asc,desc}] [--skiprepo SKIPREPO]
                          [--only_prs] [--only_issues] [--only_open]
                          [--only_closed] [--safe_force]
@@ -54,8 +53,6 @@ optional arguments:
                         Github repo to triage (defaults to all)
   --skip_no_update      skip processing if updated_at hasn't changed
   --collect_only        stop after caching issues
-  --skip_module_repos   ignore the module repos
-  --module_repos_only   only process the module repos
   --sort {asc,desc}     Direction to sort issues [desc=9-0 asc=0-9]
   --skiprepo SKIPREPO   Github repo to skip triaging
   --only_prs            Triage pullrequests only
