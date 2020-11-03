@@ -213,7 +213,6 @@ class IntegrationTest(object):
             '--commit=%s' % self.target_meta['ansible_commit'],
             '--debug',
             '--verbose',
-            '--skip_module_repos',
             '--ignore_module_commits',
             '--cachedir=%s' % os.path.join(self.tmpdir, 'cache'),
             '--force',

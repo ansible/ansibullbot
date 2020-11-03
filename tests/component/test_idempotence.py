@@ -28,7 +28,6 @@ class TestIdempotence:
                 '--verbose',
                 #'--only_issues',
                 '--ignore_module_commits',
-                '--skip_module_repos',
                 '--cachedir=%s' % mm.cachedir,
                 '--logfile=%s' % os.path.join(mm.cachedir, 'bot.log'),
                 '--no_since',

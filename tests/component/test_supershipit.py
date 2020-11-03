@@ -37,7 +37,6 @@ class TestSuperShipit:
                 '--debug',
                 '--verbose',
                 '--ignore_module_commits',
-                '--skip_module_repos',
                 '--cachedir=%s' % mm.cachedir,
                 '--logfile=%s' % os.path.join(mm.cachedir, 'bot.log'),
                 '--no_since',
