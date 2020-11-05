@@ -28,7 +28,7 @@ usage: triage_ansible.py [-h] [--cachedir CACHEDIR_BASE] [--logfile LOGFILE]
                          [--ignore_module_commits] [--pr PR]
                          [--start-at START_AT] [--resume] [--no_since]
                          [--last LAST] [--commit ANSIBLE_COMMIT]
-                         [--ignore_galaxy]
+                         [--ignore_galaxy] [--ci {shippable,azp}]
 
 Triage issue and pullrequest queues for Ansible. (NOTE: only useful if you
 have commit access to the repo in question.)
@@ -76,5 +76,5 @@ optional arguments:
   --commit ANSIBLE_COMMIT
                         Use a specific commit for the indexers
   --ignore_galaxy       do not index or search for components in galaxy
+  --ci {shippable,azp}  Specify a CI provider that repo uses
 ```
-
