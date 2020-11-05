@@ -304,6 +304,15 @@ DEFAULT_SHIPPABLE_URL = get_config(
     value_type='string'
 )
 
+DEFAULT_CI_PROVIDER = get_config(
+    p,
+    DEFAULTS,
+    'ci_provider',
+    '%s_CI_PROVIDER' % PROG_NAME.upper(),
+    u'shippable',
+    value_type='string'
+)
+
 DEFAULT_NEEDS_INFO_WARN = get_config(
     p,
     'needs_info',
