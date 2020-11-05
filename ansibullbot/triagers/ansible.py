@@ -55,7 +55,6 @@ from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
-from ansibullbot.utils.shippable_api import ShippableCI
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.receiver_client import post_to_receiver
 from ansibullbot.utils.webscraper import GithubWebScraper
@@ -97,6 +96,9 @@ from ansibullbot.triagers.plugins.spam import get_spam_facts
 from ansibullbot.triagers.plugins.test_support_plugins import get_test_support_plugins_facts
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
+
+
+VALID_CI_PROVIDERS = frozenset((u'shippable', u'azp'))
 
 
 REPOS = [
@@ -202,6 +204,16 @@ class AnsibleTriage(DefaultTriager):
             val = getattr(args, x)
             setattr(self, x, val)
 
+        if self.ci  == u'shippable':
+            from ansibullbot.utils.shippable_api import ShippableCI as ci_class
+        elif self.ci == u'azp':
+            raise NotImplementedError(u'azp ci provider has not been implemented')
+        else:
+            raise ValueError(
+                u'Unknown CI provider specified in the config file: %s. Valid CI providers: %s' %
+                (C.DEFAULT_CI_PROVIDER, ', '.join(VALID_CI_PROVIDERS))
+            )
+
         self.last_run = None
 
         self.github_url = C.DEFAULT_GITHUB_URL
@@ -288,7 +300,7 @@ class AnsibleTriage(DefaultTriager):
         )
 
         logging.info('creating CI wrapper')
-        self.ci = ShippableCI(self.cachedir_base)
+        self.ci = ci_class(self.cachedir_base)
         self.ci.update()
 
         # resume is just an overload for the start-at argument
@@ -1977,7 +1989,7 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # ci
-        self.meta.update(get_ci_facts(iw))
+        self.meta.update(get_ci_facts(iw, self.ci))
 
         # ci rebuilds
         self.meta.update(get_rebuild_facts(iw, self.meta))
@@ -1988,6 +2000,7 @@ class AnsibleTriage(DefaultTriager):
                 iw,
                 self.meta,
                 self.ansible_core_team,
+                self.ci,
             )
         )
 
@@ -1996,6 +2009,7 @@ class AnsibleTriage(DefaultTriager):
             get_rebuild_command_facts(
                 iw,
                 self.meta,
+                self.ci,
             )
         )
 
@@ -2407,6 +2421,10 @@ class AnsibleTriage(DefaultTriager):
 
         parser.add_argument('--ignore_galaxy', action='store_true',
                             help='do not index or search for components in galaxy')
+
+        parser.add_argument("--ci", type=str, choices=VALID_CI_PROVIDERS,
+                            default=C.DEFAULT_CI_PROVIDER,
+                            help="Specify a CI provider that repo uses")
 
         return parser
 

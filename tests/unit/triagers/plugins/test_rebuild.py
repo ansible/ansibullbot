@@ -1,4 +1,6 @@
 from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_command_facts
+from ansibullbot.utils.shippable_api import ShippableCI
+
 from tests.utils.helpers import get_issue
 
 
@@ -14,7 +16,7 @@ def test_rebuild_command():
             u'needs_rebuild': False,
             u'ci_run_number': 0,
         }
-        rbfacts = get_rebuild_command_facts(iw, meta)
+        rbfacts = get_rebuild_command_facts(iw, meta, ShippableCI)
         assert rbfacts[u'needs_rebuild']
         assert rbfacts[u'needs_rebuild_all']
         assert not rbfacts[u'needs_rebuild_failed']
@@ -32,7 +34,7 @@ def test_rebuild_failed_command():
             u'needs_rebuild': False,
             u'ci_run_number': 0,
         }
-        rbfacts = get_rebuild_command_facts(iw, meta)
+        rbfacts = get_rebuild_command_facts(iw, meta, ShippableCI)
         assert rbfacts[u'needs_rebuild']
         assert rbfacts[u'needs_rebuild_failed']
         assert not rbfacts[u'needs_rebuild_all']
@@ -50,7 +52,7 @@ def test_rebuild_and_rebuild_failed_commands():
             u'needs_rebuild': False,
             u'ci_run_number': 0,
         }
-        rbfacts = get_rebuild_command_facts(iw, meta)
+        rbfacts = get_rebuild_command_facts(iw, meta, ShippableCI)
         assert rbfacts[u'needs_rebuild']
         assert rbfacts[u'needs_rebuild_failed']
         assert not rbfacts[u'needs_rebuild_all']
@@ -68,7 +70,7 @@ def test_rebuild_failed_and_rebuild_commands():
             u'needs_rebuild': False,
             u'ci_run_number': 0,
         }
-        rbfacts = get_rebuild_command_facts(iw, meta)
+        rbfacts = get_rebuild_command_facts(iw, meta, ShippableCI)
         assert rbfacts[u'needs_rebuild']
         assert rbfacts[u'needs_rebuild_all']
         assert not rbfacts[u'needs_rebuild_failed']
