@@ -469,7 +469,6 @@ class AnsibleTriage(DefaultTriager):
                                         skip = False
 
                             if skip:
-
                                 # re-check ansible/ansible after
                                 # a window of time since the last check.
                                 lt = lmeta[u'time']
@@ -482,16 +481,15 @@ class AnsibleTriage(DefaultTriager):
                                     logging.info(msg)
                                     skip = False
 
-                                # if last process time is older than
-                                # last completion time on CI, we need
-                                # to reprocess because the CI status has
-                                # probabaly changed.
-                                if skip and iw.is_pullrequest():
-                                    ua = to_text(iw.pullrequest.updated_at.isoformat())
+                            if skip:
+                                if iw.is_pullrequest():
+                                    # if last process time is older than
+                                    # last completion time on CI, we need
+                                    # to reprocess because the CI status has
+                                    # probabaly changed.
                                     mua = strip_time_safely(lmeta[u'updated_at'])
                                     lsr = self.ci.get_last_completion_date(iw.number)
-                                    if (lsr and lsr > mua) or \
-                                            ua > lmeta[u'updated_at']:
+                                    if lsr and lsr > mua:
                                         skip = False
 
                             # was this in the stale list?
