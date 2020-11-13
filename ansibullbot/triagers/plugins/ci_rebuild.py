@@ -35,7 +35,7 @@ def get_rebuild_facts(iw, meta, force=False):
         if meta[u'is_needs_rebase']:
             return rbmeta
 
-        if not meta[u'has_shippable']:
+        if not meta[u'has_ci']:
             return rbmeta
 
         if not meta[u'shipit']:

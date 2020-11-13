@@ -10,7 +10,7 @@ from ansibullbot.utils.timetools import strip_time_safely
 CI_STALE_DAYS = 7
 
 
-def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
+def get_needs_revision_facts(triager, issuewrapper, meta, ci):
     # Thanks @adityacs for this PR. This PR requires revisions, either
     # because it fails to build or by reviewer request. Please make the
     # suggested revisions. When you are done, please comment with text
@@ -36,7 +36,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     has_commit_mention = False
     has_commit_mention_notification = False
 
-    has_shippable = False
+    has_ci = False
     has_shippable_yaml = None
     has_shippable_yaml_notification = None
 
@@ -57,7 +57,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         u'is_needs_rebase_msgs': needs_rebase_msgs,
         u'has_commit_mention': has_commit_mention,
         u'has_commit_mention_notification': has_commit_mention_notification,
-        u'has_shippable': has_shippable,
+        u'has_ci': has_ci,
         u'merge_commits': merge_commits,
         u'has_merge_commit_notification': has_merge_commit_notification,
         u'mergeable': None,
@@ -86,10 +86,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
 
     maintainers += meta.get(u'component_maintainers', [])
 
-    ci_states = iw.pullrequest_status_by_context(shippable.state_context)
+    ci_states = iw.pullrequest_status_by_context(ci.state_context)
     if ci_states:
-        has_shippable = True
-        ci_date = shippable.get_last_full_run_date(ci_states)
+        has_ci = True
+        ci_date = ci.get_last_full_run_date(ci_states)
         if ci_date:
             ci_stale = (datetime.datetime.now() - ci_date).days > CI_STALE_DAYS
         ci_state = ci_states[0].get('state')
@@ -265,7 +265,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
     has_remote_repo = bool(iw.pullrequest.head.repo)
 
     # https://github.com/ansible/ansibullbot/issues/406
-    has_shippable_yaml = iw.pullrequest_filepath_exists(shippable.required_file)
+    has_shippable_yaml = iw.pullrequest_filepath_exists(ci.required_file)
     if not has_shippable_yaml:
         needs_rebase = True
         needs_rebase_msgs.append(u'missing shippable.yml')
@@ -324,7 +324,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, shippable):
         u'is_needs_revision_msgs': needs_revision_msgs,
         u'is_needs_rebase': needs_rebase,
         u'is_needs_rebase_msgs': needs_rebase_msgs,
-        u'has_shippable': has_shippable,
+        u'has_ci': has_ci,
         u'has_commit_mention': has_commit_mention,
         u'has_commit_mention_notification': has_commit_mention_notification,
         u'merge_commits': merge_commits,
@@ -427,34 +427,34 @@ def _get_review_state(reviews, submitter):
     return user_reviews
 
 
-def get_shippable_run_facts(iw, meta, shippable):
+def get_ci_run_facts(iw, meta, ci):
     '''Does an issue need the test result comment?'''
     # https://github.com/ansible/ansibullbot/issues/312
     # https://github.com/ansible/ansibullbot/issues/404
     # https://github.com/ansible/ansibullbot/issues/418
 
-    shippable_facts = {
-        u'shippable_test_results': None,
+    ci_facts = {
+        u'ci_test_results': None,
         u'ci_verified': None,
         u'needs_testresult_notification': None
     }
 
     # should only be here if the run state is failed ...
-    if not meta[u'has_shippable'] or meta[u'ci_state'] != u'failure':
-        return shippable_facts
+    if not meta[u'has_ci'] or meta[u'ci_state'] != u'failure':
+        return ci_facts
 
     needs_testresult_notification = False
 
-    ci_states = iw.pullrequest_status_by_context(shippable.state_context)
+    ci_states = iw.pullrequest_status_by_context(ci.state_context)
     if not ci_states:
-        return shippable_facts
+        return ci_facts
 
-    last_run = shippable.get_processed_run(ci_states[0])
+    last_run = ci.get_processed_run(ci_states[0])
     last_run_id = last_run[u'run_id']
 
     # filter by the last run id
-    shippable_test_results, ci_verified = \
-        shippable.get_test_results(
+    ci_test_results, ci_verified = \
+        ci.get_test_results(
             last_run_id,
             usecache=True,
             filter_paths=[u'/testresults/ansible-test-.*.json'],
@@ -464,16 +464,16 @@ def get_shippable_run_facts(iw, meta, shippable):
     if u'ci_verified' in iw.labels and not ci_verified:
         ci_verified_last_applied = iw.history.label_last_applied(u'ci_verified')
         # NOTE this assumes iw.pullrequest_status_by_context is sorted, latest first
-        for ci_run in iw.pullrequest_status_by_context(shippable.state_context):
+        for ci_run in iw.pullrequest_status_by_context(ci.state_context):
             ci_run_updated_at = pytz.utc.localize(strip_time_safely(ci_run[u'updated_at']))
             if ci_run_updated_at <= ci_verified_last_applied:
-                last_ci_verified_run = shippable.get_processed_run(ci_run)
+                last_ci_verified_run = ci.get_processed_run(ci_run)
                 if last_run_id == last_ci_verified_run[u'run_id']:
                     ci_verified = True
                 break
 
     # no results means no notification required
-    if len(shippable_test_results) < 1:
+    if len(ci_test_results) < 1:
         needs_testresult_notification = False
     else:
         s_bpcs = iw.history.get_boilerplate_comments_content(
@@ -481,7 +481,7 @@ def get_shippable_run_facts(iw, meta, shippable):
         )
         if s_bpcs:
             # was this specific result shown?
-            job_ids = [x[u'job_id'] for x in shippable_test_results]
+            job_ids = [x[u'job_id'] for x in ci_test_results]
             job_ids = sorted(set(job_ids))
             found = []
             for bp in s_bpcs:
@@ -496,7 +496,7 @@ def get_shippable_run_facts(iw, meta, shippable):
             needs_testresult_notification = True
 
     return {
-        u'shippable_test_results': shippable_test_results,
+        u'ci_test_results': ci_test_results,
         u'ci_verified': ci_verified,
         u'needs_testresult_notification': needs_testresult_notification
     }

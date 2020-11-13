@@ -79,8 +79,8 @@ def get_automerge_facts(issuewrapper, meta):
     if meta[u'is_needs_info']:
         return create_ameta(False, u'automerge needs_info test failed')
 
-    if not meta[u'has_shippable']:
-        return create_ameta(False, u'automerge has_shippable test failed')
+    if not meta[u'has_ci']:
+        return create_ameta(False, u'automerge has_ci test failed')
 
     if not meta[u'mergeable']:
         return create_ameta(False, u'automerge mergeable test failed')
@@ -159,7 +159,7 @@ def needs_community_review(meta, issue):
     if meta[u'ci_state'] == u'pending':
         return False
 
-    if not meta[u'has_shippable']:
+    if not meta[u'has_ci']:
         return False
 
     if not meta[u'mergeable']:

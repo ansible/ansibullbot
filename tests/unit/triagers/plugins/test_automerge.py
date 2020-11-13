@@ -78,7 +78,7 @@ class TestAutomergeFacts(unittest.TestCase):
         meta = {
             u'ci_stale': False,
             u'ci_state': u'success',
-            u'has_shippable': True,
+            u'has_ci': True,
             u'is_new_directory': False,
             u'is_module': True,
             u'is_module_util': False,
@@ -114,7 +114,7 @@ class TestAutomergeFacts(unittest.TestCase):
         meta = {
             u'ci_stale': False,
             u'ci_state': u'success',
-            u'has_shippable': True,
+            u'has_ci': True,
             u'is_new_directory': False,
             u'is_module': True,
             u'is_module_util': False,
