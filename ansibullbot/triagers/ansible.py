@@ -81,7 +81,7 @@ from ansibullbot.triagers.plugins.needs_info import is_needsinfo
 from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
 from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
 from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
-from ansibullbot.triagers.plugins.needs_revision import get_shippable_run_facts
+from ansibullbot.triagers.plugins.needs_revision import get_ci_run_facts
 from ansibullbot.triagers.plugins.contributors import get_contributor_facts
 from ansibullbot.triagers.plugins.notifications import get_notification_facts
 from ansibullbot.triagers.plugins.performance import get_performance_facts
@@ -882,7 +882,7 @@ class AnsibleTriage(DefaultTriager):
                     actions.comments.append(comment)
                     if u'merge_commit' not in iw.labels:
                         actions.newlabel.append(u'merge_commit')
-                if self.meta.get(u'has_shippable'):
+                if self.meta.get(u'has_ci'):
                     actions.cancel_ci = True
             else:
                 if u'merge_commit' in iw.labels:
@@ -981,7 +981,7 @@ class AnsibleTriage(DefaultTriager):
                     self.meta[u'needs_testresult_notification']:
                 tvars = {
                     u'submitter': iw.submitter,
-                    u'data': self.meta[u'shippable_test_results']
+                    u'data': self.meta[u'ci_test_results']
                 }
 
                 try:
@@ -1004,7 +1004,7 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/293
         if iw.is_pullrequest():
-            if not self.meta[u'has_shippable']:
+            if not self.meta[u'has_ci']:
                 if u'needs_ci' not in iw.labels:
                     actions.newlabel.append(u'needs_ci')
             else:
@@ -1922,7 +1922,7 @@ class AnsibleTriage(DefaultTriager):
 
         # ci_verified and test results
         self.meta.update(
-            get_shippable_run_facts(iw, self.meta, self.ci)
+            get_ci_run_facts(iw, self.meta, self.ci)
         )
 
         # needsinfo?
@@ -2323,7 +2323,7 @@ class AnsibleTriage(DefaultTriager):
                 self.ci.rebuild(runid)
             else:
                 logging.error(
-                    u'rebuild: no shippable runid for {}'.format(iw.number)
+                    u'rebuild: no CI runid for {}'.format(iw.number)
                 )
         elif actions.rebuild_failed:
             runid = self.meta.get(u'ci_run_number')
@@ -2332,7 +2332,7 @@ class AnsibleTriage(DefaultTriager):
                 self.ci.rebuild_failed(runid)
             else:
                 logging.error(
-                    u'rebuild: no shippable runid for {}'.format(iw.number)
+                    u'rebuild: no CI runid for {}'.format(iw.number)
                 )
 
         if actions.cancel_ci:
@@ -2342,7 +2342,7 @@ class AnsibleTriage(DefaultTriager):
                 self.ci.cancel(runid)
             else:
                 logging.error(
-                    u'cancel: no shippable runid for {}'.format(iw.number)
+                    u'cancel: no CI runid for {}'.format(iw.number)
                 )
 
         if actions.cancel_ci_branch:
