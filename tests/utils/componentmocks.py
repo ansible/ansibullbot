@@ -1489,6 +1489,7 @@ class BotMockManager:
         self.mocks.append(mock.patch('ansibullbot.utils.gh_gql_client.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.git_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.moduletools.logging', MockLogger))
+        self.mocks.append(mock.patch('ansibullbot.utils.net_tools.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.shippable_api.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
         self.mocks.append(mock.patch('ansibullbot.utils.timetools.logging', MockLogger))
