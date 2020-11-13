@@ -532,6 +532,12 @@ class DefaultWrapper(object):
 
     @property
     @RateLimited
+    def pullrequest_check_runs(self):
+        url = u'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
+        return self.github.get_request_gen(url)
+
+    @property
+    @RateLimited
     def pullrequest_raw_data(self):
         if not self.pull_raw:
             logging.info(u'@pullrequest_raw_data')

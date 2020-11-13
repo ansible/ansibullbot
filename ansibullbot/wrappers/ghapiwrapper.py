@@ -160,6 +160,34 @@ class GithubWrapper(object):
         return data
 
     @RateLimited
+    def get_request_gen(self, url):
+        '''Get an arbitrary API endpoint'''
+        # FIXME merge with get_request()
+        headers = {
+            u'Accept': u','.join(self.accepts_headers),
+            u'Authorization': u'Bearer %s' % self.token,
+        }
+
+        rr = requests.get(url, headers=headers)
+        data = rr.json()
+
+        # handle ratelimits ...
+        if isinstance(data, dict) and data.get(u'message'):
+            if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+                raise RateLimitError()
+
+        yield data
+
+        # pagination
+        while hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
+            rr = requests.get(rr.links[u'next'][u'url'], headers=headers)
+            data = rr.json()
+            if isinstance(data, dict) and data.get(u'message'):
+                if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+                    raise RateLimitError()
+            yield data
+
+    @RateLimited
     def delete_request(self, url):
         headers = {
             u'Accept': u','.join(self.accepts_headers),
