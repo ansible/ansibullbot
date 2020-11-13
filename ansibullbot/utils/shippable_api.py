@@ -7,16 +7,15 @@ import os
 import re
 import time
 
+import requests
 import pytz
 import six
-
-import requests
-from tenacity import retry, stop_after_attempt, wait_fixed, RetryError, TryAgain
 
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text
 from ansibullbot.ci.base import BaseCI
 from ansibullbot.utils.file_tools import compress_gzip_file, read_gzip_json_file, write_gzip_json_file
+from ansibullbot.utils.net_tools import fetch, check_response
 from ansibullbot.utils.timetools import strip_time_safely
 
 
@@ -32,6 +31,9 @@ NEW_BUILD_URL = u"%s/projects/%s/newBuild" % (
 )
 
 TIMEOUT = 5  # seconds
+HEADERS = {
+    'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
+}
 
 
 class ShippableNoData(Exception):
@@ -155,7 +157,7 @@ class ShippableCI(BaseCI):
             if os.path.isfile(gzfile):
                 logging.error(gzfile)
 
-            resp = _fetch(url, timeout=timeout)
+            resp = fetch(url, headers=HEADERS, timeout=timeout)
             if not resp:
                 return None
 
@@ -166,7 +168,7 @@ class ShippableCI(BaseCI):
                 write_gzip_json_file(gzfile, [resp.status_code, {}])
                 return None
 
-        _check_response(resp)
+        check_response(resp)
 
         if not jdata:
             raise ShippableNoData
@@ -310,10 +312,10 @@ class ShippableCI(BaseCI):
 
     def _get_run_id(self, run_number):
         run_url = u"%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
-        response = _fetch(run_url, timeout=TIMEOUT)
+        response = fetch(run_url, headers=HEADERS, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)
-        _check_response(response)
+        check_response(response)
         run_id = response.json()[0][u'id']
         logging.debug(run_id)
         return run_id
@@ -327,10 +329,10 @@ class ShippableCI(BaseCI):
         if failed_only:
             data[u'rerunFailedOnly'] = True
 
-        response = _fetch(NEW_BUILD_URL, verb='post', data=data, timeout=TIMEOUT)
+        response = fetch(NEW_BUILD_URL, verb='post', headers=HEADERS, data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST %r to %r" % (data, NEW_BUILD_URL))
-        _check_response(response)
+        check_response(response)
         return response
 
     def rebuild_failed(self, run_number):
@@ -344,10 +346,10 @@ class ShippableCI(BaseCI):
         data = {u'runId': run_id}
 
         cancel_url = u"%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
-        response = _fetch(cancel_url, verb='post', data=data, timeout=TIMEOUT)
+        response = fetch(cancel_url, verb='post', headers=HEADERS, data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST %r to %r" % (data, cancel_url))
-        _check_response(response)
+        check_response(response)
         return response
 
     def cancel_on_branch(self, branch):
@@ -423,35 +425,3 @@ class ShippableCI(BaseCI):
 
         # return only the timestamp from the last full run
         return strip_time_safely(rundata[u'created_at'])
-
-
-def _fetch(url, verb='get', **kwargs):
-    """return response or None in case of failure, try twice"""
-    @retry(stop=stop_after_attempt(2), wait=wait_fixed(2))
-    def _inner_fetch(verb='get'):
-        headers = {
-            'Authorization': 'apiToken %s' % C.DEFAULT_SHIPPABLE_TOKEN
-        }
-
-        logging.info(u'%s %s' % (verb, url))
-        http_method = getattr(requests, verb)
-        resp = http_method(url, headers=headers, **kwargs)
-        logging.info(u'shippable status code: %s' % resp.status_code)
-        logging.info(u'shippable reason: %s' % resp.reason)
-
-        if resp.status_code not in [200, 302, 400]:
-            logging.error(u'RC: %s' % resp.status_code)
-            raise TryAgain
-
-        return resp
-
-    try:
-        logging.debug(u'%s' % url)
-        return _inner_fetch(verb=verb)
-    except RetryError as e:
-        logging.error(e)
-
-
-def _check_response(response):
-    if response and response.status_code == 404:
-        raise Exception(u'shippable 404')
