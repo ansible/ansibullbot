@@ -158,8 +158,7 @@ for tb in tracebacks:
 rdata += "<br>\n"
 
 # force error on full disk
-if int(pdata['disk'].replace('%', '')) > 98:
-    print('Status: 500 No disk space left')
-    print()
+if int(pdata['disk'].replace(b'%', b'')) > 98:
+    print('Status: 500 No disk space left\n')
 else:
     print(rdata)
