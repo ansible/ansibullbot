@@ -463,14 +463,8 @@ def get_ci_run_facts(iw, meta, ci):
     # do validation so that we're not stepping on toes
     if u'ci_verified' in iw.labels and not ci_verified:
         ci_verified_last_applied = iw.history.label_last_applied(u'ci_verified')
-        # NOTE this assumes iw.pullrequest_status_by_context is sorted, latest first
-        for ci_run in iw.pullrequest_status_by_context(ci.state_context):
-            ci_run_updated_at = pytz.utc.localize(strip_time_safely(ci_run[u'updated_at']))
-            if ci_run_updated_at <= ci_verified_last_applied:
-                last_ci_verified_run = ci.get_processed_run(ci_run)
-                if last_run_id == last_ci_verified_run[u'run_id']:
-                    ci_verified = True
-                break
+        if ci_verified_last_applied >= last_run[u'updated_at']:
+            ci_verified = True
 
     # no results means no notification required
     if len(ci_test_results) < 1:
