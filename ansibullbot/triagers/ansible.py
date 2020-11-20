@@ -2437,7 +2437,7 @@ class AnsibleTriage(DefaultTriager):
             return None
 
         logging.debug('Resume: read %r', resume_file)
-        with open(resume_file, 'rb') as f:
+        with io.open(resume_file, 'r', encoding='utf-8') as f:
             data = json.loads(f.read())
         return data
 
@@ -2450,5 +2450,5 @@ class AnsibleTriage(DefaultTriager):
             u'number': number
         }
         resume_file = os.path.join(self.cachedir_base, u'resume.json')
-        with open(resume_file, 'wb') as f:
-            f.write(json.dumps(data, indent=2))
+        with io.open(resume_file, 'w', encoding='utf-8') as f:
+            json_dump(data, f)
