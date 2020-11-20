@@ -1750,6 +1750,10 @@ class AnsibleTriage(DefaultTriager):
                 )
 
                 for k, v in self.issue_summaries[repo].items():
+                    if v[u'created_at'] is None:
+                        # issue is closed and was never processed
+                        continue
+
                     if v[u'created_at'] > self.repos[repo][u'since']:
                         numbers.append(k)
 
