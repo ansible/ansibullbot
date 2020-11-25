@@ -200,6 +200,7 @@ YAML_FILENAME_EXTENSIONS = ["", ".yml", ".yaml", ".json"]
 
 # sections in config file
 DEFAULTS = 'defaults'
+AZP = 'azp'
 
 DEFAULT_DEBUG = get_config(
     p,
@@ -310,6 +311,24 @@ DEFAULT_CI_PROVIDER = get_config(
     'ci_provider',
     '%s_CI_PROVIDER' % PROG_NAME.upper(),
     u'shippable',
+    value_type='string'
+)
+
+DEFAULT_AZP_ORG = get_config(
+    p,
+    AZP,
+    'org',
+    '%s_AZP_ORG' % PROG_NAME.upper(),
+    u'',
+    value_type='string'
+)
+
+DEFAULT_AZP_PROJECT = get_config(
+    p,
+    AZP,
+    'project',
+    '%s_AZP_PROJECT' % PROG_NAME.upper(),
+    u'',
     value_type='string'
 )
 

@@ -4,3 +4,6 @@ class LabelWafflingError(Exception):
 
 class RateLimitError(Exception):
     """Used to trigger the ratelimiting decorator"""
+
+class NoCIError(Exception):
+    """No CI results found"""

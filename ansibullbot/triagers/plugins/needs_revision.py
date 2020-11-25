@@ -3,6 +3,7 @@ import logging
 
 import pytz
 
+from ansibullbot.errors import NoCIError
 from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.timetools import strip_time_safely
 
@@ -86,13 +87,15 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
 
     maintainers += meta.get(u'component_maintainers', [])
 
-    ci_states = iw.pullrequest_status_by_context(ci.state_context)
-    if ci_states:
+    try:
+        ci_date = ci.get_last_full_run_date()
+    except NoCIError:
+        pass
+    else:
         has_ci = True
-        ci_date = ci.get_last_full_run_date(ci_states)
         if ci_date:
             ci_stale = (datetime.datetime.now() - ci_date).days > CI_STALE_DAYS
-        ci_state = ci_states[0].get('state')
+        ci_state = ci.state
 
     logging.info(u'ci_state == %s' % ci_state)
 
@@ -125,6 +128,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
             if ci_state == u'pending' and u'needs_revision' in iw.labels:
                 needs_revision = True
                 needs_rebase_msgs.append(u'keep label till test finished')
+        if ci_state is None:
+            needs_revision = True
+
+        # FIXME mstate == 'draft'
     else:
         user_reviews = {}
         shipits = {}  # key: actor, value: created_at
@@ -264,12 +271,13 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
     # keep track of who deleted their repo/branch
     has_remote_repo = bool(iw.pullrequest.head.repo)
 
-    # https://github.com/ansible/ansibullbot/issues/406
-    has_shippable_yaml = iw.pullrequest_filepath_exists(ci.required_file)
-    if not has_shippable_yaml:
-        needs_rebase = True
-        needs_rebase_msgs.append(u'missing shippable.yml')
-        has_shippable_yaml_notification = u'no_shippable_yaml' in bpcs
+    if ci.name == 'shippable':
+        # https://github.com/ansible/ansibullbot/issues/406
+        has_shippable_yaml = iw.pullrequest_filepath_exists(ci.required_file)
+        if not has_shippable_yaml:
+            needs_rebase = True
+            needs_rebase_msgs.append(u'missing shippable.yml')
+            has_shippable_yaml_notification = u'no_shippable_yaml' in bpcs
 
     # stale reviews
     if user_reviews:
@@ -445,25 +453,16 @@ def get_ci_run_facts(iw, meta, ci):
 
     needs_testresult_notification = False
 
-    ci_states = iw.pullrequest_status_by_context(ci.state_context)
-    if not ci_states:
+    if ci.last_run is None:
         return ci_facts
 
-    last_run = ci.get_processed_run(ci_states[0])
-    last_run_id = last_run[u'run_id']
-
     # filter by the last run id
-    ci_test_results, ci_verified = \
-        ci.get_test_results(
-            last_run_id,
-            usecache=True,
-            filter_paths=[u'/testresults/ansible-test-.*.json'],
-        )
+    ci_test_results, ci_verified = ci.get_test_results()
 
     # do validation so that we're not stepping on toes
     if u'ci_verified' in iw.labels and not ci_verified:
         ci_verified_last_applied = iw.history.label_last_applied(u'ci_verified')
-        if ci_verified_last_applied >= last_run[u'updated_at']:
+        if ci_verified_last_applied >= ci.last_run[u'updated_at']:
             ci_verified = True
 
     # no results means no notification required

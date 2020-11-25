@@ -14,6 +14,7 @@ import six
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text
 from ansibullbot.ci.base import BaseCI
+from ansibullbot.errors import NoCIError
 from ansibullbot.utils.file_tools import compress_gzip_file, read_gzip_json_file, write_gzip_json_file
 from ansibullbot.utils.net_tools import fetch, check_response
 from ansibullbot.utils.timetools import strip_time_safely
@@ -42,36 +43,51 @@ class ShippableNoData(Exception):
 
 class ShippableCI(BaseCI):
 
-    state_context = u'Shippable'
+    name = 'shippable'
 
-    def __init__(self, cachedir):
+    def __init__(self, cachedir, iw):
         self.cachedir = os.path.join(cachedir, 'shippable.runs')
+        self.last_run = None
+        self._runs = None
+        self._state = None
+        self.pr_number = iw.number
+
+        self.states = iw.pullrequest_status_by_context(u'Shippable')
+        if self.states:
+            self.last_run = self._get_processed_run(self.states[0])
+            self._state = self.last_run[u'state']
+
+    @property
+    def state(self):
+        return self._state
 
     @property
     def required_file(self):
         return u'shippable.yml'
 
-    def update(self):
-        success = False
-        while not success:
-            resp = requests.get(ANSIBLE_RUNS_URL)
-            try:
-                self._rawdata = resp.json()
-                success = True
-            except Exception as e:
-                logging.error(e)
-                time.sleep(2*60)
+    @property
+    def runs(self):
+        if self._runs is None:
+            success = False
+            while not success:
+                resp = requests.get(ANSIBLE_RUNS_URL)
+                try:
+                    self._rawdata = resp.json()
+                    success = True
+                except Exception as e:
+                    logging.error(e)
+                    time.sleep(2*60)
 
-        self.runs = [x for x in self._rawdata]
-        for idx, x in enumerate(self.runs):
-            for k, v in six.iteritems(x):
-                if k.endswith(u'At'):
-                    # 2017-02-07T00:27:06.482Z
-                    if v:
-                        self.runs[idx][k] = strip_time_safely(v)
+            self._runs = [x for x in self._rawdata]
+            for idx, x in enumerate(self.runs):
+                for k, v in six.iteritems(x):
+                    if k.endswith(u'At'):
+                        # 2017-02-07T00:27:06.482Z
+                        if v:
+                            self._runs[idx][k] = strip_time_safely(v)
+        return self._runs
 
-    @staticmethod
-    def _get_run_id_from_status(status):
+    def _get_run_id_from_status(self, status):
         target_url = status.get('target_url')
 
         if target_url is None:
@@ -96,20 +112,20 @@ class ShippableCI(BaseCI):
 
         return run_id
 
-    @classmethod
-    def get_processed_run(cls, run):
-        run = run.copy()
-        run_id = cls._get_run_id_from_status(run)
+    def _get_processed_run(self, status):
+        run = status.copy()
+        run_id = self._get_run_id_from_status(run)
 
         run[u'created_at'] = pytz.utc.localize(strip_time_safely(run.get(u'created_at')))
         run[u'updated_at'] = pytz.utc.localize(strip_time_safely(run.get(u'updated_at')))
         run[u'run_id'] = run_id
         return run
 
-    def get_last_completion_date(self, pr_number):
+    @property
+    def updated_at(self):
         nruns = []
         for x in self.runs:
-            if x[u'commitUrl'].endswith(u'/' + to_text(pr_number)):
+            if x[u'commitUrl'].endswith(u'/' + to_text(self.pr_number)):
                 nruns.append(x)
         if not nruns:
             return None
@@ -201,15 +217,16 @@ class ShippableCI(BaseCI):
 
         return run_data
 
-    def get_test_results(self, run_id, usecache=False, filter_paths=None):
+    def get_test_results(self):
         '''Fetch and munge the test results into proper json'''
         # statusCode(s):
         #   80: failed
         #   80: timeout
         #   30: success
         #   20: processing
-        if filter_paths:
-            fps = [re.compile(x) for x in filter_paths]
+        usecache = True
+        run_id = self.last_run[u'run_id']
+        fps = [re.compile(x) for x in [u'/testresults/ansible-test-.*.json']]
 
         # ci verified data map
         CVMAP = {}
@@ -253,14 +270,11 @@ class ShippableCI(BaseCI):
             jdata = [x for x in jdata if 'path' in x]
 
             for td in jdata:
-                if filter_paths:
-                    try:
-                        matches = [x.match(td[u'path']) for x in fps]
-                        matches = [x for x in matches if x]
-                    except Exception as e:
-                        logging.error(e)
-                else:
-                    matches = True
+                try:
+                    matches = [x.match(td[u'path']) for x in fps]
+                    matches = [x for x in matches if x]
+                except Exception as e:
+                    logging.error(e)
 
                 if not matches:
                     CVMAP[dkey][u'files_filtered'].append(td[u'path'])
@@ -303,7 +317,6 @@ class ShippableCI(BaseCI):
                         break
 
         # https://github.com/ansible/ansibullbot/issues/421
-        # FIXME is this hack for shippable or will this be common for other CI providers?
         for tr in results:
             if tr.get(u'contents', {}).get(u'failureDetails', []) or tr.get(u'contents', {}).get(u'results', []):
                 return results, ci_verified
@@ -369,11 +382,14 @@ class ShippableCI(BaseCI):
             if run_number:
                 self.cancel(run_number)
 
-    def get_last_full_run_date(self, ci_status):
+    def get_last_full_run_date(self):
         '''Map partial re-runs back to their last full run date'''
         # https://github.com/ansible/ansibullbot/issues/935
         # extract and unique the run ids from the target urls
-        runids = [self._get_run_id_from_status(x) for x in ci_status]
+        if not self.states:
+            raise NoCIError(u'No shippable states')
+
+        runids = [self._get_run_id_from_status(x) for x in self.states]
 
         # get rid of duplicates and sort
         runids = sorted(set(runids))

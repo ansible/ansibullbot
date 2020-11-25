@@ -533,8 +533,33 @@ class DefaultWrapper(object):
     @property
     @RateLimited
     def pullrequest_check_runs(self):
-        url = u'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
-        return self.github.get_request_gen(url)
+        if not os.path.isdir(self.full_cachedir):
+            os.makedirs(self.full_cachedir)
+
+        data = None
+        cache_file = os.path.join(self.full_cachedir, u'pr_check_runs.pickle')
+        if os.path.isfile(cache_file):
+            logging.info(u'load pullrequest_check runs cache')
+            with open(cache_file, 'rb') as f:
+                data = pickle_load(f)
+
+        if data is None or (data and data[0] < self.pullrequest.updated_at) or not data[1]:
+            if data:
+                logging.info(u'fetching pull request check runs: stale, previous from %s' % data[0])
+            else:
+                logging.info(u'fetching pull request check runs: stale, no previous data')
+            url = u'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
+            data = []
+            for resp_data in self.github.get_request_gen(url):
+                for check_runs_data in resp_data['check_runs']:
+                    data.append(check_runs_data)
+            data = (self.pullrequest.updated_at, data)
+
+            logging.info(u'writing %s' % cache_file)
+            with open(cache_file, 'wb') as f:
+                pickle_dump(data, f)
+
+        return data[1]
 
     @property
     @RateLimited

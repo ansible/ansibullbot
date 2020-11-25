@@ -15,7 +15,7 @@ def test0():
             u'needs_rebuild': False,
             u'ci_run_number': 0,
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI)
+        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI('', iw))
         assert not rbfacts[u'needs_rebuild']
         assert not rbfacts[u'needs_rebuild_all']
         assert rbfacts[u'admin_merge']
@@ -33,7 +33,7 @@ def test1():
             u'needs_rebuild': False,
             u'ci_run_number': 0
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI)
+        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI('', iw))
         assert not rbfacts[u'needs_rebuild']
         assert not rbfacts[u'needs_rebuild_all']
         assert not rbfacts[u'admin_merge']
@@ -51,7 +51,7 @@ def test2():
             u'needs_rebuild': False,
             u'ci_run_number': 0
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI)
+        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI('', iw))
         assert rbfacts[u'needs_rebuild']
         assert rbfacts[u'needs_rebuild_all']
         assert not rbfacts[u'admin_merge']
@@ -69,7 +69,7 @@ def test3():
             u'needs_rebuild': False,
             u'ci_run_number': 0
         }
-        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI)
+        rbfacts = get_rebuild_merge_facts(iw, meta, [u'superman'], ShippableCI('', iw))
         assert not rbfacts[u'needs_rebuild']
         assert not rbfacts[u'needs_rebuild_all']
         assert not rbfacts[u'admin_merge']
