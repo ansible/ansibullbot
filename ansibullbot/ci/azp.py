@@ -20,7 +20,7 @@ from ansibullbot.utils.timetools import strip_time_safely
 
 DETAILS_URL_RE = \
     re.compile(
-        r'https://dev\.azure\.com/(?P<organization>[^/]+)/(?P<project>[^/]+)/_build/results\?buildId=(?P<buildId>[0-9]+)&'
+        r'https://dev\.azure\.com/(?P<organization>[^/]+)/(?P<project>[^/]+)/_build/results\?buildId=(?P<buildId>[0-9]+)'
     )
 TIMELINE_URL_FMT = \
     u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/timeline/?api-version=6.0'
