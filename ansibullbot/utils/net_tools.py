@@ -14,7 +14,7 @@ def fetch(url, verb='get', **kwargs):
         logging.info(u'status code: %s' % resp.status_code)
         logging.info(u'reason: %s' % resp.reason)
 
-        if resp.status_code not in [200, 302, 400]:
+        if resp.status_code not in [200, 302, 400] + [204, 409]:
             logging.error(u'status code: %s' % resp.status_code)
             raise TryAgain
 

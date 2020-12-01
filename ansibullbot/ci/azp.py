@@ -26,6 +26,10 @@ TIMELINE_URL_FMT = \
     u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/timeline/?api-version=6.0'
 ARTIFACTS_URL_FMT = \
     u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/artifacts?api-version=6.0'
+TIMEOUT = 5  # seconds
+HEADERS = {
+    'Content-Type': 'application/json',
+}
 
 
 class AzurePipelinesCI(BaseCI):
@@ -40,6 +44,7 @@ class AzurePipelinesCI(BaseCI):
         self._jobs = None
         self._state = None
         self._updated_at = None
+        self._stages = None
         self._artifacts = None
         self.last_run = None
 
@@ -83,7 +88,8 @@ class AzurePipelinesCI(BaseCI):
                 check_response(resp)
                 data = resp.json()
                 self._jobs = [r for r in data['records'] if r['type'] == 'Job']
-                self._updated_at = strip_time_safely(data['lastChangedOn'])
+                self._updated_at = strip_time_safely(data['lastChangedOn'])  # FIXME
+                self._stages = [r for r in data['records'] if r['type'] == 'Stage']  # FIXME
             else:
                 self._jobs = []
         return self._jobs
@@ -115,10 +121,16 @@ class AzurePipelinesCI(BaseCI):
     @property
     def updated_at(self):
         if self._updated_at is None:
-            if not self.jobs:
-                return
+            self.jobs
 
         return self._updated_at
+
+    @property
+    def stages(self):
+        if self._stages is None:
+            self.jobs
+
+        return self._stages
 
     def get_last_full_run_date(self):
         # FIXME fix the method name, it makes sense for shippable but not for azp
@@ -236,13 +248,56 @@ class AzurePipelinesCI(BaseCI):
         return results, ci_verified
 
     def rebuild(self, run_id, failed_only=False):
-        raise NotImplementedError
+        if failed_only:
+            api_version = u'6.0-preview.1'
+            data = '{"state":"retry"}'
+            stages = [s['identifier'] for s in self.stages if s['result'] != 'succeeded']
+        else:
+            api_version = u'6.1-preview.1'
+            data = '{"state":"retry","forceRetryAllJobs":true}'
+            stages = [s['identifier'] for s in self.stages]
+
+        for stage in stages:
+            if stage == 'Summary':
+                continue
+            url = u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=%s' % (run_id, stage, api_version)
+
+            resp = fetch(
+                url,
+                verb='patch',
+                headers=HEADERS,
+                data=data,
+                timeout=TIMEOUT,
+                auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
+            )
+
+            if not resp:
+                raise Exception("Unable to PATCH %r to %r" % (data, url))
+            check_response(resp)
 
     def rebuild_failed(self, run_id):
         self.rebuild(run_id, failed_only=True)
 
     def cancel(self, run_id):
-        raise NotImplementedError
+        data = '{"state":"cancel"}'
+        for stage in [s['identifier'] for s in self.stages if s['state'] != 'completed']:
+            if stage == 'Summary':
+                continue
+            url = u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=6.0-preview.1' % (run_id, stage)
+
+            resp = fetch(
+                url,
+                verb='patch',
+                headers=HEADERS,
+                data=data,
+                timeout=TIMEOUT,
+                auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
+            )
+
+            if not resp:
+                raise Exception("Unable to PATCH %r to %r" % (data, url))
+            check_response(resp)
 
     def cancel_on_branch(self, branch):
-        raise NotImplementedError
+        # FIXME cancel() should be enough?
+        pass
