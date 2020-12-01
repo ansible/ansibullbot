@@ -6,14 +6,10 @@ def get_ci_facts(iw, ci):
     if not iw.is_pullrequest():
         return cifacts
 
-    ci_states = iw.pullrequest_status_by_context(ci.state_context)
-
-    if not ci_states:
+    if ci.last_run is None:
         return cifacts
 
-    last_run = ci.get_processed_run(ci_states[0])
-
-    return {'ci_run_number': last_run[u'run_id']}
+    return {'ci_run_number': ci.last_run[u'run_id']}
 
 
 def get_rebuild_facts(iw, meta, force=False):
@@ -91,17 +87,14 @@ def get_rebuild_merge_facts(iw, meta, core_team, ci):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    ci_states = iw.pullrequest_status_by_context(ci.state_context)
-    if not ci_states:
+    if ci.last_run is None:
         return rbmerge_meta
 
-    last_run = ci.get_processed_run(ci_states[0])
-
-    if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
+    if ci.last_run[u'state'] != u'pending' and ci.last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
         rbmerge_meta[u'needs_rebuild_all'] = True
 
-    if last_run[u'state'] == u'success' and last_run[u'created_at'] > last_command:
+    if ci.last_run[u'state'] == u'success' and ci.last_run[u'created_at'] > last_command:
         rbmerge_meta[u'admin_merge'] = True
 
     return rbmerge_meta
@@ -145,13 +138,10 @@ def get_rebuild_command_facts(iw, meta, ci):
     if lc and lc > last_command:
         return rbmerge_meta
 
-    ci_states = iw.pullrequest_status_by_context(ci.state_context)
-    if not ci_states:
+    if ci.last_run is None:
         return rbmerge_meta
 
-    last_run = ci.get_processed_run(ci_states[0])
-
-    if last_run[u'state'] != u'pending' and last_run[u'created_at'] < last_command:
+    if ci.last_run[u'state'] != u'pending' and ci.last_run[u'created_at'] < last_command:
         rbmerge_meta[u'needs_rebuild'] = True
         rbmerge_meta[meta_key] = True
 

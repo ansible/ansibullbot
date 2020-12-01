@@ -816,7 +816,7 @@ class IssueDatabase:
             rdata['base'] = {}
             rdata['_links'] = {}
             rdata['maintainer_can_modify'] = False
-            rdata['commits'] = len(issue['commits'])
+            # FIXME KeyError rdata['commits'] = len(issue['commits'])
             rdata['additions'] = 1
             rdata['deletions'] = 1
             rdata['changed_files'] = 1

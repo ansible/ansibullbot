@@ -200,6 +200,7 @@ YAML_FILENAME_EXTENSIONS = ["", ".yml", ".yaml", ".json"]
 
 # sections in config file
 DEFAULTS = 'defaults'
+AZP = 'azp'
 
 DEFAULT_DEBUG = get_config(
     p,
@@ -352,6 +353,45 @@ DEFAULT_PICKLE_ISSUES = get_config(
     value_type='boolean'
 )
 
+###########################################
+#   AZURE PIPELINES
+###########################################
+
+DEFAULT_AZP_ORG = get_config(
+    p,
+    AZP,
+    'org',
+    '%s_AZP_ORG' % PROG_NAME.upper(),
+    u'',
+    value_type='string'
+)
+
+DEFAULT_AZP_PROJECT = get_config(
+    p,
+    AZP,
+    'project',
+    '%s_AZP_PROJECT' % PROG_NAME.upper(),
+    u'',
+    value_type='string'
+)
+
+DEFAULT_AZP_USER = get_config(
+    p,
+    AZP,
+    'user',
+    '%s_AZP_USER' % PROG_NAME.upper(),
+    u'',
+    value_type='string'
+)
+
+DEFAULT_AZP_TOKEN = get_config(
+    p,
+    AZP,
+    'token',
+    '%s_AZP_TOKEN' % PROG_NAME.upper(),
+    u'',
+    value_type='string'
+)
 
 ###########################################
 #   METADATA RECEIVER

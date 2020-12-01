@@ -61,7 +61,7 @@ from ansibullbot.utils.webscraper import GithubWebScraper
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 
 from ansibullbot.decorators.github import RateLimited
-from ansibullbot.errors import LabelWafflingError
+from ansibullbot.errors import LabelWafflingError, NoCIError
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
@@ -204,17 +204,20 @@ class AnsibleTriage(DefaultTriager):
             val = getattr(args, x)
             setattr(self, x, val)
 
-        if self.ci  == u'shippable':
+        ci_provider = self.ci
+
+        if ci_provider == u'shippable':
             from ansibullbot.utils.shippable_api import ShippableCI as ci_class
-        elif self.ci == u'azp':
-            raise NotImplementedError(u'azp ci provider has not been implemented')
+        elif ci_provider == u'azp':
+            from ansibullbot.ci.azp import AzurePipelinesCI as ci_class
         else:
             raise ValueError(
                 u'Unknown CI provider specified in the config file: %s. Valid CI providers: %s' %
                 (C.DEFAULT_CI_PROVIDER, ', '.join(VALID_CI_PROVIDERS))
             )
 
-        self.last_run = None
+        self.ci = None
+        self.ci_class = ci_class
 
         self.github_url = C.DEFAULT_GITHUB_URL
         self.github_user = C.DEFAULT_GITHUB_USERNAME
@@ -299,10 +302,6 @@ class AnsibleTriage(DefaultTriager):
             use_galaxy=not self.args.ignore_galaxy
         )
 
-        logging.info('creating CI wrapper')
-        self.ci = ci_class(self.cachedir_base)
-        self.ci.update()
-
         # resume is just an overload for the start-at argument
         resume = self.get_resume()
         if resume:
@@ -359,9 +358,6 @@ class AnsibleTriage(DefaultTriager):
                 use_galaxy=not self.args.ignore_galaxy,
                 botmeta=self.botmeta,
             )
-
-            logging.info('updating CI run data')
-            self.ci.update()
 
         # is automerge allowed?
         self.automerge_on = False
@@ -451,6 +447,12 @@ class AnsibleTriage(DefaultTriager):
                         gitrepo=self.gitrepo,
                     )
 
+                    if iw.is_pullrequest():
+                        logging.info('creating CI wrapper')
+                        self.ci = self.ci_class(self.cachedir_base, iw)
+                    else:
+                        self.ci = None
+
                     if self.skip_no_update:
                         lmeta = self.load_meta(iw)
 
@@ -487,9 +489,8 @@ class AnsibleTriage(DefaultTriager):
                                     # last completion time on CI, we need
                                     # to reprocess because the CI status has
                                     # probabaly changed.
-                                    mua = strip_time_safely(lmeta[u'updated_at'])
-                                    lsr = self.ci.get_last_completion_date(iw.number)
-                                    if lsr and lsr > mua:
+                                    if self.ci.updated_at and \
+                                            self.ci.updated_at > strip_time_safely(lmeta[u'updated_at']):
                                         skip = False
 
                             # was this in the stale list?
@@ -1004,12 +1005,22 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/293
         if iw.is_pullrequest():
+            label = u'needs_ci'
+            if self.ci.name == 'azp' and not self.meta[u'has_ci']:
+                try:
+                    from ansibullbot.utils.shippable_api import ShippableCI
+                    shippable = ShippableCI(self.cachedir_base, iw)
+                    shippable.get_last_full_run_date()
+                    label = u'pre_azp'
+                except NoCIError:
+                    pass
+
             if not self.meta[u'has_ci']:
-                if u'needs_ci' not in iw.labels:
-                    actions.newlabel.append(u'needs_ci')
+                if label not in iw.labels:
+                    actions.newlabel.append(label)
             else:
-                if u'needs_ci' in iw.labels:
-                    actions.unlabel.append(u'needs_ci')
+                if label in iw.labels:
+                    actions.unlabel.append(label)
 
         # MODULE CATEGORY LABELS
         if not self.meta[u'is_bad_pr']:
@@ -1309,7 +1320,7 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/406
         if iw.is_pullrequest():
-            if not self.meta[u'has_shippable_yaml']:
+            if self.ci.name == 'shippable' and not self.meta[u'has_shippable_yaml']:
                 if not self.meta[u'has_shippable_yaml_notification']:
                     tvars = {u'submitter': iw.submitter}
                     comment = self.render_boilerplate(

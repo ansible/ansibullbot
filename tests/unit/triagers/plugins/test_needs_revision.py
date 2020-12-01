@@ -48,7 +48,8 @@ class AnsibleTriageMock(object):
 class ShippableCIMock(object):
     def __init__(self):
         self.required_file = u'shippable.yml'
-        self.state_context = u'Shippable'
+        self.state = None
+        self.name = u'shippable'
 
     def get_last_full_run_date(*args, **kwargs):
         return None

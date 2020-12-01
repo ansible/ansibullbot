@@ -73,6 +73,7 @@ class DefaultWrapper(object):
         self.full_cachedir = os.path.join(self.cachedir, u'issues', to_text(self.number))
         self._raw_data_issue = None
         self._renamed_files = None
+        self._pullrequest_check_runs = None
 
     @property
     def url(self):
@@ -533,8 +534,15 @@ class DefaultWrapper(object):
     @property
     @RateLimited
     def pullrequest_check_runs(self):
-        url = u'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
-        return self.github.get_request_gen(url)
+        if self._pullrequest_check_runs is None:
+            logging.info(u'fetching pull request check runs: stale, no previous data')
+            url = u'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
+            self._pullrequest_check_runs = []
+            for resp_data in self.github.get_request_gen(url):
+                for check_runs_data in resp_data['check_runs']:
+                    self._pullrequest_check_runs.append(check_runs_data)
+
+        return self._pullrequest_check_runs
 
     @property
     @RateLimited
