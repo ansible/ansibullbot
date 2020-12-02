@@ -3,7 +3,7 @@ ansibullbot_fqdn: ansibullbot.eng.ansible.com
 ansibullbot_ci_provider: azp
 ansibullbot_azp:
   org: ansible
-  project: 0bce9b4c-e7fb-4587-a45b-7d40c5f04699
+  project: fc938e26-c865-4d62-b731-a77bbe8bf5c4
   user: !vault |
     $ANSIBLE_VAULT;1.1;AES256
     39363938636134663933656164306261663630386439663239616439346365646562346430623538
