@@ -1754,7 +1754,7 @@ class AnsibleTriage(DefaultTriager):
                     numbers.append(number)
                     issuecache[number] = x
 
-                numbers = sorted(set(numbers))
+                numbers = sorted(set([int(n) for n in numbers]))
                 logging.info(
                     u'%s numbers after [api] since == %s' %
                     (len(numbers), since)
@@ -1768,7 +1768,7 @@ class AnsibleTriage(DefaultTriager):
                     if v[u'created_at'] > self.repos[repo][u'since']:
                         numbers.append(k)
 
-                numbers = sorted(set(numbers))
+                numbers = sorted(set([int(n) for n in numbers]))
                 logging.info(
                     u'%s numbers after [www] since == %s' %
                     (len(numbers), since)
