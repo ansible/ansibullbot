@@ -49,9 +49,13 @@ class AzurePipelinesCI(BaseCI):
         self.last_run = None
 
         if self.state and self.build_id and self.jobs:
-            created_at = min(
-                (strip_time_safely(j['startTime']) for j in self.jobs if j['startTime'] is not None)
-            )
+            try:
+                created_at = min(
+                    (strip_time_safely(j['startTime']) for j in self.jobs if j['startTime'] is not None)
+                )
+            except ValueError:
+                created_at = self.updated_at
+
             self.last_run = {
                 'state': self.state,
                 'created_at': created_at,
