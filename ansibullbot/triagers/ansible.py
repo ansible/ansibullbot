@@ -1006,14 +1006,18 @@ class AnsibleTriage(DefaultTriager):
         # https://github.com/ansible/ansibullbot/issues/293
         if iw.is_pullrequest():
             label = u'needs_ci'
-            if self.ci.name == 'azp' and not self.meta[u'has_ci']:
-                try:
-                    from ansibullbot.utils.shippable_api import ShippableCI
-                    shippable = ShippableCI(self.cachedir_base, iw)
-                    shippable.get_last_full_run_date()
-                    label = u'pre_azp'
-                except NoCIError:
-                    pass
+            if self.ci.name == 'azp':
+                if not self.meta[u'has_ci']:
+                    try:
+                        from ansibullbot.utils.shippable_api import ShippableCI
+                        shippable = ShippableCI(self.cachedir_base, iw)
+                        shippable.get_last_full_run_date()
+                        label = u'pre_azp'
+                    except NoCIError:
+                        pass
+                else:
+                    if u'pre_azp' in iw.labels:
+                        actions.unlabel.append(u'pre_azp')
 
             if not self.meta[u'has_ci']:
                 if label not in iw.labels:
