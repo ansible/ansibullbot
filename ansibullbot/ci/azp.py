@@ -252,7 +252,7 @@ class AzurePipelinesCI(BaseCI):
                         'path': None,
                     })
 
-        if ci_verified and len(self.failed_jobs) != failed_jobs_with_artifact:
+        if ci_verified and len(failed_jobs) != failed_jobs_with_artifact:
             ci_verified = False
 
         return results, ci_verified
