@@ -229,10 +229,12 @@ class AzurePipelinesCI(BaseCI):
 
         results = []
         ci_verified = True
+        failed_jobs_with_artifact = 0
         for job in failed_jobs:
             for artifact in self.artifacts:
                 if job['id'] != artifact['source']:
                     continue
+                failed_jobs_with_artifact += 1
                 for artifact_json in self.get_artifact(artifact['name'], artifact['resource']['downloadUrl']):
                     if not artifact_json['verified']:
                         ci_verified = False
@@ -249,6 +251,9 @@ class AzurePipelinesCI(BaseCI):
                         'job_id': hashlib.md5(to_bytes(result_data)).hexdigest(),
                         'path': None,
                     })
+
+        if ci_verified and len(failed_jobs) != failed_jobs_with_artifact:
+            ci_verified = False
 
         return results, ci_verified
 
