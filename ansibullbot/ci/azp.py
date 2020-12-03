@@ -47,18 +47,19 @@ class AzurePipelinesCI(BaseCI):
         self._stages = None
         self._artifacts = None
         self.last_run = None
+        self.created_at = None
 
         if self.state and self.build_id and self.jobs:
             try:
-                created_at = min(
+                self.created_at = min(
                     (strip_time_safely(j['startTime']) for j in self.jobs if j['startTime'] is not None)
                 )
             except ValueError:
-                created_at = self.updated_at
+                self.created_at = self.updated_at
 
             self.last_run = {
                 'state': self.state,
-                'created_at': created_at,
+                'created_at': self.created_at,
                 'updated_at': pytz.utc.localize(self.updated_at),
                 'run_id': self.build_id,
             }
@@ -143,9 +144,9 @@ class AzurePipelinesCI(BaseCI):
         # FIXME pending?
         #if self.state == u'pending':
         #    raise NoCIError
-        return min(
-            (strip_time_safely(j['startTime']) for j in self.jobs if j['startTime'] is not None)
-        )
+        if self.created_at is None:
+            raise NoCIError
+        return self.created_at
 
     @property
     def artifacts(self):
