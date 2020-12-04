@@ -59,7 +59,7 @@ class AzurePipelinesCI(BaseCI):
 
             self.last_run = {
                 'state': self.state,
-                'created_at': self.created_at,
+                'created_at': pytz.utc.localize(self.created_at),
                 'updated_at': pytz.utc.localize(self.updated_at),
                 'run_id': self.build_id,
             }
