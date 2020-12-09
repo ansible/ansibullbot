@@ -1,6 +1,6 @@
 ansibullbot_fqdn: ansibullbot-dev.eng.ansible.com
-caddy_force_update: no
-ansibullbot_sentry_server_name: penguinsucker
+ansibullbot_sentry_server_name: ansibullbot-dev
+ansibullbot_sentry_env: dev
 ansibullbot_options:
   - collect_only
   - daemonize
