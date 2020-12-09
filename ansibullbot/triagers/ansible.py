@@ -101,9 +101,11 @@ from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 VALID_CI_PROVIDERS = frozenset((u'shippable', u'azp'))
 
 
+# NOTE if we want to support more repos for the ansible triager
+# using --repos and/or --skiprepo all occurrences of hardcoded
+# "ansible/ansible" need to be fixed
 REPOS = [
     u'ansible/ansible',
-    u'ansible/ansible-azp',
 ]
 
 
