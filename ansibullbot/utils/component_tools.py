@@ -109,16 +109,13 @@ class AnsibleComponentMatcher(object):
     botmeta = {}
     GALAXY_FILES = {}
     GALAXY_MANIFESTS = {}
-    INDEX = {}
     REPO = u'https://github.com/ansible/ansible'
     STOPWORDS = [u'ansible', u'core', u'plugin']
     STOPCHARS = [u'"', "'", u'(', u')', u'?', u'*', u'`', u',', u':', u'?', u'-']
     BLACKLIST = [u'new module', u'new modules']
-    FILE_NAMES = []
     MODULES = OrderedDict()
     MODULE_NAMES = []
     MODULE_NAMESPACE_DIRECTORIES = []
-    PREVIOUS_FILES = []
 
     # FIXME: THESE NEED TO GO INTO botmeta
     # ALSO SEE search_by_regex_generic ...
@@ -220,11 +217,10 @@ class AnsibleComponentMatcher(object):
         self.strategy = None
         self.strategies = []
 
-        self.indexed_at = False
         self.updated_at = None
-        self.update(refresh_botmeta=False)
+        self.update()
 
-    def update(self, email_cache=None, refresh_botmeta=True, usecache=False, use_galaxy=True, botmeta=None):
+    def update(self, email_cache=None, usecache=False, use_galaxy=True, botmeta=None):
         if botmeta is not None:
             self.botmeta = botmeta
         if self.GQT is not None and use_galaxy:
@@ -232,11 +228,10 @@ class AnsibleComponentMatcher(object):
         if email_cache:
             self.email_cache = email_cache
         self.index_files()
-        self.indexed_at = datetime.datetime.now()
         self.cache_keywords()
         self.updated_at = datetime.datetime.now()
 
-    def get_module_meta(self, checkoutdir, filename1, filename2):
+    def get_module_meta(self, checkoutdir, filename):
 
         if self.cachedir:
             cdir = os.path.join(self.cachedir, 'module_extractor_cache')
@@ -244,21 +239,21 @@ class AnsibleComponentMatcher(object):
             cdir = '/tmp/ansibot_module_extractor_cache'
         if not os.path.exists(cdir) and self.usecache:
             os.makedirs(cdir)
-        cfile = os.path.join(cdir, '%s.json' % os.path.basename(filename1))
+        cfile = os.path.join(cdir, '%s.json' % os.path.basename(filename))
 
         bmeta = None
         if not os.path.exists(cfile) or not self.usecache:
             bmeta = {}
-            efile = os.path.join(checkoutdir, filename1)
+            efile = os.path.join(checkoutdir, filename)
             if not os.path.exists(efile):
-                fdata = self.gitrepo.get_file_content(filename1, follow=True)
+                fdata = self.gitrepo.get_file_content(filename, follow=True)
                 ME = ModuleExtractor(None, filedata=fdata, email_cache=self.email_cache)
             else:
-                ME = ModuleExtractor(os.path.join(checkoutdir, filename1), email_cache=self.email_cache)
-            if filename1 not in self.botmeta[u'files']:
+                ME = ModuleExtractor(os.path.join(checkoutdir, filename), email_cache=self.email_cache)
+            if filename not in self.botmeta[u'files']:
                 bmeta = {
-                    u'deprecated': os.path.basename(filename1).startswith(u'_'),
-                    u'labels': os.path.dirname(filename1).split(u'/'),
+                    u'deprecated': os.path.basename(filename).startswith(u'_'),
+                    u'labels': os.path.dirname(filename).split(u'/'),
                     u'authors': ME.authors,
                     u'maintainers': ME.authors,
                     u'maintainers_keys': [],
@@ -267,7 +262,7 @@ class AnsibleComponentMatcher(object):
                     u'support': u'community',
                 }
             else:
-                bmeta = self.botmeta[u'files'][filename1].copy()
+                bmeta = self.botmeta[u'files'][filename].copy()
                 if u'notified' not in bmeta:
                     bmeta[u'notified'] = []
                 if u'maintainers' not in bmeta:
@@ -284,8 +279,8 @@ class AnsibleComponentMatcher(object):
                     if x not in bmeta[u'notified']:
                         bmeta[u'notified'].append(x)
                 if not bmeta.get(u'labels'):
-                    bmeta[u'labels'] = os.path.dirname(filename1).split(u'/')
-                bmeta[u'deprecated'] = os.path.basename(filename1).startswith(u'_')
+                    bmeta[u'labels'] = os.path.dirname(filename).split(u'/')
+                bmeta[u'deprecated'] = os.path.basename(filename).startswith(u'_')
 
             # clean out the ignorees
             if u'ignored' in bmeta:
@@ -400,7 +395,8 @@ class AnsibleComponentMatcher(object):
             else:
                 _k = k
             logging.debug('extract %s' % k)
-            fmeta = self.get_module_meta(checkoutdir, k, _k)
+            # FIXME fmeta = self.get_module_meta(checkoutdir, k, _k)
+            fmeta = self.get_module_meta(checkoutdir, k)
             if k in self.botmeta[u'files']:
                 self.botmeta['files'][k].update(fmeta)
             else:
@@ -1394,7 +1390,6 @@ class AnsibleComponentMatcher(object):
                     meta[u'collection_scm'] = manifest[u'issues']
             return meta
 
-        populated = False
         filenames = [filename, os.path.splitext(filename)[0]]
 
         # powershell meta is in the python file
@@ -1458,8 +1453,6 @@ class AnsibleComponentMatcher(object):
             # only "deprecate" exact matches
             if u'deprecated' in fdata and entry == filename:
                 meta[u'deprecated'] = fdata[u'deprecated']
-
-            populated = True
 
         # walk up the tree for more meta
         paths = filename.split(u'/')

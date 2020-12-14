@@ -368,25 +368,6 @@ def remove_markdown_comments(rawtext):
     return cleaned
 
 
-def _remove_markdown_comments(rawtext):
-    # Get rid of the comment blocks from the markdown template
-    # <!--- ---> OR <!-- -->
-    cleaned = []
-    inphase = None
-    for idx, x in enumerate(rawtext):
-        if rawtext[idx:(idx+5)] == u'<!---':
-            inphase = True
-        if inphase and idx <= 5:
-            continue
-        if inphase and rawtext[(idx-3):idx] == u'-->':
-            inphase = False
-            continue
-        if inphase:
-            continue
-        cleaned.append(x)
-    return u''.join(cleaned)
-
-
 def extract_pr_number_from_comment(rawtext):
     # "resolved_by_pr 5136" --> 5136
     # "resolved_by_pr #5136" --> 5136
@@ -540,12 +521,6 @@ def get_template_data(iw):
 
     # pull out the section names from the tempalte
     tf_sections = extract_template_sections(tf_content, header=TEMPLATE_HEADER)
-
-    # what is required?
-    iw._required_template_sections = [
-        x.lower() for x in tf_sections.keys()
-        if tf_sections[x][u'required']
-    ]
 
     # extract ...
     template_data = \

@@ -144,8 +144,6 @@ class AnsibleTriage(DefaultTriager):
 
     CLOSING_LABELS = ['bot_closed']
 
-    COMPONENTS = []
-
     ISSUE_TYPES = {
         u'bug report': u'bug',
         u'bugfix pull request': u'bug',
@@ -393,7 +391,6 @@ class AnsibleTriage(DefaultTriager):
 
                 icount += 1
 
-                self.COMPONENTS = []
                 self.meta = {}
                 number = issue.number
                 self.set_resume(item[0], number)
@@ -779,7 +776,6 @@ class AnsibleTriage(DefaultTriager):
                 pr_type = type_to_branch_prefix[
                     iw.template_data.get(u'issue type')
                 ]
-                pr_backup_branch = 'pull/{:d}/head'.format(pr_number)
                 pr_recovered_branch = (
                     'recovered-{pr_type}/{pr_number:d}-{pr_topic}'.
                     format(
@@ -2369,11 +2365,6 @@ class AnsibleTriage(DefaultTriager):
         if actions.cancel_ci_branch:
             branch = iw.pullrequest.head.repo
             self.ci.cancel_on_branch(branch)
-
-    def render_comment(self, boilerplate=None):
-        """Renders templates into comments using the boilerplate as filename"""
-        template = environment.get_template(u'%s.j2' % boilerplate)
-        return template.render()
 
     @classmethod
     def create_parser(cls):

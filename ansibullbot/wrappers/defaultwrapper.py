@@ -67,23 +67,15 @@ class DefaultWrapper(object):
         self._pr_reviews = False
         self._repo_full_name = False
         self._template_data = None
-        self._required_template_sections = []
         self.pull_raw = None
         self.pr_files = None
         self.full_cachedir = os.path.join(self.cachedir, u'issues', to_text(self.number))
-        self._raw_data_issue = None
         self._renamed_files = None
         self._pullrequest_check_runs = None
 
     @property
     def url(self):
         return self.instance.url
-
-    @property
-    def raw_data_issue(self):
-        if self._raw_data_issue is None:
-            self._raw_data_issue = self.load_update_fetch(u'raw_data', obj=u'issue')
-        return self._raw_data_issue
 
     @property
     def comments(self):
@@ -162,10 +154,6 @@ class DefaultWrapper(object):
     def get_files(self):
         self.files = self.load_update_fetch(u'files')
         return self.files
-
-    def get_review_comments(self):
-        self.review_comments = self.load_update_fetch(u'review_comments')
-        return self.review_comments
 
     def _get_timeline(self):
         '''Use python-requests instead of pygithub'''
@@ -327,14 +315,6 @@ class DefaultWrapper(object):
                     pickle_dump(edata, f)
 
         return events
-
-    @property
-    def missing_template_sections(self):
-        td = self.template_data
-        expected_keys = [x.lower() for x in self._required_template_sections]
-        missing = [x for x in expected_keys
-                   if x not in td or not td[x]]
-        return missing
 
     @RateLimited
     def get_labels(self):
