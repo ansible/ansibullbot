@@ -34,7 +34,8 @@ class TestIdempotence:
                 #'--id=2',
                 #'--id=1',
                 '--force',
-                '--ignore_galaxy'
+                '--ignore_galaxy',
+                '--ci=shippable',
             ]
 
             # create a bug report
