@@ -42,7 +42,7 @@ from ansibullbot._text_compat import to_bytes, to_text
 
 import ansibullbot.constants as C
 
-from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, environment
+from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 

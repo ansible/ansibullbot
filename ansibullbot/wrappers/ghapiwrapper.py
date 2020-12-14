@@ -3,14 +3,11 @@ from __future__ import print_function
 import json
 import logging
 import os
-import re
 import requests
 import shutil
 from datetime import datetime
 
 import ansibullbot.constants as C
-
-from bs4 import BeautifulSoup
 
 from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
