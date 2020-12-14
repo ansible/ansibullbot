@@ -469,9 +469,7 @@ def get_ci_run_facts(iw, meta, ci):
     if len(ci_test_results) < 1:
         needs_testresult_notification = False
     else:
-        s_bpcs = iw.history.get_boilerplate_comments_content(
-            bfilter='shippable_test_result'
-        )
+        s_bpcs = iw.history.get_boilerplate_comments_content()
         if s_bpcs:
             # was this specific result shown?
             job_ids = [x[u'job_id'] for x in ci_test_results]

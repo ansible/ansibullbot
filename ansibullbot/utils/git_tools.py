@@ -40,7 +40,7 @@ class GitRepoWrapper(object):
         if repo:
             self.update(force=True)
 
-    def exists(self, filename, loose=False):
+    def exists(self, filename):
         return filename in self.files
 
     @property

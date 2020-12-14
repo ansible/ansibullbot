@@ -329,7 +329,7 @@ class AnsibleVersionIndexer(object):
 
         return aversion
 
-    def ansible_version_by_commit(self, commithash, config=None):
+    def ansible_version_by_commit(self, commithash):
 
         # $ git branch --contains e620fed755a9c7e07df846b7deb32bbbf3164ac7
         # * devel

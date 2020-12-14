@@ -194,22 +194,10 @@ def load_config_file():
 
 p, CONFIG_FILE = load_config_file()
 
-# check all of these extensions when looking for yaml files for things like
-# group variables -- really anything we can load
-YAML_FILENAME_EXTENSIONS = ["", ".yml", ".yaml", ".json"]
-
 # sections in config file
 DEFAULTS = 'defaults'
 AZP = 'azp'
 
-DEFAULT_DEBUG = get_config(
-    p,
-    DEFAULTS,
-    'debug',
-    '%s_DEBUG' % PROG_NAME.upper(),
-    False,
-    value_type='string'
-)
 
 # who dat?
 DEFAULT_BOT_NAMES = get_config(

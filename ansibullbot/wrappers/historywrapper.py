@@ -479,9 +479,7 @@ class HistoryWrapper(object):
 
         return boilerplates
 
-    def get_boilerplate_comments_content(self, bfilter=None):
-        # FIXME bfilter not used but a caller passes it in
-        # in ansibullbot/triagers/plugins/needs_revision.py
+    def get_boilerplate_comments_content(self):
         bpcs = self.get_boilerplate_comments()
         bpcs = [x[-1] for x in bpcs]
         return bpcs
