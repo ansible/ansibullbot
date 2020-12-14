@@ -42,7 +42,8 @@ class TestSuperShipit:
                 '--no_since',
                 '--force',
                 '--botmetafile=%s' % bmfile,
-                '--ignore_galaxy'
+                '--ignore_galaxy',
+                '--ci=shippable',
             ]
 
             # create a bug report
