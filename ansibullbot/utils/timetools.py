@@ -7,12 +7,12 @@ from ansibullbot._text_compat import to_text
 def strip_time_safely(tstring):
     """Try various formats to strip the time from a string"""
     tsformats = (
-        u'%Y-%m-%dT%H:%M:%SZ',
-        u'%Y-%m-%dT%H:%M:%S.%f',
-        u'%Y-%m-%dT%H:%M:%S',
-        u'%Y-%m-%dT%H:%M:%S.%fZ',
-        u'%a %b %d %H:%M:%S %Y',
-        u'%Y-%m-%d',
+        '%Y-%m-%dT%H:%M:%SZ',
+        '%Y-%m-%dT%H:%M:%S.%f',
+        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%dT%H:%M:%S.%fZ',
+        '%a %b %d %H:%M:%S %Y',
+        '%Y-%m-%d',
     )
 
     for tsformat in tsformats:
@@ -20,7 +20,7 @@ def strip_time_safely(tstring):
             return datetime.datetime.strptime(tstring, tsformat)
         except ValueError as e:
             text_e = to_text(e)
-            if u'unconverted data remains' in text_e and tstring.endswith('Z'):
+            if 'unconverted data remains' in text_e and tstring.endswith('Z'):
                 # '2020-11-10T07:39:58.6833333Z'
                 new_tstring = tstring[:-len(text_e.split(':')[-1].strip())]+'Z'
                 try:
@@ -28,5 +28,5 @@ def strip_time_safely(tstring):
                 except ValueError:
                     pass
 
-    logging.error(u'{} could not be stripped'.format(tstring))
-    raise Exception(u'{} could not be stripped'.format(tstring))
+    logging.error(f'{tstring} could not be stripped')
+    raise Exception(f'{tstring} could not be stripped')

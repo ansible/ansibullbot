@@ -1,12 +1,6 @@
-#!/usr/bin/env python
-
 import shutil
 import tempfile
 from unittest import TestCase
-
-import six
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
 
 import pytest
 
@@ -19,12 +13,12 @@ from ansibullbot.utils.systemtools import run_command
 class TestMakePrefixes(TestCase):
 
     def test_simple_path_is_split_correctly(self):
-        fp = u'lib/ansible/foo/bar'
+        fp = 'lib/ansible/foo/bar'
         prefixes = make_prefixes(fp)
         assert len(prefixes) == len(fp)
         assert fp in prefixes
         assert prefixes[0] == fp
-        assert prefixes[-1] == u'l'
+        assert prefixes[-1] == 'l'
 
 
 class GitShallowRepo(GitRepoWrapper):
@@ -32,10 +26,10 @@ class GitShallowRepo(GitRepoWrapper):
 
     def create_checkout(self):
         """checkout ansible"""
-        cmd = u"git clone --depth=1 --single-branch %s %s" % (self.repo, self.checkoutdir)
+        cmd = "git clone --depth=1 --single-branch %s %s" % (self.repo, self.checkoutdir)
         (rc, so, se) = run_command(cmd)
         if rc:
-            raise Exception(u"Fail to execute '{}: {} ({}, {})'".format(cmd, rc, so, se))
+            raise Exception(f"Fail to execute '{cmd}: {rc} ({so}, {se})'")
 
     def update_checkout(self):
         return False
@@ -60,143 +54,143 @@ class TestComponentMatcher(TestCase):
     @pytest.mark.skip(reason="FIXME")    
     def test_get_meta_for_file_wildcard(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'lib/ansible/plugins/action/junos': {
-                    u'maintainers': [u'gundalow'],
-                    u'labels': [u'networking'],
+            'files': {
+                'lib/ansible/plugins/action/junos': {
+                    'maintainers': ['gundalow'],
+                    'labels': ['networking'],
                 }
             }
         }
-        result = self.component_matcher.get_meta_for_file(u'lib/ansible/plugins/action/junos_config.py')
-        self.assertEqual(result[u'labels'], [u'networking'])
-        self.assertEqual(result[u'maintainers'], [u'gundalow'])
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/action/junos_config.py')
+        self.assertEqual(result['labels'], ['networking'])
+        self.assertEqual(result['maintainers'], ['gundalow'])
 
     @pytest.mark.skip(reason="FIXME")    
     def test_get_meta_for_file_wildcard_multiple(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'lib/ansible/plugins/action/junos_config.py': {
-                    u'maintainers': [u'privateip'],
-                    u'labels': [u'config'],
-                    u'notified': [u'jctanner'],
+            'files': {
+                'lib/ansible/plugins/action/junos_config.py': {
+                    'maintainers': ['privateip'],
+                    'labels': ['config'],
+                    'notified': ['jctanner'],
                 },
-                u'lib/ansible/plugins/action/junos': {
-                    u'maintainers': [u'gundalow'],
-                    u'labels': [u'networking'],
-                    u'notified': [u'mkrizek'],
+                'lib/ansible/plugins/action/junos': {
+                    'maintainers': ['gundalow'],
+                    'labels': ['networking'],
+                    'notified': ['mkrizek'],
                 }
             }
         }
-        result = self.component_matcher.get_meta_for_file(u'lib/ansible/plugins/action/junos_config.py')
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/action/junos_config.py')
 
-        assert sorted(result[u'notify']) == sorted([u'gundalow', u'mkrizek', u'jctanner', u'privateip'])
-        assert sorted(result[u'labels']) == sorted([u'networking', u'config'])
-        assert sorted(result[u'maintainers']) == sorted([u'gundalow', u'privateip'])
+        assert sorted(result['notify']) == sorted(['gundalow', 'mkrizek', 'jctanner', 'privateip'])
+        assert sorted(result['labels']) == sorted(['networking', 'config'])
+        assert sorted(result['maintainers']) == sorted(['gundalow', 'privateip'])
 
     @pytest.mark.skip(reason="FIXME")    
     def test_get_meta_for_file_pyfile(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'lib/ansible/modules/packaging/os/yum.py': {
-                    u'ignored': [u'verm666'],  # 'verm666' is also listed as an author of yum module
-                    u'maintainers': [u'maxamillion', u'verm666'],
+            'files': {
+                'lib/ansible/modules/packaging/os/yum.py': {
+                    'ignored': ['verm666'],  # 'verm666' is also listed as an author of yum module
+                    'maintainers': ['maxamillion', 'verm666'],
                 }
             }
         }
-        result = self.component_matcher.get_meta_for_file(u'lib/ansible/modules/packaging/os/yum.py')
-        assert sorted(result[u'maintainers']) == sorted([
-            u'Akasurde',
-            u'ansible',
-            u'berenddeschouwer',
-            u'kustodian',
-            u'maxamillion',
+        result = self.component_matcher.get_meta_for_file('lib/ansible/modules/packaging/os/yum.py')
+        assert sorted(result['maintainers']) == sorted([
+            'Akasurde',
+            'ansible',
+            'berenddeschouwer',
+            'kustodian',
+            'maxamillion',
         ])
-        assert sorted(result[u'notify']) == sorted([
-            u'Akasurde',
-            u'ansible',
-            u'berenddeschouwer',
+        assert sorted(result['notify']) == sorted([
+            'Akasurde',
+            'ansible',
+            'berenddeschouwer',
             # u'kustodian',  added in botmeta, not authors, to be merged later
-            u'maxamillion',
+            'maxamillion',
         ])
 
     def test_get_meta_support_core_from_module(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'lib/ansible/modules/packaging/os/yum.py': {
-                    u'ignored': [u'verm666'],  # 'verm666' is also listed as an author of yum module
-                    u'maintainers': [u'maxamillion', u'verm666'],
+            'files': {
+                'lib/ansible/modules/packaging/os/yum.py': {
+                    'ignored': ['verm666'],  # 'verm666' is also listed as an author of yum module
+                    'maintainers': ['maxamillion', 'verm666'],
                 }
             }
         }
-        result = self.component_matcher.get_meta_for_file(u'lib/ansible/modules/packaging/os/yum.py')
-        assert result[u'support'] == u'core'
+        result = self.component_matcher.get_meta_for_file('lib/ansible/modules/packaging/os/yum.py')
+        assert result['support'] == 'core'
 
     def test_get_meta_support_core_filter_plugin(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'lib/ansible/plugins/filter/': {
-                    u'support': u'community',
-                    u'supported_by': u'community',
+            'files': {
+                'lib/ansible/plugins/filter/': {
+                    'support': 'community',
+                    'supported_by': 'community',
                 },
-                u'lib/ansible/plugins/filter/core.py': {
-                    u'support': u'core',
-                    u'supported_by': u'core'
+                'lib/ansible/plugins/filter/core.py': {
+                    'support': 'core',
+                    'supported_by': 'core'
                 },
             }
         }
-        result = self.component_matcher.get_meta_for_file(u'lib/ansible/plugins/filter/core.py')
-        assert result[u'support'] == u'core'
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/filter/core.py')
+        assert result['support'] == 'core'
 
     def test_get_meta_support_new_filter_plugin(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'lib/ansible/plugins/filter/': {
-                    u'support': u'community',
-                    u'supported_by': u'community',
+            'files': {
+                'lib/ansible/plugins/filter/': {
+                    'support': 'community',
+                    'supported_by': 'community',
                 },
-                u'lib/ansible/plugins/filter/core.py': {
-                    u'support': u'core',
-                    u'supported_by': u'core'
+                'lib/ansible/plugins/filter/core.py': {
+                    'support': 'core',
+                    'supported_by': 'core'
                 },
             }
         }
-        result = self.component_matcher.get_meta_for_file(u'lib/ansible/plugins/filter/new.py')
-        assert result[u'support'] == u'community'
+        result = self.component_matcher.get_meta_for_file('lib/ansible/plugins/filter/new.py')
+        assert result['support'] == 'community'
 
     @pytest.mark.skip(reason="FIXME")
     def test_get_meta_for_file_powershell(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'lib/ansible/modules/windows/win_ping.py': {
-                    u'maintainers': [u'jborean93'],
-                    u'labels': [u'windoez'],
+            'files': {
+                'lib/ansible/modules/windows/win_ping.py': {
+                    'maintainers': ['jborean93'],
+                    'labels': ['windoez'],
                 }
             }
         }
-        result = self.component_matcher.get_meta_for_file(u'lib/ansible/modules/windows/win_ping.ps1')
-        assert result[u'labels'] == [u'windoez']
+        result = self.component_matcher.get_meta_for_file('lib/ansible/modules/windows/win_ping.ps1')
+        assert result['labels'] == ['windoez']
         #import epdb; epdb.st()
         #expected_maintainers = sorted([u'cchurch', u'jborean93'])
-        expected_maintainers = sorted([u'jborean93'])
-        assert sorted(result[u'maintainers']) == expected_maintainers
+        expected_maintainers = sorted(['jborean93'])
+        assert sorted(result['maintainers']) == expected_maintainers
 
     def test_reduce_filepaths(self):
 
-        filepaths = [u'commands/command.py', u'lib/ansible/modules/commands/command.py']
+        filepaths = ['commands/command.py', 'lib/ansible/modules/commands/command.py']
         reduced = self.component_matcher.reduce_filepaths(filepaths)
-        self.assertEqual(reduced, [u'lib/ansible/modules/commands/command.py'])
+        self.assertEqual(reduced, ['lib/ansible/modules/commands/command.py'])
 
     @pytest.mark.skip(reason="FIXME")
     def test_search_by_filepath(self):
 
         COMPONENTS = {
-            u'/usr/lib/python2.7/site-packages/ansible/modules/core/packaging/os/rhn_register.py': [
-                u'lib/ansible/modules/packaging/os/rhn_register.py',
-                u'lib/ansible/modules/packaging/os/rhn_register.py'
+            '/usr/lib/python2.7/site-packages/ansible/modules/core/packaging/os/rhn_register.py': [
+                'lib/ansible/modules/packaging/os/rhn_register.py',
+                'lib/ansible/modules/packaging/os/rhn_register.py'
             ],
-            u'module/network/ios/ios_facts': [
-                u'lib/ansible/modules/network/ios/ios_facts.py',
-                u'lib/ansible/modules/network/ios/ios_facts.py'
+            'module/network/ios/ios_facts': [
+                'lib/ansible/modules/network/ios/ios_facts.py',
+                'lib/ansible/modules/network/ios/ios_facts.py'
             ],
             # Doesn't work, lib/ansible/modules/network/nso/nso_query.py is
             # found
@@ -204,88 +198,88 @@ class TestComponentMatcher(TestCase):
             #    'lib/ansible/plugins/filter/json_query.py',
             #    'lib/ansible/plugins/filter/json_query.py'
             #],
-            u'module_common.py': [
-                u'lib/ansible/executor/module_common.py',
-                u'lib/ansible/executor/module_common.py'
+            'module_common.py': [
+                'lib/ansible/executor/module_common.py',
+                'lib/ansible/executor/module_common.py'
             ],
-            u'/network/dellos6/dellos6_config': [
-                u'lib/ansible/modules/network/dellos6/dellos6_config.py',
-                u'lib/ansible/modules/network/dellos6/dellos6_config.py'
+            '/network/dellos6/dellos6_config': [
+                'lib/ansible/modules/network/dellos6/dellos6_config.py',
+                'lib/ansible/modules/network/dellos6/dellos6_config.py'
             ],
-            u'module_utils/vmware': [
-                u'lib/ansible/module_utils/vmware.py',
-                u'lib/ansible/module_utils/vmware.py'
+            'module_utils/vmware': [
+                'lib/ansible/module_utils/vmware.py',
+                'lib/ansible/module_utils/vmware.py'
             ],
-            u'`azure_rm.py`': [
-                u'contrib/inventory/azure_rm.py',
-                u'contrib/inventory/azure_rm.py'
+            '`azure_rm.py`': [
+                'contrib/inventory/azure_rm.py',
+                'contrib/inventory/azure_rm.py'
             ],
-            u'vmware_inventory': [
-                u'contrib/inventory/vmware_inventory.py',
-                u'contrib/inventory/vmware_inventory.py'
+            'vmware_inventory': [
+                'contrib/inventory/vmware_inventory.py',
+                'contrib/inventory/vmware_inventory.py'
             ],
-            u'skippy': [
-                u'lib/ansible/plugins/callback/skippy.py',
-                u'lib/ansible/plugins/callback/skippy.py'
+            'skippy': [
+                'lib/ansible/plugins/callback/skippy.py',
+                'lib/ansible/plugins/callback/skippy.py'
             ],
-            u'azure_rm_common': [
-                u'lib/ansible/module_utils/azure_rm_common.py',
-                u'lib/ansible/module_utils/azure_rm_common.py'
+            'azure_rm_common': [
+                'lib/ansible/module_utils/azure_rm_common.py',
+                'lib/ansible/module_utils/azure_rm_common.py'
             ],
-            u'junit': [
-                u'lib/ansible/plugins/callback/junit.py',
-                u'lib/ansible/plugins/callback/junit.py'
+            'junit': [
+                'lib/ansible/plugins/callback/junit.py',
+                'lib/ansible/plugins/callback/junit.py'
             ],
-            u'`plugins/strategy/__init__.py`': [
-                u'lib/ansible/plugins/strategy/__init__.py',
-                u'lib/ansible/plugins/strategy/__init__.py'
+            '`plugins/strategy/__init__.py`': [
+                'lib/ansible/plugins/strategy/__init__.py',
+                'lib/ansible/plugins/strategy/__init__.py'
             ],
-            u'- jabber.py': [
+            '- jabber.py': [
                 #'lib/ansible/plugins/callback/jabber.py',
                 #'lib/ansible/plugins/callback/jabber.py'
-                u'lib/ansible/modules/notification/jabber.py',
-                u'lib/ansible/modules/notification/jabber.py',
+                'lib/ansible/modules/notification/jabber.py',
+                'lib/ansible/modules/notification/jabber.py',
             ],
-            u'- ios_config.py': [
+            '- ios_config.py': [
                 #'lib/ansible/plugins/action/ios_config.py',
                 #'lib/ansible/plugins/action/ios_config.py'
-                u'lib/ansible/modules/network/ios/ios_config.py',
-                u'lib/ansible/modules/network/ios/ios_config.py',
+                'lib/ansible/modules/network/ios/ios_config.py',
+                'lib/ansible/modules/network/ios/ios_config.py',
             ],
             # Unable to follow symlink ? Besides a new file exists: test/sanity/pylint/config/ansible-test
             #'ansible-test': [
             #    'test/runner/ansible-test',
             #    'test/runner/ansible-test'
             #],
-            u'inventory manager': [
+            'inventory manager': [
                 None,
-                u'lib/ansible/inventory/manager.py'
+                'lib/ansible/inventory/manager.py'
             ],
             # Doesn't work
             #'ansible/hacking/test-module': [
             #    'hacking/test-module',
             #    'hacking/test-module'
             #],
-            u'- ansible-connection': [
-                u'bin/ansible-connection',
-                u'bin/ansible-connection'
+            '- ansible-connection': [
+                'bin/ansible-connection',
+                'bin/ansible-connection'
             ],
             # Doesn't work
             #'`validate-modules`': [
             #    'test/sanity/validate-modules/validate-modules',
             #    'test/sanity/validate-modules/validate-modules'
             #],
-            u'`modules/cloud/docker/docker_container.py`': [
-                u'lib/ansible/modules/cloud/docker/docker_container.py',
-                u'lib/ansible/modules/cloud/docker/docker_container.py'
+            '`modules/cloud/docker/docker_container.py`': [
+                'lib/ansible/modules/cloud/docker/docker_container.py',
+                'lib/ansible/modules/cloud/docker/docker_container.py'
             ],
-            u'packaging/language/maven_artifact': [
-                u'lib/ansible/modules/packaging/language/maven_artifact.py',
-                u'lib/ansible/modules/packaging/language/maven_artifact.py'
+            'packaging/language/maven_artifact': [
+                'lib/ansible/modules/packaging/language/maven_artifact.py',
+                'lib/ansible/modules/packaging/language/maven_artifact.py'
             ],
-            u'`lib/ansible/executor/module_common.py`': [
-                u'lib/ansible/executor/module_common.py',
-                u'lib/ansible/executor/module_common.py'
+            '`lib/ansible/executor/module_common.py`': [
+                'lib/ansible/executor/module_common.py',
+                'lib/ansible/executor/module_common.py'
             ],
         }
 
@@ -309,17 +303,17 @@ class TestComponentMatcher(TestCase):
     def test_search_by_filepath_with_context(self):
 
         COMPONENTS = {
-            u'ec2.py': [
+            'ec2.py': [
                 #{'context': None, 'expected': ['contrib/inventory/ec2.py']},
-                {u'context': u'contrib/inventory', u'expected': [u'contrib/inventory/ec2.py']},
-                {u'context': u'lib/ansible/modules', u'expected': [u'lib/ansible/modules/cloud/amazon/ec2.py']},
+                {'context': 'contrib/inventory', 'expected': ['contrib/inventory/ec2.py']},
+                {'context': 'lib/ansible/modules', 'expected': ['lib/ansible/modules/cloud/amazon/ec2.py']},
             ],
-            u'netapp_e_storagepool storage module': [
-                {u'context': u'lib/ansible/modules', u'partial': False, u'expected': []},
-                {u'context': u'lib/ansible/modules', u'partial': True, u'expected': [u'lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
+            'netapp_e_storagepool storage module': [
+                {'context': 'lib/ansible/modules', 'partial': False, 'expected': []},
+                {'context': 'lib/ansible/modules', 'partial': True, 'expected': ['lib/ansible/modules/storage/netapp/netapp_e_storagepool.py']},
             ],
-            u'ansible/files/modules/archive.py': [
-                {u'context': None, u'partial': True, u'expected': [u'lib/ansible/modules/files/archive.py']}
+            'ansible/files/modules/archive.py': [
+                {'context': None, 'partial': True, 'expected': ['lib/ansible/modules/files/archive.py']}
             ],
             # Doesn't work
             #'lib/ansible/modules/cloud/amazon': [
@@ -348,9 +342,9 @@ class TestComponentMatcher(TestCase):
         for k,v in COMPONENTS.items():
             COMPONENT = k
             for v2 in v:
-                CONTEXT = v2.get(u'context')
-                PARTIAL = v2.get(u'partial')
-                EXPECTED = v2.get(u'expected')
+                CONTEXT = v2.get('context')
+                PARTIAL = v2.get('partial')
+                EXPECTED = v2.get('expected')
                 res = self.component_matcher.search_by_filepath(COMPONENT, context=CONTEXT, partial=PARTIAL)
                 assert EXPECTED == res
 
@@ -358,14 +352,14 @@ class TestComponentMatcher(TestCase):
     def test_search_by_regex_module_globs(self):
 
         COMPONENTS = {
-            u'All AWS modules': u'lib/ansible/modules/cloud/amazon',
-            u'ec2_* modules': u'lib/ansible/modules/cloud/amazon',
-            u'GCP ansible modules': u'lib/ansible/modules/cloud/google',
-            u'BigIP modules': u'lib/ansible/modules/network/f5',
-            u'NXOS modules': u'lib/ansible/modules/network/nxos',
-            u'azurerm modules': u'lib/ansible/modules/cloud/azure',
-            u'ansiballz/ziploader for modules': [],
-            u'dellos*_* network modules': [],
+            'All AWS modules': 'lib/ansible/modules/cloud/amazon',
+            'ec2_* modules': 'lib/ansible/modules/cloud/amazon',
+            'GCP ansible modules': 'lib/ansible/modules/cloud/google',
+            'BigIP modules': 'lib/ansible/modules/network/f5',
+            'NXOS modules': 'lib/ansible/modules/network/nxos',
+            'azurerm modules': 'lib/ansible/modules/cloud/azure',
+            'ansiballz/ziploader for modules': [],
+            'dellos*_* network modules': [],
             #u'elasticache modules': [
             #    u'lib/ansible/modules/cloud/amazon/elasticache.py',
             #    u'lib/ansible/modules/cloud/amazon/elasticache_info.py',
@@ -373,10 +367,10 @@ class TestComponentMatcher(TestCase):
             #    u'lib/ansible/modules/cloud/amazon/elasticache_snapshot.py',
             #    u'lib/ansible/modules/cloud/amazon/elasticache_subnet_group.py',
             #],
-            u'All FreeIPA Modules': [],
-            u'All modules': [],
-            u'All Cisco IOS Modules': [],
-            u'All EC2 based modules, possibly more.': u'lib/ansible/modules/cloud/amazon',
+            'All FreeIPA Modules': [],
+            'All modules': [],
+            'All Cisco IOS Modules': [],
+            'All EC2 based modules, possibly more.': 'lib/ansible/modules/cloud/amazon',
         }
 
         for COMPONENT,EXPECTED in COMPONENTS.items():
@@ -390,7 +384,7 @@ class TestComponentMatcher(TestCase):
 
         COMPONENTS = {
             #'inventory script': [u'lib/ansible/plugins/inventory/script.py'] #ix2390 https://github.com/ansible/ansible/issues/24545
-            u'inventory script': [u'contrib/inventory']  # ix2390 https://github.com/ansible/ansible/issues/24545
+            'inventory script': ['contrib/inventory']  # ix2390 https://github.com/ansible/ansible/issues/24545
         }
 
         for k,v in COMPONENTS.items():
@@ -403,54 +397,54 @@ class TestComponentMatcher(TestCase):
     def test_search_by_regex_modules(self):
 
         COMPONENTS = {
-            u'Module: include_role': [u'lib/ansible/modules/utilities/logic/include_role.py'],
-            u'module: include_role': [u'lib/ansible/modules/utilities/logic/include_role.py'],
-            u'module include_role': [u'lib/ansible/modules/utilities/logic/include_role.py'],
+            'Module: include_role': ['lib/ansible/modules/utilities/logic/include_role.py'],
+            'module: include_role': ['lib/ansible/modules/utilities/logic/include_role.py'],
+            'module include_role': ['lib/ansible/modules/utilities/logic/include_role.py'],
             #'ec2_asg (AWS EC2 auto scaling groups)': ['lib/ansible/modules/cloud/amazon/ec2_asg.py'],
-            u'junos_command (but not only !)': [u'lib/ansible/modules/network/junos/junos_command.py'],
-            u'tower_job_list module but I believe that also the other tower_* module have the same error':
-                [u'lib/ansible/modules/web_infrastructure/ansible_tower/tower_job_list.py'],
+            'junos_command (but not only !)': ['lib/ansible/modules/network/junos/junos_command.py'],
+            'tower_job_list module but I believe that also the other tower_* module have the same error':
+                ['lib/ansible/modules/web_infrastructure/ansible_tower/tower_job_list.py'],
             #'F5 bigip (bigip_selfip)': [u'lib/ansible/modules/network/f5/bigip_selfip.py'],
             #u'ansible_modules_vsphere_guest': [
             #    #u'lib/ansible/modules/cloud/vmware/_vsphere_guest.py'
             #    u'lib/ansible/modules/cloud/vmware/vsphere_copy.py'
             #    u'lib/ansible/modules/cloud/vmware/vsphere_file.py',
             #],
-            u'shell-module': [u'lib/ansible/modules/commands/shell.py'],
-            u'the docker_volume command': [u'lib/ansible/modules/cloud/docker/docker_volume.py'],
-            u'Azure Inventory Script - azure_rm.py': [],
-            u':\n`at` module': [u'lib/ansible/modules/system/at.py'],
-            u':\n`rax` module': [u'lib/ansible/modules/cloud/rackspace/rax.py'],
-            u'`apt_key` module': [u'lib/ansible/modules/packaging/os/apt_key.py'],
-            u'`apt` module': [u'lib/ansible/modules/packaging/os/apt.py'],
-            u'`ecs_service` module': [u'lib/ansible/modules/cloud/amazon/ecs_service.py'],
-            u'`meta` module': [u'lib/ansible/modules/utilities/helper/meta.py'],
+            'shell-module': ['lib/ansible/modules/commands/shell.py'],
+            'the docker_volume command': ['lib/ansible/modules/cloud/docker/docker_volume.py'],
+            'Azure Inventory Script - azure_rm.py': [],
+            ':\n`at` module': ['lib/ansible/modules/system/at.py'],
+            ':\n`rax` module': ['lib/ansible/modules/cloud/rackspace/rax.py'],
+            '`apt_key` module': ['lib/ansible/modules/packaging/os/apt_key.py'],
+            '`apt` module': ['lib/ansible/modules/packaging/os/apt.py'],
+            '`ecs_service` module': ['lib/ansible/modules/cloud/amazon/ecs_service.py'],
+            '`meta` module': ['lib/ansible/modules/utilities/helper/meta.py'],
             #'`meta` module': [u'lib/ansible/modules/utilities/helper/meta.py'],
-            u'`mysql_user` module': [u'lib/ansible/modules/database/mysql/mysql_user.py'],
+            '`mysql_user` module': ['lib/ansible/modules/database/mysql/mysql_user.py'],
             #u'`s3` module': [u'lib/ansible/modules/cloud/amazon/_s3.py'],
-            u'`user` module': [u'lib/ansible/modules/system/user.py'],
-            u'the "user" module': [u'lib/ansible/modules/system/user.py'],
-            u'`ansible_module_ec2_ami_copy.py`': [u'lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],
-            u'module: `include_vars `': [u'lib/ansible/modules/utilities/logic/include_vars.py'],
-            u'rabbitmq_plugin  module': [u'lib/ansible/modules/messaging/rabbitmq/rabbitmq_plugin.py'],
+            '`user` module': ['lib/ansible/modules/system/user.py'],
+            'the "user" module': ['lib/ansible/modules/system/user.py'],
+            '`ansible_module_ec2_ami_copy.py`': ['lib/ansible/modules/cloud/amazon/ec2_ami_copy.py'],
+            'module: `include_vars `': ['lib/ansible/modules/utilities/logic/include_vars.py'],
+            'rabbitmq_plugin  module': ['lib/ansible/modules/messaging/rabbitmq/rabbitmq_plugin.py'],
             #'F5 bigip (bigip_selfip)': [u'lib/ansible/modules/network/f5/bigip_selfip.py'],
             #u'module: `vsphere_guest`': [u'lib/ansible/modules/cloud/vmware/_vsphere_guest.py'],
             #u'module: `vsphere_guest`': [
             #    u'lib/ansible/modules/cloud/vmware/vsphere_copy.py'
             #    u'lib/ansible/modules/cloud/vmware/vsphere_file.py',
             #],
-            u'Add to vmware_guest module, Clone to Virtual Machine task': [
-                u'lib/ansible/modules/cloud/vmware/vmware_guest.py'
+            'Add to vmware_guest module, Clone to Virtual Machine task': [
+                'lib/ansible/modules/cloud/vmware/vmware_guest.py'
             ],
-            u'Jinja2 includes in ansible template module': [
-                u'lib/ansible/modules/files/template.py'
+            'Jinja2 includes in ansible template module': [
+                'lib/ansible/modules/files/template.py'
             ],
-            u': ec2_vpc_route_table module': [
-                u'lib/ansible/modules/cloud/amazon/ec2_vpc_route_table.py'
+            ': ec2_vpc_route_table module': [
+                'lib/ansible/modules/cloud/amazon/ec2_vpc_route_table.py'
             ],
-            u'copy shell  modules': [
-                u'lib/ansible/modules/files/copy.py',
-                u'lib/ansible/modules/commands/shell.py'
+            'copy shell  modules': [
+                'lib/ansible/modules/files/copy.py',
+                'lib/ansible/modules/commands/shell.py'
             ],
             #u':\ndocker.py': [
             #    u'lib/ansible/modules/cloud/docker/_docker.py'
@@ -458,11 +452,11 @@ class TestComponentMatcher(TestCase):
             #u': s3 module': [
             #    u'lib/ansible/modules/cloud/amazon/_s3.py'
             #],
-            u'The new ldap_attr module.': [
-                u'lib/ansible/modules/net_tools/ldap/_ldap_attr.py'
+            'The new ldap_attr module.': [
+                'lib/ansible/modules/net_tools/ldap/_ldap_attr.py'
             ],
-            u'- Ansible Core/Cisco ios_command module': [
-                u'lib/ansible/modules/network/ios/ios_command.py'
+            '- Ansible Core/Cisco ios_command module': [
+                'lib/ansible/modules/network/ios/ios_command.py'
             ]
         }
 
@@ -503,110 +497,110 @@ class TestComponentMatcherInheritance(TestCase):
 
     def test_get_meta_for_known_file(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'foo': {
-                    u'ignored': [u'foo_ignored'],
-                    u'supershipit': [u'foo_supershipit'],
-                    u'maintainers': [u'foo_maintainer'],
+            'files': {
+                'foo': {
+                    'ignored': ['foo_ignored'],
+                    'supershipit': ['foo_supershipit'],
+                    'maintainers': ['foo_maintainer'],
                 },
-                u'foo/bar': {
-                    u'ignored': [u'bar_ignored'],
-                    u'supershipit': [u'bar_supershipit'],
-                    u'maintainers': [u'bar_maintainer'],
+                'foo/bar': {
+                    'ignored': ['bar_ignored'],
+                    'supershipit': ['bar_supershipit'],
+                    'maintainers': ['bar_maintainer'],
                 },
-                u'foo/bar/baz.py': {
-                    u'ignored': [u'baz_ignored'],
-                    u'supershipit': [u'baz_supershipit'],
-                    u'maintainers': [u'baz_maintainer'],
-                    u'support': u'community'
+                'foo/bar/baz.py': {
+                    'ignored': ['baz_ignored'],
+                    'supershipit': ['baz_supershipit'],
+                    'maintainers': ['baz_maintainer'],
+                    'support': 'community'
                 },
             }
         }
 
         # send in a file that is known
-        result = self.component_matcher.get_meta_for_file(u'foo/bar/baz.py')
+        result = self.component_matcher.get_meta_for_file('foo/bar/baz.py')
 
         # make sure everything inherited
-        keys = [u'ignored', u'maintainer', u'supershipit']
-        names = [u'bar', u'baz', u'foo']
+        keys = ['ignored', 'maintainer', 'supershipit']
+        names = ['bar', 'baz', 'foo']
         for key in keys:
             expected = [x + '_' + key for x in names]
 
-            if key == u'ignored':
-                key = u'ignore'
-            if key == u'maintainer':
-                key = u'maintainers'
+            if key == 'ignored':
+                key = 'ignore'
+            if key == 'maintainer':
+                key = 'maintainers'
 
             assert sorted(result[key]) == sorted(expected)
 
         # make sure the support level is preserved
-        assert result[u'support'] == u'community'
+        assert result['support'] == 'community'
 
     def test_get_meta_for_unknown_extension(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'foo': {
-                    u'ignored': [u'foo_ignored'],
-                    u'supershipit': [u'foo_supershipit'],
-                    u'maintainers': [u'foo_maintainer'],
+            'files': {
+                'foo': {
+                    'ignored': ['foo_ignored'],
+                    'supershipit': ['foo_supershipit'],
+                    'maintainers': ['foo_maintainer'],
                 },
-                u'foo/bar': {
-                    u'ignored': [u'bar_ignored'],
-                    u'supershipit': [u'bar_supershipit'],
-                    u'maintainers': [u'bar_maintainer'],
+                'foo/bar': {
+                    'ignored': ['bar_ignored'],
+                    'supershipit': ['bar_supershipit'],
+                    'maintainers': ['bar_maintainer'],
                 },
-                u'foo/bar/baz': {
-                    u'ignored': [u'baz_ignored'],
-                    u'supershipit': [u'baz_supershipit'],
-                    u'maintainers': [u'baz_maintainer'],
-                    u'support': u'community'
+                'foo/bar/baz': {
+                    'ignored': ['baz_ignored'],
+                    'supershipit': ['baz_supershipit'],
+                    'maintainers': ['baz_maintainer'],
+                    'support': 'community'
                 },
             }
         }
 
         # send in a file that matches a prefix, but has an unknown extension
-        result = self.component_matcher.get_meta_for_file(u'foo/bar/baz.psx')
+        result = self.component_matcher.get_meta_for_file('foo/bar/baz.psx')
 
         # make sure everything inherited
-        keys = [u'ignored', u'maintainer', u'supershipit']
-        names = [u'bar', u'baz', u'foo']
+        keys = ['ignored', 'maintainer', 'supershipit']
+        names = ['bar', 'baz', 'foo']
         for key in keys:
             expected = [x + '_' + key for x in names]
 
-            if key == u'ignored':
-                key = u'ignore'
-            if key == u'maintainer':
-                key = u'maintainers'
+            if key == 'ignored':
+                key = 'ignore'
+            if key == 'maintainer':
+                key = 'maintainers'
 
             assert sorted(result[key]) == sorted(expected)
 
         # make sure the support level is applied
-        assert result[u'support'] == u'community'
+        assert result['support'] == 'community'
 
     def test_get_meta_support_inheritance(self):
         self.component_matcher.botmeta = {
-            u'files': {
-                u'foo': {
-                    u'ignored': [u'foo_ignored'],
-                    u'supershipit': [u'foo_supershipit'],
-                    u'maintainers': [u'foo_maintainer'],
+            'files': {
+                'foo': {
+                    'ignored': ['foo_ignored'],
+                    'supershipit': ['foo_supershipit'],
+                    'maintainers': ['foo_maintainer'],
                 },
-                u'foo/bar': {
-                    u'ignored': [u'bar_ignored'],
-                    u'supershipit': [u'bar_supershipit'],
-                    u'maintainers': [u'bar_maintainer'],
+                'foo/bar': {
+                    'ignored': ['bar_ignored'],
+                    'supershipit': ['bar_supershipit'],
+                    'maintainers': ['bar_maintainer'],
                 },
-                u'foo/bar/baz': {
-                    u'ignored': [u'baz_ignored'],
-                    u'supershipit': [u'baz_supershipit'],
-                    u'maintainers': [u'baz_maintainer'],
-                    u'support': u'core'
+                'foo/bar/baz': {
+                    'ignored': ['baz_ignored'],
+                    'supershipit': ['baz_supershipit'],
+                    'maintainers': ['baz_maintainer'],
+                    'support': 'core'
                 },
             }
         }
 
         # send in a file that matches a prefix, but has an unknown extension
-        result = self.component_matcher.get_meta_for_file(u'foo/bar/baz.psx')
+        result = self.component_matcher.get_meta_for_file('foo/bar/baz.psx')
 
         # make sure the support level is applied
-        assert result[u'support'] == u'core'
+        assert result['support'] == 'core'

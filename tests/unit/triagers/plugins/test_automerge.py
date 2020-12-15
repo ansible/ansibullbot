@@ -1,20 +1,15 @@
-#!/usr/bin/env python
-
 import unittest
-
-import six
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
 
 from ansibullbot.triagers.plugins.shipit import get_automerge_facts
 
 
-class HistoryWrapperMock(object):
+class HistoryWrapperMock:
     history = None
     def __init__(self):
         self.history = []
 
 
-class IssueWrapperMock(object):
+class IssueWrapperMock:
     _is_pullrequest = False
     _pr_files = []
     _wip = False
@@ -62,8 +57,8 @@ class IssueWrapperMock(object):
             return 'https://github.com/%s/%s/issues/%s' % (self.org, self.repo, self.number)
 
 
-class MockFile(object):
-    def __init__(self, name, content=u''):
+class MockFile:
+    def __init__(self, name, content=''):
         self.filename = name
         self.content = content
 
@@ -76,35 +71,35 @@ class TestAutomergeFacts(unittest.TestCase):
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
         meta = {
-            u'ci_stale': False,
-            u'ci_state': u'success',
-            u'has_ci': True,
-            u'is_new_directory': False,
-            u'is_module': True,
-            u'is_module_util': False,
-            u'is_new_module': False,
-            u'is_needs_info': False,
-            u'is_needs_rebase': False,
-            u'is_needs_revision': False,
-            u'is_backport': False,
-            u'mergeable': True,
-            u'merge_commits': False,
-            u'has_commit_mention': False,
-            u'shipit': True,
-            u'supershipit': True,
-            u'component_matches': [
+            'ci_stale': False,
+            'ci_state': 'success',
+            'has_ci': True,
+            'is_new_directory': False,
+            'is_module': True,
+            'is_module_util': False,
+            'is_new_module': False,
+            'is_needs_info': False,
+            'is_needs_rebase': False,
+            'is_needs_revision': False,
+            'is_backport': False,
+            'mergeable': True,
+            'merge_commits': False,
+            'has_commit_mention': False,
+            'shipit': True,
+            'supershipit': True,
+            'component_matches': [
                 {
-                    u'repo_filename': u'foo',
-                    u'supershipit': [u'jane', u'doe'],
-                    u'support': u'community'
+                    'repo_filename': 'foo',
+                    'supershipit': ['jane', 'doe'],
+                    'support': 'community'
                 }
             ],
-            u'component_support': [u'community']
+            'component_support': ['community']
         }
-        meta[u'module_match'] = meta[u'component_matches'][:]
+        meta['module_match'] = meta['component_matches'][:]
         amfacts = get_automerge_facts(IW, meta)
-        assert amfacts[u'automerge']
-        assert u'automerge_status' in amfacts
+        assert amfacts['automerge']
+        assert 'automerge_status' in amfacts
 
     def test_not_automerge_if_not_shipit(self):
         # if not shipit, automerge should be False
@@ -112,32 +107,32 @@ class TestAutomergeFacts(unittest.TestCase):
         IW._is_pullrequest = True
         IW.add_comment('jane', 'shipit')
         meta = {
-            u'ci_stale': False,
-            u'ci_state': u'success',
-            u'has_ci': True,
-            u'is_new_directory': False,
-            u'is_module': True,
-            u'is_module_util': False,
-            u'is_new_module': False,
-            u'is_needs_info': False,
-            u'is_needs_rebase': False,
-            u'is_needs_revision': False,
-            u'is_backport': False,
-            u'mergeable': True,
-            u'merge_commits': False,
-            u'has_commit_mention': False,
-            u'shipit': False,
-            u'supershipit': False,
-            u'component_matches': [
+            'ci_stale': False,
+            'ci_state': 'success',
+            'has_ci': True,
+            'is_new_directory': False,
+            'is_module': True,
+            'is_module_util': False,
+            'is_new_module': False,
+            'is_needs_info': False,
+            'is_needs_rebase': False,
+            'is_needs_revision': False,
+            'is_backport': False,
+            'mergeable': True,
+            'merge_commits': False,
+            'has_commit_mention': False,
+            'shipit': False,
+            'supershipit': False,
+            'component_matches': [
                 {
-                    u'repo_filename': u'foo',
-                    u'supershipit': [u'jane', u'doe'],
-                    u'support': u'community'
+                    'repo_filename': 'foo',
+                    'supershipit': ['jane', 'doe'],
+                    'support': 'community'
                 }
             ],
-            u'component_support': [u'community']
+            'component_support': ['community']
         }
-        meta[u'module_match'] = meta[u'component_matches'][:]
+        meta['module_match'] = meta['component_matches'][:]
         amfacts = get_automerge_facts(IW, meta)
-        assert not amfacts[u'automerge']
-        assert u'automerge_status' in amfacts
+        assert not amfacts['automerge']
+        assert 'automerge_status' in amfacts

@@ -1,39 +1,39 @@
 import yaml
 
 
-class ActorMock(object):
+class ActorMock:
     id = None
     login = None
 
 
-class CommitterMock(object):
+class CommitterMock:
     date = None
     login = None
 
 
-class CommitBottomMock(object):
+class CommitBottomMock:
     committer = CommitterMock()
     message = ""
 
 
-class CommitMock(object):
+class CommitMock:
     commit = CommitBottomMock()
     committer = commit.committer
     sha = None
 
 
-class LabelMock(object):
+class LabelMock:
     name = None
 
 
-class RequesterMock(object):
+class RequesterMock:
     rdata = "{}"
 
     def requestJson(self, method, url, headers=None):
         return (200, "foo", self.rdata)
 
 
-class IssueMock(object):
+class IssueMock:
     """Mocks a pygithub object with data from a yaml file"""
 
     def __init__(self, datafile):
@@ -127,11 +127,11 @@ class IssueMock(object):
         self.calls.append(('edit', title, body, assignee, state, milestone, labels))
 
     def get_events(self):
-        self.calls.append(('get_events'))
+        self.calls.append('get_events')
         return self.events
 
     def get_labels(self):
-        self.calls.append(('get_labels'))
+        self.calls.append('get_labels')
 
     def get_pullrequest_status(self):
         return []

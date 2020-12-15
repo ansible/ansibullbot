@@ -33,7 +33,7 @@ MATCH_MAP = {}
 METATAR = 'tests/fixtures/issuemeta/metafiles-2017-11-02.tar.gz'
 
 
-class IssueWrapperMock(object):
+class IssueWrapperMock:
     def __init__(self, meta):
         self.meta = meta
 
@@ -67,9 +67,9 @@ def extract_metafiles():
     # return list of json files in tempdir
     tarfile = os.path.abspath(METATAR)
     tdir = tempfile.mkdtemp()
-    cmd = 'cd {} ; tar xzvf {}'.format(tdir, tarfile)
+    cmd = f'cd {tdir} ; tar xzvf {tarfile}'
     (rc, so, se) = run_command(cmd)
-    metafiles = glob.glob('{}/metafiles/*.json'.format(tdir))
+    metafiles = glob.glob(f'{tdir}/metafiles/*.json')
     metafiles= sorted(set(metafiles))
     return metafiles
 
@@ -225,7 +225,7 @@ def main():
         #    continue
 
         if component:
-            print('------------------------------------------ {}|{}'.format(total, IDMF))
+            print(f'------------------------------------------ {total}|{IDMF}')
             print(meta['html_url'])
             print(meta['title'])
             print(component)
@@ -299,7 +299,7 @@ def main():
             if expected_fns != cmr_fns and hurl not in EXPECTED:
                 if len(cmr_fns) == 1 and 'lib/ansible/modules' in cmr_fns[0]:
                     c_bn = os.path.basename(cmr_fns[0])
-                    if 'docs.ansible.com/ansible/latest/{}_module.html'.format(c_bn) in component:
+                    if f'docs.ansible.com/ansible/latest/{c_bn}_module.html' in component:
                         MATCH_MAP[component] = cmr_fns
                         save_match_map(MATCH_MAP)
                         continue

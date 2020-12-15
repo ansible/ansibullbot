@@ -12,7 +12,7 @@ from ansibullbot.utils.timetools import strip_time_safely
 import ansibullbot.constants as C
 
 
-class AnsibleVersionIndexer(object):
+class AnsibleVersionIndexer:
 
     def __init__(self, checkoutdir):
         self.checkoutdir = checkoutdir
@@ -24,25 +24,25 @@ class AnsibleVersionIndexer(object):
 
     def _get_devel_version(self):
         # get devel's version
-        vpath = os.path.join(self.checkoutdir, u'VERSION')
+        vpath = os.path.join(self.checkoutdir, 'VERSION')
         vpath = os.path.expanduser(vpath)
         devel_version = None
 
         if os.path.isfile(vpath):
             with open(vpath, 'rb') as f:
                 devel_version = f.read().strip().split()[0]
-                self.VALIDVERSIONS[devel_version] = u'devel'
+                self.VALIDVERSIONS[devel_version] = 'devel'
         else:
             # __version__ = '2.6.0dev0'
-            vpath = os.path.join(self.checkoutdir, u'lib/ansible/release.py')
-            with open(vpath, 'r') as f:
+            vpath = os.path.join(self.checkoutdir, 'lib/ansible/release.py')
+            with open(vpath) as f:
                 flines = f.readlines()
             for line in flines:
                 line = line.strip()
-                if line.startswith(u'__version__'):
-                    devel_version = line.split(u'=')[-1].strip()
-                    devel_version = devel_version.replace(u"'", u'')
-                    devel_version = devel_version.replace(u'"', u'')
+                if line.startswith('__version__'):
+                    devel_version = line.split('=')[-1].strip()
+                    devel_version = devel_version.replace("'", '')
+                    devel_version = devel_version.replace('"', '')
                     break
 
         return devel_version
@@ -51,8 +51,8 @@ class AnsibleVersionIndexer(object):
         self.VALIDVERSIONS = {}
 
         # branches
-        cmd = u'cd %s;' % self.checkoutdir
-        cmd += u'git branch -a'
+        cmd = 'cd %s;' % self.checkoutdir
+        cmd += 'git branch -a'
         p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
         (so, se) = p.communicate()
@@ -66,11 +66,11 @@ class AnsibleVersionIndexer(object):
         rlines = [x.replace(b'stable-', b'') for x in rlines]
         for rline in rlines:
             if rline not in self.VALIDVERSIONS:
-                self.VALIDVERSIONS[rline] = u'branch'
+                self.VALIDVERSIONS[rline] = 'branch'
 
         # tags
-        cmd = u'cd %s;' % self.checkoutdir
-        cmd += u'git tag -l'
+        cmd = 'cd %s;' % self.checkoutdir
+        cmd += 'git tag -l'
         p = subprocess.Popen(
             cmd,
             shell=True,
@@ -82,7 +82,7 @@ class AnsibleVersionIndexer(object):
         rlines = [x.replace(b'v', b'', 1) for x in lines]
         for rline in rlines:
             if rline not in self.VALIDVERSIONS:
-                self.VALIDVERSIONS[rline] = u'tag'
+                self.VALIDVERSIONS[rline] = 'tag'
 
     def is_valid_version(self, version):
 
@@ -128,34 +128,34 @@ class AnsibleVersionIndexer(object):
         # 1.x
         # 2.x
 
-        devel = [u'devel', u'master', u'head', u'latest', u'all', u'all?', u'all ?', u'any',
-                 u'n/a', u'na', u'not applicable', u'latest devel',
-                 u'latest devel branch', u'ansible devel', u'', u'future',
-                 u'git version', u'ansible@devel', u'all recent releases']
+        devel = ['devel', 'master', 'head', 'latest', 'all', 'all?', 'all ?', 'any',
+                 'n/a', 'na', 'not applicable', 'latest devel',
+                 'latest devel branch', 'ansible devel', '', 'future',
+                 'git version', 'ansible@devel', 'all recent releases']
 
         if not self.VALIDVERSIONS:
             self._get_versions()
 
         if rawtext is None:
-            return u'devel'
+            return 'devel'
 
         aversion = False
 
-        rawtext = rawtext.replace(u'`', u'')
+        rawtext = rawtext.replace('`', '')
         rawtext = rawtext.strip()
         rawtext = rawtext.lower()
-        rawlines = rawtext.split(u'\n')
+        rawlines = rawtext.split('\n')
         rawlines = [x.strip() for x in rawlines]
 
         # exit early for "devel" variations ...
         if rawtext in devel:
-            return u'devel'
+            return 'devel'
 
         # handle 1.x/2.x globs
-        xver = re.compile(u'^-?[1-9].x')
+        xver = re.compile('^-?[1-9].x')
         if len(rawlines) == 1:
             if xver.match(rawlines[0]):
-                major_ver = rawlines[0].split(u'.')[0]
+                major_ver = rawlines[0].split('.')[0]
 
                 # Get the highest minor version for this major
                 cversions = reversed(sorted(self.VALIDVERSIONS.keys()))
@@ -166,16 +166,16 @@ class AnsibleVersionIndexer(object):
                 if aversion:
                     return aversion
 
-        xver = re.compile(u'^-?[1-9].[1-9].x')
+        xver = re.compile('^-?[1-9].[1-9].x')
         if len(rawlines) == 1:
             if xver.match(rawlines[0]):
-                major_ver = rawlines[0].split(u'.')[0]
-                minor_ver = rawlines[0].split(u'.')[1]
+                major_ver = rawlines[0].split('.')[0]
+                minor_ver = rawlines[0].split('.')[1]
 
                 # Get the highest minor version for this major
                 cversions = reversed(sorted(self.VALIDVERSIONS.keys()))
                 for cver in cversions:
-                    if cver[0:3] == (major_ver + u'.' + minor_ver):
+                    if cver[0:3] == (major_ver + '.' + minor_ver):
                         aversion = cver
                         break
                 if aversion:
@@ -185,10 +185,10 @@ class AnsibleVersionIndexer(object):
         for idx, x in enumerate(rawlines):
             if len(rawlines) < (idx+2):
                 continue
-            if x.startswith(u'ansible') and \
-                (rawlines[idx+1].startswith(u'config file') or
-                 rawlines[idx+1].startswith(u'configured module search path')):
-                parts = x.replace(u')', u'').split()
+            if x.startswith('ansible') and \
+                (rawlines[idx+1].startswith('config file') or
+                 rawlines[idx+1].startswith('configured module search path')):
+                parts = x.replace(')', '').split()
                 aversion = parts[1]
 
                 # is this a checkout with a hash? ...
@@ -200,13 +200,13 @@ class AnsibleVersionIndexer(object):
                 return aversion
 
         # try to find a vstring ...
-        pidx = rawtext.find(u'.')
+        pidx = rawtext.find('.')
         if pidx > -1:
-            fver = u''
+            fver = ''
             # get chars to the end of the vstring ...
             for char in rawtext[pidx:]:
-                if char == u' ' or char == u'\n' or char == u'\r' \
-                        or (not char.isalnum() and char != u'.'):
+                if char == ' ' or char == '\n' or char == '\r' \
+                        or (not char.isalnum() and char != '.'):
                     break
                 else:
                     fver += char
@@ -214,12 +214,12 @@ class AnsibleVersionIndexer(object):
             head = head[::-1]
             # get chars to the beginning of the vstring ...
             for char in head:
-                if char == u' ' or char == u'\n' or char == u'\r' \
-                        or (not char.isalnum() and char != u'.'):
+                if char == ' ' or char == '\n' or char == '\r' \
+                        or (not char.isalnum() and char != '.'):
                     break
                 else:
                     fver = char + fver
-            if fver[0] == u'v':
+            if fver[0] == 'v':
                 fver = fver[1:]
             if fver:
                 sver = None
@@ -240,45 +240,45 @@ class AnsibleVersionIndexer(object):
                 elif lver and fver[0].isdigit():
                     return fver
 
-        lines = rawtext.split(u'\n')
+        lines = rawtext.split('\n')
         lines = [x.strip() for x in lines if x.strip()]
-        lines = [x for x in lines if not x.startswith(u'config')]
-        lines = [x for x in lines if not x.startswith(u'<')]
-        lines = [x for x in lines if not x.startswith(u'-')]
-        lines = [x for x in lines if not x.startswith(u'lib')]
+        lines = [x for x in lines if not x.startswith('config')]
+        lines = [x for x in lines if not x.startswith('<')]
+        lines = [x for x in lines if not x.startswith('-')]
+        lines = [x for x in lines if not x.startswith('lib')]
         for idx, x in enumerate(lines):
-            if u"'" in x:
-                x = x.replace(u"'", u'').strip()
-            if u'"' in x:
-                x = x.replace(u'"', u'').strip()
-            if u'`' in x:
-                x = x.replace(u'`', u'').strip()
-            if u',' in x:
-                x = x.replace(u',', u'').strip()
-            if u'*' in x:
-                x = x.replace(u'*', u'').strip()
-            if u')' in x:
-                x = x.replace(u')', u'').strip()
+            if "'" in x:
+                x = x.replace("'", '').strip()
+            if '"' in x:
+                x = x.replace('"', '').strip()
+            if '`' in x:
+                x = x.replace('`', '').strip()
+            if ',' in x:
+                x = x.replace(',', '').strip()
+            if '*' in x:
+                x = x.replace('*', '').strip()
+            if ')' in x:
+                x = x.replace(')', '').strip()
             lines[idx] = x
         lines = [x.strip() for x in lines if x.strip()]
-        lines = [x for x in lines if x.startswith(u'ansible') or x[0].isdigit() or x[0] == u'v']
+        lines = [x for x in lines if x.startswith('ansible') or x[0].isdigit() or x[0] == 'v']
 
         # https://github.com/ansible/ansible-modules-extras/issues/809
         #   false positives from this issue ...
-        lines = [x for x in lines if u'versions: []' not in x]
+        lines = [x for x in lines if 'versions: []' not in x]
 
         # try to narrow down to a single line
         if len(lines) > 1:
             candidate = None
             for x in lines:
-                pidx = x.find(u'.')
+                pidx = x.find('.')
                 if pidx == -1:
                     continue
                 if (len(x) - 1) < (pidx+1):
                     continue
                 if not x[pidx+1].isdigit():
                     continue
-                if (x.startswith(u'ansible') or x[0].isdigit()) and u'.' in x:
+                if (x.startswith('ansible') or x[0].isdigit()) and '.' in x:
                     candidate = x
                     break
             if candidate:
@@ -292,21 +292,21 @@ class AnsibleVersionIndexer(object):
 
                 words = lines[0].split()
                 words = [x.strip() for x in words if x.strip()]
-                words = [x for x in words if x != u'stable']
-                words = [x for x in words if x != u'ansible']
-                words = [x for x in words if x != u'ansible-doc']
-                words = [x for x in words if x != u'ansible-playbook']
+                words = [x for x in words if x != 'stable']
+                words = [x for x in words if x != 'ansible']
+                words = [x for x in words if x != 'ansible-doc']
+                words = [x for x in words if x != 'ansible-playbook']
                 if not words:
-                    print(logprefix + u"NO VERSIONABLE WORDS!!")
+                    print(logprefix + "NO VERSIONABLE WORDS!!")
                     pass
                 else:
 
-                    if words[0].startswith(u'ansible-'):
-                        words[0] = words[0].replace(u'ansible-', u'')
+                    if words[0].startswith('ansible-'):
+                        words[0] = words[0].replace('ansible-', '')
 
-                    if words[0][0] == u'v':
+                    if words[0][0] == 'v':
                         words[0] = words[0][1:]
-                    characters = words[0].split(u'.')
+                    characters = words[0].split('.')
                     digits = [x.isdigit() for x in characters]
                     digits = sorted(set(digits))
                     if digits == [True]:
@@ -315,15 +315,15 @@ class AnsibleVersionIndexer(object):
                         except Exception as e:
                             logging.error(e)
                             if C.DEFAULT_BREAKPOINTS:
-                                logging.error(u'breakpoint!')
+                                logging.error('breakpoint!')
                                 import epdb; epdb.st()
                             else:
-                                raise Exception(u'indexerror: %s' % e)
+                                raise Exception('indexerror: %s' % e)
                     elif characters[0].isdigit():
                         aversion = words[0]
                     else:
-                        print(logprefix + u"INVALID VER STRING !!!")
-                        print(logprefix + u'Exception: ' + to_text(e))
+                        print(logprefix + "INVALID VER STRING !!!")
+                        print(logprefix + 'Exception: ' + to_text(e))
                         for line in lines:
                             print(logprefix + line)
 
@@ -363,30 +363,30 @@ class AnsibleVersionIndexer(object):
             # get devel's version
             devel_version = self._get_devel_version()
 
-            cmd = u'cd %s;' % self.checkoutdir
-            cmd += u'git branch -r --contains %s' % commithash
+            cmd = 'cd %s;' % self.checkoutdir
+            cmd += 'git branch -r --contains %s' % commithash
             (rc, so, se) = run_command(cmd)
-            lines = (x.strip() for x in to_text(so).split(u'\n'))
+            lines = (x.strip() for x in to_text(so).split('\n'))
             lines = list(filter(bool, lines))
 
             rlines = (x for x in lines
-                      if x.startswith((u'origin/release', u'origin/stable')))
-            rlines = (x.split(u'/')[-1] for x in rlines)
-            rlines = (x.replace(u'release', u'') for x in rlines)
-            rlines = [x.replace(u'stable-', u'') for x in rlines]
+                      if x.startswith(('origin/release', 'origin/stable')))
+            rlines = (x.split('/')[-1] for x in rlines)
+            rlines = (x.replace('release', '') for x in rlines)
+            rlines = [x.replace('stable-', '') for x in rlines]
 
             if rc != 0:
-                logging.error(u"rc != 0")
+                logging.error("rc != 0")
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
-                    raise Exception(u'bad returncode')
+                    raise Exception('bad returncode')
 
             if len(rlines) > 0:
                 aversion = rlines[0]
             else:
-                if u'HEAD' in lines[0] or lines[0].endswith(u'/devel'):
+                if 'HEAD' in lines[0] or lines[0].endswith('/devel'):
                     '''
                     cmd = 'cd %s;' % self.checkoutdir
                     cmd += 'git branch -a | fgrep -e release -e stable | tail -n 1'
@@ -402,12 +402,12 @@ class AnsibleVersionIndexer(object):
                     '''
                     aversion = devel_version
                 else:
-                    logging.error(u"WTF!? ...")
+                    logging.error("WTF!? ...")
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
+                        logging.error('breakpoint!')
                         import epdb; epdb.st()
                     else:
-                        raise Exception(u'HEAD not found')
+                        raise Exception('HEAD not found')
 
             self.COMMITVERSIONS[commithash] = aversion
 
@@ -417,13 +417,13 @@ class AnsibleVersionIndexer(object):
 
         if not self.DATEVERSIONS:
             self.DATEVERSIONS = []
-            cmd = u'cd %s;' % self.checkoutdir
-            cmd += u'git log --date=short --pretty=format:"%ad;%H"'
+            cmd = 'cd %s;' % self.checkoutdir
+            cmd += 'git log --date=short --pretty=format:"%ad;%H"'
             (rc, so, se) = run_command(cmd)
-            lines = (x.strip() for x in to_text(so).split(u'\n'))
+            lines = (x.strip() for x in to_text(so).split('\n'))
             lines = filter(bool, lines)
             for x in lines:
-                parts = x.split(u';')
+                parts = x.split(';')
                 self.DATEVERSIONS.append(parts)
 
         last_commit_date = self.DATEVERSIONS[0][0]
@@ -439,9 +439,9 @@ class AnsibleVersionIndexer(object):
                 if dv[0] == datestr:
                     break
             if not acommit:
-                datestr = u'-'.join(datestr.split(u'-')[0:2])
+                datestr = '-'.join(datestr.split('-')[0:2])
                 for dv in self.DATEVERSIONS:
-                    dvs = u'-'.join(dv[0].split(u'-')[0:2])
+                    dvs = '-'.join(dv[0].split('-')[0:2])
                     if dvs == datestr:
                         acommit = dv[1]
                         break

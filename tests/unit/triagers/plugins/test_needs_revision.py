@@ -1,13 +1,7 @@
-#!/usr/bin/env python
-
 import datetime
 import json
-import six
 import unittest
-from unittest import TestCase
-
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
+from unittest import TestCase, mock
 
 import github
 import pytz
@@ -19,7 +13,7 @@ from ansibullbot.triagers.plugins.needs_revision import _changes_requested_by, g
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
-class ComponentMatcherMock(object):
+class ComponentMatcherMock:
 
     expected_results = []
 
@@ -27,7 +21,7 @@ class ComponentMatcherMock(object):
         return self.expected_results
 
 
-class ModuleIndexerMock(object):
+class ModuleIndexerMock:
 
     def __init__(self, namespace_maintainers):
         self.namespace_maintainers = namespace_maintainers
@@ -36,20 +30,20 @@ class ModuleIndexerMock(object):
         return self.namespace_maintainers
 
 
-class AnsibleTriageMock(object):
+class AnsibleTriageMock:
 
-    BOTNAMES = [u'ansibot', u'gregdek', u'robynbergeron']
+    BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
 
     @property
     def ansible_core_team(self):
-        return [u'bcoca']
+        return ['bcoca']
 
 
-class ShippableCIMock(object):
+class ShippableCIMock:
     def __init__(self):
-        self.required_file = u'shippable.yml'
+        self.required_file = 'shippable.yml'
         self.state = None
-        self.name = u'shippable'
+        self.name = 'shippable'
 
     def get_last_full_run_date(*args, **kwargs):
         return None
@@ -59,10 +53,10 @@ class TestNeedsRevisionFacts(TestCase):
 
     def setUp(self):
         self.meta = {
-            u'is_new_module': False,
-            u'module_match': {
-                u'namespace': u'zypper',
-                u'maintainers': [u'robinro'],
+            'is_new_module': False,
+            'module_match': {
+                'namespace': 'zypper',
+                'maintainers': ['robinro'],
             }
         }
 
@@ -72,82 +66,82 @@ class TestNeedsRevisionFacts(TestCase):
         Ansibot should ignore CHANGES_REQUESTED Github review when the author of the
         CHANGES_REQUESTED review used the shipit command.
         """
-        datafile = u'tests/fixtures/needs_revision/0_issue.yml'
-        statusfile = u'tests/fixtures/needs_revision/0_prstatus.json'
+        datafile = 'tests/fixtures/needs_revision/0_issue.yml'
+        statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
         with mock.patch.multiple(IssueWrapper,
                                mergeable_state=mock.PropertyMock(return_value='clean'),
                                pullrequest_filepath_exists=mock.Mock(return_value=True)):
             with get_issue(datafile, statusfile) as iw:
                 iw._merge_commits = []
-                iw._committer_emails = [u'tsdmgz@domain.example']
+                iw._committer_emails = ['tsdmgz@domain.example']
 
                 pullrequest = mock.Mock(spec_set=github.PullRequest.PullRequest)
                 pullrequest.head.repo.__return_value__ = True
                 iw._pr = pullrequest
 
-                with open(u'tests/fixtures/needs_revision/0_reviews.json') as reviews:
+                with open('tests/fixtures/needs_revision/0_reviews.json') as reviews:
                     iw._pr_reviews = json.load(reviews)
                     iw._history.merge_reviews(iw.reviews)
 
-                self.meta[u'component_maintainers'] = [u'robinro']
+                self.meta['component_maintainers'] = ['robinro']
                 facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableCIMock())
 
-                self.assertFalse(facts[u'is_needs_revision'])
-                self.assertFalse(facts[u'stale_reviews'])
+                self.assertFalse(facts['is_needs_revision'])
+                self.assertFalse(facts['stale_reviews'])
 
     def test_shipit_removes_needs_revision(self):
         """
         Ansibot should remove needs_revision if the same user that set it gave shipit afterwards.
         https://github.com/ansible/ansibullbot/issues/994
         """
-        datafile = u'tests/fixtures/needs_revision/1_issue.yml'
-        statusfile = u'tests/fixtures/needs_revision/0_prstatus.json'
+        datafile = 'tests/fixtures/needs_revision/1_issue.yml'
+        statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
         with mock.patch.multiple(IssueWrapper,
                                mergeable_state=mock.PropertyMock(return_value='clean'),
                                pullrequest_filepath_exists=mock.Mock(return_value=True)):
             with get_issue(datafile, statusfile) as iw:
                 iw._merge_commits = []
-                iw._committer_emails = [u'tsdmgz@domain.example']
+                iw._committer_emails = ['tsdmgz@domain.example']
 
                 pullrequest = mock.Mock(spec_set=github.PullRequest.PullRequest)
                 pullrequest.head.repo.__return_value__ = True
                 iw._pr = pullrequest
 
-                with open(u'tests/fixtures/needs_revision/1_reviews.json') as reviews:
+                with open('tests/fixtures/needs_revision/1_reviews.json') as reviews:
                     iw._pr_reviews = json.load(reviews)
                     iw._history.merge_reviews(iw.reviews)
 
-                self.meta[u'component_maintainers'] = [u'mkrizek']
+                self.meta['component_maintainers'] = ['mkrizek']
                 facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableCIMock())
 
-                self.assertFalse(facts[u'is_needs_revision'])
+                self.assertFalse(facts['is_needs_revision'])
 
     def test_shipit_removes_needs_revision_multiple_users(self):
         """
         Ansibot should remove needs_revision if the same user that set it gave shipit afterwards.
         https://github.com/ansible/ansibullbot/issues/994
         """
-        datafile = u'tests/fixtures/needs_revision/2_issue.yml'
-        statusfile = u'tests/fixtures/needs_revision/0_prstatus.json'
+        datafile = 'tests/fixtures/needs_revision/2_issue.yml'
+        statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
         with mock.patch.multiple(IssueWrapper,
                                mergeable_state=mock.PropertyMock(return_value='clean'),
                                pullrequest_filepath_exists=mock.Mock(return_value=True)):
             with get_issue(datafile, statusfile) as iw:
                 iw._merge_commits = []
-                iw._committer_emails = [u'tsdmgz@domain.example']
+                iw._committer_emails = ['tsdmgz@domain.example']
 
                 pullrequest = mock.Mock(spec_set=github.PullRequest.PullRequest)
                 pullrequest.head.repo.__return_value__ = True
                 iw._pr = pullrequest
 
-                with open(u'tests/fixtures/needs_revision/1_reviews.json') as reviews:
+                with open('tests/fixtures/needs_revision/1_reviews.json') as reviews:
                     iw._pr_reviews = json.load(reviews)
                     iw._history.merge_reviews(iw.reviews)
 
-                self.meta[u'component_maintainers'] = [u'mkrizek', u'jctanner']
+                self.meta['component_maintainers'] = ['mkrizek', 'jctanner']
                 facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableCIMock())
 
-                self.assertTrue(facts[u'is_needs_revision'])
+                self.assertTrue(facts['is_needs_revision'])
 
 
 class TestReviewMethods(TestCase):
@@ -160,41 +154,41 @@ class TestReviewMethods(TestCase):
         """
         reviews = [
             # oldest first
-            {u'user': {u'login': u'reviewer0'}, u'submitted_at': u'2017-01-01T00:00:00Z', u'state': u'COMMENTED'},
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-01-01T00:00:00Z', 'state': 'COMMENTED'},
 
-            {u'user': {u'login': u'reviewer1'}, u'submitted_at': u'2017-02-01T00:00:00Z', u'state': u'COMMENTED'},
-            {u'user': {u'login': u'reviewer1'}, u'submitted_at': u'2017-02-02T00:00:00Z', u'state': u'CHANGES_REQUESTED'},
-            {u'user': {u'login': u'reviewer1'}, u'submitted_at': u'2017-02-03T00:00:00Z', u'state': u'COMMENTED'},
+            {'user': {'login': 'reviewer1'}, 'submitted_at': '2017-02-01T00:00:00Z', 'state': 'COMMENTED'},
+            {'user': {'login': 'reviewer1'}, 'submitted_at': '2017-02-02T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
+            {'user': {'login': 'reviewer1'}, 'submitted_at': '2017-02-03T00:00:00Z', 'state': 'COMMENTED'},
 
-            {u'user': {u'login': u'reviewer2'}, u'submitted_at': u'2017-03-01T00:00:00Z', u'state': u'CHANGES_REQUESTED'},
-            {u'user': {u'login': u'reviewer2'}, u'submitted_at': u'2017-03-02T00:00:00Z', u'state': u'APPROVED'},
-            {u'user': {u'login': u'reviewer2'}, u'submitted_at': u'2017-03-03T00:00:00Z', u'state': u'COMMENTED'},
+            {'user': {'login': 'reviewer2'}, 'submitted_at': '2017-03-01T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
+            {'user': {'login': 'reviewer2'}, 'submitted_at': '2017-03-02T00:00:00Z', 'state': 'APPROVED'},
+            {'user': {'login': 'reviewer2'}, 'submitted_at': '2017-03-03T00:00:00Z', 'state': 'COMMENTED'},
 
-            {u'user': {u'login': u'reviewer3'}, u'submitted_at': u'2017-04-02T00:00:00Z', u'state': u'APPROVED'},
-            {u'user': {u'login': u'reviewer3'}, u'submitted_at': u'2017-04-03T00:00:00Z', u'state': u'CHANGES_REQUESTED'},
+            {'user': {'login': 'reviewer3'}, 'submitted_at': '2017-04-02T00:00:00Z', 'state': 'APPROVED'},
+            {'user': {'login': 'reviewer3'}, 'submitted_at': '2017-04-03T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
 
-            {u'user': {u'login': u'reviewer4'}, u'submitted_at': u'2017-05-01T00:00:00Z', u'state': u'CHANGES_REQUESTED'},
+            {'user': {'login': 'reviewer4'}, 'submitted_at': '2017-05-01T00:00:00Z', 'state': 'CHANGES_REQUESTED'},
         ]
         for review in reviews:
-            review[u'commit_id'] = u'569597fac8175e6c63cbb415080ce42f9992a0c9'
-        submitter = u'submitter'
+            review['commit_id'] = '569597fac8175e6c63cbb415080ce42f9992a0c9'
+        submitter = 'submitter'
 
         filtered = _get_review_state(reviews, submitter)
 
-        self.assertEqual(filtered[u'reviewer0'][u'state'], u'COMMENTED')
-        self.assertEqual(filtered[u'reviewer1'][u'state'], u'CHANGES_REQUESTED')
-        self.assertEqual(filtered[u'reviewer2'][u'state'], u'COMMENTED')
-        self.assertEqual(filtered[u'reviewer3'][u'state'], u'CHANGES_REQUESTED')
-        self.assertEqual(filtered[u'reviewer4'][u'state'], u'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer0']['state'], 'COMMENTED')
+        self.assertEqual(filtered['reviewer1']['state'], 'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer2']['state'], 'COMMENTED')
+        self.assertEqual(filtered['reviewer3']['state'], 'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer4']['state'], 'CHANGES_REQUESTED')
 
         shipits = {
-            u'reviewer1': self.make_time(u'2017-02-04T00:00:00Z'),  # newer, overrides CHANGES_REQUESTED review
-            u'reviewer3': self.make_time(u'2017-04-01T00:00:00Z'),  # older, doesn't override CHANGES_REQUESTED review
+            'reviewer1': self.make_time('2017-02-04T00:00:00Z'),  # newer, overrides CHANGES_REQUESTED review
+            'reviewer3': self.make_time('2017-04-01T00:00:00Z'),  # older, doesn't override CHANGES_REQUESTED review
         }
 
-        last_commit = u'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
         requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review=None)
-        self.assertEqual(sorted(requested_by), [u'reviewer3', u'reviewer4'])
+        self.assertEqual(sorted(requested_by), ['reviewer3', 'reviewer4'])
 
     def test_review_older_than_ready_for_review(self):
         """Check that:
@@ -203,18 +197,18 @@ class TestReviewMethods(TestCase):
         """
         reviews = [
             # oldest first
-            {u'user': {u'login': u'reviewer0'}, u'submitted_at': u'2017-01-01T00:00:00Z', u'state': u'CHANGES_REQUESTED',
-             u'commit_id': u'569597fac8175e6c63cbb415080ce42f9992a0c9'},
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-01-01T00:00:00Z', 'state': 'CHANGES_REQUESTED',
+             'commit_id': '569597fac8175e6c63cbb415080ce42f9992a0c9'},
         ]
-        submitter = u'submitter'
+        submitter = 'submitter'
 
         filtered = _get_review_state(reviews, submitter)
 
-        self.assertEqual(filtered[u'reviewer0'][u'state'], u'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer0']['state'], 'CHANGES_REQUESTED')
 
         shipits = {}
-        last_commit = u'dce73fdee311d5e74a7d59fd301320943f69d49f'
-        ready_for_review = self.make_time(u'2017-02-02T00:00:00Z')
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        ready_for_review = self.make_time('2017-02-02T00:00:00Z')
 
         requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review)
         self.assertFalse(requested_by)  # CHANGES_REQUESTED review ignored
@@ -226,21 +220,21 @@ class TestReviewMethods(TestCase):
         """
         reviews = [
             # oldest first
-            {u'user': {u'login': u'reviewer0'}, u'submitted_at': u'2017-02-02T00:00:00Z', u'state': u'CHANGES_REQUESTED',
-             u'commit_id': u'569597fac8175e6c63cbb415080ce42f9992a0c9'},
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-02-02T00:00:00Z', 'state': 'CHANGES_REQUESTED',
+             'commit_id': '569597fac8175e6c63cbb415080ce42f9992a0c9'},
         ]
-        submitter = u'submitter'
+        submitter = 'submitter'
 
         filtered = _get_review_state(reviews, submitter)
 
-        self.assertEqual(filtered[u'reviewer0'][u'state'], u'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer0']['state'], 'CHANGES_REQUESTED')
 
         shipits = {}
-        last_commit = u'dce73fdee311d5e74a7d59fd301320943f69d49f'
-        ready_for_review = self.make_time(u'2017-01-01T00:00:00Z')
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        ready_for_review = self.make_time('2017-01-01T00:00:00Z')
 
         requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review)
-        self.assertEqual(requested_by, [u'reviewer0'])  # HANGES_REQUESTED review isn't ignored
+        self.assertEqual(requested_by, ['reviewer0'])  # HANGES_REQUESTED review isn't ignored
 
     def test_review_older_than_ready_for_review_PR_not_updated(self):
         """Check that:
@@ -248,25 +242,25 @@ class TestReviewMethods(TestCase):
         - but submitter didn't update the pull request
         => review isn't ignored
         """
-        last_commit = u'dce73fdee311d5e74a7d59fd301320943f69d49f'
+        last_commit = 'dce73fdee311d5e74a7d59fd301320943f69d49f'
         reviews = [
             # oldest first
-            {u'user': {u'login': u'reviewer0'}, u'submitted_at': u'2017-01-01T00:00:00Z', u'state': u'CHANGES_REQUESTED',
-             u'commit_id': last_commit},
+            {'user': {'login': 'reviewer0'}, 'submitted_at': '2017-01-01T00:00:00Z', 'state': 'CHANGES_REQUESTED',
+             'commit_id': last_commit},
         ]
-        submitter = u'submitter'
+        submitter = 'submitter'
 
         filtered = _get_review_state(reviews, submitter)
 
-        self.assertEqual(filtered[u'reviewer0'][u'state'], u'CHANGES_REQUESTED')
+        self.assertEqual(filtered['reviewer0']['state'], 'CHANGES_REQUESTED')
 
         shipits = {}
-        ready_for_review = self.make_time(u'2017-02-02T00:00:00Z')
+        ready_for_review = self.make_time('2017-02-02T00:00:00Z')
 
         requested_by = _changes_requested_by(filtered, shipits, last_commit, ready_for_review)
-        self.assertEqual(requested_by, [u'reviewer0'])  # HANGES_REQUESTED review isn't ignored
+        self.assertEqual(requested_by, ['reviewer0'])  # HANGES_REQUESTED review isn't ignored
 
     @staticmethod
     def make_time(data):
-        time = datetime.datetime.strptime(data, u'%Y-%m-%dT%H:%M:%SZ')
+        time = datetime.datetime.strptime(data, '%Y-%m-%dT%H:%M:%SZ')
         return pytz.utc.localize(time)

@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-
-import six
-
-
-class RepoIssuesIterator(six.Iterator):
+class RepoIssuesIterator:
 
     def __init__(self, repo, numbers, issuecache={}):
         self.repo = repo

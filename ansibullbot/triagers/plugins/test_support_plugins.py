@@ -12,17 +12,17 @@ import os.path
 
 def get_test_support_plugins_facts(iw, component_matcher):
     tmeta = {
-        u'test_support_plugins': {}
+        'test_support_plugins': {}
     }
 
     if not (iw.is_pullrequest() and iw.files):
         return tmeta
 
     for fn in iw.files:
-        if not fn.startswith(u'test/support/'):
+        if not fn.startswith('test/support/'):
             continue
 
-        tmeta[u'test_support_plugins'][fn] = []
+        tmeta['test_support_plugins'][fn] = []
 
         try:
             plugin_path = fn.split('plugins/')[1]
@@ -37,7 +37,7 @@ def get_test_support_plugins_facts(iw, component_matcher):
             collections = component_matcher.search_ecosystem(pattern)
             for collection_data in collections:
                 collection_name = collection_data.split(':')[1]
-                if collection_name not in tmeta[u'test_support_plugins'][fn]:
-                    tmeta[u'test_support_plugins'][fn].append(collection_name)
+                if collection_name not in tmeta['test_support_plugins'][fn]:
+                    tmeta['test_support_plugins'][fn].append(collection_name)
 
     return tmeta

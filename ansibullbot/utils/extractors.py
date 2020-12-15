@@ -3,40 +3,39 @@ import operator
 import re
 from string import Template
 
-import six
 import yaml
 
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_bytes, to_text
 
 
-SECTIONS = [u'ISSUE TYPE', u'COMPONENT NAME', u'PLUGIN NAME',
-            u'ANSIBLE VERSION', u'ANSIBLE CONFIGURATION', u'CONFIGURATION',
-            u'OS / ENVIRONMENT', u'SUMMARY', u'ENVIRONMENT',
-            u'STEPS TO REPRODUCE', u'EXPECTED RESULTS',
-            u'ACTUAL RESULTS', u'ADDITIONAL INFORMATION']
+SECTIONS = ['ISSUE TYPE', 'COMPONENT NAME', 'PLUGIN NAME',
+            'ANSIBLE VERSION', 'ANSIBLE CONFIGURATION', 'CONFIGURATION',
+            'OS / ENVIRONMENT', 'SUMMARY', 'ENVIRONMENT',
+            'STEPS TO REPRODUCE', 'EXPECTED RESULTS',
+            'ACTUAL RESULTS', 'ADDITIONAL INFORMATION']
 
-TEMPLATE_HEADER = u'#####'
+TEMPLATE_HEADER = '#####'
 
 
 def extract_template_sections(body, header=TEMPLATE_HEADER):
     ''' Get the section names from a .github/*.md file in a repo'''
 
     sections = {}
-    lines = body.split(u'\n')
+    lines = body.split('\n')
     current_section = None
     index = 0
     for line in lines:
         if line.startswith(header):
-            section = line.replace(header, u'', 1)
+            section = line.replace(header, '', 1)
             section = section.strip()
-            sections[section] = {u'required': False, u'index': index}
+            sections[section] = {'required': False, 'index': index}
             index += 1
             current_section = section
 
-        elif line.startswith(u'<!--') and current_section:
-            if u'required: True' in line:
-                sections[current_section][u'required'] = True
+        elif line.startswith('<!--') and current_section:
+            if 'required: True' in line:
+                sections[current_section]['required'] = True
 
     return sections
 
@@ -62,7 +61,7 @@ def fuzzy_find_sections(body, sections):
         try:
             before = upper_body[v-1]
             after = upper_body[v + len(k)]
-            header = before + u'${section}' + after
+            header = before + '${section}' + after
             headers.append(header)
         except Exception:
             pass
@@ -83,7 +82,7 @@ def fuzzy_find_sections(body, sections):
             try:
                 tofind = t.substitute(section=section)
             except Exception as e:
-                raise Exception(u'substitution failed: %s' % to_text(e))
+                raise Exception('substitution failed: %s' % to_text(e))
             match = upper_body.find(tofind)
             if match != -1:
                 match_map[section] = match + 1
@@ -102,16 +101,16 @@ def fuzzy_find_sections(body, sections):
 
     elif len(headers) <= 1:
         if headers and \
-                (u'#' not in headers[0] and
-                 u':' not in headers[0] and
-                 u'*' not in headers[0]):
+                ('#' not in headers[0] and
+                 ':' not in headers[0] and
+                 '*' not in headers[0]):
             return {}
 
     # sort mapping by element id and inject itype if needed
     match_map = sorted(match_map.items(), key=operator.itemgetter(1))
-    if match_map and u'ISSUE TYPE' not in [x[0] for x in match_map]:
+    if match_map and 'ISSUE TYPE' not in [x[0] for x in match_map]:
         if match_map[0][1] > 10:
-            match_map.insert(0, (u'ISSUE TYPE', 0))
+            match_map.insert(0, ('ISSUE TYPE', 0))
 
     # extract the sections based on their indexes
     tdict = {}
@@ -179,27 +178,27 @@ def extract_template_data(body, issue_class='issue', sections=None):
 
     # lowercase the keys
     ndict = {}
-    for k, v in six.iteritems(tdict):
+    for k, v in tdict.items():
         ku = k.lower()
-        if ku == u'plugin name':
-            ku = u'component name'
+        if ku == 'plugin name':
+            ku = 'component name'
         ndict[ku] = v
     if ndict != tdict:
         tdict = ndict.copy()
 
     # make a raw component section for later processing
-    component_raw = tdict.get(u'component name', u'')
+    component_raw = tdict.get('component name', '')
 
     # https://github.com/ansible/ansibullbot/issues/359
-    if u',' in tdict.get(u'component name', u''):
-        tdict[u'component name'] = tdict[u'component name'].replace(u',', u'\n')
+    if ',' in tdict.get('component name', ''):
+        tdict['component name'] = tdict['component name'].replace(',', '\n')
 
     # https://github.com/ansible/ansibullbot/issues/385
-    if u' and ' in tdict.get(u'component name', u''):
-        tdict[u'component name'] = tdict[u'component name'].replace(u' and ', u'\n')
+    if ' and ' in tdict.get('component name', ''):
+        tdict['component name'] = tdict['component name'].replace(' and ', '\n')
 
     # cleanup the sections
-    for k, v in six.iteritems(tdict):
+    for k, v in tdict.items():
         # remove markdown comments from the sections
         v = remove_markdown_comments(v)
 
@@ -207,31 +206,31 @@ def extract_template_data(body, issue_class='issue', sections=None):
         v = to_text(to_bytes(v, 'ascii', errors='ignore'), 'ascii')
 
         # normalize newlines and return chars
-        v = v.replace(u'\r', u'\n')
+        v = v.replace('\r', '\n')
 
         # remove pre-ceding and trailing newlines
         v = v.strip()
 
         # remove trailing hashes
-        while v.endswith(u'#'):
+        while v.endswith('#'):
             v = v[:-1]
 
         # remove pre-ceding and trailing newlines (AGAIN)
         v = v.strip()
 
         # clean more on critical sections
-        if u'step' not in k and u'result' not in k:
+        if 'step' not in k and 'result' not in k:
 
             # https://github.com/ansible/ansible-modules-extras/issues/2262
-            if k == u'component name':
+            if k == 'component name':
                 v = v.lower()
 
-            if k == u'component name' and u'module' in v:
-                if u'/modules/' in v or \
-                        u'module_util' in v or \
-                        u'module_utils/' in v or \
-                        u'validate-modules' in v or\
-                        u'module_common' in v:
+            if k == 'component name' and 'module' in v:
+                if '/modules/' in v or \
+                        'module_util' in v or \
+                        'module_utils/' in v or \
+                        'validate-modules' in v or\
+                        'module_common' in v:
                     # https://github.com/ansible/ansible/issues/20563
                     # https://github.com/ansible/ansible/issues/18179
                     pass
@@ -246,64 +245,64 @@ def extract_template_data(body, issue_class='issue', sections=None):
                         v = v[match.pos:match.end()]
                     else:
                         # https://github.com/ansible/ansibullbot/issues/385
-                        if u'modules' in v:
-                            v = v.replace(u'modules', u' ')
+                        if 'modules' in v:
+                            v = v.replace('modules', ' ')
                         else:
-                            v = v.replace(u'module', u' ')
+                            v = v.replace('module', ' ')
 
             # remove useless chars
             exclude = None
-            if k == u'component name':
-                exclude = [u'__']
+            if k == 'component name':
+                exclude = ['__']
             v = clean_bad_characters(v, exclude=exclude)
 
             # clean up empty lines
-            vlines = v.split(u'\n')
+            vlines = v.split('\n')
             vlines = [x for x in vlines if x.strip()]
             vlines = [x.strip() for x in vlines if x.strip()]
-            v = u'\n'.join(vlines)
+            v = '\n'.join(vlines)
 
             # remove pre-ceding special chars
-            for bc in [u'-', u'*']:
+            for bc in ['-', '*']:
                 if v:
                     if v[0] == bc:
                         v = v[1:]
                     v = v.strip()
 
             # keep just the first line for types and components
-            if k in [u'issue type', u'component name']:
+            if k in ['issue type', 'component name']:
                 if v:
-                    vlines = v.split(u'\n')
+                    vlines = v.split('\n')
                     # https://github.com/ansible/ansible-modules-core/issues/3085
-                    vlines = [x for x in vlines if u'pick one' not in x]
+                    vlines = [x for x in vlines if 'pick one' not in x]
                     v = vlines[0]
 
             # https://github.com/ansible/ansible-modules-core/issues/4060
-            if k in [u'issue type']:
-                if u'/' in v:
-                    v = v.split(u'/')
-                    if k == [u'issue type']:
+            if k in ['issue type']:
+                if '/' in v:
+                    v = v.split('/')
+                    if k == ['issue type']:
                         v = v[0]
                     else:
                         v = v[-1]
                     v = v.strip()
 
-            if issue_class == u'issue':
-                if k == u'issue type' and v != u'bug report' and u'bug' in v.lower():
-                    v = u'bug report'
-                elif k == u'issue type' and v != u'feature idea' and u'feature' in v.lower():
-                    v = u'feature idea'
-            elif issue_class == u'pullrequest':
-                if k == u'issue type' and v != u'bugfix pull request' and u'bug' in v.lower():
-                    v = u'bugfix pull request'
-                elif k == u'issue type' and v != u'feature pull request' and u'feature' in v.lower():
-                    v = u'feature pull request'
-                elif k == u'issue type' and v != u'new module pull request' and u'new module' in v.lower():
-                    v = u'new module pull request'
-                elif k == u'issue type' and v != u'docs pull request' and u'docs' in v.lower():
-                    v = u'docs pull request'
-                elif k == u'issue type' and v != u'test pull request' and u'test' in v.lower():
-                    v = u'test pull request'
+            if issue_class == 'issue':
+                if k == 'issue type' and v != 'bug report' and 'bug' in v.lower():
+                    v = 'bug report'
+                elif k == 'issue type' and v != 'feature idea' and 'feature' in v.lower():
+                    v = 'feature idea'
+            elif issue_class == 'pullrequest':
+                if k == 'issue type' and v != 'bugfix pull request' and 'bug' in v.lower():
+                    v = 'bugfix pull request'
+                elif k == 'issue type' and v != 'feature pull request' and 'feature' in v.lower():
+                    v = 'feature pull request'
+                elif k == 'issue type' and v != 'new module pull request' and 'new module' in v.lower():
+                    v = 'new module pull request'
+                elif k == 'issue type' and v != 'docs pull request' and 'docs' in v.lower():
+                    v = 'docs pull request'
+                elif k == 'issue type' and v != 'test pull request' and 'test' in v.lower():
+                    v = 'test pull request'
 
         if v == 'paste below':
             v = ''
@@ -313,27 +312,27 @@ def extract_template_data(body, issue_class='issue', sections=None):
 
     # quick clean and add raw component to the dict
     component_raw = remove_markdown_comments(component_raw)
-    component_raw = clean_bad_characters(component_raw, exclude=[u'__'])
-    component_raw = u'\n'.join([x.strip() for x in component_raw.split(u'\n') if x.strip()])
-    component_raw = u'\n'.join([x for x in component_raw.split(u'\n') if not x.startswith(u'#')])
-    tdict[u'component_raw'] = component_raw
+    component_raw = clean_bad_characters(component_raw, exclude=['__'])
+    component_raw = '\n'.join([x.strip() for x in component_raw.split('\n') if x.strip()])
+    component_raw = '\n'.join([x for x in component_raw.split('\n') if not x.startswith('#')])
+    tdict['component_raw'] = component_raw
 
     return tdict
 
 
 def clean_bad_characters(raw_text, exclude=None):
-    badchars = [u'#', u':', u';', u',', u'*', u'"', u"'", u'`', u'---', u'__']
+    badchars = ['#', ':', ';', ',', '*', '"', "'", '`', '---', '__']
 
     if exclude is None:
         exclude = []
 
     # Exclude patterns of word, word,word
     if re.search(r'(\w+,\s?)+\w+', raw_text):
-        exclude.extend(u',')
+        exclude.extend(',')
 
     # Exclude contractions like It's
     if re.search(r"\w+'\w", raw_text):
-        exclude.extend(u"'")
+        exclude.extend("'")
 
     # Don't remove characters passed in as an exclusion
     if exclude:
@@ -343,7 +342,7 @@ def clean_bad_characters(raw_text, exclude=None):
             badchars = [x for x in badchars if x != exclude]
 
     for bc in badchars:
-        raw_text = raw_text.replace(bc, u'')
+        raw_text = raw_text.replace(bc, '')
 
     return raw_text
 
@@ -353,11 +352,11 @@ def remove_markdown_comments(rawtext):
     # <!--- ---> OR <!-- -->
     cleaned = rawtext
     loopcount = 0
-    while cleaned.find(u'<!-') > -1 and loopcount <= 20:
+    while cleaned.find('<!-') > -1 and loopcount <= 20:
         loopcount += 1
-        start = cleaned.find(u'<!-')
+        start = cleaned.find('<!-')
         if start > -1:
-            end = cleaned.find(u'->', start)
+            end = cleaned.find('->', start)
             if end == -1:
                 cleaned = cleaned[:start-1]
             else:
@@ -382,7 +381,7 @@ def extract_pr_number_from_comment(rawtext):
     return None
 
 
-class ModuleExtractor(object):
+class ModuleExtractor:
 
     _AUTHORS = None
     _DOCUMENTATION_RAW = None
@@ -400,7 +399,7 @@ class ModuleExtractor(object):
             try:
                 with open(self.filepath, 'rb') as f:
                     self._FILEDATA = f.read()
-            except (IOError, OSError):
+            except OSError:
                 return b''
         return self._FILEDATA
 
@@ -415,17 +414,17 @@ class ModuleExtractor(object):
         if self._DOCSTRING is not None:
             return self._DOCSTRING
 
-        documentation = u''
+        documentation = ''
         inphase = False
-        lines = to_text(self.filedata).split(u'\n')
+        lines = to_text(self.filedata).split('\n')
         for line in lines:
-            if u'DOCUMENTATION' in line:
+            if 'DOCUMENTATION' in line:
                 inphase = True
                 continue
-            if inphase and (line.strip().endswith((u"'''", u'"""'))):
+            if inphase and (line.strip().endswith(("'''", '"""'))):
                 break
             if inphase:
-                documentation += line + u'\n'
+                documentation += line + '\n'
 
         self._DOCUMENTATION_RAW = documentation
 
@@ -475,21 +474,21 @@ class ModuleExtractor(object):
         if author is None:
             return authors
 
-        if u'ansible core team' in author.lower():
-            authors.add(u'ansible')
-        elif u'@' in author:
+        if 'ansible core team' in author.lower():
+            authors.add('ansible')
+        elif '@' in author:
             # match github ids but not emails
             authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
-        elif u'github.com/' in author:
+        elif 'github.com/' in author:
             # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
-            idx = author.find(u'github.com/')
+            idx = author.find('github.com/')
             author = author[idx+11:]
-            authors.add(author.replace(u')', u''))
-        elif u'(' in author and len(author.split()) == 3:
+            authors.add(author.replace(')', ''))
+        elif '(' in author and len(author.split()) == 3:
             # Mathieu Bultel (matbu)
-            idx = author.find(u'(')
+            idx = author.find('(')
             author = author[idx+1:]
-            authors.add(author.replace(u')', u''))
+            authors.add(author.replace(')', ''))
 
         # search for emails
         for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
@@ -504,9 +503,9 @@ def get_template_data(iw):
     """Extract templated data from an issue body"""
 
     if iw.is_issue():
-        tfile = u'.github/ISSUE_TEMPLATE/bug_report.md'
+        tfile = '.github/ISSUE_TEMPLATE/bug_report.md'
     else:
-        tfile = u'.github/PULL_REQUEST_TEMPLATE.md'
+        tfile = '.github/PULL_REQUEST_TEMPLATE.md'
 
     # use the fileindexer whenever possible to conserve ratelimits
     if iw.gitrepo:
@@ -516,8 +515,8 @@ def get_template_data(iw):
             tf = iw.repo.get_file_contents(tfile)
             tf_content = tf.decoded_content
         except Exception:
-            logging.warning(u'repo does not have {}'.format(tfile))
-            tf_content = u''
+            logging.warning(f'repo does not have {tfile}')
+            tf_content = ''
 
     # pull out the section names from the tempalte
     tf_sections = extract_template_sections(tf_content, header=TEMPLATE_HEADER)
@@ -548,41 +547,41 @@ def get_template_data(iw):
                     if v and (k not in template_data or not template_data.get(k)):
                         template_data[k] = v
 
-    if u'ANSIBLE VERSION' in tf_sections and u'ansible version' not in template_data:
+    if 'ANSIBLE VERSION' in tf_sections and 'ansible version' not in template_data:
 
         # FIXME - abstract this into a historywrapper method
-        vlabels = [x for x in iw.history.history if x[u'event'] == u'labeled']
-        vlabels = [x for x in vlabels if x[u'actor'] not in C.DEFAULT_BOT_NAMES]
-        vlabels = [x[u'label'] for x in vlabels if x[u'label'].startswith(u'affects_')]
-        vlabels = [x for x in vlabels if x.startswith(u'affects_')]
+        vlabels = [x for x in iw.history.history if x['event'] == 'labeled']
+        vlabels = [x for x in vlabels if x['actor'] not in C.DEFAULT_BOT_NAMES]
+        vlabels = [x['label'] for x in vlabels if x['label'].startswith('affects_')]
+        vlabels = [x for x in vlabels if x.startswith('affects_')]
 
-        versions = [x.split(u'_')[1] for x in vlabels]
+        versions = [x.split('_')[1] for x in vlabels]
         versions = [float(x) for x in versions]
         if versions:
             version = versions[-1]
-            template_data[u'ansible version'] = to_text(version)
+            template_data['ansible version'] = to_text(version)
 
-    if u'COMPONENT NAME' in tf_sections and u'component name' not in template_data:
+    if 'COMPONENT NAME' in tf_sections and 'component name' not in template_data:
         if iw.is_pullrequest():
             fns = iw.files
             if fns:
-                template_data[u'component name'] = u'\n'.join(fns)
-                template_data[u'component_raw'] = u'\n'.join(fns)
+                template_data['component name'] = '\n'.join(fns)
+                template_data['component_raw'] = '\n'.join(fns)
         else:
-            clabels = [x for x in iw.labels if x.startswith(u'c:')]
+            clabels = [x for x in iw.labels if x.startswith('c:')]
             if clabels:
                 fns = []
                 for clabel in clabels:
-                    clabel = clabel.replace(u'c:', u'')
-                    fns.append(u'lib/ansible/' + clabel)
-                template_data[u'component name'] = u'\n'.join(fns)
-                template_data[u'component_raw'] = u'\n'.join(fns)
+                    clabel = clabel.replace('c:', '')
+                    fns.append('lib/ansible/' + clabel)
+                template_data['component name'] = '\n'.join(fns)
+                template_data['component_raw'] = '\n'.join(fns)
 
-            elif u'documentation' in template_data.get(u'issue type', u'').lower():
-                template_data[u'component name'] = u'docs'
-                template_data[u'component_raw'] = u'docs'
+            elif 'documentation' in template_data.get('issue type', '').lower():
+                template_data['component name'] = 'docs'
+                template_data['component_raw'] = 'docs'
 
-    if u'ISSUE TYPE' in tf_sections and u'issue type' not in template_data:
+    if 'ISSUE TYPE' in tf_sections and 'issue type' not in template_data:
 
         # FIXME - turn this into a real classifier based on work done in
         # jctanner/pr-triage repo.
@@ -592,14 +591,14 @@ def get_template_data(iw):
         while not itype:
 
             for label in iw.labels:
-                if label.startswith(u'bug'):
-                    itype = u'bug'
+                if label.startswith('bug'):
+                    itype = 'bug'
                     break
-                if label.startswith(u'feature'):
-                    itype = u'feature'
+                if label.startswith('feature'):
+                    itype = 'feature'
                     break
-                if label.startswith(u'doc'):
-                    itype = u'docs'
+                if label.startswith('doc'):
+                    itype = 'docs'
                     break
             if itype:
                 break
@@ -607,56 +606,56 @@ def get_template_data(iw):
             if iw.is_pullrequest():
                 fns = iw.files
                 for fn in fns:
-                    if fn.startswith(u'doc'):
-                        itype = u'docs'
+                    if fn.startswith('doc'):
+                        itype = 'docs'
                         break
             if itype:
                 break
 
             msgs = [iw.title, iw.body]
             if iw.is_pullrequest():
-                msgs += [x[u'message'] for x in iw.history.history if x[u'event'] == u'committed']
+                msgs += [x['message'] for x in iw.history.history if x['event'] == 'committed']
 
             msgs = [x for x in msgs if x]
             msgs = [x.lower() for x in msgs]
 
             for msg in msgs:
-                if u'fix' in msg:
-                    itype = u'bug'
+                if 'fix' in msg:
+                    itype = 'bug'
                     break
-                if u'addresses' in msg:
-                    itype = u'bug'
+                if 'addresses' in msg:
+                    itype = 'bug'
                     break
-                if u'broke' in msg:
-                    itype = u'bug'
+                if 'broke' in msg:
+                    itype = 'bug'
                     break
-                if u'add' in msg:
-                    itype = u'feature'
+                if 'add' in msg:
+                    itype = 'feature'
                     break
-                if u'should' in msg:
-                    itype = u'feature'
+                if 'should' in msg:
+                    itype = 'feature'
                     break
-                if u'please' in msg:
-                    itype = u'feature'
+                if 'please' in msg:
+                    itype = 'feature'
                     break
-                if u'feature' in msg:
-                    itype = u'feature'
+                if 'feature' in msg:
+                    itype = 'feature'
                     break
 
             # quit now
             break
 
-        if itype and itype == u'bug' and iw.is_issue():
-            template_data[u'issue type'] = u'bug report'
-        elif itype and itype == u'bug' and not iw.is_issue():
-            template_data[u'issue type'] = u'bugfix pullrequest'
-        elif itype and itype == u'feature' and iw.is_issue():
-            template_data[u'issue type'] = u'feature idea'
-        elif itype and itype == u'feature' and not iw.is_issue():
-            template_data[u'issue type'] = u'feature pullrequest'
-        elif itype and itype == u'docs' and iw.is_issue():
-            template_data[u'issue type'] = u'documentation report'
-        elif itype and itype == u'docs' and not iw.is_issue():
-            template_data[u'issue type'] = u'documenation pullrequest'
+        if itype and itype == 'bug' and iw.is_issue():
+            template_data['issue type'] = 'bug report'
+        elif itype and itype == 'bug' and not iw.is_issue():
+            template_data['issue type'] = 'bugfix pullrequest'
+        elif itype and itype == 'feature' and iw.is_issue():
+            template_data['issue type'] = 'feature idea'
+        elif itype and itype == 'feature' and not iw.is_issue():
+            template_data['issue type'] = 'feature pullrequest'
+        elif itype and itype == 'docs' and iw.is_issue():
+            template_data['issue type'] = 'documentation report'
+        elif itype and itype == 'docs' and not iw.is_issue():
+            template_data['issue type'] = 'documenation pullrequest'
 
     return template_data

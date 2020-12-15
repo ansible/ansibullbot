@@ -1,9 +1,5 @@
-# Prod deps:
 -r requirements.txt
 
-# Test runner:
-backports.tempfile>=1.0
-backports.weakref>=1.0.post1
-pytest>=3.0
-pytest-cov>=2.6.0
-pytest-sugar>=0.9.1
+pytest
+pytest-cov
+pytest-sugar

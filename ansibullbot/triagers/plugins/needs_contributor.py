@@ -5,26 +5,26 @@ def get_needs_contributor_facts(triager, issuewrapper, meta):
     needs_contributor = False
 
     for event in issuewrapper.history.history:
-        if event[u'actor'] in triager.BOTNAMES:
+        if event['actor'] in triager.BOTNAMES:
             continue
 
-        if event[u'event'] == u'labeled':
-            if event[u'label'] in [u'needs_contributor', u'waiting_on_contributor']:
+        if event['event'] == 'labeled':
+            if event['label'] in ['needs_contributor', 'waiting_on_contributor']:
                 needs_contributor = True
                 continue
 
-        if event[u'event'] == u'unlabeled':
-            if event[u'label'] == [u'needs_contributor', u'waiting_on_contributor']:
+        if event['event'] == 'unlabeled':
+            if event['label'] == ['needs_contributor', 'waiting_on_contributor']:
                 needs_contributor = False
                 continue
 
-        if event[u'event'] == u'commented':
-            if u'!needs_contributor' in event[u'body']:
+        if event['event'] == 'commented':
+            if '!needs_contributor' in event['body']:
                 needs_contributor = False
                 continue
 
-            if u'needs_contributor' in event[u'body'] and u'!needs_contributor' not in event[u'body']:
+            if 'needs_contributor' in event['body'] and '!needs_contributor' not in event['body']:
                 needs_contributor = True
                 continue
 
-    return {u'is_needs_contributor': needs_contributor}
+    return {'is_needs_contributor': needs_contributor}

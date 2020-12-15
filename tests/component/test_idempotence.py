@@ -82,7 +82,7 @@ class TestIdempotence:
             metafiles = sorted(metafiles)
             for mf in metafiles:
 
-                with open(mf, 'r') as f:
+                with open(mf) as f:
                     meta = json.loads(f.read())
 
                 print('checking %s' % mf)

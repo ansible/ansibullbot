@@ -2,9 +2,7 @@
 
 ## Python compatibility
 
-Ansibullbot is compatible with both Python 2.7 and Python 3.7.
-
-Usage of unicode strings is required.
+Ansibullbot is compatible with Python 3.8+.
 
 ## Getting started
 

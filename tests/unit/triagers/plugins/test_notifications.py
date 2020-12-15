@@ -8,30 +8,30 @@ from tests.utils.repo_mock import RepoMock
 @pytest.fixture
 def meta():
     return {
-        u'component_maintainers': [u'target_user'],
-        u'component_notifiers': [u'another_user'],
+        'component_maintainers': ['target_user'],
+        'component_notifiers': ['another_user'],
     }
 
 
 @pytest.fixture
 def statusfile():
-    return u'tests/fixtures/needs_contributor/0_prstatus.json'
+    return 'tests/fixtures/needs_contributor/0_prstatus.json'
 
 
 @pytest.fixture
 def iw(meta, statusfile):
-    datafile = u'tests/fixtures/needs_contributor/0_issue.yml'
+    datafile = 'tests/fixtures/needs_contributor/0_issue.yml'
     with get_issue(datafile, statusfile) as iw:
         iw._assignees = []
         iw._merge_commits = []
-        iw.repo = RepoMock(meta[u'component_maintainers'] + meta[u'component_notifiers'])
+        iw.repo = RepoMock(meta['component_maintainers'] + meta['component_notifiers'])
         return iw
 
 
 def test_notify_authors(iw, meta):
     facts = get_notification_facts(iw, meta)
 
-    expected_assign_users = [u'target_user']
-    expected_notify_users = [u'another_user']  # , u'target_user']
-    assert sorted(facts[u'to_assign']) == expected_assign_users
-    assert sorted(facts[u'to_notify']) == expected_notify_users
+    expected_assign_users = ['target_user']
+    expected_notify_users = ['another_user']  # , u'target_user']
+    assert sorted(facts['to_assign']) == expected_assign_users
+    assert sorted(facts['to_notify']) == expected_notify_users

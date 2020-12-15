@@ -1,17 +1,16 @@
 import datetime
+import tempfile
 
 import pytest
-
-from backports import tempfile
 
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
 
-class UserMock(object):
+class UserMock:
     def __init__(self, login):
         self.login = login
 
-class LabelEventMock(object):
+class LabelEventMock:
     def __init__(self, event, login, label=None):
         self.id = 1
         self.actor = UserMock(login)
@@ -40,7 +39,7 @@ class LabelEventMock(object):
         return self._created_at
 
 
-class CommentMock(object):
+class CommentMock:
     def __init__(self, login, body):
         self.id = 1
         self.user = UserMock(login)
@@ -48,15 +47,15 @@ class CommentMock(object):
         self.created_at = datetime.datetime.now()
 
 
-class RepoMock(object):
+class RepoMock:
     repo_path = 'ansible/ansible'
 
 
-class IssueMock(object):
+class IssueMock:
     number = 1
 
 
-class IssueWrapperMock(object):
+class IssueWrapperMock:
 
     _events = []
     _comments = []
@@ -84,11 +83,11 @@ def test_get_component_commands():
 
     iw._comments = [
         {
-            u'id': 1,
-            u'actor': u'jimi-c',
-            u'body': '!component =lib/ansible/unicorns',
-            u'event': u'commented',
-            u'created_at': datetime.datetime.utcnow(),
+            'id': 1,
+            'actor': 'jimi-c',
+            'body': '!component =lib/ansible/unicorns',
+            'event': 'commented',
+            'created_at': datetime.datetime.utcnow(),
         }
     ]
     iw._events = iw._comments
@@ -109,11 +108,11 @@ def test_get_no_component_commands():
 
     iw._comments = [
         {
-            u'id': 1,
-            u'actor': u'jimi-c',
-            u'body': u'unicorns are awesome',
-            u'event': u'commented',
-            u'created_at': datetime.datetime.utcnow(),
+            'id': 1,
+            'actor': 'jimi-c',
+            'body': 'unicorns are awesome',
+            'event': 'commented',
+            'created_at': datetime.datetime.utcnow(),
         }
     ]
     iw._events = iw._comments
@@ -138,22 +137,22 @@ def test_ignore_events_without_dates_on_last_methods():
     keys are missing."""
 
     events = [
-        {u'event': u'labeled', u'created_at': datetime.datetime.utcnow(), u'actor': u'bcoca', u'label': u'needs_info'},
-        {u'event': u'labeled', u'created_at': datetime.datetime.utcnow(), u'actor': u'bcoca', u'label': u'needs_info'},
+        {'event': 'labeled', 'created_at': datetime.datetime.utcnow(), 'actor': 'bcoca', 'label': 'needs_info'},
+        {'event': 'labeled', 'created_at': datetime.datetime.utcnow(), 'actor': 'bcoca', 'label': 'needs_info'},
 
-        {u'event': u'comment', u'created_at': datetime.datetime.utcnow(), u'actor': u'ansibot', u'body': u'foobar\n<!--- boilerplate: needs_info --->'},
-        {u'event': u'comment', u'actor': u'ansibot', u'body': u'foobar\n<!--- boilerplate: needs_info --->'},
-        {u'event': u'labeled', u'created_at': datetime.datetime.utcnow(), u'actor': u'ansibot', u'label': u'needs_info'},
-        {u'event': u'labeled', u'actor': u'ansibot', u'label': u'needs_info'},
-        {u'event': u'comment', u'created_at': datetime.datetime.utcnow(), u'actor': u'jimi-c', u'body': u'unicorns are awesome'},
-        {u'event': u'comment', u'actor': u'jimi-c', u'body': u'unicorns are awesome'},
-        {u'event': u'unlabeled', u'created_at': datetime.datetime.utcnow(), u'actor': u'ansibot', u'label': u'needs_info'},
-        {u'event': u'unlabeled', u'actor': u'ansibot', u'label': u'needs_info'},
+        {'event': 'comment', 'created_at': datetime.datetime.utcnow(), 'actor': 'ansibot', 'body': 'foobar\n<!--- boilerplate: needs_info --->'},
+        {'event': 'comment', 'actor': 'ansibot', 'body': 'foobar\n<!--- boilerplate: needs_info --->'},
+        {'event': 'labeled', 'created_at': datetime.datetime.utcnow(), 'actor': 'ansibot', 'label': 'needs_info'},
+        {'event': 'labeled', 'actor': 'ansibot', 'label': 'needs_info'},
+        {'event': 'comment', 'created_at': datetime.datetime.utcnow(), 'actor': 'jimi-c', 'body': 'unicorns are awesome'},
+        {'event': 'comment', 'actor': 'jimi-c', 'body': 'unicorns are awesome'},
+        {'event': 'unlabeled', 'created_at': datetime.datetime.utcnow(), 'actor': 'ansibot', 'label': 'needs_info'},
+        {'event': 'unlabeled', 'actor': 'ansibot', 'label': 'needs_info'},
     ]
 
     iw = IssueWrapperMock()
     for event in events:
-        if event[u'event'] == u'comment':
+        if event['event'] == 'comment':
             iw._comments.append(event)
         iw._events.append(event)
 
@@ -162,10 +161,10 @@ def test_ignore_events_without_dates_on_last_methods():
     hw.BOTNAMES = ['ansibot']
 
     res = []
-    res.append(hw.label_last_applied(u'needs_info'))
-    res.append(hw.label_last_removed(u'needs_info'))
-    res.append(hw.last_date_for_boilerplate(u'needs_info'))
-    res.append(hw.was_labeled(u'needs_info'))
-    res.append(hw.was_unlabeled(u'needs_info'))
+    res.append(hw.label_last_applied('needs_info'))
+    res.append(hw.label_last_removed('needs_info'))
+    res.append(hw.last_date_for_boilerplate('needs_info'))
+    res.append(hw.was_labeled('needs_info'))
+    res.append(hw.was_unlabeled('needs_info'))
 
     assert not [x for x in res if x is None]

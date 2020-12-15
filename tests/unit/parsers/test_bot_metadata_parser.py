@@ -1,18 +1,9 @@
-#!/usr/bin/env python
-
 import inspect
 import os
 import shutil
 import unittest
 
-import pytest
-
 from ansibullbot.parsers.botmetadata import BotMetadataParser
-
-import six
-
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
 
 EXAMPLE1 = """
 ---
@@ -96,39 +87,39 @@ class TestBotMetadataParserEx1(TestBotMetaIndexerBase):
     def runTest(self):
         data = BotMetadataParser.parse_yaml(EXAMPLE1)
 
-        assert u'macros' in data
-        assert u'files' in data
-        assert u'lib/ansible/cli/galaxy' in data[u'files']
-        assert u'lib/ansible/cli/vault.py' in data[u'files']
-        assert u'lib/ansible/parsing/vault' in data[u'files']
-        assert u'lib/ansible/foobar' in data[u'files']
+        assert 'macros' in data
+        assert 'files' in data
+        assert 'lib/ansible/cli/galaxy' in data['files']
+        assert 'lib/ansible/cli/vault.py' in data['files']
+        assert 'lib/ansible/parsing/vault' in data['files']
+        assert 'lib/ansible/foobar' in data['files']
 
         self.assertEqual(
-            data[u'files'][u'lib/ansible/foobar'][u'labels'],
-            [u'ansible', u'bar', u'foo', u'foobar', u'lib']
+            data['files']['lib/ansible/foobar']['labels'],
+            ['ansible', 'bar', 'foo', 'foobar', 'lib']
         )
 
         self.assertEqual(
-            data[u'files'][u'lib/ansible/cli/vault.py'][u'maintainers'],
-            [u'larry', u'curly', u'moe', u'jeff'],
+            data['files']['lib/ansible/cli/vault.py']['maintainers'],
+            ['larry', 'curly', 'moe', 'jeff'],
         )
 
         # double-macro
-        assert u'lib/ansible/modules/x/y' in data[u'files']
-        assert u'maintainers' in data[u'files'][u'lib/ansible/modules/x/y']
+        assert 'lib/ansible/modules/x/y' in data['files']
+        assert 'maintainers' in data['files']['lib/ansible/modules/x/y']
         self.assertEqual(
-            data[u'files'][u'lib/ansible/modules/x/y'][u'maintainers'],
-            [u'steven']
+            data['files']['lib/ansible/modules/x/y']['maintainers'],
+            ['steven']
         )
 
-        assert u'team_oneline' in data[u'macros']
-        assert isinstance(data[u'macros'][u'team_oneline'], list)
+        assert 'team_oneline' in data['macros']
+        assert isinstance(data['macros']['team_oneline'], list)
         self.assertEqual(
-            data[u'macros'][u'team_oneline'],
-            [u'one', u'line', u'at', u'a', u'time']
+            data['macros']['team_oneline'],
+            ['one', 'line', 'at', 'a', 'time']
         )
 
-        self.assertEqual(dict, type(data[u'files'][u'packaging']))
+        self.assertEqual(dict, type(data['files']['packaging']))
 
 
 class TestBotMetadataParserFileExample1(TestBotMetaIndexerBase):
@@ -172,81 +163,81 @@ class TestBotMetadataPropagation(TestBotMetaIndexerBase):
 
         data = BotMetadataParser.parse_yaml(LABELS_SUPPORT_PROPAGATION)
 
-        assert u'macros' in data
-        assert u'files' in data
+        assert 'macros' in data
+        assert 'files' in data
 
-        self.assertEqual(set([u'lib/ansible/module_utils/network',
-                              u'lib/ansible/module_utils/network/fw',
-                              u'lib/ansible/module_utils/network/fw/sub',
-                              u'lib/ansible/module_utils/network/fw/sub/childA',
-                              u'lib/ansible/module_utils/network/fw/sub/childB',
-                              u'lib/ansible/module_utils/network/iwfu.py',
-                              u'lib/ansible/module_utils/other']),
-                         set(data[u'files'].keys()))
+        self.assertEqual({'lib/ansible/module_utils/network',
+                              'lib/ansible/module_utils/network/fw',
+                              'lib/ansible/module_utils/network/fw/sub',
+                              'lib/ansible/module_utils/network/fw/sub/childA',
+                              'lib/ansible/module_utils/network/fw/sub/childB',
+                              'lib/ansible/module_utils/network/iwfu.py',
+                              'lib/ansible/module_utils/other'},
+                         set(data['files'].keys()))
 
         #### 'labels' key
         self.assertEqual(
-            set(data[u'files'][u'lib/ansible/module_utils/network'][u'labels']),
-            set([u'lib', u'ansible', u'module_utils', u'network', u'networking'])
+            set(data['files']['lib/ansible/module_utils/network']['labels']),
+            {'lib', 'ansible', 'module_utils', 'network', 'networking'}
         )
 
         self.assertEqual(
-            set(data[u'files'][u'lib/ansible/module_utils/network/fw'][u'labels']),
-            set([u'lib', u'ansible', u'module_utils', u'network', u'networking', u'fw', u'firewall'])
+            set(data['files']['lib/ansible/module_utils/network/fw']['labels']),
+            {'lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall'}
         )
 
         self.assertEqual(
-            set(data[u'files'][u'lib/ansible/module_utils/network/fw/sub'][u'labels']),
-            set([u'lib', u'ansible', u'module_utils', u'network', u'networking', u'fw', u'firewall', u'sub', u'fwsub'])
+            set(data['files']['lib/ansible/module_utils/network/fw/sub']['labels']),
+            {'lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall', 'sub', 'fwsub'}
         )
 
         self.assertEqual(
-            set(data[u'files'][u'lib/ansible/module_utils/network/fw/sub/childA'][u'labels']),
-            set([u'lib', u'ansible', u'module_utils', u'network', u'networking', u'fw', u'firewall', u'sub', u'fwsub', u'childA'])
+            set(data['files']['lib/ansible/module_utils/network/fw/sub/childA']['labels']),
+            {'lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall', 'sub', 'fwsub', 'childA'}
         )
 
         self.assertEqual(
-            set(data[u'files'][u'lib/ansible/module_utils/network/fw/sub/childB'][u'labels']),
-            set([u'lib', u'ansible', u'module_utils', u'network', u'networking', u'fw', u'firewall', u'sub', u'fwsub', u'childB', u'labelB'])
+            set(data['files']['lib/ansible/module_utils/network/fw/sub/childB']['labels']),
+            {'lib', 'ansible', 'module_utils', 'network', 'networking', 'fw', 'firewall', 'sub', 'fwsub', 'childB', 'labelB'}
         )
 
         self.assertEqual(
-            set(data[u'files'][u'lib/ansible/module_utils/network/iwfu.py'][u'labels']),
-            set([u'lib', u'ansible', u'module_utils', u'network', u'networking', u'iwfu', u'firewall'])
+            set(data['files']['lib/ansible/module_utils/network/iwfu.py']['labels']),
+            {'lib', 'ansible', 'module_utils', 'network', 'networking', 'iwfu', 'firewall'}
         )
 
         #### 'support' key
         self.assertEqual(
-            data[u'files'][u'lib/ansible/module_utils/network'][u'support'], [u'network']
+            data['files']['lib/ansible/module_utils/network']['support'], ['network']
         )
 
         # subpath: support key is inherited
         self.assertEqual(
-            data[u'files'][u'lib/ansible/module_utils/network/fw'][u'support'], [u'network']
+            data['files']['lib/ansible/module_utils/network/fw']['support'], ['network']
         )
 
         # subpath: support key is overridden
         self.assertEqual(
-            data[u'files'][u'lib/ansible/module_utils/network/iwfu.py'][u'support'], [u'community']
+            data['files']['lib/ansible/module_utils/network/iwfu.py']['support'], ['community']
         )
 
         # subpath: support key is overridden
         self.assertEqual(
-            data[u'files'][u'lib/ansible/module_utils/network/fw/sub'][u'support'], [u'core']
+            data['files']['lib/ansible/module_utils/network/fw/sub']['support'], ['core']
         )
 
         # subpath: support key is inherited
         self.assertEqual(
-            data[u'files'][u'lib/ansible/module_utils/network/fw/sub/childA'][u'support'], [u'core']
+            data['files']['lib/ansible/module_utils/network/fw/sub/childA']['support'], ['core']
         )
 
         # subpath: support key is overridden
         self.assertEqual(
-            data[u'files'][u'lib/ansible/module_utils/network/fw/sub/childB'][u'support'], [u'another_level']
+            data['files']['lib/ansible/module_utils/network/fw/sub/childB']['support'], ['another_level']
         )
 
         # default value for support isn't set by botmeta
-        self.assertNotIn(u'support', data[u'files'][u'lib/ansible/module_utils/other'])
+        self.assertNotIn('support', data['files']['lib/ansible/module_utils/other'])
 
 
 class TestBotMetadataParserAnchors(TestBotMetaIndexerBase):
@@ -254,17 +245,17 @@ class TestBotMetadataParserAnchors(TestBotMetaIndexerBase):
         data = BotMetadataParser.parse_yaml(EXAMPLE_ANCHORS)
 
         # shortcuts
-        topdir = u'lib/ansible/modules/topdir'
-        dfile = u'docs/foo/bar'
-        mfile = u'lib/ansible/modules/topdir/topfile'
+        topdir = 'lib/ansible/modules/topdir'
+        dfile = 'docs/foo/bar'
+        mfile = 'lib/ansible/modules/topdir/topfile'
 
         # labels should be automatic from the path(s)
-        assert u'docs' in data[u'files'][dfile][u'labels']
+        assert 'docs' in data['files'][dfile]['labels']
 
         # children should inherit from their parent anchors
-        assert u'topdir' in data[u'files'][dfile][u'labels']
-        assert u'topdir' in data[u'files'][dfile][u'labels']
+        assert 'topdir' in data['files'][dfile]['labels']
+        assert 'topdir' in data['files'][dfile]['labels']
 
         # we do not want pointers merging all data into the anchor
-        assert u'docs' not in data[u'files'][topdir][u'labels']
-        assert u'docs' not in data[u'files'][mfile][u'labels']
+        assert 'docs' not in data['files'][topdir]['labels']
+        assert 'docs' not in data['files'][mfile]['labels']

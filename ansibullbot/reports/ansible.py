@@ -86,7 +86,7 @@ class IssueMock:
 class AnsibleSupportReport(AnsibleTriage):
 
     def __init__(self):
-        super(AnsibleSupportReport, self).__init__()
+        super().__init__()
 
     @classmethod
     def create_parser(cls):

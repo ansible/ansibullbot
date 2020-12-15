@@ -1,21 +1,17 @@
 -c constraints.txt
 
-argparse
 beautifulsoup4
 fuzzywuzzy
 jinja2
 logzero
-PyYAML
 pygithub
 python-Levenshtein
 pytz
+PyYAML
 requests
 requests_cache
 sentry-sdk
-six
 sqlalchemy
 tenacity
-textblob
-mock ; python_version < '3.3'
 
 -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt

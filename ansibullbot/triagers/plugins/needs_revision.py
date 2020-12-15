@@ -51,29 +51,29 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
     needs_multiple_new_modules_notification = False
 
     rmeta = {
-        u'committer_count': committer_count,
-        u'is_needs_revision': needs_revision,
-        u'is_needs_revision_msgs': needs_revision_msgs,
-        u'is_needs_rebase': needs_rebase,
-        u'is_needs_rebase_msgs': needs_rebase_msgs,
-        u'has_commit_mention': has_commit_mention,
-        u'has_commit_mention_notification': has_commit_mention_notification,
-        u'has_ci': has_ci,
-        u'merge_commits': merge_commits,
-        u'has_merge_commit_notification': has_merge_commit_notification,
-        u'mergeable': None,
-        u'mergeable_state': mstate,
-        u'change_requested': change_requested,
-        u'ci_state': ci_state,
-        u'ci_stale': ci_stale,
-        u'reviews': None,
-        u'ready_for_review': ready_for_review,
-        u'has_shippable_yaml': has_shippable_yaml,
-        u'has_shippable_yaml_notification': has_shippable_yaml_notification,
-        u'has_remote_repo': has_remote_repo,
-        u'stale_reviews': stale_reviews,
-        u'has_multiple_modules': has_multiple_modules,
-        u'needs_multiple_new_modules_notification': needs_multiple_new_modules_notification
+        'committer_count': committer_count,
+        'is_needs_revision': needs_revision,
+        'is_needs_revision_msgs': needs_revision_msgs,
+        'is_needs_rebase': needs_rebase,
+        'is_needs_rebase_msgs': needs_rebase_msgs,
+        'has_commit_mention': has_commit_mention,
+        'has_commit_mention_notification': has_commit_mention_notification,
+        'has_ci': has_ci,
+        'merge_commits': merge_commits,
+        'has_merge_commit_notification': has_merge_commit_notification,
+        'mergeable': None,
+        'mergeable_state': mstate,
+        'change_requested': change_requested,
+        'ci_state': ci_state,
+        'ci_stale': ci_stale,
+        'reviews': None,
+        'ready_for_review': ready_for_review,
+        'has_shippable_yaml': has_shippable_yaml,
+        'has_shippable_yaml_notification': has_shippable_yaml_notification,
+        'has_remote_repo': has_remote_repo,
+        'stale_reviews': stale_reviews,
+        'has_multiple_modules': has_multiple_modules,
+        'needs_multiple_new_modules_notification': needs_multiple_new_modules_notification
     }
 
     if not iw.is_pullrequest():
@@ -85,7 +85,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
     maintainers = [x for x in triager.ansible_core_team
                    if x not in triager.BOTNAMES]
 
-    maintainers += meta.get(u'component_maintainers', [])
+    maintainers += meta.get('component_maintainers', [])
 
     try:
         ci_date = ci.get_last_full_run_date()
@@ -97,37 +97,37 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
             ci_stale = (datetime.datetime.now() - ci_date).days > CI_STALE_DAYS
         ci_state = ci.state
 
-    logging.info(u'ci_state == %s' % ci_state)
+    logging.info('ci_state == %s' % ci_state)
 
     # clean/unstable/dirty/unknown
     mstate = iw.mergeable_state
     if not mstate:
-        mstate = u'unknown'
-    logging.info(u'mergeable_state == %s' % mstate)
+        mstate = 'unknown'
+    logging.info('mergeable_state == %s' % mstate)
 
     # clean/unstable/dirty/unknown
-    if mstate != u'clean':
-        if ci_state == u'failure':
+    if mstate != 'clean':
+        if ci_state == 'failure':
             needs_revision = True
-            needs_revision_msgs.append(u'ci failure')
+            needs_revision_msgs.append('ci failure')
 
-        if mstate == u'dirty':
+        if mstate == 'dirty':
             needs_revision = True
             needs_rebase = True
-            needs_revision_msgs.append(u'mergeable state is dirty')
-            needs_rebase_msgs.append(u'mergeable state is dirty')
-        elif mstate == u'unknown':
+            needs_revision_msgs.append('mergeable state is dirty')
+            needs_rebase_msgs.append('mergeable state is dirty')
+        elif mstate == 'unknown':
             # if tests are still running, this needs to be ignored.
-            if ci_state not in [u'pending']:
+            if ci_state not in ['pending']:
                 needs_revision = True
-                needs_revision_msgs.append(u'mergeable state is unknown')
+                needs_revision_msgs.append('mergeable state is unknown')
                 needs_rebase = True
-                needs_rebase_msgs.append(u'mergeable state is unknown')
-        elif mstate == u'unstable':
+                needs_rebase_msgs.append('mergeable state is unknown')
+        elif mstate == 'unstable':
             # reduce the label churn
-            if ci_state == u'pending' and u'needs_revision' in iw.labels:
+            if ci_state == 'pending' and 'needs_revision' in iw.labels:
                 needs_revision = True
-                needs_rebase_msgs.append(u'keep label till test finished')
+                needs_rebase_msgs.append('keep label till test finished')
         if ci_state is None:
             needs_revision = True
 
@@ -140,71 +140,71 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
 
         for event in iw.history.history:
 
-            if event[u'actor'] in triager.BOTNAMES:
+            if event['actor'] in triager.BOTNAMES:
                 continue
 
-            if event[u'actor'] in maintainers and \
-                    event[u'actor'] != iw.submitter:
+            if event['actor'] in maintainers and \
+                    event['actor'] != iw.submitter:
 
-                if event[u'event'] == u'labeled':
-                    if event[u'label'] == u'needs_revision':
+                if event['event'] == 'labeled':
+                    if event['label'] == 'needs_revision':
                         needs_revision = True
                         needs_revision_msgs.append(
-                            u'[%s] labeled' % event[u'actor']
+                            '[%s] labeled' % event['actor']
                         )
-                        has_set_needs_revision.add(event[u'actor'])
+                        has_set_needs_revision.add(event['actor'])
                         continue
 
-                if event[u'event'] == u'unlabeled':
-                    if event[u'label'] == u'needs_revision':
+                if event['event'] == 'unlabeled':
+                    if event['label'] == 'needs_revision':
                         needs_revision = False
                         needs_revision_msgs.append(
-                            u'[%s] unlabeled' % event[u'actor']
+                            '[%s] unlabeled' % event['actor']
                         )
                         continue
 
-                if event[u'event'] == u'commented':
-                    if is_approval(event[u'body']):
-                        shipits[event[u'actor']] = event[u'created_at']
-                    if u'!needs_revision' in event[u'body']:
+                if event['event'] == 'commented':
+                    if is_approval(event['body']):
+                        shipits[event['actor']] = event['created_at']
+                    if '!needs_revision' in event['body']:
                         needs_revision = False
                         needs_revision_msgs.append(
-                            u'[%s] !needs_revision' % event[u'actor']
+                            '[%s] !needs_revision' % event['actor']
                         )
                         continue
-                    if any(line.startswith(u'needs_revision') for line in event[u'body'].splitlines()) and \
-                            u'!needs_revision' not in event[u'body']:
+                    if any(line.startswith('needs_revision') for line in event['body'].splitlines()) and \
+                            '!needs_revision' not in event['body']:
                         needs_revision = True
                         needs_revision_msgs.append(
-                            u'[%s] needs_revision' % event[u'actor']
+                            '[%s] needs_revision' % event['actor']
                         )
-                        has_set_needs_revision.add(event[u'actor'])
+                        has_set_needs_revision.add(event['actor'])
                         continue
 
-                    if u'shipit' in event[u'body'].lower():
-                        if event[u'actor'] in has_set_needs_revision:
-                            has_set_needs_revision.remove(event[u'actor'])
+                    if 'shipit' in event['body'].lower():
+                        if event['actor'] in has_set_needs_revision:
+                            has_set_needs_revision.remove(event['actor'])
                             if not has_set_needs_revision:
                                 needs_revision = False
                                 continue
 
-            if event[u'actor'] == iw.submitter:
-                if event[u'event'] == u'commented':
-                    if u'ready_for_review' in event[u'body']:
-                        if ready_for_review is None or event[u'created_at'] > ready_for_review:
-                            ready_for_review = event[u'created_at']
+            if event['actor'] == iw.submitter:
+                if event['event'] == 'commented':
+                    if 'ready_for_review' in event['body']:
+                        if ready_for_review is None or event['created_at'] > ready_for_review:
+                            ready_for_review = event['created_at']
                         needs_revision = False
                         needs_revision_msgs.append(
-                            u'[%s] ready_for_review' % event[u'actor']
+                            '[%s] ready_for_review' % event['actor']
                         )
                         continue
-                    if u'shipit' in event[u'body'].lower():
+                    if 'shipit' in event['body'].lower():
                         #ready_for_review = True
-                        if ready_for_review is None or event[u'created_at'] > ready_for_review:
-                            ready_for_review = event[u'created_at']
+                        if ready_for_review is None or event['created_at'] > ready_for_review:
+                            ready_for_review = event['created_at']
                         needs_revision = False
                         needs_revision_msgs.append(
-                            u'[%s] shipit' % event[u'actor']
+                            '[%s] shipit' % event['actor']
                         )
                         continue
 
@@ -220,7 +220,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
             if change_requested:
                 needs_revision = True
                 needs_revision_msgs.append(
-                    u'outstanding reviews: %s' % u','.join(change_requested)
+                    'outstanding reviews: %s' % ','.join(change_requested)
                 )
 
     # Merge commits are bad, force a rebase
@@ -229,14 +229,14 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
 
         for mc in iw.merge_commits:
             merge_commits.append(mc.html_url)
-            needs_rebase_msgs.append(u'merge commit %s' % mc.commit.sha)
+            needs_rebase_msgs.append('merge commit %s' % mc.commit.sha)
 
-        if u'merge_commit_notify' not in bpcs:
+        if 'merge_commit_notify' not in bpcs:
             has_merge_commit_notification = False
         else:
             mc_comments = iw.history.search_user_comments(
                 triager.BOTNAMES,
-                u'boilerplate: merge_commit_notify'
+                'boilerplate: merge_commit_notify'
             )
             last_mc_comment = mc_comments[-1]
             mc_missing = []
@@ -257,15 +257,15 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
         words = x.commit.message.split()
         if not words:
             continue
-        if [x for x in words if x.startswith(u'@') and not x.endswith(u'@')]:
+        if [x for x in words if x.startswith('@') and not x.endswith('@')]:
             has_commit_mention = True
             needs_revision = True
-            needs_revision_msgs.append(u'@ in commit message')
+            needs_revision_msgs.append('@ in commit message')
             break
 
     # make sure they're notified about the problem
     if has_commit_mention:
-        if u'commit_msg_mentions' in bpcs:
+        if 'commit_msg_mentions' in bpcs:
             has_commit_mention_notification = True
 
     # keep track of who deleted their repo/branch
@@ -276,29 +276,29 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
         has_shippable_yaml = iw.pullrequest_filepath_exists(ci.required_file)
         if not has_shippable_yaml:
             needs_rebase = True
-            needs_rebase_msgs.append(u'missing shippable.yml')
-            has_shippable_yaml_notification = u'no_shippable_yaml' in bpcs
+            needs_rebase_msgs.append('missing shippable.yml')
+            has_shippable_yaml_notification = 'no_shippable_yaml' in bpcs
 
     # stale reviews
     if user_reviews:
 
         now = pytz.utc.localize(datetime.datetime.now())
-        commits = [x for x in iw.history.history if x[u'event'] == u'committed']
-        lc_date = commits[-1][u'created_at']
+        commits = [x for x in iw.history.history if x['event'] == 'committed']
+        lc_date = commits[-1]['created_at']
 
         stale_reviews = {}
         for actor, review in user_reviews.items():
-            if review[u'state'] != u'CHANGES_REQUESTED':
+            if review['state'] != 'CHANGES_REQUESTED':
                 continue
             lrd = None
             for x in iw.history.history:
-                if x[u'actor'] != actor:
+                if x['actor'] != actor:
                     continue
-                if x[u'event'] == u'review_changes_requested':
-                    if not lrd or lrd < x[u'created_at']:
-                        lrd = x[u'created_at']
-                elif x[u'event'] == u'commented' and is_approval(x[u'body']):
-                    if lrd and lrd < x[u'created_at']:
+                if x['event'] == 'review_changes_requested':
+                    if not lrd or lrd < x['created_at']:
+                        lrd = x['created_at']
+                elif x['event'] == 'commented' and is_approval(x['body']):
+                    if lrd and lrd < x['created_at']:
                         lrd = None
 
             if lrd:
@@ -307,53 +307,53 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
                 delta = (lc_date - lrd).days
                 if (lc_date > lrd) and (age > 7):
                     stale_reviews[actor] = {
-                        u'age': age,
-                        u'delta': delta,
-                        u'review_date': lrd.isoformat(),
-                        u'commit_date': lc_date.isoformat()
+                        'age': age,
+                        'delta': delta,
+                        'review_date': lrd.isoformat(),
+                        'commit_date': lc_date.isoformat()
                     }
 
     # https://github.com/ansible/ansibullbot/issues/302
     if len(iw.new_modules) > 1:
         has_multiple_modules = True
-        if u'multiple_module_notify' not in bpcs:
+        if 'multiple_module_notify' not in bpcs:
             needs_multiple_new_modules_notification = True
         needs_revision = True
-        needs_revision_msgs.append(u'multiple new modules')
+        needs_revision_msgs.append('multiple new modules')
 
-    logging.info(u'mergeable_state is %s' % mstate)
-    logging.info(u'needs_rebase is %s' % needs_rebase)
-    logging.info(u'needs_revision is %s' % needs_revision)
-    logging.info(u'ready_for_review is %s' % ready_for_review)
+    logging.info('mergeable_state is %s' % mstate)
+    logging.info('needs_rebase is %s' % needs_rebase)
+    logging.info('needs_revision is %s' % needs_revision)
+    logging.info('ready_for_review is %s' % ready_for_review)
 
     rmeta = {
-        u'committer_count': committer_count,
-        u'is_needs_revision': needs_revision,
-        u'is_needs_revision_msgs': needs_revision_msgs,
-        u'is_needs_rebase': needs_rebase,
-        u'is_needs_rebase_msgs': needs_rebase_msgs,
-        u'has_ci': has_ci,
-        u'has_commit_mention': has_commit_mention,
-        u'has_commit_mention_notification': has_commit_mention_notification,
-        u'merge_commits': merge_commits,
-        u'has_merge_commit_notification': has_merge_commit_notification,
-        u'mergeable': iw.mergeable,
-        u'mergeable_state': mstate,
-        u'change_requested': change_requested,
-        u'ci_state': ci_state,
-        u'ci_stale': ci_stale,
-        u'reviews': iw.reviews,
-        u'ready_for_review_date': ready_for_review,
-        u'ready_for_review': bool(ready_for_review),
-        u'has_shippable_yaml': has_shippable_yaml,
-        u'has_shippable_yaml_notification': has_shippable_yaml_notification,
-        u'has_remote_repo': has_remote_repo,
-        u'stale_reviews': stale_reviews,
-        u'has_multiple_modules': has_multiple_modules,
-        u'needs_multiple_new_modules_notification': needs_multiple_new_modules_notification
+        'committer_count': committer_count,
+        'is_needs_revision': needs_revision,
+        'is_needs_revision_msgs': needs_revision_msgs,
+        'is_needs_rebase': needs_rebase,
+        'is_needs_rebase_msgs': needs_rebase_msgs,
+        'has_ci': has_ci,
+        'has_commit_mention': has_commit_mention,
+        'has_commit_mention_notification': has_commit_mention_notification,
+        'merge_commits': merge_commits,
+        'has_merge_commit_notification': has_merge_commit_notification,
+        'mergeable': iw.mergeable,
+        'mergeable_state': mstate,
+        'change_requested': change_requested,
+        'ci_state': ci_state,
+        'ci_stale': ci_stale,
+        'reviews': iw.reviews,
+        'ready_for_review_date': ready_for_review,
+        'ready_for_review': bool(ready_for_review),
+        'has_shippable_yaml': has_shippable_yaml,
+        'has_shippable_yaml_notification': has_shippable_yaml_notification,
+        'has_remote_repo': has_remote_repo,
+        'stale_reviews': stale_reviews,
+        'has_multiple_modules': has_multiple_modules,
+        'needs_multiple_new_modules_notification': needs_multiple_new_modules_notification
     }
-    if rmeta[u'ready_for_review_date']:
-        rmeta[u'ready_for_review_date'] = rmeta[u'ready_for_review_date'].isoformat()
+    if rmeta['ready_for_review_date']:
+        rmeta['ready_for_review_date'] = rmeta['ready_for_review_date'].isoformat()
 
     return rmeta
 
@@ -361,9 +361,9 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
 def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
     outstanding = set()
     for actor, review in user_reviews.items():
-        if review[u'state'] == u'CHANGES_REQUESTED':
+        if review['state'] == 'CHANGES_REQUESTED':
             if actor in shipits:
-                review_time = strip_time_safely(review[u'submitted_at'])
+                review_time = strip_time_safely(review['submitted_at'])
                 review_time = pytz.utc.localize(review_time)
                 shipit_time = shipits[actor]
                 if review_time < shipit_time:
@@ -372,17 +372,17 @@ def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
                     continue
 
             if ready_for_review:
-                review_time = strip_time_safely(review[u'submitted_at'])
+                review_time = strip_time_safely(review['submitted_at'])
                 review_time = pytz.utc.localize(review_time)
-                if review[u'commit_id'] != last_commit and review_time < ready_for_review:
+                if review['commit_id'] != last_commit and review_time < ready_for_review:
                     # ignore review older than ready_for_review comment wrote by submitter
                     # but only if the pull request has been updated (meaning the
                     # last commit isn't the reviewed commit).
                     continue
 
             outstanding.add(actor)
-        elif review[u'state'] not in [u'APPROVED', u'COMMENTED']:
-            logging.error(u'%s unhandled' % review[u'state'])
+        elif review['state'] not in ['APPROVED', 'COMMENTED']:
+            logging.error('%s unhandled' % review['state'])
 
     return list(outstanding)
 
@@ -394,43 +394,43 @@ def _get_review_state(reviews, submitter):
     user_reviews = {}
 
     for review in reviews:
-        actor = review[u'user'][u'login']
+        actor = review['user']['login']
 
         if actor != submitter:
 
             if actor not in user_reviews:
                 user_reviews[actor] = {}
 
-            state = review[u'state']
-            submitted_at = review[u'submitted_at']
-            if u'commit_id' in review:
-                commit_id = review[u'commit_id']
+            state = review['state']
+            submitted_at = review['submitted_at']
+            if 'commit_id' in review:
+                commit_id = review['commit_id']
             else:
                 commit_id = None
 
-            if state in [u'CHANGES_REQUESTED', u'APPROVED']:
-                user_reviews[actor][u'state'] = state
-                user_reviews[actor][u'submitted_at'] = submitted_at
-                user_reviews[actor][u'commit_id'] = commit_id
+            if state in ['CHANGES_REQUESTED', 'APPROVED']:
+                user_reviews[actor]['state'] = state
+                user_reviews[actor]['submitted_at'] = submitted_at
+                user_reviews[actor]['commit_id'] = commit_id
 
-            elif state == u'COMMENTED':
+            elif state == 'COMMENTED':
                 # comments do not override change requests
-                if user_reviews[actor].get(u'state') != u'CHANGES_REQUESTED':
-                    user_reviews[actor][u'state'] = state
-                    user_reviews[actor][u'submitted_at'] = submitted_at
-                    user_reviews[actor][u'commit_id'] = commit_id
+                if user_reviews[actor].get('state') != 'CHANGES_REQUESTED':
+                    user_reviews[actor]['state'] = state
+                    user_reviews[actor]['submitted_at'] = submitted_at
+                    user_reviews[actor]['commit_id'] = commit_id
 
-            elif state == u'DISMISSED':
+            elif state == 'DISMISSED':
                 # a dismissed review 'magically' turns into a comment
-                user_reviews[actor][u'state'] = u'COMMENTED'
-                user_reviews[actor][u'submitted_at'] = submitted_at
-                user_reviews[actor][u'commit_id'] = commit_id
+                user_reviews[actor]['state'] = 'COMMENTED'
+                user_reviews[actor]['submitted_at'] = submitted_at
+                user_reviews[actor]['commit_id'] = commit_id
 
-            elif state == u'PENDING':
+            elif state == 'PENDING':
                 pass
 
             else:
-                logging.error(u'%s not handled yet' % state)
+                logging.error('%s not handled yet' % state)
 
     return user_reviews
 
@@ -442,13 +442,13 @@ def get_ci_run_facts(iw, meta, ci):
     # https://github.com/ansible/ansibullbot/issues/418
 
     ci_facts = {
-        u'ci_test_results': None,
-        u'ci_verified': None,
-        u'needs_testresult_notification': None
+        'ci_test_results': None,
+        'ci_verified': None,
+        'needs_testresult_notification': None
     }
 
     # should only be here if the run state is failed ...
-    if not meta[u'has_ci'] or meta[u'ci_state'] != u'failure':
+    if not meta['has_ci'] or meta['ci_state'] != 'failure':
         return ci_facts
 
     needs_testresult_notification = False
@@ -460,9 +460,9 @@ def get_ci_run_facts(iw, meta, ci):
     ci_test_results, ci_verified = ci.get_test_results()
 
     # do validation so that we're not stepping on toes
-    if u'ci_verified' in iw.labels and not ci_verified:
-        ci_verified_last_applied = iw.history.label_last_applied(u'ci_verified')
-        if ci_verified_last_applied >= ci.last_run[u'updated_at']:
+    if 'ci_verified' in iw.labels and not ci_verified:
+        ci_verified_last_applied = iw.history.label_last_applied('ci_verified')
+        if ci_verified_last_applied >= ci.last_run['updated_at']:
             ci_verified = True
 
     # no results means no notification required
@@ -472,7 +472,7 @@ def get_ci_run_facts(iw, meta, ci):
         s_bpcs = iw.history.get_boilerplate_comments_content()
         if s_bpcs:
             # was this specific result shown?
-            job_ids = [x[u'job_id'] for x in ci_test_results]
+            job_ids = [x['job_id'] for x in ci_test_results]
             job_ids = sorted(set(job_ids))
             found = []
             for bp in s_bpcs:
@@ -487,7 +487,7 @@ def get_ci_run_facts(iw, meta, ci):
             needs_testresult_notification = True
 
     return {
-        u'ci_test_results': ci_test_results,
-        u'ci_verified': ci_verified,
-        u'needs_testresult_notification': needs_testresult_notification
+        'ci_test_results': ci_test_results,
+        'ci_verified': ci_verified,
+        'needs_testresult_notification': needs_testresult_notification
     }

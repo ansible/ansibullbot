@@ -6,7 +6,7 @@ def get_spam_facts(issuewrapper, meta):
     iw = issuewrapper
 
     sfacts = {
-        u'spam_comment_ids': set()
+        'spam_comment_ids': set()
     }
 
     whitelist = [
@@ -15,15 +15,15 @@ def get_spam_facts(issuewrapper, meta):
     ]
 
     comments = iw.comments[:]
-    comments = [x for x in comments if x[u'actor'] in C.DEFAULT_BOT_NAMES]
+    comments = [x for x in comments if x['actor'] in C.DEFAULT_BOT_NAMES]
 
     cdates = {}
     cmap = {}
     for comment in comments:
-        cdates[comment[u'id']] = comment[u'created_at']
-        if comment[u'body'] not in cmap:
-            cmap[comment[u'body']] = set()
-        cmap[comment[u'body']].add(comment[u'id'])
+        cdates[comment['id']] = comment['created_at']
+        if comment['body'] not in cmap:
+            cmap[comment['body']] = set()
+        cmap[comment['body']].add(comment['id'])
 
     spamkeys = set()
     for k,v in cmap.items():
@@ -40,8 +40,8 @@ def get_spam_facts(issuewrapper, meta):
         commentids = list(cmap[spamkey])
         commentids = sorted(commentids, key=lambda x: cdates[x])
         for cid in commentids[:-1]:
-            sfacts[u'spam_comment_ids'].add(cid)
+            sfacts['spam_comment_ids'].add(cid)
 
-    sfacts[u'spam_comment_ids'] = list(sfacts[u'spam_comment_ids'])
+    sfacts['spam_comment_ids'] = list(sfacts['spam_comment_ids'])
 
     return sfacts

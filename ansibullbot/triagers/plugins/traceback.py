@@ -8,7 +8,7 @@ RE_FILE_LINE = r'file "(.*)", line \d+, in'
 
 def get_traceback_facts(iw):
     tfacts = {
-        u'has_traceback': False
+        'has_traceback': False
     }
 
     try:
@@ -17,12 +17,12 @@ def get_traceback_facts(iw):
         return tfacts
 
     tb_cond = [
-        u'traceback (most recent call last):' in body,
-        u'to see the full traceback' in body,
+        'traceback (most recent call last):' in body,
+        'to see the full traceback' in body,
         re.search(RE_FILE_LINE, body),
     ]
 
     if any(tb_cond):
-        tfacts[u'has_traceback'] = True
+        tfacts['has_traceback'] = True
 
     return tfacts

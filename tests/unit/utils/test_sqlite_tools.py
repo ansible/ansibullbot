@@ -1,16 +1,9 @@
-#!/usr/bin/env python
-
-import pytest
-import six
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
-
-from backports import tempfile
-
 import os
+import tempfile
+
+from unittest import mock
 
 from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
-
 
 
 def test_db_file_endswith_version():

@@ -19,22 +19,20 @@
 # which is licensed GPLv3. This code therefore is also licensed under the terms
 # of the GNU Public License, version 3.
 
-from __future__ import absolute_import, division, print_function
 
+import configparser
 import sys
 import tempfile
 import os
 import subprocess
 
-from six import string_types
-from six.moves import configparser
 
 from ._text_compat import to_text
 from .utils.feature_flags import FeatureFlags
 
 
-PROG_NAME = u'ansibullbot'
-BOOL_TRUE = frozenset([u"true", u"t", u"y", u"1", u"yes", u"on"])
+PROG_NAME = 'ansibullbot'
+BOOL_TRUE = frozenset(["true", "t", "y", "1", "yes", "on"])
 
 
 def mk_boolean(value):
@@ -47,7 +45,7 @@ def mk_boolean(value):
 
 
 def unquote(value):
-    return value.replace(u'"', u'').replace(u"'", u'')
+    return value.replace('"', '').replace("'", '')
 
 
 def shell_expand(path, expand_relative_paths=False):
@@ -108,7 +106,7 @@ def get_config(p, section, key, env_var, default,
             value = float(value)
 
         elif value_type == 'list':
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 value = [x.strip() for x in value.split(',')]
 
         elif value_type == 'none':
@@ -129,14 +127,14 @@ def get_config(p, section, key, env_var, default,
             value = tempfile.mkdtemp(prefix=prefix, dir=value)
 
         elif value_type == 'pathlist':
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 value = [
                     shell_expand(
                         x,
                         expand_relative_paths=expand_relative_paths
                     ) for x in value.split(os.pathsep)]
 
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             value = unquote(value)
 
     if value_type in ['integer', 'int', 'float', 'boolean']:
@@ -186,7 +184,7 @@ def load_config_file():
             try:
                 p.read(path)
             except configparser.Error as e:
-                print("Error reading config file: \n{0}".format(e))
+                print(f"Error reading config file: \n{e}")
                 sys.exit(1)
             return p, path
     return None, ''
@@ -289,7 +287,7 @@ DEFAULT_SHIPPABLE_URL = get_config(
     DEFAULTS,
     'shippable_url',
     '%s_SHIPPABLE_URL' % PROG_NAME.upper(),
-    u'https://api.shippable.com',
+    'https://api.shippable.com',
     value_type='string'
 )
 
@@ -298,7 +296,7 @@ DEFAULT_CI_PROVIDER = get_config(
     DEFAULTS,
     'ci_provider',
     '%s_CI_PROVIDER' % PROG_NAME.upper(),
-    u'shippable',
+    'shippable',
     value_type='string'
 )
 
@@ -350,7 +348,7 @@ DEFAULT_AZP_ORG = get_config(
     AZP,
     'org',
     '%s_AZP_ORG' % PROG_NAME.upper(),
-    u'',
+    '',
     value_type='string'
 )
 
@@ -359,7 +357,7 @@ DEFAULT_AZP_PROJECT = get_config(
     AZP,
     'project',
     '%s_AZP_PROJECT' % PROG_NAME.upper(),
-    u'',
+    '',
     value_type='string'
 )
 
@@ -368,7 +366,7 @@ DEFAULT_AZP_USER = get_config(
     AZP,
     'user',
     '%s_AZP_USER' % PROG_NAME.upper(),
-    u'',
+    '',
     value_type='string'
 )
 
@@ -377,7 +375,7 @@ DEFAULT_AZP_TOKEN = get_config(
     AZP,
     'token',
     '%s_AZP_TOKEN' % PROG_NAME.upper(),
-    u'',
+    '',
     value_type='string'
 )
 
@@ -455,7 +453,7 @@ def get_ansibullbot_version():
     try:
         return to_text(subprocess.check_output(('git', 'rev-parse', 'HEAD')).strip())
     except subprocess.CalledProcessError:
-        return u'unknown'
+        return 'unknown'
 
 
 ANSIBULLBOT_VERSION = get_ansibullbot_version()

@@ -11,7 +11,7 @@ def get_contributor_facts(issuewrapper):
     # CONTRIBUTOR - made previous commits
 
     cfacts = {
-        u'new_contributor': False
+        'new_contributor': False
     }
 
     iw = issuewrapper
@@ -20,10 +20,10 @@ def get_contributor_facts(issuewrapper):
     if iw.is_issue():
         return cfacts
 
-    association = iw.pull_raw.get(u'author_association').upper()
-    logging.info(u'{} {} association: {}'.format(iw.html_url, iw.submitter, association))
+    association = iw.pull_raw.get('author_association').upper()
+    logging.info(f'{iw.html_url} {iw.submitter} association: {association}')
 
-    if association in [u'NONE', u'FIRST_TIME_CONTRIBUTOR']:
-        cfacts[u'new_contributor'] = True
+    if association in ['NONE', 'FIRST_TIME_CONTRIBUTOR']:
+        cfacts['new_contributor'] = True
 
     return cfacts

@@ -1,11 +1,9 @@
 import copy
-import io
 import logging
 import os
+import pickle
 import re
 import yaml
-
-import six
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column
@@ -14,7 +12,6 @@ from sqlalchemy import String
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotYAMLLoader
 from ansibullbot.utils.systemtools import run_command
@@ -26,7 +23,7 @@ Base = declarative_base()
 
 
 class Blame(Base):
-    __tablename__ = u'blames'
+    __tablename__ = 'blames'
     id = Column(Integer(), primary_key=True)
     file_name = Column(String())
     file_commit = Column(String())
@@ -35,37 +32,37 @@ class Blame(Base):
 
 
 class Email(Base):
-    __tablename__ = u'email'
+    __tablename__ = 'email'
     id = Column(Integer())
     login = Column(String())
     email = Column(String(), primary_key=True)
 
 
-class ModuleIndexer(object):
+class ModuleIndexer:
 
     EMPTY_MODULE = {
-        u'authors': [],
-        u'name': None,
-        u'namespaced_module': None,
-        u'namespace_maintainers': [],
-        u'deprecated': False,
-        u'deprecated_filename': None,
-        u'dirpath': None,
-        u'filename': None,
-        u'filepath': None,
-        u'fulltopic': None,
-        u'maintainers': [],
-        u'_maintainers': [],
-        u'maintainers_keys': None,
-        u'metadata': {},
-        u'repo_filename': None,
-        u'repository': u'ansible',
-        u'subtopic': None,
-        u'topic': None,
-        u'imports': []
+        'authors': [],
+        'name': None,
+        'namespaced_module': None,
+        'namespace_maintainers': [],
+        'deprecated': False,
+        'deprecated_filename': None,
+        'dirpath': None,
+        'filename': None,
+        'filepath': None,
+        'fulltopic': None,
+        'maintainers': [],
+        '_maintainers': [],
+        'maintainers_keys': None,
+        'metadata': {},
+        'repo_filename': None,
+        'repository': 'ansible',
+        'subtopic': None,
+        'topic': None,
+        'imports': []
     }
 
-    def __init__(self, commits=True, blames=True, botmeta=None, maintainers=None, gh_client=None, cachedir=u'~/.ansibullbot/cache', gitrepo=None):
+    def __init__(self, commits=True, blames=True, botmeta=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache', gitrepo=None):
         '''
         Maintainers: defaultdict(dict) where keys are filepath and values are dict
         gh_client: GraphQL GitHub client
@@ -75,16 +72,16 @@ class ModuleIndexer(object):
         botmeta = botmeta if botmeta else {}
         self.maintainers = maintainers or {}
         self.gqlc = gh_client
-        self.scraper_cache = os.path.expanduser(os.path.join(cachedir, u'ansible.modules.scraper'))
+        self.scraper_cache = os.path.expanduser(os.path.join(cachedir, 'ansible.modules.scraper'))
         self.gws = GithubWebScraper(cachedir=self.scraper_cache)
         self.gitrepo = gitrepo
 
         self.modules = {}  # keys: paths of files belonging to the repository
 
         # sqlalchemy
-        unc = os.path.join(cachedir, u'ansible_module_indexer.db')
+        unc = os.path.join(cachedir, 'ansible_module_indexer.db')
         unc = os.path.expanduser(unc)
-        unc = u'sqlite:///' + unc
+        unc = 'sqlite:///' + unc
 
         self.engine = create_engine(unc)
         self.Session = sessionmaker(bind=self.engine)
@@ -111,11 +108,11 @@ class ModuleIndexer(object):
         """Make a list of known modules"""
 
         matches = []
-        module_dir = os.path.join(self.gitrepo.checkoutdir, u'lib/ansible/modules')
+        module_dir = os.path.join(self.gitrepo.checkoutdir, 'lib/ansible/modules')
         module_dir = os.path.expanduser(module_dir)
         for root, _, filenames in os.walk(module_dir):
             for filename in filenames:
-                if u'lib/ansible/modules' in root and not filename == u'__init__.py':
+                if 'lib/ansible/modules' in root and not filename == '__init__.py':
                     matches.append(os.path.join(root, filename))
 
         matches = sorted(set(matches))
@@ -124,51 +121,51 @@ class ModuleIndexer(object):
 
         # custom fixes
         newitems = []
-        for k, v in six.iteritems(self.modules):
+        for k, v in self.modules.items():
 
             # include* is almost always an ansible/ansible issue
             # https://github.com/ansible/ansibullbot/issues/214
-            if k.endswith(u'/include.py'):
-                self.modules[k][u'repository'] = u'ansible'
+            if k.endswith('/include.py'):
+                self.modules[k]['repository'] = 'ansible'
             # https://github.com/ansible/ansibullbot/issues/214
-            if k.endswith(u'/include_vars.py'):
-                self.modules[k][u'repository'] = u'ansible'
-            if k.endswith(u'/include_role.py'):
-                self.modules[k][u'repository'] = u'ansible'
+            if k.endswith('/include_vars.py'):
+                self.modules[k]['repository'] = 'ansible'
+            if k.endswith('/include_role.py'):
+                self.modules[k]['repository'] = 'ansible'
 
             # ansible maintains these
-            if u'include' in k:
-                self.modules[k][u'maintainers'] = [u'ansible']
+            if 'include' in k:
+                self.modules[k]['maintainers'] = ['ansible']
 
             # deprecated modules are annoying
-            if v[u'name'].startswith(u'_'):
+            if v['name'].startswith('_'):
 
-                dkey = os.path.dirname(v[u'filepath'])
-                dkey = os.path.join(dkey, v[u'filename'].replace(u'_', u'', 1))
+                dkey = os.path.dirname(v['filepath'])
+                dkey = os.path.join(dkey, v['filename'].replace('_', '', 1))
                 if dkey not in self.modules:
                     nd = v.copy()
-                    nd[u'name'] = nd[u'name'].replace(u'_', u'', 1)
+                    nd['name'] = nd['name'].replace('_', '', 1)
                     newitems.append((dkey, nd))
 
         for ni in newitems:
             self.modules[ni[0]] = ni[1]
 
         # parse imports
-        logging.debug(u'set module imports')
+        logging.debug('set module imports')
         self.set_module_imports()
 
         # last modified
         if self.get_commits:
-            logging.debug(u'set module commits')
+            logging.debug('set module commits')
             self.get_module_commits()
 
         # parse blame
         if self.get_blames and self.get_commits:
-            logging.debug(u'set module blames')
+            logging.debug('set module blames')
             self.get_module_blames()
 
         # depends on metadata now ...
-        logging.debug(u'set module maintainers')
+        logging.debug('set module maintainers')
         self.set_maintainers()
 
         return self.modules
@@ -178,51 +175,51 @@ class ModuleIndexer(object):
         for match in matches:
             mdict = copy.deepcopy(self.EMPTY_MODULE)
 
-            mdict[u'filename'] = os.path.basename(match)
+            mdict['filename'] = os.path.basename(match)
 
             dirpath = os.path.dirname(match)
-            dirpath = dirpath.replace(self.gitrepo.checkoutdir + u'/', u'')
-            mdict[u'dirpath'] = dirpath
+            dirpath = dirpath.replace(self.gitrepo.checkoutdir + '/', '')
+            mdict['dirpath'] = dirpath
 
-            filepath = match.replace(self.gitrepo.checkoutdir + u'/', u'')
-            mdict[u'filepath'] = filepath
+            filepath = match.replace(self.gitrepo.checkoutdir + '/', '')
+            mdict['filepath'] = filepath
 
             mdict.update(
                 self.split_topics_from_path(filepath)
             )
 
-            mdict[u'repo_filename'] = mdict[u'filepath']\
-                .replace(u'lib/ansible/modules/%s/' % mdict[u'repository'], u'')
+            mdict['repo_filename'] = mdict['filepath']\
+                .replace('lib/ansible/modules/%s/' % mdict['repository'], '')
 
             # clustering/consul
-            mdict[u'namespaced_module'] = mdict[u'repo_filename']
-            mdict[u'namespaced_module'] = \
-                mdict[u'namespaced_module'].replace(u'.py', u'')
-            mdict[u'namespaced_module'] = \
-                mdict[u'namespaced_module'].replace(u'.ps1', u'')
+            mdict['namespaced_module'] = mdict['repo_filename']
+            mdict['namespaced_module'] = \
+                mdict['namespaced_module'].replace('.py', '')
+            mdict['namespaced_module'] = \
+                mdict['namespaced_module'].replace('.ps1', '')
 
             mname = os.path.basename(match)
-            mname = mname.replace(u'.py', u'')
-            mname = mname.replace(u'.ps1', u'')
-            mdict[u'name'] = mname
+            mname = mname.replace('.py', '')
+            mname = mname.replace('.ps1', '')
+            mdict['name'] = mname
 
             # deprecated modules
-            if mname.startswith(u'_'):
-                mdict[u'deprecated'] = True
+            if mname.startswith('_'):
+                mdict['deprecated'] = True
                 deprecated_filename = \
-                    os.path.dirname(mdict[u'namespaced_module'])
+                    os.path.dirname(mdict['namespaced_module'])
                 deprecated_filename = \
-                    os.path.join(deprecated_filename, mname[1:] + u'.py')
-                mdict[u'deprecated_filename'] = deprecated_filename
+                    os.path.join(deprecated_filename, mname[1:] + '.py')
+                mdict['deprecated_filename'] = deprecated_filename
             else:
-                mdict[u'deprecated_filename'] = mdict[u'repo_filename']
+                mdict['deprecated_filename'] = mdict['repo_filename']
 
             self.modules[filepath] = mdict
 
         # meta is a special module
-        self.modules[u'meta'] = copy.deepcopy(self.EMPTY_MODULE)
-        self.modules[u'meta'][u'name'] = u'meta'
-        self.modules[u'meta'][u'repo_filename'] = u'meta'
+        self.modules['meta'] = copy.deepcopy(self.EMPTY_MODULE)
+        self.modules['meta']['name'] = 'meta'
+        self.modules['meta']['repo_filename'] = 'meta'
 
     def get_module_commits(self):
         keys = self.modules.keys()
@@ -237,86 +234,85 @@ class ModuleIndexer(object):
             refresh = False
             pfile = os.path.join(
                 self.scraper_cache,
-                k.replace(u'/', u'_') + u'.commits.pickle'
+                k.replace('/', '_') + '.commits.pickle'
             )
 
             if not os.path.isfile(pfile):
                 refresh = True
             else:
-                pickle_kwargs = {'encoding': 'bytes'} if six.PY3 else {}
                 print(pfile)
                 with open(pfile, 'rb') as f:
-                    pdata = pickle_load(f, **pickle_kwargs)
+                    pdata = pickle.load(f)
                 if pdata[0] == mtime:
                     self.commits[k] = pdata[1]
                 else:
                     refresh = True
 
             if refresh:
-                logging.info(u'refresh commit cache for %s' % k)
-                cmd = u'cd %s; git log --follow %s' % (self.gitrepo.checkoutdir, k)
+                logging.info('refresh commit cache for %s' % k)
+                cmd = 'cd %s; git log --follow %s' % (self.gitrepo.checkoutdir, k)
                 (rc, so, se) = run_command(cmd)
-                for line in to_text(so).split(u'\n'):
-                    if line.startswith(u'commit '):
+                for line in to_text(so).split('\n'):
+                    if line.startswith('commit '):
                         commit = {
-                            u'name': None,
-                            u'email': None,
-                            u'login': None,
-                            u'hash': line.split()[-1],
-                            u'date': None
+                            'name': None,
+                            'email': None,
+                            'login': None,
+                            'hash': line.split()[-1],
+                            'date': None
                         }
 
                     # Author: Matt Clay <matt@mystile.com>
-                    if line.startswith(u'Author: '):
-                        line = line.replace(u'Author: ', u'')
-                        line = line.replace(u'<', u'')
-                        line = line.replace(u'>', u'')
+                    if line.startswith('Author: '):
+                        line = line.replace('Author: ', '')
+                        line = line.replace('<', '')
+                        line = line.replace('>', '')
                         lparts = line.split()
 
-                        if u'@' in lparts[-1]:
-                            commit[u'email'] = lparts[-1]
-                            commit[u'name'] = u' '.join(lparts[:-1])
+                        if '@' in lparts[-1]:
+                            commit['email'] = lparts[-1]
+                            commit['name'] = ' '.join(lparts[:-1])
                         else:
                             pass
 
-                        if commit[u'email'] and \
-                                u'noreply.github.com' in commit[u'email']:
-                            commit[u'login'] = commit[u'email'].split(u'@')[0]
+                        if commit['email'] and \
+                                'noreply.github.com' in commit['email']:
+                            commit['login'] = commit['email'].split('@')[0]
 
                     # Date:   Sat Jan 28 23:28:53 2017 -0800
-                    if line.startswith(u'Date:'):
-                        dstr = line.split(u':', 1)[1].strip()
-                        dstr = u' '.join(dstr.split(u' ')[:-1])
-                        commit[u'date'] = strip_time_safely(to_text(dstr))
+                    if line.startswith('Date:'):
+                        dstr = line.split(':', 1)[1].strip()
+                        dstr = ' '.join(dstr.split(' ')[:-1])
+                        commit['date'] = strip_time_safely(to_text(dstr))
                         self.commits[k].append(commit)
 
                 with open(pfile, 'wb') as f:
-                    pickle_dump((mtime, self.commits[k]), f)
+                    pickle.dump((mtime, self.commits[k]), f)
 
     def last_commit_for_file(self, filepath):
-        if filepath in self.commits and u'hash' in self.commits[filepath][0]:
-            return self.commits[filepath][0][u'hash']
+        if filepath in self.commits and 'hash' in self.commits[filepath][0]:
+            return self.commits[filepath][0]['hash']
 
         # git log --pretty=format:'%H' -1
         # lib/ansible/modules/cloud/amazon/ec2_metric_alarm.py
-        cmd = u'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
+        cmd = 'cd %s; git log --pretty=format:\'%%H\' -1 %s' % \
             (self.gitrepo.checkoutdir, filepath)
         (rc, so, se) = run_command(cmd)
         return to_text(so).strip()
 
     def get_module_blames(self):
 
-        logging.debug(u'build email cache')
+        logging.debug('build email cache')
         emails_cache = self.session.query(Email)
         emails_cache = [(x.email, x.login) for x in emails_cache]
         self.emails_cache = dict(emails_cache)
 
-        logging.debug(u'build blame cache')
+        logging.debug('build blame cache')
         blame_cache = self.session.query(Blame).all()
         blame_cache = [x.file_commit for x in blame_cache]
         blame_cache = sorted(set(blame_cache))
 
-        logging.debug(u'eval module hashes')
+        logging.debug('eval module hashes')
         changed = False
         keys = sorted(self.modules.keys())
         for k in keys:
@@ -329,15 +325,15 @@ class ModuleIndexer(object):
             if ghash in blame_cache:
                 continue
 
-            logging.debug(u'checking hash for {}'.format(k))
+            logging.debug(f'checking hash for {k}')
             res = self.session.query(Blame).filter_by(file_name=k, file_commit=ghash).all()
             hashes = [x.file_commit for x in res]
 
             if ghash not in hashes:
 
-                logging.debug(u'hash {} not found for {}, updating blames'.format(ghash, k))
+                logging.debug(f'hash {ghash} not found for {k}, updating blames')
 
-                scraper_args = [u'ansible', u'ansible', u'devel', k]
+                scraper_args = ['ansible', 'ansible', 'devel', k]
                 uns, emailmap = self.gqlc.get_usernames_from_filename_blame(*scraper_args)
 
                 # check the emails
@@ -346,7 +342,7 @@ class ModuleIndexer(object):
                         continue
                     exists = self.session.query(Email).filter_by(email=email).first()
                     if not exists:
-                        logging.debug(u'insert {}:{}'.format(login, email))
+                        logging.debug(f'insert {login}:{email}')
                         _email = Email(email=email, login=login)
                         self.session.add(_email)
                         changed = True
@@ -355,131 +351,131 @@ class ModuleIndexer(object):
                 for login, commits in uns.items():
                     for commit in commits:
                         kwargs = {
-                            u'file_name': k,
-                            u'file_commit': ghash,
-                            u'author_commit': commit,
-                            u'author_login': login
+                            'file_name': k,
+                            'file_commit': ghash,
+                            'author_commit': commit,
+                            'author_login': login
                         }
                         exists = self.session.query(Blame).filter_by(**kwargs).first()
                         if not exists:
-                            logging.debug(u'insert {}:{}:{}'.format(k, commit, login))
+                            logging.debug(f'insert {k}:{commit}:{login}')
                             _blame = Blame(**kwargs)
                             self.session.add(_blame)
                             changed = True
 
         if changed:
             self.session.commit()
-            logging.debug(u're-build email cache')
+            logging.debug('re-build email cache')
             emails_cache = self.session.query(Email)
             emails_cache = [(x.email, x.login) for x in emails_cache]
             self.emails_cache = dict(emails_cache)
 
         # fill in what we can ...
-        logging.debug(u'fill in commit logins')
+        logging.debug('fill in commit logins')
         for k in keys:
             for idc, commit in enumerate(self.commits[k][:]):
-                if not commit.get(u'login'):
+                if not commit.get('login'):
                     continue
-                login = self.emails_cache.get(commit[u'email'])
-                if not login and u'@users.noreply.github.com' in commit[u'email']:
-                    login = commit[u'email'].split(u'@')[0]
-                    self.emails_cache[commit[u'email']] = login
+                login = self.emails_cache.get(commit['email'])
+                if not login and '@users.noreply.github.com' in commit['email']:
+                    login = commit['email'].split('@')[0]
+                    self.emails_cache[commit['email']] = login
                 if not login:
-                    print(u'unknown: {}'.format(commit[u'email']))
-                self.commits[k][idc][u'login'] = self.emails_cache.get(login)
+                    print('unknown: {}'.format(commit['email']))
+                self.commits[k][idc]['login'] = self.emails_cache.get(login)
 
     def set_maintainers(self):
         '''Define the maintainers for each module'''
 
         # grep the authors:
-        for k, v in six.iteritems(self.modules):
-            if v[u'filepath'] is None:
+        for k, v in self.modules.items():
+            if v['filepath'] is None:
                 continue
-            mfile = os.path.join(self.gitrepo.checkoutdir, v[u'filepath'])
+            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
             authors = self.get_module_authors(mfile)
-            self.modules[k][u'authors'] = authors
+            self.modules[k]['authors'] = authors
 
             # authors are maintainers by -default-
-            self.modules[k][u'maintainers'] += authors
-            self.modules[k][u'maintainers'] = \
-                sorted(set(self.modules[k][u'maintainers']))
+            self.modules[k]['maintainers'] += authors
+            self.modules[k]['maintainers'] = \
+                sorted(set(self.modules[k]['maintainers']))
 
-        metadata = self.botmeta[u'files'].keys()
-        for k, v in six.iteritems(self.modules):
-            if k == u'meta':
+        metadata = self.botmeta['files'].keys()
+        for k, v in self.modules.items():
+            if k == 'meta':
                 continue
 
-            if k in self.botmeta[u'files']:
+            if k in self.botmeta['files']:
                 # There are metadata in .github/BOTMETA.yml for this file
                 # copy maintainers_keys
-                self.modules[k][u'maintainers_keys'] = self.botmeta[u'files'][k][u'maintainers_keys'][:]
+                self.modules[k]['maintainers_keys'] = self.botmeta['files'][k]['maintainers_keys'][:]
 
-                if self.botmeta[u'files'][k]:
-                    maintainers = self.botmeta[u'files'][k].get(u'maintainers', [])
+                if self.botmeta['files'][k]:
+                    maintainers = self.botmeta['files'][k].get('maintainers', [])
 
                     for maintainer in maintainers:
-                        if maintainer not in self.modules[k][u'maintainers']:
-                            self.modules[k][u'maintainers'].append(maintainer)
+                        if maintainer not in self.modules[k]['maintainers']:
+                            self.modules[k]['maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
-                    if u'ignored' in self.botmeta[u'files'][k]:
-                        ignored = self.botmeta[u'files'][k][u'ignored']
+                    if 'ignored' in self.botmeta['files'][k]:
+                        ignored = self.botmeta['files'][k]['ignored']
                         for x in ignored:
-                            if x in self.modules[k][u'maintainers']:
-                                self.modules[k][u'maintainers'].remove(x)
+                            if x in self.modules[k]['maintainers']:
+                                self.modules[k]['maintainers'].remove(x)
 
             else:
                 # There isn't metadata in .github/BOTMETA.yml for this file
                 best_match = None
                 for mkey in metadata:
-                    if v[u'filepath'].startswith(mkey):
+                    if v['filepath'].startswith(mkey):
                         if not best_match:
                             best_match = mkey
                             continue
                         if len(mkey) > len(best_match):
                             best_match = mkey
                 if best_match:
-                    self.modules[k][u'maintainers_keys'] = [best_match]
-                    for maintainer in self.botmeta[u'files'][best_match].get(u'maintainers', []):
-                        if maintainer not in self.modules[k][u'maintainers']:
-                            self.modules[k][u'maintainers'].append(maintainer)
+                    self.modules[k]['maintainers_keys'] = [best_match]
+                    for maintainer in self.botmeta['files'][best_match].get('maintainers', []):
+                        if maintainer not in self.modules[k]['maintainers']:
+                            self.modules[k]['maintainers'].append(maintainer)
 
                     # remove the people who want to be ignored
-                    for ignored in self.botmeta[u'files'][best_match].get(u'ignored', []):
-                        if ignored in self.modules[k][u'maintainers']:
-                            self.modules[k][u'maintainers'].remove(ignored)
+                    for ignored in self.botmeta['files'][best_match].get('ignored', []):
+                        if ignored in self.modules[k]['maintainers']:
+                            self.modules[k]['maintainers'].remove(ignored)
 
             # save a pristine copy so that higher level code can still use it
-            self.modules[k][u'maintainers'] = sorted(set(self.modules[k][u'maintainers']))
-            self.modules[k][u'_maintainers'] = \
-                [x for x in self.modules[k][u'maintainers']]
+            self.modules[k]['maintainers'] = sorted(set(self.modules[k]['maintainers']))
+            self.modules[k]['_maintainers'] = \
+                [x for x in self.modules[k]['maintainers']]
 
         # set the namespace maintainers ...
-        for k, v in six.iteritems(self.modules):
-            if u'namespace_maintainers' not in self.modules[k]:
-                self.modules[k][u'namespace_maintainers'] = []
-            if v.get(u'namespace'):
-                ns = v.get(u'namespace')
+        for k, v in self.modules.items():
+            if 'namespace_maintainers' not in self.modules[k]:
+                self.modules[k]['namespace_maintainers'] = []
+            if v.get('namespace'):
+                ns = v.get('namespace')
                 nms = self.get_maintainers_for_namespace(ns)
-                self.modules[k][u'namespace_maintainers'] = nms
+                self.modules[k]['namespace_maintainers'] = nms
 
     def split_topics_from_path(self, module_file):
-        subpath = module_file.replace(u'lib/ansible/modules/', u'')
-        path_parts = subpath.split(u'/')
+        subpath = module_file.replace('lib/ansible/modules/', '')
+        path_parts = subpath.split('/')
         topic = path_parts[0]
 
         if len(path_parts) > 2:
             subtopic = path_parts[1]
-            fulltopic = u'/'.join(path_parts[0:2])
+            fulltopic = '/'.join(path_parts[0:2])
         else:
             subtopic = None
             fulltopic = path_parts[0]
 
         tdata = {
-            u'fulltopic': fulltopic,
-            u'namespace': fulltopic,
-            u'topic': topic,
-            u'subtopic': subtopic
+            'fulltopic': fulltopic,
+            'namespace': fulltopic,
+            'topic': topic,
+            'subtopic': subtopic
         }
 
         return tdata
@@ -493,7 +489,7 @@ class ModuleIndexer(object):
         documentation = b''
         inphase = False
 
-        with io.open(module_file, 'rb') as f:
+        with open(module_file, 'rb') as f:
             for line in f:
                 if b'DOCUMENTATION' in line:
                     inphase = True
@@ -508,16 +504,16 @@ class ModuleIndexer(object):
 
         # clean out any other yaml besides author to save time
         inphase = False
-        author_lines = u''
-        doc_lines = to_text(documentation).split(u'\n')
+        author_lines = ''
+        doc_lines = to_text(documentation).split('\n')
         for idx, x in enumerate(doc_lines):
-            if x.startswith(u'author'):
+            if x.startswith('author'):
                 inphase = True
-            if inphase and not x.strip().startswith((u'-', u'author')):
+            if inphase and not x.strip().startswith(('-', 'author')):
                 inphase = False
                 break
             if inphase:
-                author_lines += x + u'\n'
+                author_lines += x + '\n'
 
         if not author_lines:
             return []
@@ -534,14 +530,14 @@ class ModuleIndexer(object):
             return []
 
         # quit if the key was not found
-        if u'author' not in ydata:
+        if 'author' not in ydata:
             return []
 
-        if not isinstance(ydata[u'author'], list):
-            ydata[u'author'] = [ydata[u'author']]
+        if not isinstance(ydata['author'], list):
+            ydata['author'] = [ydata['author']]
 
         authors = []
-        for author in ydata[u'author']:
+        for author in ydata['author']:
             github_ids = self.extract_github_id(author)
             if github_ids:
                 authors.extend(github_ids)
@@ -552,21 +548,21 @@ class ModuleIndexer(object):
 
         if author is None:
             return []
-        if u'ansible core team' in author.lower():
-            authors.add(u'ansible')
-        elif u'@' in author:
+        if 'ansible core team' in author.lower():
+            authors.add('ansible')
+        elif '@' in author:
             # match github ids but not emails
             authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
-        elif u'github.com/' in author:
+        elif 'github.com/' in author:
             # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
-            idx = author.find(u'github.com/')
+            idx = author.find('github.com/')
             author = author[idx+11:]
-            authors.add(author.replace(u')', u''))
-        elif u'(' in author and len(author.split()) == 3:
+            authors.add(author.replace(')', ''))
+        elif '(' in author and len(author.split()) == 3:
             # Mathieu Bultel (matbu)
-            idx = author.find(u'(')
+            idx = author.find('(')
             author = author[idx+1:]
-            authors.add(author.replace(u')', u''))
+            authors.add(author.replace(')', ''))
 
         # search for emails
         for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
@@ -577,11 +573,11 @@ class ModuleIndexer(object):
         return list(authors)
 
     def set_module_imports(self):
-        for k, v in six.iteritems(self.modules):
-            if not v[u'filepath']:
+        for k, v in self.modules.items():
+            if not v['filepath']:
                 continue
-            mfile = os.path.join(self.gitrepo.checkoutdir, v[u'filepath'])
-            self.modules[k][u'imports'] = self.get_module_imports(mfile)
+            mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
+            self.modules[k]['imports'] = self.get_module_imports(mfile)
 
     def get_module_imports(self, module_file):
         mimports = []
@@ -609,17 +605,17 @@ class ModuleIndexer(object):
     @property
     def all_maintainers(self):
         maintainers = set()
-        for path, metadata in self.botmeta[u'files'].items():
-            maintainers.update(metadata.get(u'maintainers', []))
+        for path, metadata in self.botmeta['files'].items():
+            maintainers.update(metadata.get('maintainers', []))
         return maintainers
 
     def get_maintainers_for_namespace(self, namespace):
         maintainers = []
         for k, v in self.modules.items():
-            if u'namespace' not in v or u'maintainers' not in v:
+            if 'namespace' not in v or 'maintainers' not in v:
                 continue
-            if v[u'namespace'] == namespace:
-                for m in v[u'maintainers']:
+            if v['namespace'] == namespace:
+                for m in v['maintainers']:
                     if m not in maintainers:
                         maintainers.append(m)
         maintainers = [x for x in maintainers if x.strip()]

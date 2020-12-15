@@ -9,9 +9,8 @@ import shutil
 import sys
 import tempfile
 import time
+import urllib.parse
 
-import six
-from six.moves.urllib import parse as urllib2
 from bs4 import BeautifulSoup
 
 from ansibullbot._text_compat import to_text
@@ -19,9 +18,9 @@ from ansibullbot.utils.receiver_client import post_to_receiver
 import ansibullbot.constants as C
 
 
-class GithubWebScraper(object):
+class GithubWebScraper:
     cachedir = None
-    baseurl = u'https://github.com'
+    baseurl = 'https://github.com'
     summaries = {}
     reviews = {}
 
@@ -32,19 +31,19 @@ class GithubWebScraper(object):
         if cachedir:
             self.cachedir = cachedir
         else:
-            self.cachedir = u'/tmp/gws'
+            self.cachedir = '/tmp/gws'
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
 
     def split_repo_url(self, repo_url):
-        rparts = repo_url.split(u'/')
+        rparts = repo_url.split('/')
         rparts = [x.strip() for x in rparts if x.strip()]
         return rparts[-2], rparts[-1]
 
     def load_summaries(self, repo_url):
         issues = {}
         ns, repo = self.split_repo_url(repo_url)
-        cachefile = os.path.join(self.cachedir, ns, repo, u'html_summaries.json')
+        cachefile = os.path.join(self.cachedir, ns, repo, 'html_summaries.json')
         if os.path.isfile(cachefile):
             try:
                 with open(cachefile, 'rb') as f:
@@ -53,7 +52,7 @@ class GithubWebScraper(object):
                 logging.error(e)
                 issues = {}
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
                     raise Exception(to_text(e))
@@ -97,14 +96,14 @@ class GithubWebScraper(object):
             self.cachedir,
             ns,
             repo,
-            u'%s.json' % filename
+            '%s.json' % filename
         )
         if not issues:
             if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception(u'no issues')
+                raise Exception('no issues')
 
         tfh, tfn = tempfile.mkstemp()
         os.close(tfh)
@@ -119,7 +118,7 @@ class GithubWebScraper(object):
         self.dump_summaries(repo_url, issues, filename="html_summaries-tmp")
 
     def get_last_number(self, repo_path):
-        repo_url = self.baseurl + u'/' + repo_path
+        repo_url = self.baseurl + '/' + repo_path
         issues = self.get_issue_summaries(repo_url)
         if issues:
             return sorted([int(x) for x in issues.keys()])[-1]
@@ -141,45 +140,45 @@ class GithubWebScraper(object):
 
         if not baseurl:
             url = repo_url
-            url += u'/issues'
-            url += u'?'
-            url += u'q='
-            url += urllib2.quote(u'sort:updated-desc')
+            url += '/issues'
+            url += '?'
+            url += 'q='
+            url += urllib.parse.quote('sort:updated-desc')
         else:
             url = baseurl
 
-        namespace = repo_url.split(u'/')[-2]
-        reponame = repo_url.split(u'/')[-1]
+        namespace = repo_url.split('/')[-2]
+        reponame = repo_url.split('/')[-1]
 
         rr = self._request_url(url)
-        soup = BeautifulSoup(rr.text, u'html.parser')
+        soup = BeautifulSoup(rr.text, 'html.parser')
         data = self._parse_issue_summary_page(soup)
-        if data[u'issues']:
+        if data['issues']:
             # send to receiver
-            post_to_receiver(u'html_summaries', {u'user': namespace, u'repo': reponame}, data[u'issues'])
+            post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, data['issues'])
             # update master list
-            issues.update(data[u'issues'])
+            issues.update(data['issues'])
 
         if not baseurl:
             self.dump_summaries_tmp(repo_url, issues)
 
-        while data[u'next_page']:
-            rr = self._request_url(self.baseurl + data[u'next_page'])
-            soup = BeautifulSoup(rr.text, u'html.parser')
+        while data['next_page']:
+            rr = self._request_url(self.baseurl + data['next_page'])
+            soup = BeautifulSoup(rr.text, 'html.parser')
             data = self._parse_issue_summary_page(soup)
 
             # send to receiver
-            post_to_receiver(u'html_summaries', {u'user': namespace, u'repo': reponame}, data[u'issues'])
+            post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, data['issues'])
 
-            if not data[u'next_page'] or not data[u'issues']:
+            if not data['next_page'] or not data['issues']:
                 break
 
             changed = []
             changes = False
-            for k, v in six.iteritems(data[u'issues']):
+            for k, v in data['issues'].items():
 
                 if not isinstance(k, unicode):
-                    k = u'%s' % k
+                    k = '%s' % k
 
                 if k not in issues:
                     changed.append(k)
@@ -190,7 +189,7 @@ class GithubWebScraper(object):
                 issues[k] = v
 
             if changed:
-                logging.info(u'changed: %s' % u','.join(x for x in changed))
+                logging.info('changed: %s' % ','.join(x for x in changed))
 
             if not baseurl:
                 self.dump_summaries_tmp(repo_url, issues)
@@ -205,21 +204,21 @@ class GithubWebScraper(object):
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
-                    post_to_receiver(u'html_summaries', {u'user': namespace, u'repo': reponame}, {x: summary})
+                    post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, {x: summary})
                     if not isinstance(x, unicode):
-                        x = u'%s' % x
+                        x = '%s' % x
                     issues[x] = summary
 
         # get missing timestamps
         if not baseurl:
             numbers = sorted([int(x) for x in issues.keys()])
-            missing = [x for x in numbers if to_text(x) not in issues or not issues[to_text(x)][u'updated_at']]
+            missing = [x for x in numbers if to_text(x) not in issues or not issues[to_text(x)]['updated_at']]
             for x in missing:
                 summary = self.get_single_issue_summary(repo_url, x, force=True)
                 if summary:
-                    post_to_receiver(u'html_summaries', {u'user': namespace, u'repo': reponame}, {x: summary})
+                    post_to_receiver('html_summaries', {'user': namespace, 'repo': reponame}, {x: summary})
                     if not isinstance(x, unicode):
-                        x = u'%s' % x
+                        x = '%s' % x
                     issues[x] = summary
 
         # save the cache
@@ -244,16 +243,16 @@ class GithubWebScraper(object):
         if number in issues and not force:
             return issues[number]
         else:
-            if repo_url.startswith(u'http'):
+            if repo_url.startswith('http'):
                 url = repo_url
             else:
-                url = self.baseurl + u'/' + repo_url
-            url += u'/issues/'
+                url = self.baseurl + '/' + repo_url
+            url += '/issues/'
             url += to_text(number)
 
             rr = self._request_url(url)
-            soup = BeautifulSoup(rr.text, u'html.parser')
-            if soup.text.lower().strip() != u'not found':
+            soup = BeautifulSoup(rr.text, 'html.parser')
+            if soup.text.lower().strip() != 'not found':
                 summary = self.parse_issue_page_to_summary(soup, url=rr.url)
                 if summary:
                     issues[number] = summary
@@ -266,47 +265,47 @@ class GithubWebScraper(object):
     def _issue_urls_from_links(self, links, checkstring=None):
         issue_urls = []
         for link in links:
-            href = link.get(u'href')
+            href = link.get('href')
             if href.startswith(checkstring):
                 issue_urls.append(href)
         return issue_urls
 
     def _get_issue_urls(self, namespace, repo, pages=0):
-        url = os.path.join(self.baseurl, namespace, repo, u'issues')
+        url = os.path.join(self.baseurl, namespace, repo, 'issues')
         rr = requests.get(url)
-        soup = BeautifulSoup(rr.text, u'html.parser')
-        links = soup.find_all(u'a')
+        soup = BeautifulSoup(rr.text, 'html.parser')
+        links = soup.find_all('a')
 
         issue_urls = []
 
         # href="/ansible/ansible/issues/17952"
-        checkstring = u'/%s/%s/issues' % (namespace, repo)
+        checkstring = '/%s/%s/issues' % (namespace, repo)
         issue_urls = self._issue_urls_from_links(
             links,
-            checkstring=checkstring + u'/'
+            checkstring=checkstring + '/'
         )
 
         if pages > 1:
             # rel="next"
             next_page = [
-                x[u'href'] for x in links
-                if u'next' in x.get(u'rel', []) and checkstring in x[u'href']
+                x['href'] for x in links
+                if 'next' in x.get('rel', []) and checkstring in x['href']
             ]
             while next_page:
                 np = next_page[0]
                 np = self.baseurl + np
-                logging.debug(u'np: %s' % np)
+                logging.debug('np: %s' % np)
 
                 rr = requests.get(np)
-                soup = BeautifulSoup(rr.text, u'html.parser')
-                links = soup.find_all(u'a')
+                soup = BeautifulSoup(rr.text, 'html.parser')
+                links = soup.find_all('a')
                 issue_urls += self._issue_urls_from_links(
                     links,
-                    checkstring=checkstring + u'/'
+                    checkstring=checkstring + '/'
                 )
                 next_page = [
-                    x[u'href'] for x in links
-                    if u'next' in x.get(u'rel', []) and checkstring in x[u'href']
+                    x['href'] for x in links
+                    if 'next' in x.get('rel', []) and checkstring in x['href']
                 ]
 
         return issue_urls
@@ -329,8 +328,8 @@ class GithubWebScraper(object):
         else:
             return None
         '''
-        issues = self.get_issue_summaries(namespace + u'/' + repo)
-        keys = sorted(set([int(x[u'number']) for x in issues.keys()]))
+        issues = self.get_issue_summaries(namespace + '/' + repo)
+        keys = sorted({int(x['number']) for x in issues.keys()})
         return keys[-1]
 
     def get_usernames_from_filename_blame(
@@ -348,28 +347,28 @@ class GithubWebScraper(object):
             self.baseurl,
             namespace,
             repo,
-            u'blame',
+            'blame',
             branch,
             filepath
         )
 
         rr = self._request_url(url)
 
-        logging.debug(u'parsing blame page for %s' % filepath)
-        soup = BeautifulSoup(rr.text, u'html.parser')
-        commits = soup.findAll(u'td', {u'class': u'blame-commit-info'})
+        logging.debug('parsing blame page for %s' % filepath)
+        soup = BeautifulSoup(rr.text, 'html.parser')
+        commits = soup.findAll('td', {'class': 'blame-commit-info'})
         for commit in commits:
-            avatar = commit.find(u'img', {u'class': u'avatar blame-commit-avatar'})
-            committer = avatar.attrs.get(u'alt')
+            avatar = commit.find('img', {'class': 'avatar blame-commit-avatar'})
+            committer = avatar.attrs.get('alt')
             if committer:
 
-                if committer.startswith(u'@'):
+                if committer.startswith('@'):
 
-                    msg = commit.find(u'a', {u'class': u'message'})
-                    mhref = msg.attrs[u'href']
-                    chash = mhref.split(u'/')[-1]
+                    msg = commit.find('a', {'class': 'message'})
+                    mhref = msg.attrs['href']
+                    chash = mhref.split('/')[-1]
 
-                    committer = committer.replace(u'@', u'')
+                    committer = committer.replace('@', '')
                     if committer not in commiters:
                         commiters[committer] = []
                     if chash not in commiters[committer]:
@@ -382,18 +381,18 @@ class GithubWebScraper(object):
         # https://raw.githubusercontent.com/
         #   ansible/ansibullbot/master/MAINTAINERS-CORE.txt
 
-        tdir = u'/tmp/webscraper_cache'
-        tfile = os.path.join(tdir, filepath.replace(u'/', u'__'))
+        tdir = '/tmp/webscraper_cache'
+        tfile = os.path.join(tdir, filepath.replace('/', '__'))
 
         if usecache and os.path.exists(tfile):
-            tdata = u''
+            tdata = ''
             with open(tfile, 'rb') as f:
                 tdata = f.read()
 
             return tdata
 
         url = os.path.join(
-            u'https://raw.githubusercontent.com',
+            'https://raw.githubusercontent.com',
             namespace,
             repo, branch,
             filepath
@@ -402,10 +401,10 @@ class GithubWebScraper(object):
 
         if rr.status_code != 200:
             if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception(u'bad statuscode on %s' % url)
+                raise Exception('bad statuscode on %s' % url)
 
         if usecache:
             if not os.path.isdir(tdir):
@@ -420,10 +419,10 @@ class GithubWebScraper(object):
         prs = {}
 
         url = self.baseurl
-        url += u'/'
+        url += '/'
         url += self.repo_path
-        url += u'/pulls?'
-        url += urllib2.quote(u'q=is open')
+        url += '/pulls?'
+        url += urllib.parse.quote('q=is open')
 
         page_count = 0
         while url:
@@ -431,88 +430,88 @@ class GithubWebScraper(object):
             rr = self._request_url(url)
             if rr.status_code != 200:
                 break
-            soup = BeautifulSoup(rr.text, u'html.parser')
+            soup = BeautifulSoup(rr.text, 'html.parser')
             data = self._parse_pullrequests_summary_page(soup)
-            if data[u'next_page']:
-                url = self.baseurl + data[u'next_page']
+            if data['next_page']:
+                url = self.baseurl + data['next_page']
             else:
                 url = None
-            if data[u'prs']:
-                prs.update(data[u'prs'])
+            if data['prs']:
+                prs.update(data['prs'])
             else:
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
-                    raise Exception(u'no "prs" key in data')
+                    raise Exception('no "prs" key in data')
 
         return prs
 
     def scrape_pullrequest_review(self, repo_path, number):
 
         reviews = {
-            u'users': {},
-            u'reviews': {}
+            'users': {},
+            'reviews': {}
         }
 
         url = self.baseurl
-        url += u'/'
+        url += '/'
         url += repo_path
-        url += u'/pull/'
+        url += '/pull/'
         url += to_text(number)
 
         rr = self._request_url(url)
-        soup = BeautifulSoup(rr.text, u'html.parser')
+        soup = BeautifulSoup(rr.text, 'html.parser')
 
         # <span class="reviewers-status-icon tooltipped tooltipped-nw
         # float-right d-block text-center" aria-label="nerzhul requested
         # changes">
         spans = soup.findAll(
-            u'span',
-            {u'class': lambda L: L and u'reviewers-status-icon' in L}
+            'span',
+            {'class': lambda L: L and 'reviewers-status-icon' in L}
         )
         for span in spans:
             # nerzhul requested changes
             # bcoca left review comments
             # gundalow approved these changes
             # requested review from gundalow
-            txt = span.attrs[u'aria-label']
+            txt = span.attrs['aria-label']
             tparts = txt.split(None, 1)
-            if not tparts[0].lower() == u'awaiting':
-                reviews[u'users'][tparts[0]] = tparts[1]
+            if not tparts[0].lower() == 'awaiting':
+                reviews['users'][tparts[0]] = tparts[1]
 
         # <div class="discussion-item discussion-item-review_requested">
         # <div id="pullrequestreview-15502866" class="timeline-comment
         # js-comment">
         rdivs = soup.findAll(
-            u'div',
-            {u'class': lambda L: L and u'discussion-item-review' in L}
+            'div',
+            {'class': lambda L: L and 'discussion-item-review' in L}
         )
 
         count = 0
         for rdiv in rdivs:
             count += 1
 
-            author = rdiv.find(u'a', {u'class': [u'author']}).text
+            author = rdiv.find('a', {'class': ['author']}).text
 
             id_div = rdiv.find(
-                u'div',
-                {u'id': lambda L: L and L.startswith(u'pullrequestreview-')}
+                'div',
+                {'id': lambda L: L and L.startswith('pullrequestreview-')}
             )
             if id_div:
-                rid = id_div.attrs[u'id']
+                rid = id_div.attrs['id']
             else:
                 rid = count
 
-            tdiv = rdiv.find(u'relative-time')
+            tdiv = rdiv.find('relative-time')
             if tdiv:
-                timestamp = tdiv[u'datetime']
+                timestamp = tdiv['datetime']
             else:
                 timestamp = None
 
             obutton = rdiv.findAll(
-                u'button',
-                {u'class': lambda L: L and u'outdated-comment-label' in L}
+                'button',
+                {'class': lambda L: L and 'outdated-comment-label' in L}
             )
             if obutton:
                 outdated = True
@@ -523,89 +522,89 @@ class GithubWebScraper(object):
 
             # https://github.com/ansible/ansibullbot/issues/523
             adiv = rdiv.find(
-                u'div',
-                {u'class': lambda L: L and L.startswith(u'discussion-item-header')}
+                'div',
+                {'class': lambda L: L and L.startswith('discussion-item-header')}
             )
             if not adiv:
                 adiv = rdiv.find(
-                    u'div',
-                    {u'class': u'discussion-item'}
+                    'div',
+                    {'class': 'discussion-item'}
                 )
 
                 if not adiv:
 
                     adiv = rdiv.find(
-                        u'h3',
-                        {u'class': lambda L: L and L.startswith(u'discussion-item-header')}
+                        'h3',
+                        {'class': lambda L: L and L.startswith('discussion-item-header')}
                     )
 
             atxt = adiv.text
             atxt = atxt.lower()
-            if u'suggested changes' in atxt:
-                action = u'suggested changes'
-            elif u'requested changes' in atxt:
-                action = u'requested changes'
-            elif u'self-requested a review' in atxt:
+            if 'suggested changes' in atxt:
+                action = 'suggested changes'
+            elif 'requested changes' in atxt:
+                action = 'requested changes'
+            elif 'self-requested a review' in atxt:
                 # <a href="/resmo" class="author">resmo</a>
-                action = u'requested review'
-                ra = rdiv.find(u'a', {u'class': u'author'})
+                action = 'requested review'
+                ra = rdiv.find('a', {'class': 'author'})
                 if ra:
                     reviewer = ra.text.strip()
-            elif u'requested a review' in atxt:
-                action = u'requested review'
+            elif 'requested a review' in atxt:
+                action = 'requested review'
                 tparts = atxt.split()
-                findex = tparts.index(u'from')
+                findex = tparts.index('from')
                 reviewer = tparts[findex+1]
-            elif u'requested review' in atxt:
-                action = u'requested review'
+            elif 'requested review' in atxt:
+                action = 'requested review'
                 tparts = atxt.split()
-                findex = tparts.index(u'from')
+                findex = tparts.index('from')
                 reviewer = tparts[findex+1]
-            elif u'approved these changes' in atxt:
-                action = u'approved'
-            elif u'left review comments' in atxt:
-                action = u'review comment'
-            elif u'reviewed' in atxt:
-                action = u'reviewed'
-            elif u'dismissed' in atxt:
-                action = u'dismissed'
-            elif u'removed ' in atxt:
-                action = u'removed'
+            elif 'approved these changes' in atxt:
+                action = 'approved'
+            elif 'left review comments' in atxt:
+                action = 'review comment'
+            elif 'reviewed' in atxt:
+                action = 'reviewed'
+            elif 'dismissed' in atxt:
+                action = 'dismissed'
+            elif 'removed ' in atxt:
+                action = 'removed'
                 tparts = atxt.split()
-                if u'from' in tparts:
-                    findex = tparts.index(u'from')
+                if 'from' in tparts:
+                    findex = tparts.index('from')
                     reviewer = tparts[findex+1]
             else:
                 action = None
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
-                    raise Exception(u'parsing error on %s' % atxt)
+                    raise Exception('parsing error on %s' % atxt)
 
-            reviews[u'reviews'][rid] = {
-                u'actor': author,
-                u'action': action,
-                u'reviewer': reviewer,
-                u'timestamp': timestamp,
-                u'outdated': outdated
+            reviews['reviews'][rid] = {
+                'actor': author,
+                'action': action,
+                'reviewer': reviewer,
+                'timestamp': timestamp,
+                'outdated': outdated
             }
 
         # force to ascii
         x = {}
-        for k, v in six.iteritems(reviews[u'users']):
+        for k, v in reviews['users'].items():
             k = k.encode('ascii','ignore')
             v = v.encode('ascii', 'ignore')
             x[k] = v
-        reviews[u'users'] = x.copy()
+        reviews['users'] = x.copy()
 
         return reviews
 
     def _request_url(self, url):
-        ua = u'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0)'
-        ua += u' Gecko/20100101 Firefix/40.1'
+        ua = 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:40.0)'
+        ua += ' Gecko/20100101 Firefix/40.1'
         headers = {
-            u'User-Agent': ua
+            'User-Agent': ua
         }
 
         sleep = 60
@@ -615,9 +614,9 @@ class GithubWebScraper(object):
             rr = None
             try:
                 rr = requests.get(url, headers=headers)
-                if rr.reason == u'Too Many Requests' or rr.status_code == 500:
+                if rr.reason == 'Too Many Requests' or rr.status_code == 500:
                     logging.debug(
-                        u'too many www requests, sleeping %ss' % sleep
+                        'too many www requests, sleeping %ss' % sleep
                     )
                     if not C.DEFAULT_RATELIMIT:
                         sys.exit(1)
@@ -628,7 +627,7 @@ class GithubWebScraper(object):
             except requests.exceptions.ConnectionError:
                 # Failed to establish a new connection: [Errno 111] Connection
                 # refused',))
-                logging.debug(u'connection refused')
+                logging.debug('connection refused')
                 if not C.DEFAULT_RATELIMIT:
                     sys.exit(1)
                 time.sleep(sleep)
@@ -642,16 +641,16 @@ class GithubWebScraper(object):
 
             if not rr:
                 failed = True
-                logging.warning(u'no response')
+                logging.warning('no response')
                 if not C.DEFAULT_RATELIMIT:
                     sys.exit(1)
                 time.sleep(sleep)
                 sleep *= 2
 
             # https://github.com/ansible/ansibullbot/issues/573
-            if not rr or u'page is taking way too long to load' in rr.text.lower():
+            if not rr or 'page is taking way too long to load' in rr.text.lower():
                 failed = True
-                logging.warning(u'github page took too long to load')
+                logging.warning('github page took too long to load')
                 if not C.DEFAULT_RATELIMIT:
                     sys.exit(1)
                 time.sleep(sleep)
@@ -660,70 +659,70 @@ class GithubWebScraper(object):
         return rr
 
     def _parse_issue_numbers_from_soup(self, soup):
-        refs = soup.findAll(u'a')
+        refs = soup.findAll('a')
         urls = []
         for ref in refs:
-            if u'href' in ref.attrs:
-                logging.debug(ref.attrs[u'href'])
-                urls.append(ref.attrs[u'href'])
+            if 'href' in ref.attrs:
+                logging.debug(ref.attrs['href'])
+                urls.append(ref.attrs['href'])
 
-        checkpath = u'/' + self.repo_path
-        m = re.compile(u'^%s/(pull|issues)/[0-9]+$' % checkpath)
+        checkpath = '/' + self.repo_path
+        m = re.compile('^%s/(pull|issues)/[0-9]+$' % checkpath)
         urls = [x for x in urls if m.match(x)]
 
-        numbers = [x.split(u'/')[-1] for x in urls]
+        numbers = [x.split('/')[-1] for x in urls]
         numbers = [int(x) for x in numbers]
         numbers = sorted(set(numbers))
         return numbers
 
     def _parse_pullrequests_summary_page(self, soup):
         data = {
-            u'prs': {}
+            'prs': {}
         }
 
         lis = soup.findAll(
-            u'li',
-            {u'class': lambda L: L and L.endswith(u'issue-row')}
+            'li',
+            {'class': lambda L: L and L.endswith('issue-row')}
         )
 
         if lis:
             for li in lis:
 
-                number = li.attrs[u'id'].split(u'_')[-1]
+                number = li.attrs['id'].split('_')[-1]
                 number = int(number)
                 status_txt = None
                 status_state = None
                 review_txt = None
 
-                status = li.find(u'div', {u'class': u'commit-build-statuses'})
+                status = li.find('div', {'class': 'commit-build-statuses'})
                 if status:
-                    status_a = status.find(u'a')
-                    status_txt = status_a.attrs[u'aria-label'].lower().strip()
-                    status_state = status_txt.split(u':')[0]
+                    status_a = status.find('a')
+                    status_txt = status_a.attrs['aria-label'].lower().strip()
+                    status_state = status_txt.split(':')[0]
 
                 review_txt = None
                 review = li.find(
-                    u'a',
-                    {u'aria-label': lambda L: L and u'review' in L}
+                    'a',
+                    {'aria-label': lambda L: L and 'review' in L}
                 )
                 if review:
                     review_txt = review.text.lower().strip()
                 else:
                     review_txt = None
 
-                data[u'prs'][number] = {
-                    u'ci_state': status_state,
-                    u'ci_message': status_txt,
-                    u'review_message': review_txt,
+                data['prs'][number] = {
+                    'ci_state': status_state,
+                    'ci_message': status_txt,
+                    'review_message': review_txt,
 
                 }
 
         # next_page
         next_page = None
-        next_a = soup.find(u'a', {u'class': [u'next_page']})
+        next_a = soup.find('a', {'class': ['next_page']})
         if next_a:
-            next_page = next_a.attrs[u'href']
-        data[u'next_page'] = next_page
+            next_page = next_a.attrs['href']
+        data['next_page'] = next_page
 
         return data
 
@@ -737,8 +736,8 @@ class GithubWebScraper(object):
 
 
         data = {
-            u'issues': {},
-            u'next_page': None
+            'issues': {},
+            'next_page': None
         }
 
         '''
@@ -872,8 +871,8 @@ class GithubWebScraper(object):
         #       href="/ansible/ansible/issues/31602">TITLE</a>
 
         refs = soup.findAll(
-            u'a',
-            {u'id': lambda L: L and L.startswith('issue_') and L.endswith(u'_link')}
+            'a',
+            {'id': lambda L: L and L.startswith('issue_') and L.endswith('_link')}
         )
 
         for ref in refs:
@@ -912,27 +911,27 @@ class GithubWebScraper(object):
 
     def parse_issue_page_to_summary(self, soup, url=None):
         data = {
-            u'state': None,
-            u'labels': [],
-            u'merged': None,
-            u'href': None,
-            u'type': None,
-            u'number': None,
-            u'title': None,
-            u'ci_state': None,
-            u'ci_message': None,
-            u'review_message': None,
-            u'created_at': None,
-            u'updated_at': None,
-            u'closed_at': None,
-            u'merged_at': None
+            'state': None,
+            'labels': [],
+            'merged': None,
+            'href': None,
+            'type': None,
+            'number': None,
+            'title': None,
+            'ci_state': None,
+            'ci_message': None,
+            'review_message': None,
+            'created_at': None,
+            'updated_at': None,
+            'closed_at': None,
+            'merged_at': None
         }
 
         if url:
-            if u'/pull/' in url:
-                data[u'type'] = u'pullrequest'
+            if '/pull/' in url:
+                data['type'] = 'pullrequest'
             else:
-                data[u'type'] = u'issue'
+                data['type'] = 'issue'
 
         '''
         # <div class="state state-open">
@@ -967,34 +966,34 @@ class GithubWebScraper(object):
         #<span title="Status: Merged" class="State State--purple  ">
         #<span title="Status: Draft" class="State   ">
         state_span = soup.find(
-            u'span', {u'class': lambda L: L and
-                    L.lower().startswith(u'state ')}
+            'span', {'class': lambda L: L and
+                    L.lower().startswith('state ')}
         )
 
         if not state_span:
             if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception(u'no state div')
+                raise Exception('no state div')
 
-        if u'merged' in state_span.attrs[u'title'].lower():
-            data[u'state'] = u'closed'
-            data[u'merged'] = True
-        elif u'closed' in state_span.attrs[u'title'].lower():
-            data[u'state'] = u'closed'
-            if data[u'type'] == u'pullrequest':
-                data[u'merged'] = False
+        if 'merged' in state_span.attrs['title'].lower():
+            data['state'] = 'closed'
+            data['merged'] = True
+        elif 'closed' in state_span.attrs['title'].lower():
+            data['state'] = 'closed'
+            if data['type'] == 'pullrequest':
+                data['merged'] = False
         else:
-            data[u'state'] = u'open'
-            if data[u'type'] == u'pullrequest':
-                data[u'merged'] = False
+            data['state'] = 'open'
+            if data['type'] == 'pullrequest':
+                data['merged'] = False
 
-        title = soup.find(u'span', {u'class': u'js-issue-title'})
-        data[u'title'] = title.text.strip()
+        title = soup.find('span', {'class': 'js-issue-title'})
+        data['title'] = title.text.strip()
 
-        number = soup.find(u'span', {u'class': u'gh-header-number'})
-        data[u'number'] = int(number.text.replace(u'#', u''))
+        number = soup.find('span', {'class': 'gh-header-number'})
+        data['number'] = int(number.text.replace('#', ''))
 
         '''
         # <div class="TableObject-item TableObject-item--primary">
@@ -1003,52 +1002,52 @@ class GithubWebScraper(object):
 
         # <div class="timeline-comment-header-text">
         # <div class="TableObject-item TableObject-item--primary">
-        timeline_header = soup.find(u'div', {u'class': u'timeline-comment-header-text'})
+        timeline_header = soup.find('div', {'class': 'timeline-comment-header-text'})
         if not timeline_header:
             # https://github.com/ansible/ansibullbot/issues/520
-            timeline_header = soup.find(u'div', {u'class': u'TableObject-item TableObject-item--primary'})
-        timeline_relative_time = timeline_header.find(u'relative-time')
+            timeline_header = soup.find('div', {'class': 'TableObject-item TableObject-item--primary'})
+        timeline_relative_time = timeline_header.find('relative-time')
         if not timeline_relative_time:
-            timeline_header = soup.find(u'h3', {u'class': u'timeline-comment-header-text f5 text-normal'})
-            timeline_relative_time = timeline_header.find(u'relative-time')
+            timeline_header = soup.find('h3', {'class': 'timeline-comment-header-text f5 text-normal'})
+            timeline_relative_time = timeline_header.find('relative-time')
 
-        data[u'created_at'] = timeline_relative_time.attrs[u'datetime']
+        data['created_at'] = timeline_relative_time.attrs['datetime']
 
-        if data[u'merged']:
+        if data['merged']:
             # <div class="discussion-item-header" id="event-11140358">
-            event_divs = soup.findAll(u'div', {u'id': lambda L: L and L.startswith(u'event-')})
+            event_divs = soup.findAll('div', {'id': lambda L: L and L.startswith('event-')})
             for x in event_divs:
-                rt = x.find(u'relative-time')
-                data[u'merged_at'] = rt.attrs[u'datetime']
-                data[u'closed_at'] = rt.attrs[u'datetime']
-                data[u'updated_at'] = rt.attrs[u'datetime']
-        elif data[u'state'] == u'closed':
-            close_div = soup.find(u'div', {u'class': u'discussion-item discussion-item-closed'})
-            closed_rtime = close_div.find(u'relative-time')
-            data[u'closed_at'] = closed_rtime.attrs[u'datetime']
-            data[u'updated_at'] = closed_rtime.attrs[u'datetime']
+                rt = x.find('relative-time')
+                data['merged_at'] = rt.attrs['datetime']
+                data['closed_at'] = rt.attrs['datetime']
+                data['updated_at'] = rt.attrs['datetime']
+        elif data['state'] == 'closed':
+            close_div = soup.find('div', {'class': 'discussion-item discussion-item-closed'})
+            closed_rtime = close_div.find('relative-time')
+            data['closed_at'] = closed_rtime.attrs['datetime']
+            data['updated_at'] = closed_rtime.attrs['datetime']
 
         comments = []
-        comment_divs = soup.findAll(u'div', {u'class': u'timeline-comment-wrapper js-comment-container'})
+        comment_divs = soup.findAll('div', {'class': 'timeline-comment-wrapper js-comment-container'})
         for cd in comment_divs:
-            rt = cd.find(u'relative-time')
+            rt = cd.find('relative-time')
             if rt:
-                comments.append(rt.attrs[u'datetime'])
+                comments.append(rt.attrs['datetime'])
 
         commits = []
-        if data[u'type'] == u'pullrequest':
-            commit_divs = soup.findAll(u'div', {u'class': u'discussion-item discussion-commits'})
+        if data['type'] == 'pullrequest':
+            commit_divs = soup.findAll('div', {'class': 'discussion-item discussion-commits'})
             for cd in commit_divs:
-                rt = cd.find(u'relative-time')
+                rt = cd.find('relative-time')
                 if rt:
-                    commits.append(rt.attrs[u'datetime'])
+                    commits.append(rt.attrs['datetime'])
 
-        if not data[u'updated_at']:
+        if not data['updated_at']:
             events = comments + commits
             events = sorted(set(events))
             if events:
-                data[u'updated_at'] = events[-1]
+                data['updated_at'] = events[-1]
             else:
-                data[u'updated_at'] = data[u'created_at']
+                data['updated_at'] = data['created_at']
 
         return data
