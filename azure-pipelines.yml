@@ -14,8 +14,8 @@ jobs:
       TOXENV: python
     strategy:
       matrix:
-        3.7:
-          python_version: 3.7
+        3.8:
+          python_version: 3.8
     steps:
       - task: UsePythonVersion@0
         inputs:
