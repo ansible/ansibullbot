@@ -88,17 +88,33 @@ class AzurePipelinesCI(BaseCI):
     def jobs(self):
         if self._jobs is None:
             if self.build_id:
-                # FIXME cache this
+                if not os.path.isdir(self._cachedir):
+                    os.makedirs(self._cachedir)
+                cache_file = os.path.join(self._cachedir, u'timeline_%s.pickle' % self.build_id)
+
                 resp = fetch(TIMELINE_URL_FMT % self.build_id)
                 if resp is None:
-                    self._jobs = []
-                    self._updated_at = strip_time_safely('1970-01-01')  # FIXME
-                    self._stages = []
+                    data = None
+                    if os.path.isfile(cache_file):
+                        logging.info(u'timeline was probably removed, load it from cache')
+                        with open(cache_file, 'rb') as f:
+                            data = pickle_load(f)
                 else:
                     data = resp.json()
+                    data = (strip_time_safely(data['lastChangedOn']), data)
+                    logging.info(u'writing %s' % cache_file)
+                    with open(cache_file, 'wb') as f:
+                        pickle_dump(data, f)
+
+                if data is not None:
+                    data = data[1]
                     self._jobs = [r for r in data['records'] if r['type'] == 'Job']
                     self._updated_at = strip_time_safely(data['lastChangedOn'])  # FIXME
                     self._stages = [r for r in data['records'] if r['type'] == 'Stage']  # FIXME
+                else:
+                    self._jobs = []
+                    self._updated_at = strip_time_safely('1970-01-01')
+                    self._stages = []
             else:
                 self._jobs = []
         return self._jobs
