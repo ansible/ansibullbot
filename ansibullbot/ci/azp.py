@@ -49,14 +49,14 @@ class AzurePipelinesCI(BaseCI):
         self.last_run = None
         self.created_at = None
 
-        if self.state and self.build_id and self.jobs:
-            try:
-                self.created_at = min(
-                    (strip_time_safely(j['startTime']) for j in self.jobs if j['startTime'] is not None)
-                )
-            except ValueError:
-                self.created_at = self.updated_at
+        try:
+            self.created_at = min(
+                (strip_time_safely(j['startTime']) for j in self.jobs if j['startTime'] is not None)
+            )
+        except ValueError:
+            self.created_at = self.updated_at
 
+        if self.state and self.build_id and self.jobs:
             self.last_run = {
                 'state': self.state,
                 'created_at': pytz.utc.localize(self.created_at),
@@ -88,13 +88,17 @@ class AzurePipelinesCI(BaseCI):
     def jobs(self):
         if self._jobs is None:
             if self.build_id:
-                # FIXME cache this? We need lastChangedOn always anyway...
+                # FIXME cache this
                 resp = fetch(TIMELINE_URL_FMT % self.build_id)
-                check_response(resp)
-                data = resp.json()
-                self._jobs = [r for r in data['records'] if r['type'] == 'Job']
-                self._updated_at = strip_time_safely(data['lastChangedOn'])  # FIXME
-                self._stages = [r for r in data['records'] if r['type'] == 'Stage']  # FIXME
+                if resp is None:
+                    self._jobs = []
+                    self._updated_at = strip_time_safely('1970-01-01')  # FIXME
+                    self._stages = []
+                else:
+                    data = resp.json()
+                    self._jobs = [r for r in data['records'] if r['type'] == 'Job']
+                    self._updated_at = strip_time_safely(data['lastChangedOn'])  # FIXME
+                    self._stages = [r for r in data['records'] if r['type'] == 'Stage']  # FIXME
             else:
                 self._jobs = []
         return self._jobs
@@ -139,7 +143,7 @@ class AzurePipelinesCI(BaseCI):
 
     def get_last_full_run_date(self):
         # FIXME fix the method name, it makes sense for shippable but not for azp
-        if self.state is None:
+        if self.state is None and self.build_id is None:
             raise NoCIError
         # FIXME pending?
         #if self.state == u'pending':
