@@ -98,13 +98,13 @@ class AzurePipelinesCI(BaseCI):
                     if os.path.isfile(cache_file):
                         logging.info(u'timeline was probably removed, load it from cache')
                         with open(cache_file, 'rb') as f:
-                            data = pickle_load(f)
+                            data = pickle.load(f)
                 else:
                     data = resp.json()
                     data = (strip_time_safely(data['lastChangedOn']), data)
                     logging.info(u'writing %s' % cache_file)
                     with open(cache_file, 'wb') as f:
-                        pickle_dump(data, f)
+                        pickle.dump(data, f)
 
                 if data is not None:
                     data = data[1]
