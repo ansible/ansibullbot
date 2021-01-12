@@ -189,15 +189,15 @@ class AzurePipelinesCI(BaseCI):
                     logging.info(u'fetching artifacts: stale, no previous data')
 
                 resp = fetch(ARTIFACTS_URL_FMT % self.build_id)
-                check_response(resp)
-                data = [a for a in resp.json()['value'] if a['name'].startswith('Bot')]
-                data = (self.updated_at, data)
+                if resp is not None:
+                    data = [a for a in resp.json()['value'] if a['name'].startswith('Bot')]
+                    data = (self.updated_at, data)
 
-                logging.info(u'writing %s' % cache_file)
-                with open(cache_file, 'wb') as f:
-                    pickle_dump(data, f)
-
-            self._artifacts = data[1]
+                    logging.info(u'writing %s' % cache_file)
+                    with open(cache_file, 'wb') as f:
+                        pickle_dump(data, f)
+            if data:
+                self._artifacts = data[1]
 
         return self._artifacts
 
@@ -219,25 +219,25 @@ class AzurePipelinesCI(BaseCI):
                 logging.info(u'fetching artifacts: stale, no previous data')
 
             resp = fetch(url, stream=True)
-            check_response(resp)
-            with BytesIO() as data:
-                for chunk in resp.iter_content(chunk_size=128):
-                    data.write(chunk)
-                artifact_zip = ZipFile(data)
+            if resp is not None:
+                with BytesIO() as data:
+                    for chunk in resp.iter_content(chunk_size=128):
+                        data.write(chunk)
+                    artifact_zip = ZipFile(data)
 
-                artifact_data = []
-                for fn in artifact_zip.namelist():
-                    if 'ansible-test-' not in fn:
-                        continue
-                    with artifact_zip.open(fn) as f:
-                        artifact_data.append(json.load(f))
+                    artifact_data = []
+                    for fn in artifact_zip.namelist():
+                        if 'ansible-test-' not in fn:
+                            continue
+                        with artifact_zip.open(fn) as f:
+                            artifact_data.append(json.load(f))
 
-                data = (self.updated_at, artifact_data)
-                logging.info(u'writing %s' % cache_file)
-                with open(cache_file, 'wb') as f:
-                    pickle_dump(data, f)
-
-        return data[1]
+                    data = (self.updated_at, artifact_data)
+                    logging.info(u'writing %s' % cache_file)
+                    with open(cache_file, 'wb') as f:
+                        pickle_dump(data, f)
+        if data:
+            return data[1]
 
     def get_test_results(self):
         if self.state in ('pending', 'inProgress', None):
