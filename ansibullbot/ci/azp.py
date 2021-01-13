@@ -195,7 +195,7 @@ class AzurePipelinesCI(BaseCI):
 
                     logging.info('writing %s' % cache_file)
                     with open(cache_file, 'wb') as f:
-                        pickle_dump(data, f)
+                        pickle.dump(data, f)
             if data:
                 self._artifacts = data[1]
 
@@ -235,7 +235,7 @@ class AzurePipelinesCI(BaseCI):
                     data = (self.updated_at, artifact_data)
                     logging.info('writing %s' % cache_file)
                     with open(cache_file, 'wb') as f:
-                        pickle_dump(data, f)
+                        pickle.dump(data, f)
         if data:
             return data[1]
 
