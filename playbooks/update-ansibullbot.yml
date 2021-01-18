@@ -3,6 +3,5 @@
   become: yes
 
   roles:
-    - docker
     - role: ansibullbot
       ansibullbot_action: update
