@@ -40,6 +40,7 @@ ansibullbot_slack_url: !vault |
 
 # Caddy settings
 ansibullbot_caddy_log_path: /var/log/caddy
+caddy_config_path: /etc/caddy
 caddy_user: caddy
 caddy_group: caddy
 caddy_root: /usr/share/caddy
