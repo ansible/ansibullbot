@@ -76,6 +76,17 @@ authorized_keys:
       h6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPu\
       Jzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5"
 
+  - user: centos
+    comment: tower2_deploy
+    key:
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCk3j+kA6cfWin+Gq7RWZ1JQdpTbwEwpDPMN2GZy3uksDKnG8c+lXvfXhrtJ1XtQQmta06\
+      J8oEp4pmf8QlFflftxoq/LRJ/YlmviSzvWbyqBYGtFo/Ndv0QU1UokY3jjLGiktvmmU7hH/xGDOBZLX9I2L/A0WiJ9HoAkKUGPfQwokTpbwP\
+      lZ0U7zZ6ivqyRjnKmkzt6SkPExZ3JGIo5EfQoZMLRxyHmSvuTP+3dgNhTKGCbtQErPfU4tmL3u/1nz/7HoX1G0z8fee/QxgVCvWKmgbVXW28\
+      Vsyio8ekFqVmViZae4m8SgE4viR10fj2Gultmp17bwnG8RWPqJ0liY+4hplEfZ+p4awcR3n1f4vyPW0somE5TTzU2v0ze+mhj0DusIyblfqs\
+      BHOX55w2SVFW+rDB3rZ8MdN//JeYndFbLH69Sjggys+Yl9nUQ81sIo7LY4mdFzOOnn5wtBTzNf8NjwVn51jPh2XOg1AA2/QCnM7VweUfb3Aq\
+      lrOCinTtySBz0eX75fbttyyGTYKGc4v8ZFDjFAxEl1ZxFmMP30LbCnAyc4Q2CQYp8BS1xxww9BXDQe+v91Z9NwYQNYTFDP0nMPh+yQOJdlSA\
+      1ZBZIAtH/Z92Uz0CwgFZLeAaWXBxwKO3IezLGLTboojr9m1Fm3/sCPSSHK9SURB4iAopdOXNW7Q"
+
   - user: "{{ ansibullbot_user }}"
     comment: mkrizek@x240
     key:
@@ -91,14 +102,3 @@ authorized_keys:
       e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
       h6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPu\
       Jzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5"
-
-  - user: "{{ ansibullbot_user }}"
-    comment: tower2_deploy
-    key:
-      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCk3j+kA6cfWin+Gq7RWZ1JQdpTbwEwpDPMN2GZy3uksDKnG8c+lXvfXhrtJ1XtQQmta06\
-      J8oEp4pmf8QlFflftxoq/LRJ/YlmviSzvWbyqBYGtFo/Ndv0QU1UokY3jjLGiktvmmU7hH/xGDOBZLX9I2L/A0WiJ9HoAkKUGPfQwokTpbwP\
-      lZ0U7zZ6ivqyRjnKmkzt6SkPExZ3JGIo5EfQoZMLRxyHmSvuTP+3dgNhTKGCbtQErPfU4tmL3u/1nz/7HoX1G0z8fee/QxgVCvWKmgbVXW28\
-      Vsyio8ekFqVmViZae4m8SgE4viR10fj2Gultmp17bwnG8RWPqJ0liY+4hplEfZ+p4awcR3n1f4vyPW0somE5TTzU2v0ze+mhj0DusIyblfqs\
-      BHOX55w2SVFW+rDB3rZ8MdN//JeYndFbLH69Sjggys+Yl9nUQ81sIo7LY4mdFzOOnn5wtBTzNf8NjwVn51jPh2XOg1AA2/QCnM7VweUfb3Aq\
-      lrOCinTtySBz0eX75fbttyyGTYKGc4v8ZFDjFAxEl1ZxFmMP30LbCnAyc4Q2CQYp8BS1xxww9BXDQe+v91Z9NwYQNYTFDP0nMPh+yQOJdlSA\
-      1ZBZIAtH/Z92Uz0CwgFZLeAaWXBxwKO3IezLGLTboojr9m1Fm3/sCPSSHK9SURB4iAopdOXNW7Q"
