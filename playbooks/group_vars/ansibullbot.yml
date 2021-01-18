@@ -85,7 +85,7 @@ authorized_keys:
       Vsyio8ekFqVmViZae4m8SgE4viR10fj2Gultmp17bwnG8RWPqJ0liY+4hplEfZ+p4awcR3n1f4vyPW0somE5TTzU2v0ze+mhj0DusIyblfqs\
       BHOX55w2SVFW+rDB3rZ8MdN//JeYndFbLH69Sjggys+Yl9nUQ81sIo7LY4mdFzOOnn5wtBTzNf8NjwVn51jPh2XOg1AA2/QCnM7VweUfb3Aq\
       lrOCinTtySBz0eX75fbttyyGTYKGc4v8ZFDjFAxEl1ZxFmMP30LbCnAyc4Q2CQYp8BS1xxww9BXDQe+v91Z9NwYQNYTFDP0nMPh+yQOJdlSA\
-      1ZBZIAtH/Z92Uz0CwgFZLeAaWXBxwKO3IezLGLTboojr9m1Fm3/sCPSSHK9SURB4iAopdOXNW7Q"
+      1ZBZIAtH/Z92Uz0CwgFZLeAaWXBxwKO3IezLGLTboojr9m1Fm3/sCPSSHK9SURB4iAopdOXNW7Q=="
 
   - user: "{{ ansibullbot_user }}"
     comment: mkrizek@x240
