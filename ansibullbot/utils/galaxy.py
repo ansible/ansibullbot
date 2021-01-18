@@ -87,7 +87,7 @@ class GalaxyQueryTool:
             os.makedirs(cachedir)
         cachefile = os.path.join(cachedir, url.replace('/', '__'))
         if os.path.exists(cachefile):
-            with open(cachefile, 'r') as f:
+            with open(cachefile) as f:
                 fdata = json.loads(f.read())
             jdata = fdata['result']
             ts = fdata['timestamp']
@@ -241,7 +241,7 @@ class GalaxyQueryTool:
     def _load_checkout_index(self):
         ci = {}
         if os.path.exists(self._checkout_index_file):
-            with open(self._checkout_index_file, 'r') as f:
+            with open(self._checkout_index_file) as f:
                 ci = json.loads(f.read())
         for k,v in ci.items():
             ci[k]['updated'] = strip_time_safely(v['updated'])
@@ -351,7 +351,7 @@ class GalaxyQueryTool:
                 # list it
                 tarfn_json = tarfn + '.json'
                 if os.path.exists(tarfn_json):
-                    with open(tarfn_json, 'r') as f:
+                    with open(tarfn_json) as f:
                         filenames = json.loads(f.read())
                 else:
                     logging.debug(tarfn)
@@ -471,7 +471,7 @@ class GalaxyQueryTool:
                     continue
                 if pattern == 'plugins/modules/':  # false positives
                     continue
-                logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
+                logging.info('matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
                 candidates.append(key)
                 break
 

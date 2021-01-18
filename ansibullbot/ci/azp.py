@@ -2,6 +2,7 @@ import hashlib
 import logging
 import json
 import os.path
+import pickle
 import re
 
 from io import BytesIO
@@ -10,7 +11,6 @@ from zipfile import ZipFile
 import pytz
 
 import ansibullbot.constants as C
-from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_bytes
 from ansibullbot.ci.base import BaseCI
 from ansibullbot.errors import NoCIError
@@ -23,9 +23,9 @@ DETAILS_URL_RE = \
         r'https://dev\.azure\.com/(?P<organization>[^/]+)/(?P<project>[^/]+)/_build/results\?buildId=(?P<buildId>[0-9]+)'
     )
 TIMELINE_URL_FMT = \
-    u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/timeline/?api-version=6.0'
+    'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/timeline/?api-version=6.0'
 ARTIFACTS_URL_FMT = \
-    u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/artifacts?api-version=6.0'
+    'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/artifacts?api-version=6.0'
 TIMEOUT = 5  # seconds
 HEADERS = {
     'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ class AzurePipelinesCI(BaseCI):
         if self._build_id is None:
             build_ids = set()
             for check_run in self._iw.pullrequest_check_runs:
-                match = re.match(DETAILS_URL_RE, check_run[u'details_url'])
+                match = re.match(DETAILS_URL_RE, check_run['details_url'])
                 if not match:
                     continue
                 org, project, buildid = match.groups()
@@ -98,13 +98,13 @@ class AzurePipelinesCI(BaseCI):
                     if os.path.isfile(cache_file):
                         logging.info(u'timeline was probably removed, load it from cache')
                         with open(cache_file, 'rb') as f:
-                            data = pickle_load(f)
+                            data = pickle.load(f)
                 else:
                     data = resp.json()
                     data = (strip_time_safely(data['lastChangedOn']), data)
                     logging.info(u'writing %s' % cache_file)
                     with open(cache_file, 'wb') as f:
-                        pickle_dump(data, f)
+                        pickle.dump(data, f)
 
                 if data is not None:
                     data = data[1]
@@ -124,9 +124,9 @@ class AzurePipelinesCI(BaseCI):
         if self._state is None:
             if self.jobs:
                 # pending, completed, inProgress
-                state = list(set([j['state'] for j in self.jobs]))
+                state = list({j['state'] for j in self.jobs})
                 # succeeded, failed, None
-                result = list(set([j['result'] for j in self.jobs]))
+                result = list({j['result'] for j in self.jobs})
                 if 'canceled' in result or 'cancelled' in result:
                     self._state = 'failure'
                 elif len(state) == 1 and 'completed' in state:
@@ -176,26 +176,26 @@ class AzurePipelinesCI(BaseCI):
                 os.makedirs(self._cachedir)
 
             data = None
-            cache_file = os.path.join(self._cachedir, u'artifacts_%s.pickle' % self.build_id)
+            cache_file = os.path.join(self._cachedir, 'artifacts_%s.pickle' % self.build_id)
             if os.path.isfile(cache_file):
-                logging.info(u'load artifacts cache')
+                logging.info('load artifacts cache')
                 with open(cache_file, 'rb') as f:
-                    data = pickle_load(f)
+                    data = pickle.load(f)
 
             if data is None or (data and data[0] < self.updated_at) or not data[1]:
                 if data:
-                    logging.info(u'fetching artifacts: stale, previous from %s' % data[0])
+                    logging.info('fetching artifacts: stale, previous from %s' % data[0])
                 else:
-                    logging.info(u'fetching artifacts: stale, no previous data')
+                    logging.info('fetching artifacts: stale, no previous data')
 
                 resp = fetch(ARTIFACTS_URL_FMT % self.build_id)
                 if resp is not None:
                     data = [a for a in resp.json()['value'] if a['name'].startswith('Bot')]
                     data = (self.updated_at, data)
 
-                    logging.info(u'writing %s' % cache_file)
+                    logging.info('writing %s' % cache_file)
                     with open(cache_file, 'wb') as f:
-                        pickle_dump(data, f)
+                        pickle.dump(data, f)
             if data:
                 self._artifacts = data[1]
 
@@ -206,17 +206,17 @@ class AzurePipelinesCI(BaseCI):
             os.makedirs(self._cachedir)
 
         data = None
-        cache_file = os.path.join(self._cachedir, u'%s_%s.pickle' % (name.replace(' ', '-'), self.build_id))
+        cache_file = os.path.join(self._cachedir, '%s_%s.pickle' % (name.replace(' ', '-'), self.build_id))
         if os.path.isfile(cache_file):
-            logging.info(u'loading %s' % cache_file)
+            logging.info('loading %s' % cache_file)
             with open(cache_file, 'rb') as f:
-                data = pickle_load(f)
+                data = pickle.load(f)
 
         if data is None or (data and data[0] < self.updated_at) or not data[1]:
             if data:
-                logging.info(u'fetching artifacts: stale, previous from %s' % data[0])
+                logging.info('fetching artifacts: stale, previous from %s' % data[0])
             else:
-                logging.info(u'fetching artifacts: stale, no previous data')
+                logging.info('fetching artifacts: stale, no previous data')
 
             resp = fetch(url, stream=True)
             if resp is not None:
@@ -233,9 +233,9 @@ class AzurePipelinesCI(BaseCI):
                             artifact_data.append(json.load(f))
 
                     data = (self.updated_at, artifact_data)
-                    logging.info(u'writing %s' % cache_file)
+                    logging.info('writing %s' % cache_file)
                     with open(cache_file, 'wb') as f:
-                        pickle_dump(data, f)
+                        pickle.dump(data, f)
         if data:
             return data[1]
 
@@ -279,18 +279,18 @@ class AzurePipelinesCI(BaseCI):
 
     def rebuild(self, run_id, failed_only=False):
         if failed_only:
-            api_version = u'6.0-preview.1'
+            api_version = '6.0-preview.1'
             data = '{"state":"retry"}'
             stages = [s['identifier'] for s in self.stages if s['result'] != 'succeeded']
         else:
-            api_version = u'6.1-preview.1'
+            api_version = '6.1-preview.1'
             data = '{"state":"retry","forceRetryAllJobs":true}'
             stages = [s['identifier'] for s in self.stages]
 
         for stage in stages:
             if stage == 'Summary':
                 continue
-            url = u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=%s' % (run_id, stage, api_version)
+            url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=%s' % (run_id, stage, api_version)
 
             resp = fetch(
                 url,
@@ -313,7 +313,7 @@ class AzurePipelinesCI(BaseCI):
         for stage in [s['identifier'] for s in self.stages if s['state'] != 'completed']:
             if stage == 'Summary':
                 continue
-            url = u'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=6.0-preview.1' % (run_id, stage)
+            url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=6.0-preview.1' % (run_id, stage)
 
             resp = fetch(
                 url,

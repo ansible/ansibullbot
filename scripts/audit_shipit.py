@@ -8,8 +8,6 @@ import subprocess
 
 from pprint import pprint
 
-import six
-
 
 def main():
     base_path = os.path.expanduser(u'~/.ansibullbot/cache/ansible/ansible/issues')
@@ -32,10 +30,10 @@ def main():
         #    continue
 
         print(meta[u'html_url'])
-        print(u'submitter: ' + six.text_type(meta[u'submitter']))
-        print(u'previous_commits: ' + six.text_type(meta[u'submitter_previous_commits']))
-        print(u'previous_related_commits: ' + six.text_type(meta[u'submitter_previous_commits_for_pr_files']))
-        print(u'vshipits: ' + six.text_type(meta[u'shipit_count_vtotal']))
+        print(u'submitter: ' + str(meta[u'submitter']))
+        print(u'previous_commits: ' + str(meta[u'submitter_previous_commits']))
+        print(u'previous_related_commits: ' + str(meta[u'submitter_previous_commits_for_pr_files']))
+        print(u'vshipits: ' + str(meta[u'shipit_count_vtotal']))
         for x in meta[u'component_filenames']:
             print(u'\t' + x)
 
@@ -47,9 +45,6 @@ def main():
             meta[u'submitter_previous_commits'],
             meta[u'submitter_previous_commits_for_pr_files']
         ])
-        #import epdb; epdb.st()
-
-    import epdb; epdb.st()
 
 
 if __name__ == "__main__":

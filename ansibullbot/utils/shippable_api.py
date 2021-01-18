@@ -9,7 +9,6 @@ import time
 
 import requests
 import pytz
-import six
 
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text
@@ -20,13 +19,13 @@ from ansibullbot.utils.net_tools import fetch, check_response
 from ansibullbot.utils.timetools import strip_time_safely
 
 
-ANSIBLE_PROJECT_ID = u'573f79d02a8192902e20e34b'
+ANSIBLE_PROJECT_ID = '573f79d02a8192902e20e34b'
 SHIPPABLE_URL = C.DEFAULT_SHIPPABLE_URL
-ANSIBLE_RUNS_URL = u'%s/runs?projectIds=%s&isPullRequest=True' % (
+ANSIBLE_RUNS_URL = '%s/runs?projectIds=%s&isPullRequest=True' % (
     SHIPPABLE_URL,
     ANSIBLE_PROJECT_ID
 )
-NEW_BUILD_URL = u"%s/projects/%s/newBuild" % (
+NEW_BUILD_URL = "%s/projects/%s/newBuild" % (
     SHIPPABLE_URL,
     ANSIBLE_PROJECT_ID
 )
@@ -52,10 +51,10 @@ class ShippableCI(BaseCI):
         self._state = None
         self.pr_number = iw.number
 
-        self.states = iw.pullrequest_status_by_context(u'Shippable')
+        self.states = iw.pullrequest_status_by_context('Shippable')
         if self.states:
             self.last_run = self._get_processed_run(self.states[0])
-            self._state = self.last_run[u'state']
+            self._state = self.last_run['state']
 
     @property
     def state(self):
@@ -63,7 +62,7 @@ class ShippableCI(BaseCI):
 
     @property
     def required_file(self):
-        return u'shippable.yml'
+        return 'shippable.yml'
 
     @property
     def runs(self):
@@ -80,8 +79,8 @@ class ShippableCI(BaseCI):
 
             self._runs = [x for x in self._rawdata]
             for idx, x in enumerate(self.runs):
-                for k, v in six.iteritems(x):
-                    if k.endswith(u'At'):
+                for k, v in x.items():
+                    if k.endswith('At'):
                         # 2017-02-07T00:27:06.482Z
                         if v:
                             self._runs[idx][k] = strip_time_safely(v)
@@ -93,9 +92,9 @@ class ShippableCI(BaseCI):
         if target_url is None:
             raise ValueError('Could not get run ID from state: "%s"' % status)
 
-        target_url = target_url.split(u'/')
+        target_url = target_url.split('/')
 
-        if target_url[-1] == u'summary':
+        if target_url[-1] == 'summary':
             # https://app.shippable.com/github/ansible/ansible/runs/21001/summary
             run_id = target_url[-2]
         else:
@@ -116,31 +115,31 @@ class ShippableCI(BaseCI):
         run = status.copy()
         run_id = self._get_run_id_from_status(run)
 
-        run[u'created_at'] = pytz.utc.localize(strip_time_safely(run.get(u'created_at')))
-        run[u'updated_at'] = pytz.utc.localize(strip_time_safely(run.get(u'updated_at')))
-        run[u'run_id'] = run_id
+        run['created_at'] = pytz.utc.localize(strip_time_safely(run.get('created_at')))
+        run['updated_at'] = pytz.utc.localize(strip_time_safely(run.get('updated_at')))
+        run['run_id'] = run_id
         return run
 
     @property
     def updated_at(self):
         nruns = []
         for x in self.runs:
-            if x[u'commitUrl'].endswith(u'/' + to_text(self.pr_number)):
+            if x['commitUrl'].endswith('/' + to_text(self.pr_number)):
                 nruns.append(x)
         if not nruns:
             return None
-        nruns = sorted([x[u'endedAt'] for x in nruns if x[u'endedAt']])
+        nruns = sorted([x['endedAt'] for x in nruns if x['endedAt']])
         if nruns:
             return nruns[-1]
 
     def _get_url(self, url, usecache=False, timeout=TIMEOUT):
-        cdir = os.path.join(self.cachedir, u'.raw')
+        cdir = os.path.join(self.cachedir, '.raw')
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
-        cfile = url.replace(SHIPPABLE_URL + '/', u'')
-        cfile = cfile.replace(u'/', u'_')
-        cfile = os.path.join(cdir, cfile + u'.json')
-        gzfile = cfile + u'.gz'
+        cfile = url.replace(SHIPPABLE_URL + '/', '')
+        cfile = cfile.replace('/', '_')
+        cfile = os.path.join(cdir, cfile + '.json')
+        gzfile = cfile + '.gz'
 
         # transparently compress old logs
         if os.path.isfile(cfile) and not os.path.isfile(gzfile):
@@ -165,7 +164,7 @@ class ShippableCI(BaseCI):
             ts = [x.get('endedAt') for x in jdata]
             if None not in ts:
                 is_finished = True
-        elif isinstance(jdata, dict) and jdata.get(u'endedAt'):
+        elif isinstance(jdata, dict) and jdata.get('endedAt'):
             is_finished = True
 
         resp = None
@@ -199,12 +198,12 @@ class ShippableCI(BaseCI):
             # https://github.com/ansible/ansibullbot/issues/982
             # https://api.shippable.com/runs?projectIds=573f79d02a8192902e20e34b&runNumbers=75680
             run_url = SHIPPABLE_URL + '/runs'
-            run_url += u'?'
-            run_url += u'projectIds=%s' % ANSIBLE_PROJECT_ID
-            run_url += u'&'
-            run_url += u'runNumbers=%s' % run_id
+            run_url += '?'
+            run_url += 'projectIds=%s' % ANSIBLE_PROJECT_ID
+            run_url += '&'
+            run_url += 'runNumbers=%s' % run_id
 
-        logging.info(u'shippable: %s' % run_url)
+        logging.info('shippable: %s' % run_url)
         run_data = self._get_url(run_url, usecache=usecache)
         if run_data:
             if isinstance(run_data, list):
@@ -225,19 +224,19 @@ class ShippableCI(BaseCI):
         #   30: success
         #   20: processing
         usecache = True
-        run_id = self.last_run[u'run_id']
-        fps = [re.compile(x) for x in [u'/testresults/ansible-test-.*.json']]
+        run_id = self.last_run['run_id']
+        fps = [re.compile(x) for x in ['/testresults/ansible-test-.*.json']]
 
         # ci verified data map
         CVMAP = {}
 
         # get the run metdata
-        logging.info(u'shippable: get %s run data' % run_id)
+        logging.info('shippable: get %s run data' % run_id)
         run_data = self._get_run_data(run_id, usecache=usecache)
 
         # flip to the real runid
-        if run_data and run_data[u'id'] != run_id:
-            run_id = run_data[u'id']
+        if run_data and run_data['id'] != run_id:
+            run_id = run_data['id']
 
         # https://github.com/ansible/ansibullbot/issues/472
         if not run_data:
@@ -248,17 +247,17 @@ class ShippableCI(BaseCI):
         rdata = self._get_url(url, usecache=usecache)
 
         for rd in rdata:
-            dkey = u'%s.%s' % (rd[u'runNumber'], rd[u'jobNumber'])
+            dkey = '%s.%s' % (rd['runNumber'], rd['jobNumber'])
             if dkey not in CVMAP:
                 CVMAP[dkey] = {
-                    u'files_matched': [],
-                    u'files_filtered': [],
-                    u'test_data': []
+                    'files_matched': [],
+                    'files_filtered': [],
+                    'test_data': []
                 }
 
-            CVMAP[dkey][u'statusCode'] = rd[u'statusCode']
+            CVMAP[dkey]['statusCode'] = rd['statusCode']
 
-            job_id = rd.get(u'id')
+            job_id = rd.get('id')
             jurl = SHIPPABLE_URL + '/jobs/%s/jobTestReports' % job_id
             jdata = self._get_url(jurl, usecache=usecache)
 
@@ -271,65 +270,65 @@ class ShippableCI(BaseCI):
 
             for td in jdata:
                 try:
-                    matches = [x.match(td[u'path']) for x in fps]
+                    matches = [x.match(td['path']) for x in fps]
                     matches = [x for x in matches if x]
                 except Exception as e:
                     logging.error(e)
 
                 if not matches:
-                    CVMAP[dkey][u'files_filtered'].append(td[u'path'])
+                    CVMAP[dkey]['files_filtered'].append(td['path'])
 
                 if matches:
-                    CVMAP[dkey][u'files_matched'].append(td[u'path'])
+                    CVMAP[dkey]['files_matched'].append(td['path'])
 
-                    td[u'run_id'] = run_id
-                    td[u'job_id'] = job_id
+                    td['run_id'] = run_id
+                    td['job_id'] = job_id
 
                     try:
-                        td[u'contents'] = json.loads(td[u'contents'])
+                        td['contents'] = json.loads(td['contents'])
                     except ValueError as e:
                         logging.error(e)
 
-                    CVMAP[dkey][u'test_data'].append(td)
+                    CVMAP[dkey]['test_data'].append(td)
                     results.append(td)
 
         ci_verified = False
-        if run_data[u'statusCode'] == 80:
+        if run_data['statusCode'] == 80:
             ci_verified = True
             for v in CVMAP.values():
-                if v[u'statusCode'] == 30:
+                if v['statusCode'] == 30:
                     continue
-                if v[u'statusCode'] != 80:
+                if v['statusCode'] != 80:
                     ci_verified = False
                     break
-                if not v[u'files_matched']:
+                if not v['files_matched']:
                     ci_verified = False
                     break
 
-                for td in v[u'test_data']:
-                    if not td[u'contents']:
+                for td in v['test_data']:
+                    if not td['contents']:
                         continue
-                    if u'verified' not in td[u'contents']:
+                    if 'verified' not in td['contents']:
                         ci_verified = False
                         break
-                    if not td[u'contents'][u'verified']:
+                    if not td['contents']['verified']:
                         ci_verified = False
                         break
 
         # https://github.com/ansible/ansibullbot/issues/421
         for tr in results:
-            if tr.get(u'contents', {}).get(u'failureDetails', []) or tr.get(u'contents', {}).get(u'results', []):
+            if tr.get('contents', {}).get('failureDetails', []) or tr.get('contents', {}).get('results', []):
                 return results, ci_verified
 
         return [], ci_verified
 
     def _get_run_id(self, run_number):
-        run_url = u"%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
+        run_url = "%s&runNumbers=%s" % (ANSIBLE_RUNS_URL, run_number)
         response = fetch(run_url, headers=HEADERS, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to fetch %r" % run_url)
         check_response(response)
-        run_id = response.json()[0][u'id']
+        run_id = response.json()[0]['id']
         logging.debug(run_id)
         return run_id
 
@@ -337,10 +336,10 @@ class ShippableCI(BaseCI):
         """trigger a new run"""
         # always pass the runId in a dict() to requests
         run_id = self._get_run_id(run_number)
-        data = {u'runId': run_id}
+        data = {'runId': run_id}
 
         if failed_only:
-            data[u'rerunFailedOnly'] = True
+            data['rerunFailedOnly'] = True
 
         response = fetch(NEW_BUILD_URL, verb='post', headers=HEADERS, data=data, timeout=TIMEOUT)
         if not response:
@@ -356,9 +355,9 @@ class ShippableCI(BaseCI):
         """cancel existing run"""
         # always pass the runId in a dict() to requests
         run_id = self._get_run_id(run_number)
-        data = {u'runId': run_id}
+        data = {'runId': run_id}
 
-        cancel_url = u"%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
+        cancel_url = "%s/runs/%s/cancel" % (SHIPPABLE_URL, run_id)
         response = fetch(cancel_url, verb='post', headers=HEADERS, data=data, timeout=TIMEOUT)
         if not response:
             raise Exception("Unable to POST %r to %r" % (data, cancel_url))
@@ -368,17 +367,17 @@ class ShippableCI(BaseCI):
     def cancel_on_branch(self, branch):
         """Cancel all Shippable runs on a given branch"""
         run_url = SHIPPABLE_URL + '/runs?projectIds=%s&branch=%s&' \
-                  u'status=waiting,queued,processing,started' \
+                  'status=waiting,queued,processing,started' \
                   % (ANSIBLE_PROJECT_ID, branch)
 
-        logging.info(u'shippable: %s' % run_url)
+        logging.info('shippable: %s' % run_url)
         try:
             run_data = self._get_url(run_url)
         except ShippableNoData:
             return
 
         for r in run_data:
-            run_number = r.get(u'runNumber', None)
+            run_number = r.get('runNumber', None)
             if run_number:
                 self.cancel(run_number)
 
@@ -387,7 +386,7 @@ class ShippableCI(BaseCI):
         # https://github.com/ansible/ansibullbot/issues/935
         # extract and unique the run ids from the target urls
         if not self.states:
-            raise NoCIError(u'No shippable states')
+            raise NoCIError('No shippable states')
 
         runids = [self._get_run_id_from_status(x) for x in self.states]
 
@@ -399,10 +398,10 @@ class ShippableCI(BaseCI):
 
         # build a datastructure to hold the info collected
         rundata = {
-            u'runid': runid,
-            u'created_at': None,
-            u'rerun_batch_id': None,
-            u'rerun_batch_createdat': None
+            'runid': runid,
+            'created_at': None,
+            'rerun_batch_id': None,
+            'rerun_batch_createdat': None
         }
 
         # query the api for all data on this runid
@@ -416,28 +415,28 @@ class ShippableCI(BaseCI):
             return None
 
         # get the referenced run for the last runid if it exists
-        pbag = rdata.get(u'propertyBag')
+        pbag = rdata.get('propertyBag')
         if pbag:
-            rundata[u'rerun_batch_id'] = pbag.get(u'originalRunId')
+            rundata['rerun_batch_id'] = pbag.get('originalRunId')
 
         # keep the timestamp too
-        rundata[u'created_at'] = rdata.get(u'createdAt')
+        rundata['created_at'] = rdata.get('createdAt')
 
         # if it had a rerunbatchid it was a partial run and
         # we need to go get the date on the original run
-        while rundata[u'rerun_batch_id']:
+        while rundata['rerun_batch_id']:
             # the original run data
-            rjdata = self._get_run_data(rundata[u'rerun_batch_id'])
+            rjdata = self._get_run_data(rundata['rerun_batch_id'])
             # swap the timestamp
-            rundata[u'rerun_batch_createdat'] = rundata[u'created_at']
+            rundata['rerun_batch_createdat'] = rundata['created_at']
             # get the old timestamp
-            rundata[u'created_at'] = rjdata.get(u'createdAt')
+            rundata['created_at'] = rjdata.get('createdAt')
             # get the new batchid
-            pbag = rjdata.get(u'propertyBag')
+            pbag = rjdata.get('propertyBag')
             if pbag:
-                rundata[u'rerun_batch_id'] = pbag.get(u'originalRunId')
+                rundata['rerun_batch_id'] = pbag.get('originalRunId')
             else:
-                rundata[u'rerun_batch_id'] = None
+                rundata['rerun_batch_id'] = None
 
         # return only the timestamp from the last full run
-        return strip_time_safely(rundata[u'created_at'])
+        return strip_time_safely(rundata['created_at'])

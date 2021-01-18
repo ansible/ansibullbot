@@ -7,7 +7,7 @@ from ansibullbot._text_compat import to_bytes
 
 
 def compress_gzip_file(path_in, path_out):
-    with open(path_in, 'r') as f_in, gzip.open(path_out, 'w') as f_out:
+    with open(path_in) as f_in, gzip.open(path_out, 'w') as f_out:
         shutil.copyfileobj(f_in, f_out)
     os.remove(path_in)
 

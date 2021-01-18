@@ -18,7 +18,7 @@ Base = declarative_base()
 
 
 class Blame(Base):
-    __tablename__ = u'blames'
+    __tablename__ = 'blames'
     id = Column(Integer(), primary_key=True)
     file_name = Column(String())
     file_commit = Column(String())
@@ -27,14 +27,14 @@ class Blame(Base):
 
 
 class Email(Base):
-    __tablename__ = u'email'
+    __tablename__ = 'email'
     id = Column(Integer())
     login = Column(String())
     email = Column(String(), primary_key=True)
 
 
 class RateLimit(Base):
-    __tablename__ = u'rate_limit'
+    __tablename__ = 'rate_limit'
     id = Column(Integer(), primary_key=True)
     username = Column(String)
     token = Column(String)
@@ -45,7 +45,7 @@ class RateLimit(Base):
 
 
 class GithubApiRequest(Base):
-    __tablename__ = u'github_api_request'
+    __tablename__ = 'github_api_request'
     id = Column(Integer(), primary_key=True)
     url = Column(String)
     headers = Column(String)
@@ -56,7 +56,7 @@ class GithubApiRequest(Base):
     token = Column(String)
 
 
-class AnsibullbotDatabase(object):
+class AnsibullbotDatabase:
 
     '''A sqlite backed database to help with data caching [NOT CONFIG]'''
 

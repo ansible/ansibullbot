@@ -13,14 +13,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
-
-import six
 
 from .defaultwrapper import DefaultWrapper
 
 
-@six.python_2_unicode_compatible
 class IssueWrapper(DefaultWrapper):
     def __str__(self):
         return self.instance.html_url

@@ -8,13 +8,13 @@ from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 
-class GithubMock(object):
+class GithubMock:
     def get_repo(self, full_name):
         gr = GithubRepoMock(full_name)
         return gr
 
 
-class GithubRepoMock(object):
+class GithubRepoMock:
     repo = None
     full_name = None
 
@@ -26,44 +26,44 @@ class GithubRepoMock(object):
         issue.number = number
         return issue
 
-class GithubUserMock(object):
+class GithubUserMock:
 
     @property
     def login(self):
-        return u'testuser'
+        return 'testuser'
 
 
-class GithubIssueMock(object):
+class GithubIssueMock:
     number = 1
-    title = u'test ticket'
-    state = u'open'
+    title = 'test ticket'
+    state = 'open'
     _body = [
-        u"##### ISSUE TYPE",
-        u"Bug Report"
-        u"##### COMPONENT NAME",
-        u"cron module",
-        u"##### ANSIBLE VERSION",
-        u"2.3",
-        u"##### ENVIRONMENT",
-        u"N/A",
-        u"##### SUMMARY",
-        u"It's broken",
-        u"##### EXPECTED RESULTS",
-        u"N/A",
-        u"##### ACTUAL RESULTS"
-        u"N/A",
+        "##### ISSUE TYPE",
+        "Bug Report"
+        "##### COMPONENT NAME",
+        "cron module",
+        "##### ANSIBLE VERSION",
+        "2.3",
+        "##### ENVIRONMENT",
+        "N/A",
+        "##### SUMMARY",
+        "It's broken",
+        "##### EXPECTED RESULTS",
+        "N/A",
+        "##### ACTUAL RESULTS"
+        "N/A",
     ]
-    body = u'\n'.join(_body)
+    body = '\n'.join(_body)
 
     def get_raw_data(self):
         data = {
-            u'number': self.number
+            'number': self.number
         }
         return data
 
     @property
     def html_url(self):
-        return u'https://github.com/test/test/issues/%s' % self.number
+        return 'https://github.com/test/test/issues/%s' % self.number
 
     @property
     def user(self):
@@ -71,29 +71,29 @@ class GithubIssueMock(object):
 
     @property
     def created_at(self):
-        return u'xxxx-xx-xx:xx:xx:xx'
+        return 'xxxx-xx-xx:xx:xx:xx'
 
     @property
     def closed_at(self):
-        return u'xxxx-xx-xx:xx:xx:xx'
+        return 'xxxx-xx-xx:xx:xx:xx'
 
     @property
     def updated_at(self):
-        return u'xxxx-xx-xx:xx:xx:xx'
+        return 'xxxx-xx-xx:xx:xx:xx'
 
 
-class GitRepoWrapperMock(object):
+class GitRepoWrapperMock:
     def get_file_content(self, filename):
         fd = [
-            u"##### ISSUE TYPE",
-            u"##### COMPONENT NAME",
-            u"##### ANSIBLE VERSION",
-            u"##### ENVIRONMENT",
-            u"##### SUMMARY",
-            u"##### EXPECTED RESULTS",
-            u"##### ACTUAL RESULTS"
+            "##### ISSUE TYPE",
+            "##### COMPONENT NAME",
+            "##### ANSIBLE VERSION",
+            "##### ENVIRONMENT",
+            "##### SUMMARY",
+            "##### EXPECTED RESULTS",
+            "##### ACTUAL RESULTS"
         ]
-        return u'\n'.join(fd)
+        return '\n'.join(fd)
 
 
 class TestIssueWrapperBase(unittest.TestCase):
@@ -116,22 +116,22 @@ class TestIssueWrapperBase(unittest.TestCase):
 
 class TestIssueWrapperProperties(TestIssueWrapperBase):
     def runTest(self):
-        self.assertEqual(self.iw.cachedir, u'/tmp/testcache')
+        self.assertEqual(self.iw.cachedir, '/tmp/testcache')
         self.assertEqual(self.iw.number, 1)
-        self.assertEqual(self.iw.title, u'test ticket')
-        self.assertEqual(self.iw.state, u'open')
-        self.assertEqual(self.iw.repo_full_name, u'test/test')
-        self.assertEqual(self.iw.submitter, u'testuser')
-        self.assertEqual(self.iw.created_at, u'xxxx-xx-xx:xx:xx:xx')
-        self.assertEqual(self.iw.updated_at, u'xxxx-xx-xx:xx:xx:xx')
-        self.assertEqual(self.iw.closed_at, u'xxxx-xx-xx:xx:xx:xx')
-        assert hasattr(self.iw, u'template_data')
+        self.assertEqual(self.iw.title, 'test ticket')
+        self.assertEqual(self.iw.state, 'open')
+        self.assertEqual(self.iw.repo_full_name, 'test/test')
+        self.assertEqual(self.iw.submitter, 'testuser')
+        self.assertEqual(self.iw.created_at, 'xxxx-xx-xx:xx:xx:xx')
+        self.assertEqual(self.iw.updated_at, 'xxxx-xx-xx:xx:xx:xx')
+        self.assertEqual(self.iw.closed_at, 'xxxx-xx-xx:xx:xx:xx')
+        assert hasattr(self.iw, 'template_data')
 
 class TestIssueWrapperTemplateData(TestIssueWrapperBase):
     def runTest(self):
         td = self.iw.template_data
-        self.assertEqual(td['ansible version'], u'2.3')
-        self.assertEqual(td['issue type'], u"bug report")
-        self.assertEqual(td['summary'], u"It's broken")
-        self.assertEqual(td['component_raw'], u"cron module")
-        self.assertEqual(td['component name'], u"cron")
+        self.assertEqual(td['ansible version'], '2.3')
+        self.assertEqual(td['issue type'], "bug report")
+        self.assertEqual(td['summary'], "It's broken")
+        self.assertEqual(td['component_raw'], "cron module")
+        self.assertEqual(td['component name'], "cron")

@@ -8,42 +8,42 @@ def get_label_command_facts(issuewrapper, meta, all_maintainers, core_team=[], v
     del_labels = []
 
     namespace_labels = [
-        u'aci',
-        u'avi',
-        u'aws',
-        u'azure',
-        u'cloud',
-        u'cloudstack',
-        u'digital_ocean',
-        u'docker',
-        u'f5',
-        u'gce',
-        u'infoblox',
-        u'jboss',
-        u'meraki',
-        u'netapp',
-        u'networking',
-        u'nxos',
-        u'openstack',
-        u'ovirt',
-        u'ucs',
-        u'vmware',
-        u'windows',
+        'aci',
+        'avi',
+        'aws',
+        'azure',
+        'cloud',
+        'cloudstack',
+        'digital_ocean',
+        'docker',
+        'f5',
+        'gce',
+        'infoblox',
+        'jboss',
+        'meraki',
+        'netapp',
+        'networking',
+        'nxos',
+        'openstack',
+        'ovirt',
+        'ucs',
+        'vmware',
+        'windows',
     ]
 
     whitelist = [
-        u'docsite_pr',
-        u'easyfix',
-        u'module',
-        u'needs_triage',
-        u'needs_verified',
-        u'test',
+        'docsite_pr',
+        'easyfix',
+        'module',
+        'needs_triage',
+        'needs_verified',
+        'test',
     ]
 
     whitelist += namespace_labels
-    whitelist += [x for x in valid_labels if x.startswith(u'affects_')]
-    whitelist += [x for x in valid_labels if x.startswith(u'c:')]
-    whitelist += [x for x in valid_labels if x.startswith(u'm:')]
+    whitelist += [x for x in valid_labels if x.startswith('affects_')]
+    whitelist += [x for x in valid_labels if x.startswith('c:')]
+    whitelist += [x for x in valid_labels if x.startswith('m:')]
 
     iw = issuewrapper
     maintainers = [x for x in core_team]
@@ -52,10 +52,10 @@ def get_label_command_facts(issuewrapper, meta, all_maintainers, core_team=[], v
 
     # iterate through the description and comments and look for label commands
     for ev in iw.history.history:
-        if ev[u'actor'] in maintainers and ev[u'event'] == u'commented':
-            if u'+label' in ev[u'body'] or u'-label' in ev[u'body']:
-                for line in ev[u'body'].split(u'\n'):
-                    if u'label' not in line:
+        if ev['actor'] in maintainers and ev['event'] == 'commented':
+            if '+label' in ev['body'] or '-label' in ev['body']:
+                for line in ev['body'].split('\n'):
+                    if 'label' not in line:
                         continue
                     words = line.split()
 
@@ -67,11 +67,11 @@ def get_label_command_facts(issuewrapper, meta, all_maintainers, core_team=[], v
                     if label not in whitelist:
                         continue
                     action = words[0]
-                    if action == u'+label':
+                    if action == '+label':
                         add_labels.append(label)
                         if label in del_labels:
                             del_labels.remove(label)
-                    elif action == u'-label':
+                    elif action == '-label':
                         del_labels.append(label)
                         if label in add_labels:
                             add_labels.remove(label)
@@ -87,9 +87,9 @@ def get_label_command_facts(issuewrapper, meta, all_maintainers, core_team=[], v
                 del_labels.remove(ml)
 
     fact = {
-        u'label_cmds': {
-            u'add': add_labels,
-            u'del': del_labels
+        'label_cmds': {
+            'add': add_labels,
+            'del': del_labels
         }
     }
 
@@ -107,11 +107,11 @@ def get_waffling_overrides(issuewrapper, meta, all_maintainers, core_team=[], va
     maintainers = sorted(set(maintainers))
 
     for ev in iw.history.history:
-        if ev[u'actor'] in maintainers and ev[u'event'] == u'commented':
-            if u'!waffling' in ev.get(u'body', u''):
-                lines = ev[u'body'].split(u'\n')
+        if ev['actor'] in maintainers and ev['event'] == 'commented':
+            if '!waffling' in ev.get('body', ''):
+                lines = ev['body'].split('\n')
                 for line in lines:
-                    if line.strip().startswith(u'!waffling'):
+                    if line.strip().startswith('!waffling'):
                         line = line.strip()
                         parts = line.strip().split()
                         thislabel = parts[1].strip()
@@ -119,7 +119,7 @@ def get_waffling_overrides(issuewrapper, meta, all_maintainers, core_team=[], va
                             overrides.append(thislabel)
 
     fact = {
-        u'label_waffling_overrides': overrides
+        'label_waffling_overrides': overrides
     }
 
     return fact

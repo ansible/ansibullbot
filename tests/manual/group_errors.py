@@ -18,7 +18,7 @@ GROUPS = []
 for error in errors:
 
     component = error['component']
-    print('checking: {}'.format(component))
+    print(f'checking: {component}')
 
     for idg,group in enumerate(GROUPS):
 

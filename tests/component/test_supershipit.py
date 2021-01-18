@@ -83,7 +83,7 @@ class TestSuperShipit:
 
                 number = int(mf.split('/')[-2])
 
-                with open(mf, 'r') as f:
+                with open(mf) as f:
                     meta = json.loads(f.read())
 
                 print(mf)

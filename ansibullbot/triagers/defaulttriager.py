@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 
 import abc
 import argparse
@@ -23,12 +22,12 @@ import json
 import logging
 import operator
 import os
+import pickle
 import sys
 import time
 from datetime import datetime
 from pprint import pprint
 
-from six.moves import input
 
 # remember to pip install PyGithub, kids!
 from github import Github
@@ -36,7 +35,6 @@ from github import Github
 from jinja2 import Environment, FileSystemLoader
 
 import ansibullbot.constants as C
-from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
@@ -56,7 +54,7 @@ if 'equalto' not in environment.tests:
     environment.tests['equalto'] = operator.eq
 
 
-class DefaultActions(object):
+class DefaultActions:
     def __init__(self):
         self.newlabel = []
         self.unlabel = []
@@ -81,7 +79,7 @@ class DefaultActions(object):
         return count
 
 
-class DefaultTriager(object):
+class DefaultTriager:
     """
     How to use:
     1. Create a new class which inherits from DefaultTriager
@@ -204,7 +202,7 @@ class DefaultTriager(object):
 
         if os.path.isfile(cachefile):
             with open(cachefile, 'rb') as f:
-                mdata = pickle_load(f)
+                mdata = pickle.load(f)
             members = mdata[1]
             if mdata[0] < gh_org.updated_at:
                 update = True
@@ -220,7 +218,7 @@ class DefaultTriager(object):
         if write_cache:
             mdata = [now, members]
             with open(cachefile, 'wb') as f:
-                pickle_dump(mdata, f)
+                pickle.dump(mdata, f)
 
         return members
 
@@ -419,11 +417,11 @@ class DefaultTriager(object):
 
     def dump_action_dict(self, issue, actions):
         '''Serialize the action dict to disk for quick(er) debugging'''
-        fn = os.path.join(u'/tmp', u'actions', issue.repo_full_name, to_text(issue.number) + u'.json')
+        fn = os.path.join('/tmp', 'actions', issue.repo_full_name, to_text(issue.number) + '.json')
         dn = os.path.dirname(fn)
         if not os.path.isdir(dn):
             os.makedirs(dn)
 
-        logging.info('dumping {}'.format(fn))
+        logging.info(f'dumping {fn}')
         with open(fn, 'wb') as f:
             f.write(json.dumps(actions, indent=2, sort_keys=True))

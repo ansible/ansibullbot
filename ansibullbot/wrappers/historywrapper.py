@@ -1,17 +1,18 @@
 import datetime
 import logging
 import os
+import pickle
+
 from operator import itemgetter
 
 import pytz
 
 import ansibullbot.constants as C
-from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.utils.timetools import strip_time_safely
 
 
-class HistoryWrapper(object):
+class HistoryWrapper:
     """A tool to ask questions about an issue's history.
 
     This class will join the events and comments of an issue into
@@ -32,62 +33,62 @@ class HistoryWrapper(object):
         self.issue = issue
         self._waffled_labels = None
 
-        if issue.repo.repo_path not in cachedir and u'issues' not in cachedir:
+        if issue.repo.repo_path not in cachedir and 'issues' not in cachedir:
             self.cachefile = os.path.join(
                 cachedir,
                 issue.repo.repo_path,
-                u'issues',
+                'issues',
                 to_text(issue.instance.number),
-                u'history.pickle'
+                'history.pickle'
             )
         elif issue.repo.repo_path not in cachedir:
             self.cachefile = os.path.join(
                 cachedir,
                 issue.repo.repo_path,
-                u'issues',
+                'issues',
                 to_text(issue.instance.number),
-                u'history.pickle'
+                'history.pickle'
             )
-        elif u'issues' not in cachedir:
+        elif 'issues' not in cachedir:
             self.cachefile = os.path.join(
                 cachedir,
-                u'issues',
+                'issues',
                 to_text(issue.instance.number),
-                u'history.pickle'
+                'history.pickle'
             )
         else:
             self.cachefile = os.path.join(
                 cachedir,
                 to_text(issue.instance.number),
-                u'history.pickle'
+                'history.pickle'
             )
 
         self.cachedir = os.path.join(
             cachedir,
             os.path.dirname(self.cachefile)
         )
-        if u'issues' not in self.cachedir:
+        if 'issues' not in self.cachedir:
             logging.error(self.cachedir)
             if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception(u'')
+                raise Exception('')
 
         if usecache:
             cache = self._load_cache()
 
             if not self.validate_cache(cache):
-                logging.info(u'history cache invalidated, rebuilding')
+                logging.info('history cache invalidated, rebuilding')
                 self.history = self.issue.events
                 self._dump_cache()
             else:
-                logging.info(u'use cached history')
-                self.history = cache[u'history']
+                logging.info('use cached history')
+                self.history = cache['history']
         else:
             self.history = self.issue.events
 
-        self.history = sorted(self.history, key=itemgetter(u'created_at'))
+        self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def validate_cache(self, cache):
         if cache is None:
@@ -107,7 +108,7 @@ class HistoryWrapper(object):
             logging.info('history cache schema version behind')
             return False
 
-        if cache[u'updated_at'] < self.issue.instance.updated_at:
+        if cache['updated_at'] < self.issue.instance.updated_at:
             logging.info('history cache behind issue')
             return False
 
@@ -128,53 +129,53 @@ class HistoryWrapper(object):
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
         if not os.path.isfile(self.cachefile):
-            logging.info(u'!%s' % self.cachefile)
+            logging.info('!%s' % self.cachefile)
             return None
         try:
             with open(self.cachefile, 'rb') as f:
-                cachedata = pickle_load(f)
+                cachedata = pickle.load(f)
         except Exception as e:
             logging.debug(e)
-            logging.info(u'%s failed to load' % self.cachefile)
+            logging.info('%s failed to load' % self.cachefile)
             cachedata = None
 
-        cachedata[u'history'] = self._fix_event_bytes(cachedata[u'history'])
+        cachedata['history'] = self._fix_event_bytes(cachedata['history'])
 
         return cachedata
 
     def _dump_cache(self):
         if any(x for x in self.history if not isinstance(x['created_at'], datetime.datetime)):
             logging.error(self.history)
-            raise AssertionError(u'found a non-datetime created_at in events data')
+            raise AssertionError('found a non-datetime created_at in events data')
 
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
 
         # keep the timestamp
         cachedata = {
-            u'version': self.SCHEMA_VERSION,
-            u'updated_at': self.issue.instance.updated_at,
-            u'history': self.history
+            'version': self.SCHEMA_VERSION,
+            'updated_at': self.issue.instance.updated_at,
+            'history': self.history
         }
 
         try:
             with open(self.cachefile, 'wb') as f:
-                pickle_dump(cachedata, f)
+                pickle.dump(cachedata, f)
         except Exception as e:
             logging.error(e)
             if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception(u'')
+                raise Exception('')
 
     def get_json_comments(self):
         comments = self.issue.comments[:]
         for idx, x in enumerate(comments):
-            ca = x[u'created_at']
+            ca = x['created_at']
             if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
                 ca = pytz.utc.localize(x['created_at'])
-            nc = {u'body': x[u'body'], u'created_at': ca, u'user': {u'login': x[u'actor']}}
+            nc = {'body': x['body'], 'created_at': ca, 'user': {'login': x['actor']}}
             comments[idx] = nc
         return comments
 
@@ -189,16 +190,16 @@ class HistoryWrapper(object):
     def merge_commits(self, commits):
         for xc in commits:
             event = {}
-            event[u'id'] = xc.sha
-            if hasattr(xc.committer, u'login'):
-                event[u'actor'] = xc.committer.login
+            event['id'] = xc.sha
+            if hasattr(xc.committer, 'login'):
+                event['actor'] = xc.committer.login
             else:
-                event[u'actor'] = to_text(xc.committer)
-            event[u'created_at'] = pytz.utc.localize(xc.commit.committer.date)
-            event[u'event'] = u'committed'
-            event[u'message'] = xc.commit.message
+                event['actor'] = to_text(xc.committer)
+            event['created_at'] = pytz.utc.localize(xc.commit.committer.date)
+            event['event'] = 'committed'
+            event['message'] = xc.commit.message
             self.history.append(event)
-        self.history = sorted(self.history, key=itemgetter(u'created_at'))
+        self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def merge_reviews(self, reviews):
         for review in reviews:
@@ -209,48 +210,48 @@ class HistoryWrapper(object):
             if review.get('user') is None:
                 continue
 
-            if review[u'state'] == u'COMMENTED':
-                event[u'event'] = u'review_comment'
-            elif review[u'state'] == u'CHANGES_REQUESTED':
-                event[u'event'] = u'review_changes_requested'
-            elif review[u'state'] == u'APPROVED':
-                event[u'event'] = u'review_approved'
-            elif review[u'state'] == u'DISMISSED':
-                event[u'event'] = u'review_dismissed'
-            elif review[u'state'] == u'PENDING':
+            if review['state'] == 'COMMENTED':
+                event['event'] = 'review_comment'
+            elif review['state'] == 'CHANGES_REQUESTED':
+                event['event'] = 'review_changes_requested'
+            elif review['state'] == 'APPROVED':
+                event['event'] = 'review_approved'
+            elif review['state'] == 'DISMISSED':
+                event['event'] = 'review_dismissed'
+            elif review['state'] == 'PENDING':
                 # ignore pending review
                 continue
             else:
-                logging.error(u'unknown review state %s', review[u'state'])
+                logging.error('unknown review state %s', review['state'])
                 continue
 
-            event[u'id'] = review[u'id']
-            event[u'actor'] = review[u'user'][u'login']
-            event[u'created_at'] = pytz.utc.localize(strip_time_safely(review[u'submitted_at']))
-            if u'commit_id' in review:
-                event[u'commit_id'] = review[u'commit_id']
+            event['id'] = review['id']
+            event['actor'] = review['user']['login']
+            event['created_at'] = pytz.utc.localize(strip_time_safely(review['submitted_at']))
+            if 'commit_id' in review:
+                event['commit_id'] = review['commit_id']
             else:
-                event[u'commit_id'] = None
-            event[u'body'] = review.get(u'body')
+                event['commit_id'] = None
+            event['body'] = review.get('body')
 
             self.history.append(event)
-        self.history = sorted(self.history, key=itemgetter(u'created_at'))
+        self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def merge_history(self, oldhistory):
         '''Combine history from another issue [migration]'''
         self.history += oldhistory
-        self.history = sorted(self.history, key=itemgetter(u'created_at'))
+        self.history = sorted(self.history, key=itemgetter('created_at'))
 
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
         for event in self.history:
-            if event[u'event'] == eventname or not eventname:
+            if event['event'] == eventname or not eventname:
                 # allow actor to be a list or a string or None
                 if actor is None:
                     matching_events.append(event)
-                elif type(actor) != list and event[u'actor'] == actor:
+                elif type(actor) != list and event['actor'] == actor:
                     matching_events.append(event)
-                elif type(actor) == list and event[u'actor'] in actor:
+                elif type(actor) == list and event['actor'] in actor:
                     matching_events.append(event)
                 if len(matching_events) == maxcount:
                     break
@@ -273,21 +274,21 @@ class HistoryWrapper(object):
     def get_user_comments(self, username):
         """Get all the comments from a user"""
         matching_events = self._find_events_by_actor(
-            u'commented',
+            'commented',
             username,
             maxcount=999
         )
-        comments = [x[u'body'] for x in matching_events]
+        comments = [x['body'] for x in matching_events]
         return comments
 
     def search_user_comments(self, username, searchterm):
         """Get all the comments from a user"""
         matching_events = self._find_events_by_actor(
-            u'commented',
+            'commented',
             username,
             maxcount=999
         )
-        comments = [x[u'body'] for x in matching_events if searchterm in x[u'body'].lower()]
+        comments = [x['body'] for x in matching_events if searchterm in x['body'].lower()]
         return comments
 
     def get_commands(self, username, command_keys, timestamps=False, uselabels=True):
@@ -295,47 +296,47 @@ class HistoryWrapper(object):
         commands = []
 
         comments = self._find_events_by_actor(
-            u'commented',
+            'commented',
             username,
             maxcount=999
         )
         labels = self._find_events_by_actor(
-            u'labeled',
+            'labeled',
             username,
             maxcount=999
         )
         unlabels = self._find_events_by_actor(
-            u'unlabeled',
+            'unlabeled',
             username,
             maxcount=999
         )
         events = comments + labels + unlabels
-        events = sorted(events, key=itemgetter(u'created_at'))
+        events = sorted(events, key=itemgetter('created_at'))
         for event in events:
-            if event[u'actor'] in self.BOTNAMES:
+            if event['actor'] in self.BOTNAMES:
                 continue
-            if event[u'event'] == u'commented':
+            if event['event'] == 'commented':
                 for y in command_keys:
-                    if event[u'body'].startswith(u'_From @'):
+                    if event['body'].startswith('_From @'):
                         continue
-                    l_body = event[u'body'].split()
-                    if y in l_body and not u'!' + y in l_body:
+                    l_body = event['body'].split()
+                    if y in l_body and not '!' + y in l_body:
                         if timestamps:
-                            commands.append((event[u'created_at'], y))
+                            commands.append((event['created_at'], y))
                         else:
                             commands.append(y)
-            elif event[u'event'] == u'labeled' and uselabels:
-                if event[u'label'] in command_keys:
+            elif event['event'] == 'labeled' and uselabels:
+                if event['label'] in command_keys:
                     if timestamps:
-                        commands.append((event[u'created_at'], y))
+                        commands.append((event['created_at'], y))
                     else:
-                        commands.append(event[u'label'])
-            elif event[u'event'] == u'unlabeled' and uselabels:
-                if event[u'label'] in command_keys:
+                        commands.append(event['label'])
+            elif event['event'] == 'unlabeled' and uselabels:
+                if event['label'] in command_keys:
                     if timestamps:
-                        commands.append((event[u'created_at'], y))
+                        commands.append((event['created_at'], y))
                     else:
-                        commands.append(u'!' + event[u'label'])
+                        commands.append('!' + event['label'])
 
         return commands
 
@@ -346,9 +347,9 @@ class HistoryWrapper(object):
         events = [x for x in events if x['user']['login'] not in self.BOTNAMES]
 
         for event in events:
-            if event.get(u'body'):
+            if event.get('body'):
                 matched = False
-                lines = event[u'body'].split(u'\n')
+                lines = event['body'].split('\n')
                 for line in lines:
                     if line.strip().startswith(command_key):
                         matched = True
@@ -360,42 +361,42 @@ class HistoryWrapper(object):
 
     def was_assigned(self, username):
         """Has person X ever been assigned to this issue?"""
-        matching_events = self._find_events_by_actor(u'assigned', username)
+        matching_events = self._find_events_by_actor('assigned', username)
         return len(matching_events) > 0
 
     def was_subscribed(self, username):
         """Has person X ever been subscribed to this issue?"""
-        matching_events = self._find_events_by_actor(u'subscribed', username)
+        matching_events = self._find_events_by_actor('subscribed', username)
         return len(matching_events) > 0
 
     def last_notified(self, username):
         """When was this person pinged last in a comment?"""
         if not isinstance(username, list):
             username = [username]
-        username = [u'@' + x for x in username]
+        username = ['@' + x for x in username]
         last_notification = None
-        comments = [x for x in self.history if x[u'event'] == u'commented']
+        comments = [x for x in self.history if x['event'] == 'commented']
         for comment in comments:
-            if not comment.get(u'body'):
+            if not comment.get('body'):
                 continue
             for un in username:
-                if un in comment[u'body']:
+                if un in comment['body']:
                     if not last_notification:
-                        last_notification = comment[u'created_at']
+                        last_notification = comment['created_at']
                     else:
-                        if comment[u'created_at'] > last_notification:
-                            last_notification = comment[u'created_at']
+                        if comment['created_at'] > last_notification:
+                            last_notification = comment['created_at']
         return last_notification
 
     def last_comment(self, username):
         last_comment = None
         for event in reversed(self.history):
-            if event[u'event'] == u'commented':
+            if event['event'] == 'commented':
                 if type(username) == list:
-                    if event[u'actor'] in username:
-                        last_comment = event[u'body']
-                elif event[u'actor'] == username:
-                    last_comment = event[u'body']
+                    if event['actor'] in username:
+                        last_comment = event['body']
+                elif event['actor'] == username:
+                    last_comment = event['body']
             if last_comment:
                 break
         return last_comment
@@ -404,9 +405,9 @@ class HistoryWrapper(object):
         """What date was a label last applied?"""
         last_date = None
         for event in reversed(self.history):
-            if event[u'event'] == u'labeled':
-                if event[u'label'] == label:
-                    last_date = event[u'created_at']
+            if event['event'] == 'labeled':
+                if event['label'] == label:
+                    last_date = event['created_at']
                     break
         return last_date
 
@@ -414,9 +415,9 @@ class HistoryWrapper(object):
         """What date was a label last removed?"""
         last_date = None
         for event in reversed(self.history):
-            if event[u'event'] == u'unlabeled':
-                if event[u'label'] == label:
-                    last_date = event[u'created_at']
+            if event['event'] == 'unlabeled':
+                if event['label'] == label:
+                    last_date = event['created_at']
                     break
         return last_date
 
@@ -425,10 +426,10 @@ class HistoryWrapper(object):
         labeled = False
         for event in self.history:
             if bots:
-                if event[u'actor'] in bots:
+                if event['actor'] in bots:
                     continue
-            if event[u'event'] == u'labeled':
-                if label and event[u'label'] == label:
+            if event['event'] == 'labeled':
+                if label and event['label'] == label:
                     labeled = True
                     break
                 elif not label:
@@ -441,10 +442,10 @@ class HistoryWrapper(object):
         labeled = False
         for event in self.history:
             if bots:
-                if event[u'actor'] in bots:
+                if event['actor'] in bots:
                     continue
-            if event[u'event'] == u'unlabeled':
-                if label and event[u'label'] == label:
+            if event['event'] == 'unlabeled':
+                if label and event['label'] == label:
                     labeled = True
                     break
                 elif not label:
@@ -459,20 +460,20 @@ class HistoryWrapper(object):
         comments = [x for x in comments if x['user']['login'] in self.BOTNAMES] 
 
         for comment in comments:
-            if not comment.get(u'body'):
+            if not comment.get('body'):
                 continue
-            if u'boilerplate:' in comment[u'body']:
-                lines = [x for x in comment[u'body'].split(u'\n')
-                         if x.strip() and u'boilerplate:' in x]
+            if 'boilerplate:' in comment['body']:
+                lines = [x for x in comment['body'].split('\n')
+                         if x.strip() and 'boilerplate:' in x]
                 bp = lines[0].split()[2]
 
                 if dates or content:
                     bpc = []
                     if dates:
-                        bpc.append(comment[u'created_at'])
+                        bpc.append(comment['created_at'])
                     bpc.append(bp)
                     if content:
-                        bpc.append(comment[u'body'])
+                        bpc.append(comment['body'])
                     boilerplates.append(bpc)
                 else:
                     boilerplates.append(bp)
@@ -494,9 +495,9 @@ class HistoryWrapper(object):
 
     @property
     def last_commit_date(self):
-        events = [x for x in self.history if x[u'event'] == u'committed']
+        events = [x for x in self.history if x['event'] == 'committed']
         if events:
-            return events[-1][u'created_at']
+            return events[-1]['created_at']
         else:
             return None
 
@@ -506,14 +507,14 @@ class HistoryWrapper(object):
             bots = []
         labeled = []
         for event in self.history:
-            if event[u'actor'] in bots:
+            if event['actor'] in bots:
                 continue
-            if event[u'event'] in [u'labeled', u'unlabeled']:
+            if event['event'] in ['labeled', 'unlabeled']:
                 if prefix:
-                    if event[u'label'].startswith(prefix):
-                        labeled.append(event[u'label'])
+                    if event['label'].startswith(prefix):
+                        labeled.append(event['label'])
                 else:
-                    labeled.append(event[u'label'])
+                    labeled.append(event['label'])
         return sorted(set(labeled))
 
     def label_is_waffling(self, label, limit=20):
@@ -521,7 +522,7 @@ class HistoryWrapper(object):
         #https://github.com/ansible/ansibullbot/issues/672
         if self._waffled_labels is None:
             self._waffled_labels = {}
-            history = [x[u'label'] for x in self.history if u'label' in x]
+            history = [x['label'] for x in self.history if 'label' in x]
             labels = sorted(set(history))
             for hl in labels:
                 self._waffled_labels[hl] = len([x for x in history if x == hl])

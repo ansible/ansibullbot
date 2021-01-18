@@ -5,6 +5,7 @@
 # FIXME
 #   - [Errno -5] No address associated with hostname
 
+import http.client
 import logging
 import requests
 import socket
@@ -12,9 +13,6 @@ import ssl
 import sys
 import time
 import traceback
-
-import six
-from six.moves import http_client as httplib
 
 from requests.exceptions import ReadTimeout
 
@@ -128,14 +126,13 @@ def RateLimited(fn):
                 qcounter = ADB.get_rate_limit_query_counter(token=C.DEFAULT_GITHUB_TOKEN)
 
             logging.debug('qcounter: %s' % qcounter)
-            rl['resources']['core']['remaining'] -= qcounter            
+            rl['resources']['core']['remaining'] -= qcounter
 
             if rl:
-                func_name = fn.__name__ if six.PY3 else fn.func_name
                 logging.debug('ratelimited call #%s [%s] [%s] [%s]' %
                               (count,
                                type(args[0]),
-                               func_name,
+                               fn.__name__,
                                rl['resources']['core']['remaining']))
 
             if count > 10:
@@ -149,14 +146,14 @@ def RateLimited(fn):
                 success = True
             except RateLimitError:
                 stime = get_reset_time(fn, args)
-            except socket.error as e:
+            except OSError as e:
                 logging.warning('socket error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except ssl.SSLError as e:
                 logging.warning('ssl error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except ReadTimeout as e:
-                logging.warning(u'read timeout: sleeping 2 minutes %s' % e)
+                logging.warning('read timeout: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except AttributeError as e:
                 if "object has no attribute 'decoded_content'" in e.message:
@@ -227,10 +224,10 @@ def RateLimited(fn):
                             import epdb; epdb.st()
                         else:
                             raise Exception('unhandled message type')
-                elif isinstance(e, httplib.IncompleteRead):
+                elif isinstance(e, http.client.IncompleteRead):
                     # https://github.com/ansible/ansibullbot/issues/593
                     stime = 2*60
-                elif isinstance(e, httplib.BadStatusLine):
+                elif isinstance(e, http.client.BadStatusLine):
                     # https://github.com/ansible/ansibullbot/issues/602
                     stime = 2*60
                 elif getattr(e, 'status', 0) >= 500:

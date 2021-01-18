@@ -28,7 +28,7 @@ def get_collection_facts(iw, component_matcher, meta):
             is_backport = iw.pullrequest.base.ref != u'devel'
         '''
         if not iw.is_issue():
-            is_backport = iw.pullrequest.base.ref != u'devel'
+            is_backport = iw.pullrequest.base.ref != 'devel'
 
     cfacts = {
         'is_collection': False,
@@ -44,7 +44,7 @@ def get_collection_facts(iw, component_matcher, meta):
     }
 
     cmap = {}
-    for cm in meta.get(u'component_matches', []):
+    for cm in meta.get('component_matches', []):
         if cm.get('repo_filename'):
             cmap[cm['repo_filename']] = None
 

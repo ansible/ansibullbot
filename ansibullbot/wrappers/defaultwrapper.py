@@ -13,22 +13,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Ansible. If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import print_function
 
 import datetime
 import inspect
 import json
 import logging
 import os
+import pickle
 import re
 import sys
 import time
 
 import pytz
-import six
 
 import ansibullbot.constants as C
-from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
@@ -42,7 +40,7 @@ class UnsetValue:
         return "AnsibullbotUnsetValue()"
 
 
-class DefaultWrapper(object):
+class DefaultWrapper:
     def __init__(self, github=None, repo=None, issue=None, cachedir=None, gitrepo=None):
         self.github = github
         self.repo = repo
@@ -69,7 +67,7 @@ class DefaultWrapper(object):
         self._template_data = None
         self.pull_raw = None
         self.pr_files = None
-        self.full_cachedir = os.path.join(self.cachedir, u'issues', to_text(self.number))
+        self.full_cachedir = os.path.join(self.cachedir, 'issues', to_text(self.number))
         self._renamed_files = None
         self._pullrequest_check_runs = None
 
@@ -79,7 +77,7 @@ class DefaultWrapper(object):
 
     @property
     def comments(self):
-        return [x for x in self.history.history if x[u'event'] == 'commented']
+        return [x for x in self.history.history if x['event'] == 'commented']
 
     @property
     def events(self):
@@ -91,68 +89,68 @@ class DefaultWrapper(object):
     def _parse_events(self, events):
         processed_events = []
         for event_no, dd in enumerate(events):
-            if dd[u'event'] == u'committed':
+            if dd['event'] == 'committed':
                 # FIXME
                 # commits are added through HistoryWrapper.merge_commits()
                 continue
 
             # reviews do not have created_at keys
-            if not dd.get(u'created_at') and dd.get(u'submitted_at'):
-                dd[u'created_at'] = dd[u'submitted_at']
+            if not dd.get('created_at') and dd.get('submitted_at'):
+                dd['created_at'] = dd['submitted_at']
 
             # commits do not have created_at keys
-            if not dd.get(u'created_at') and dd.get('author'):
-                dd[u'created_at'] = dd[u'author'][u'date']
+            if not dd.get('created_at') and dd.get('author'):
+                dd['created_at'] = dd['author']['date']
 
             # commit comments do not have created_at keys
-            if not dd.get(u'created_at') and dd.get('comments'):
-                dd[u'created_at'] = dd[u'comments'][0][u'created_at']
+            if not dd.get('created_at') and dd.get('comments'):
+                dd['created_at'] = dd['comments'][0]['created_at']
 
-            if not dd.get(u'created_at'):
+            if not dd.get('created_at'):
                 raise AssertionError(dd)
 
             # commits do not have actors
-            if not dd.get(u'actor'):
-                dd[u'actor'] = {'login': None}
+            if not dd.get('actor'):
+                dd['actor'] = {'login': None}
 
             # fix commits with no message
-            if dd[u'event'] == u'committed' and u'message' not in dd:
-                dd[u'message'] = u''
+            if dd['event'] == 'committed' and 'message' not in dd:
+                dd['message'] = ''
 
-            if not dd.get(u'id'):
+            if not dd.get('id'):
                 # set id as graphql node_id OR make one up
-                if u'node_id' in dd:
-                    dd[u'id'] = dd[u'node_id']
+                if 'node_id' in dd:
+                    dd['id'] = dd['node_id']
                 else:
-                    dd[u'id'] = '%s/%s/%s/%s' % (self.repo_full_name, self.number, 'timeline', event_no)
+                    dd['id'] = '%s/%s/%s/%s' % (self.repo_full_name, self.number, 'timeline', event_no)
 
             event = {}
-            event[u'id'] = dd[u'id']
-            event[u'actor'] = dd[u'actor'][u'login']
-            event[u'event'] = dd[u'event']
-            if isinstance(dd[u'created_at'], six.string_types):
-                dd[u'created_at'] = strip_time_safely(dd[u'created_at'])
+            event['id'] = dd['id']
+            event['actor'] = dd['actor']['login']
+            event['event'] = dd['event']
+            if isinstance(dd['created_at'], str):
+                dd['created_at'] = strip_time_safely(dd['created_at'])
 
-            event[u'created_at'] = pytz.utc.localize(dd[u'created_at'])
+            event['created_at'] = pytz.utc.localize(dd['created_at'])
 
-            if dd[u'event'] in [u'labeled', u'unlabeled']:
-                event[u'label'] = dd.get(u'label', {}).get(u'name', None)
-            elif dd[u'event'] == u'referenced':
-                event[u'commit_id'] = dd[u'commit_id']
-            elif dd[u'event'] == u'assigned':
-                event[u'assignee'] = dd[u'assignee'][u'login']
-                event[u'assigner'] = event[u'actor']
-            elif dd[u'event'] == u'commented':
-                event[u'body'] = dd[u'body']
-            elif dd[u'event'] == u'cross-referenced':
-                event[u'source'] = dd[u'source']
+            if dd['event'] in ['labeled', 'unlabeled']:
+                event['label'] = dd.get('label', {}).get('name', None)
+            elif dd['event'] == 'referenced':
+                event['commit_id'] = dd['commit_id']
+            elif dd['event'] == 'assigned':
+                event['assignee'] = dd['assignee']['login']
+                event['assigner'] = event['actor']
+            elif dd['event'] == 'commented':
+                event['body'] = dd['body']
+            elif dd['event'] == 'cross-referenced':
+                event['source'] = dd['source']
 
             processed_events.append(event)
 
-        return sorted(processed_events, key=lambda x: x[u'created_at'])
+        return sorted(processed_events, key=lambda x: x['created_at'])
 
     def get_files(self):
-        self.files = self.load_update_fetch(u'files')
+        self.files = self.load_update_fetch('files')
         return self.files
 
     def _get_timeline(self):
@@ -171,7 +169,7 @@ class DefaultWrapper(object):
         if not os.path.exists(cache_data):
             fetch = True
         else:
-            with open(cache_meta, 'r') as f:
+            with open(cache_meta) as f:
                 meta = json.loads(f.read())
 
         if not fetch and (not meta or meta.get('updated_at', 0) < self.updated_at.isoformat()):
@@ -179,7 +177,7 @@ class DefaultWrapper(object):
 
         # validate the data is not infected by ratelimit errors
         if not fetch:
-            with open(cache_data, 'r') as f:
+            with open(cache_data) as f:
                 data = json.loads(f.read())
 
             if isinstance(data, list):
@@ -228,7 +226,7 @@ class DefaultWrapper(object):
         update = False
         write_cache = False
 
-        pfile = os.path.join(self.full_cachedir, u'%s.pickle' % property_name)
+        pfile = os.path.join(self.full_cachedir, '%s.pickle' % property_name)
         pdir = os.path.dirname(pfile)
         logging.debug(pfile)
 
@@ -238,7 +236,7 @@ class DefaultWrapper(object):
         if os.path.isfile(pfile):
             try:
                 with open(pfile, 'rb') as f:
-                    edata = pickle_load(f)
+                    edata = pickle.load(f)
             except Exception as e:
                 update = True
                 write_cache = True
@@ -253,35 +251,35 @@ class DefaultWrapper(object):
 
         baseobj = None
         if obj:
-            if obj == u'issue':
+            if obj == 'issue':
                 baseobj = self.instance
-            elif obj == u'pullrequest':
+            elif obj == 'pullrequest':
                 baseobj = self.pullrequest
         else:
-            if hasattr(self.instance, u'get_' + property_name):
+            if hasattr(self.instance, 'get_' + property_name):
                 baseobj = self.instance
             else:
                 if self.pullrequest:
-                    if hasattr(self.pullrequest, u'get_' + property_name):
+                    if hasattr(self.pullrequest, 'get_' + property_name):
                         baseobj = self.pullrequest
 
         if not baseobj:
             logging.error(
-                u'%s was not a property for the issue or the pullrequest'
+                '%s was not a property for the issue or the pullrequest'
                 % property_name
             )
             if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception(u'property error')
+                raise Exception('property error')
 
         # pull all events if timestamp is behind or no events cached
         if update or not events or force:
             write_cache = True
             updated = datetime.datetime.utcnow()
 
-            if not hasattr(baseobj, u'get_' + property_name) \
+            if not hasattr(baseobj, 'get_' + property_name) \
                     and hasattr(baseobj, property_name):
                 # !callable properties
                 try:
@@ -289,7 +287,7 @@ class DefaultWrapper(object):
                 except Exception as e:
                     logging.error(e)
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
+                        logging.error('breakpoint!')
                         import epdb; epdb.st()
                     else:
                         raise Exception(to_text(e))
@@ -297,11 +295,11 @@ class DefaultWrapper(object):
             else:
                 # callable properties
                 try:
-                    methodToCall = getattr(baseobj, u'get_' + property_name)
+                    methodToCall = getattr(baseobj, 'get_' + property_name)
                 except Exception as e:
                     logging.error(e)
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
+                        logging.error('breakpoint!')
                         import epdb; epdb.st()
                     else:
                         raise Exception(to_text(e))
@@ -312,7 +310,7 @@ class DefaultWrapper(object):
                 # need to dump the pickle back to disk
                 edata = [updated, events]
                 with open(pfile, 'wb') as f:
-                    pickle_dump(edata, f)
+                    pickle.dump(edata, f)
 
         return events
 
@@ -393,7 +391,7 @@ class DefaultWrapper(object):
         #self.instance.edit(body=description)
 
         vparms = inspect.getargspec(self.instance.edit)
-        if u'assignees' in vparms.args:
+        if 'assignees' in vparms.args:
             new_assignees = self.assignees + assignees
             new_assignees = sorted(set(new_assignees))
             self.instance.edit(assignees=assignees)
@@ -402,19 +400,19 @@ class DefaultWrapper(object):
             post_parameters["assignees"] = [x for x in assignees]
 
             headers, data = self.instance._requester.requestJsonAndCheck(
-                u"PATCH",
+                "PATCH",
                 self.instance.url,
                 input=post_parameters
             )
-            if headers[u'status'] != u'200 OK':
-                print(u'ERROR: failed to edit assignees')
+            if headers['status'] != '200 OK':
+                print('ERROR: failed to edit assignees')
                 sys.exit(1)
 
     def is_pullrequest(self):
-        return self.github_type == u'pullrequest'
+        return self.github_type == 'pullrequest'
 
     def is_issue(self):
-        return self.github_type == u'issue'
+        return self.github_type == 'issue'
 
     @property
     def age(self):
@@ -475,10 +473,10 @@ class DefaultWrapper(object):
 
     @property
     def github_type(self):
-        if u'/pull/' in self.html_url:
-            return u'pullrequest'
+        if '/pull/' in self.html_url:
+            return 'pullrequest'
         else:
-            return u'issue'
+            return 'issue'
 
     @property
     def number(self):
@@ -489,7 +487,7 @@ class DefaultWrapper(object):
         # auto-migrated issue by ansibot{-dev}
         # figure out the original submitter
         if self.instance.user.login in C.DEFAULT_BOT_NAMES:
-            m = re.match(u'From @(.*) on', self.instance.body)
+            m = re.match('From @(.*) on', self.instance.body)
             if m:
                 return m.group(1)
 
@@ -498,7 +496,7 @@ class DefaultWrapper(object):
     @property
     def pullrequest(self):
         if not self._pr:
-            logging.debug(u'@pullrequest.get_pullrequest #%s' % self.number)
+            logging.debug('@pullrequest.get_pullrequest #%s' % self.number)
             self._pr = self.repo.get_pullrequest(self.number)
         return self._pr
 
@@ -515,8 +513,8 @@ class DefaultWrapper(object):
     @RateLimited
     def pullrequest_check_runs(self):
         if self._pullrequest_check_runs is None:
-            logging.info(u'fetching pull request check runs: stale, no previous data')
-            url = u'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
+            logging.info('fetching pull request check runs: stale, no previous data')
+            url = 'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
             self._pullrequest_check_runs = []
             for resp_data in self.github.get_request_gen(url):
                 for check_runs_data in resp_data['check_runs']:
@@ -528,7 +526,7 @@ class DefaultWrapper(object):
     @RateLimited
     def pullrequest_raw_data(self):
         if not self.pull_raw:
-            logging.info(u'@pullrequest_raw_data')
+            logging.info('@pullrequest_raw_data')
             self.pull_raw = self.pullrequest.raw_data
         return self.pull_raw
 
@@ -538,27 +536,27 @@ class DefaultWrapper(object):
         pdata = None
         # pull out the status url from the raw data
         rd = self.pullrequest_raw_data
-        surl = rd[u'statuses_url']
+        surl = rd['statuses_url']
 
-        pfile = os.path.join(self.full_cachedir, u'pr_status.pickle')
+        pfile = os.path.join(self.full_cachedir, 'pr_status.pickle')
         pdir = os.path.dirname(pfile)
         if not os.path.isdir(pdir):
             os.makedirs(pdir)
 
         if os.path.isfile(pfile):
-            logging.info(u'pullrequest_status load pfile')
+            logging.info('pullrequest_status load pfile')
             with open(pfile, 'rb') as f:
-                pdata = pickle_load(f)
+                pdata = pickle.load(f)
 
         if pdata:
             # is the data stale?
             if pdata[0] < self.pullrequest.updated_at or force_fetch:
-                logging.info(u'fetching pr status: stale, previous from %s' % pdata[0])
+                logging.info('fetching pr status: stale, previous from %s' % pdata[0])
                 jdata = self.github.get_request(surl)
 
                 if isinstance(jdata, dict):
                     # https://github.com/ansible/ansibullbot/issues/959
-                    logging.error(u'Got the following error while fetching PR status: %s', jdata.get(u'message'))
+                    logging.error('Got the following error while fetching PR status: %s', jdata.get('message'))
                     logging.error(jdata)
                     return []
 
@@ -569,26 +567,26 @@ class DefaultWrapper(object):
 
         # missing?
         if not jdata:
-            logging.info(u'fetching pr status: !data')
+            logging.info('fetching pr status: !data')
             jdata = self.github.get_request(surl)
             # FIXME? should we self.log_ci_status(jdata) here too?
             fetched = True
 
         if fetched or not os.path.isfile(pfile):
-            logging.info(u'writing %s' % pfile)
+            logging.info('writing %s' % pfile)
             pdata = (self.pullrequest.updated_at, jdata)
             with open(pfile, 'wb') as f:
-                pickle_dump(pdata, f)
+                pickle.dump(pdata, f)
 
         return jdata
 
     def log_ci_status(self, status_data):
         '''Keep track of historical CI statuses'''
-        logfile = os.path.join(self.full_cachedir, u'pr_status_log.json')
+        logfile = os.path.join(self.full_cachedir, 'pr_status_log.json')
 
         jdata = {}
         if os.path.isfile(logfile):
-            with open(logfile, 'r') as f:
+            with open(logfile) as f:
                 jdata = json.loads(f.read())
 
         # the "url" field is constant
@@ -596,26 +594,26 @@ class DefaultWrapper(object):
 
         for sd in status_data:
             try:
-                turl = sd[u'target_url']
+                turl = sd['target_url']
             except TypeError:
                 # https://github.com/ansible/ansibullbot/issues/959
                 # the above traceback sometimes occurs and cannot be reproduced
                 # log the following info to have better idea how to handle this
-                logging.error(u'sd = %s, type = %s' % (sd, type(sd)))
-                logging.error(u'status_data = %s, type = %s' % (status_data, type(status_data)))
+                logging.error('sd = %s, type = %s' % (sd, type(sd)))
+                logging.error('status_data = %s, type = %s' % (status_data, type(status_data)))
                 raise
 
             if turl not in jdata:
                 jdata[turl] = {
-                    u'meta': sd.copy(),
-                    u'history': {}
+                    'meta': sd.copy(),
+                    'history': {}
                 }
             else:
-                if jdata[turl][u'meta'][u'updated_at'] < sd[u'updated_at']:
-                    jdata[turl][u'meta'] = sd.copy()
-            ts = sd[u'updated_at']
-            if ts not in jdata[turl][u'history']:
-                jdata[turl][u'history'][ts] = sd[u'state']
+                if jdata[turl]['meta']['updated_at'] < sd['updated_at']:
+                    jdata[turl]['meta'] = sd.copy()
+            ts = sd['updated_at']
+            if ts not in jdata[turl]['history']:
+                jdata[turl]['history'][ts] = sd['state']
 
         with open(logfile, 'w') as f:
             f.write(json.dumps(jdata))
@@ -637,7 +635,7 @@ class DefaultWrapper(object):
         if self.is_issue():
             return None
         if self.pr_files is None:
-            self.pr_files = self.load_update_fetch(u'files')
+            self.pr_files = self.load_update_fetch('files')
         files = [x.filename for x in self.pr_files]
         return files
 
@@ -651,16 +649,16 @@ class DefaultWrapper(object):
     def new_modules(self):
         new_modules = self.new_files
         new_modules = [
-            x for x in new_modules if x.startswith(u'lib/ansible/modules')
+            x for x in new_modules if x.startswith('lib/ansible/modules')
         ]
         new_modules = [
-            x for x in new_modules if not os.path.basename(x) == u'__init__.py'
+            x for x in new_modules if not os.path.basename(x) == '__init__.py'
         ]
         new_modules = [
-            x for x in new_modules if not os.path.basename(x).startswith(u'_')
+            x for x in new_modules if not os.path.basename(x).startswith('_')
         ]
         new_modules = [
-            x for x in new_modules if not os.path.basename(x).endswith(u'.ps1')
+            x for x in new_modules if not os.path.basename(x).endswith('.ps1')
         ]
         return new_modules
 
@@ -682,8 +680,8 @@ class DefaultWrapper(object):
         # https://github.com/ansible/ansibullbot/issues/881
         # https://github.com/ansible/ansibullbot/issues/883
         for idx, x in enumerate(self._pr_reviews):
-            if u'commit_id' not in x:
-                self._pr_reviews[idx][u'commit_id'] = None
+            if 'commit_id' not in x:
+                self._pr_reviews[idx]['commit_id'] = None
 
         return self._pr_reviews
 
@@ -692,9 +690,9 @@ class DefaultWrapper(object):
         #   early-access/graphql/enum/pullrequestreviewstate/
         # https://developer.github.com/v3/
         #   pulls/reviews/#list-reviews-on-a-pull-request
-        reviews_url = self.pullrequest.url + u'/reviews'
+        reviews_url = self.pullrequest.url + '/reviews'
         headers = {
-            u'Accept': u'application/vnd.github.black-cat-preview+json',
+            'Accept': 'application/vnd.github.black-cat-preview+json',
         }
 
         jdata = self.paginated_request(reviews_url, headers=headers)
@@ -710,7 +708,7 @@ class DefaultWrapper(object):
         while True or counter <= 100:
             counter += 1
             status, hdrs, body = self.instance._requester.requestJson(
-                u'GET',
+                'GET',
                 url,
                 headers=headers
             )
@@ -718,15 +716,15 @@ class DefaultWrapper(object):
 
             if isinstance(_jdata, dict):
                 logging.error(
-                    u'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
-                    u'resp.headers=%s | resp.status=%s',
+                    'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
+                    'resp.headers=%s | resp.status=%s',
                     _jdata.keys(), len(_jdata),
                     hdrs, status,
                 )
 
-                is_rate_limited = u'rate' in _jdata[u'message']
+                is_rate_limited = 'rate' in _jdata['message']
                 is_server_error = (
-                    u'Server Error' == _jdata[u'message']
+                    'Server Error' == _jdata['message']
                     or 500 <= status < 600
                 )
 
@@ -750,7 +748,7 @@ class DefaultWrapper(object):
             np = [x for x in links if 'next' in x]
             if not np:
                 break
-            url =  re.search('\<.*\>', np[0]).group()
+            url =  re.search(r'\<.*\>', np[0]).group()
             url = url.replace('<', '').replace('>', '')
 
         return jdata
@@ -771,10 +769,10 @@ class DefaultWrapper(object):
 
             if self.instance.updated_at > self.pullrequest.updated_at:
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
-                    raise Exception(u'issue date != pr date')
+                    raise Exception('issue date != pr date')
 
     @property
     def commits(self):
@@ -795,19 +793,19 @@ class DefaultWrapper(object):
 
     @property
     def mergeable_state(self):
-        if not self.is_pullrequest() or self.pullrequest.state == u'closed':
+        if not self.is_pullrequest() or self.pullrequest.state == 'closed':
             return None
 
         # http://stackoverflow.com/a/30620973
         fetchcount = 0
-        while self.pullrequest.mergeable_state == u'unknown':
+        while self.pullrequest.mergeable_state == 'unknown':
             fetchcount += 1
             if fetchcount >= 10:
-                logging.warning(u'exceeded fetch threshold for mstate')
+                logging.warning('exceeded fetch threshold for mstate')
                 return False
 
             logging.warning(
-                u're-fetch[%s] PR#%s because mergeable state is unknown' % (
+                're-fetch[%s] PR#%s because mergeable state is unknown' % (
                     fetchcount,
                     self.number
                  )
@@ -820,9 +818,9 @@ class DefaultWrapper(object):
 
     @property
     def wip(self):
-        if self.title.startswith(u'WIP'):
+        if self.title.startswith('WIP'):
             return True
-        elif u'[WIP]' in self.title:
+        elif '[WIP]' in self.title:
             return True
         return False
 
@@ -842,7 +840,7 @@ class DefaultWrapper(object):
         if not self.incoming_repo_exists:
             return True
 
-        return self.incoming_repo_slug != u'ansible/ansible'
+        return self.incoming_repo_slug != 'ansible/ansible'
 
     @RateLimited
     def get_commit_parents(self, commit):
@@ -885,7 +883,7 @@ class DefaultWrapper(object):
             for commit in self.commits:
                 parents = self.get_commit_parents(commit)
                 message = self.get_commit_message(commit)
-                if len(parents) > 1 or message.startswith(u'Merge branch'):
+                if len(parents) > 1 or message.startswith('Merge branch'):
                     self._merge_commits.append(commit)
         return self._merge_commits
 
@@ -926,38 +924,38 @@ class DefaultWrapper(object):
 
         if len(self.commits) == 1 or len(emails) == 1 or len(logins) == 1:
             # squash single committer PRs
-            merge_method = u'squash'
+            merge_method = 'squash'
         elif (len(self.commits) == len(emails)) and len(self.commits) <= 10:
             # rebase multi-committer PRs
-            merge_method = u'rebase'
+            merge_method = 'rebase'
         else:
-            logging.error(u'merge skipped for %s' % self.number)
+            logging.error('merge skipped for %s' % self.number)
             return
 
-        url = os.path.join(self.pullrequest.url, u'merge')
+        url = os.path.join(self.pullrequest.url, 'merge')
         headers = {
-            u'Accept': u'application/vnd.github.polaris-preview+json',
+            'Accept': 'application/vnd.github.polaris-preview+json',
         }
         params = {
             'merge_method': merge_method,
         }
         resp = self.pullrequest._requester.requestJson(
-            u"PUT",
+            "PUT",
             url,
             headers=headers,
             input=params
         )
 
-        if resp[0] != 200 or u'successfully merged' not in resp[2]:
-            logging.error(u'merge failed on %s' % self.number)
+        if resp[0] != 200 or 'successfully merged' not in resp[2]:
+            logging.error('merge failed on %s' % self.number)
             logging.error(resp)
             if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
+                logging.error('breakpoint!')
                 import epdb; epdb.st()
             else:
-                raise Exception(u'merge failed - %d - %s' % (resp[0], resp[1][u'status']))
+                raise Exception('merge failed - %d - %s' % (resp[0], resp[1]['status']))
         else:
-            logging.info(u'merge successful for %s' % self.number)
+            logging.info('merge successful for %s' % self.number)
 
     @property
     def migrated_from(self):
@@ -967,28 +965,28 @@ class DefaultWrapper(object):
     @property
     def migrated(self):
         if self._migrated is None:
-            if self.body and u'Copied from original issue' in self.body:
+            if self.body and 'Copied from original issue' in self.body:
                 self._migrated = True
                 migrated_issue = None
-                idx = self.body.find(u'Copied from original issue')
+                idx = self.body.find('Copied from original issue')
                 msg = self.body[idx:]
                 try:
                     migrated_issue = msg.split()[4]
                 except Exception as e:
                     logging.error(e)
                     if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
+                        logging.error('breakpoint!')
                         import epdb; epdb.st()
                     else:
-                        raise Exception(u'split failed')
-                if migrated_issue.endswith(u'_'):
-                    migrated_issue = migrated_issue.rstrip(u'_')
+                        raise Exception('split failed')
+                if migrated_issue.endswith('_'):
+                    migrated_issue = migrated_issue.rstrip('_')
                 self._migrated_from = migrated_issue
             else:
                 for comment in self.comments:
-                    if comment[u'body'].lower().startswith(u'migrated from'):
+                    if comment['body'].lower().startswith('migrated from'):
                         self._migrated = True
-                        bparts = comment[u'body'].split()
+                        bparts = comment['body'].split()
                         self._migrated_from = bparts[2]
                         break
         return self._migrated
@@ -1015,18 +1013,18 @@ class DefaultWrapper(object):
         try:
             if os.path.isfile(cachefile):
                 with open(cachefile, 'rb') as f:
-                    pdata = pickle_load(f)
+                    pdata = pickle.load(f)
         except Exception as e:
-            logging.error(u'failed to unpickle %s %s' % (cachefile, to_text(e)))
+            logging.error('failed to unpickle %s %s' % (cachefile, to_text(e)))
 
         if not pdata or pdata[0] != sha:
 
             if self.pullrequest.head.repo:
-                url = self.pullrequest.head.repo.url + u'/contents/' + filepath
+                url = self.pullrequest.head.repo.url + '/contents/' + filepath
                 resp = self.pullrequest._requester.requestJson(
-                    u"GET",
+                    "GET",
                     url,
-                    input={u'ref': self.pullrequest.head.ref}
+                    input={'ref': self.pullrequest.head.ref}
                 )
             else:
                 # https://github.com/ansible/ansible/pull/19891
@@ -1035,7 +1033,7 @@ class DefaultWrapper(object):
 
             pdata = [sha, resp]
             with open(cachefile, 'wb') as f:
-                pickle_dump(pdata, f)
+                pickle.dump(pdata, f)
 
         else:
             resp = pdata[1]

@@ -20,5 +20,5 @@ class FeatureFlags:
 
     @classmethod
     def from_config(cls, config_path):
-        with open(config_path, 'r') as f:
+        with open(config_path) as f:
             return cls(yaml.load(f))

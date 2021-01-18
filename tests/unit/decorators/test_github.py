@@ -1,9 +1,4 @@
-#!/usr/bin/env python
-
-import pytest
-import six
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
+from unittest.mock import patch
 
 from ansibullbot.decorators.github import get_rate_limit
 
@@ -16,7 +11,6 @@ class RequestsResponseMock:
         self.cache = {}
     def json(self):
         result = self.cache.get(self.url, {})
-        #print('\n RESULT: %s' % result)
         return result
 
 
@@ -24,12 +18,12 @@ def SleepMock(duration):
     pass
 
 
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_USERNAME', 'bob')
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_PASSWORD', '12345')
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abcde12345')
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_URL', None)
-@mock.patch('ansibullbot.decorators.github.time.sleep', SleepMock)
-@mock.patch('ansibullbot.decorators.github.requests.get')
+@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_USERNAME', 'bob')
+@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_PASSWORD', '12345')
+@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abcde12345')
+@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_URL', None)
+@patch('ansibullbot.decorators.github.time.sleep', SleepMock)
+@patch('ansibullbot.decorators.github.requests.get')
 def test_get_rate_limit(mock_requests_get):
 
     '''Basic check of get_rate_limit api'''
@@ -50,10 +44,10 @@ def test_get_rate_limit(mock_requests_get):
     limit = get_rate_limit()
 
     assert isinstance(limit, dict)
-    assert u'resources' in limit
-    assert u'core' in limit[u'resources']
-    assert u'limit' in limit[u'resources'][u'core']
-    assert u'remaining' in limit[u'resources'][u'core']
-    assert u'reset' in limit[u'resources'][u'core']
-    assert limit[u'resources'][u'core'][u'limit'] == 5000
-    assert limit[u'resources'][u'core'][u'remaining'] == 5000
+    assert 'resources' in limit
+    assert 'core' in limit['resources']
+    assert 'limit' in limit['resources']['core']
+    assert 'remaining' in limit['resources']['core']
+    assert 'reset' in limit['resources']['core']
+    assert limit['resources']['core']['limit'] == 5000
+    assert limit['resources']['core']['remaining'] == 5000

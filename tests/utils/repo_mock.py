@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 
-class SubRepo(object):
+class SubRepo:
     def __init__(self, assignees=None):
         self.assignees = assignees or []
     def has_in_assignees(self, user):
         return user in self.assignees
 
 
-class RepoMock(object):
+class RepoMock:
     issues = {}
     def __init__(self, assignees=None):
         self.repo = SubRepo(assignees)

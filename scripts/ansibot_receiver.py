@@ -5,7 +5,6 @@
 import glob
 import gzip
 import json
-import six
 
 from flask import Flask
 from flask import jsonify
@@ -222,7 +221,7 @@ def summaries():
             known_list = get_summary_numbers_with_state_for_repo(username, reponame, collection_name=collection_name)
             known_states = {}
             for x in known_list:
-                known_states[six.text_type(x['number'])] = x['state']
+                known_states[str(x['number'])] = x['state']
 
             print('inspecting {} summaries'.format(len(to_inspect)))
             for x in to_inspect:
@@ -249,7 +248,7 @@ def summaries():
                     res['replaced'] += 1
                 '''
 
-                if data['state'] != known_states[six.text_type(data['number'])]:
+                if data['state'] != known_states[str(data['number'])]:
                     print('replacing {}'.format(data['number']))
                     filterdict = {'github_org': username, 'github_repo': reponame, 'github_number': data['number']}
                     #mongo.db.summaries.replace_one(filterdict, data)

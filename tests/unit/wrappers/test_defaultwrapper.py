@@ -1,21 +1,16 @@
-#!/usr/bin/env python
-
 import datetime
 import json
 import os
+import tempfile
 
-import six
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
-
-from backports import tempfile
+from unittest import mock
 
 from ansibullbot.wrappers.defaultwrapper import DefaultWrapper
 
 
 class GithubIssueMock:
     number = 1
-    url = u'https://github.com/ansible/ansible/issues/1'
+    url = 'https://github.com/ansible/ansible/issues/1'
     updated_at = datetime.datetime.now()
 
 
@@ -49,7 +44,7 @@ def test_get_events():
         repo = GithubRepoWrapperMock()
         issue = GithubIssueMock()
 
-        github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'] = [
+        github.cache['https://github.com/ansible/ansible/issues/1/timeline'] = [
             {'event': 'labeled', 'created_at':  '2020-05-31T10:02:20Z'},
             {'event': 'unlabeled', 'created_at':  '2020-05-31T10:02:20Z'},
             {'event': 'comment', 'created_at':  '2020-05-31T10:02:20Z'}
@@ -79,7 +74,7 @@ def test_get_events_bad_cache_invalidate():
         repo = GithubRepoWrapperMock()
         issue = GithubIssueMock()
 
-        github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'] = [
+        github.cache['https://github.com/ansible/ansible/issues/1/timeline'] = [
             {'event': 'labeled', 'created_at': '2020-05-31T10:02:20Z'},
             {'event': 'unlabeled', 'created_at': '2020-05-31T10:02:20Z'},
             {'event': 'comment', 'created_at': '2020-05-31T10:02:20Z'}
@@ -94,13 +89,13 @@ def test_get_events_bad_cache_invalidate():
         # set a meta file that matches the timestamp for the issue so the cache is used
         with open(events_meta_cache, 'w') as f:
             f.write(json.dumps({
-                u'updated_at': '2020-05-31T10:02:20Z',
-                u'url': u'https://github.com/ansible/ansible/issues/1/timeline',
+                'updated_at': '2020-05-31T10:02:20Z',
+                'url': 'https://github.com/ansible/ansible/issues/1/timeline',
             }))
 
         # create a bad event to make sure the cache is invalidated and refetched
-        bad_events = github.cache[u'https://github.com/ansible/ansible/issues/1/timeline'][:]
-        bad_events[0] = u'documentation_url'
+        bad_events = github.cache['https://github.com/ansible/ansible/issues/1/timeline'][:]
+        bad_events[0] = 'documentation_url'
         with open(events_data_cache, 'w') as f:
             f.write(json.dumps(bad_events))
 

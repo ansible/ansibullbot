@@ -1,15 +1,13 @@
-from __future__ import print_function
-
 import json
 import logging
 import os
+import pickle
 import requests
 import shutil
 from datetime import datetime
 
 import ansibullbot.constants as C
 
-from ansibullbot._pickle_compat import pickle_dump, pickle_load
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
@@ -20,25 +18,25 @@ from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 ADB = AnsibullbotDatabase()
 
 
-class GithubWrapper(object):
-    def __init__(self, gh, token=None, username=None, password=None, cachedir=u'~/.ansibullbot/cache'):
+class GithubWrapper:
+    def __init__(self, gh, token=None, username=None, password=None, cachedir='~/.ansibullbot/cache'):
         self.gh = gh
         self.token = token
         self.username = username
         self.password = password
         self.cachedir = os.path.expanduser(cachedir)
-        self.cachefile = os.path.join(self.cachedir, u'github.pickle')
+        self.cachefile = os.path.join(self.cachedir, 'github.pickle')
         self.cached_requests_dir = os.path.join(self.cachedir, 'cached_requests')
 
     @property
     def accepts_headers(self):
         accepts = [
-            u'application/json',
-            u'application/vnd.github.mockingbird-preview',
-            u'application/vnd.github.sailor-v-preview+json',
-            u'application/vnd.github.starfox-preview+json',
-            u'application/vnd.github.squirrel-girl-preview',
-            u'application/vnd.github.v3+json',
+            'application/json',
+            'application/vnd.github.mockingbird-preview',
+            'application/vnd.github.sailor-v-preview+json',
+            'application/vnd.github.starfox-preview+json',
+            'application/vnd.github.squirrel-girl-preview',
+            'application/vnd.github.v3+json',
         ]
         return accepts
 
@@ -72,8 +70,8 @@ class GithubWrapper(object):
             return read_gzip_json_file(cdf)
 
         headers = {
-            u'Accept': u','.join(self.accepts_headers),
-            u'Authorization': u'Bearer %s' % self.token,
+            'Accept': ','.join(self.accepts_headers),
+            'Authorization': 'Bearer %s' % self.token,
         }
 
         meta = ADB.get_github_api_request_meta(url, token=self.token)
@@ -89,14 +87,14 @@ class GithubWrapper(object):
 
         if rr.status_code == 304:
             # not modified
-            with open(cdf, 'r') as f:
+            with open(cdf) as f:
                 data = json.loads(f.read())
         else:
             data = rr.json()
 
             # handle ratelimits ...
-            if isinstance(data, dict) and data.get(u'message'):
-                if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+            if isinstance(data, dict) and data.get('message'):
+                if data['message'].lower().startswith('api rate limit exceeded'):
                     raise RateLimitError()
 
             # cache data to disk
@@ -107,8 +105,8 @@ class GithubWrapper(object):
         ADB.set_github_api_request_meta(url, rr.headers, cdf, token=self.token)
 
         # pagination
-        if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
-            _data = self.get_request(rr.links[u'next'][u'url'])
+        if hasattr(rr, 'links') and rr.links and rr.links.get('next'):
+            _data = self.get_request(rr.links['next']['url'])
             if isinstance(data, list):
                 data += _data
             else:
@@ -121,21 +119,21 @@ class GithubWrapper(object):
         '''Get an arbitrary API endpoint'''
 
         headers = {
-            u'Accept': u','.join(self.accepts_headers),
-            u'Authorization': u'Bearer %s' % self.token,
+            'Accept': ','.join(self.accepts_headers),
+            'Authorization': 'Bearer %s' % self.token,
         }
 
         rr = requests.get(url, headers=headers)
         data = rr.json()
 
         # handle ratelimits ...
-        if isinstance(data, dict) and data.get(u'message'):
-            if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+        if isinstance(data, dict) and data.get('message'):
+            if data['message'].lower().startswith('api rate limit exceeded'):
                 raise RateLimitError()
 
         # pagination
-        if hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
-            _data = self.get_request(rr.links[u'next'][u'url'])
+        if hasattr(rr, 'links') and rr.links and rr.links.get('next'):
+            _data = self.get_request(rr.links['next']['url'])
             try:
                 if isinstance(data, list):
                     data += _data
@@ -143,7 +141,7 @@ class GithubWrapper(object):
                     data.update(_data)
             except TypeError as e:
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
                     raise Exception(e)
@@ -155,34 +153,34 @@ class GithubWrapper(object):
         '''Get an arbitrary API endpoint'''
         # FIXME merge with get_request()
         headers = {
-            u'Accept': u','.join(self.accepts_headers),
-            u'Authorization': u'Bearer %s' % self.token,
+            'Accept': ','.join(self.accepts_headers),
+            'Authorization': 'Bearer %s' % self.token,
         }
 
         rr = requests.get(url, headers=headers)
         data = rr.json()
 
         # handle ratelimits ...
-        if isinstance(data, dict) and data.get(u'message'):
-            if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+        if isinstance(data, dict) and data.get('message'):
+            if data['message'].lower().startswith('api rate limit exceeded'):
                 raise RateLimitError()
 
         yield data
 
         # pagination
-        while hasattr(rr, u'links') and rr.links and rr.links.get(u'next'):
-            rr = requests.get(rr.links[u'next'][u'url'], headers=headers)
+        while hasattr(rr, 'links') and rr.links and rr.links.get('next'):
+            rr = requests.get(rr.links['next']['url'], headers=headers)
             data = rr.json()
-            if isinstance(data, dict) and data.get(u'message'):
-                if data[u'message'].lower().startswith(u'api rate limit exceeded'):
+            if isinstance(data, dict) and data.get('message'):
+                if data['message'].lower().startswith('api rate limit exceeded'):
                     raise RateLimitError()
             yield data
 
     @RateLimited
     def delete_request(self, url):
         headers = {
-            u'Accept': u','.join(self.accepts_headers),
-            u'Authorization': u'Bearer %s' % self.token,
+            'Accept': ','.join(self.accepts_headers),
+            'Authorization': 'Bearer %s' % self.token,
         }
 
         rr = requests.delete(url, headers=headers)
@@ -190,15 +188,15 @@ class GithubWrapper(object):
 
 
 
-class RepoWrapper(object):
-    def __init__(self, gh, repo_path, verbose=True, cachedir=u'~/.ansibullbot/cache'):
+class RepoWrapper:
+    def __init__(self, gh, repo_path, verbose=True, cachedir='~/.ansibullbot/cache'):
 
         self.gh = gh
         self.repo_path = repo_path
 
         self.cachedir = os.path.expanduser(cachedir)
         self.cachedir = os.path.join(self.cachedir, repo_path)
-        self.cachefile = os.path.join(self.cachedir, u'repo.pickle')
+        self.cachefile = os.path.join(self.cachedir, 'repo.pickle')
 
         self.updated = False
         self.verbose = verbose
@@ -213,7 +211,7 @@ class RepoWrapper(object):
 
     @RateLimited
     def get_repo(self, repo_path):
-        logging.getLogger(u'github.Requester').setLevel(logging.INFO)
+        logging.getLogger('github.Requester').setLevel(logging.INFO)
         repo = self.gh.get_repo(repo_path)
         return repo
 
@@ -235,7 +233,7 @@ class RepoWrapper(object):
                 break
             except UnicodeDecodeError:
                 # https://github.com/ansible/ansibullbot/issues/610
-                logging.warning(u'cleaning cache for %s' % number)
+                logging.warning('cleaning cache for %s' % number)
                 self.clean_issue_cache(number)
 
         return issue
@@ -254,10 +252,10 @@ class RepoWrapper(object):
     @property
     def assignees(self):
         if self._assignees is False:
-            self._assignees = self.load_update_fetch(u'assignees')
+            self._assignees = self.load_update_fetch('assignees')
         return self._assignees
 
-    def get_issues(self, since=None, state=u'open', itype=u'issue'):
+    def get_issues(self, since=None, state='open', itype='issue'):
 
         if since:
             return self.repo.get_issues(since=since)
@@ -270,14 +268,14 @@ class RepoWrapper(object):
 
         pfile = os.path.join(
             self.cachedir,
-            u'issues',
+            'issues',
             to_text(number),
-            u'issue.pickle'
+            'issue.pickle'
         )
         if os.path.isfile(pfile):
             with open(pfile, 'rb') as f:
                 try:
-                    issue = pickle_load(f)
+                    issue = pickle.load(f)
                 except TypeError:
                     return False
             return issue
@@ -291,16 +289,16 @@ class RepoWrapper(object):
 
         cfile = os.path.join(
             self.cachedir,
-            u'issues',
+            'issues',
             to_text(issue.number),
-            u'issue.pickle'
+            'issue.pickle'
         )
         cdir = os.path.dirname(cfile)
         if not os.path.isdir(cdir):
             os.makedirs(cdir)
-        logging.debug(u'dump %s' % cfile)
+        logging.debug('dump %s' % cfile)
         with open(cfile, 'wb') as f:
-            pickle_dump(issue, f)
+            pickle.dump(issue, f)
 
     @RateLimited
     def load_update_fetch(self, property_name):
@@ -313,7 +311,7 @@ class RepoWrapper(object):
         write_cache = False
         self.repo.update()
 
-        pfile = os.path.join(self.cachedir, u'%s.pickle' % property_name)
+        pfile = os.path.join(self.cachedir, '%s.pickle' % property_name)
         pdir = os.path.dirname(pfile)
 
         if not os.path.isdir(pdir):
@@ -322,7 +320,7 @@ class RepoWrapper(object):
         if os.path.isfile(pfile):
             try:
                 with open(pfile, 'rb') as f:
-                    edata = pickle_load(f)
+                    edata = pickle.load(f)
             except Exception as e:
                 update = True
                 write_cache = True
@@ -340,14 +338,14 @@ class RepoWrapper(object):
             write_cache = True
             updated = datetime.utcnow()
             try:
-                methodToCall = getattr(self.repo, u'get_' + property_name)
+                methodToCall = getattr(self.repo, 'get_' + property_name)
             except Exception as e:
                 logging.error(e)
                 if C.DEFAULT_BREAKPOINTS:
-                    logging.error(u'breakpoint!')
+                    logging.error('breakpoint!')
                     import epdb; epdb.st()
                 else:
-                    raise Exception(u'unable to get %s' % property_name)
+                    raise Exception('unable to get %s' % property_name)
             events = [x for x in methodToCall()]
 
         if C.DEFAULT_PICKLE_ISSUES:
@@ -355,7 +353,7 @@ class RepoWrapper(object):
                 # need to dump the pickle back to disk
                 edata = [updated, events]
                 with open(pfile, 'wb') as f:
-                    pickle_dump(edata, f)
+                    pickle.dump(edata, f)
 
         return events
 
@@ -376,7 +374,7 @@ class RepoWrapper(object):
         # https://github.com/ansible/ansibullbot/issues/610
         cdir = os.path.join(
             self.cachedir,
-            u'issues',
+            'issues',
             to_text(number)
         )
         shutil.rmtree(cdir)

@@ -1,8 +1,7 @@
 from abc import ABCMeta, abstractmethod, abstractproperty
-from six import with_metaclass
 
 
-class BaseCI(with_metaclass(ABCMeta, object)):
+class BaseCI(metaclass=ABCMeta):
     """An interface that each CI provider that bot could use must implement.
     """
 

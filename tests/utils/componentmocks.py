@@ -1,26 +1,15 @@
-#!/usr/bin/env python
-
-import six
-six.add_move(six.MovedModule('mock', 'mock', 'unittest.mock'))
-from six.moves import mock
-
-from backports import tempfile
-
 import datetime
 import json
 import os
 import shutil
 import subprocess
+import tempfile
 import uuid
 
 import pytz
 
-try:
-    #py3
-    from urllib.parse import urlparse
-except ImportError:
-    #py2
-    from urllib import unquote as urlparse
+from unittest.mock import patch
+from urllib.parse import urlparse
 
 # reaction
 #   * content '+1'
@@ -183,7 +172,7 @@ class IssueDatabase:
         if not os.path.exists(cachefile):
             return
 
-        with open(cachefile, 'r') as f:
+        with open(cachefile) as f:
             cachedata = json.loads(f.read())
 
         self.issues = cachedata['issues'][:]
@@ -1445,7 +1434,7 @@ class BotMockManager:
 
         # force sqlite to use the cachedir
         unc = 'sqlite:///' + self.cachedir + '/test.db'
-        unc_mock = mock.patch('ansibullbot.utils.sqlite_utils.C.DEFAULT_DATABASE_UNC', unc)
+        unc_mock = patch('ansibullbot.utils.sqlite_utils.C.DEFAULT_DATABASE_UNC', unc)
         self.mocks.append(unc_mock)
 
         # pre-create
@@ -1470,36 +1459,36 @@ class BotMockManager:
         self.mrs = MockRequestsSession(self.issuedb)
         self.ml = MockLogger
 
-        self.mocks.append(mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False))
-        self.mocks.append(mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', True))
-        self.mocks.append(mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_USERNAME', 'ansibot'))
-        self.mocks.append(mock.patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234'))
-        self.mocks.append(mock.patch('github.Requester.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.decorators.github.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.parsers.botmetadata.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.triagers.ansible.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.triagers.ansible.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.contributors.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.needs_revision.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.triagers.plugins.shipit.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.component_tools.logging', MockLogger))
-        #self.mocks.append(mock.patch('ansibullbot.utils.component_tools.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.utils.extractors.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.gh_gql_client.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.git_tools.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.moduletools.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.net_tools.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.shippable_api.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.timetools.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.version_tools.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.wrappers.defaultwrapper.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.wrappers.historywrapper.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.wrappers.ghapiwrapper.logging', MockLogger))
-        self.mocks.append(mock.patch('ansibullbot.utils.gh_gql_client.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.utils.shippable_api.requests', self.mr))
-        self.mocks.append(mock.patch('ansibullbot.wrappers.ghapiwrapper.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False))
+        self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', True))
+        self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_USERNAME', 'ansibot'))
+        self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234'))
+        self.mocks.append(patch('github.Requester.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.decorators.github.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.parsers.botmetadata.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.triagers.ansible.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.triagers.ansible.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.triagers.plugins.contributors.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.triagers.plugins.needs_revision.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.triagers.plugins.shipit.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.triagers.defaulttriager.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.component_tools.logging', MockLogger))
+        #self.mocks.append(patch('ansibullbot.utils.component_tools.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.utils.extractors.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.gh_gql_client.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.git_tools.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.moduletools.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.net_tools.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.shippable_api.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.timetools.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.version_tools.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.wrappers.defaultwrapper.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.wrappers.historywrapper.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.wrappers.ghapiwrapper.logging', MockLogger))
+        self.mocks.append(patch('ansibullbot.utils.gh_gql_client.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.utils.shippable_api.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.wrappers.ghapiwrapper.requests', self.mr))
 
         for _m in self.mocks:
             _m.start()
