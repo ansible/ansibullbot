@@ -9,13 +9,13 @@
     botinstance_dns_entries:
       - type: A
         record: ansibullbot-dev.eng.ansible.com
-        value: "{{ _elastic_ip.public_ip }}"
+        value: "{{ elastic_ip.public_ip }}"
 
   roles:
     - ansibullbot_instance
 
 - name: Install dev ansibullbot
-  hosts: ansibullbot-dev
+  hosts: ansibullbot-dev.eng.ansible.com
   become: yes
 
   roles:
@@ -23,7 +23,7 @@
     - yum_cron
     - firewall
     - fail2ban
-    - docker
     - mongodb
     - caddy
     - ansibullbot
+    - authorized_keys

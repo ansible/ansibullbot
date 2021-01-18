@@ -16,7 +16,7 @@
     - yum_cron
     - firewall
     - fail2ban
-    - docker
     - mongodb
     - caddy
     - ansibullbot
+    - authorized_keys
