@@ -1,10 +1,11 @@
-#!/usr/bin/env python
+#!/usr/bin/python3.8
 # Ansible managed. Any local changes will be overwritten.
 
 import cgi
 import glob
 import os
 import sys
+import pwd
 import subprocess
 
 def run_command(args):
@@ -119,7 +120,8 @@ def get_log_data():
 
 
 def get_version_data():
-    cmd = 'cd /home/ansibot/ansibullbot; git log --format="%H" -1'
+    ansibot_home = pwd.getpwnam('ansibot').pw_dir
+    cmd = f'cd {ansibot_home}; git log --format="%H" -1'
 
     (rc, so, se) = run_command(cmd)
     if rc == 0 and so:
