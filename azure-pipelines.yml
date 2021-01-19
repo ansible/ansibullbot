@@ -33,13 +33,13 @@ jobs:
       - task: PublishTestResults@2
         condition: succeededOrFailed()
         inputs:
-          testResultsFiles: 'shippable/testresults/pytest.xml'
+          testResultsFiles: 'ci_output/testresults/pytest.xml'
           pathToSources: '$(System.DefaultWorkingDirectory)'
         displayName: Publish Test Results
       - task: PublishCodeCoverageResults@1
         condition: succeededOrFailed()
         inputs:
           codeCoverageTool: Cobertura
-          summaryFileLocation: 'shippable/codecoverage/pytest-cov.xml'
+          summaryFileLocation: 'ci_output/codecoverage/pytest-cov.xml'
           pathToSources: '$(System.DefaultWorkingDirectory)'
         displayName: Publish Coverage Results
