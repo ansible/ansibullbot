@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 # Ansible managed. Any local changes will be overwritten.
 
-import cgi
 import glob
-import os
-import sys
 import pwd
 import subprocess
+
 
 def run_command(args):
     p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
@@ -16,8 +14,8 @@ def run_command(args):
 
 def get_process_data():
     # USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
-    #[root@centos-1gb-nyc3-01 cgi-bin]# ps aux | fgrep -i triage.py | egrep ^ansibot
-    #ansibot   1092 18.2 37.4 600984 380548 pts/2   S+   13:53   3:46
+    # [root@centos-1gb-nyc3-01 cgi-bin]# ps aux | fgrep -i triage.py | egrep ^ansibot
+    # ansibot   1092 18.2 37.4 600984 380548 pts/2   S+   13:53   3:46
     #   python ./triage.py --debug --verbose --force --skip_no_update --daemonize --daemonize_interval=360
     pdata = {
         'pid': None,
@@ -45,7 +43,7 @@ def get_process_data():
 
 def _get_log_data():
 
-    LOGDIR='/var/log'
+    LOGDIR = '/var/log'
     logfiles = sorted(glob.glob('%s/ansibullbot*' % LOGDIR))
     log_lines = []
 
@@ -59,7 +57,7 @@ def _get_log_data():
 
     # each time the bot starts, it's possibly because of a traceback
     bot_starts = []
-    for idx,x in enumerate(log_lines):
+    for idx, x in enumerate(log_lines):
         if 'starting bot' in x:
             bot_starts.append(idx)
 
@@ -69,7 +67,7 @@ def _get_log_data():
         this_issue = None
         this_traceback = []
         if len(log_lines) > 1000:
-            lines = log_lines[bs-1000:bs]
+            lines = log_lines[bs - 1000:bs]
         else:
             lines = log_lines[:bs]
 
@@ -86,7 +84,6 @@ def _get_log_data():
         if this_traceback:
             tracebacks.append([this_issue] + this_traceback)
 
-    #import epdb; epdb.st()
     return (log_info[-500:], tracebacks)
 
 
@@ -104,17 +101,17 @@ def get_log_data():
         parts = so.split()
 
         if "'x-ratelimit-limit':" not in parts:
-            #ratelimit['msg'] = '<br>\n'.join(parts)
+            # ratelimit['msg'] = '<br>\n'.join(parts)
             pass
         else:
             lidx = parts.index("'x-ratelimit-limit':")
             if lidx:
-                ratelimit['total'] = parts[lidx+1].replace("'", '').replace(',', '')
+                ratelimit['total'] = parts[lidx + 1].replace("'", '').replace(',', '')
             ridx = parts.index("'x-ratelimit-remaining':")
             if ridx:
-                ratelimit['remaining'] = parts[ridx+1].replace("'", '').replace(',', '')
+                ratelimit['remaining'] = parts[ridx + 1].replace("'", '').replace(',', '')
 
-    lines,tracebacks = _get_log_data()
+    lines, tracebacks = _get_log_data()
 
     return (ratelimit, lines, tracebacks)
 
@@ -129,6 +126,7 @@ def get_version_data():
         return commit_hash
 
     return "unknown: %s" % se
+
 
 pdata = get_process_data()
 (ratelimit, loglines, tracebacks) = get_log_data()
