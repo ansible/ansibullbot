@@ -257,7 +257,7 @@ class AnsibleComponentMatcher:
                     'maintainers_keys': [],
                     'notified': ME.authors,
                     'ignored': [],
-                    'support': 'community',
+                    'support': 'core' if os.path.exists(efile) else 'community',
                 }
             else:
                 bmeta = self.botmeta['files'][filename].copy()
