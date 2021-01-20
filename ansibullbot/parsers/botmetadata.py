@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import logging
 import os
 
@@ -7,7 +5,6 @@ from string import Template
 
 import yaml
 
-import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text
 
 
@@ -50,10 +47,7 @@ class BotMetadataParser:
         def clean_list_items(inlist):
             if isinstance(inlist, list):
                 inlist = to_text(inlist)
-            if '&' in inlist:
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
+
             inlist = inlist.replace("[", '')
             inlist = inlist.replace("]", '')
             inlist = inlist.replace("'", '')

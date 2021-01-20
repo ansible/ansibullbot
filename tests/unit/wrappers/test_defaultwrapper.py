@@ -36,7 +36,6 @@ class GithubRepoWrapperMock:
 
 
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', False)
 def test_get_events():
     '''Check basic event fetching and caching'''
     with tempfile.TemporaryDirectory() as cachedir:
@@ -66,7 +65,6 @@ def test_get_events():
 
 
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', False)
 def test_get_events_bad_cache_invalidate():
     '''Prevent bad data from leaking into events'''
     with tempfile.TemporaryDirectory() as cachedir:

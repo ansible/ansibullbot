@@ -69,11 +69,7 @@ class HistoryWrapper:
         )
         if 'issues' not in self.cachedir:
             logging.error(self.cachedir)
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('')
+            raise Exception
 
         if usecache:
             cache = self._load_cache()
@@ -163,11 +159,7 @@ class HistoryWrapper:
                 pickle.dump(cachedata, f)
         except Exception as e:
             logging.error(e)
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('')
+            raise
 
     def get_json_comments(self):
         comments = self.issue.comments[:]
@@ -266,7 +258,6 @@ class HistoryWrapper:
                     matching_events.remove(me)
                 else:
                     print('%s in cids' % me['id'])
-            import epdb; epdb.st()
         """
 
         return matching_events

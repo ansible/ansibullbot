@@ -263,8 +263,7 @@ class GalaxyQueryTool:
             try:
                 rurl = self._checkout_index.get(fqcn, {}).get('url')
             except AttributeError as e:
-                print(e)
-                import epdb; epdb.st()
+                logging.info(e)
 
             if rurl is None:
                 # https://galaxy.ansible.com/api/v2/collections/devoperate/base/
@@ -488,7 +487,6 @@ class GalaxyQueryTool:
         return matches
 
     def fuzzy_search_galaxy(self, component):
-
         matched_filenames = []
 
         if component.rstrip('/') in self.BLACKLIST_PATHS:
@@ -514,7 +512,6 @@ class GalaxyQueryTool:
                             logging.info('galaxy fuzzy match %s startswith %s_' % (keybn, prefix))
                             logging.info('galaxy fuzzy match %s == %s' % (keybn, prefix))
                             logging.info('galaxy fuzzy match %s == %s' % (key, component))
-                            #import epdb; epdb.st()
 
                             for fqcn in self.GALAXY_FILES[key]:
                                 if fqcn in self.BLACKLIST_FQCNS:
@@ -525,7 +522,5 @@ class GalaxyQueryTool:
 
                     #if matched_filenames:
                     #    break
-
-        #import epdb; epdb.st()
 
         return matched_filenames

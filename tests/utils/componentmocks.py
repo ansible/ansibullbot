@@ -1460,7 +1460,6 @@ class BotMockManager:
         self.ml = MockLogger
 
         self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False))
-        self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', True))
         self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_USERNAME', 'ansibot'))
         self.mocks.append(patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234'))
         self.mocks.append(patch('github.Requester.requests', self.mr))
