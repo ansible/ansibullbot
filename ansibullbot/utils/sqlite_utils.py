@@ -247,6 +247,3 @@ class AnsibullbotDatabase:
         self.session.merge(rl)
         self.session.flush()
         self.session.commit()
-
-    def debug(self):
-        import epdb; epdb.st()     

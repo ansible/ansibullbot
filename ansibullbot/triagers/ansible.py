@@ -117,8 +117,6 @@ def get_version_major_minor(vstring):
 class MetaDict(dict):
     def __setitem__(self, key, val):
         # https://github.com/ansible/ansible/issues/68640
-        #if key == 'component_support' and val == ['community']:
-        #    import epdb; epdb.st()
         dict.__setitem__(self, key, val)
     def update(self, *args, **kwargs):
         for k, v in dict(*args, **kwargs).items():
@@ -382,9 +380,6 @@ class AnsibleTriage(DefaultTriager):
             for issue in item[1]['issues']:
 
                 if issue is None:
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
                     continue
 
                 icount += 1
@@ -988,11 +983,7 @@ class AnsibleTriage(DefaultTriager):
                     )
                 except Exception as e:
                     logging.debug(e)
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.debug('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception(to_text(e))
+                    raise
 
                 # https://github.com/ansible/ansibullbot/issues/423
                 if len(comment) < 65536:
@@ -1565,14 +1556,10 @@ class AnsibleTriage(DefaultTriager):
                 if label in actions.newlabel or label in actions.unlabel:
                     msg = f'"{label}" label is waffling on {iw.html_url}'
                     logging.error(msg)
-                    if C.DEFAULT_BREAKPOINTS:
-                        import epdb; epdb.st()
                     raise LabelWafflingError(msg)
             elif label in actions.newlabel and label in actions.unlabel:
                 msg = f'"{label}" label is waffling on {iw.html_url}'
                 logging.error(msg)
-                if C.DEFAULT_BREAKPOINTS:
-                    import epdb; epdb.st()
                 raise LabelWafflingError(msg)
 
     def apply_actions(self, iw, actions):
@@ -2114,11 +2101,7 @@ class AnsibleTriage(DefaultTriager):
             mirepopath = '/'.join(miparts[0:2])
         else:
             print(migrated_issue)
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('unknown url type for migrated issue')
+            raise Exception('unknown url type for migrated issue')
 
         # https://github.com/ansible/ansibullbot/issues/1303
         try:

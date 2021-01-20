@@ -218,11 +218,7 @@ def get_review_facts(issuewrapper, meta):
     elif supported_by in ['curated', 'certified']:
         rfacts['committer_review'] = True
     else:
-        if C.DEFAULT_BREAKPOINTS:
-            logging.error('breakpoint!')
-            import epdb; epdb.st()
-        else:
-            raise Exception(f'unknown supported_by type: {supported_by}')
+        raise Exception(f'unknown supported_by type: {supported_by}')
 
     return rfacts
 

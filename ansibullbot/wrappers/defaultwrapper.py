@@ -268,11 +268,7 @@ class DefaultWrapper:
                 '%s was not a property for the issue or the pullrequest'
                 % property_name
             )
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('property error')
+            raise Exception('property error')
 
         # pull all events if timestamp is behind or no events cached
         if update or not events or force:
@@ -286,11 +282,7 @@ class DefaultWrapper:
                     methodToCall = getattr(baseobj, property_name)
                 except Exception as e:
                     logging.error(e)
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception(to_text(e))
+                    raise
                 events = methodToCall
             else:
                 # callable properties
@@ -298,11 +290,7 @@ class DefaultWrapper:
                     methodToCall = getattr(baseobj, 'get_' + property_name)
                 except Exception as e:
                     logging.error(e)
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception(to_text(e))
+                    raise
                 events = [x for x in methodToCall()]
 
         if C.DEFAULT_PICKLE_ISSUES:
@@ -768,11 +756,7 @@ class DefaultWrapper:
             self.pullrequest.update()
 
             if self.instance.updated_at > self.pullrequest.updated_at:
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('issue date != pr date')
+                raise Exception('issue date != pr date')
 
     @property
     def commits(self):
@@ -949,11 +933,7 @@ class DefaultWrapper:
         if resp[0] != 200 or 'successfully merged' not in resp[2]:
             logging.error('merge failed on %s' % self.number)
             logging.error(resp)
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('merge failed - %d - %s' % (resp[0], resp[1]['status']))
+            raise Exception('merge failed - %d - %s' % (resp[0], resp[1]['status']))
         else:
             logging.info('merge successful for %s' % self.number)
 
@@ -974,11 +954,7 @@ class DefaultWrapper:
                     migrated_issue = msg.split()[4]
                 except Exception as e:
                     logging.error(e)
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception('split failed')
+                    raise Exception('split failed')
                 if migrated_issue.endswith('_'):
                     migrated_issue = migrated_issue.rstrip('_')
                 self._migrated_from = migrated_issue

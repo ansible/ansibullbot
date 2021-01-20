@@ -442,8 +442,6 @@ class AnsibleComponentMatcher:
         self.strategies = []
         matched_filenames = None
 
-        #import epdb; epdb.st()
-
         # No matching necessary for PRs, but should provide consistent api
         if files:
             matched_filenames = files[:]
@@ -742,8 +740,6 @@ class AnsibleComponentMatcher:
                         continue
                     matches.append('collection:%s:%s' % (fqcn, cn))
             matches = sorted(set(matches))
-
-        #import epdb; epdb.st()
 
         return matches
     """
@@ -1557,7 +1553,6 @@ class AnsibleComponentMatcher:
 
             # make new test targets community by default
             if not meta['support'] and not meta['supported_by']:
-                #import epdb; epdb.st()
                 meta['support'] = 'community'
 
         # it's okay to remove things from legacy-files.txt

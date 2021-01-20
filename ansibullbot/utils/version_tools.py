@@ -314,11 +314,7 @@ class AnsibleVersionIndexer:
                             aversion = words[0]
                         except Exception as e:
                             logging.error(e)
-                            if C.DEFAULT_BREAKPOINTS:
-                                logging.error('breakpoint!')
-                                import epdb; epdb.st()
-                            else:
-                                raise Exception('indexerror: %s' % e)
+                            raise
                     elif characters[0].isdigit():
                         aversion = words[0]
                     else:
@@ -377,37 +373,15 @@ class AnsibleVersionIndexer:
 
             if rc != 0:
                 logging.error("rc != 0")
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('bad returncode')
+                raise Exception('bad returncode')
 
             if len(rlines) > 0:
                 aversion = rlines[0]
             else:
                 if 'HEAD' in lines[0] or lines[0].endswith('/devel'):
-                    '''
-                    cmd = 'cd %s;' % self.checkoutdir
-                    cmd += 'git branch -a | fgrep -e release -e stable | tail -n 1'
-                    (rc, so, se) = run_command(cmd)
-                    cver = so.strip()
-                    cver = cver.replace('remotes/origin/stable-', '')
-                    cver = cver.replace('remotes/upstream/stable-', '')
-                    cver = cver.replace('remotes/origin/release', '')
-                    cver = cver.replace('remotes/upstream/release', '')
-                    assert cver, "cver is null"
-                    assert cver[0].isdigit(), "cver[0] is not digit: %s" % cver
-                    aversion = cver
-                    '''
                     aversion = devel_version
                 else:
-                    logging.error("WTF!? ...")
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception('HEAD not found')
+                    raise Exception('HEAD not found')
 
             self.COMMITVERSIONS[commithash] = aversion
 

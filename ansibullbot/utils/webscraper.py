@@ -51,11 +51,7 @@ class GithubWebScraper:
             except Exception as e:
                 logging.error(e)
                 issues = {}
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception(to_text(e))
+                raise
         return issues
 
     def dump_summaries(self, repo_url, issues, filename="html_summaries"):
@@ -99,11 +95,7 @@ class GithubWebScraper:
             '%s.json' % filename
         )
         if not issues:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('no issues')
+            raise Exception('no issues')
 
         tfh, tfn = tempfile.mkstemp()
         os.close(tfh)
@@ -400,11 +392,7 @@ class GithubWebScraper:
         rr = requests.get(url)
 
         if rr.status_code != 200:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('bad statuscode on %s' % url)
+            raise Exception('bad statuscode on %s' % url)
 
         if usecache:
             if not os.path.isdir(tdir):
@@ -439,11 +427,7 @@ class GithubWebScraper:
             if data['prs']:
                 prs.update(data['prs'])
             else:
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('no "prs" key in data')
+                raise Exception('no "prs" key in data')
 
         return prs
 
@@ -576,11 +560,7 @@ class GithubWebScraper:
                     reviewer = tparts[findex+1]
             else:
                 action = None
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('parsing error on %s' % atxt)
+                raise Exception('parsing error on %s' % atxt)
 
             reviews['reviews'][rid] = {
                 'actor': author,
@@ -775,11 +755,7 @@ class GithubWebScraper:
                     state = u'open'
                     merged = False
                 else:
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error(u'breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception(u'state parsing error')
+                    raise Exception(u'state parsing error')
 
                 created_at = None
                 updated_at = None
@@ -896,7 +872,6 @@ class GithubWebScraper:
             oby = idiv.find('span', {'class': 'opened-by'})
             issue['created_at'] = oby.find('relative-time').attrs['datetime']
             issue['created_by'] = oby.find('a').text
-            #import epdb; epdb.st()
 
             data['issues'][issue['number']] = issue.copy()
 
@@ -905,7 +880,6 @@ class GithubWebScraper:
             data['next_page'] = soup.find('a', {'class': 'next_page'}).attrs['href']
         except AttributeError:
             pass
-        #import epdb; epdb.st()
 
         return data
 
@@ -942,11 +916,7 @@ class GithubWebScraper:
         )
 
         if not state_div:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error(u'breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception(u'no state div')
+            raise Exception(u'no state div')
 
         if u'state-merged' in state_div.attrs[u'class']:
             data[u'state'] = u'closed'
@@ -971,11 +941,7 @@ class GithubWebScraper:
         )
 
         if not state_span:
-            if C.DEFAULT_BREAKPOINTS:
-                logging.error('breakpoint!')
-                import epdb; epdb.st()
-            else:
-                raise Exception('no state div')
+            raise Exception('no state div')
 
         if 'merged' in state_span.attrs['title'].lower():
             data['state'] = 'closed'

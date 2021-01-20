@@ -217,16 +217,6 @@ DEFAULT_DATABASE_UNC = get_config(
     value_type='string'
 )
 
-# We don't want breakpoints in production
-DEFAULT_BREAKPOINTS = get_config(
-    p,
-    DEFAULTS,
-    'breakpoints',
-    '%s_BREAKPOINTS' % PROG_NAME.upper(),
-    False,
-    value_type='boolean'
-)
-
 # Use or don't use the ratelimiting decorator
 DEFAULT_RATELIMIT = get_config(
     p,

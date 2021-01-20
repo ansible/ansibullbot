@@ -28,7 +28,6 @@ class RequestsMockRateLimited:
 
 
 @mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_BREAKPOINTS', False)
 @mock.patch('ansibullbot.wrappers.ghapiwrapper.requests', RequestsMockRateLimited())
 def test_get_request_rate_limited():
 

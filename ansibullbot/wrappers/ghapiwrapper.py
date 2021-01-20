@@ -134,17 +134,10 @@ class GithubWrapper:
         # pagination
         if hasattr(rr, 'links') and rr.links and rr.links.get('next'):
             _data = self.get_request(rr.links['next']['url'])
-            try:
-                if isinstance(data, list):
-                    data += _data
-                elif isinstance(data, dict):
-                    data.update(_data)
-            except TypeError as e:
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception(e)
+            if isinstance(data, list):
+                data += _data
+            elif isinstance(data, dict):
+                data.update(_data)
 
         return data
 
@@ -337,15 +330,7 @@ class RepoWrapper:
         if update or not events:
             write_cache = True
             updated = datetime.utcnow()
-            try:
-                methodToCall = getattr(self.repo, 'get_' + property_name)
-            except Exception as e:
-                logging.error(e)
-                if C.DEFAULT_BREAKPOINTS:
-                    logging.error('breakpoint!')
-                    import epdb; epdb.st()
-                else:
-                    raise Exception('unable to get %s' % property_name)
+            methodToCall = getattr(self.repo, 'get_' + property_name)
             events = [x for x in methodToCall()]
 
         if C.DEFAULT_PICKLE_ISSUES:
@@ -359,13 +344,11 @@ class RepoWrapper:
 
     @RateLimited
     def get_file_contents(self, filepath):
-
         # FIXME - cachethis
-
         filedata = None
         try:
             filedata = self.repo.get_file_contents(filepath)
-        except:
+        except Exception:
             pass
 
         return filedata

@@ -122,6 +122,4 @@ def get_collection_facts(iw, component_matcher, meta):
 
     cfacts['collection_fqcn_label_remove'] = list(cfacts['collection_fqcn_label_remove'])
 
-    #import epdb; epdb.st()
-
     return cfacts

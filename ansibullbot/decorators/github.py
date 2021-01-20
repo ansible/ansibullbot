@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # https://github.com/octokit/octokit.net/issues/638#issuecomment-67795998
 
 # FIXME
@@ -69,7 +67,6 @@ def get_rate_limit():
                 time.sleep(60)
 
     response = rr.json()
-    #print(response)
 
     if 'resources' not in response or 'core' not in response.get('resources', {}):
         logging.warning('Unable to fetch rate limit %r', response.get('message'))
@@ -163,11 +160,7 @@ def RateLimited(fn):
                     logging.warning(msg)
                     time.sleep(stime)
                 else:
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception('unhandled message type')
+                    raise Exception('unhandled message type')
             except TypeError as e:
                 if "unsupported operand type(s) for -=" in e.message:
                     stime = get_reset_time(fn, args)
@@ -177,11 +170,7 @@ def RateLimited(fn):
                     time.sleep(stime)
                 else:
                     logging.error(e)
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        raise Exception('unhandled message type')
+                    raise Exception('unhandled message type')
             except Exception as e:
                 logging.error(e)
                 if hasattr(e, 'data') and e.data is not None and e.data.get('message'):
@@ -202,8 +191,6 @@ def RateLimited(fn):
                         stime = 2*60
                     elif 'Not Found' in msg:
                         logging.info('object not found')
-                        #stime = 0
-                        #success = True
                         return None
                     elif "object has no attribute 'decoded_content'" in msg:
                         # occurs most often when fetching file contents from
@@ -219,11 +206,7 @@ def RateLimited(fn):
                     elif 'The request could not be processed because too many files changed' in msg:
                         stime = 2*60
                     else:
-                        if C.DEFAULT_BREAKPOINTS:
-                            logging.error('breakpoint!')
-                            import epdb; epdb.st()
-                        else:
-                            raise Exception('unhandled message type')
+                        raise Exception('unhandled message type')
                 elif isinstance(e, http.client.IncompleteRead):
                     # https://github.com/ansible/ansibullbot/issues/593
                     stime = 2*60
@@ -235,13 +218,9 @@ def RateLimited(fn):
                     # https://sentry.io/red-hat-ansibullbot/ansibullbot/issues/804854465
                     stime = 2*60
                 else:
-                    if C.DEFAULT_BREAKPOINTS:
-                        logging.error('breakpoint!')
-                        import epdb; epdb.st()
-                    else:
-                        ex_type, ex, tb = sys.exc_info()
-                        traceback.print_tb(tb)
-                        raise
+                    ex_type, ex, tb = sys.exc_info()
+                    traceback.print_tb(tb)
+                    raise
 
                 logging.warning('sleeping %s minutes' % (stime/60))
                 time.sleep(stime)
