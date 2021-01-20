@@ -79,7 +79,7 @@ def main():
     with open(destfile, 'w') as f:
         f.write(json.dumps(BYFILE, indent=2, sort_keys=True))
 
-    tuples = BYFILE.items()
+    tuples = list(BYFILE.items())
     for idx, x in enumerate(tuples):
         x = [x[0]] + x[1]
         tuples[idx] = x
@@ -91,28 +91,27 @@ def main():
         for tup in tuples:
             f.write(b'%s\n' % to_bytes(tup[0]))
             for issue in tup[1:]:
-                issue = to_bytes(issue)
                 title = to_bytes(ISSUES[issue]['title'])
-                f.write(b'\t%s\t%s\n' % (issue, title))
+                f.write(b'\t%s\t%s\n' % (to_bytes(issue), title))
 
     destfile = os.path.join(destdir, 'byfile_sorted.html')
     with open(destfile, 'wb') as f:
         for idp, tup in enumerate(tuples):
             f.write(b'<div style="background-color: #cfc ; padding: 10px; border: 1px solid green;">\n')
-            file_ref = b'%s. <a href="https://github.com/ansible/ansible/blob/devel/%s">https://github.com/ansible/ansible/blob/devel/%s</a> %s total' % (
+            file_ref = b'%d. <a href="https://github.com/ansible/ansible/blob/devel/%s">https://github.com/ansible/ansible/blob/devel/%s</a> %d total' % (
                 (idp+1), to_bytes(tup[0]), to_bytes(tup[0]), len(tup[1:])
             )
             f.write(b'%s\n' % (file_ref))
             f.write(b'</div>')
             f.write(b'<br>\n')
             for issue in tup[1:]:
-                issue = to_bytes(issue)
                 title = to_bytes(ISSUES[issue]['title'])
+                issue = to_bytes(issue)
                 issue_ref = b'<a href="%s">%s</a>' % (issue, issue)
                 f.write(b'\t%s\t%s<br>\n' % (issue_ref, title))
             f.write(b'<br>\n')
 
-    tuples = BYMAINTAINER.items()
+    tuples = list(BYMAINTAINER.items())
     for idx, x in enumerate(tuples):
         x = [x[0]] + x[1]
         tuples[idx] = x
