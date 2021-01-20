@@ -24,10 +24,11 @@ def get_process_data():
         'disk': '0',
     }
     cmd = 'ps aux | fgrep -i triage_ansible.py | egrep ^ansibot'
-    (rc, so, se) = run_command(cmd)
+    (rc, b_so, se) = run_command(cmd)
     if rc != 0:
         return pdata
 
+    so = b_so.decode('utf-8')
     parts = so.split()
     pdata['pid'] = parts[1]
     pdata['cpu'] = parts[2]
@@ -35,7 +36,8 @@ def get_process_data():
 
     # disk used
     cmd = "df -h / | tail -n1 | awk '{print $5}'"
-    (rc, so, se) = run_command(cmd)
+    (rc, b_so, se) = run_command(cmd)
+    so = b_so.decode('utf-8')
     pdata['disk'] = so.strip()
 
     return pdata
