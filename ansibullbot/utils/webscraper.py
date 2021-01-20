@@ -50,7 +50,6 @@ class GithubWebScraper:
                     issues = json.load(f)
             except Exception as e:
                 logging.error(e)
-                issues = {}
                 raise
         return issues
 
@@ -559,7 +558,6 @@ class GithubWebScraper:
                     findex = tparts.index('from')
                     reviewer = tparts[findex+1]
             else:
-                action = None
                 raise Exception('parsing error on %s' % atxt)
 
             reviews['reviews'][rid] = {

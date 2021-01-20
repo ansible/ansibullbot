@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import logging
 import os
 
@@ -7,7 +5,6 @@ from string import Template
 
 import yaml
 
-import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text
 
 

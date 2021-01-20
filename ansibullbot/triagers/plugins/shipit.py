@@ -1,10 +1,6 @@
-#!/usr/bin/env python
-
 import itertools
 import logging
 from fnmatch import fnmatch
-
-import ansibullbot.constants as C
 
 
 def replace_ansible(maintainers, ansible_members, bots=[]):

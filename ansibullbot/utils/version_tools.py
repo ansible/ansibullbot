@@ -9,8 +9,6 @@ from ansibullbot._text_compat import to_text
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
 
-import ansibullbot.constants as C
-
 
 class AnsibleVersionIndexer:
 
