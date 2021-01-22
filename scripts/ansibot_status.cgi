@@ -122,7 +122,9 @@ def get_version_data():
     ansibot_home = pwd.getpwnam('ansibot').pw_dir
     cmd = f'git -C {ansibot_home}/ansibullbot log --format="%H" -1'
 
-    (rc, so, se) = run_command(cmd)
+    (rc, b_so, b_se) = run_command(cmd)
+    so = b_so.decode('utf-8')
+    se = b_se.decode('utf-8')
     if rc == 0 and so:
         commit_hash = so.strip()
         return commit_hash
