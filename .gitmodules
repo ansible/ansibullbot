@@ -1,7 +1,7 @@
 [submodule "playbooks/roles/ansibullbot"]
 	path = playbooks/roles/ansibullbot
 	url = https://github.com/samdoran/ansible-role-ansibullbot.git
-    branch = 2.1.8
+    branch = 2.2.2
 [submodule "playbooks/roles/firewall"]
 	path = playbooks/roles/firewall
 	url = https://github.com/samdoran/ansible-role-firewall.git
