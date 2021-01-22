@@ -146,7 +146,7 @@ def _get_ast_info(content):
     mod_map = ParsedModule()
 
     for node in source.body:
-        if isinstance(node, (ast.Assign, ast.AnnAssign)):
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
             if node.targets[0].id == "DOCUMENTATION":
                 mod_map.doc_string = node.value.value
                 mod_map.ds_line_start = node.lineno
