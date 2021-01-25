@@ -260,8 +260,8 @@ def get_docs_only_facts(iw):
         commit_files = iw.get_commit_files(commit)
         if commit_files is None:
             # "Sorry, this diff is temporarily unavailable due to heavy server load."
-            # Preserve docs_only label to prevent potential waffling
-            dfacts['is_docs_only'] = 'docs_only' in iw.labels
+            # Preserve docsite label to prevent potential waffling
+            dfacts['is_docs_only'] = 'docsite' in iw.labels
             return dfacts
         
         for changed_file in commit_files:
