@@ -170,7 +170,7 @@ class AzurePipelinesCI(BaseCI):
 
     @property
     def artifacts(self):
-        if self._artifacts is None:
+        if self._artifacts is None and self._jobs:
             # FIXME deduplicate code
             if not os.path.isdir(self._cachedir):
                 os.makedirs(self._cachedir)
