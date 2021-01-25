@@ -285,9 +285,9 @@ def get_docs_only_facts(iw):
                     # If a python file, check if the changes are only to
                     # docstrings
                     else:
-                        self.docs_only = _check_py_changes(
+                        docs_only = _check_py_changes(
                                 changed_file.raw_url,
-                                file.patch
+                                changed_file.patch
                         )
 
         if not docs_only:
