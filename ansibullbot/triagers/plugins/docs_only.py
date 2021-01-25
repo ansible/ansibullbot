@@ -217,24 +217,24 @@ def _check_py_changes(raw_url, diff):
         for line in diff:
             # Check if change applies to module DOCUMENTATION (if exists)
             if source.doc_string:
-                if source.ds_line_start < line["lineno"] < source.ds_line_end:
+                if source.ds_line_start <= line["lineno"] <= source.ds_line_end:
                         continue
 
             # Check if change applies to module EXAMPLES (if exists)
             if source.example_string:
-                if source.ex_line_start < line["lineno"] < source.ex_line_end:
+                if source.ex_line_start <= line["lineno"] <= source.ex_line_end:
                     continue
 
             # Find appropriate class if it exists
             source_class = source.find_class(line["lineno"])
             if source_class is not None:
                 if source_class.doc_string:
-                    if source_class.ds_line_start < line["lineno"] < source_class.ds_line_end:
+                    if source_class.ds_line_start <= line["lineno"] <= source_class.ds_line_end:
                         continue
 
                 source_func = source_class.find_function(line["lineno"])
                 if source_func.doc_string:
-                    if source_func.ds_line_start <line["lineno"] < source_func.ds_line_end:
+                    if source_func.ds_line_start <= line["lineno"] <= source_func.ds_line_end:
                         continue
             
             # If we made it this far, this change is outside docs/examples
