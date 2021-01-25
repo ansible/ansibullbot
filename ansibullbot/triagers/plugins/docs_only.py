@@ -1,5 +1,6 @@
 import ast
 import dataclasses
+import logging
 import re
 
 import requests
@@ -140,7 +141,7 @@ def _get_ast_info(content):
     try:
         source = ast.parse(content)
     except Exception as err:
-        print(f"Error parsing module: {err}")
+        logging.error("Error parsing module: %s", err)
         return None
 
     mod_map = ParsedModule()
