@@ -263,7 +263,7 @@ def get_docs_only_facts(iw):
             # Preserve docsite label to prevent potential waffling
             dfacts['is_docs_only'] = 'docsite' in iw.labels
             return dfacts
-        
+
         for changed_file in commit_files:
             if isinstance(changed_file, dict):
                 changed_file = CommitFile(changed_file)
