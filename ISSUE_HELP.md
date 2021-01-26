@@ -171,8 +171,8 @@ Command | Scope | Allowed | Description
 **<a name="cmd-close_me">close_me</a>** | issues | maintainers | If the issue can be closed for a reason you will specify in the comment, use this command.
 **<a name="cmd-ready_for_review">ready_for_review</a>** | pull requests | submitters | If you are finished making commits to your pull request or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
 **<a name="cmd-shipit">shipit</a>** | pull requests | maintainers | If you approve the code in this pull request, use this command to have it merged. Note that Github `Approve` pull request status is ignored. Nonetheless `shipit` in review summary of commented or approved review is taken in account. In place of `shipit`, `+1` and `LGTM` can be used too. Note that these commands must not be surrounded by any character, spaces excepted.
-**<a name="cmd-add-label">+label</a>** | issues pull requests | staff maintainers | Add a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
-**<a name="cmd-remove-label">-label</a>** | issues pull requests | staff maintainers | Remove a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
+**<a name="cmd-add-label">+label</a>** | issues pull requests | staff maintainers | Add a [supported label](#labels). See [When to use label commands](#when-to-use-label-commands).
+**<a name="cmd-remove-label">-label</a>** | issues pull requests | staff maintainers | Remove a [supported label](#labels). See [When to use label commands](#when-to-use-label-commands).
 **<a name="cmd-rebuild_merge">rebuild_merge</a>** | pull requests | staff | Allow core team members to trigger CI, then the pull request is automatically merged if CI results are successful.
 **<a name="cmd-rebuild">/rebuild</a>** | pull requests | anyone | Allows anyone to re-trigger CI.
 **<a name="cmd-rebuild_failed">/rebuild_failed</a>** | pull requests | anyone | Allows anyone to re-trigger CI only on failed jobs [this is usually much faster than /rebuild].
