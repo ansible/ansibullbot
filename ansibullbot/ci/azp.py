@@ -302,7 +302,20 @@ class AzurePipelinesCI(BaseCI):
             )
 
             if not resp:
-                raise Exception("Unable to PATCH %r to %r" % (data, url))
+                data = '{"resources":{"repositories":{"self":{"refName": "refs/pull/%s/head"}}}}' % self._iw.number
+                url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/pipelines/20/runs?api-version=6.0-preview.1'
+                resp = fetch(
+                    url,
+                    verb='post',
+                    headers=HEADERS,
+                    data=data,
+                    timeout=30,
+                    auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
+                )
+                if not resp:
+                    raise Exception("Unable to POST %r to %r" % (data, url))
+                break
+
             check_response(resp)
 
     def rebuild_failed(self, run_id):
