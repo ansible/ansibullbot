@@ -63,19 +63,19 @@ class CommitFile:
 
     @property
     def filename(self):
-        return self.raw_data.get('filename')
+        return self.raw_data.get("filename")
 
     @property
     def status(self):
-        return self.raw_data.get('status')
+        return self.raw_data.get("status")
 
     @property
     def patch(self):
-        return self.raw_data.get('patch')
+        return self.raw_data.get("patch")
 
     @property
     def raw_url(self):
-        return self.raw_data.get('raw_url')
+        return self.raw_data.get("raw_url")
 
 def _is_docs_path(filename):
     """ Determine if affected file is only applicable to the docs/docsite
@@ -193,7 +193,7 @@ def _get_ast_info(content):
                                 func_map.ds_line_start + len(func_doc.splitlines())
                         )
                     class_map.funcs.append(func_map)
-            
+
             mod_map.classes.append(class_map)
 
     return mod_map
@@ -210,7 +210,7 @@ def _check_py_changes(raw_url, diff):
     result = requests.get(raw_url)
     if result.ok:
         content = result.text
-    
+
     if content is not None:
         source = _get_ast_info(content)
 
@@ -237,7 +237,7 @@ def _check_py_changes(raw_url, diff):
                 if source_func.doc_string:
                     if source_func.ds_line_start <= line["lineno"] <= source_func.ds_line_end:
                         continue
-            
+
             # If we made it this far, this change is outside docs/examples
             return False
         else:
@@ -248,7 +248,7 @@ def get_docs_only_facts(iw):
         affect docs-related files/content.
     """
     dfacts = {
-        'is_docs_only': False
+        "is_docs_only": False
     }
 
     if not iw.is_pullrequest():
@@ -261,7 +261,7 @@ def get_docs_only_facts(iw):
         if commit_files is None:
             # "Sorry, this diff is temporarily unavailable due to heavy server load."
             # Preserve docsite label to prevent potential waffling
-            dfacts['is_docs_only'] = 'docsite' in iw.labels
+            dfacts["is_docs_only"] = "docsite" in iw.labels
             return dfacts
 
         for changed_file in commit_files:
@@ -294,5 +294,5 @@ def get_docs_only_facts(iw):
         if not docs_only:
             break
 
-    dfacts['is_docs_only'] = docs_only
+    dfacts["is_docs_only"] = docs_only
     return dfacts
