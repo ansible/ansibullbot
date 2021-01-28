@@ -96,31 +96,7 @@ Once the pull request labeled with [`shipit`](#label-shipit), the module will be
 
 #### Existing Modules
 
-Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/devel/dev_guide/developing_modules_documenting.html#ansible-metadata-block) field per the [metadata proposal](https://github.com/ansible/proposals/issues/30).
-
-:information_source: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes. When other changes are line deletions in `ansible/test/*/*.txt` files, the `supported_by` property isn't ignored.
-
-:information_source: if the pull request has more than one committer, then number of commits must be equal to number of authors and lower than 11.
-
-The possible values of `supported_by` are:
-
-##### core
-
-Members of the Ansible Core Team typically do all the maintenance on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
-
-##### certified
-
-These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once the pull request is labeled with [`shipit`](#label-shipit), the core team will be alerted to review.
-
-##### community
-
-These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the [`shipit`](#cmd-shipit) command to approve the pull request. The bot will wait for the pull request being labeled with [`shipit`](#label-shipit), then automerge.
-
-:information_source: If you are maintainer of the module or maintainer of a module in the same namespace, only one [`shipit`](#cmd-shipit) is required.
-
-##### network
-
-Members of the Ansible Network Team typically do all the maintenance on this module, so only they can approve changes.
+Members of the Ansible Core Team typically do all the maintenance on these modules, so only they can approve changes.
 
 #### Non-module changes
 
