@@ -14,7 +14,7 @@ import ansibullbot.constants as C
 from ansibullbot._text_compat import to_bytes
 from ansibullbot.ci.base import BaseCI
 from ansibullbot.errors import NoCIError
-from ansibullbot.utils.net_tools import fetch, check_response
+from ansibullbot.utils.net_tools import fetch
 from ansibullbot.utils.timetools import strip_time_safely
 
 
@@ -93,7 +93,7 @@ class AzurePipelinesCI(BaseCI):
                 cache_file = os.path.join(self._cachedir, u'timeline_%s.pickle' % self.build_id)
 
                 resp = fetch(TIMELINE_URL_FMT % self.build_id)
-                if resp is None:
+                if resp is not None and resp.status_code == 404:
                     data = None
                     if os.path.isfile(cache_file):
                         logging.info(u'timeline was probably removed, load it from cache')
@@ -189,7 +189,7 @@ class AzurePipelinesCI(BaseCI):
                     logging.info('fetching artifacts: stale, no previous data')
 
                 resp = fetch(ARTIFACTS_URL_FMT % self.build_id)
-                if resp is not None:
+                if resp is not None and resp.status_code != 404:
                     data = [a for a in resp.json()['value'] if a['name'].startswith('Bot')]
                     data = (self.updated_at, data)
 
@@ -219,7 +219,7 @@ class AzurePipelinesCI(BaseCI):
                 logging.info('fetching artifacts: stale, no previous data')
 
             resp = fetch(url, stream=True)
-            if resp is not None:
+            if resp is not None and resp.status_code != 404:
                 with BytesIO() as data:
                     for chunk in resp.iter_content(chunk_size=128):
                         data.write(chunk)
@@ -301,7 +301,7 @@ class AzurePipelinesCI(BaseCI):
                 auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
             )
 
-            if not resp:
+            if resp is not None and resp.status_code == 404:
                 data = '{"resources":{"repositories":{"self":{"refName": "refs/pull/%s/head"}}}}' % self._iw.number
                 url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/pipelines/20/runs?api-version=6.0-preview.1'
                 resp = fetch(
@@ -315,8 +315,6 @@ class AzurePipelinesCI(BaseCI):
                 if not resp:
                     raise Exception("Unable to POST %r to %r" % (data, url))
                 break
-
-            check_response(resp)
 
     def rebuild_failed(self, run_id):
         self.rebuild(run_id, failed_only=True)
@@ -339,7 +337,6 @@ class AzurePipelinesCI(BaseCI):
 
             if not resp:
                 raise Exception("Unable to PATCH %r to %r" % (data, url))
-            check_response(resp)
 
     def cancel_on_branch(self, branch):
         # FIXME cancel() should be enough?
