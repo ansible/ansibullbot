@@ -148,14 +148,20 @@ def _get_ast_info(content):
 
     for node in source.body:
         if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
-            if node.targets[0].id == "DOCUMENTATION":
-                mod_map.doc_string = node.value.value
-                mod_map.ds_line_start = node.lineno
-                mod_map.ds_line_end = node.end_lineno
-            elif node.targets[0].id == "EXAMPLES":
-                mod_map.example_string = node.value.value
-                mod_map.ex_line_start = node.lineno
-                mod_map.ex_line_end = node.end_lineno
+            for target in node.targets:
+                if not isinstance(target, ast.Name):
+                    # ignore unpacked assignments
+                    continue
+                if target.id == "DOCUMENTATION":
+                    mod_map.doc_string = node.value.value
+                    mod_map.ds_line_start = node.lineno
+                    mod_map.ds_line_end = node.end_lineno
+                    break
+                elif target.id == "EXAMPLES":
+                    mod_map.example_string = node.value.value
+                    mod_map.ex_line_start = node.lineno
+                    mod_map.ex_line_end = node.end_lineno
+                    break
         elif isinstance(node, ast.ClassDef):
             class_map = ParsedClass(
                 name=node.name,
