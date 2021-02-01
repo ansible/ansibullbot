@@ -234,7 +234,7 @@ def _check_py_changes(raw_url, diff):
                         continue
 
                 source_func = source_class.find_function(line["lineno"])
-                if source_func.doc_string:
+                if source_func is not None and source_func.doc_string:
                     if source_func.ds_line_start <= line["lineno"] <= source_func.ds_line_end:
                         continue
 
