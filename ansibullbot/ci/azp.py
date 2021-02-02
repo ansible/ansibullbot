@@ -300,10 +300,25 @@ class AzurePipelinesCI(BaseCI):
                 timeout=TIMEOUT,
                 auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
             )
-
             if resp is not None and resp.status_code == 404:
-                data = '{"resources":{"repositories":{"self":{"refName": "refs/pull/%s/head"}}}}' % self._iw.number
-                url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/pipelines/20/runs?api-version=6.0-preview.1'
+                data = '{"definition":{"id":20},"reason":"pullRequest","sourceBranch":"refs/pull/%s/merge","repository":{"type":"github"},"triggerInfo":{"pr.sourceBranch":"%s","pr.sourceSha":"%s","pr.id":"%s","pr.title":"%s","pr.number":"%s","pr.isFork":"%s","pr.draft":"%s","pr.sender.name":"%s","pr.sender.avatarUrl":"%s","pr.providerId":"github","pr.autoCancel":"true"},"parameters":"{\\"system.pullRequest.pullRequestId\\":\\"%s\\",\\"system.pullRequest.pullRequestNumber\\":\\"%s\\",\\"system.pullRequest.mergedAt\\":\\"\\",\\"system.pullRequest.sourceBranch\\":\\"%s\\",\\"system.pullRequest.targetBranch\\":\\"%s\\",\\"system.pullRequest.sourceRepositoryUri\\":\\"https://github.com/ansible/ansible\\",\\"system.pullRequest.sourceCommitId\\":\\"%s\\"}"}' % (
+                        self._iw.number,
+                        self._iw._pr.head.ref,
+                        self._iw._pr.head.sha,
+                        self._iw._pr.id,
+                        self._iw._pr.title,
+                        self._iw._pr.number,
+                        self._iw.from_fork,
+                        self._iw._pr.draft,
+                        self._iw._pr.user.login,
+                        self._iw._pr.user.avatar_url,
+                        self._iw._pr.id,
+                        self._iw._pr.number,
+                        self._iw._pr.head.ref,
+                        self._iw._pr.base.ref,
+                        self._iw._pr.head.sha,)
+
+                url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds?api-version=6.0'
                 resp = fetch(
                     url,
                     verb='post',
