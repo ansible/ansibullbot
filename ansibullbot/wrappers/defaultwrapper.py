@@ -505,6 +505,9 @@ class DefaultWrapper:
             url = 'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
             self._pullrequest_check_runs = []
             for resp_data in self.github.get_request_gen(url):
+                if 'check_runs' not in resp_data:
+                    # FIXME when does this happen?
+                    raise Exception("%s: %s" % (url, resp_data))
                 for check_runs_data in resp_data['check_runs']:
                     self._pullrequest_check_runs.append(check_runs_data)
 
