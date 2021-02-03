@@ -288,8 +288,6 @@ class AzurePipelinesCI(BaseCI):
             stages = [s['identifier'] for s in self.stages]
 
         for stage in stages:
-            if stage == 'Summary':
-                continue
             url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=%s' % (run_id, stage, api_version)
 
             resp = fetch(
