@@ -12,6 +12,7 @@ from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
 from ansibullbot.utils.file_tools import read_gzip_json_file, write_gzip_json_file
+from ansibullbot.utils.net_tools import fetch
 from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
 
@@ -150,8 +151,10 @@ class GithubWrapper:
             'Authorization': 'Bearer %s' % self.token,
         }
 
-        rr = requests.get(url, headers=headers)
-        data = rr.json()
+        resp = fetch(url, headers=headers)
+        if resp is None:
+            raise Exception("Unable to GET %s" % url)
+        data = resp.json()
 
         # handle ratelimits ...
         if isinstance(data, dict) and data.get('message'):
@@ -161,9 +164,13 @@ class GithubWrapper:
         yield data
 
         # pagination
-        while hasattr(rr, 'links') and rr.links and rr.links.get('next'):
-            rr = requests.get(rr.links['next']['url'], headers=headers)
-            data = rr.json()
+        while hasattr(resp, 'links') and resp.links and resp.links.get('next'):
+            url = resp.links['next']['url']
+            resp = fetch(url, headers=headers)
+            if resp is None:
+                raise Exception("Unable to GET %s" % url)
+            data = resp.json()
+
             if isinstance(data, dict) and data.get('message'):
                 if data['message'].lower().startswith('api rate limit exceeded'):
                     raise RateLimitError()
