@@ -92,8 +92,12 @@ class AzurePipelinesCI(BaseCI):
                     os.makedirs(self._cachedir)
                 cache_file = os.path.join(self._cachedir, u'timeline_%s.pickle' % self.build_id)
 
-                resp = fetch(TIMELINE_URL_FMT % self.build_id)
-                if resp is not None and resp.status_code == 404:
+                url = TIMELINE_URL_FMT % self.build_id
+                resp = fetch(url)
+                if resp is None:
+                    raise Exception("Unable to GET %s" % url)
+
+                if resp.status_code == 404:
                     data = None
                     if os.path.isfile(cache_file):
                         logging.info(u'timeline was probably removed, load it from cache')
@@ -188,8 +192,12 @@ class AzurePipelinesCI(BaseCI):
                 else:
                     logging.info('fetching artifacts: stale, no previous data')
 
-                resp = fetch(ARTIFACTS_URL_FMT % self.build_id)
-                if resp is not None and resp.status_code != 404:
+                url = ARTIFACTS_URL_FMT % self.build_id
+                resp = fetch(url)
+                if resp is None:
+                    raise Exception("Unable to GET %s" % url)
+
+                if resp.status_code != 404:
                     data = [a for a in resp.json()['value'] if a['name'].startswith('Bot')]
                     data = (self.updated_at, data)
 
@@ -219,7 +227,10 @@ class AzurePipelinesCI(BaseCI):
                 logging.info('fetching artifacts: stale, no previous data')
 
             resp = fetch(url, stream=True)
-            if resp is not None and resp.status_code != 404:
+            if resp is None:
+                raise Exception("Unable to GET %s" % url)
+
+            if resp.status_code != 404:
                 with BytesIO() as data:
                     for chunk in resp.iter_content(chunk_size=128):
                         data.write(chunk)
