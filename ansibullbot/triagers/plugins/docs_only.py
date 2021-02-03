@@ -77,6 +77,13 @@ class CommitFile:
     def raw_url(self):
         return self.raw_data.get("raw_url")
 
+    @property
+    def file_content(self):
+        if self.raw_url:
+            result = requests.get(self.raw_url)
+            if result.ok:
+                return result.text
+
 def _is_docs_path(filename):
     """ Determine if affected file is only applicable to the docs/docsite
     """
@@ -204,7 +211,7 @@ def _get_ast_info(content):
 
     return mod_map
 
-def _check_py_changes(raw_url, diff):
+def _check_py_changes(file_content, diff):
     """ Check a python file's changes to see if they're only docstring
         changes.
     """
@@ -212,20 +219,15 @@ def _check_py_changes(raw_url, diff):
     diff = _get_diff_info(diff)
     source = None
 
-    content = None
-    result = requests.get(raw_url)
-    if result.ok:
-        content = result.text
-
-    if content is not None:
-        source = _get_ast_info(content)
+    if file_content is not None:
+        source = _get_ast_info(file_content)
 
     if source is not None:
         for line in diff:
             # Check if change applies to module DOCUMENTATION (if exists)
             if source.doc_string:
                 if source.ds_line_start <= line["lineno"] <= source.ds_line_end:
-                        continue
+                    continue
 
             # Check if change applies to module EXAMPLES (if exists)
             if source.example_string:
@@ -293,7 +295,7 @@ def get_docs_only_facts(iw):
                     # docstrings
                     else:
                         docs_only = _check_py_changes(
-                                changed_file.raw_url,
+                                changed_file.file_content,
                                 changed_file.patch
                         )
 
