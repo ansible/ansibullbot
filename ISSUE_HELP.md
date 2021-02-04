@@ -130,7 +130,9 @@ To streamline the maintenance process, we've added some commands to Ansibullbot 
 Command | Scope | Allowed | Description
 --- | --- | --- | ---
 **<a name="cmd-bot_broken">bot_broken</a>** | issues pull requests | anyone | Use this command if you think the bot is misbehaving (not for test failures), and an Ansible staff member will investigate.
+**<a name="cmd-bot_broken">!bot_broken</a>** | issues pull requests | anyone | Clear `bot_broken` command.
 **<a name="cmd-bot_skip">bot_skip</a>** | issues pull requests | staff | Ansible staff members use this to have the bot skip triaging an issue.
+**<a name="cmd-bot_skip">!bot_skip</a>** | issues pull requests | staff | Clear `bot_skip` command.
 **<a name="cmd-bot_status">bot_status</a>** | pull requests | submitters maintainers | Use this command if you would like the bot to comment with some helpful metadata about the issue.
 **<a name="cmd-needs_info">needs_info</a>** | issues pull requests | maintainers past committers | Use this command if you need more information from the submitter. We will notify the submitter and apply the [`needs_info`](#label-needs_info) label.
 **<a name="cmd-!needs_info">!needs_info</a>** | issues pull requests | maintainers past committers | If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the [`needs_info`](#label-needs_info) label will be replaced with [`waiting_on_maintainer`](#label-waiting_on_maintainer).
