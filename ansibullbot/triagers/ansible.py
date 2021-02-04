@@ -742,7 +742,7 @@ class AnsibleTriage(DefaultTriager):
                 bot_broken_commands.append((bot_broken_label, '!bot_broken'))
 
             last_bot_broken = sorted(bot_broken_commands, key=lambda x: x[0])[-1:]
-            if last_bot_broken[-1:] == 'bot_broken':
+            if last_bot_broken and last_bot_broken[0][-1] == 'bot_broken':
                 logging.warning('bot broken!')
                 if 'bot_broken' not in iw.labels:
                     actions.newlabel.append('bot_broken')
@@ -752,8 +752,20 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('bot_broken')
 
             if 'bot_skip' in self.meta['maintainer_commands'] or \
-                    'bot_skip' in self.meta['submitter_commands']:
-                return
+                    'bot_skip' in self.meta['submitter_commands'] or \
+                    '!bot_skip' in self.meta['maintainer_commands'] or \
+                    '!bot_skip' in self.meta['submitter_commands']:
+                bot_skip_users = [x.login for x in iw.repo.assignees]
+                bot_skip_users.append(iw.submitter)
+                bot_skip_commands = iw.history.get_commands(
+                        bot_skip_users,
+                        ['bot_skip', '!bot_skip'],
+                        timestamps=True
+                )
+                last_bot_skip = sorted(bot_skip_commands, key=lambda x: x[0])[-1:]
+                if last_bot_skip and last_bot_skip[0][-1] == 'bot_skip':
+                    logging.warning('bot skip!')
+                    return
 
         if iw.is_pullrequest():
             if not iw.incoming_repo_exists and C.features.is_enabled('close_missing_ref_prs'):
