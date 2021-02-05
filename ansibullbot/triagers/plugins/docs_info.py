@@ -251,7 +251,7 @@ def _check_py_changes(file_content, diff):
         else:
             return True
 
-def get_docs_only_facts(iw):
+def get_docs_facts(iw):
     """ Cycle through the files and triage if changes only
         affect docs-related files/content.
     """
