@@ -248,8 +248,8 @@ def _check_py_changes(file_content, diff):
 
             # If we made it this far, this change is outside docs/examples
             return False
-        else:
-            return True
+
+        return True
 
 def get_docs_facts(iw):
     """ Cycle through the files and triage if changes only
