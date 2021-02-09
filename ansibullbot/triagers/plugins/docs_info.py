@@ -262,7 +262,7 @@ def get_docs_facts(iw):
     if not iw.is_pullrequest():
         return dfacts
 
-    docs_only = True
+    docs_only = False
 
     for commit in iw.commits:
         commit_files = iw.get_commit_files(commit)
@@ -277,6 +277,7 @@ def get_docs_facts(iw):
                 changed_file = CommitFile(changed_file)
 
             if _is_docs_path(changed_file.filename):
+                docs_only = True
                 continue
             else:
                 # Additions or deletions of complete files outside of
