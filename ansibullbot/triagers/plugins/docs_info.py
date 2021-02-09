@@ -286,19 +286,18 @@ def get_docs_facts(iw):
                 if changed_file.status != "modified":
                     docs_only = False
                     break
-                else:
-                    # Non-Python files that are outside of the docsite
-                    # folder will not be documentation related
-                    if not changed_file.filename.endswith(".py"):
-                        docs_only = False
-                        break
-                    # If a python file, check if the changes are only to
-                    # docstrings
-                    else:
-                        docs_only = _check_py_changes(
-                                changed_file.file_content,
-                                changed_file.patch
-                        )
+
+                # Non-Python files that are outside of the docsite
+                # folder will not be documentation related
+                if not changed_file.filename.endswith(".py"):
+                    docs_only = False
+                    break
+                # If a python file, check if the changes are only to
+                # docstrings
+                docs_only = _check_py_changes(
+                        changed_file.file_content,
+                        changed_file.patch
+                )
 
         if not docs_only:
             break
