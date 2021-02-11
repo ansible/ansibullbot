@@ -16,7 +16,6 @@ from ansibullbot._text_compat import to_text
 from ansibullbot.parsers.botmetadata import BotYAMLLoader
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
-from ansibullbot.utils.webscraper import GithubWebScraper
 
 
 Base = declarative_base()
@@ -73,7 +72,6 @@ class ModuleIndexer:
         self.maintainers = maintainers or {}
         self.gqlc = gh_client
         self.scraper_cache = os.path.expanduser(os.path.join(cachedir, 'ansible.modules.scraper'))
-        self.gws = GithubWebScraper(cachedir=self.scraper_cache)
         self.gitrepo = gitrepo
 
         self.modules = {}  # keys: paths of files belonging to the repository
