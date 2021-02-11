@@ -55,7 +55,6 @@ from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.receiver_client import post_to_receiver
-from ansibullbot.utils.webscraper import GithubWebScraper
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 
 from ansibullbot.decorators.github import RateLimited
@@ -251,20 +250,11 @@ class AnsibleTriage(DefaultTriager):
         # scraped summaries for all issues
         self.issue_summaries = {}
 
-        # create the scraper for www data
-        logging.info('creating webscraper')
-        self.gws = GithubWebScraper(
-            cachedir=self.cachedir_base,
+        logging.info('creating graphql client')
+        self.gqlc = GithubGraphQLClient(
+            C.DEFAULT_GITHUB_TOKEN,
             server=C.DEFAULT_GITHUB_URL
         )
-        if C.DEFAULT_GITHUB_TOKEN:
-            logging.info('creating graphql client')
-            self.gqlc = GithubGraphQLClient(
-                C.DEFAULT_GITHUB_TOKEN,
-                server=C.DEFAULT_GITHUB_URL
-            )
-        else:
-            self.gqlc = None
 
         # clone ansible/ansible
         logging.info('creating gitrepowrapper')
@@ -610,34 +600,19 @@ class AnsibleTriage(DefaultTriager):
             repopaths = [x for x in REPOS]
 
         for rp in repopaths:
-            if self.gqlc:
-                if issuenums and len(issuenums) <= 10:
-                    self.issue_summaries[repopath] = {}
+            if issuenums and len(issuenums) <= 10:
+                self.issue_summaries[repopath] = {}
 
-                    for num in issuenums:
-                        # --pr is an alias to --id and can also be for issues
-                        node = self.gqlc.get_summary(rp, 'pullRequest', num)
-                        if node is None:
-                            node = self.gqlc.get_summary(rp, 'issue', num)
-                        if node is not None:
-                            self.issue_summaries[repopath][to_text(num)] = node
-
-                else:
-                    self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
+                for num in issuenums:
+                    # --pr is an alias to --id and can also be for issues
+                    node = self.gqlc.get_summary(rp, 'pullRequest', num)
+                    if node is None:
+                        node = self.gqlc.get_summary(rp, 'issue', num)
+                    if node is not None:
+                        self.issue_summaries[repopath][to_text(num)] = node
             else:
-                # scrape all summaries rom www for later opchecking
+                self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
 
-                if self.pr:
-                    logging.warning("'pr' switch is used by but Github authentication token isn't set: all pull-requests will be scrapped")
-
-                cachefile = os.path.join(
-                    self.cachedir_base, rp,
-                    '%s__scraped_issues.json' % rp
-                )
-                self.issue_summaries[repopath] = self.gws.get_issue_summaries(
-                    'https://github.com/%s' % rp,
-                    cachefile=cachefile
-                )
 
     def save_meta(self, issuewrapper, meta, actions):
         # save the meta+actions

@@ -15,7 +15,6 @@ from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.utils.moduletools import ModuleIndexer
-#from ansibullbot.utils.webscraper import GithubWebScraper
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 
 from pprint import pprint
@@ -25,10 +24,6 @@ LABELS = []
 CACHEDIR = os.path.expanduser('~/.ansibullbot/cache')
 FIXTUREDIR = 'tests/fixtures/component_data'
 MATCH_MAP = {}
-
-#METADIR = '/home/jtanner/workspace/scratch/metafiles'
-#METAFILES = glob.glob('{}/*.json'.format(METADIR))
-#METAFILES = sorted(set(METAFILES))
 
 METATAR = 'tests/fixtures/issuemeta/metafiles-2017-11-02.tar.gz'
 
@@ -149,7 +144,6 @@ def main():
     with open('/tmp/files.json', 'wb') as f:
         f.write(json.dumps(FI.files, indent=2))
     GQLC = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
-    #GWS = GithubWebScraper(cachedir=CACHEDIR)
     MI = ModuleIndexer(cachedir=CACHEDIR, gh_client=GQLC, blames=False, commits=False)
 
     CM = AnsibleComponentMatcher(cachedir=CACHEDIR)
