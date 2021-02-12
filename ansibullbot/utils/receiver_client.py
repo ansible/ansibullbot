@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import logging
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_text

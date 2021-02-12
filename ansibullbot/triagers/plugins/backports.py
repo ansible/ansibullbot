@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
-
 def get_backport_facts(issuewrapper, meta):
     # https://github.com/ansible/ansibullbot/issues/367
-
     iw = issuewrapper
 
     bfacts = {

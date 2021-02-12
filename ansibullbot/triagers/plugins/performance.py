@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-
 def get_performance_facts(issuewrapper, meta):
     iw = issuewrapper
 

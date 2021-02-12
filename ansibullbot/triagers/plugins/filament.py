@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-
 def get_filament_facts(issuewrapper, meta):
     # https://github.com/ansible/ansible/pull/26921
 

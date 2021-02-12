@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import unittest
 
 from ansibullbot.triagers.plugins.needs_contributor import get_needs_contributor_facts

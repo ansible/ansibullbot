@@ -1,8 +1,4 @@
-#!/usr/bin/env python
-
-
 def get_label_command_facts(issuewrapper, meta, all_maintainers, core_team=[], valid_labels=[]):
-
     iw = issuewrapper
     add_labels = []
     del_labels = []
@@ -97,7 +93,6 @@ def get_label_command_facts(issuewrapper, meta, all_maintainers, core_team=[], v
 
 
 def get_waffling_overrides(issuewrapper, meta, all_maintainers, core_team=[], valid_labels=[]):
-
     iw = issuewrapper
     overrides = []
 

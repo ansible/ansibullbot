@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import logging
 import re
 
@@ -149,7 +147,6 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
     if [x for x in CM_MATCHES if x['repo_filename'].startswith('collection:')]:
         cmeta['is_collection'] = True
         cmeta['component_collection'] = []
-        #cmeta[u'component_support'] = [u'community']
         for comp in [x for x in CM_MATCHES if x['repo_filename'].startswith('collection:')]:
             fqcn = x['repo_filename'].split(':')[1]
             cmeta['component_collection'].append(fqcn)

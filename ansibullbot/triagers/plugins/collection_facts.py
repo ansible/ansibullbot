@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-
 import copy
 import json
 import os
 
 
 def get_collection_facts(iw, component_matcher, meta):
-
     # Skip redirection of backports or <2.10 issues ...
     is_backport = False
     if isinstance(meta.get('is_backport'), bool):
