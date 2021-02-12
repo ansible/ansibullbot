@@ -69,7 +69,7 @@ class AzurePipelinesCI(BaseCI):
         if self._build_id is None:
             build_ids = set()
             for check_run in self._iw.pullrequest_check_runs:
-                match = re.match(DETAILS_URL_RE, check_run['details_url'])
+                match = re.match(DETAILS_URL_RE, check_run.details_url)
                 if not match:
                     continue
                 org, project, buildid = match.groups()

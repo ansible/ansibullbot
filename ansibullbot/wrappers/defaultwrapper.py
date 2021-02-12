@@ -501,13 +501,8 @@ class DefaultWrapper:
     @RateLimited
     def pullrequest_check_runs(self):
         if self._pullrequest_check_runs is None:
-            logging.info('fetching pull request check runs: stale, no previous data')
-            url = 'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
-            self._pullrequest_check_runs = []
-            for resp_data in self.github.get_request_gen(url):
-                for check_runs_data in resp_data['check_runs']:
-                    self._pullrequest_check_runs.append(check_runs_data)
-
+            logging.info('fetching pull request check runs')
+            self._pullrequest_check_runs = self.commits[-1].get_check_runs()
         return self._pullrequest_check_runs
 
     @property
