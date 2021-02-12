@@ -12,7 +12,6 @@ from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
 from ansibullbot.utils.file_tools import read_gzip_json_file, write_gzip_json_file
-from ansibullbot.utils.net_tools import fetch
 from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
 
@@ -56,9 +55,7 @@ class GithubWrapper:
 
     @RateLimited
     def get_cached_request(self, url):
-
         '''Use a combination of sqlite and ondisk caching to GET an api resource'''
-
         url_parts = url.split('/')
 
         cdf = os.path.join(self.cached_requests_dir, url.replace('https://', '') + '.json.gz')
@@ -79,7 +76,7 @@ class GithubWrapper:
         if meta is None:
             meta = {}
 
-        # https://developer.github.com/v3/#conditional-requests        
+        # https://developer.github.com/v3/#conditional-requests
         etag = meta.get('etag')
         if etag and os.path.exists(cdf):
             headers['If-None-Match'] = etag
@@ -143,40 +140,6 @@ class GithubWrapper:
         return data
 
     @RateLimited
-    def get_request_gen(self, url):
-        '''Get an arbitrary API endpoint'''
-        # FIXME merge with get_request()
-        headers = {
-            'Accept': ','.join(self.accepts_headers),
-            'Authorization': 'Bearer %s' % self.token,
-        }
-
-        resp = fetch(url, headers=headers)
-        if resp is None:
-            raise Exception("Unable to GET %s" % url)
-        data = resp.json()
-
-        # handle ratelimits ...
-        if isinstance(data, dict) and data.get('message'):
-            if data['message'].lower().startswith('api rate limit exceeded'):
-                raise RateLimitError()
-
-        yield data
-
-        # pagination
-        while hasattr(resp, 'links') and resp.links and resp.links.get('next'):
-            url = resp.links['next']['url']
-            resp = fetch(url, headers=headers)
-            if resp is None:
-                raise Exception("Unable to GET %s" % url)
-            data = resp.json()
-
-            if isinstance(data, dict) and data.get('message'):
-                if data['message'].lower().startswith('api rate limit exceeded'):
-                    raise RateLimitError()
-            yield data
-
-    @RateLimited
     def delete_request(self, url):
         headers = {
             'Accept': ','.join(self.accepts_headers),
@@ -185,7 +148,6 @@ class GithubWrapper:
 
         rr = requests.delete(url, headers=headers)
         return rr.ok
-
 
 
 class RepoWrapper:
