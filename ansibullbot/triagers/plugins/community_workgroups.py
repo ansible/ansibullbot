@@ -1,10 +1,5 @@
-#!/usr/bin/env python
-
-
 def get_community_workgroup_facts(issuewrapper, meta):
-
     # https://github.com/ansible/ansibullbot/issues/820
-
     # https://github.com/ansible/community#groups-we-help
     WORKING_GROUPS = {
         'cloud/amazon': 'aws',

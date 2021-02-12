@@ -199,7 +199,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
                         )
                         continue
                     if 'shipit' in event['body'].lower():
-                        #ready_for_review = True
                         if ready_for_review is None or event['created_at'] > ready_for_review:
                             ready_for_review = event['created_at']
                         needs_revision = False

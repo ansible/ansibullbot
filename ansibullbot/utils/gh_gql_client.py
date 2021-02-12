@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # https://developer.github.com/v4/explorer/
 # https://developer.github.com/v4/guides/forming-calls/
 

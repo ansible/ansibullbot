@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # This is a triager for the combined repos that should have happend
 # in the 12-2016 timeframe.
 #   https://groups.google.com/forum/#!topic/ansible-devel/mIxqxXRsmCI
@@ -1346,14 +1344,6 @@ class AnsibleTriage(DefaultTriager):
                         needs_maintainer = True
                         break
                 if needs_maintainer:
-                    # 'ansible' is cleared from the primary key, so we need
-                    # to check the original copy before deciding this isn't
-                    # being maintained.
-
-                    #if not self.meta['module_match'].get('_maintainers'):
-                    #    if 'needs_maintainer' not in iw.labels:
-                    #        actions.newlabel.append('needs_maintainer')
-
                     if 'needs_maintainer' not in iw.labels:
                         actions.newlabel.append('needs_maintainer')
                 else:

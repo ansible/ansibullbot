@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-
 def get_cross_reference_facts(issuewrapper, meta):
 
     iw = issuewrapper
