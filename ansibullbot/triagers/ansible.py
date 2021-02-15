@@ -1923,7 +1923,7 @@ class AnsibleTriage(DefaultTriager):
         # shipit?
         self.meta.update(
             get_shipit_facts(
-                iw, self.meta, self.module_indexer.botmeta['files'],
+                iw, self.meta, self.botmeta['files'],
                 core_team=self.ansible_core_team, botnames=self.BOTNAMES
             )
         )
