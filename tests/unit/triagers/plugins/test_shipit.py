@@ -3,6 +3,8 @@ import shutil
 import tempfile
 import unittest
 
+from collections import namedtuple
+
 import pytest
 
 from tests.utils.issue_mock import IssueMock
@@ -98,6 +100,9 @@ class MockFile:
 class MockRepo:
     def __init__(self, repo_path):
         self.repo_path = repo_path
+
+    def get_pullrequest(self, issueid):
+        return namedtuple('PullRequest', ['draft'])(draft=False)
 
 
 class GithubWrapperMock:
