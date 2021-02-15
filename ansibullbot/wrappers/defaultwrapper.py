@@ -797,11 +797,11 @@ class DefaultWrapper:
 
     @property
     def wip(self):
-        if self.title.startswith('WIP'):
-            return True
-        elif '[WIP]' in self.title:
-            return True
-        return False
+        return (
+            self.title.startswith('WIP') or
+            '[WIP]' in self.title or
+            (self.is_pullrequest() and self.pullrequest.draft)
+        )
 
     @property
     def incoming_repo_exists(self):
