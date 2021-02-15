@@ -344,6 +344,24 @@ class AnsibleComponentMatcher:
                     'name': mn
                 }
 
+        # pre collections modules
+        pre_coll_modules = [
+            x for x in self.gitrepo.list_files_by_branch('origin/stable-2.9')
+            if x.startswith('lib/ansible/modules') and '__init__' not in x and
+                (x.endswith('.py') or x.endswith('.ps1'))
+        ]
+        for module in pre_coll_modules:
+            mn = os.path.basename(module).replace('.py', '').replace('.ps1', '')
+            mn = mn.lstrip('_')
+            if mn not in self.MODULE_NAMES:
+                self.MODULE_NAMES.append(mn)
+            if module not in self.MODULES:
+                self.MODULES[module] = {
+                    'filename': module,
+                    'repo_filename': module,
+                    'name': mn
+                }
+
         # make a list of names by calling ansible-doc
         checkoutdir = self.gitrepo.checkoutdir
         checkoutdir = os.path.abspath(checkoutdir)
