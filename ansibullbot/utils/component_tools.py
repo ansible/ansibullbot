@@ -362,40 +362,7 @@ class AnsibleComponentMatcher:
                     'name': mn
                 }
 
-        # make a list of names by calling ansible-doc
-        checkoutdir = self.gitrepo.checkoutdir
-        checkoutdir = os.path.abspath(checkoutdir)
-        cmd = f'. {checkoutdir}/hacking/env-setup; ansible-doc -t module -F'
-        logging.debug(cmd)
-        (rc, so, se) = run_command(cmd, cwd=checkoutdir)
-        if rc != 0:
-            raise Exception("'ansible-doc' command failed (%s, %s %s)" % (rc, so, se))
-        lines = to_text(so).split('\n')
-        for line in lines:
-
-            # compat for macos tmpdirs
-            if ' /private' in line:
-                line = line.replace(' /private', '', 1)
-
-            parts = line.split()
-            parts = [x.strip() for x in parts]
-
-            if len(parts) != 2 or checkoutdir not in line:
-                continue
-
-            mname = parts[0]
-            if mname not in self.MODULE_NAMES:
-                self.MODULE_NAMES.append(mname)
-
-            fpath = parts[1]
-            fpath = fpath.replace(checkoutdir + '/', '')
-
-            if fpath not in self.MODULES:
-                self.MODULES[fpath] = {
-                    'name': mname,
-                    'repo_filename': fpath,
-                    'filename': fpath
-                }
+        checkoutdir = os.path.abspath(self.gitrepo.checkoutdir)
 
         _modules = self.MODULES.copy()
         for k, v in _modules.items():
