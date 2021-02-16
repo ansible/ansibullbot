@@ -11,10 +11,8 @@ from Levenshtein import jaro_winkler
 
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.extractors import ModuleExtractor
-from ansibullbot.utils.git_tools import GitRepoWrapper
-from ansibullbot.utils.systemtools import run_command
-
 from ansibullbot.utils.galaxy import GalaxyQueryTool
+from ansibullbot.utils.git_tools import GitRepoWrapper
 
 
 MODULES_FLATTEN_MAP = {
