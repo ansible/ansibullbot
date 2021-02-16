@@ -1,0 +1,47 @@
+html_url: https://github.com/ansible/ansible/pull/21313
+number: 21313
+github_repo: ansible
+submitter: sommersoft
+created_at: 2016-02-18T17:37:01Z
+title: Test
+body: |
+    test docs_info
+events:
+    - event: committed
+      created_at: 2017-12-10T17:24:02Z
+      id: 1
+      actor:
+        login: sommersoft
+      files:
+        - filename: lib/ansible/foo.py
+          status: modified
+          patch: |
+            @@ -1,5 +1,6 @@
+            DOCUMENTATION = '''
+            This is the documentation.
+            +Enjoy!
+            '''
+
+            class Bar:
+
+          file_content: |
+            DOCUMENTATION = '''
+            This is the documentation.
+            Enjoy!
+            '''
+
+            EXAMPLES = '''
+            - example1:
+              foo: bar
+            - example2:
+              foo: bar.baz
+            '''
+
+            class Bar:
+                ''' This is Bar class' documentation '''
+
+                def baz(self):
+                    ''' This is Bar.baz's documentation '''
+
+                    return False
+            

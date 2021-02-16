@@ -1,0 +1,23 @@
+html_url: https://github.com/ansible/ansible/pull/21313
+number: 21313
+github_repo: ansible
+submitter: sommersoft
+created_at: 2016-02-18T17:37:01Z
+title: Test
+body: |
+    test docs_info
+events:
+    - event: committed
+      created_at: 2017-12-10T17:24:02Z
+      id: 1
+      actor:
+        login: sommersoft
+      files:
+        - filename: hacks/fail_me.txt
+          status: modified
+          patch: |
+            @@ -1,1 +1,1 @@
+            +please fail
+          file_content: |
+            please fail
+
