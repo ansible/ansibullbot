@@ -20,6 +20,14 @@ class CommitMock:
     commit = CommitBottomMock()
     committer = commit.committer
     sha = None
+    files = None
+
+
+class CommitFileMock:
+    filename = ""
+    status = ""
+    patch = ""
+    file_content = ""
 
 
 class LabelMock:
@@ -49,8 +57,22 @@ class IssueMock:
             commit = CommitMock()
             commit.commit.committer.date = x['created_at']
             commit.commit.committer.login = x['actor']['login']
+            for file in x['files']:
+                cfile = CommitFileMock()
+                cfile.filename = file['filename']
+                cfile.status = file['status']
+                cfile.patch = file['patch']
+                cfile.file_content = file['file_content']
+                if isinstance(commit, list):
+                    commit.files.append(cfile)
+                else:
+                    commit.files = [cfile]
+
             self._commits.append(commit)
         return self._commits
+
+    def get_commit_files(self, commit):
+        return commit.files
 
     @property
     def comments(self):
@@ -148,3 +170,6 @@ class IssueMock:
     def get_commits(self):
         self.calls.append('get_commits')
         return self.commits
+
+    def is_pullrequest(self):
+        return 'pull' in self.html_url
