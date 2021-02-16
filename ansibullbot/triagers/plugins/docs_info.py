@@ -6,7 +6,7 @@ import re
 import requests
 
 RE_DOCS_PATTERNS = [
-    r"^docs/docsite/.*",
+    r"^docs/.*",
     r"^examples/.*",
 ]
 
