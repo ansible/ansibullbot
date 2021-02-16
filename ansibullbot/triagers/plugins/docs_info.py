@@ -34,8 +34,7 @@ class ParsedClass():
     funcs: list = dataclasses.field(default_factory=list)
 
     def find_function(self, lineno):
-        """ Returns a function that contains the given line number ``lineno``.
-        """
+        """ Returns a function that contains the given line number ``lineno``. """
         for item in self.funcs:
             if item.line_start <= lineno <= item.line_end:
                 return item
@@ -51,8 +50,7 @@ class ParsedModule():
     classes: list = dataclasses.field(default_factory=list)
 
     def find_class(self, lineno):
-        """ Returns a class that contains the given line number ``lineno``.
-        """
+        """ Returns a class that contains the given line number ``lineno``. """
         for item in self.classes:
             if item.line_start <= lineno <= item.line_end:
                 return item
@@ -85,16 +83,14 @@ class CommitFile:
                 return result.text
 
 def _is_docs_path(filename):
-    """ Determine if affected file is only applicable to the docs/docsite
-    """
+    """ Determine if affected file is only applicable to documentation directories """
     for pattern in RE_DOCS_PATTERNS:
         if re.search(pattern, filename):
             return True
     return False
 
 def _get_diff_info(diff_text):
-    """ Gather info from the diff to make searching the file's AST easier.
-    """
+    """ Gather info from the diff to make searching the file's AST easier. """
     diff_lines = diff_text.splitlines()
     a_lines = [line for line in diff_lines if not line.startswith("+")]
     b_lines = [line for line in diff_lines if not line.startswith("-")]
