@@ -57,7 +57,7 @@ class IssueMock:
             commit = CommitMock()
             commit.commit.committer.date = x['created_at']
             commit.commit.committer.login = x['actor']['login']
-            for file in x['files']:
+            for file in x.get('files', []):
                 cfile = CommitFileMock()
                 cfile.filename = file['filename']
                 cfile.status = file['status']
