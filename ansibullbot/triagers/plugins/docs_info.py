@@ -1,5 +1,6 @@
 import ast
 import dataclasses
+from itertools import filterfalse
 import logging
 import re
 
@@ -247,10 +248,36 @@ def _check_py_changes(file_content, diff):
 
         return True
 
+def _is_docs_only(changed_file):
+    """ Check if the changes made to ``changed_file`` affect only documentation. """
+    docs_only = False
+
+    if isinstance(changed_file, dict):
+        changed_file = CommitFile(changed_file)
+
+    if _is_docs_path(changed_file.filename):
+        docs_only = True
+    else:
+        # Additions or deletions of complete files outside of
+        # docsite/examples will likely be more than documentation
+        # changes
+        if changed_file.status != "modified":
+            docs_only = False
+        else:
+            # Non-Python files that are outside of the docsite
+            # folder will not be documentation related
+            if not changed_file.filename.endswith(".py"):
+                docs_only = False
+            else:
+                # If a python file, check if the changes are only to
+                # docstrings
+                if _check_py_changes(changed_file.file_content, changed_file.patch):
+                    docs_only = True
+
+    return docs_only
+
 def get_docs_facts(iw):
-    """ Cycle through the files and triage if changes only
-        affect docs-related files/content.
-    """
+    """ Cycle through the files and gather facts about documentation changes. """
     dfacts = {
         "is_docs_only": False
     }
@@ -268,35 +295,12 @@ def get_docs_facts(iw):
             dfacts["is_docs_only"] = "docsite" in iw.labels
             return dfacts
 
-        for changed_file in commit_files:
-            if isinstance(changed_file, dict):
-                changed_file = CommitFile(changed_file)
-
-            if _is_docs_path(changed_file.filename):
-                docs_only = True
-                continue
-            else:
-                # Additions or deletions of complete files outside of
-                # docsite/examples will likely be more than documentation
-                # changes
-                if changed_file.status != "modified":
-                    docs_only = False
-                    break
-
-                # Non-Python files that are outside of the docsite
-                # folder will not be documentation related
-                if not changed_file.filename.endswith(".py"):
-                    docs_only = False
-                    break
-                # If a python file, check if the changes are only to
-                # docstrings
-                docs_only = _check_py_changes(
-                        changed_file.file_content,
-                        changed_file.patch
-                )
-
-        if not docs_only:
+        has_non_docs_changes = any(filterfalse(_is_docs_only, commit_files))
+        if has_non_docs_changes:
+            docs_only = False
             break
+        else:
+            docs_only = True
 
     dfacts["is_docs_only"] = docs_only
     return dfacts
