@@ -5,34 +5,34 @@ from tests.utils.issue_mock import IssueMock
 
 datafiles = (
     {
-        'id': 'docs/docsite/ changes',
+        'id': 'docs_only: docs/docsite/ changes',
         'path': 'tests/fixtures/docs_info/0_issue.yml',
-        'expected_result': True
+        'expected_result': {'is_docs_only': True}
     },
     {
-        'id': '.py changes: DOCUMENTATION',
+        'id': 'docs_only: .py changes - DOCUMENTATION',
         'path': 'tests/fixtures/docs_info/1_issue.yml',
-        'expected_result': True
+        'expected_result': {'is_docs_only': True}
     },
     {
-        'id': '.py changes: EXAMPLES',
+        'id': 'docs_only: .py changes - EXAMPLES',
         'path': 'tests/fixtures/docs_info/4_issue.yml',
-        'expected_result': True
+        'expected_result': {'is_docs_only': True}
     },
     {
-        'id': 'multiple changes: DOCUMENTATION & docs/docsite',
+        'id': 'docs_only: multiple changes - DOCUMENTATION & docs/docsite',
         'path': 'tests/fixtures/docs_info/5_issue.yml',
-        'expected_result': True
+        'expected_result': {'is_docs_only': True}
     },
     {
-        'id': '.py changes: non-doc/examples',
+        'id': 'docs_only: .py changes - non-doc/examples',
         'path': 'tests/fixtures/docs_info/2_issue.yml',
-        'expected_result': False
+        'expected_result': {'is_docs_only': False}
     },
     {
-        'id': 'non-doc non-.py changes',
+        'id': 'docs_only: non-doc/.py changes',
         'path': 'tests/fixtures/docs_info/3_issue.yml',
-        'expected_result': False
+        'expected_result': {'is_docs_only': False}
     },
 )
 
@@ -52,4 +52,5 @@ def test_docs_facts(iw_fixture):
     expects = iw_fixture['expects']
 
     facts = get_docs_facts(iw)
-    assert facts['is_docs_only'] == expects
+    for key, val in expects.items():
+        assert facts[key] == val
