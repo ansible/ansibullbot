@@ -1286,10 +1286,10 @@ class AnsibleTriage(DefaultTriager):
                 if label_name in iw.labels:
                     actions.unlabel.append(label_name)
 
-        # docsite?
+        # docs_only?
         # https://github.com/ansible/ansibullbot/issues/1047
         if iw.is_pullrequest():
-            label_name = 'docsite'
+            label_name = 'docs_only'
             if self.meta['is_docs_only']:
                 if label_name not in iw.labels:
                     actions.newlabel.append(label_name)
