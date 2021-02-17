@@ -443,9 +443,9 @@ class AnsibleComponentMatcher:
                     delimited = True
                     components = component.split(delimiter)
                     for _component in components:
-                        if len(component.split('.')) == 3:
+                        if len(_component.split('.')) == 3:
                             # fqcn
-                            matched_filenames += self._match_component(title, body, component.split('.')[-1])
+                            matched_filenames += self._match_component(title, body, _component.split('.')[-1])
                         _matches = self._match_component(title, body, _component)
                         self.strategies.append(self.strategy)
 
