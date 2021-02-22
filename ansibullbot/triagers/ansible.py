@@ -1539,6 +1539,19 @@ class AnsibleTriage(DefaultTriager):
                 logging.error(msg)
                 raise LabelWafflingError(msg)
 
+    def post_actions_to_receiver(self, iw, actions):
+        data = {}
+        for name, value in vars(actions).items():
+            if not value:
+                continue
+            data[name] = value
+        namespace, reponame = iw.repo_full_name.split('/', 1)
+        post_to_receiver(
+            'actions',
+            {'user': namespace, 'repo': reponame, 'number': iw.number},
+            data,
+        )
+
     def apply_actions(self, iw, actions):
         if self.safe_force:
             self.check_safe_match(iw, actions)
@@ -2280,6 +2293,8 @@ class AnsibleTriage(DefaultTriager):
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
+
+        self.post_actions_to_receiver(iw, actions)
 
         super().execute_actions(iw, actions)
 

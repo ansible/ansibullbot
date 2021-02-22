@@ -1,16 +1,17 @@
-#!/opt/anaconda2/bin/python
+#!/usr/bin/env python
 
 # $ curl -v -X POST --header "Content-Type: application/json" -d@summaries.json 'http://localhost:5001/summaries?user=ansible&repo=ansible'
 
+import datetime
 import glob
 import gzip
 import json
 
+from bson.json_util import dumps
 from flask import Flask
 from flask import jsonify
 from flask import request
 from flask_pymongo import PyMongo
-from pprint import pprint
 from werkzeug.exceptions import BadRequest
 
 app = Flask(__name__)
@@ -52,9 +53,57 @@ def get_summary_numbers_with_state_for_repo(org, repo, collection_name=None):
     return res
 
 
+@app.route('/actions', methods=['POST'])
+def store_action():
+    username = request.args.get('user')
+    reponame = request.args.get('repo')
+    number = request.args.get('number')
+
+    if not username or not reponame or not number:
+        raise BadRequest('user and repo and number must be supplied as parameters')
+
+    content = request.get_json()
+    data = content.copy()
+    data['github_org'] = username
+    data['github_repo'] = reponame
+    data['github_number'] = int(number)
+    data['datetime'] = datetime.datetime.utcnow()
+
+    mongo.db.actions.insert_one(data)
+
+    return jsonify({'result': 'ok'})
+
+
+@app.route('/actions', methods=['GET'])
+def list_actions():
+    username = request.args.get('user')
+    reponame = request.args.get('repo')
+
+    if not username or not reponame:
+        raise BadRequest('user and repo must be supplied as parameters')
+
+    query = {'github_org': username, 'github_repo': reponame}
+
+    number = request.args.get('number')
+    if number:
+        query['github_number'] = int(number)
+
+    start = request.args.get('start')
+    end = request.args.get('end')
+    if start or end:
+        query['datetime'] = {}
+    if start:
+        query['datetime']['$gte'] = datetime.datetime.fromisoformat(start)
+    if end:
+        query['datetime']['$lte'] = datetime.datetime.fromisoformat(end)
+
+    res = mongo.db.actions.find(query)
+
+    return dumps(res)
+
+
 @app.route('/dedupe', methods=['GET'])
 def dedupe_summaries():
-
     # summaries
     cursor = mongo.db.summaries.find()
     results = list(cursor)
@@ -140,7 +189,7 @@ def metadata():
 
         docs = list(cursor)
         docs = [dict(x) for x in docs]
-        for idx,x in enumerate(docs):
+        for idx, x in enumerate(docs):
             x.pop('_id', None)
             docs[idx] = x
         return jsonify(docs)
@@ -190,7 +239,7 @@ def summaries():
         # group by missing or needs evaluation
         to_insert = []
         to_inspect = []
-        for k,v in content.items():
+        for k, v in content.items():
 
             if v['number'] not in known:
                 to_insert.append(k)
@@ -230,28 +279,10 @@ def summaries():
                 data['github_repo'] = reponame
                 data['github_number'] = data['number']
 
-                '''
-                # get the existing document
-                doc = mongo.db.summaries.find_one(
-                    {'github_org': username, 'github_repo': reponame, 'number': data['number']}
-                )
-
-                # compare it
-                cdict = dict(doc)
-                cdict.pop('_id', None)
-                if cdict == data:
-                   #print('skip %s' % x)
-                    res['skipped'] += 1
-                else:
-                    #print('replace %s' % x)
-                    mongo.db.summaries.replace_one(doc, data)
-                    res['replaced'] += 1
-                '''
 
                 if data['state'] != known_states[str(data['number'])]:
                     print('replacing {}'.format(data['number']))
                     filterdict = {'github_org': username, 'github_repo': reponame, 'github_number': data['number']}
-                    #mongo.db.summaries.replace_one(filterdict, data)
                     collection = getattr(mongo.db, collection_name)
                     collection.replace_one(filterdict, data)
 
@@ -264,12 +295,11 @@ def summaries():
             qdict['number'] = number
         if state:
             qdict['state'] = state
-        #cursor = mongo.db.summaries.find(qdict)
         collection = getattr(mongo.db, collection_name)
         cursor = collection.find(qdict)
         docs = list(cursor)
         docs = [dict(x) for x in docs]
-        for idx,x in enumerate(docs):
+        for idx, x in enumerate(docs):
             x.pop('_id', None)
             docs[idx] = x
         print(len(docs))
@@ -296,7 +326,7 @@ def strip_line_json(line):
         'url': parts[4],
     }
 
-    for k,v in data.items():
+    for k, v in data.items():
         line = line.replace(v, '', 1)
     line = line.lstrip()
 
@@ -322,7 +352,6 @@ def strip_line_json(line):
         jdata = line[list_index:]
 
     data['data'] = json.loads(jdata)
-    #import epdb; epdb.st()
 
     return data
 
@@ -330,7 +359,7 @@ def strip_line_json(line):
 @app.route('/logs', methods=['GET', 'POST'])
 @app.route('/logs/<path:issue>', methods=['GET', 'POST'])
 def logs(issue=None):
-    LOGDIR='/var/log'
+    LOGDIR = '/var/log'
     logfiles = sorted(glob.glob('%s/ansibullbot*' % LOGDIR))
     log_lines = []
 
@@ -351,7 +380,7 @@ def logs(issue=None):
 
         # each time the bot starts, it's possibly because of a traceback
         bot_starts = []
-        for idx,x in enumerate(log_lines):
+        for idx, x in enumerate(log_lines):
             if 'starting bot' in x:
                 bot_starts.append(idx)
 
@@ -359,7 +388,7 @@ def logs(issue=None):
         for bs in bot_starts:
             this_issue = None
             this_traceback = None
-            for idx,x in enumerate(log_lines):
+            for idx, x in enumerate(log_lines):
                 if 'starting triage' in x:
                     this_issue = x
                     continue
