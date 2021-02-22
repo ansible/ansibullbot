@@ -90,11 +90,13 @@ def get_rebuild_merge_facts(iw, meta, core_team, ci):
     if ci.last_run is None:
         return rbmerge_meta
 
-    if ci.last_run['state'] != 'pending' and ci.last_run['created_at'] < last_command:
+    ci_updated_at = ci.last_run.get('updated_at', ci.last_run.get('created_at'))
+
+    if ci.last_run['state'] != 'pending' and ci_updated_at < last_command:
         rbmerge_meta['needs_rebuild'] = True
         rbmerge_meta['needs_rebuild_all'] = True
 
-    if ci.last_run['state'] == 'success' and ci.last_run['created_at'] > last_command:
+    if ci.last_run['state'] == 'success' and ci_updated_at > last_command:
         rbmerge_meta['admin_merge'] = True
 
     return rbmerge_meta
@@ -141,7 +143,9 @@ def get_rebuild_command_facts(iw, meta, ci):
     if ci.last_run is None:
         return rbmerge_meta
 
-    if ci.last_run['state'] != 'pending' and ci.last_run['created_at'] < last_command:
+    ci_updated_at = ci.last_run.get('updated_at', ci.last_run.get('created_at'))
+
+    if ci.last_run['state'] != 'pending' and ci_updated_at < last_command:
         rbmerge_meta['needs_rebuild'] = True
         rbmerge_meta[meta_key] = True
 
