@@ -1540,11 +1540,7 @@ class AnsibleTriage(DefaultTriager):
                 raise LabelWafflingError(msg)
 
     def post_actions_to_receiver(self, iw, actions):
-        data = {}
-        for name, value in vars(actions).items():
-            if not value:
-                continue
-            data[name] = value
+        data = {name: value for (name, value) in vars(actions).items() if value}
         namespace, reponame = iw.repo_full_name.split('/', 1)
         post_to_receiver(
             'actions',
