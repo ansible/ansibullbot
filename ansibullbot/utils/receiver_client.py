@@ -1,12 +1,11 @@
 import logging
-import ansibullbot.constants as C
-from ansibullbot._text_compat import to_text
 
 import requests
 
+import ansibullbot.constants as C
+
 
 def post_to_receiver(path, params, data):
-
     if not data:
         return
 
@@ -18,7 +17,7 @@ def post_to_receiver(path, params, data):
         receiverurl = 'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
         receiverurl += ':'
-        receiverurl += to_text(C.DEFAULT_RECEIVER_PORT)
+        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
         receiverurl += '/'
         receiverurl += path
         logging.info('RECEIVER: POST to %s' % receiverurl)
@@ -40,9 +39,6 @@ def get_receiver_summaries(username, reponame, state=None, number=None):
     '''
     @app.route('/summaries', methods=['GET', 'POST'])
     def summaries():
-        print('summaries!')
-        print(request)
-
         username = request.args.get('user')
         reponame = request.args.get('repo')
         number = request.args.get('number')
@@ -58,7 +54,7 @@ def get_receiver_summaries(username, reponame, state=None, number=None):
         receiverurl = 'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
         receiverurl += ':'
-        receiverurl += to_text(C.DEFAULT_RECEIVER_PORT)
+        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
         receiverurl += '/'
         receiverurl += 'summaries'
         logging.info('RECEIVER: GET %s' % receiverurl)
@@ -86,8 +82,6 @@ def get_receiver_metadata(username, reponame, number=None, keys=None):
     '''
     @app.route('/metadata', methods=['GET', 'POST'])
     def metadata():
-        print('metadata!')
-        print(request)
         username = request.args.get('user')
         reponame = request.args.get('repo')
         number = request.args.get('number')
@@ -103,7 +97,7 @@ def get_receiver_metadata(username, reponame, number=None, keys=None):
         receiverurl = 'http://'
         receiverurl += C.DEFAULT_RECEIVER_HOST
         receiverurl += ':'
-        receiverurl += to_text(C.DEFAULT_RECEIVER_PORT)
+        receiverurl += str(C.DEFAULT_RECEIVER_PORT)
         receiverurl += '/'
         receiverurl += 'metadata'
         logging.info('RECEIVER: GET %s' % receiverurl)
