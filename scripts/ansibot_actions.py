@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import datetime
-
 import requests
 import yaml
 
