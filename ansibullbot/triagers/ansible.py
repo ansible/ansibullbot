@@ -373,6 +373,7 @@ class AnsibleTriage(DefaultTriager):
                 icount += 1
 
                 self.meta = {}
+                self.processed_meta = {}
                 number = issue.number
                 self.set_resume(item[0], number)
 
@@ -649,10 +650,7 @@ class AnsibleTriage(DefaultTriager):
             dmeta['pullrequest_reviews'] = []
 
         self.dump_meta(issuewrapper, dmeta)
-        rfn = issuewrapper.repo_full_name
-        rfn_parts = rfn.split('/', 1)
-        namespace = rfn_parts[0]
-        reponame = rfn_parts[1]
+        namespace, reponame = issuewrapper.repo_full_name.split('/', 1)
 
         # https://github.com/ansible/ansibullbot/issues/1355
         dmeta_copy = dmeta.copy()
@@ -662,12 +660,14 @@ class AnsibleTriage(DefaultTriager):
         # FIXME figure out a way how to store these without keys being invalid
         dmeta_copy['collection_filemap'] = None
         dmeta_copy['collection_file_matches'] = None
+        dmeta_copy['renamed_filenames'] = None
 
         post_to_receiver(
             'metadata',
             {'user': namespace, 'repo': reponame, 'number': issuewrapper.number},
             dmeta_copy
         )
+        self.processed_meta = dmeta_copy.copy()
 
     def load_meta(self, issuewrapper):
         mfile = os.path.join(
@@ -1539,9 +1539,11 @@ class AnsibleTriage(DefaultTriager):
                 logging.error(msg)
                 raise LabelWafflingError(msg)
 
-    def post_actions_to_receiver(self, iw, actions):
-        data = {name: value for (name, value) in vars(actions).items() if value}
+    def post_actions_to_receiver(self, iw, actions, processed_meta):
         namespace, reponame = iw.repo_full_name.split('/', 1)
+        processed_actions = {name: value for (name, value) in vars(actions).items() if value}
+        data = processed_actions
+        data['meta'] = processed_meta
         post_to_receiver(
             'actions',
             {'user': namespace, 'repo': reponame, 'number': iw.number},
@@ -2290,7 +2292,7 @@ class AnsibleTriage(DefaultTriager):
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
 
-        self.post_actions_to_receiver(iw, actions)
+        self.post_actions_to_receiver(iw, actions, self.processed_meta)
 
         super().execute_actions(iw, actions)
 

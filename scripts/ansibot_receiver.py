@@ -7,6 +7,8 @@ import glob
 import gzip
 import json
 
+import pymongo
+
 from bson.json_util import dumps
 from flask import Flask
 from flask import jsonify
@@ -97,7 +99,7 @@ def list_actions():
     if end:
         query['datetime']['$lte'] = datetime.datetime.fromisoformat(end)
 
-    res = mongo.db.actions.find(query)
+    res = mongo.db.actions.find(query).sort("_id", pymongo.DESCENDING)
 
     return dumps(res)
 
