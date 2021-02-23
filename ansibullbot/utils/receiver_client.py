@@ -24,7 +24,7 @@ def post_to_receiver(path, params, data):
         try:
             rr = requests.post(receiverurl, params=params, json=data)
         except Exception as e:
-            logging.warning(e)
+            logging.error(e)
 
     try:
         if rr is not None:
@@ -32,7 +32,7 @@ def post_to_receiver(path, params, data):
                 logging.info('RECEIVER: %s %s' % (v, k))
     except ValueError as e:
         logging.debug('RECEIVER: status_code = %s' % rr.status_code)
-        logging.warning(e)
+        logging.error(e)
 
 
 def get_receiver_summaries(username, reponame, state=None, number=None):
@@ -70,7 +70,7 @@ def get_receiver_summaries(username, reponame, state=None, number=None):
                 params=params
             )
         except Exception as e:
-            logging.warning(e)
+            logging.error(e)
 
         if rr:
             return rr.json()
@@ -115,7 +115,7 @@ def get_receiver_metadata(username, reponame, number=None, keys=None):
                 params=params
             )
         except Exception as e:
-            logging.warning(e)
+            logging.error(e)
 
         if rr:
             return rr.json()
