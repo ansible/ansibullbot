@@ -89,9 +89,9 @@ def main():
             "</div>"
         )
 
-        action_data = {action: value for action, value in sorted(action_data.items()) if action in VALID_ACTIONS}
+        valid_actions  = {action: value for action, value in sorted(action_data.items()) if action in VALID_ACTIONS}
         page.append("<pre>")
-        page.append(yaml.dump(action_data))
+        page.append(yaml.dump(valid_actions))
         page.append("</pre>")
 
         action_id = str(action_data.get("_id"))
