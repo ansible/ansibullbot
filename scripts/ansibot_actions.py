@@ -67,52 +67,49 @@ def main():
         "repo": "ansible",
     }
 
-    resp = requests.get("http://localhost:5001/actions", params=params)
+    resp = requests.get("http://127.0.0.1:5001/actions", params=params)
     if resp.status_code != 200:
         raise RuntimeError(resp.status_code)
 
     actions = loads(resp.content)
 
-    print(HTML_HEAD)
+    page = HTML_HEAD.splitlines()
     for action_data in actions:
         gh_number = action_data.get("github_number")
         action_datetime = action_data.get("datetime")
         gh_title = action_data.get("meta", {}).get("title")
+        gh_submitter = action_data.get("meta", {}).get("submitter")
         if action_datetime is not None:
             action_datetime = action_datetime.strftime("%a %d. %b %Y, %H:%M:%S.%f UTC")
-        print(
+
+        page.append(
             "<div class=\"div_heading\">"
             f"<a href=\"https://github.com/ansible/ansible/issues/{gh_number}\">#{gh_number}</a>"
-            f" | {gh_title} | {action_datetime}"
+            f" | {gh_title} by {gh_submitter} | {action_datetime}"
             "</div>"
         )
-        print("<ul>")
 
-        for action, value in sorted(action_data.items()):
-            if action not in VALID_ACTIONS:
-                continue
+        action_data = {action: value for action, value in sorted(action_data.items()) if action in VALID_ACTIONS}
+        page.append("<pre>")
+        page.append(yaml.dump(action_data))
+        page.append("</pre>")
 
-            if isinstance(value, bool):
-                parsed_value = "yes" if value else "no"
-            elif isinstance(value, list):
-                parsed_value = ", ".join(value)
-            else:
-                raise AssertionError("value is of type %s" % type(value))
-
-            print(f"<li>{action}: {parsed_value}</li>")
-
-        print("</ul>")
         action_id = str(action_data.get("_id"))
         action_meta = action_data.get("meta", {"meta": "N/A"})
         action_meta.pop('actions', None)
-        print(f"<button onclick=\"showMeta('{action_id}')\">Show meta</button>")
-        print(f"<div class=\"div_meta\" id=\"meta{action_id}\" style=\"display: none;\"><pre>")
-        print(yaml.dump(action_meta))
-        print("</pre></div>")
+        page.append(f"<button onclick=\"showMeta('{action_id}')\">Show meta</button>")
+        page.append(f"<div class=\"div_meta\" id=\"meta{action_id}\" style=\"display: none;\"><pre>")
+        page.append(yaml.dump(action_meta))
+        page.append("</pre>")
+        page.append("</div>")
 
-    print("</body>")
-    print("</html>")
+    page.append("</body>")
+    page.append("</html>")
+
+    return "\n".join(page)
 
 
 if __name__ == "__main__":
-    main()
+    page = "Content-type: text/html\n\n"
+    page += main()
+    print(page)
