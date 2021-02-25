@@ -12,6 +12,11 @@ from ansibullbot.triagers.ansible import AnsibleTriage
 
 
 class TestSuperShipit:
+    # FIXME a hack to create the log file which **several** of other tests rely on
+    def test_presupershipit(self):
+        with BotMockManager() as mm:
+            os.system('touch %s' % os.path.join(mm.cachedir, 'bot.log'))
+
     @pytest.mark.skip(reason="automerge is disabled now and this is not really an unit test.")
     def test_supershipit(self, *args, **kwargs):
         with BotMockManager() as mm:
