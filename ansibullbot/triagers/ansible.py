@@ -661,6 +661,7 @@ class AnsibleTriage(DefaultTriager):
         dmeta_copy['collection_filemap'] = None
         dmeta_copy['collection_file_matches'] = None
         dmeta_copy['renamed_filenames'] = None
+        dmeta_copy['test_support_plugins'] = None
 
         post_to_receiver(
             'metadata',
