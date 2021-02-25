@@ -883,22 +883,12 @@ class DefaultWrapper:
         return self._committer_logins
 
     def merge(self):
-        # https://developer.github.com/v3/repos/merging/
-        # def merge(self, commit_message=github.GithubObject.NotSet)
-
-        # squash if 1 committer or just a few commits?
-        # rebase if >1 committer
-        # error otherwise
-
-        # no merge commits allowed!
         if self.merge_commits:
             return None
 
-        # unique the list of emails so that we can tell how many people
+        # unique the lists so that we can tell how many people
         # have worked on this particular pullrequest
         emails = sorted(set(self.committer_emails))
-
-        # unique list of github logins that made each commit
         logins = sorted(set(self.committer_logins))
 
         if len(self.commits) == 1 or len(emails) == 1 or len(logins) == 1:
@@ -911,26 +901,13 @@ class DefaultWrapper:
             logging.error('merge skipped for %s' % self.number)
             return
 
-        url = os.path.join(self.pullrequest.url, 'merge')
-        headers = {
-            'Accept': 'application/vnd.github.polaris-preview+json',
-        }
-        params = {
-            'merge_method': merge_method,
-        }
-        resp = self.pullrequest._requester.requestJson(
-            "PUT",
-            url,
-            headers=headers,
-            input=params
-        )
+        merge_status = self.pullrequest.merge(merge_method=merge_method)
 
-        if resp[0] != 200 or 'successfully merged' not in resp[2]:
-            logging.error('merge failed on %s' % self.number)
-            logging.error(resp)
-            raise Exception('merge failed - %d - %s' % (resp[0], resp[1]['status']))
-        else:
+        if merge_status.merged:
             logging.info('merge successful for %s' % self.number)
+        else:
+            logging.error('merge failed on %s - %s' % (self.number, merge_status.messsage))
+            raise Exception('merge failed on %s - %s' % (self.number, merge_status.messsage))
 
     @property
     def migrated_from(self):
