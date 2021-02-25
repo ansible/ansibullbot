@@ -2,6 +2,7 @@ import glob
 import json
 import os
 
+import pytest
 import yaml
 
 from tests.utils.componentmocks import BotMockManager
@@ -11,7 +12,7 @@ from ansibullbot.triagers.ansible import AnsibleTriage
 
 
 class TestSuperShipit:
-
+    @pytest.mark.skip(reason="automerge is disabled now and this is not really an unit test.")
     def test_supershipit(self, *args, **kwargs):
         with BotMockManager() as mm:
             botmeta = {
