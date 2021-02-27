@@ -6,9 +6,9 @@ import re
 
 import requests
 
-RE_DOCS_PATTERNS = [
-    r"^docs/.*",
-    r"^examples/.*",
+DOCS_PATH_PATTERNS = [
+    "docs/",
+    "examples/",
 ]
 
 RE_DIFF_PATTERNS = {
@@ -85,8 +85,8 @@ class CommitFile:
 
 def _is_docs_path(filename):
     """ Determine if affected file is only applicable to documentation directories """
-    for pattern in RE_DOCS_PATTERNS:
-        if re.search(pattern, filename):
+    for pattern in DOCS_PATH_PATTERNS:
+        if filename.startswith(pattern):
             return True
     return False
 
