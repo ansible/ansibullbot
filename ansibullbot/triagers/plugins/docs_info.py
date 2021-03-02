@@ -219,34 +219,36 @@ def _check_py_changes(file_content, diff):
     if file_content is not None:
         source = _get_ast_info(file_content)
 
-    if source is not None:
-        for line in diff:
-            # Check if change applies to module DOCUMENTATION (if exists)
-            if source.doc_string:
-                if source.ds_line_start <= line["lineno"] <= source.ds_line_end:
+    if source is None:
+        return False
+
+    for line in diff:
+        # Check if change applies to module DOCUMENTATION (if exists)
+        if source.doc_string:
+            if source.ds_line_start <= line["lineno"] <= source.ds_line_end:
+                continue
+
+        # Check if change applies to module EXAMPLES (if exists)
+        if source.example_string:
+            if source.ex_line_start <= line["lineno"] <= source.ex_line_end:
+                continue
+
+        # Find appropriate class if it exists
+        source_class = source.find_class(line["lineno"])
+        if source_class is not None:
+            if source_class.doc_string:
+                if source_class.ds_line_start <= line["lineno"] <= source_class.ds_line_end:
                     continue
 
-            # Check if change applies to module EXAMPLES (if exists)
-            if source.example_string:
-                if source.ex_line_start <= line["lineno"] <= source.ex_line_end:
+            source_func = source_class.find_function(line["lineno"])
+            if source_func is not None and source_func.doc_string:
+                if source_func.ds_line_start <= line["lineno"] <= source_func.ds_line_end:
                     continue
 
-            # Find appropriate class if it exists
-            source_class = source.find_class(line["lineno"])
-            if source_class is not None:
-                if source_class.doc_string:
-                    if source_class.ds_line_start <= line["lineno"] <= source_class.ds_line_end:
-                        continue
+        # If we made it this far, this change is outside docs/examples
+        return False
 
-                source_func = source_class.find_function(line["lineno"])
-                if source_func is not None and source_func.doc_string:
-                    if source_func.ds_line_start <= line["lineno"] <= source_func.ds_line_end:
-                        continue
-
-            # If we made it this far, this change is outside docs/examples
-            return False
-
-        return True
+    return True
 
 def _is_docs_only(changed_file):
     """ Check if the changes made to ``changed_file`` affect only documentation. """
