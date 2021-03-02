@@ -33,6 +33,15 @@ class CommitFileMock:
         self.patch = patch
         self.src_filepath = src_filepath
 
+    @property
+    def raw_data(self):
+        return self
+
+    @property
+    def file_content(self):
+        with open(self.src_filepath) as content:
+            return content.read()
+
 
 class LabelMock:
     name = None
