@@ -7,27 +7,31 @@ class ActorMock:
 
 
 class CommitterMock:
-    date = None
-    login = None
+    def __init__(self, date=None, login=None):
+        self.date = date
+        self.login = login
 
 
 class CommitBottomMock:
-    committer = CommitterMock()
-    message = ""
+    def __init__(self, committer_date=None, committer_login=None, message=""):
+        self.committer = CommitterMock(date=committer_date, login=committer_login)
+        self.message = message
 
 
 class CommitMock:
-    commit = CommitBottomMock()
-    committer = commit.committer
-    sha = None
-    files = None
+    def __init__(self, **kwargs):
+        self.commit = CommitBottomMock(**kwargs)
+        self.committer = self.commit.committer
+        self.sha = None
+        self.files = None
 
 
 class CommitFileMock:
-    filename = ""
-    status = ""
-    patch = ""
-    file_content = ""
+    def __init__(self, filename="", status="", patch="", src_filepath=""):
+        self.filename = filename
+        self.status = status
+        self.patch = patch
+        self.src_filepath = src_filepath
 
 
 class LabelMock:
@@ -54,15 +58,17 @@ class IssueMock:
         for x in self.events:
             if not x['event'] == 'committed':
                 continue
-            commit = CommitMock()
-            commit.commit.committer.date = x['created_at']
-            commit.commit.committer.login = x['actor']['login']
+            commit = CommitMock(
+                committer_date=x['created_at'],
+                committer_login=x['actor']['login']
+            )
             for file in x.get('files', []):
-                cfile = CommitFileMock()
-                cfile.filename = file['filename']
-                cfile.status = file['status']
-                cfile.patch = file['patch']
-                cfile.file_content = file['file_content']
+                cfile = CommitFileMock(
+                    filename=file['filename'],
+                    status=file['status'],
+                    patch=file['patch'],
+                    src_filepath=file['src_filepath']
+                )
                 if isinstance(commit, list):
                     commit.files.append(cfile)
                 else:
