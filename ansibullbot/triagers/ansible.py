@@ -1294,8 +1294,7 @@ class AnsibleTriage(DefaultTriager):
                 if label_name not in iw.labels:
                     actions.newlabel.append(label_name)
             else:
-                human_labeled = iw.history.was_labeled(label_name, bots=self.BOTNAMES)
-                if label_name in iw.labels and not human_labeled:
+                if label_name in iw.labels:
                     actions.unlabel.append(label_name)
 
         if iw.is_pullrequest():
