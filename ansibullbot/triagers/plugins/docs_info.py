@@ -1,6 +1,5 @@
 import ast
 import dataclasses
-from itertools import filterfalse
 import logging
 import re
 
