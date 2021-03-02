@@ -18,6 +18,4 @@ events:
           patch: |
             @@ -1,1 +1,1 @@
             +please fail
-          file_content: |
-            please fail
-
+          src_filepath: tests/fixtures/docs_info/files/hacks_fail_me.txt

@@ -19,6 +19,4 @@ events:
             @@ -2,2 +2,2 @@
             -   index
             +   api
-          file_content: |
-            .. toctree::
-                api
+          src_filepath: tests/fixtures/docs_info/files/docsite_index.rst

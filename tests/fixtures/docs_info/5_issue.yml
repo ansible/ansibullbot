@@ -8,7 +8,7 @@ body: |
     test docs_info
 events:
     - event: committed
-      created_at: 2017-12-10T17:24:02Z
+      created_at: 2017-12-11T17:24:02Z
       id: 1
       actor:
         login: sommersoft
@@ -19,9 +19,7 @@ events:
             @@ -2,2 +2,2 @@
             -   index
             +   api
-          file_content: |
-            .. toctree::
-                api
+          src_filepath: tests/fixtures/docs_info/files/docsite_index.rst
     - event: committed
       created_at: 2017-12-10T17:24:02Z
       id: 2
@@ -37,25 +35,24 @@ events:
             +Enjoy!
             '''
 
-            class Bar:
+            EXAMPLES = '''
 
-          file_content: |
+          src_filepath: tests/fixtures/docs_info/files/lib_ansible_foo.py
+    - event: committed
+      created_at: 2017-12-12T17:24:02Z
+      id: 2
+      actor:
+        login: sommersoft
+      files:
+        - filename: lib/ansible/foo.py
+          status: modified
+          patch: |
+            @@ -1,5 +1,6 @@
             DOCUMENTATION = '''
             This is the documentation.
-            Enjoy!
+            +Enjoy!
             '''
 
             EXAMPLES = '''
-            - example1:
-              foo: bar
-            - example2:
-              foo: bar.baz
-            '''
 
-            class Bar:
-                ''' This is Bar class' documentation '''
-
-                def baz(self):
-                    ''' This is Bar.baz's documentation '''
-
-                    return False
+          src_filepath: tests/fixtures/docs_info/files/lib_ansible_foo.py
