@@ -1,3 +1,4 @@
+from operator import attrgetter
 import yaml
 
 
@@ -188,3 +189,18 @@ class IssueMock:
 
     def is_pullrequest(self):
         return 'pull' in self.html_url
+
+    def get_files(self):
+        # simulate getting PR files from the tip of the HEAD
+        files = []
+        sorted_commits = sorted(
+            self.commits,
+            key=attrgetter('commit.committer.date'),
+            reverse=True
+        )
+        for commit in sorted_commits:
+            for file in commit.files:
+                if file.filename not in [f.filename for f in files]:
+                    files.append(file)
+
+        return files
