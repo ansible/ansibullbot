@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+import datetime
+import pprint
+
 import requests
-import yaml
 
 from bson.json_util import loads
 
@@ -65,6 +67,7 @@ def main():
     params = {
         "user": "ansible",
         "repo": "ansible",
+        "start": (datetime.datetime.utcnow() - datetime.timedelta(days=2)).isoformat()
     }
 
     resp = requests.get("http://127.0.0.1:5001/actions", params=params)
@@ -91,7 +94,7 @@ def main():
 
         valid_actions  = {action: value for action, value in sorted(action_data.items()) if action in VALID_ACTIONS}
         page.append("<pre>")
-        page.append(yaml.dump(valid_actions))
+        page.append(pprint.pformat(valid_actions, indent=2, width=100, sort_dicts=True))
         page.append("</pre>")
 
         action_id = str(action_data.get("_id"))
@@ -99,7 +102,7 @@ def main():
         action_meta.pop('actions', None)
         page.append(f"<button onclick=\"showMeta('{action_id}')\">Show meta</button>")
         page.append(f"<div class=\"div_meta\" id=\"meta{action_id}\" style=\"display: none;\"><pre>")
-        page.append(yaml.dump(action_meta))
+        page.append(pprint.pformat(action_meta, indent=2, width=100, sort_dicts=True))
         page.append("</pre>")
         page.append("</div>")
 
