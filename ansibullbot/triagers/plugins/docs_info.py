@@ -208,7 +208,7 @@ def _get_ast_info(content):
 
     return mod_map
 
-def _check_py_changes(file_content, diff):
+def _is_diff_docs_only(file_content, diff):
     """ Check a python file's changes to see if they're only docstring
         changes.
     """
