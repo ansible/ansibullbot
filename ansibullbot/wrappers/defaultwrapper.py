@@ -150,8 +150,9 @@ class DefaultWrapper:
         return sorted(processed_events, key=lambda x: x['created_at'])
 
     def get_files(self):
-        self.files = self.load_update_fetch('files')
-        return self.files
+        if self.pr_files is None:
+            self.pr_files = self.load_update_fetch('files')
+        return self.pr_files
 
     def _get_timeline(self):
         '''Use python-requests instead of pygithub'''
