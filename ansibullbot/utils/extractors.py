@@ -502,31 +502,32 @@ class ModuleExtractor:
 def get_template_data(iw):
     """Extract templated data from an issue body"""
 
-    if iw.is_issue():
-        tfile = '.github/ISSUE_TEMPLATE/bug_report.md'
-    else:
-        tfile = '.github/PULL_REQUEST_TEMPLATE.md'
+    # if iw.is_issue():
+    #     tfile = '.github/ISSUE_TEMPLATE/bug_report.md'
+    # else:
+    #     tfile = '.github/PULL_REQUEST_TEMPLATE.md'
 
-    # use the fileindexer whenever possible to conserve ratelimits
-    if iw.gitrepo:
-        tf_content = iw.gitrepo.get_file_content(tfile)
-    else:
-        try:
-            tf = iw.repo.get_file_contents(tfile)
-            tf_content = tf.decoded_content
-        except Exception:
-            logging.warning(f'repo does not have {tfile}')
-            tf_content = ''
+    # # use the fileindexer whenever possible to conserve ratelimits
+    # if iw.gitrepo:
+    #     tf_content = iw.gitrepo.get_file_content(tfile)
+    # else:
+    #     try:
+    #         tf = iw.repo.get_file_contents(tfile)
+    #         tf_content = tf.decoded_content
+    #     except Exception:
+    #         logging.warning(f'repo does not have {tfile}')
+    #         tf_content = ''
 
-    # pull out the section names from the tempalte
-    tf_sections = extract_template_sections(tf_content, header=TEMPLATE_HEADER)
+    # # pull out the section names from the tempalte
+    # tf_sections = extract_template_sections(tf_content, header=TEMPLATE_HEADER)
+    tf_sections = SECTIONS
 
     # extract ...
     template_data = \
         extract_template_data(
             iw.instance.body,
             issue_class=iw.github_type,
-            sections=tf_sections.keys()
+            sections=tf_sections
         )
 
     # try comments if the description was insufficient
@@ -537,7 +538,7 @@ def get_template_data(iw):
             _template_data = extract_template_data(
                 s_comment,
                 issue_class=iw.github_type,
-                sections=tf_sections.keys()
+                sections=tf_sections
             )
 
             if _template_data:
