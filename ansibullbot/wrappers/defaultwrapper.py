@@ -198,28 +198,14 @@ class DefaultWrapper:
         return data
 
     @RateLimited
-    def load_update_fetch(self, property_name, obj=None, force=False):
-        '''Fetch a property for an issue object'''
-
-        # A pygithub issue object has methods such as ...
-        #   - get_events()
-        #   - get_comments()
-        # Those methods return a list with no update() property,
-        # so we can't take advantage of the caching scheme used
-        # for the issue it's self. Instead this function calls
-        # those methods by their given name, and write the data
-        # to a pickle file with a timestamp for the fetch time.
-        # Upon later loading of the pickle, the timestamp is
-        # compared to the issue's update_at timestamp and if the
-        # pickle data is behind, the process will be repeated.
-
+    def load_update_fetch_files(self):
         edata = None
         events = []
         updated = None
         update = False
         write_cache = False
 
-        pfile = os.path.join(self.full_cachedir, '%s.pickle' % property_name)
+        pfile = os.path.join(self.full_cachedir, 'files.pickle')
         pdir = os.path.dirname(pfile)
         logging.debug(pfile)
 
@@ -242,52 +228,14 @@ class DefaultWrapper:
                 update = True
                 write_cache = True
 
-        baseobj = None
-        if obj:
-            if obj == 'issue':
-                baseobj = self.instance
-            elif obj == 'pullrequest':
-                baseobj = self.pullrequest
-        else:
-            if hasattr(self.instance, 'get_' + property_name):
-                baseobj = self.instance
-            else:
-                if self.pullrequest:
-                    if hasattr(self.pullrequest, 'get_' + property_name):
-                        baseobj = self.pullrequest
-
-        if not baseobj:
-            logging.error(
-                '%s was not a property for the issue or the pullrequest'
-                % property_name
-            )
-            raise Exception('property error')
-
         # pull all events if timestamp is behind or no events cached
-        if update or not events or force:
+        if update or not events:
             write_cache = True
             updated = datetime.datetime.utcnow()
-
-            if not hasattr(baseobj, 'get_' + property_name) \
-                    and hasattr(baseobj, property_name):
-                # !callable properties
-                try:
-                    methodToCall = getattr(baseobj, property_name)
-                except Exception as e:
-                    logging.error(e)
-                    raise
-                events = methodToCall
-            else:
-                # callable properties
-                try:
-                    methodToCall = getattr(baseobj, 'get_' + property_name)
-                except Exception as e:
-                    logging.error(e)
-                    raise
-                events = [x for x in methodToCall()]
+            events = [x for x in self.pullrequest.get_files()]
 
         if C.DEFAULT_PICKLE_ISSUES:
-            if write_cache or not os.path.isfile(pfile) or force:
+            if write_cache or not os.path.isfile(pfile):
                 # need to dump the pickle back to disk
                 edata = [updated, events]
                 with open(pfile, 'wb') as f:
@@ -570,7 +518,7 @@ class DefaultWrapper:
         if self.is_issue():
             return None
         if self.pr_files is None:
-            self.pr_files = self.load_update_fetch('files')
+            self.pr_files = self.load_update_fetch_files()
         files = [x.filename for x in self.pr_files]
         return files
 
@@ -694,17 +642,6 @@ class DefaultWrapper:
             self._history = HistoryWrapper(self, cachedir=self.cachedir)
         return self._history
 
-    @RateLimited
-    def update(self):
-        self.instance.update()
-        self._history = \
-            HistoryWrapper(self, cachedir=self.cachedir, usecache=True)
-        if self.is_pullrequest():
-            self.pullrequest.update()
-
-            if self.instance.updated_at > self.pullrequest.updated_at:
-                raise Exception('issue date != pr date')
-
     @property
     def commits(self):
         if self._commits is False:
@@ -774,20 +711,6 @@ class DefaultWrapper:
         return self.incoming_repo_slug != 'ansible/ansible'
 
     @RateLimited
-    def get_commit_parents(self, commit):
-        # https://github.com/ansible/ansibullbot/issues/391
-        cdata = self.github.get_cached_request(commit.url)
-        parents = cdata['parents']
-        return parents
-
-    @RateLimited
-    def get_commit_message(self, commit):
-        # https://github.com/ansible/ansibullbot/issues/391
-        cdata = self.github.get_cached_request(commit.url)
-        msg = cdata['commit']['message']
-        return msg
-
-    @RateLimited
     def get_commit_files(self, commit):
         cdata = self.github.get_cached_request(commit.url)
         files = cdata.get('files', [])
@@ -807,14 +730,14 @@ class DefaultWrapper:
         return login
 
     @property
+    @RateLimited
     def merge_commits(self):
         # https://api.github.com/repos/ansible/ansible/pulls/91/commits
         if self._merge_commits is False:
             self._merge_commits = []
             for commit in self.commits:
-                parents = self.get_commit_parents(commit)
-                message = self.get_commit_message(commit)
-                if len(parents) > 1 or message.startswith('Merge branch'):
+                commit_data = self.github.get_cached_request(commit.url)
+                if len(commit_data['parents']) > 1 or commit_data['commit']['message'].startswith('Merge branch'):
                     self._merge_commits.append(commit)
         return self._merge_commits
 

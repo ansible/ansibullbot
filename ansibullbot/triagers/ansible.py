@@ -356,17 +356,10 @@ class AnsibleTriage(DefaultTriager):
         if self.collect_only:
             return
 
-        # loop through each repo made by collect_repos
-        items = list(self.repos.items())
-        for item in items:
-            repopath = item[0]
-            repo = item[1]['repo']
-
-            # set the relative cachedir
+        for repopath, repodata in self.repos.items():
+            repo = repodata['repo']
             cachedir = os.path.join(self.cachedir_base, repopath)
-
-            for issue in item[1]['issues']:
-
+            for issue in repodata['issues']:
                 if issue is None:
                     continue
 
@@ -375,7 +368,7 @@ class AnsibleTriage(DefaultTriager):
                 self.meta = {}
                 self.processed_meta = {}
                 number = issue.number
-                self.set_resume(item[0], number)
+                self.set_resume(repopath, number)
 
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(number)
