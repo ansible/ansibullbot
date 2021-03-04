@@ -391,7 +391,7 @@ class DefaultTriager:
 
         while True:
             cachedir = os.path.join(self.cachedir_base, self.repo)
-            thisrepo = self.ghw.get_repo(self.repo, verbose=False)
+            thisrepo = self.ghw.get_repo(self.repo)
             issues = thisrepo.repo.get_issues()
             rl = thisrepo.get_rate_limit()
             pprint(rl)
