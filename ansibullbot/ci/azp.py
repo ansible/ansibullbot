@@ -14,7 +14,7 @@ import ansibullbot.constants as C
 from ansibullbot._text_compat import to_bytes
 from ansibullbot.ci.base import BaseCI
 from ansibullbot.errors import NoCIError
-from ansibullbot.utils.net_tools import fetch, check_response
+from ansibullbot.utils.net_tools import fetch
 from ansibullbot.utils.timetools import strip_time_safely
 
 
@@ -69,7 +69,7 @@ class AzurePipelinesCI(BaseCI):
         if self._build_id is None:
             build_ids = set()
             for check_run in self._iw.pullrequest_check_runs:
-                match = re.match(DETAILS_URL_RE, check_run['details_url'])
+                match = re.match(DETAILS_URL_RE, check_run.details_url)
                 if not match:
                     continue
                 org, project, buildid = match.groups()
@@ -92,8 +92,12 @@ class AzurePipelinesCI(BaseCI):
                     os.makedirs(self._cachedir)
                 cache_file = os.path.join(self._cachedir, u'timeline_%s.pickle' % self.build_id)
 
-                resp = fetch(TIMELINE_URL_FMT % self.build_id)
+                url = TIMELINE_URL_FMT % self.build_id
+                resp = fetch(url)
                 if resp is None:
+                    raise Exception("Unable to GET %s" % url)
+
+                if resp.status_code == 404:
                     data = None
                     if os.path.isfile(cache_file):
                         logging.info(u'timeline was probably removed, load it from cache')
@@ -170,7 +174,7 @@ class AzurePipelinesCI(BaseCI):
 
     @property
     def artifacts(self):
-        if self._artifacts is None:
+        if self._artifacts is None and self._jobs:
             # FIXME deduplicate code
             if not os.path.isdir(self._cachedir):
                 os.makedirs(self._cachedir)
@@ -188,8 +192,12 @@ class AzurePipelinesCI(BaseCI):
                 else:
                     logging.info('fetching artifacts: stale, no previous data')
 
-                resp = fetch(ARTIFACTS_URL_FMT % self.build_id)
-                if resp is not None:
+                url = ARTIFACTS_URL_FMT % self.build_id
+                resp = fetch(url)
+                if resp is None:
+                    raise Exception("Unable to GET %s" % url)
+
+                if resp.status_code != 404:
                     data = [a for a in resp.json()['value'] if a['name'].startswith('Bot')]
                     data = (self.updated_at, data)
 
@@ -219,7 +227,10 @@ class AzurePipelinesCI(BaseCI):
                 logging.info('fetching artifacts: stale, no previous data')
 
             resp = fetch(url, stream=True)
-            if resp is not None:
+            if resp is None:
+                raise Exception("Unable to GET %s" % url)
+
+            if resp.status_code != 404:
                 with BytesIO() as data:
                     for chunk in resp.iter_content(chunk_size=128):
                         data.write(chunk)
@@ -288,8 +299,6 @@ class AzurePipelinesCI(BaseCI):
             stages = [s['identifier'] for s in self.stages]
 
         for stage in stages:
-            if stage == 'Summary':
-                continue
             url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=%s' % (run_id, stage, api_version)
 
             resp = fetch(
@@ -300,10 +309,36 @@ class AzurePipelinesCI(BaseCI):
                 timeout=TIMEOUT,
                 auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
             )
+            if resp is not None and resp.status_code == 404:
+                data = '{"definition":{"id":20},"reason":"pullRequest","sourceBranch":"refs/pull/%s/merge","repository":{"type":"github"},"triggerInfo":{"pr.sourceBranch":"%s","pr.sourceSha":"%s","pr.id":"%s","pr.title":"%s","pr.number":"%s","pr.isFork":"%s","pr.draft":"%s","pr.sender.name":"%s","pr.sender.avatarUrl":"%s","pr.providerId":"github","pr.autoCancel":"true"},"parameters":"{\\"system.pullRequest.pullRequestId\\":\\"%s\\",\\"system.pullRequest.pullRequestNumber\\":\\"%s\\",\\"system.pullRequest.mergedAt\\":\\"\\",\\"system.pullRequest.sourceBranch\\":\\"%s\\",\\"system.pullRequest.targetBranch\\":\\"%s\\",\\"system.pullRequest.sourceRepositoryUri\\":\\"https://github.com/ansible/ansible\\",\\"system.pullRequest.sourceCommitId\\":\\"%s\\"}"}' % (
+                        self._iw.number,
+                        self._iw._pr.head.ref,
+                        self._iw._pr.head.sha,
+                        self._iw._pr.id,
+                        self._iw._pr.title,
+                        self._iw._pr.number,
+                        self._iw.from_fork,
+                        self._iw._pr.draft,
+                        self._iw._pr.user.login,
+                        self._iw._pr.user.avatar_url,
+                        self._iw._pr.id,
+                        self._iw._pr.number,
+                        self._iw._pr.head.ref,
+                        self._iw._pr.base.ref,
+                        self._iw._pr.head.sha,)
 
-            if not resp:
-                raise Exception("Unable to PATCH %r to %r" % (data, url))
-            check_response(resp)
+                url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds?api-version=6.0'
+                resp = fetch(
+                    url,
+                    verb='post',
+                    headers=HEADERS,
+                    data=data,
+                    timeout=30,
+                    auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
+                )
+                if not resp:
+                    raise Exception("Unable to POST %r to %r" % (data, url))
+                break
 
     def rebuild_failed(self, run_id):
         self.rebuild(run_id, failed_only=True)
@@ -326,7 +361,6 @@ class AzurePipelinesCI(BaseCI):
 
             if not resp:
                 raise Exception("Unable to PATCH %r to %r" % (data, url))
-            check_response(resp)
 
     def cancel_on_branch(self, branch):
         # FIXME cancel() should be enough?

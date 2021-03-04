@@ -1,6 +1,3 @@
-#!/usr/bin/env python
-
-
 def get_needs_contributor_facts(triager, issuewrapper, meta):
     needs_contributor = False
 

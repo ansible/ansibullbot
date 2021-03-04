@@ -1,12 +1,9 @@
-#!/usr/bin/env python
-
 import copy
 import json
 import os
 
 
 def get_collection_facts(iw, component_matcher, meta):
-
     # Skip redirection of backports or <2.10 issues ...
     is_backport = False
     if isinstance(meta.get('is_backport'), bool):
@@ -81,7 +78,11 @@ def get_collection_facts(iw, component_matcher, meta):
             continue
         for idi,item in enumerate(v):
             parts = item.split(':')
-            cmap[k][idi] = k + ' -> ' + 'https://galaxy.ansible.com/' + parts[1].replace('.', '/')
+            cmap[k][idi] = '%s -> %s (%s)' % (
+                k,
+                component_matcher.GQT._gitrepos[parts[1]].repo,
+                'https://galaxy.ansible.com/' + parts[1].replace('.', '/')
+            )
 
     cfacts['collection_file_matches'] = copy.deepcopy(cmap)
 

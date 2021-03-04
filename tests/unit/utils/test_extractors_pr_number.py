@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import pytest
 
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
@@ -23,4 +21,3 @@ from ansibullbot.utils.extractors import extract_pr_number_from_comment
 ])
 def test_extract_pr_number_from_comment(test_input, expected):
     assert extract_pr_number_from_comment(test_input) == expected
-    

@@ -15,19 +15,16 @@
 
 
 import datetime
-import inspect
 import json
 import logging
 import os
 import pickle
 import re
-import sys
 import time
 
 import pytz
 
 import ansibullbot.constants as C
-from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
 from ansibullbot.utils.extractors import get_template_data
@@ -67,7 +64,7 @@ class DefaultWrapper:
         self._template_data = None
         self.pull_raw = None
         self.pr_files = None
-        self.full_cachedir = os.path.join(self.cachedir, 'issues', to_text(self.number))
+        self.full_cachedir = os.path.join(self.cachedir, 'issues', str(self.number))
         self._renamed_files = None
         self._pullrequest_check_runs = None
 
@@ -148,11 +145,6 @@ class DefaultWrapper:
             processed_events.append(event)
 
         return sorted(processed_events, key=lambda x: x['created_at'])
-
-    def get_files(self):
-        if self.pr_files is None:
-            self.pr_files = self.load_update_fetch('files')
-        return self.pr_files
 
     def _get_timeline(self):
         '''Use python-requests instead of pygithub'''
@@ -317,24 +309,20 @@ class DefaultWrapper:
             self._template_data = get_template_data(self)
         return self._template_data
 
-    def get_issue(self):
-        """Gets the issue from the GitHub API"""
-        return self.instance
-
     @RateLimited
     def add_label(self, label=None):
         """Adds a label to the Issue using the GitHub API"""
-        self.get_issue().add_to_labels(label)
+        self.instance.add_to_labels(label)
 
     @RateLimited
     def remove_label(self, label=None):
         """Removes a label from the Issue using the GitHub API"""
-        self.get_issue().remove_from_labels(label)
+        self.instance.remove_from_labels(label)
 
     @RateLimited
     def add_comment(self, comment=None):
         """Adds a comment to the Issue using the GitHub API"""
-        self.get_issue().create_comment(comment)
+        self.instance.create_comment(comment)
 
     @RateLimited
     def remove_comment_by_id(self, commentid):
@@ -359,43 +347,6 @@ class DefaultWrapper:
         if self._assignees is UnsetValue:
             self._assignees = [x.login for x in self.instance.assignees]
         return self._assignees
-
-    def assign_user(self, user):
-        assignees = [x for x in self.assignees]
-        if user not in self.assignees:
-            assignees.append(user)
-            self._edit_assignees(assignees)
-
-    def unassign_user(self, user):
-        assignees = [x for x in self.assignees]
-        if user in self.assignees:
-            assignees.remove(user)
-            self._edit_assignees(assignees)
-
-    @RateLimited
-    def _edit_assignees(self, assignees):
-        # https://github.com/PyGithub/PyGithub/pull/469/files
-        # https://raw.githubusercontent.com/tmshn/PyGithub/ba007dc8a8bb5d5fdf75706db84dab6a69929d7d/github/Issue.py
-        # http://pygithub.readthedocs.io/en/stable/github_objects/Issue.html#github.Issue.Issue.edit
-        #self.instance.edit(body=description)
-
-        vparms = inspect.getargspec(self.instance.edit)
-        if 'assignees' in vparms.args:
-            new_assignees = self.assignees + assignees
-            new_assignees = sorted(set(new_assignees))
-            self.instance.edit(assignees=assignees)
-        else:
-            post_parameters = {}
-            post_parameters["assignees"] = [x for x in assignees]
-
-            headers, data = self.instance._requester.requestJsonAndCheck(
-                "PATCH",
-                self.instance.url,
-                input=post_parameters
-            )
-            if headers['status'] != '200 OK':
-                print('ERROR: failed to edit assignees')
-                sys.exit(1)
 
     def is_pullrequest(self):
         return self.github_type == 'pullrequest'
@@ -502,13 +453,8 @@ class DefaultWrapper:
     @RateLimited
     def pullrequest_check_runs(self):
         if self._pullrequest_check_runs is None:
-            logging.info('fetching pull request check runs: stale, no previous data')
-            url = 'https://api.github.com/repos/%s/commits/%s/check-runs' % (self.repo_full_name, self.pullrequest.head.sha)
-            self._pullrequest_check_runs = []
-            for resp_data in self.github.get_request_gen(url):
-                for check_runs_data in resp_data['check_runs']:
-                    self._pullrequest_check_runs.append(check_runs_data)
-
+            logging.info('fetching pull request check runs')
+            self._pullrequest_check_runs = self.commits[-1].get_check_runs()
         return self._pullrequest_check_runs
 
     @property
@@ -803,11 +749,11 @@ class DefaultWrapper:
 
     @property
     def wip(self):
-        if self.title.startswith('WIP'):
-            return True
-        elif '[WIP]' in self.title:
-            return True
-        return False
+        return (
+            self.title.startswith('WIP') or
+            '[WIP]' in self.title or
+            (self.is_pullrequest() and self.pullrequest.draft)
+        )
 
     @property
     def incoming_repo_exists(self):
@@ -889,22 +835,12 @@ class DefaultWrapper:
         return self._committer_logins
 
     def merge(self):
-        # https://developer.github.com/v3/repos/merging/
-        # def merge(self, commit_message=github.GithubObject.NotSet)
-
-        # squash if 1 committer or just a few commits?
-        # rebase if >1 committer
-        # error otherwise
-
-        # no merge commits allowed!
         if self.merge_commits:
             return None
 
-        # unique the list of emails so that we can tell how many people
+        # unique the lists so that we can tell how many people
         # have worked on this particular pullrequest
         emails = sorted(set(self.committer_emails))
-
-        # unique list of github logins that made each commit
         logins = sorted(set(self.committer_logins))
 
         if len(self.commits) == 1 or len(emails) == 1 or len(logins) == 1:
@@ -917,26 +853,13 @@ class DefaultWrapper:
             logging.error('merge skipped for %s' % self.number)
             return
 
-        url = os.path.join(self.pullrequest.url, 'merge')
-        headers = {
-            'Accept': 'application/vnd.github.polaris-preview+json',
-        }
-        params = {
-            'merge_method': merge_method,
-        }
-        resp = self.pullrequest._requester.requestJson(
-            "PUT",
-            url,
-            headers=headers,
-            input=params
-        )
+        merge_status = self.pullrequest.merge(merge_method=merge_method)
 
-        if resp[0] != 200 or 'successfully merged' not in resp[2]:
-            logging.error('merge failed on %s' % self.number)
-            logging.error(resp)
-            raise Exception('merge failed - %d - %s' % (resp[0], resp[1]['status']))
-        else:
+        if merge_status.merged:
             logging.info('merge successful for %s' % self.number)
+        else:
+            logging.error('merge failed on %s - %s' % (self.number, merge_status.messsage))
+            raise Exception('merge failed on %s - %s' % (self.number, merge_status.messsage))
 
     @property
     def migrated_from(self):
@@ -992,7 +915,7 @@ class DefaultWrapper:
                 with open(cachefile, 'rb') as f:
                     pdata = pickle.load(f)
         except Exception as e:
-            logging.error('failed to unpickle %s %s' % (cachefile, to_text(e)))
+            logging.error('failed to unpickle %s %s' % (cachefile, str(e)))
 
         if not pdata or pdata[0] != sha:
 

@@ -96,31 +96,7 @@ Once the pull request labeled with [`shipit`](#label-shipit), the module will be
 
 #### Existing Modules
 
-Module's have metadata with a [`supported_by`](http://docs.ansible.com/ansible/devel/dev_guide/developing_modules_documenting.html#ansible-metadata-block) field per the [metadata proposal](https://github.com/ansible/proposals/issues/30).
-
-:information_source: If you have **changes to other files in the pull request**, the `supported_by` property is ignored because the Ansible core team **must** approve those changes. When other changes are line deletions in `ansible/test/*/*.txt` files, the `supported_by` property isn't ignored.
-
-:information_source: if the pull request has more than one committer, then number of commits must be equal to number of authors and lower than 11.
-
-The possible values of `supported_by` are:
-
-##### core
-
-Members of the Ansible Core Team typically do all the maintenance on this module, so only they can approve changes. Expect reviews to take longer than most other modules because of the volume the core team has on a daily basis.
-
-##### certified
-
-These modules are developed and maintained by the community, but the Ansible core team needs to approve changes. Once the pull request is labeled with [`shipit`](#label-shipit), the core team will be alerted to review.
-
-##### community
-
-These modules are also developed, maintained and supported by the community. If you are a module maintainer, a maintainer of a module in the same namespace, or a core team member use the [`shipit`](#cmd-shipit) command to approve the pull request. The bot will wait for the pull request being labeled with [`shipit`](#label-shipit), then automerge.
-
-:information_source: If you are maintainer of the module or maintainer of a module in the same namespace, only one [`shipit`](#cmd-shipit) is required.
-
-##### network
-
-Members of the Ansible Network Team typically do all the maintenance on this module, so only they can approve changes.
+Members of the Ansible Core Team typically do all the maintenance on these modules, so only they can approve changes.
 
 #### Non-module changes
 
@@ -154,7 +130,9 @@ To streamline the maintenance process, we've added some commands to Ansibullbot 
 Command | Scope | Allowed | Description
 --- | --- | --- | ---
 **<a name="cmd-bot_broken">bot_broken</a>** | issues pull requests | anyone | Use this command if you think the bot is misbehaving (not for test failures), and an Ansible staff member will investigate.
+**<a name="cmd-bot_broken">!bot_broken</a>** | issues pull requests | anyone | Clear `bot_broken` command.
 **<a name="cmd-bot_skip">bot_skip</a>** | issues pull requests | staff | Ansible staff members use this to have the bot skip triaging an issue.
+**<a name="cmd-bot_skip">!bot_skip</a>** | issues pull requests | staff | Clear `bot_skip` command.
 **<a name="cmd-bot_status">bot_status</a>** | pull requests | submitters maintainers | Use this command if you would like the bot to comment with some helpful metadata about the issue.
 **<a name="cmd-needs_info">needs_info</a>** | issues pull requests | maintainers past committers | Use this command if you need more information from the submitter. We will notify the submitter and apply the [`needs_info`](#label-needs_info) label.
 **<a name="cmd-!needs_info">!needs_info</a>** | issues pull requests | maintainers past committers | If you do not need any more information and just need time to work the issue, leave a comment that contains the command `!needs_info` and the [`needs_info`](#label-needs_info) label will be replaced with [`waiting_on_maintainer`](#label-waiting_on_maintainer).
@@ -171,8 +149,8 @@ Command | Scope | Allowed | Description
 **<a name="cmd-close_me">close_me</a>** | issues | maintainers | If the issue can be closed for a reason you will specify in the comment, use this command.
 **<a name="cmd-ready_for_review">ready_for_review</a>** | pull requests | submitters | If you are finished making commits to your pull request or have made changes due to a request, please use this command to trigger a review from the maintainer(s).
 **<a name="cmd-shipit">shipit</a>** | pull requests | maintainers | If you approve the code in this pull request, use this command to have it merged. Note that Github `Approve` pull request status is ignored. Nonetheless `shipit` in review summary of commented or approved review is taken in account. In place of `shipit`, `+1` and `LGTM` can be used too. Note that these commands must not be surrounded by any character, spaces excepted.
-**<a name="cmd-add-label">+label</a>** | issues pull requests | staff maintainers | Add a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
-**<a name="cmd-remove-label">-label</a>** | issues pull requests | staff maintainers | Remove a whitelisted label. See [When to use label commands](#when-to-use-label-commands).
+**<a name="cmd-add-label">+label</a>** | issues pull requests | staff maintainers | Add a [supported label](#labels). See [When to use label commands](#when-to-use-label-commands).
+**<a name="cmd-remove-label">-label</a>** | issues pull requests | staff maintainers | Remove a [supported label](#labels). See [When to use label commands](#when-to-use-label-commands).
 **<a name="cmd-rebuild_merge">rebuild_merge</a>** | pull requests | staff | Allow core team members to trigger CI, then the pull request is automatically merged if CI results are successful.
 **<a name="cmd-rebuild">/rebuild</a>** | pull requests | anyone | Allows anyone to re-trigger CI.
 **<a name="cmd-rebuild_failed">/rebuild_failed</a>** | pull requests | anyone | Allows anyone to re-trigger CI only on failed jobs [this is usually much faster than /rebuild].

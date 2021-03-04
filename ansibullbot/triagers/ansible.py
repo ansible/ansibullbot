@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # This is a triager for the combined repos that should have happend
 # in the 12-2016 timeframe.
 #   https://groups.google.com/forum/#!topic/ansible-devel/mIxqxXRsmCI
@@ -55,7 +53,6 @@ from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.receiver_client import post_to_receiver
-from ansibullbot.utils.webscraper import GithubWebScraper
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 
 from ansibullbot.decorators.github import RateLimited
@@ -233,7 +230,7 @@ class AnsibleTriage(DefaultTriager):
 
         # wrap the connection
         logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
+        self.ghw = GithubWrapper(self.gh, token=self.github_token, cachedir=self.cachedir_base)
 
         # get valid labels
         logging.info('getting labels')
@@ -252,20 +249,11 @@ class AnsibleTriage(DefaultTriager):
         # scraped summaries for all issues
         self.issue_summaries = {}
 
-        # create the scraper for www data
-        logging.info('creating webscraper')
-        self.gws = GithubWebScraper(
-            cachedir=self.cachedir_base,
+        logging.info('creating graphql client')
+        self.gqlc = GithubGraphQLClient(
+            C.DEFAULT_GITHUB_TOKEN,
             server=C.DEFAULT_GITHUB_URL
         )
-        if C.DEFAULT_GITHUB_TOKEN:
-            logging.info('creating graphql client')
-            self.gqlc = GithubGraphQLClient(
-                C.DEFAULT_GITHUB_TOKEN,
-                server=C.DEFAULT_GITHUB_URL
-            )
-        else:
-            self.gqlc = None
 
         # clone ansible/ansible
         logging.info('creating gitrepowrapper')
@@ -386,6 +374,7 @@ class AnsibleTriage(DefaultTriager):
                 icount += 1
 
                 self.meta = {}
+                self.processed_meta = {}
                 number = issue.number
                 self.set_resume(item[0], number)
 
@@ -611,34 +600,19 @@ class AnsibleTriage(DefaultTriager):
             repopaths = [x for x in REPOS]
 
         for rp in repopaths:
-            if self.gqlc:
-                if issuenums and len(issuenums) <= 10:
-                    self.issue_summaries[repopath] = {}
+            if issuenums and len(issuenums) <= 10:
+                self.issue_summaries[repopath] = {}
 
-                    for num in issuenums:
-                        # --pr is an alias to --id and can also be for issues
-                        node = self.gqlc.get_summary(rp, 'pullRequest', num)
-                        if node is None:
-                            node = self.gqlc.get_summary(rp, 'issue', num)
-                        if node is not None:
-                            self.issue_summaries[repopath][to_text(num)] = node
-
-                else:
-                    self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
+                for num in issuenums:
+                    # --pr is an alias to --id and can also be for issues
+                    node = self.gqlc.get_summary(rp, 'pullRequest', num)
+                    if node is None:
+                        node = self.gqlc.get_summary(rp, 'issue', num)
+                    if node is not None:
+                        self.issue_summaries[repopath][to_text(num)] = node
             else:
-                # scrape all summaries rom www for later opchecking
+                self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
 
-                if self.pr:
-                    logging.warning("'pr' switch is used by but Github authentication token isn't set: all pull-requests will be scrapped")
-
-                cachefile = os.path.join(
-                    self.cachedir_base, rp,
-                    '%s__scraped_issues.json' % rp
-                )
-                self.issue_summaries[repopath] = self.gws.get_issue_summaries(
-                    'https://github.com/%s' % rp,
-                    cachefile=cachefile
-                )
 
     def save_meta(self, issuewrapper, meta, actions):
         # save the meta+actions
@@ -677,10 +651,7 @@ class AnsibleTriage(DefaultTriager):
             dmeta['pullrequest_reviews'] = []
 
         self.dump_meta(issuewrapper, dmeta)
-        rfn = issuewrapper.repo_full_name
-        rfn_parts = rfn.split('/', 1)
-        namespace = rfn_parts[0]
-        reponame = rfn_parts[1]
+        namespace, reponame = issuewrapper.repo_full_name.split('/', 1)
 
         # https://github.com/ansible/ansibullbot/issues/1355
         dmeta_copy = dmeta.copy()
@@ -690,12 +661,15 @@ class AnsibleTriage(DefaultTriager):
         # FIXME figure out a way how to store these without keys being invalid
         dmeta_copy['collection_filemap'] = None
         dmeta_copy['collection_file_matches'] = None
+        dmeta_copy['renamed_filenames'] = None
+        dmeta_copy['test_support_plugins'] = None
 
         post_to_receiver(
             'metadata',
             {'user': namespace, 'repo': reponame, 'number': issuewrapper.number},
             dmeta_copy
         )
+        self.processed_meta = dmeta_copy.copy()
 
     def load_meta(self, issuewrapper):
         mfile = os.path.join(
@@ -743,7 +717,7 @@ class AnsibleTriage(DefaultTriager):
                 bot_broken_commands.append((bot_broken_label, '!bot_broken'))
 
             last_bot_broken = sorted(bot_broken_commands, key=lambda x: x[0])[-1:]
-            if last_bot_broken[-1:] == 'bot_broken':
+            if last_bot_broken and last_bot_broken[0][-1] == 'bot_broken':
                 logging.warning('bot broken!')
                 if 'bot_broken' not in iw.labels:
                     actions.newlabel.append('bot_broken')
@@ -753,8 +727,20 @@ class AnsibleTriage(DefaultTriager):
                     actions.unlabel.append('bot_broken')
 
             if 'bot_skip' in self.meta['maintainer_commands'] or \
-                    'bot_skip' in self.meta['submitter_commands']:
-                return
+                    'bot_skip' in self.meta['submitter_commands'] or \
+                    '!bot_skip' in self.meta['maintainer_commands'] or \
+                    '!bot_skip' in self.meta['submitter_commands']:
+                bot_skip_users = [x.login for x in iw.repo.assignees]
+                bot_skip_users.append(iw.submitter)
+                bot_skip_commands = iw.history.get_commands(
+                        bot_skip_users,
+                        ['bot_skip', '!bot_skip'],
+                        timestamps=True
+                )
+                last_bot_skip = sorted(bot_skip_commands, key=lambda x: x[0])[-1:]
+                if last_bot_skip and last_bot_skip[0][-1] == 'bot_skip':
+                    logging.warning('bot skip!')
+                    return
 
         if iw.is_pullrequest():
             if not iw.incoming_repo_exists and C.features.is_enabled('close_missing_ref_prs'):
@@ -1371,14 +1357,6 @@ class AnsibleTriage(DefaultTriager):
                         needs_maintainer = True
                         break
                 if needs_maintainer:
-                    # 'ansible' is cleared from the primary key, so we need
-                    # to check the original copy before deciding this isn't
-                    # being maintained.
-
-                    #if not self.meta['module_match'].get('_maintainers'):
-                    #    if 'needs_maintainer' not in iw.labels:
-                    #        actions.newlabel.append('needs_maintainer')
-
                     if 'needs_maintainer' not in iw.labels:
                         actions.newlabel.append('needs_maintainer')
                 else:
@@ -1574,6 +1552,17 @@ class AnsibleTriage(DefaultTriager):
                 logging.error(msg)
                 raise LabelWafflingError(msg)
 
+    def post_actions_to_receiver(self, iw, actions, processed_meta):
+        namespace, reponame = iw.repo_full_name.split('/', 1)
+        processed_actions = {name: value for (name, value) in vars(actions).items() if value}
+        data = processed_actions
+        data['meta'] = processed_meta
+        post_to_receiver(
+            'actions',
+            {'user': namespace, 'repo': reponame, 'number': iw.number},
+            data,
+        )
+
     def apply_actions(self, iw, actions):
         if self.safe_force:
             self.check_safe_match(iw, actions)
@@ -1666,15 +1655,7 @@ class AnsibleTriage(DefaultTriager):
 
     def collect_repos(self):
         '''Populate the local cache of repos'''
-        # this should do a few things:
         logging.info('start collecting repos')
-
-        logging.debug('creating github connection object')
-        self.gh = self._connect()
-
-        logging.info('creating github connection wrapper')
-        self.ghw = GithubWrapper(self.gh, token=self.github_token, cachedir=self.cachedir_base)
-
         for repo in REPOS:
             # skip repos based on args
             if self.repo and self.repo != repo:
@@ -1688,7 +1669,6 @@ class AnsibleTriage(DefaultTriager):
                 self._collect_repo(repo, issuenums=numbers)
             else:
                 self._collect_repo(repo)
-
         logging.info('finished collecting issues')
 
     @RateLimited
@@ -1698,7 +1678,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('getting repo obj for %s' % repo)
         if repo not in self.repos:
             self.repos[repo] = {
-                'repo': self.ghw.get_repo(repo, verbose=False),
+                'repo': self.ghw.get_repo(repo),
                 'issues': [],
                 'processed': [],
                 'since': None,
@@ -1708,7 +1688,7 @@ class AnsibleTriage(DefaultTriager):
         else:
             # force a clean repo object to limit caching problems
             self.repos[repo]['repo'] = \
-                self.ghw.get_repo(repo, verbose=False)
+                self.ghw.get_repo(repo)
             # clear the issues
             self.repos[repo]['issues'] = {}
             # increment the loopcount
@@ -1961,7 +1941,7 @@ class AnsibleTriage(DefaultTriager):
         # shipit?
         self.meta.update(
             get_shipit_facts(
-                iw, self.meta, self.module_indexer.botmeta['files'],
+                iw, self.meta, self.botmeta['files'],
                 core_team=self.ansible_core_team, botnames=self.BOTNAMES
             )
         )
@@ -2092,11 +2072,6 @@ class AnsibleTriage(DefaultTriager):
             if body and key in body.lower():
                 return key
 
-        if iw.is_issue():
-            pass
-        elif iw.is_pullrequest():
-            pass
-
         return None
 
     def get_migrated_issue(self, migrated_issue):
@@ -2134,7 +2109,7 @@ class AnsibleTriage(DefaultTriager):
         # get the repo if not already fetched
         if repo_path not in self.repos:
             self.repos[repo_path] = {
-                'repo': self.ghw.get_repo(repo_path, verbose=False),
+                'repo': self.ghw.get_repo(repo_path),
                 'issues': {}
             }
 
@@ -2251,7 +2226,6 @@ class AnsibleTriage(DefaultTriager):
     def waiting_on(self, issuewrapper, meta):
         iw = issuewrapper
         wo = None
-        #if meta['is_issue']:
         if iw.is_issue():
             if meta['is_needs_info']:
                 wo = iw.submitter
@@ -2318,6 +2292,8 @@ class AnsibleTriage(DefaultTriager):
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
+
+        self.post_actions_to_receiver(iw, actions, self.processed_meta)
 
         super().execute_actions(iw, actions)
 

@@ -298,3 +298,10 @@ class GitRepoWrapper:
             if fn.endswith(pattern):
                 matches.add(fn)
         return matches
+
+    def list_files_by_branch(self, branch):
+        cmd = "cd %s; git ls-tree -r --name-only %s" % (self.checkoutdir, branch)
+        logging.info(cmd)
+        (rc, so, se) = run_command(cmd)
+        res = so.strip().decode('utf-8')
+        return res.splitlines()

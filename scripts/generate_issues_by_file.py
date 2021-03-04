@@ -99,7 +99,7 @@ def main():
         for idp, tup in enumerate(tuples):
             f.write(b'<div style="background-color: #cfc ; padding: 10px; border: 1px solid green;">\n')
             file_ref = b'%d. <a href="https://github.com/ansible/ansible/blob/devel/%s">https://github.com/ansible/ansible/blob/devel/%s</a> %d total' % (
-                (idp+1), to_bytes(tup[0]), to_bytes(tup[0]), len(tup[1:])
+                (idp + 1), to_bytes(tup[0]), to_bytes(tup[0]), len(tup[1:])
             )
             f.write(b'%s\n' % (file_ref))
             f.write(b'</div>')

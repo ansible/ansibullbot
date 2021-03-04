@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import copy
 import datetime
 import json
@@ -13,10 +11,8 @@ from Levenshtein import jaro_winkler
 
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.extractors import ModuleExtractor
-from ansibullbot.utils.git_tools import GitRepoWrapper
-from ansibullbot.utils.systemtools import run_command
-
 from ansibullbot.utils.galaxy import GalaxyQueryTool
+from ansibullbot.utils.git_tools import GitRepoWrapper
 
 
 MODULES_FLATTEN_MAP = {
@@ -105,7 +101,6 @@ def make_prefixes(filename):
 class AnsibleComponentMatcher:
 
     botmeta = {}
-    GALAXY_FILES = {}
     GALAXY_MANIFESTS = {}
     REPO = 'https://github.com/ansible/ansible'
     STOPWORDS = ['ansible', 'core', 'plugin']
@@ -347,40 +342,25 @@ class AnsibleComponentMatcher:
                     'name': mn
                 }
 
-        # make a list of names by calling ansible-doc
-        checkoutdir = self.gitrepo.checkoutdir
-        checkoutdir = os.path.abspath(checkoutdir)
-        cmd = f'. {checkoutdir}/hacking/env-setup; ansible-doc -t module -F'
-        logging.debug(cmd)
-        (rc, so, se) = run_command(cmd, cwd=checkoutdir)
-        if rc != 0:
-            raise Exception("'ansible-doc' command failed (%s, %s %s)" % (rc, so, se))
-        lines = to_text(so).split('\n')
-        for line in lines:
-
-            # compat for macos tmpdirs
-            if ' /private' in line:
-                line = line.replace(' /private', '', 1)
-
-            parts = line.split()
-            parts = [x.strip() for x in parts]
-
-            if len(parts) != 2 or checkoutdir not in line:
-                continue
-
-            mname = parts[0]
-            if mname not in self.MODULE_NAMES:
-                self.MODULE_NAMES.append(mname)
-
-            fpath = parts[1]
-            fpath = fpath.replace(checkoutdir + '/', '')
-
-            if fpath not in self.MODULES:
-                self.MODULES[fpath] = {
-                    'name': mname,
-                    'repo_filename': fpath,
-                    'filename': fpath
+        # pre collections modules
+        pre_coll_modules = [
+            x for x in self.gitrepo.list_files_by_branch('origin/stable-2.9')
+            if x.startswith('lib/ansible/modules') and '__init__' not in x and
+                (x.endswith('.py') or x.endswith('.ps1'))
+        ]
+        for module in pre_coll_modules:
+            mn = os.path.basename(module).replace('.py', '').replace('.ps1', '')
+            mn = mn.lstrip('_')
+            if mn not in self.MODULE_NAMES:
+                self.MODULE_NAMES.append(mn)
+            if module not in self.MODULES:
+                self.MODULES[module] = {
+                    'filename': module,
+                    'repo_filename': module,
+                    'name': mn
                 }
+
+        checkoutdir = os.path.abspath(self.gitrepo.checkoutdir)
 
         _modules = self.MODULES.copy()
         for k, v in _modules.items():
@@ -463,6 +443,9 @@ class AnsibleComponentMatcher:
                     delimited = True
                     components = component.split(delimiter)
                     for _component in components:
+                        if len(_component.split('.')) == 3:
+                            # fqcn
+                            matched_filenames += self._match_component(title, body, _component.split('.')[-1])
                         _matches = self._match_component(title, body, _component)
                         self.strategies.append(self.strategy)
 
@@ -476,6 +459,9 @@ class AnsibleComponentMatcher:
                     break
 
             if not delimited:
+                if len(component.split('.')) == 3:
+                    # fqcn
+                    matched_filenames += self._match_component(title, body, component.split('.')[-1])
                 matched_filenames += self._match_component(title, body, component)
                 self.strategies.append(self.strategy)
 
@@ -518,12 +504,6 @@ class AnsibleComponentMatcher:
             return []
 
         matched_filenames = []
-
-        '''
-        # botmeta -should- be the source of truth, but it's proven not to be ...
-        if not matched_filenames:
-            matched_filenames += self.search_by_botmeta_migrated_to(component)
-        '''
 
         if self.GQT is not None:
             # see what is actually in galaxy ...
@@ -577,19 +557,6 @@ class AnsibleComponentMatcher:
             context = None
 
         if component not in self.STOPWORDS and component not in self.STOPCHARS:
-
-            '''
-            if not matched_filenames:
-                matched_filenames += self.search_by_botmeta_migrated_to(component)
-                if matched_filenames:
-                    self.strategy = u'search_by_botmeta_migrated_to'
-
-            if not matched_filenames:
-                matched_filenames += self.search_by_galaxy(component)
-                if matched_filenames:
-                    self.strategy = u'search_by_galaxy'
-            '''
-
             if not matched_filenames:
                 matched_filenames += self.search_by_keywords(component, exact=True)
                 if matched_filenames:
@@ -643,106 +610,6 @@ class AnsibleComponentMatcher:
                 matched_filenames += self.include_modules_from_test_targets(matched_filenames)
 
         return matched_filenames
-
-    def search_by_botmeta_migrated_to(self, component):
-        '''Is this a file belonging to a collection?'''
-
-        matches = []
-
-        # narrow searching to modules/utils/plugins
-        if component.startswith('lib/ansible') and not (
-                component.startswith('lib/ansible/plugins') or not
-                component.startswith('lib/ansible/module')):
-            return matches
-
-        if os.path.basename(component) == '__init__.py':
-            return matches
-
-        if component.startswith('test/lib'):
-            return matches
-
-        # check for matches in botmeta first in case there's a migrated_to key ...
-        botmeta_candidates = []
-        for bmkey in self.botmeta['files'].keys():
-            # skip tests because we dont want false positives
-            if not bmkey.startswith('lib/ansible'):
-                continue
-            if not self.botmeta['files'][bmkey].get('migrated_to'):
-                continue
-
-            if 'modules/' in component and 'modules/' not in bmkey:
-                continue
-            if 'lookup' in component and 'lookup' not in bmkey:
-                continue
-            if 'filter' in component and 'filter' not in bmkey:
-                continue
-            if 'inventory' in component and 'inventory' not in bmkey:
-                continue
-
-            if bmkey == component or os.path.basename(bmkey).replace('.py', '') == os.path.basename(component).replace('.py', ''):
-                mt = self.botmeta['files'][bmkey].get('migrated_to')[0]
-                for fn,gcollections in self.GALAXY_FILES.items():
-                    if mt not in gcollections:
-                        continue
-                    if os.path.basename(fn).replace('.py', '') != os.path.basename(component).replace('.py', ''):
-                        continue
-                    if 'modules/' in component and 'modules/' not in fn:
-                        continue
-                    if 'lookup' in component and 'lookup' not in fn:
-                        continue
-                    if 'filter' in component and 'filter' not in fn:
-                        continue
-                    if 'inventory' in component and 'inventory' not in fn:
-                        continue
-                    botmeta_candidates.append('collection:%s:%s' % (mt, fn))
-                    logging.info('matched %s to %s to %s:%s' % (component, bmkey, mt, fn))
-
-        if botmeta_candidates:
-            return botmeta_candidates
-
-        return matches
-
-    """
-    def search_by_galaxy(self, component):
-        '''Is this a file belonging to a collection?'''
-
-        matches = []
-
-        # narrow searching to modules/utils/plugins
-        if component.startswith('lib/ansible') and not (
-                component.startswith('lib/ansible/plugins') or not
-                component.startswith('lib/ansible/module')):
-            return matches
-
-        if os.path.basename(component) == '__init__.py':
-            return matches
-
-        if component.startswith('test/lib'):
-            return matches
-
-        candidates = []
-        for key in self.GALAXY_FILES.keys():
-            if not (component in key or key == component):
-                continue
-            if not key.startswith('plugins'):
-                continue
-            keybn = os.path.basename(key).replace('.py', '')
-            if keybn != component:
-                continue
-
-            logging.info(u'matched %s to %s:%s' % (component, key, self.GALAXY_FILES[key]))
-            candidates.append(key)
-
-        if candidates:
-            for cn in candidates:
-                for fqcn in self.GALAXY_FILES[cn]:
-                    if fqcn.startswith('testing.'):
-                        continue
-                    matches.append('collection:%s:%s' % (fqcn, cn))
-            matches = sorted(set(matches))
-
-        return matches
-    """
 
     def search_by_module_name(self, component):
         matches = []
@@ -1515,13 +1382,6 @@ class AnsibleComponentMatcher:
                 meta['support'] = support_levels[keys[0]]
                 meta['supported_by'] = support_levels[keys[0]]
                 logging.debug('%s support == %s' % (keys[0], meta['supported_by']))
-
-        '''
-        # new modules should default to "community" support
-        if filename.startswith(u'lib/ansible/modules') and filename not in self.gitrepo.files and not meta.get('migrated_to'):
-            meta[u'support'] = u'community'
-            meta[u'supported_by'] = u'community'
-        '''
 
         # test targets for modules should inherit from their modules
         if filename.startswith('test/integration/targets') and filename not in self.botmeta['files']:

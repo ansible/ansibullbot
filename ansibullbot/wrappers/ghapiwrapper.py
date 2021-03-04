@@ -8,7 +8,6 @@ from datetime import datetime
 
 import ansibullbot.constants as C
 
-from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.errors import RateLimitError
 from ansibullbot.utils.file_tools import read_gzip_json_file, write_gzip_json_file
@@ -19,13 +18,10 @@ ADB = AnsibullbotDatabase()
 
 
 class GithubWrapper:
-    def __init__(self, gh, token=None, username=None, password=None, cachedir='~/.ansibullbot/cache'):
+    def __init__(self, gh, token=None, cachedir='~/.ansibullbot/cache'):
         self.gh = gh
         self.token = token
-        self.username = username
-        self.password = password
         self.cachedir = os.path.expanduser(cachedir)
-        self.cachefile = os.path.join(self.cachedir, 'github.pickle')
         self.cached_requests_dir = os.path.join(self.cachedir, 'cached_requests')
 
     @property
@@ -41,23 +37,18 @@ class GithubWrapper:
         return accepts
 
     @RateLimited
-    def get_org(self, org, verbose=True):
+    def get_org(self, org):
         org = self.gh.get_organization(org)
         return org
 
     @RateLimited
-    def get_repo(self, repo_path, verbose=True):
-        repo = RepoWrapper(self.gh, repo_path, verbose=verbose, cachedir=self.cachedir)
+    def get_repo(self, repo_path):
+        repo = RepoWrapper(self.gh, repo_path, cachedir=self.cachedir)
         return repo
-
-    def get_rate_limit(self):
-        return self.gh.get_rate_limit().raw_data
 
     @RateLimited
     def get_cached_request(self, url):
-
         '''Use a combination of sqlite and ondisk caching to GET an api resource'''
-
         url_parts = url.split('/')
 
         cdf = os.path.join(self.cached_requests_dir, url.replace('https://', '') + '.json.gz')
@@ -78,7 +69,7 @@ class GithubWrapper:
         if meta is None:
             meta = {}
 
-        # https://developer.github.com/v3/#conditional-requests        
+        # https://developer.github.com/v3/#conditional-requests
         etag = meta.get('etag')
         if etag and os.path.exists(cdf):
             headers['If-None-Match'] = etag
@@ -142,34 +133,6 @@ class GithubWrapper:
         return data
 
     @RateLimited
-    def get_request_gen(self, url):
-        '''Get an arbitrary API endpoint'''
-        # FIXME merge with get_request()
-        headers = {
-            'Accept': ','.join(self.accepts_headers),
-            'Authorization': 'Bearer %s' % self.token,
-        }
-
-        rr = requests.get(url, headers=headers)
-        data = rr.json()
-
-        # handle ratelimits ...
-        if isinstance(data, dict) and data.get('message'):
-            if data['message'].lower().startswith('api rate limit exceeded'):
-                raise RateLimitError()
-
-        yield data
-
-        # pagination
-        while hasattr(rr, 'links') and rr.links and rr.links.get('next'):
-            rr = requests.get(rr.links['next']['url'], headers=headers)
-            data = rr.json()
-            if isinstance(data, dict) and data.get('message'):
-                if data['message'].lower().startswith('api rate limit exceeded'):
-                    raise RateLimitError()
-            yield data
-
-    @RateLimited
     def delete_request(self, url):
         headers = {
             'Accept': ','.join(self.accepts_headers),
@@ -180,23 +143,14 @@ class GithubWrapper:
         return rr.ok
 
 
-
 class RepoWrapper:
-    def __init__(self, gh, repo_path, verbose=True, cachedir='~/.ansibullbot/cache'):
-
+    def __init__(self, gh, repo_path, cachedir='~/.ansibullbot/cache'):
         self.gh = gh
-        self.repo_path = repo_path
+        self.cachedir = os.path.join(os.path.expanduser(cachedir), repo_path)
 
-        self.cachedir = os.path.expanduser(cachedir)
-        self.cachedir = os.path.join(self.cachedir, repo_path)
-        self.cachefile = os.path.join(self.cachedir, 'repo.pickle')
-
-        self.updated = False
-        self.verbose = verbose
         self._assignees = False
-        self.repo = self.get_repo(repo_path)
-
         self._labels = False
+        self.repo = self.get_repo(repo_path)
 
     def has_in_assignees(self, login):
         logins = [x.login for x in self.assignees]
@@ -227,7 +181,7 @@ class RepoWrapper:
             except UnicodeDecodeError:
                 # https://github.com/ansible/ansibullbot/issues/610
                 logging.warning('cleaning cache for %s' % number)
-                self.clean_issue_cache(number)
+                shutil.rmtree(os.path.join(self.cachedir, 'issues', str(number)))
 
         return issue
 
@@ -262,7 +216,7 @@ class RepoWrapper:
         pfile = os.path.join(
             self.cachedir,
             'issues',
-            to_text(number),
+            str(number),
             'issue.pickle'
         )
         if os.path.isfile(pfile):
@@ -276,14 +230,13 @@ class RepoWrapper:
             return False
 
     def save_issue(self, issue):
-
         if not C.DEFAULT_PICKLE_ISSUES:
             return
 
         cfile = os.path.join(
             self.cachedir,
             'issues',
-            to_text(issue.number),
+            str(issue.number),
             'issue.pickle'
         )
         cdir = os.path.dirname(cfile)
@@ -344,20 +297,7 @@ class RepoWrapper:
 
     @RateLimited
     def get_file_contents(self, filepath):
-        # FIXME - cachethis
-        filedata = None
         try:
-            filedata = self.repo.get_file_contents(filepath)
+            return self.repo.get_file_contents(filepath)
         except Exception:
             pass
-
-        return filedata
-
-    def clean_issue_cache(self, number):
-        # https://github.com/ansible/ansibullbot/issues/610
-        cdir = os.path.join(
-            self.cachedir,
-            'issues',
-            to_text(number)
-        )
-        shutil.rmtree(cdir)
