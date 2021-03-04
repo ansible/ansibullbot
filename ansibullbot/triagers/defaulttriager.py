@@ -58,8 +58,6 @@ class DefaultActions:
         self.unlabel = []
         self.comments = []
         self.uncomment = []
-        self.assign = []
-        self.unassign = []
         self.close = False
         self.open = False
         self.merge = False
@@ -348,14 +346,6 @@ class DefaultTriager:
             for newlabel in actions.newlabel:
                 logging.info('action: label - ' + newlabel)
                 iw.add_label(label=newlabel)
-
-            for user in actions.assign:
-                logging.info('action: assign - ' + user)
-                iw.assign_user(user)
-
-            for user in actions.unassign:
-                logging.info('action: unassign - ' + user)
-                iw.unassign_user(user)
 
             if actions.merge:
                 iw.merge()
