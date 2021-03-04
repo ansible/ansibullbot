@@ -104,7 +104,7 @@ class TestIssueWrapperBase(unittest.TestCase):
         gh = GithubMock()
         ghw = GithubWrapper(gh, cachedir=cache)
 
-        gr = ghw.get_repo('test/test', verbose=False)
+        gr = ghw.get_repo('test/test')
         # FIXME - this should return a wrapped issue
         gi = gr.get_issue(1)
         self.iw = IssueWrapper(github=gh, repo=gr, issue=gi, cachedir=cache)

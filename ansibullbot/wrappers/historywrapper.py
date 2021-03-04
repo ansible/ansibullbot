@@ -33,18 +33,18 @@ class HistoryWrapper:
         self.issue = issue
         self._waffled_labels = None
 
-        if issue.repo.repo_path not in cachedir and 'issues' not in cachedir:
+        if issue.repo_full_name not in cachedir and 'issues' not in cachedir:
             self.cachefile = os.path.join(
                 cachedir,
-                issue.repo.repo_path,
+                issue.repo_full_name,
                 'issues',
                 to_text(issue.instance.number),
                 'history.pickle'
             )
-        elif issue.repo.repo_path not in cachedir:
+        elif issue.repo_full_name not in cachedir:
             self.cachefile = os.path.join(
                 cachedir,
-                issue.repo.repo_path,
+                issue.repo_full_name,
                 'issues',
                 to_text(issue.instance.number),
                 'history.pickle'

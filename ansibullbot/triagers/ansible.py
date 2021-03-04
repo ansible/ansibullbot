@@ -1675,7 +1675,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('getting repo obj for %s' % repo)
         if repo not in self.repos:
             self.repos[repo] = {
-                'repo': self.ghw.get_repo(repo, verbose=False),
+                'repo': self.ghw.get_repo(repo),
                 'issues': [],
                 'processed': [],
                 'since': None,
@@ -1685,7 +1685,7 @@ class AnsibleTriage(DefaultTriager):
         else:
             # force a clean repo object to limit caching problems
             self.repos[repo]['repo'] = \
-                self.ghw.get_repo(repo, verbose=False)
+                self.ghw.get_repo(repo)
             # clear the issues
             self.repos[repo]['issues'] = {}
             # increment the loopcount
@@ -2108,7 +2108,7 @@ class AnsibleTriage(DefaultTriager):
         # get the repo if not already fetched
         if repo_path not in self.repos:
             self.repos[repo_path] = {
-                'repo': self.ghw.get_repo(repo_path, verbose=False),
+                'repo': self.ghw.get_repo(repo_path),
                 'issues': {}
             }
 
