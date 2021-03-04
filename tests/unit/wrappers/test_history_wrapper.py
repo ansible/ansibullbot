@@ -47,9 +47,6 @@ class CommentMock:
         self.created_at = datetime.datetime.now()
 
 
-class RepoMock:
-    repo_path = 'ansible/ansible'
-
 
 class IssueMock:
     number = 1
@@ -63,7 +60,7 @@ class IssueWrapperMock:
 
     def __init__(self):
         self.instance = IssueMock()
-        self.repo = RepoMock()
+        self.repo_full_name = 'ansible/ansible'
 
     @property
     def events(self):
