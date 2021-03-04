@@ -18,7 +18,6 @@ import abc
 import argparse
 import json
 import logging
-import operator
 import os
 import pickle
 import sys
@@ -33,7 +32,6 @@ from github import Github
 from jinja2 import Environment, FileSystemLoader
 
 import ansibullbot.constants as C
-from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
@@ -45,11 +43,6 @@ libindex = (len(basepath) - 1) - libindex
 basepath = '/'.join(basepath[0:libindex])
 loader = FileSystemLoader(os.path.join(basepath, 'templates'))
 environment = Environment(loader=loader, trim_blocks=True)
-
-
-# https://github.com/ansible/ansibullbot/issues/1129
-if 'equalto' not in environment.tests:
-    environment.tests['equalto'] = operator.eq
 
 
 class DefaultActions:
@@ -117,6 +110,7 @@ class DefaultTriager:
                             help="seconds to sleep between loop iterations")
         parser.add_argument("--debug", "-d", action="store_true",
                             help="Debug output")
+        # FIXME verbose is not used
         parser.add_argument("--verbose", "-v", action="store_true",
                             help="Verbose output")
         parser.add_argument("--dry-run", "-n", action="store_true",
@@ -165,15 +159,6 @@ class DefaultTriager:
                 password=self.github_pass
             )
 
-    def is_pr(self, issue):
-        if '/pull/' in issue.html_url:
-            return True
-        else:
-            return False
-
-    def is_issue(self, issue):
-        return not self.is_pr(issue)
-
     @RateLimited
     def get_members(self, organization):
         """Get members of an organization
@@ -187,8 +172,8 @@ class DefaultTriager:
         members = []
         update = False
         write_cache = False
-        now = self.get_current_time()
-        gh_org = self._connect().get_organization(organization)
+        now = datetime.utcnow()
+        gh_org = self.gh.get_organization(organization)
 
         cachedir = os.path.join(self.cachedir_base, organization)
         if not os.path.isdir(cachedir):
@@ -231,8 +216,7 @@ class DefaultTriager:
         """
         members = set()
 
-        conn = self._connect()
-        gh_org = conn.get_organization(organization)
+        gh_org = self.gh.get_organization(organization)
         for team in gh_org.get_teams():
             if team.name in teams:
                 for member in team.get_members():
@@ -240,14 +224,8 @@ class DefaultTriager:
 
         return sorted(members)
 
-    #@RateLimited
     def get_valid_labels(self, repo):
-
         # use the repo wrapper to enable caching+updating
-        if not self.ghw:
-            self.gh = self._connect()
-            self.ghw = GithubWrapper(self.gh)
-
         rw = self.ghw.get_repo(repo)
         vlabels = []
         for vl in rw.labels:
@@ -267,9 +245,6 @@ class DefaultTriager:
     @abc.abstractmethod
     def run(self):
         pass
-
-    def get_current_time(self):
-        return datetime.utcnow()
 
     def render_boilerplate(self, tvars, boilerplate=None):
         template = environment.get_template('%s.j2' % boilerplate)
@@ -328,7 +303,6 @@ class DefaultTriager:
             logging.info("acton: comment - " + comment)
             iw.add_comment(comment=comment)
 
-
         if actions.close:
             for newlabel in actions.newlabel:
                 if newlabel in self.CLOSING_LABELS:
@@ -353,7 +327,6 @@ class DefaultTriager:
         # FIXME why?
         self.build_history(iw)
 
-    #@RateLimited
     def is_pr_merged(self, number, repo):
         '''Check if a PR# has been merged or not'''
 
@@ -399,7 +372,7 @@ class DefaultTriager:
 
     def dump_action_dict(self, issue, actions):
         '''Serialize the action dict to disk for quick(er) debugging'''
-        fn = os.path.join('/tmp', 'actions', issue.repo_full_name, to_text(issue.number) + '.json')
+        fn = os.path.join('/tmp', 'actions', issue.repo_full_name, str(issue.number) + '.json')
         dn = os.path.dirname(fn)
         if not os.path.isdir(dn):
             os.makedirs(dn)

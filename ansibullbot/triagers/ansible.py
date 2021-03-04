@@ -229,7 +229,7 @@ class AnsibleTriage(DefaultTriager):
 
         # wrap the connection
         logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh, cachedir=self.cachedir_base)
+        self.ghw = GithubWrapper(self.gh, token=self.github_token, cachedir=self.cachedir_base)
 
         # get valid labels
         logging.info('getting labels')
@@ -1643,15 +1643,7 @@ class AnsibleTriage(DefaultTriager):
 
     def collect_repos(self):
         '''Populate the local cache of repos'''
-        # this should do a few things:
         logging.info('start collecting repos')
-
-        logging.debug('creating github connection object')
-        self.gh = self._connect()
-
-        logging.info('creating github connection wrapper')
-        self.ghw = GithubWrapper(self.gh, token=self.github_token, cachedir=self.cachedir_base)
-
         for repo in REPOS:
             # skip repos based on args
             if self.repo and self.repo != repo:
@@ -1665,7 +1657,6 @@ class AnsibleTriage(DefaultTriager):
                 self._collect_repo(repo, issuenums=numbers)
             else:
                 self._collect_repo(repo)
-
         logging.info('finished collecting issues')
 
     @RateLimited
@@ -2066,11 +2057,6 @@ class AnsibleTriage(DefaultTriager):
             if body and key in body.lower():
                 return key
 
-        if iw.is_issue():
-            pass
-        elif iw.is_pullrequest():
-            pass
-
         return None
 
     def get_migrated_issue(self, migrated_issue):
@@ -2225,7 +2211,6 @@ class AnsibleTriage(DefaultTriager):
     def waiting_on(self, issuewrapper, meta):
         iw = issuewrapper
         wo = None
-        #if meta['is_issue']:
         if iw.is_issue():
             if meta['is_needs_info']:
                 wo = iw.submitter
