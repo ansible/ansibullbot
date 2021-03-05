@@ -190,6 +190,11 @@ class IssueMock:
     def is_pullrequest(self):
         return 'pull' in self.html_url
 
+    @property
+    def pullrequest(self):
+        if self.is_pullrequest:
+            return self
+
     def get_files(self):
         # simulate getting PR files from the tip of the HEAD
         files = []
