@@ -356,7 +356,7 @@ class AnsibleTriage(DefaultTriager):
         if self.collect_only:
             return
 
-        for repopath, repodata in self.repos.items():
+        for repopath, repodata in self.repos.copy().items():
             repo = repodata['repo']
             cachedir = os.path.join(self.cachedir_base, repopath)
             for issue in repodata['issues']:
