@@ -2006,7 +2006,7 @@ class AnsibleTriage(DefaultTriager):
             self.meta['is_migrated'] = True
             self.meta['migrated_from'] = to_text(miw)
             try:
-                self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
+                self.meta['migrated_issue_repo_path'] = miw.repo_full_name
                 self.meta['migrated_issue_number'] = miw.number
                 self.meta['migrated_issue_state'] = miw.state
             except AttributeError:
