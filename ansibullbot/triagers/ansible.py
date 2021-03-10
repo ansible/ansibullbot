@@ -357,17 +357,10 @@ class AnsibleTriage(DefaultTriager):
         if self.collect_only:
             return
 
-        # loop through each repo made by collect_repos
-        items = list(self.repos.items())
-        for item in items:
-            repopath = item[0]
-            repo = item[1]['repo']
-
-            # set the relative cachedir
+        for repopath, repodata in self.repos.copy().items():
+            repo = repodata['repo']
             cachedir = os.path.join(self.cachedir_base, repopath)
-
-            for issue in item[1]['issues']:
-
+            for issue in repodata['issues']:
                 if issue is None:
                     continue
 
@@ -376,7 +369,7 @@ class AnsibleTriage(DefaultTriager):
                 self.meta = {}
                 self.processed_meta = {}
                 number = issue.number
-                self.set_resume(item[0], number)
+                self.set_resume(repopath, number)
 
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(number)
@@ -2028,7 +2021,7 @@ class AnsibleTriage(DefaultTriager):
             self.meta['is_migrated'] = True
             self.meta['migrated_from'] = to_text(miw)
             try:
-                self.meta['migrated_issue_repo_path'] = miw.repo.repo_path
+                self.meta['migrated_issue_repo_path'] = miw.repo_full_name
                 self.meta['migrated_issue_number'] = miw.number
                 self.meta['migrated_issue_state'] = miw.state
             except AttributeError:

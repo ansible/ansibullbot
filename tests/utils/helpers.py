@@ -21,8 +21,7 @@ def get_issue(datafile, statusfile):
         iw = IssueWrapper(repo=repo, cachedir=cachedir, issue=issue)
 
         # disable this completely
-        iw.load_update_fetch = lambda x: []
-        iw.load_update_fetch_rest = lambda x: []
+        iw.load_update_fetch_files = lambda: []
         # hook in here to avoid github api calls
         iw._get_timeline = lambda: issue.events
         iw._commits = issue.commits

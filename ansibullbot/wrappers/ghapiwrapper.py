@@ -202,8 +202,7 @@ class RepoWrapper:
             self._assignees = self.load_update_fetch('assignees')
         return self._assignees
 
-    def get_issues(self, since=None, state='open', itype='issue'):
-
+    def get_issues(self, since=None):
         if since:
             return self.repo.get_issues(since=since)
         else:
