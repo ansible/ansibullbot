@@ -191,11 +191,7 @@ class IssueMock:
         return 'pull' in self.html_url
 
     @property
-    def pullrequest(self):
-        if self.is_pullrequest:
-            return self
-
-    def get_files(self):
+    def pr_files(self):
         # simulate getting PR files from the tip of the HEAD
         files = []
         sorted_commits = sorted(

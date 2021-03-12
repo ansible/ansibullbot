@@ -63,7 +63,7 @@ class DefaultWrapper:
         self._repo_full_name = False
         self._template_data = None
         self.pull_raw = None
-        self.pr_files = None
+        self._pr_files = None
         self.full_cachedir = os.path.join(self.cachedir, 'issues', str(self.number))
         self._renamed_files = None
         self._pullrequest_check_runs = None
@@ -514,13 +514,16 @@ class DefaultWrapper:
         ]
 
     @property
+    def pr_files(self):
+        if self._pr_files is None:
+            self._pr_files = self.load_update_fetch_files()
+        return self._pr_files
+
+    @property
     def files(self):
         if self.is_issue():
             return None
-        if self.pr_files is None:
-            self.pr_files = self.load_update_fetch_files()
-        files = [x.filename for x in self.pr_files]
-        return files
+        return [x.filename for x in self.pr_files]
 
     @property
     def new_files(self):
