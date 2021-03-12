@@ -285,8 +285,6 @@ def get_docs_facts(iw):
     if not iw.is_pullrequest():
         return dfacts
 
-    docs_only = False
-
     docs_only = False not in [_is_docs_only(f.raw_data) for f in iw.pr_files]
 
     dfacts["is_docs_only"] = docs_only
