@@ -113,6 +113,8 @@ class AnsibleComponentMatcher:
     # FIXME: THESE NEED TO GO INTO botmeta
     # ALSO SEE search_by_regex_generic ...
     KEYWORDS = {
+        'no component': 'lib/ansible/cli/__init__.py',
+        'none': 'lib/ansible/cli/__init__.py',
         'N/A': 'lib/ansible/cli/__init__.py',
         'n/a': 'lib/ansible/cli/__init__.py',
         'all': 'lib/ansible/cli/__init__.py',
@@ -178,7 +180,6 @@ class AnsibleComponentMatcher:
         'setup': 'lib/ansible/modules/system/setup.py',
         'task executor': 'lib/ansible/executor/task_executor.py',
         'testing': 'test/',
-        #u'validate-modules': u'test/sanity/validate-modules',
         'validate-modules': 'test/sanity/code-smell',
         'vault': 'lib/ansible/parsing/vault',
         'vault edit': 'lib/ansible/parsing/vault',
