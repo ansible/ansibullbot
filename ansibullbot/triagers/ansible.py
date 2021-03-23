@@ -91,6 +91,7 @@ from ansibullbot.triagers.plugins.spam import get_spam_facts
 from ansibullbot.triagers.plugins.test_support_plugins import get_test_support_plugins_facts
 from ansibullbot.triagers.plugins.traceback import get_traceback_facts
 from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
+from ansibullbot.triagers.plugins.docs_info import get_docs_facts
 
 
 VALID_CI_PROVIDERS = frozenset(('shippable', 'azp'))
@@ -1264,6 +1265,17 @@ class AnsibleTriage(DefaultTriager):
                 if label_name in iw.labels:
                     actions.unlabel.append(label_name)
 
+        # docs_only?
+        # https://github.com/ansible/ansibullbot/issues/1047
+        if iw.is_pullrequest():
+            label_name = 'docs_only'
+            if self.meta['is_docs_only']:
+                if label_name not in iw.labels:
+                    actions.newlabel.append(label_name)
+            else:
+                if label_name in iw.labels:
+                    actions.unlabel.append(label_name)
+
         if iw.is_pullrequest():
 
             # https://github.com/ansible/ansibullbot/issues/312
@@ -1872,6 +1884,9 @@ class AnsibleTriage(DefaultTriager):
 
         # small_patch
         self.meta.update(get_small_patch_facts(iw))
+
+        # docs_only
+        self.meta.update(get_docs_facts(iw))
 
         # shipit?
         self.meta.update(

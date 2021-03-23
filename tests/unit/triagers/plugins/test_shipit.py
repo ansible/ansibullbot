@@ -560,7 +560,7 @@ class TestOwnerPR(unittest.TestCase):
         datafile = 'tests/fixtures/shipit/2_issue.yml'
         statusfile = 'tests/fixtures/shipit/2_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            iw.pr_files = [MockFile('lib/ansible/module_utils/foo/bar.py')]
+            iw._pr_files = [MockFile('lib/ansible/module_utils/foo/bar.py')]
             # need to give the wrapper a list of known files to compare against
             iw.gitrepo = GitRepoWrapperMock()
             iw.gitrepo.files.append('lib/ansible/modules/foo/bar.py')
@@ -608,7 +608,7 @@ class TestOwnerPR(unittest.TestCase):
         datafile = 'tests/fixtures/shipit/0_issue.yml'
         statusfile = 'tests/fixtures/shipit/0_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            iw.pr_files = [MockFile('lib/ansible/modules/foo/bar.py')]
+            iw._pr_files = [MockFile('lib/ansible/modules/foo/bar.py')]
             iw.gitrepo = GitRepoWrapperMock()
             iw.gitrepo.files.append('lib/ansible/modules/foo/bar.py')
 
@@ -684,7 +684,7 @@ class TestOwnerPR(unittest.TestCase):
         cachedir = tempfile.mkdtemp()
         gh = GithubWrapperMock()
         iw = IssueWrapper(cachedir=cachedir, issue=issue, github=gh)
-        iw.pr_files = [
+        iw._pr_files = [
             MockFile('lib/ansible/module_utils/foo/bar.py'),
             MockFile('lib/ansible/module_utils/baz/bar.py')
         ]
@@ -735,7 +735,7 @@ class TestOwnerPR(unittest.TestCase):
         datafile = 'tests/fixtures/shipit/0_issue.yml'
         statusfile = 'tests/fixtures/shipit/0_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            iw.pr_files = [
+            iw._pr_files = [
                 MockFile('lib/ansible/modules/foo/bar.py'),
                 MockFile('lib/ansible/module_utils/baz/bar.py')
             ]
@@ -803,7 +803,7 @@ class TestOwnerPR(unittest.TestCase):
         datafile = 'tests/fixtures/shipit/2_issue.yml'
         statusfile = 'tests/fixtures/shipit/2_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            iw.pr_files = [
+            iw._pr_files = [
                 MockFile('lib/ansible/modules/foo/bar.py'),
                 MockFile('changelogs/fragments/00000-fragment.yaml')
             ]
@@ -851,7 +851,7 @@ class TestReviewFacts(unittest.TestCase):
         datafile = 'tests/fixtures/shipit/2_issue.yml'
         statusfile = 'tests/fixtures/shipit/2_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            iw.pr_files = [MockFile('lib/ansible/module_utils/foo/bar.py')]
+            iw._pr_files = [MockFile('lib/ansible/module_utils/foo/bar.py')]
             # need to give the wrapper a list of known files to compare against
             iw.gitrepo = GitRepoWrapperMock()
             iw.gitrepo.files.append('lib/ansible/modules/foo/bar.py')

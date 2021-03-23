@@ -1,3 +1,4 @@
+from operator import attrgetter
 import yaml
 
 
@@ -7,19 +8,40 @@ class ActorMock:
 
 
 class CommitterMock:
-    date = None
-    login = None
+    def __init__(self, date=None, login=None):
+        self.date = date
+        self.login = login
 
 
 class CommitBottomMock:
-    committer = CommitterMock()
-    message = ""
+    def __init__(self, committer_date=None, committer_login=None, message=""):
+        self.committer = CommitterMock(date=committer_date, login=committer_login)
+        self.message = message
 
 
 class CommitMock:
-    commit = CommitBottomMock()
-    committer = commit.committer
-    sha = None
+    def __init__(self, **kwargs):
+        self.commit = CommitBottomMock(**kwargs)
+        self.committer = self.commit.committer
+        self.sha = None
+        self.files = None
+
+
+class CommitFileMock:
+    def __init__(self, filename="", status="", patch="", src_filepath=""):
+        self.filename = filename
+        self.status = status
+        self.patch = patch
+        self.src_filepath = src_filepath
+
+    @property
+    def raw_data(self):
+        return self
+
+    @property
+    def file_content(self):
+        with open(self.src_filepath) as content:
+            return content.read()
 
 
 class LabelMock:
@@ -46,11 +68,27 @@ class IssueMock:
         for x in self.events:
             if not x['event'] == 'committed':
                 continue
-            commit = CommitMock()
-            commit.commit.committer.date = x['created_at']
-            commit.commit.committer.login = x['actor']['login']
+            commit = CommitMock(
+                committer_date=x['created_at'],
+                committer_login=x['actor']['login']
+            )
+            for file in x.get('files', []):
+                cfile = CommitFileMock(
+                    filename=file['filename'],
+                    status=file['status'],
+                    patch=file['patch'],
+                    src_filepath=file['src_filepath']
+                )
+                if isinstance(commit, list):
+                    commit.files.append(cfile)
+                else:
+                    commit.files = [cfile]
+
             self._commits.append(commit)
         return self._commits
+
+    def get_commit_files(self, commit):
+        return commit.files
 
     @property
     def comments(self):
@@ -148,3 +186,22 @@ class IssueMock:
     def get_commits(self):
         self.calls.append('get_commits')
         return self.commits
+
+    def is_pullrequest(self):
+        return 'pull' in self.html_url
+
+    @property
+    def pr_files(self):
+        # simulate getting PR files from the tip of the HEAD
+        files = []
+        sorted_commits = sorted(
+            self.commits,
+            key=attrgetter('commit.committer.date'),
+            reverse=True
+        )
+        for commit in sorted_commits:
+            for file in commit.files:
+                if file.filename not in [f.filename for f in files]:
+                    files.append(file)
+
+        return files
