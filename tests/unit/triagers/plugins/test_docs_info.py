@@ -34,6 +34,11 @@ datafiles = (
         'path': 'tests/fixtures/docs_info/3_issue.yml',
         'expected_result': {'is_docs_only': False}
     },
+    {
+        'id': 'docsite_pr: Edited On GitHub',
+        'path': 'tests/fixtures/docs_info/6_issue.yml',
+        'expected_result': {'is_docsite_pr': True}
+    },
 )
 
 def datafile_id(datafile):

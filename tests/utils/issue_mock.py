@@ -8,14 +8,28 @@ class ActorMock:
 
 
 class CommitterMock:
-    def __init__(self, date=None, login=None):
+    def __init__(self, date=None, login=None, name=None, email=None):
         self.date = date
         self.login = login
+        self.name = name
+        self.email = email
 
 
 class CommitBottomMock:
-    def __init__(self, committer_date=None, committer_login=None, message=""):
-        self.committer = CommitterMock(date=committer_date, login=committer_login)
+    def __init__(
+        self,
+        committer_date=None,
+        committer_login=None,
+        committer_name=None,
+        committer_email=None,
+        message=""
+    ):
+        self.committer = CommitterMock(
+            date=committer_date,
+            login=committer_login,
+            name=committer_name,
+            email=committer_email
+        )
         self.message = message
 
 
@@ -70,7 +84,8 @@ class IssueMock:
                 continue
             commit = CommitMock(
                 committer_date=x['created_at'],
-                committer_login=x['actor']['login']
+                committer_login=x['actor']['login'],
+                committer_name=x.get('actor', {}).get('name', '')
             )
             for file in x.get('files', []):
                 cfile = CommitFileMock(
