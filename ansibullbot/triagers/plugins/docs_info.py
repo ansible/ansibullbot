@@ -14,6 +14,11 @@ RE_DIFF_PATTERNS = {
     "header": r"^\@+\s+(?P<del_start>[\-]\d+),\d+\s(?P<add_start>[\+]\d+),\d+",
 }
 
+EDIT_ON_GITHUB_COMMITTER = {
+        "name": "GitHub",
+        "login": "web-flow",
+    }
+
 @dataclasses.dataclass(eq=False, order=False)
 class ParsedFunc():
     name: str
@@ -276,10 +281,23 @@ def _is_docs_only(changed_file):
 
     return False
 
+def _is_edited_on_github(commit):
+    """ Check if the committer information matches an instance of a change made
+        via 'Edit On GitHub'.
+    """
+
+    committer_info = {
+        "name": commit.commit.committer.name,
+        "login": commit.committer.login
+    }
+
+    return committer_info == EDIT_ON_GITHUB_COMMITTER
+
 def get_docs_facts(iw):
     """ Cycle through the files and gather facts about documentation changes. """
     dfacts = {
-        "is_docs_only": False
+        "is_docs_only": False,
+        "is_docsite_pr": False
     }
 
     if not iw.is_pullrequest():
@@ -287,5 +305,13 @@ def get_docs_facts(iw):
 
     docs_only = False not in [_is_docs_only(f.raw_data) for f in iw.pr_files]
 
-    dfacts["is_docs_only"] = docs_only
+    edit_on_github = False
+    if docs_only:
+        edit_on_github = True in [_is_edited_on_github(commit) for commit in iw.commits]
+
+    dfacts.update(
+        is_docs_only=docs_only,
+        is_docsite_pr=edit_on_github
+    )
+
     return dfacts
