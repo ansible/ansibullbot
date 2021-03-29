@@ -151,7 +151,11 @@ def _get_ast_info(content):
 
     for node in source.body:
         if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
-            for target in node.targets:
+            try:
+                targets = node.targets
+            except AttributeError:
+                targets = [node.target]
+            for target in targets:
                 if not isinstance(target, ast.Name):
                     # ignore unpacked assignments
                     continue
