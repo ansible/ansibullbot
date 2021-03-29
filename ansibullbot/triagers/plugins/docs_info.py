@@ -144,7 +144,7 @@ def _get_ast_info(content):
     try:
         source = ast.parse(content)
     except Exception as err:
-        logging.error("Error parsing module: %s", err)
+        logging.info("Error parsing module: %s", err)
         return None
 
     mod_map = ParsedModule()
