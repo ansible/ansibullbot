@@ -8,7 +8,6 @@ from operator import itemgetter
 import pytz
 
 import ansibullbot.constants as C
-from ansibullbot._text_compat import to_text
 from ansibullbot.utils.timetools import strip_time_safely
 
 
@@ -38,7 +37,7 @@ class HistoryWrapper:
                 cachedir,
                 issue.repo_full_name,
                 'issues',
-                to_text(issue.instance.number),
+                str(issue.instance.number),
                 'history.pickle'
             )
         elif issue.repo_full_name not in cachedir:
@@ -46,20 +45,20 @@ class HistoryWrapper:
                 cachedir,
                 issue.repo_full_name,
                 'issues',
-                to_text(issue.instance.number),
+                str(issue.instance.number),
                 'history.pickle'
             )
         elif 'issues' not in cachedir:
             self.cachefile = os.path.join(
                 cachedir,
                 'issues',
-                to_text(issue.instance.number),
+                str(issue.instance.number),
                 'history.pickle'
             )
         else:
             self.cachefile = os.path.join(
                 cachedir,
-                to_text(issue.instance.number),
+                str(issue.instance.number),
                 'history.pickle'
             )
 
@@ -183,10 +182,11 @@ class HistoryWrapper:
         for xc in commits:
             event = {}
             event['id'] = xc.sha
-            if hasattr(xc.committer, 'login'):
-                event['actor'] = xc.committer.login
-            else:
-                event['actor'] = to_text(xc.committer)
+            try:
+                event['actor'] = getattr(xc.committer, 'login', str(xc.committer))
+            except Exception:
+                # IncompletableObject: 400 "Returned object contains no URL"
+                event['actor'] = str(xc.committer)
             event['created_at'] = pytz.utc.localize(xc.commit.committer.date)
             event['event'] = 'committed'
             event['message'] = xc.commit.message
