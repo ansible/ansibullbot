@@ -215,8 +215,12 @@ def _is_diff_docs_only(file_content, diff):
     """ Check a python file's changes to see if they're only docstring
         changes.
     """
-
     diff = _get_diff_info(diff)
+    if not diff:
+        # likely only deletions which is not supported at the moment
+        # see _get_diff_info
+        return False
+
     source = None
 
     if file_content is not None:
