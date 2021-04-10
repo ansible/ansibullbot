@@ -248,5 +248,5 @@ Example:
 ```
 -label needs_triage
 +label cloud
-+label gce
++label gce 
 ```
