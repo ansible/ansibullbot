@@ -26,7 +26,6 @@ import pytz
 
 import ansibullbot.constants as C
 from ansibullbot.decorators.github import RateLimited
-from ansibullbot.errors import RateLimitError
 from ansibullbot.utils.extractors import get_template_data
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
@@ -561,7 +560,7 @@ class DefaultWrapper:
     @property
     def reviews(self):
         if self._pr_reviews is False:
-            self._pr_reviews = self.get_reviews()
+            self._pr_reviews = [r.raw_data for r in self.pullrequest.get_reviews()]
 
         # https://github.com/ansible/ansibullbot/issues/881
         # https://github.com/ansible/ansibullbot/issues/883
@@ -570,74 +569,6 @@ class DefaultWrapper:
                 self._pr_reviews[idx]['commit_id'] = None
 
         return self._pr_reviews
-
-    def get_reviews(self):
-        # https://developer.github.com/
-        #   early-access/graphql/enum/pullrequestreviewstate/
-        # https://developer.github.com/v3/
-        #   pulls/reviews/#list-reviews-on-a-pull-request
-        reviews_url = self.pullrequest.url + '/reviews'
-        headers = {
-            'Accept': 'application/vnd.github.black-cat-preview+json',
-        }
-
-        jdata = self.paginated_request(reviews_url, headers=headers)
-        return jdata
-
-    @RateLimited
-    def paginated_request(self, url, headers=None):
-        if headers is None:
-            headers = {}
-
-        jdata = []
-        counter = 0
-        while True or counter <= 100:
-            counter += 1
-            status, hdrs, body = self.instance._requester.requestJson(
-                'GET',
-                url,
-                headers=headers
-            )
-            _jdata = json.loads(body)
-
-            if isinstance(_jdata, dict):
-                logging.error(
-                    'get_reviews | pr_reviews.keys=%s | pr_reviews.len=%s | '
-                    'resp.headers=%s | resp.status=%s',
-                    _jdata.keys(), len(_jdata),
-                    hdrs, status,
-                )
-
-                is_rate_limited = 'rate' in _jdata['message']
-                is_server_error = (
-                    'Server Error' == _jdata['message']
-                    or 500 <= status < 600
-                )
-
-                if is_rate_limited:
-                    raise RateLimitError("rate limited")
-
-                if is_server_error:
-                    raise RateLimitError("server error")
-
-                raise RateLimitError(
-                    "unknown error: GH responded with a dict "
-                    "while a list of reviews was expected"
-                )
-
-            jdata += _jdata
-
-            if not 'link' in hdrs:
-                break
-            link = hdrs['link']
-            links = link.split(',')
-            np = [x for x in links if 'next' in x]
-            if not np:
-                break
-            url =  re.search(r'\<.*\>', np[0]).group()
-            url = url.replace('<', '').replace('>', '')
-
-        return jdata
 
     @property
     def history(self):
