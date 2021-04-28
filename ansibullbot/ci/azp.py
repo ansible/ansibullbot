@@ -74,9 +74,9 @@ class AzurePipelinesCI(BaseCI):
                     continue
                 org, project, buildid = match.groups()
                 if org == C.DEFAULT_AZP_ORG and project == C.DEFAULT_AZP_PROJECT:
-                    build_ids.add(buildid)
+                    build_ids.add(int(buildid))
             # FIXME more than one Pipeline
-            logging.debug("Azure Pipelines build IDs found: %s" % ', '.join(build_ids))
+            logging.debug("Azure Pipelines build IDs found: %s" % build_ids)
             try:
                 self._build_id = max(build_ids)
             except ValueError:
