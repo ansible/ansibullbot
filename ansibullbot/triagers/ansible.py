@@ -56,7 +56,7 @@ from ansibullbot.utils.receiver_client import post_to_receiver
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 
 from ansibullbot.decorators.github import RateLimited
-from ansibullbot.errors import LabelWafflingError, NoCIError
+from ansibullbot.errors import LabelWafflingError
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
