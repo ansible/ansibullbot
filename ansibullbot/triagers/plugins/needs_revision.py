@@ -38,8 +38,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
     has_commit_mention_notification = False
 
     has_ci = False
-    has_shippable_yaml = None
-    has_shippable_yaml_notification = None
 
     has_remote_repo = None
 
@@ -68,8 +66,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
         'ci_stale': ci_stale,
         'reviews': None,
         'ready_for_review': ready_for_review,
-        'has_shippable_yaml': has_shippable_yaml,
-        'has_shippable_yaml_notification': has_shippable_yaml_notification,
         'has_remote_repo': has_remote_repo,
         'stale_reviews': stale_reviews,
         'has_multiple_modules': has_multiple_modules,
@@ -270,14 +266,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
     # keep track of who deleted their repo/branch
     has_remote_repo = bool(iw.pullrequest.head.repo)
 
-    if ci.name == 'shippable':
-        # https://github.com/ansible/ansibullbot/issues/406
-        has_shippable_yaml = iw.pullrequest_filepath_exists(ci.required_file)
-        if not has_shippable_yaml:
-            needs_rebase = True
-            needs_rebase_msgs.append('missing shippable.yml')
-            has_shippable_yaml_notification = 'no_shippable_yaml' in bpcs
-
     # stale reviews
     if user_reviews:
 
@@ -344,8 +332,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
         'reviews': iw.reviews,
         'ready_for_review_date': ready_for_review,
         'ready_for_review': bool(ready_for_review),
-        'has_shippable_yaml': has_shippable_yaml,
-        'has_shippable_yaml_notification': has_shippable_yaml_notification,
         'has_remote_repo': has_remote_repo,
         'stale_reviews': stale_reviews,
         'has_multiple_modules': has_multiple_modules,

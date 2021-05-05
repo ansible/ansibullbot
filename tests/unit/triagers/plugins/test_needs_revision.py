@@ -39,11 +39,9 @@ class AnsibleTriageMock:
         return ['bcoca']
 
 
-class ShippableCIMock:
+class CIMock:
     def __init__(self):
-        self.required_file = 'shippable.yml'
         self.state = None
-        self.name = 'shippable'
 
     def get_last_full_run_date(*args, **kwargs):
         return None
@@ -69,8 +67,7 @@ class TestNeedsRevisionFacts(TestCase):
         datafile = 'tests/fixtures/needs_revision/0_issue.yml'
         statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
         with mock.patch.multiple(IssueWrapper,
-                               mergeable_state=mock.PropertyMock(return_value='clean'),
-                               pullrequest_filepath_exists=mock.Mock(return_value=True)):
+                                mergeable_state=mock.PropertyMock(return_value='clean')):
             with get_issue(datafile, statusfile) as iw:
                 iw._merge_commits = []
                 iw._committer_emails = ['tsdmgz@domain.example']
@@ -84,7 +81,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta['component_maintainers'] = ['robinro']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableCIMock())
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, CIMock())
 
                 self.assertFalse(facts['is_needs_revision'])
                 self.assertFalse(facts['stale_reviews'])
@@ -97,8 +94,7 @@ class TestNeedsRevisionFacts(TestCase):
         datafile = 'tests/fixtures/needs_revision/1_issue.yml'
         statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
         with mock.patch.multiple(IssueWrapper,
-                               mergeable_state=mock.PropertyMock(return_value='clean'),
-                               pullrequest_filepath_exists=mock.Mock(return_value=True)):
+                                mergeable_state=mock.PropertyMock(return_value='clean')):
             with get_issue(datafile, statusfile) as iw:
                 iw._merge_commits = []
                 iw._committer_emails = ['tsdmgz@domain.example']
@@ -112,7 +108,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta['component_maintainers'] = ['mkrizek']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableCIMock())
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, CIMock())
 
                 self.assertFalse(facts['is_needs_revision'])
 
@@ -124,8 +120,7 @@ class TestNeedsRevisionFacts(TestCase):
         datafile = 'tests/fixtures/needs_revision/2_issue.yml'
         statusfile = 'tests/fixtures/needs_revision/0_prstatus.json'
         with mock.patch.multiple(IssueWrapper,
-                               mergeable_state=mock.PropertyMock(return_value='clean'),
-                               pullrequest_filepath_exists=mock.Mock(return_value=True)):
+                                mergeable_state=mock.PropertyMock(return_value='clean')):
             with get_issue(datafile, statusfile) as iw:
                 iw._merge_commits = []
                 iw._committer_emails = ['tsdmgz@domain.example']
@@ -139,7 +134,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta['component_maintainers'] = ['mkrizek', 'jctanner']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, ShippableCIMock())
+                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, CIMock())
 
                 self.assertTrue(facts['is_needs_revision'])
 

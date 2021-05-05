@@ -1478,7 +1478,6 @@ class BotMockManager:
         self.mocks.append(patch('ansibullbot.utils.git_tools.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.moduletools.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.net_tools.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.shippable_api.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.timetools.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.version_tools.logging', MockLogger))
@@ -1486,7 +1485,6 @@ class BotMockManager:
         self.mocks.append(patch('ansibullbot.wrappers.historywrapper.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.wrappers.ghapiwrapper.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.gh_gql_client.requests', self.mr))
-        self.mocks.append(patch('ansibullbot.utils.shippable_api.requests', self.mr))
         self.mocks.append(patch('ansibullbot.wrappers.ghapiwrapper.requests', self.mr))
 
         for _m in self.mocks:

@@ -47,7 +47,7 @@ class TestSuperShipit:
                 '--force',
                 '--botmetafile=%s' % bmfile,
                 '--ignore_galaxy',
-                '--ci=shippable',
+                '--ci=azp',
             ]
 
             # create a bug report

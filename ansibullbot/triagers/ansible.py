@@ -94,7 +94,7 @@ from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
 from ansibullbot.triagers.plugins.docs_info import get_docs_facts
 
 
-VALID_CI_PROVIDERS = frozenset(('shippable', 'azp'))
+VALID_CI_PROVIDERS = frozenset(('azp',))
 
 
 # NOTE if we want to support more repos for the ansible triager
@@ -200,9 +200,7 @@ class AnsibleTriage(DefaultTriager):
 
         ci_provider = self.ci
 
-        if ci_provider == 'shippable':
-            from ansibullbot.utils.shippable_api import ShippableCI as ci_class
-        elif ci_provider == 'azp':
+        if ci_provider == 'azp':
             from ansibullbot.ci.azp import AzurePipelinesCI as ci_class
         else:
             raise ValueError(
@@ -973,25 +971,15 @@ class AnsibleTriage(DefaultTriager):
         # https://github.com/ansible/ansibullbot/issues/293
         if iw.is_pullrequest():
             label = 'needs_ci'
-            if self.ci.name == 'azp':
-                if not self.meta['has_ci']:
-                    try:
-                        from ansibullbot.utils.shippable_api import ShippableCI
-                        shippable = ShippableCI(self.cachedir_base, iw)
-                        shippable.get_last_full_run_date()
-                        label = 'pre_azp'
-                    except NoCIError:
-                        pass
-                else:
-                    if 'pre_azp' in iw.labels:
-                        actions.unlabel.append('pre_azp')
-
             if not self.meta['has_ci']:
-                if label not in iw.labels:
-                    actions.newlabel.append(label)
+                if 'pre_azp' not in iw.labels:
+                    if label not in iw.labels:
+                        actions.newlabel.append(label)
             else:
                 if label in iw.labels:
                     actions.unlabel.append(label)
+                if 'pre_azp' in iw.labels:
+                    actions.unlabel.append('pre_azp')
 
         # MODULE CATEGORY LABELS
         if not self.meta['is_bad_pr']:
@@ -1299,24 +1287,6 @@ class AnsibleTriage(DefaultTriager):
         else:
             if 'deprecated' in iw.labels:
                 actions.unlabel.append('deprecated')
-
-        # https://github.com/ansible/ansibullbot/issues/406
-        if iw.is_pullrequest():
-            if self.ci.name == 'shippable' and not self.meta['has_shippable_yaml']:
-                if not self.meta['has_shippable_yaml_notification']:
-                    tvars = {'submitter': iw.submitter}
-                    comment = self.render_boilerplate(
-                        tvars,
-                        boilerplate='no_shippable_yaml'
-                    )
-                    actions.comments.append(comment)
-
-                if 'needs_shippable' not in iw.labels:
-                    actions.newlabel.append('needs_shippable')
-
-            else:
-                if 'needs_shippable' in iw.labels:
-                    actions.unlabel.append('needs_shippable')
 
         # label PRs with missing repos
         if iw.is_pullrequest():
