@@ -26,28 +26,28 @@ class TestNeedsInfoTimeoutFacts(unittest.TestCase):
         with get_issue(datafile, self.statusfile) as iw:
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
-            self.assertEquals(facts['needs_info_action'], 'warn')
+            self.assertEqual(facts['needs_info_action'], 'warn')
 
     def test_close(self):
         datafile = 'tests/fixtures/needs_info/0_close.yml'
         with get_issue(datafile, self.statusfile) as iw:
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
-            self.assertEquals(facts['needs_info_action'], 'close')
+            self.assertEqual(facts['needs_info_action'], 'close')
 
     def test_no_action(self):
         datafile = 'tests/fixtures/needs_info/0_no_action.yml'
         with get_issue(datafile, self.statusfile) as iw:
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
-            self.assertEquals(facts['needs_info_action'], None)
+            self.assertEqual(facts['needs_info_action'], None)
 
     def test_close_1(self):
         datafile = 'tests/fixtures/needs_info/1_close.yml'
         with get_issue(datafile, self.statusfile) as iw:
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
-            self.assertEquals(facts['needs_info_action'], 'close')
+            self.assertEqual(facts['needs_info_action'], 'close')
 
     def test_too_quick_close(self):
         # https://github.com/ansible/ansible/issues/37518
@@ -55,7 +55,7 @@ class TestNeedsInfoTimeoutFacts(unittest.TestCase):
         with get_issue(datafile, self.statusfile) as iw:
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
-            self.assertEquals(facts['needs_info_action'], None)
+            self.assertEqual(facts['needs_info_action'], None)
 
     def test_too_quick_close2(self):
         # https://github.com/ansible/ansible/issues/20977
@@ -63,11 +63,11 @@ class TestNeedsInfoTimeoutFacts(unittest.TestCase):
         with get_issue(datafile, self.statusfile) as iw:
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
-            self.assertEquals(facts['needs_info_action'], 'warn')
+            self.assertEqual(facts['needs_info_action'], 'warn')
 
     def test_warn_template(self):
         datafile = 'tests/fixtures/needs_info/0_warn_template.yml'
         with get_issue(datafile, self.statusfile) as iw:
             facts = needs_info.needs_info_timeout_facts(iw, self.meta)
 
-            self.assertEquals(facts['needs_info_action'], 'warn')
+            self.assertEqual(facts['needs_info_action'], 'warn')
