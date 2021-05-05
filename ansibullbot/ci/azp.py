@@ -89,7 +89,10 @@ class AzurePipelinesCI(BaseCI):
 
     @property
     def jobs(self):
-        if self._jobs is None and self.build_id:
+        if not self.build_id:
+            return []
+
+        if self._jobs is None:
             self._jobs = []
             self._updated_at = strip_time_safely('1970-01-01')
             self._stages = []
