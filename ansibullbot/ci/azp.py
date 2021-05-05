@@ -26,6 +26,9 @@ TIMELINE_URL_FMT = \
     'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/timeline/?api-version=6.0'
 ARTIFACTS_URL_FMT = \
     'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/artifacts?api-version=6.0'
+STAGE_URL_FMT = \
+    'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=6.0-preview.1'
+NEW_BUILD = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds?api-version=6.0'
 TIMEOUT = 5  # seconds
 HEADERS = {
     'Content-Type': 'application/json',
@@ -76,7 +79,7 @@ class AzurePipelinesCI(BaseCI):
                 if org == C.DEFAULT_AZP_ORG and project == C.DEFAULT_AZP_PROJECT:
                     build_ids.add(int(buildid))
             # FIXME more than one Pipeline
-            logging.debug("Azure Pipelines build IDs found: %s" % build_ids)
+            logging.debug('Azure Pipelines build IDs found: %s' % build_ids)
             try:
                 self._build_id = max(build_ids)
             except ValueError:
@@ -86,51 +89,41 @@ class AzurePipelinesCI(BaseCI):
 
     @property
     def jobs(self):
-        if self._jobs is None:
-            if self.build_id:
-                if not os.path.isdir(self._cachedir):
-                    os.makedirs(self._cachedir)
-                cache_file = os.path.join(self._cachedir, u'timeline_%s.pickle' % self.build_id)
+        if self._jobs is None and self.build_id:
+            self._jobs = []
+            self._updated_at = strip_time_safely('1970-01-01')
+            self._stages = []
 
-                url = TIMELINE_URL_FMT % self.build_id
-                resp = fetch(url)
-                if resp is None:
-                    raise Exception("Unable to GET %s" % url)
+            if not os.path.isdir(self._cachedir):
+                os.makedirs(self._cachedir)
+            cache_file = os.path.join(self._cachedir, u'timeline_%s.pickle' % self.build_id)
 
-                if resp.status_code == 404:
-                    data = None
-                    if os.path.isfile(cache_file):
-                        logging.info(u'timeline was probably removed, load it from cache')
-                        with open(cache_file, 'rb') as f:
-                            data = pickle.load(f)
-                else:
-                    data = resp.json()
-                    data = (strip_time_safely(data['lastChangedOn']), data)
-                    logging.info(u'writing %s' % cache_file)
-                    with open(cache_file, 'wb') as f:
-                        pickle.dump(data, f)
+            url = TIMELINE_URL_FMT % self.build_id
+            resp = fetch(url)
+            if resp is None:
+                raise Exception('Unable to GET %s' % url)
 
-                if data is not None:
-                    data = data[1]
-                    self._jobs = [r for r in data['records'] if r['type'] == 'Job']
-                    self._updated_at = strip_time_safely(data['lastChangedOn'])  # FIXME
-                    self._stages = [r for r in data['records'] if r['type'] == 'Stage']  # FIXME
-                else:
-                    self._jobs = []
-                    self._updated_at = strip_time_safely('1970-01-01')
-                    self._stages = []
+            if resp.status_code == 404:
+                data = None
+                if os.path.isfile(cache_file):
+                    logging.info(u'timeline was probably removed, load it from cache')
+                    with open(cache_file, 'rb') as f:
+                        data = pickle.load(f)
             else:
-                self._jobs = []
-        return self._jobs
+                data = resp.json()
+                data = (strip_time_safely(data['lastChangedOn']), data)
+                logging.info(u'writing %s' % cache_file)
+                with open(cache_file, 'wb') as f:
+                    pickle.dump(data, f)
 
-    @property
-    def state(self):
-        if self._state is None:
-            if self.jobs:
-                # pending, completed, inProgress
-                state = list({j['state'] for j in self.jobs})
-                # succeeded, failed, None
-                result = list({j['result'] for j in self.jobs})
+            if data is not None:
+                data = data[1]
+                self._jobs = [r for r in data['records'] if r['type'] == 'Job']
+                self._updated_at = strip_time_safely(data['lastChangedOn'])
+                self._stages = [r for r in data['records'] if r['type'] == 'Stage']
+
+                state = list({j['state'] for j in self.jobs})  # pending, completed, inProgress
+                result = list({j['result'] for j in self.jobs})  # succeeded, failed, None
                 if 'canceled' in result or 'cancelled' in result:
                     self._state = 'failure'
                 elif len(state) == 1 and 'completed' in state:
@@ -144,38 +137,29 @@ class AzurePipelinesCI(BaseCI):
                     raise ValueError(
                         'Unknown state for buildId: %s, state: %s' % (self.build_id, state)
                     )
+        return self._jobs
 
+    @property
+    def state(self):
         return self._state
 
     @property
     def updated_at(self):
-        if self._updated_at is None:
-            self.jobs
-
         return self._updated_at
 
     @property
     def stages(self):
-        if self._stages is None:
-            self.jobs
-
         return self._stages
 
     def get_last_full_run_date(self):
         # FIXME fix the method name, it makes sense for shippable but not for azp
-        if self.state is None and self.build_id is None:
-            raise NoCIError
-        # FIXME pending?
-        #if self.state == u'pending':
-        #    raise NoCIError
-        if self.created_at is None:
+        if (self.state is None and self.build_id is None) or self.created_at is None:
             raise NoCIError
         return self.created_at
 
     @property
     def artifacts(self):
         if self._artifacts is None and self._jobs:
-            # FIXME deduplicate code
             if not os.path.isdir(self._cachedir):
                 os.makedirs(self._cachedir)
 
@@ -195,7 +179,7 @@ class AzurePipelinesCI(BaseCI):
                 url = ARTIFACTS_URL_FMT % self.build_id
                 resp = fetch(url)
                 if resp is None:
-                    raise Exception("Unable to GET %s" % url)
+                    raise Exception('Unable to GET %s' % url)
 
                 if resp.status_code != 404:
                     data = [a for a in resp.json()['value'] if a['name'].startswith('Bot')]
@@ -209,7 +193,7 @@ class AzurePipelinesCI(BaseCI):
 
         return self._artifacts
 
-    def get_artifact(self, name, url):
+    def _get_artifact(self, name, url):
         if not os.path.isdir(self._cachedir):
             os.makedirs(self._cachedir)
 
@@ -228,7 +212,7 @@ class AzurePipelinesCI(BaseCI):
 
             resp = fetch(url, stream=True)
             if resp is None:
-                raise Exception("Unable to GET %s" % url)
+                raise Exception('Unable to GET %s' % url)
 
             if resp.status_code != 404:
                 with BytesIO() as data:
@@ -266,13 +250,13 @@ class AzurePipelinesCI(BaseCI):
                 if job['id'] != artifact['source']:
                     continue
                 failed_jobs_with_artifact += 1
-                for artifact_json in self.get_artifact(artifact['name'], artifact['resource']['downloadUrl']):
+                for artifact_json in self._get_artifact(artifact['name'], artifact['resource']['downloadUrl']):
                     if not artifact_json['verified']:
                         ci_verified = False
 
-                    result_data = ''
-                    for result in artifact_json['results']:
-                        result_data += result['message'] + result['output']
+                    result_data = ''.join(
+                        (result['message'] + result['output'] for result in artifact_json['results'])
+                    )
 
                     results.append({
                         'contents': {
@@ -289,13 +273,13 @@ class AzurePipelinesCI(BaseCI):
         return results, ci_verified
 
     def rebuild(self, run_id, failed_only=False):
+        data = {'state': 'retry'}
         if failed_only:
             api_version = '6.0-preview.1'
-            data = '{"state":"retry"}'
             stages = [s['identifier'] for s in self.stages if s['result'] != 'succeeded']
         else:
             api_version = '6.1-preview.1'
-            data = '{"state":"retry","forceRetryAllJobs":true}'
+            data['forceRetryAllJobs'] = True
             stages = [s['identifier'] for s in self.stages]
 
         for stage in stages:
@@ -305,51 +289,70 @@ class AzurePipelinesCI(BaseCI):
                 url,
                 verb='patch',
                 headers=HEADERS,
-                data=data,
+                data=json.dumps(data),
                 timeout=TIMEOUT,
                 auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
             )
             if resp is not None and resp.status_code == 404:
-                data = '{"definition":{"id":20},"reason":"pullRequest","sourceBranch":"refs/pull/%s/merge","repository":{"type":"github"},"triggerInfo":{"pr.sourceBranch":"%s","pr.sourceSha":"%s","pr.id":"%s","pr.title":"%s","pr.number":"%s","pr.isFork":"%s","pr.draft":"%s","pr.sender.name":"%s","pr.sender.avatarUrl":"%s","pr.providerId":"github","pr.autoCancel":"true"},"parameters":"{\\"system.pullRequest.pullRequestId\\":\\"%s\\",\\"system.pullRequest.pullRequestNumber\\":\\"%s\\",\\"system.pullRequest.mergedAt\\":\\"\\",\\"system.pullRequest.sourceBranch\\":\\"%s\\",\\"system.pullRequest.targetBranch\\":\\"%s\\",\\"system.pullRequest.sourceRepositoryUri\\":\\"https://github.com/ansible/ansible\\",\\"system.pullRequest.sourceCommitId\\":\\"%s\\"}"}' % (
-                        self._iw.number,
-                        self._iw._pr.head.ref,
-                        self._iw._pr.head.sha,
-                        self._iw._pr.id,
-                        self._iw._pr.title,
-                        self._iw._pr.number,
-                        self._iw.from_fork,
-                        self._iw._pr.draft,
-                        self._iw._pr.user.login,
-                        self._iw._pr.user.avatar_url,
-                        self._iw._pr.id,
-                        self._iw._pr.number,
-                        self._iw._pr.head.ref,
-                        self._iw._pr.base.ref,
-                        self._iw._pr.head.sha,)
-
-                url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds?api-version=6.0'
-                resp = fetch(
-                    url,
-                    verb='post',
-                    headers=HEADERS,
-                    data=data,
-                    timeout=30,
-                    auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
-                )
-                if not resp:
-                    raise Exception("Unable to POST %r to %r" % (data, url))
+                self._rebuild_old()
                 break
+
+    def rebuild_old(self):
+        data = {
+            'definition': {
+                'id': 20,
+            },
+            'reason': 'pullRequest',
+            'sourceBranch': 'refs/pull/%s/merge' % self._iw.number,
+            'repository': {'type': 'github'},
+            'triggerInfo': {
+                'pr.sourceBranch': self._iw._pr.head.ref,
+                'pr.sourceSha': self._iw._pr.head.sha,
+                'pr.id': self._iw._pr.id,
+                'pr.title': self._iw._pr.title,
+                'pr.number': self._iw._pr.number,
+                'pr.isFork': self._iw.from_fork,
+                'pr.draft': self._iw._pr.draft,
+                'pr.sender.name': self._iw._pr.user.login,
+                'pr.sender.avatarUrl': self._iw._pr.user.avatar_url,
+                'pr.providerId': 'github',
+                'pr.autoCancel': 'true',
+            },
+            'parameters': {
+                'system.pullRequest.pullRequestId': self._iw._pr.id,
+                'system.pullRequest.pullRequestNumber': self._iw._pr.number,
+                'system.pullRequest.mergedAt': '',
+                'system.pullRequest.sourceBranch': self._iw._pr.head.ref,
+                'system.pullRequest.targetBranch': self._iw._pr.base.ref,
+                'system.pullRequest.sourceRepositoryUri': 'https://github.com/ansible/ansible',
+                'system.pullRequest.sourceCommitId': self._iw._pr.head.sha,
+            }
+        }
+
+        resp = fetch(
+            NEW_BUILD,
+            verb='post',
+            headers=HEADERS,
+            data=json.dumps(data),
+            timeout=30,
+            auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
+        )
+        if not resp:
+            raise Exception('Unable to POST %r to %r' % (data, NEW_BUILD))
 
     def rebuild_failed(self, run_id):
         self.rebuild(run_id, failed_only=True)
 
     def cancel(self, run_id):
-        data = '{"state":"cancel"}'
-        for stage in [s['identifier'] for s in self.stages if s['state'] != 'completed']:
+        stages_in_progress = (
+            s['identifier'] for s in self.stages if s['state'] != 'completed'
+        )
+        for stage in stages_in_progress:
             if stage == 'Summary':
                 continue
-            url = 'https://dev.azure.com/' + C.DEFAULT_AZP_ORG + '/' + C.DEFAULT_AZP_PROJECT + '/_apis/build/builds/%s/stages/%s?api-version=6.0-preview.1' % (run_id, stage)
 
+            url = STAGE_URL_FMT % (run_id, stage)
+            data = json.dumps({'state': 'cancel'})
             resp = fetch(
                 url,
                 verb='patch',
@@ -360,7 +363,7 @@ class AzurePipelinesCI(BaseCI):
             )
 
             if not resp:
-                raise Exception("Unable to PATCH %r to %r" % (data, url))
+                raise Exception('Unable to PATCH %r to %r' % (data, url))
 
     def cancel_on_branch(self, branch):
         # FIXME cancel() should be enough?
