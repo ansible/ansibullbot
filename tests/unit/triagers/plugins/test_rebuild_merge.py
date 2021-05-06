@@ -61,7 +61,6 @@ def test2():
         assert not rbfacts['admin_merge']
 
 
-@pytest.mark.xfail(reason="With shippable support removed, ci/azp.py needs a mock")
 def test3():
     """command given, new commit created, do not rebuild or merge"""
     datafile = 'tests/fixtures/rebuild_merge/3_issue.yml'
