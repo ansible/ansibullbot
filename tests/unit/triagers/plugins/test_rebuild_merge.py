@@ -4,7 +4,7 @@ from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
 from tests.utils.helpers import get_issue
 
 
-@pytest.mark.skip(reason="With shippable support removed, ci/azp.py needs a mock")
+@pytest.mark.xfail(reason="With shippable support removed, ci/azp.py needs a mock")
 def test0():
     """command issued, test ran, time to merge"""
     datafile = 'tests/fixtures/rebuild_merge/0_issue.yml'
@@ -23,7 +23,7 @@ def test0():
         assert rbfacts['admin_merge']
 
 
-@pytest.mark.skip(reason="With shippable support removed, ci/azp.py needs a mock")
+@pytest.mark.xfail(reason="With shippable support removed, ci/azp.py needs a mock")
 def test1():
     """new test is in progress, do not rebuild and do not merge"""
     datafile = 'tests/fixtures/rebuild_merge/1_issue.yml'
@@ -42,7 +42,7 @@ def test1():
         assert not rbfacts['admin_merge']
 
 
-@pytest.mark.skip(reason="With shippable support removed, ci/azp.py needs a mock")
+@pytest.mark.xfail(reason="With shippable support removed, ci/azp.py needs a mock")
 def test2():
     """command given, time to rebuild but not merge"""
     datafile = 'tests/fixtures/rebuild_merge/2_issue.yml'
@@ -61,7 +61,7 @@ def test2():
         assert not rbfacts['admin_merge']
 
 
-@pytest.mark.skip(reason="With shippable support removed, ci/azp.py needs a mock")
+@pytest.mark.xfail(reason="With shippable support removed, ci/azp.py needs a mock")
 def test3():
     """command given, new commit created, do not rebuild or merge"""
     datafile = 'tests/fixtures/rebuild_merge/3_issue.yml'

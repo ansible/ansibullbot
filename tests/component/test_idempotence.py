@@ -12,7 +12,7 @@ from ansibullbot.triagers.ansible import AnsibleTriage
 
 class TestIdempotence:
 
-    @pytest.mark.skip(reason="With shippable support removed, ci/azp.py needs a mock. This is also more of a functional/integration test.")
+    @pytest.mark.xfail(reason="With shippable support removed, ci/azp.py needs a mock. This is also more of a functional/integration test.")
     def test_no_actions_on_second_run(self, *args, **kwargs):
 
         '''Verify no actions were taken on a subsequent run'''
