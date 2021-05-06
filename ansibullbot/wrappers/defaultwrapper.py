@@ -506,12 +506,6 @@ class DefaultWrapper:
             self._pr_status = self.get_pullrequest_status(force_fetch=False)
         return self._pr_status
 
-    def pullrequest_status_by_context(self, context):
-        return [
-            s for s in self.pullrequest_status
-            if isinstance(s, dict) and s.get('context') == context
-        ]
-
     @property
     def pr_files(self):
         if self._pr_files is None:
@@ -747,58 +741,6 @@ class DefaultWrapper:
                         self._migrated_from = bparts[2]
                         break
         return self._migrated
-
-    def pullrequest_filepath_exists(self, filepath):
-        ''' Check if a file exists on the submitters branch '''
-        # https://github.com/ansible/ansibullbot/issues/406
-
-        # https://developer.github.com/v3/repos/contents/
-        #   GET /repos/:owner/:repo/readme
-        # "contents_url":
-        # "https://api.github.com/repos/ganeshrn/ansible/contents/{+path}",
-
-        # self.pullrequest.head
-        #   - ref --> branch name
-        #   - repo.full_name
-
-        sha = self.pullrequest.head.sha
-        pdata = None
-        resp = None
-        cache_file_name = filepath.replace('.', '_').replace('/', '_') + '.pickle'
-        cachefile = os.path.join(self.full_cachedir, cache_file_name)
-
-        try:
-            if os.path.isfile(cachefile):
-                with open(cachefile, 'rb') as f:
-                    pdata = pickle.load(f)
-        except Exception as e:
-            logging.error('failed to unpickle %s %s' % (cachefile, str(e)))
-
-        if not pdata or pdata[0] != sha:
-
-            if self.pullrequest.head.repo:
-                url = self.pullrequest.head.repo.url + '/contents/' + filepath
-                resp = self.pullrequest._requester.requestJson(
-                    "GET",
-                    url,
-                    input={'ref': self.pullrequest.head.ref}
-                )
-            else:
-                # https://github.com/ansible/ansible/pull/19891
-                # Sometimes the repo repo/branch has disappeared
-                resp = [None]
-
-            pdata = [sha, resp]
-            with open(cachefile, 'wb') as f:
-                pickle.dump(pdata, f)
-
-        else:
-            resp = pdata[1]
-
-        result = False
-        if resp[0]:
-            result = True
-        return result
 
     @property
     def renamed_files(self):
