@@ -17,7 +17,7 @@ class TestSuperShipit:
         with BotMockManager() as mm:
             os.system('touch %s' % os.path.join(mm.cachedir, 'bot.log'))
 
-    @pytest.mark.xfail(reason="automerge is disabled now and this is not really an unit test.")
+    @pytest.mark.skip(reason="automerge is disabled now and this is not really an unit test.")
     def test_supershipit(self, *args, **kwargs):
         with BotMockManager() as mm:
             botmeta = {
