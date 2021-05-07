@@ -80,7 +80,6 @@ from ansibullbot.triagers.plugins.needs_revision import get_ci_run_facts
 from ansibullbot.triagers.plugins.contributors import get_contributor_facts
 from ansibullbot.triagers.plugins.notifications import get_notification_facts
 from ansibullbot.triagers.plugins.performance import get_performance_facts
-from ansibullbot.triagers.plugins.py3 import get_python3_facts
 from ansibullbot.triagers.plugins.shipit import get_automerge_facts
 from ansibullbot.triagers.plugins.shipit import get_review_facts
 from ansibullbot.triagers.plugins.shipit import get_shipit_facts
@@ -1108,14 +1107,6 @@ class AnsibleTriage(DefaultTriager):
                         if not iw.history.was_unlabeled(label):
                             actions.newlabel.append(label)
 
-        # python3 ... obviously!
-        if not self.meta['is_bad_pr']:
-            if self.meta['is_py3']:
-                if 'python3' not in iw.labels:
-                    # do not re-add py3
-                    if not iw.history.was_unlabeled('python3'):
-                        actions.newlabel.append('python3')
-
         # needs info?
         if self.meta['is_needs_info']:
             if 'needs_info' not in iw.labels:
@@ -1839,9 +1830,6 @@ class AnsibleTriage(DefaultTriager):
                 self.meta,
             )
         )
-
-        # python3 ?
-        self.meta.update(get_python3_facts(iw))
 
         # backports
         self.meta.update(get_backport_facts(iw, self.meta))
