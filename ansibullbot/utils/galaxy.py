@@ -31,6 +31,7 @@ BLACKLIST_FQCNS = [
     'alancoding.vmware',
     'alikins.collection_inspect',
     'arillso.test_do_not_use',
+    'chrismeyersfsu.tower_modules',
     'felixfontein.tools',
     'fragmentedpacket.netbox_modules',
     'gavinfish.azuretest',
