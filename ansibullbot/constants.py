@@ -349,6 +349,15 @@ DEFAULT_AZP_TOKEN = get_config(
     value_type='string'
 )
 
+DEFAULT_AZP_DEFINITION = get_config(
+    p,
+    AZP,
+    'definition',
+    '%s_AZP_DEFINITION' % PROG_NAME.upper(),
+    None,
+    value_type='int'
+)
+
 ###########################################
 #   METADATA RECEIVER
 ###########################################
