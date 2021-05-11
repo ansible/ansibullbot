@@ -6,48 +6,6 @@ import pytest
 from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
 
-class UserMock:
-    def __init__(self, login):
-        self.login = login
-
-class LabelEventMock:
-    def __init__(self, event, login, label=None):
-        self.id = 1
-        self.actor = UserMock(login)
-        self._created_at = datetime.datetime.now()
-        self._event = event
-        self._label = label
-
-    @property
-    def raw_data(self):
-        created_at = self.created_at
-        if isinstance(created_at, datetime.datetime):
-            created_at = self.created_at.isoformat()
-        return {
-            'actor': {'login': self.actor.login},
-            'event': self._event,
-            'created_at': created_at,
-            'label': {'name': self._label}
-        }
-
-    @property
-    def event(self):
-        return self._event
-
-    @property
-    def created_at(self):
-        return self._created_at
-
-
-class CommentMock:
-    def __init__(self, login, body):
-        self.id = 1
-        self.user = UserMock(login)
-        self.body = body
-        self.created_at = datetime.datetime.now()
-
-
-
 class IssueMock:
     number = 1
 
