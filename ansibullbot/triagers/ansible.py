@@ -634,10 +634,8 @@ class AnsibleTriage(DefaultTriager):
         else:
             dmeta['history'] = []
         if issuewrapper.is_pullrequest():
-            dmeta['pullrequest_status'] = issuewrapper.pullrequest_status
             dmeta['pullrequest_reviews'] = issuewrapper.reviews
         else:
-            dmeta['pullrequest_status'] = []
             dmeta['pullrequest_reviews'] = []
 
         self.dump_meta(issuewrapper, dmeta)

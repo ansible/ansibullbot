@@ -57,11 +57,10 @@ class DefaultWrapper:
         self._migrated_from = None
         self._migrated_issue = None
         self._pr = False
-        self._pr_status = False
         self._pr_reviews = False
         self._repo_full_name = False
         self._template_data = None
-        self.pull_raw = None
+        self._pull_raw = None
         self._pr_files = None
         self.full_cachedir = os.path.join(self.cachedir, 'issues', str(self.number))
         self._renamed_files = None
@@ -391,7 +390,6 @@ class DefaultWrapper:
         if self.is_pullrequest():
             # the underlying call is wrapper with ratelimited ...
             self._pr = self.repo.get_pullrequest(self.number)
-            self.get_pullrequest_status(force_fetch=True)
             self._pr_reviews = False
             self._merge_commits = False
             self._committer_emails = False
@@ -407,104 +405,10 @@ class DefaultWrapper:
     @property
     @RateLimited
     def pullrequest_raw_data(self):
-        if not self.pull_raw:
+        if not self._pull_raw:
             logging.info('@pullrequest_raw_data')
-            self.pull_raw = self.pullrequest.raw_data
-        return self.pull_raw
-
-    def get_pullrequest_status(self, force_fetch=False):
-        fetched = False
-        jdata = None
-        pdata = None
-        # pull out the status url from the raw data
-        rd = self.pullrequest_raw_data
-        surl = rd['statuses_url']
-
-        pfile = os.path.join(self.full_cachedir, 'pr_status.pickle')
-        pdir = os.path.dirname(pfile)
-        if not os.path.isdir(pdir):
-            os.makedirs(pdir)
-
-        if os.path.isfile(pfile):
-            logging.info('pullrequest_status load pfile')
-            with open(pfile, 'rb') as f:
-                pdata = pickle.load(f)
-
-        if pdata:
-            # is the data stale?
-            if pdata[0] < self.pullrequest.updated_at or force_fetch:
-                logging.info('fetching pr status: stale, previous from %s' % pdata[0])
-                jdata = self.github.get_request(surl)
-
-                if isinstance(jdata, dict):
-                    # https://github.com/ansible/ansibullbot/issues/959
-                    logging.error('Got the following error while fetching PR status: %s', jdata.get('message'))
-                    logging.error(jdata)
-                    return []
-
-                self.log_ci_status(jdata)
-                fetched = True
-            else:
-                jdata = pdata[1]
-
-        # missing?
-        if not jdata:
-            logging.info('fetching pr status: !data')
-            jdata = self.github.get_request(surl)
-            # FIXME? should we self.log_ci_status(jdata) here too?
-            fetched = True
-
-        if fetched or not os.path.isfile(pfile):
-            logging.info('writing %s' % pfile)
-            pdata = (self.pullrequest.updated_at, jdata)
-            with open(pfile, 'wb') as f:
-                pickle.dump(pdata, f)
-
-        return jdata
-
-    def log_ci_status(self, status_data):
-        '''Keep track of historical CI statuses'''
-        logfile = os.path.join(self.full_cachedir, 'pr_status_log.json')
-
-        jdata = {}
-        if os.path.isfile(logfile):
-            with open(logfile) as f:
-                jdata = json.loads(f.read())
-
-        # the "url" field is constant
-        # the "target_url" field varies between CI providers
-
-        for sd in status_data:
-            try:
-                turl = sd['target_url']
-            except TypeError:
-                # https://github.com/ansible/ansibullbot/issues/959
-                # the above traceback sometimes occurs and cannot be reproduced
-                # log the following info to have better idea how to handle this
-                logging.error('sd = %s, type = %s' % (sd, type(sd)))
-                logging.error('status_data = %s, type = %s' % (status_data, type(status_data)))
-                raise
-
-            if turl not in jdata:
-                jdata[turl] = {
-                    'meta': sd.copy(),
-                    'history': {}
-                }
-            else:
-                if jdata[turl]['meta']['updated_at'] < sd['updated_at']:
-                    jdata[turl]['meta'] = sd.copy()
-            ts = sd['updated_at']
-            if ts not in jdata[turl]['history']:
-                jdata[turl]['history'][ts] = sd['state']
-
-        with open(logfile, 'w') as f:
-            f.write(json.dumps(jdata))
-
-    @property
-    def pullrequest_status(self):
-        if self._pr_status is False:
-            self._pr_status = self.get_pullrequest_status(force_fetch=False)
-        return self._pr_status
+            self._pull_raw = self.pullrequest.raw_data
+        return self._pull_raw
 
     @property
     def pr_files(self):

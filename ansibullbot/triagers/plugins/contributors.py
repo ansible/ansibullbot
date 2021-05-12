@@ -18,7 +18,7 @@ def get_contributor_facts(issuewrapper):
     if iw.is_issue():
         return cfacts
 
-    association = iw.pull_raw.get('author_association').upper()
+    association = iw.pullrequest_raw_data.get('author_association').upper()
     logging.info(f'{iw.html_url} {iw.submitter} association: {association}')
 
     if association in ['NONE', 'FIRST_TIME_CONTRIBUTOR']:

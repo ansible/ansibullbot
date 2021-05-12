@@ -171,9 +171,6 @@ class IssueMock:
     def get_labels(self):
         self.calls.append('get_labels')
 
-    def get_pullrequest_status(self):
-        return []
-
     def get_pullrequest(self):
         self.calls.append('get_pullrequest')
 
