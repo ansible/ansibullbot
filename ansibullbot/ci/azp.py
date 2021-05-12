@@ -303,7 +303,7 @@ class AzurePipelinesCI(BaseCI):
     def rebuild_old(self):
         data = {
             'definition': {
-                'id': 20,
+                'id': C.DEFAULT_AZP_DEFINITION,
             },
             'reason': 'pullRequest',
             'sourceBranch': 'refs/pull/%s/merge' % self._iw.number,
