@@ -26,10 +26,6 @@ def get_issue(datafile, statusfile):
         iw._get_timeline = lambda: issue.events
         iw._commits = issue.commits
 
-        # pre-load status to avoid github api calls
-        with open(statusfile, 'rb') as status:
-            iw._pr_status = json.loads(status.read())
-
         # pre-create history to avoid github api calls
         history = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
         iw._history = history
