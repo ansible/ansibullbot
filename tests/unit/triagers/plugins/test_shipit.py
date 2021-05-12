@@ -371,7 +371,7 @@ class TestSuperShipit(unittest.TestCase):
 
 class TestShipitRebuildMerge(unittest.TestCase):
 
-    def testshipit_with_core_rebuild_merge(self):
+    def test_shipit_with_core_rebuild_merge(self):
         # a rebuild_merge should also be a shipit
         IW = IssueWrapperMock('ansible', 'ansible', 1)
         IW._is_pullrequest = True
@@ -401,7 +401,7 @@ class TestShipitRebuildMerge(unittest.TestCase):
         assert sfacts['shipit_count_other'] == 0
         assert sfacts['shipit_count_vtotal'] == 2
 
-    def testshipit_with_noncore_rebuild_merge(self):
+    def test_shipit_with_noncore_rebuild_merge(self):
         # a !core rebuild_merge should not be a shipit?
         IW = IssueWrapperMock('ansible', 'ansible', 1)
         IW._is_pullrequest = True
