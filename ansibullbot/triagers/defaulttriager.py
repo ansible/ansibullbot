@@ -378,5 +378,5 @@ class DefaultTriager:
             os.makedirs(dn)
 
         logging.info(f'dumping {fn}')
-        with open(fn, 'wb') as f:
+        with open(fn, 'w') as f:
             f.write(json.dumps(actions, indent=2, sort_keys=True))

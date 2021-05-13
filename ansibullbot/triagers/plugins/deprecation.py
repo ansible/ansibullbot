@@ -1,7 +1,7 @@
 import os
 
 
-def get_deprecation_facts(issuewrapper, meta):
+def get_deprecation_facts(meta):
     # https://github.com/ansible/ansibullbot/issues/29
 
     deprecated = False

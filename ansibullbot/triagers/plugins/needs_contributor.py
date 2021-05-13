@@ -1,4 +1,4 @@
-def get_needs_contributor_facts(triager, issuewrapper, meta):
+def get_needs_contributor_facts(triager, issuewrapper):
     needs_contributor = False
 
     for event in issuewrapper.history.history:

@@ -167,7 +167,6 @@ class RepoWrapper:
 
     @RateLimited
     def get_issue(self, number):
-        issue = None
         while True:
             try:
                 issue = self.load_issue(number)
@@ -266,7 +265,7 @@ class RepoWrapper:
             try:
                 with open(pfile, 'rb') as f:
                     edata = pickle.load(f)
-            except Exception as e:
+            except Exception:
                 update = True
                 write_cache = True
 

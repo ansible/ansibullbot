@@ -30,7 +30,6 @@ import logging
 import os
 import shutil
 
-import ansibullbot.constants as C
 from ansibullbot.triagers.ansible import AnsibleTriage
 from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
 
@@ -101,12 +100,7 @@ class AnsibleSupportReport(AnsibleTriage):
 
     def run(self):
         '''Emit an html report of each file and it's metadata'''
-
         component_facts = {}
-        lblacklist = [
-            'ansible',
-        ]
-        lblacklist = []
 
         filenames = sorted(self.gitrepo.files)
         filenames = [x for x in filenames if not x.startswith('/')]
@@ -116,7 +110,6 @@ class AnsibleSupportReport(AnsibleTriage):
 
         for fn in filenames:
             logging.debug(fn)
-            meta = self.component_matcher.search_by_filepath(fn)
             iw = IssueMock()
             iw._component = fn
             try:
@@ -127,7 +120,6 @@ class AnsibleSupportReport(AnsibleTriage):
                 labels = facts['component_matches'][0]['labels'][:]
                 labels += facts['component_labels']
                 labels = sorted(set(labels))
-                labels = [x for x in labels if x not in lblacklist]
                 component_facts[fn]['labels'] = ','.join(labels)
                 component_facts[fn]['maintainers'] = \
                         ','.join(facts['component_matches'][0]['maintainers'])

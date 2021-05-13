@@ -125,16 +125,14 @@ class HistoryWrapper:
             os.makedirs(self.cachedir)
         if not os.path.isfile(self.cachefile):
             logging.info('!%s' % self.cachefile)
-            return None
+            return
         try:
             with open(self.cachefile, 'rb') as f:
                 cachedata = pickle.load(f)
         except Exception as e:
             logging.debug(e)
             logging.info('%s failed to load' % self.cachefile)
-            cachedata = None
-
-        cachedata['history'] = self._fix_event_bytes(cachedata['history'])
+            return
 
         return cachedata
 
@@ -146,7 +144,6 @@ class HistoryWrapper:
         if not os.path.isdir(self.cachedir):
             os.makedirs(self.cachedir)
 
-        # keep the timestamp
         cachedata = {
             'version': self.SCHEMA_VERSION,
             'updated_at': self.issue.instance.updated_at,
@@ -170,18 +167,9 @@ class HistoryWrapper:
             comments[idx] = nc
         return comments
 
-    def _fix_event_bytes(self, events):
-        '''Make sure all event values are strings and not bytes'''
-        for ide,event in enumerate(events):
-            for k,v in event.items():
-                if isinstance(v, bytes):
-                    events[ide][k] = v.decode('utf-8')
-        return events
-
     def merge_commits(self, commits):
         for xc in commits:
-            event = {}
-            event['id'] = xc.sha
+            event = {'id': xc.sha}
             try:
                 event['actor'] = getattr(xc.committer, 'login', str(xc.committer))
             except Exception:
@@ -248,18 +236,6 @@ class HistoryWrapper:
                 if len(matching_events) == maxcount:
                     break
 
-        """
-        # get rid of deleted comments
-        if active and eventname == u'commented':
-            cids = [x.id for x in self.issue.comments]
-            for me in matching_events[:]:
-                if me['id'] not in cids:
-                    print('remove %s' % me['id'])
-                    matching_events.remove(me)
-                else:
-                    print('%s in cids' % me['id'])
-        """
-
         return matching_events
 
     def get_user_comments(self, username):
@@ -319,13 +295,13 @@ class HistoryWrapper:
             elif event['event'] == 'labeled' and uselabels:
                 if event['label'] in command_keys:
                     if timestamps:
-                        commands.append((event['created_at'], y))
+                        commands.append((event['created_at'], event['label']))
                     else:
                         commands.append(event['label'])
             elif event['event'] == 'unlabeled' and uselabels:
                 if event['label'] in command_keys:
                     if timestamps:
-                        commands.append((event['created_at'], y))
+                        commands.append((event['created_at'], '!' + event['label']))
                     else:
                         commands.append('!' + event['label'])
 

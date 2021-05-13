@@ -214,11 +214,9 @@ class AnsibleComponentMatcher:
         self.updated_at = None
         self.update()
 
-    def update(self, email_cache=None, usecache=False, use_galaxy=True, botmeta=None):
+    def update(self, email_cache=None, botmeta=None):
         if botmeta is not None:
             self.botmeta = botmeta
-        if self.GQT is not None and use_galaxy:
-            self.GQT.update()
         if email_cache:
             self.email_cache = email_cache
         self.index_files()
@@ -237,7 +235,6 @@ class AnsibleComponentMatcher:
 
         bmeta = None
         if not os.path.exists(cfile) or not self.usecache:
-            bmeta = {}
             efile = os.path.join(checkoutdir, filename)
             if not os.path.exists(efile):
                 fdata = self.gitrepo.get_file_content(filename, follow=True)
@@ -421,7 +418,6 @@ class AnsibleComponentMatcher:
 
         self.strategy = None
         self.strategies = []
-        matched_filenames = None
 
         # No matching necessary for PRs, but should provide consistent api
         if files:
@@ -446,8 +442,8 @@ class AnsibleComponentMatcher:
                     for _component in components:
                         if len(_component.split('.')) == 3:
                             # fqcn
-                            matched_filenames += self._match_component(title, body, _component.split('.')[-1])
-                        _matches = self._match_component(title, body, _component)
+                            matched_filenames += self._match_component(title, _component.split('.')[-1])
+                        _matches = self._match_component(title, _component)
                         self.strategies.append(self.strategy)
 
                         # bypass for blacklist
@@ -462,8 +458,8 @@ class AnsibleComponentMatcher:
             if not delimited:
                 if len(component.split('.')) == 3:
                     # fqcn
-                    matched_filenames += self._match_component(title, body, component.split('.')[-1])
-                matched_filenames += self._match_component(title, body, component)
+                    matched_filenames += self._match_component(title, component.split('.')[-1])
+                matched_filenames += self._match_component(title, component)
                 self.strategies.append(self.strategy)
 
                 # bypass for blacklist
@@ -516,7 +512,7 @@ class AnsibleComponentMatcher:
 
         return matched_filenames
 
-    def _match_component(self, title, body, component):
+    def _match_component(self, title, component):
         """Find matches for a single line"""
 
         if not component:
@@ -587,11 +583,6 @@ class AnsibleComponentMatcher:
                 matched_filenames += self.search_by_regex_urls(component)
                 if matched_filenames:
                     self.strategy = 'search_by_regex_urls'
-
-            if not matched_filenames:
-                matched_filenames += self.search_by_tracebacks(component)
-                if matched_filenames:
-                    self.strategy = 'search_by_tracebacks'
 
             if not matched_filenames:
                 matched_filenames += self.search_by_filepath(component, context=context)
@@ -955,56 +946,6 @@ class AnsibleComponentMatcher:
 
         return matches
 
-    def search_by_tracebacks(self, body):
-
-        matches = []
-
-        if 'Traceback (most recent call last)' in body:
-            lines = body.split('\n')
-            for line in lines:
-                line = line.strip()
-                if line.startswith('DistributionNotFound'):
-                    matches = ['setup.py']
-                    break
-                elif line.startswith('File'):
-                    fn = line.split()[1]
-                    for SC in self.STOPCHARS:
-                        fn = fn.replace(SC, '')
-                    if 'ansible_module_' in fn:
-                        fn = os.path.basename(fn)
-                        fn = fn.replace('ansible_module_', '')
-                        matches = [fn]
-                    elif 'cli/playbook.py' in fn:
-                        fn = 'lib/ansible/cli/playbook.py'
-                    elif 'module_utils' in fn:
-                        idx = fn.find('module_utils/')
-                        fn = 'lib/ansible/' + fn[idx:]
-                    elif 'ansible/' in fn:
-                        idx = fn.find('ansible/')
-                        fn1 = fn[idx:]
-
-                        if 'bin/' in fn1:
-                            if not fn1.startswith('bin'):
-
-                                idx = fn1.find('bin/')
-                                fn1 = fn1[idx:]
-
-                                if fn1.endswith('.py'):
-                                    fn1 = fn1.rstrip('.py')
-
-                        elif 'cli/' in fn1:
-                            idx = fn1.find('cli/')
-                            fn1 = fn1[idx:]
-                            fn1 = 'lib/ansible/' + fn1
-
-                        elif 'lib' not in fn1:
-                            fn1 = 'lib/' + fn1
-
-                        if fn1 not in self.files:
-                            pass
-
-        return matches
-
     def search_by_filepath(self, body, partial=False, context=None):
         """Find known filepaths in body"""
 
@@ -1237,9 +1178,6 @@ class AnsibleComponentMatcher:
 
         if filename.startswith('collection:'):
             fqcn = filename.split(':')[1]
-            manifest = self.GALAXY_MANIFESTS.get(fqcn)
-            if manifest:
-                manifest = manifest['manifest']['collection_info']
             meta['collection'] = fqcn
             meta['migrated_to'] = fqcn
             meta['support'] = 'community'
@@ -1493,7 +1431,6 @@ class AnsibleComponentMatcher:
         '''Exact module name matching'''
 
         logging.debug(f'find_module_match for "{pattern}"')
-        candidate = None
 
         BLACKLIST = [
             'module_utils',

@@ -300,7 +300,7 @@ class AzurePipelinesCI(BaseCI):
                 self._rebuild_old()
                 break
 
-    def rebuild_old(self):
+    def _rebuild_old(self):
         data = {
             'definition': {
                 'id': C.DEFAULT_AZP_DEFINITION,

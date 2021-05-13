@@ -7,18 +7,6 @@ import ansibullbot.constants as C
 def is_needsinfo(triager, issue):
     needs_info = False
 
-    maintainers = [x for x in triager.ansible_members]
-    maintainers += [x for x in triager.ansible_core_team]
-
-    maintainers = sorted(
-        {
-            x for x in maintainers
-                if x != 'DEPRECATED' and
-                x != issue.submitter and
-                x not in triager.BOTNAMES
-        }
-    )
-
     for event in issue.history.history:
         if needs_info and \
                 event['actor'] == issue.submitter and \
@@ -149,10 +137,7 @@ def needs_info_timeout_facts(iw, meta):
         bp_comments = iw.history.get_boilerplate_comments()
         bp_comments_found = [c for c in bp_comments if c[0] == 'needs_info_base']
 
-        try:
-            delta = (now - bpd).days
-        except TypeError as e:
-            logging.error(e)
+        delta = (now - bpd).days
 
         if delta >= NI_EXPIRE:
             if len(bp_comments_found) >= 1:

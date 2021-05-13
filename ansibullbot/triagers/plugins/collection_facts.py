@@ -1,6 +1,4 @@
 import copy
-import json
-import os
 
 
 def get_collection_facts(iw, component_matcher, meta):
@@ -8,30 +6,12 @@ def get_collection_facts(iw, component_matcher, meta):
     is_backport = False
     if isinstance(meta.get('is_backport'), bool):
         is_backport = meta['is_backport']
-    else:
-        '''
-        if iw.is_issue():
-            avparts = meta['ansible_version'].split('.')
-            major = int(avparts[0])
-            try:
-                minor = int(avparts[1])
-            except:
-                minor = 0
-            if major < 2 or (major == 2 and minor < 10):
-                is_backport = True
-            else:
-                is_backport = False
-        else:
-            is_backport = iw.pullrequest.base.ref != u'devel'
-        '''
-        if not iw.is_issue():
-            is_backport = iw.pullrequest.base.ref != 'devel'
+    elif not iw.is_issue():
+        is_backport = iw.pullrequest.base.ref != 'devel'
 
     cfacts = {
         'is_collection': False,
-        # notification about collections and closure ...
         'needs_collection_boilerplate': False,
-        # close it ...
         'needs_collection_redirect': False,
         'collection_redirects': [],
         'collection_filemap': {},
@@ -76,7 +56,7 @@ def get_collection_facts(iw, component_matcher, meta):
     for k,v in cmap.items():
         if v is None:
             continue
-        for idi,item in enumerate(v):
+        for idi, item in enumerate(v):
             parts = item.split(':')
             cmap[k][idi] = '%s -> %s (%s)' % (
                 k,

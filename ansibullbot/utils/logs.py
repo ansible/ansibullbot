@@ -25,7 +25,7 @@ def set_logger(debug=False, logfile=None):
             fileHandler = WatchedFileHandler(logfile)
             fileHandler.setFormatter(logFormatter)
             rootLogger.addHandler(fileHandler)
-        except Exception as e:
+        except Exception:
             pass
 
     consoleHandler = logging.StreamHandler()

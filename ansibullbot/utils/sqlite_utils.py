@@ -105,7 +105,7 @@ class AnsibullbotDatabase:
     def get_github_api_request_meta(self, url, token=None):
         try:
             if token is None:
-                rl = self.session.query(GitubApiRequest).filter(GithubApiRequest.url == url).first()
+                rl = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).first()
             else:
                 rl = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).filter(GithubApiRequest.token == token).first()
         except Exception as e:
@@ -139,7 +139,7 @@ class AnsibullbotDatabase:
 
         try:
             if token is None:
-                current = self.session.query(GitubApiRequest).filter(GithubApiRequest.url == url).first()
+                current = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).first()
             else:
                 current = self.session.query(GithubApiRequest).filter(GithubApiRequest.url == url).filter(GithubApiRequest.token == token).first()
         except Exception as e:

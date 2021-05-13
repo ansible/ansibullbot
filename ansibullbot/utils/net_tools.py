@@ -36,8 +36,3 @@ def fetch(url, verb='get', **kwargs):
         return _inner_fetch(verb=verb)
     except RetryError as e:
         logging.error(e)
-
-
-def check_response(response):
-    if response and response.status_code == 404:
-        raise Exception('%s 404' % response.url)

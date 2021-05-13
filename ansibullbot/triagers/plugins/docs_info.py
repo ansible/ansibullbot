@@ -15,7 +15,7 @@ RE_DIFF_PATTERNS = {
 }
 
 @dataclasses.dataclass(eq=False, order=False)
-class ParsedFunc():
+class ParsedFunc:
     name: str
     line_start: int
     line_end: int
@@ -24,7 +24,7 @@ class ParsedFunc():
     ds_line_end: int = 0
 
 @dataclasses.dataclass(eq=False, order=False)
-class ParsedClass():
+class ParsedClass:
     name: str
     line_start: int
     line_end: int
@@ -40,7 +40,7 @@ class ParsedClass():
                 return item
 
 @dataclasses.dataclass(eq=False, order=False)
-class ParsedModule():
+class ParsedModule:
     doc_string: str = ""
     ds_line_start: int = 0
     ds_line_end: int = 0

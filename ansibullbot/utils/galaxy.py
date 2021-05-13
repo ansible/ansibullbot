@@ -108,9 +108,6 @@ class GalaxyQueryTool:
 
         return jdata
 
-    def update(self):
-        pass
-
     def index_ecosystem(self):
         # index the ansible-collections org
         token = C.DEFAULT_GITHUB_TOKEN
@@ -136,7 +133,7 @@ class GalaxyQueryTool:
 
             # is there a galaxy.yml at the root level?
             if grepo.exists('galaxy.yml'):
-                meta = yaml.load(grepo.get_file_content('galaxy.yml'))
+                meta = yaml.safe_load(grepo.get_file_content('galaxy.yml'))
                 fqcn = '%s.%s' % (meta['namespace'], meta['name'])
                 self._gitrepos[fqcn] = grepo
             else:
@@ -145,7 +142,7 @@ class GalaxyQueryTool:
 
                 if galaxyfns:
                     for gfn in galaxyfns:
-                        meta = yaml.load(grepo.get_file_content(gfn))
+                        meta = yaml.safe_load(grepo.get_file_content(gfn))
                         fqcn = '%s.%s' % (meta['namespace'], meta['name'])
                         _grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=False, context=os.path.dirname(gfn))
                         self._gitrepos[fqcn] = _grepo
@@ -204,7 +201,7 @@ class GalaxyQueryTool:
                 self._gitrepos[fqcn] = grepo
 
         self._galaxy_files = {}
-        for fqcn,gr in self._gitrepos.items():
+        for fqcn, gr in self._gitrepos.items():
             if fqcn.startswith('testing.'):
                 continue
             for fn in gr.files:
@@ -229,7 +226,7 @@ class GalaxyQueryTool:
         if component.rstrip('/') in DIRMAP:
             return []
 
-        for k,v in DIRMAP.items():
+        for k, v in DIRMAP.items():
             if component.startswith(k):
                 # look for the full path including subdirs ...
                 _component = component.replace(k + '/', v + '/')

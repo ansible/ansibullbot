@@ -30,7 +30,7 @@ pytest-sugar==0.9.4       # via -r test-requirements.txt
 pytest==6.2.0             # via -r test-requirements.txt, pytest-cov, pytest-sugar
 python-levenshtein==0.12.0  # via -r requirements.txt
 pytz==2020.4              # via -r requirements.txt
-pyyaml==3.13              # via -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt, -r requirements.txt
+pyyaml==5.1               # via -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt, -r requirements.txt
 requests-cache==0.5.2     # via -r requirements.txt
 requests==2.24.0          # via -r requirements.txt, pygithub, requests-cache
 sentry-sdk==0.19.5        # via -r requirements.txt

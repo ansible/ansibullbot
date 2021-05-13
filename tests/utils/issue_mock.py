@@ -118,7 +118,7 @@ class IssueMock:
         with open(datafile, 'rb') as f:
             fdata = f.read()
         if fdata:
-            self.ydata = yaml.load(fdata)
+            self.ydata = yaml.safe_load(fdata)
         else:
             self.ydata = {}
 

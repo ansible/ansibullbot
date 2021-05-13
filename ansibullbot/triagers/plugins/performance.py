@@ -1,4 +1,4 @@
-def get_performance_facts(issuewrapper, meta):
+def get_performance_facts(issuewrapper):
     iw = issuewrapper
 
     pfacts = {

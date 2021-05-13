@@ -430,7 +430,7 @@ class ModuleExtractor:
 
         # some docstrings don't pass yaml validation with PyYAML >= 4.2
         try:
-            self._DOCSTRING = yaml.load(self._DOCUMENTATION_RAW)
+            self._DOCSTRING = yaml.safe_load(self._DOCUMENTATION_RAW)
         except yaml.parser.ParserError:
             logging.warning('%s has non-yaml formatted docstrings' % self.filepath)
         except yaml.scanner.ScannerError:

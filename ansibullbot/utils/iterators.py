@@ -1,9 +1,9 @@
 class RepoIssuesIterator:
 
-    def __init__(self, repo, numbers, issuecache={}):
+    def __init__(self, repo, numbers, issuecache=None):
         self.repo = repo
         self.numbers = numbers
-        self.issuecache = issuecache
+        self.issuecache = {} if issuecache is None else issuecache
         self.i = 0
 
     def __iter__(self):

@@ -182,8 +182,8 @@ class BotMetadataParser:
 
         # https://github.com/ansible/ansibullbot/issues/1155#issuecomment-457731630
         logging.info('botmeta: load yaml')
-        ydata_orig = yaml.load(data, BotYAMLLoader)
-        ydata = yaml.load(yaml.dump(ydata_orig, Dumper=NoAliasDumper), BotYAMLLoader)
+        ydata_orig = yaml.safe_load(data)
+        ydata = yaml.safe_load(yaml.dump(ydata_orig, Dumper=NoAliasDumper))
 
         # fix the team macros
         logging.info('botmeta: fix teams')
@@ -224,26 +224,3 @@ class BotMetadataParser:
         propagate_keys(ydata)
 
         return ydata
-
-
-def construct_yaml_str(self, node):
-    # Override the default string handling function
-    # to always return unicode objects
-
-    # Taken from https://stackoverflow.com/a/2967461/595220
-    return self.construct_scalar(node)
-
-
-def default_to_unicode_strings(cls):
-    cls.add_constructor('tag:yaml.org,2002:str', construct_yaml_str)
-    return cls
-
-
-@default_to_unicode_strings
-class BotYAMLLoader(yaml.Loader):
-    pass
-
-
-@default_to_unicode_strings
-class BotSafeYAMLLoader(yaml.SafeLoader):
-    pass
