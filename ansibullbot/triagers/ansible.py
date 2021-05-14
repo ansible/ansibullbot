@@ -2117,18 +2117,14 @@ class AnsibleTriage(DefaultTriager):
 
         # resolved_by_pr is special
         if 'resolved_by_pr' in meta['maintainer_commands']:
-            # find the comment
             mc = iw.history.get_user_comments(maintainers)
             mc = [x for x in mc if 'resolved_by_pr' in x]
 
-            # extract the PR
             pr_number = extract_pr_number_from_comment(mc[-1])
             if pr_number is None:
-                # ignore resolved_by_pr command without actual number
                 logging.warning("Invalid resolved_by_pr command in '%s'", mc[-1])
             else:
-                # was it merged?
-                merged = self.is_pr_merged(pr_number, repo=iw.repo)
+                merged = iw.repo.is_pr_merged(pr_number)
                 meta['resolved_by_pr'] = {
                     'number': pr_number,
                     'merged': merged
