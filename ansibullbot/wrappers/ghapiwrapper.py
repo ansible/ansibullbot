@@ -189,6 +189,13 @@ class RepoWrapper:
         pr = self.repo.get_pull(number)
         return pr
 
+    def is_pr_merged(self, number):
+        try:
+            return self.get_pullrequest(number).merged
+        except Exception as e:
+            logging.debug(e)
+            return False
+
     @property
     def labels(self):
         if self._labels is False:

@@ -327,25 +327,6 @@ class DefaultTriager:
         # FIXME why?
         self.build_history(iw)
 
-    def is_pr_merged(self, number, repo):
-        '''Check if a PR# has been merged or not'''
-
-        if number is None:
-            raise Exception('Can not check merge state on the number: None')
-
-        merged = False
-        pr = None
-        try:
-            pr = repo.get_pullrequest(number)
-        except Exception as e:
-            print(e)
-        if pr:
-            try:
-                merged = pr.merged
-            except Exception as e:
-                logging.debug(e)
-        return merged
-
     def trigger_rate_limit(self):
         '''Repeatedly make calls to exhaust rate limit'''
 
