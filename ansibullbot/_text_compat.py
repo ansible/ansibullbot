@@ -253,21 +253,3 @@ def to_text(obj, encoding='utf-8', errors=None, nonstring='simplerepr'):
         raise TypeError('Invalid value %s for to_text\'s nonstring parameter' % nonstring)
 
     return to_text(value, encoding, errors)
-
-
-#: :py:func:`to_native`
-#:      Transform a variable into the native str type for the python version
-#:
-#:      On Python2, this is an alias for
-#:      :func:`~ansible.module_utils.to_bytes`.  On Python3 it is an alias for
-#:      :func:`~ansible.module_utils.to_text`.  It makes it easier to
-#:      transform a variable into the native str type for the python version
-#:      the code is running on.  Use this when constructing the message to
-#:      send to exceptions or when dealing with an API that needs to take
-#:      a native string.  Example::
-#:
-#:          try:
-#:              1//0
-#:          except ZeroDivisionError as e:
-#:              raise MyException('Encountered and error: %s' % to_native(e))
-to_native = to_text

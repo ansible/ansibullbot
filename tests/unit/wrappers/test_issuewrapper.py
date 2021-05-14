@@ -5,7 +5,7 @@ import tempfile
 
 from unittest import mock
 
-from ansibullbot.wrappers.defaultwrapper import DefaultWrapper
+from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 
 class GithubIssueMock:
@@ -49,7 +49,7 @@ def test_get_events():
             {'event': 'comment', 'created_at':  '2020-05-31T10:02:20Z'}
         ]
 
-        dw = DefaultWrapper(
+        iw = IssueWrapper(
             github=github,
             repo=repo,
             issue=issue,
@@ -57,7 +57,7 @@ def test_get_events():
             gitrepo=repo,
         )
 
-        events = dw.events
+        events = iw.events
 
         assert len(events) == 3
         assert os.path.exists(os.path.join(cachedir, 'issues', '1', 'timeline_meta.json'))
@@ -97,7 +97,7 @@ def test_get_events_bad_cache_invalidate():
         with open(events_data_cache, 'w') as f:
             f.write(json.dumps(bad_events))
 
-        dw = DefaultWrapper(
+        iw = IssueWrapper(
             github=github,
             repo=repo,
             issue=issue,
@@ -105,6 +105,6 @@ def test_get_events_bad_cache_invalidate():
             gitrepo=repo
         )
 
-        events = dw.events
+        events = iw.events
 
         assert len(events) == 3

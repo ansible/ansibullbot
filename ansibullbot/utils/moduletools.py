@@ -13,7 +13,6 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from ansibullbot._text_compat import to_text
-from ansibullbot.parsers.botmetadata import BotYAMLLoader
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
 
@@ -508,7 +507,6 @@ class ModuleIndexer:
             if x.startswith('author'):
                 inphase = True
             if inphase and not x.strip().startswith(('-', 'author')):
-                inphase = False
                 break
             if inphase:
                 author_lines += x + '\n'
@@ -516,9 +514,8 @@ class ModuleIndexer:
         if not author_lines:
             return []
 
-        ydata = {}
         try:
-            ydata = yaml.load(author_lines, BotYAMLLoader)
+            ydata = yaml.safe_load(author_lines)
         except Exception as e:
             print(e)
             return []

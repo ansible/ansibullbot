@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod, abstractproperty
+from abc import ABCMeta, abstractmethod
 
 
 class BaseCI(metaclass=ABCMeta):
@@ -7,7 +7,8 @@ class BaseCI(metaclass=ABCMeta):
 
     name = None
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def state(self):
         """
 
@@ -15,7 +16,8 @@ class BaseCI(metaclass=ABCMeta):
         """
         raise NotImplementedError
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def updated_at(self):
         """Timestamp of last job completion for given PR number.
 
@@ -37,7 +39,6 @@ class BaseCI(metaclass=ABCMeta):
         """Get test results of given run_id and figure out a ci_verified out
         of it.
 
-        :type run_id: str
         :rtype: tuple(bool, list)
         """
         raise NotImplementedError
@@ -47,6 +48,7 @@ class BaseCI(metaclass=ABCMeta):
         """Rebuild jobs. All by default, optionally failed jobs only.
 
         :type run_id: str
+        :type failed_only: bool
         """
         raise NotImplementedError
 

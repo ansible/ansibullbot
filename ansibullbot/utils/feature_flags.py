@@ -12,7 +12,7 @@ class FeatureFlags:
         return self._flags.get(feature, False)
 
     def is_disabled(self, feature):
-        return not is_enabled(feature)
+        return not self.is_enabled(feature)
 
     @property
     def flags(self):
@@ -21,4 +21,4 @@ class FeatureFlags:
     @classmethod
     def from_config(cls, config_path):
         with open(config_path) as f:
-            return cls(yaml.load(f))
+            return cls(yaml.safe_load(f))

@@ -129,7 +129,6 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
 
         # FIXME mstate == 'draft'
     else:
-        user_reviews = {}
         shipits = {}  # key: actor, value: created_at
 
         has_set_needs_revision = set()
@@ -435,8 +434,6 @@ def get_ci_run_facts(iw, meta, ci):
     # should only be here if the run state is failed ...
     if not meta['has_ci'] or meta['ci_state'] != 'failure':
         return ci_facts
-
-    needs_testresult_notification = False
 
     if ci.last_run is None:
         return ci_facts

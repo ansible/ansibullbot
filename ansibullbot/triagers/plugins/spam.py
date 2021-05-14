@@ -1,7 +1,7 @@
 import ansibullbot.constants as C
 
 
-def get_spam_facts(issuewrapper, meta):
+def get_spam_facts(issuewrapper):
 
     iw = issuewrapper
 

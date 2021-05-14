@@ -36,8 +36,6 @@ BOOL_TRUE = frozenset(["true", "t", "y", "1", "yes", "on"])
 def mk_boolean(value):
     ret = value
     if not isinstance(value, bool):
-        if value is None:
-            ret = False
         ret = (to_text(value).lower() in BOOL_TRUE)
     return ret
 

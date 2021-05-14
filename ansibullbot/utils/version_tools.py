@@ -344,9 +344,6 @@ class AnsibleVersionIndexer:
         # make sure the checkout cache is still valid
         self.update_checkout()
         '''
-
-        aversion = None
-
         if not self.COMMITVERSIONS:
             self.COMMITVERSIONS = {}
 
@@ -385,8 +382,7 @@ class AnsibleVersionIndexer:
 
         return aversion
 
-    def version_by_date(self, dateobj, devel=False):
-
+    def version_by_date(self, dateobj):
         if not self.DATEVERSIONS:
             self.DATEVERSIONS = []
             cmd = 'cd %s;' % self.checkoutdir

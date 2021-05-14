@@ -7,7 +7,6 @@ import http.client
 import logging
 import requests
 import socket
-import ssl
 import sys
 import time
 import traceback
@@ -35,26 +34,21 @@ def get_rate_limit():
     token = C.DEFAULT_GITHUB_TOKEN
 
     if token:
-        success = False
-        while not success:
-            try:
-                logging.debug(url)
-            except Exception as e:
-                pass
+        while True:
+            logging.debug(url)
             try:
                 rr = requests.get(
                     url,
                     headers={'Authorization': 'token %s' % token}
                 )
                 response = rr.json()
-                success = True
+                break
             except Exception as e:
                 logging.error(e)
                 time.sleep(60)
 
     else:
-        success = False
-        while not success:
+        while True:
             logging.debug(url)
             try:
                 rr = requests.get(
@@ -62,11 +56,9 @@ def get_rate_limit():
                     auth=(username, password)
                 )
                 response = rr.json()
-                success = True
+                break
             except Exception:
                 time.sleep(60)
-
-    response = rr.json()
 
     if 'resources' not in response or 'core' not in response.get('resources', {}):
         logging.warning('Unable to fetch rate limit %r', response.get('message'))
@@ -77,7 +69,7 @@ def get_rate_limit():
     return response
 
 
-def get_reset_time(fn, args):
+def get_reset_time():
     '''Return the number of seconds until the rate limit resets'''
 
     # default to 62 minutes
@@ -142,19 +134,16 @@ def RateLimited(fn):
                 x = fn(*args, **kwargs)
                 success = True
             except RateLimitError:
-                stime = get_reset_time(fn, args)
+                stime = get_reset_time()
             except OSError as e:
                 logging.warning('socket error: sleeping 2 minutes %s' % e)
-                time.sleep(2*60)
-            except ssl.SSLError as e:
-                logging.warning('ssl error: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except ReadTimeout as e:
                 logging.warning('read timeout: sleeping 2 minutes %s' % e)
                 time.sleep(2*60)
             except AttributeError as e:
                 if "object has no attribute 'decoded_content'" in e.message:
-                    stime = get_reset_time(fn, args)
+                    stime = get_reset_time()
                     msg = 'decoded_content error: sleeping %s minutes %s' \
                         % (stime / 60, e)
                     logging.warning(msg)
@@ -163,7 +152,7 @@ def RateLimited(fn):
                     raise Exception('unhandled message type')
             except TypeError as e:
                 if "unsupported operand type(s) for -=" in e.message:
-                    stime = get_reset_time(fn, args)
+                    stime = get_reset_time()
                     msg = 'retry type error: sleeping %s minutes %s' \
                         % (stime / 60, e)
                     logging.warning(msg)
@@ -182,7 +171,7 @@ def RateLimited(fn):
                         return None
                     elif 'rate limit exceeded' in msg:
                         logging.warning('general rate limit exceeded')
-                        stime = get_reset_time(fn, args)
+                        stime = get_reset_time()
                     elif isinstance(e, socket.error):
                         logging.warning('socket error')
                         stime = 5*60
@@ -195,7 +184,7 @@ def RateLimited(fn):
                     elif "object has no attribute 'decoded_content'" in msg:
                         # occurs most often when fetching file contents from
                         # the api such as the issue template
-                        stime = get_reset_time(fn, args)
+                        stime = get_reset_time()
                     elif 'No handler found for uri' in msg:
                         # Not sure what is happening here ...
                         # No handler found for uri

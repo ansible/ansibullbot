@@ -336,8 +336,6 @@ class AnsibleTriage(DefaultTriager):
             logging.info('updating component matcher')
             self.component_matcher.update(
                 email_cache=self.module_indexer.emails_cache,
-                usecache=True,
-                use_galaxy=not self.args.ignore_galaxy,
                 botmeta=self.botmeta,
             )
 
@@ -373,17 +371,14 @@ class AnsibleTriage(DefaultTriager):
 
                 if issue.state == 'closed' and not self.ignore_state:
                     logging.info(to_text(number) + ' is closed, skipping')
-                    redo = False
                     continue
 
                 if self.only_prs and 'pull' not in issue.html_url:
                     logging.info(to_text(number) + ' is issue, skipping')
-                    redo = False
                     continue
 
                 if self.only_issues and 'pull' in issue.html_url:
                     logging.info(to_text(number) + ' is pullrequest, skipping')
-                    redo = False
                     continue
 
                 # users may want to re-run this issue after manual intervention
@@ -900,7 +895,7 @@ class AnsibleTriage(DefaultTriager):
 
         # NAMESPACE MAINTAINER NOTIFY
         if iw.is_pullrequest() and not self.meta['is_bad_pr']:
-            if needs_community_review(self.meta, iw):
+            if needs_community_review(self.meta):
 
                 comment = self.render_boilerplate(
                     self.meta,
@@ -1517,10 +1512,10 @@ class AnsibleTriage(DefaultTriager):
 
     def apply_actions(self, iw, actions):
         if self.safe_force:
-            self.check_safe_match(iw, actions)
+            self.check_safe_match(actions)
         return super().apply_actions(iw, actions)
 
-    def check_safe_match(self, iw, actions):
+    def check_safe_match(self, actions):
 
         if self.safe_force_script:
             with open(self.safe_force_script, 'rb') as f:
@@ -1645,8 +1640,6 @@ class AnsibleTriage(DefaultTriager):
             self.repos[repo]['issues'] = {}
             # increment the loopcount
             self.repos[repo]['loopcount'] += 1
-
-        issuecache = {}
 
         logging.info('getting issue objs for %s' % repo)
         self.update_issue_summaries(repopath=repo, issuenums=issuenums)
@@ -1830,10 +1823,10 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # backports
-        self.meta.update(get_backport_facts(iw, self.meta))
+        self.meta.update(get_backport_facts(iw))
 
         # performance
-        self.meta.update(get_performance_facts(iw, self.meta))
+        self.meta.update(get_performance_facts(iw))
 
         # traceback
         self.meta.update(get_traceback_facts(iw))
@@ -1859,7 +1852,6 @@ class AnsibleTriage(DefaultTriager):
             get_needs_contributor_facts(
                 self,
                 iw,
-                self.meta,
             )
         )
 
@@ -1906,7 +1898,6 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(
             get_label_command_facts(
                 iw,
-                self.meta,
                 self.module_indexer.all_maintainers,
                 core_team=self.ansible_core_team,
                 valid_labels=self.valid_labels
@@ -1917,10 +1908,8 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(
             get_waffling_overrides(
                 iw,
-                self.meta,
                 self.module_indexer.all_maintainers,
                 core_team=self.ansible_core_team,
-                valid_labels=self.valid_labels
             )
         )
 
@@ -1961,10 +1950,10 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(get_contributor_facts(iw))
 
         # is it deprecated?
-        self.meta.update(get_deprecation_facts(iw, self.meta))
+        self.meta.update(get_deprecation_facts(self.meta))
 
         # does it have a pr or does it have an issue?
-        self.meta.update(get_cross_reference_facts(iw, self.meta))
+        self.meta.update(get_cross_reference_facts(iw))
 
         # need these keys to always exist
         if 'merge_commits' not in self.meta:
@@ -1986,7 +1975,7 @@ class AnsibleTriage(DefaultTriager):
                 self.meta['migrated_issue_state'] = None
 
         # spam!
-        self.meta.update(get_spam_facts(iw, self.meta))
+        self.meta.update(get_spam_facts(iw))
 
         # automerge
         self.meta.update(get_automerge_facts(iw, self.meta))
@@ -2048,7 +2037,7 @@ class AnsibleTriage(DefaultTriager):
                 mirepopath,
                 minumber
             )
-        except Exception as e:
+        except Exception:
             mw = None
 
         return mw
@@ -2172,9 +2161,7 @@ class AnsibleTriage(DefaultTriager):
 
         return commands
 
-    def waiting_on(self, issuewrapper, meta):
-        iw = issuewrapper
-        wo = None
+    def waiting_on(self, iw, meta):
         if iw.is_issue():
             if meta['is_needs_info']:
                 wo = iw.submitter

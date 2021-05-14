@@ -191,7 +191,7 @@ class IntegrationTest(object):
         '''Targets have meta to inform how tests should run'''
         mpath = os.path.join(self.target_path, 'meta.yml')
         with open(mpath, 'r') as f:
-            ydata = yaml.load(f.read())
+            ydata = yaml.safe_load(f.read())
         if not isinstance(ydata, dict):
             raise Exception('target meta should be a dict-like structure')
         if 'ansible_commit' not in ydata:

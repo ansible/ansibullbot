@@ -134,7 +134,7 @@ def get_automerge_facts(issuewrapper, meta):
     return create_ameta(True, 'automerge tests passed')
 
 
-def needs_community_review(meta, issue):
+def needs_community_review(meta):
     '''Notify community for more shipits?'''
 
     if not meta['is_new_module']:
@@ -205,7 +205,7 @@ def get_review_facts(issuewrapper, meta):
     if meta['is_needs_rebase']:
         return rfacts
 
-    supported_by = get_supported_by(iw, meta)
+    supported_by = get_supported_by(meta)
 
     if supported_by == 'community':
         rfacts['community_review'] = True
@@ -268,7 +268,7 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames
 
     # make sure only deletions from ignore.txt are allowed
     for pr_file in iw.pr_files:
-        if (pr_file.filename.startswith('test/sanity') and pr_file.filename.endswith('ignore.txt')):
+        if pr_file.filename.startswith('test/sanity') and pr_file.filename.endswith('ignore.txt'):
             if pr_file.additions > 0:
                 logging.debug('failed shipit test for additions on %s' % pr_file.filename)
                 return nmeta
@@ -470,7 +470,7 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames
     return nmeta
 
 
-def get_supported_by(issuewrapper, meta):
+def get_supported_by(meta):
     # http://docs.ansible.com/ansible/modules_support.html
     # certified: maintained by the community and reviewed by Ansible core team.
     # community: maintained by the community at large.

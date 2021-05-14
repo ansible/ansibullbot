@@ -1,4 +1,4 @@
-def get_cross_reference_facts(issuewrapper, meta):
+def get_cross_reference_facts(issuewrapper):
 
     iw = issuewrapper
 

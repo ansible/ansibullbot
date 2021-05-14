@@ -100,15 +100,13 @@ class GithubGraphQLClient:
         }
         self.environment = jinja2.Environment()
 
-    def get_issue_summaries(self, repo_url, baseurl=None, cachefile=None):
+    def get_issue_summaries(self, repo_url):
         """Return a dict of all issue summaries with numbers as keys
 
         Adds a compatibility method for the webscraper
 
         Args:
             repo_url  (str): username/repository
-            baseurl   (str): not used
-            cachefile (str): not used
         """
         owner = repo_url.split('/', 1)[0]
         repo = repo_url.split('/', 1)[1]
@@ -129,10 +127,6 @@ class GithubGraphQLClient:
 
     def get_last_number(self, repo_path):
         """Return the very last issue/pr number opened for a repo
-
-        Args:
-            owner (str): the github namespace
-            repo  (str): the github repository
         """
         owner = repo_path.split('/', 1)[0]
         repo = repo_path.split('/', 1)[1]

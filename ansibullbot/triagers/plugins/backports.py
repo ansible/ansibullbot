@@ -1,4 +1,4 @@
-def get_backport_facts(issuewrapper, meta):
+def get_backport_facts(issuewrapper):
     # https://github.com/ansible/ansibullbot/issues/367
     iw = issuewrapper
 
