@@ -301,7 +301,7 @@ class AzurePipelinesCI(BaseCI):
                 break
 
     def _rebuild_old(self):
-        data = {
+        data = json.dumps({
             'definition': {
                 'id': C.DEFAULT_AZP_DEFINITION,
             },
@@ -321,7 +321,7 @@ class AzurePipelinesCI(BaseCI):
                 'pr.providerId': 'github',
                 'pr.autoCancel': 'true',
             },
-            'parameters': {
+            'parameters': json.dumps({
                 'system.pullRequest.pullRequestId': self._iw._pr.id,
                 'system.pullRequest.pullRequestNumber': self._iw._pr.number,
                 'system.pullRequest.mergedAt': '',
@@ -329,14 +329,14 @@ class AzurePipelinesCI(BaseCI):
                 'system.pullRequest.targetBranch': self._iw._pr.base.ref,
                 'system.pullRequest.sourceRepositoryUri': 'https://github.com/ansible/ansible',
                 'system.pullRequest.sourceCommitId': self._iw._pr.head.sha,
-            }
-        }
+            }),
+        })
 
         resp = fetch(
             NEW_BUILD,
             verb='post',
             headers=HEADERS,
-            data=json.dumps(data),
+            data=data,
             timeout=30,
             auth=(C.DEFAULT_AZP_USER, C.DEFAULT_AZP_TOKEN),
         )
