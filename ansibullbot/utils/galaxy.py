@@ -4,13 +4,9 @@ import logging
 import os
 
 import requests
-import yaml
-from github import Github
 
-import ansibullbot.constants as C
-from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.timetools import strip_time_safely
-from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
+
 
 GALAXY_BASE_URL = 'https://galaxy.ansible.com'
 
@@ -77,10 +73,8 @@ class GalaxyQueryTool:
         if not os.path.exists(self.cachedir):
             os.makedirs(self.cachedir)
 
-        self._galaxy_files = {}
-        self._gitrepos = {}
-
-        self.index_ecosystem()
+        self._galaxy_files = self._get_cached_url('https://sivel.eng.ansible.com/api/v1/collections/file_map')
+        self._collections_meta = self._get_cached_url('https://sivel.eng.ansible.com/api/v1/collections/list')
 
     def _get_cached_url(self, url, days=0):
         cachedir = os.path.join(self.cachedir, 'urls')
@@ -107,107 +101,6 @@ class GalaxyQueryTool:
             }))
 
         return jdata
-
-    def index_ecosystem(self):
-        # index the ansible-collections org
-        token = C.DEFAULT_GITHUB_TOKEN
-        gh = Github(login_or_token=token)
-        gw = GithubWrapper(gh, cachedir=self.cachedir)
-        ac = gw.get_org('ansible-collections')
-
-        cloneurls = set()
-        for repo in ac.get_repos():
-            cloneurls.add(repo.clone_url)
-        cloneurls = [x.replace('.git', '') for x in cloneurls]
-
-        for curl in cloneurls:
-            if curl.endswith('/overview'):
-                continue
-            if curl.endswith('/collection_template'):
-                continue
-            if curl.endswith('/.github'):
-                continue
-            if curl.endswith('/hub'):
-                continue
-            grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=False)
-
-            # is there a galaxy.yml at the root level?
-            if grepo.exists('galaxy.yml'):
-                meta = yaml.safe_load(grepo.get_file_content('galaxy.yml'))
-                fqcn = '%s.%s' % (meta['namespace'], meta['name'])
-                self._gitrepos[fqcn] = grepo
-            else:
-                # multi-collection repos ... sigh.
-                galaxyfns = grepo.find('galaxy.yml')
-
-                if galaxyfns:
-                    for gfn in galaxyfns:
-                        meta = yaml.safe_load(grepo.get_file_content(gfn))
-                        fqcn = '%s.%s' % (meta['namespace'], meta['name'])
-                        _grepo = GitRepoWrapper(cachedir=self.cachedir, repo=curl, rebase=False, context=os.path.dirname(gfn))
-                        self._gitrepos[fqcn] = _grepo
-                else:
-
-                    fqcn = None
-                    bn = os.path.basename(curl)
-
-                    # enumerate the url?
-                    if '.' in bn:
-                        fqcn = bn
-
-                    # try the README?
-                    if fqcn is None:
-                        for fn in ['README.rst', 'README.md']:
-                            if fqcn:
-                                break
-                            if not grepo.exists(fn):
-                                continue
-                            fdata = grepo.get_file_content(fn)
-                            if not '.' in fdata:
-                                continue
-                            lines = fdata.split('\n')
-                            for line in lines:
-                                line = line.strip()
-                                if line.lower().startswith('ansible collection:'):
-                                    fqcn = line.split(':')[-1].strip()
-                                    break
-
-                    # lame ...
-                    if fqcn is None:
-                        fqcn = bn + '._community'
-
-                    self._gitrepos[fqcn] = grepo
-
-        # scrape the galaxy collections api
-        nexturl = GALAXY_BASE_URL + '/api/v2/collections/?page_size=1000'
-        while nexturl:
-            jdata = self._get_cached_url(nexturl)
-            nexturl = jdata.get('next_link')
-            if nexturl:
-                nexturl = GALAXY_BASE_URL + nexturl
-
-            for res in jdata.get('results', []):
-                fqcn = '%s.%s' % (res['namespace']['name'], res['name'])
-                if res.get('deprecated'):
-                    continue
-                if fqcn in self._gitrepos:
-                    continue
-                lv = res['latest_version']['href']
-                lvdata = self._get_cached_url(lv)
-                rurl = lvdata.get('metadata', {}).get('repository')
-                if rurl is None:
-                    rurl = lvdata['download_url']
-                grepo = GitRepoWrapper(cachedir=self.cachedir, repo=rurl, rebase=False)
-                self._gitrepos[fqcn] = grepo
-
-        self._galaxy_files = {}
-        for fqcn, gr in self._gitrepos.items():
-            if fqcn.startswith('testing.'):
-                continue
-            for fn in gr.files:
-                if fn not in self._galaxy_files:
-                    self._galaxy_files[fn] = set()
-                self._galaxy_files[fn].add(fqcn)
 
     def search_galaxy(self, component):
         '''Is this a file belonging to a collection?'''
@@ -276,7 +169,8 @@ class GalaxyQueryTool:
                 for fqcn in self._galaxy_files[cn]:
                     if fqcn in BLACKLIST_FQCNS:
                         continue
-                    matches.append('collection:%s:%s' % (fqcn, cn))
+                    homepage = self._collections_meta[fqcn]['manifest']['collection_info']['homepage']
+                    matches.append('collection:%s:%s:%s' % (fqcn, cn, homepage))
             matches = sorted(set(matches))
 
         return matches
@@ -311,7 +205,8 @@ class GalaxyQueryTool:
                             for fqcn in self._galaxy_files[key]:
                                 if fqcn in BLACKLIST_FQCNS:
                                     continue
-                                matched_filenames.append('collection:%s:%s' % (fqcn, key))
+                                homepage = self._collections_meta[fqcn]['manifest']['collection_info']['homepage']
+                                matched_filenames.append('collection:%s:%s:%s' % (fqcn, key, homepage))
                             break
 
         return matched_filenames
