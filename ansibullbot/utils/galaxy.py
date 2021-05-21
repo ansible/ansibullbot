@@ -169,8 +169,8 @@ class GalaxyQueryTool:
                 for fqcn in self._galaxy_files[cn]:
                     if fqcn in BLACKLIST_FQCNS:
                         continue
-                    homepage = self._collections_meta[fqcn]['manifest']['collection_info']['homepage']
-                    matches.append('collection:%s:%s:%s' % (fqcn, cn, homepage))
+                    repo = self._collections_meta[fqcn]['manifest']['collection_info']['repository']
+                    matches.append('collection:%s:%s:%s' % (fqcn, cn, repo))
             matches = sorted(set(matches))
 
         return matches
@@ -205,8 +205,8 @@ class GalaxyQueryTool:
                             for fqcn in self._galaxy_files[key]:
                                 if fqcn in BLACKLIST_FQCNS:
                                     continue
-                                homepage = self._collections_meta[fqcn]['manifest']['collection_info']['homepage']
-                                matched_filenames.append('collection:%s:%s:%s' % (fqcn, key, homepage))
+                                repo = self._collections_meta[fqcn]['manifest']['collection_info']['repository']
+                                matched_filenames.append('collection:%s:%s:%s' % (fqcn, key, repo))
                             break
 
         return matched_filenames
