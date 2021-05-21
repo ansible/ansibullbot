@@ -57,10 +57,10 @@ def get_collection_facts(iw, component_matcher, meta):
         if v is None:
             continue
         for idi, item in enumerate(v):
-            parts = item.split(':')
+            parts = item.split(':', 3)
             cmap[k][idi] = '%s -> %s (%s)' % (
                 k,
-                component_matcher.GQT._gitrepos[parts[1]].repo,
+                parts[3],
                 'https://galaxy.ansible.com/' + parts[1].replace('.', '/')
             )
 
