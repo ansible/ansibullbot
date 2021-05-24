@@ -36,7 +36,6 @@ ansibullbot_options:
   - logfile {{ ansibullbot_log_path }}
   - resume
   - skip_no_update
-  - verbose
 
 ansibullbot_slack_url: !vault |
     $ANSIBLE_VAULT;1.1;AES256

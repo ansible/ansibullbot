@@ -31,7 +31,6 @@ ansibullbot_options:
   - resume
   - repo ansible/ansible
   - skip_no_update
-  - verbose
 
 ansibullbot_slack_token: !vault |
   $ANSIBLE_VAULT;1.1;AES256
