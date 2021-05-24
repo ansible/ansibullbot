@@ -19,22 +19,12 @@ import argparse
 import json
 import logging
 import os
-import pickle
 import sys
 import time
-from datetime import datetime
-from pprint import pprint
-
-
-# remember to pip install PyGithub, kids!
-from github import Github
 
 from jinja2 import Environment, FileSystemLoader
 
 import ansibullbot.constants as C
-from ansibullbot.decorators.github import RateLimited
-from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
 from ansibullbot.utils.logs import set_logger
 
 basepath = os.path.dirname(__file__).split('/')
@@ -93,11 +83,6 @@ class DefaultTriager:
 
     @classmethod
     def create_parser(cls):
-        """Creates an argument parser
-
-        Returns:
-            A argparse.ArgumentParser object
-        """
         parser = argparse.ArgumentParser()
         parser.add_argument("--cachedir", type=str, dest='cachedir_base',
                             default='~/.ansibullbot/cache')
@@ -110,18 +95,12 @@ class DefaultTriager:
                             help="seconds to sleep between loop iterations")
         parser.add_argument("--debug", "-d", action="store_true",
                             help="Debug output")
-        # FIXME verbose is not used
-        parser.add_argument("--verbose", "-v", action="store_true",
-                            help="Verbose output")
         parser.add_argument("--dry-run", "-n", action="store_true",
                             help="Don't make any changes")
         parser.add_argument("--force", "-f", action="store_true",
                             help="Do not ask questions")
         parser.add_argument("--pause", "-p", action="store_true", dest="always_pause",
                             help="Always pause between prs|issues")
-        parser.add_argument("--force_rate_limit", action="store_true",
-                            help="debug: force the rate limit")
-        # useful for debugging
         parser.add_argument("--dump_actions", action="store_true",
                             help="serialize the actions to disk [/tmp/actions]")
         parser.add_argument("--botmetafile", type=str,
@@ -133,12 +112,6 @@ class DefaultTriager:
         set_logger(debug=self.debug, logfile=self.logfile)
 
     def start(self):
-
-        if self.force_rate_limit:
-            logging.warning('attempting to trigger rate limit')
-            self.trigger_rate_limit()
-            return
-
         if self.daemonize:
             logging.info('starting daemonize loop')
             self.loop()
@@ -147,94 +120,8 @@ class DefaultTriager:
             self.run()
         logging.info('stopping bot')
 
-    @RateLimited
-    def _connect(self):
-        """Connects to GitHub's API"""
-        if self.github_token:
-            return Github(base_url=self.github_url, login_or_token=self.github_token)
-        else:
-            return Github(
-                base_url=self.github_url,
-                login_or_token=self.github_user,
-                password=self.github_pass
-            )
-
-    @RateLimited
-    def get_members(self, organization):
-        """Get members of an organization
-
-        Args:
-            organization: name of the organization
-
-        Returns:
-            A list of GitHub login belonging to the organization
-        """
-        members = []
-        update = False
-        write_cache = False
-        now = datetime.utcnow()
-        gh_org = self.gh.get_organization(organization)
-
-        cachedir = os.path.join(self.cachedir_base, organization)
-        if not os.path.isdir(cachedir):
-            os.makedirs(cachedir)
-
-        cachefile = os.path.join(cachedir, 'members.pickle')
-
-        if os.path.isfile(cachefile):
-            with open(cachefile, 'rb') as f:
-                mdata = pickle.load(f)
-            members = mdata[1]
-            if mdata[0] < gh_org.updated_at:
-                update = True
-        else:
-            update = True
-            write_cache = True
-
-        if update:
-            members = gh_org.get_members()
-            members = [x.login for x in members]
-
-        # save the data
-        if write_cache:
-            mdata = [now, members]
-            with open(cachefile, 'wb') as f:
-                pickle.dump(mdata, f)
-
-        return members
-
-    @RateLimited
-    def get_core_team(self, organization, teams):
-        """Get members of the core team
-
-        Args:
-            organization: name of the teams' organization
-            teams: list of teams that compose the project core team
-
-        Returns:
-            A list of GitHub login belonging to teams
-        """
-        members = set()
-
-        gh_org = self.gh.get_organization(organization)
-        for team in gh_org.get_teams():
-            if team.name in teams:
-                for member in team.get_members():
-                    members.add(member.login)
-
-        return sorted(members)
-
-    def get_valid_labels(self, repo):
-        # use the repo wrapper to enable caching+updating
-        rw = self.ghw.get_repo(repo)
-        vlabels = []
-        for vl in rw.labels:
-            vlabels.append(vl.name)
-
-        return vlabels
-
     def loop(self):
-        '''Call the run method in a defined interval'''
+        """Call the run method in a defined interval"""
         while True:
             self.run()
             self.ITERATION += 1
@@ -295,7 +182,6 @@ class DefaultTriager:
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
-
         for commentid in actions.uncomment:
             iw.remove_comment_by_id(commentid)
 
@@ -309,7 +195,6 @@ class DefaultTriager:
                     logging.info('action: label - ' + newlabel)
                     iw.add_label(label=newlabel)
 
-            # https://github.com/PyGithub/PyGithub/blob/master/github/Issue.py#L263
             logging.info('action: close')
             iw.instance.edit(state='closed')
 
@@ -327,32 +212,8 @@ class DefaultTriager:
         # FIXME why?
         self.build_history(iw)
 
-    def trigger_rate_limit(self):
-        '''Repeatedly make calls to exhaust rate limit'''
-
-        self.gh = self._connect()
-        self.ghw = GithubWrapper(self.gh)
-
-        while True:
-            cachedir = os.path.join(self.cachedir_base, self.repo)
-            thisrepo = self.ghw.get_repo(self.repo)
-            issues = thisrepo.repo.get_issues()
-            rl = thisrepo.get_rate_limit()
-            pprint(rl)
-
-            for issue in issues:
-                iw = IssueWrapper(
-                        github=self.ghw,
-                        repo=thisrepo,
-                        issue=issue,
-                        cachedir=cachedir
-                )
-                iw.history
-                rl = thisrepo.get_rate_limit()
-                pprint(rl)
-
     def dump_action_dict(self, issue, actions):
-        '''Serialize the action dict to disk for quick(er) debugging'''
+        """Serialize the action dict to disk for quick(er) debugging"""
         fn = os.path.join('/tmp', 'actions', issue.repo_full_name, str(issue.number) + '.json')
         dn = os.path.dirname(fn)
         if not os.path.isdir(dn):

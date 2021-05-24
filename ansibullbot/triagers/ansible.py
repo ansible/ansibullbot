@@ -209,30 +209,26 @@ class AnsibleTriage(DefaultTriager):
         self.ci = None
         self.ci_class = ci_class
 
-        self.github_url = C.DEFAULT_GITHUB_URL
-        self.github_user = C.DEFAULT_GITHUB_USERNAME
-        self.github_pass = C.DEFAULT_GITHUB_PASSWORD
-        self.github_token = C.DEFAULT_GITHUB_TOKEN
-
         # where to store junk
         self.cachedir_base = os.path.expanduser(self.cachedir_base)
 
         self.set_logger()
         logging.info('starting bot')
 
-        # connect to github
-        logging.info('creating api connection')
-        self.gh = self._connect()
-
         # wrap the connection
         logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(self.gh, token=self.github_token, cachedir=self.cachedir_base)
+        self.ghw = GithubWrapper(
+            url=C.DEFAULT_GITHUB_URL,
+            user=C.DEFAULT_GITHUB_USERNAME,
+            passw=C.DEFAULT_GITHUB_PASSWORD,
+            token=C.DEFAULT_GITHUB_TOKEN,
+            cachedir=self.cachedir_base
+        )
 
         # get valid labels
         logging.info('getting labels')
-        self.valid_labels = self.get_valid_labels("ansible/ansible")
+        self.valid_labels = self.ghw.get_valid_labels("ansible/ansible")
 
-        self._ansible_members = []
         self._ansible_core_team = None
         self.botmeta = {}
         self.automerge_on = False
@@ -292,19 +288,13 @@ class AnsibleTriage(DefaultTriager):
                 self.start_at = resume['number'] + 1
 
     @property
-    def ansible_members(self):
-        if not self._ansible_members:
-            self._ansible_members = self.get_members('ansible')
-        return [x for x in self._ansible_members]
-
-    @property
     def ansible_core_team(self):
         if self._ansible_core_team is None:
             teams = [
                 'ansible-commit',
                 'ansible-community',
             ]
-            self._ansible_core_team = self.get_core_team('ansible', teams)
+            self._ansible_core_team = self.ghw.get_members('ansible', teams)
         return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
 
     def load_botmeta(self):

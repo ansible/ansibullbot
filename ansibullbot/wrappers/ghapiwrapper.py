@@ -6,6 +6,8 @@ import requests
 import shutil
 from datetime import datetime
 
+from github import Github
+
 import ansibullbot.constants as C
 
 from ansibullbot.decorators.github import RateLimited
@@ -16,25 +18,50 @@ from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
 ADB = AnsibullbotDatabase()
 
+HEADERS = [
+    'application/json',
+    'application/vnd.github.mockingbird-preview',
+    'application/vnd.github.sailor-v-preview+json',
+    'application/vnd.github.starfox-preview+json',
+    'application/vnd.github.squirrel-girl-preview',
+    'application/vnd.github.v3+json',
+]
+
 
 class GithubWrapper:
-    def __init__(self, gh, token=None, cachedir='~/.ansibullbot/cache'):
-        self.gh = gh
+    def __init__(self, url=None, user=None, passw=None, token=None, cachedir='~/.ansibullbot/cache'):
+        self.gh = self._connect(url, user, passw, token)
         self.token = token
         self.cachedir = os.path.expanduser(cachedir)
         self.cached_requests_dir = os.path.join(self.cachedir, 'cached_requests')
 
-    @property
-    def accepts_headers(self):
-        accepts = [
-            'application/json',
-            'application/vnd.github.mockingbird-preview',
-            'application/vnd.github.sailor-v-preview+json',
-            'application/vnd.github.starfox-preview+json',
-            'application/vnd.github.squirrel-girl-preview',
-            'application/vnd.github.v3+json',
-        ]
-        return accepts
+    @RateLimited
+    def _connect(self, url, user, passw, token):
+        """Connects to GitHub's API"""
+        if token:
+            return Github(base_url=url, login_or_token=token)
+        else:
+            return Github(
+                base_url=url,
+                login_or_token=user,
+                password=passw
+            )
+
+    @RateLimited
+    def get_members(self, org, teams):
+        members = set()
+
+        gh_org = self.get_org(org)
+        for team in gh_org.get_teams():
+            if team.name in teams:
+                for member in team.get_members():
+                    members.add(member.login)
+
+        return sorted(members)
+
+    @RateLimited
+    def get_valid_labels(self, repo):
+        return [l.name for l in self.get_repo(repo).labels]
 
     @RateLimited
     def get_org(self, org):
@@ -61,7 +88,7 @@ class GithubWrapper:
             return read_gzip_json_file(cdf)
 
         headers = {
-            'Accept': ','.join(self.accepts_headers),
+            'Accept': ','.join(HEADERS),
             'Authorization': 'Bearer %s' % self.token,
         }
 
@@ -110,7 +137,7 @@ class GithubWrapper:
         '''Get an arbitrary API endpoint'''
 
         headers = {
-            'Accept': ','.join(self.accepts_headers),
+            'Accept': ','.join(HEADERS),
             'Authorization': 'Bearer %s' % self.token,
         }
 
@@ -135,7 +162,7 @@ class GithubWrapper:
     @RateLimited
     def delete_request(self, url):
         headers = {
-            'Accept': ','.join(self.accepts_headers),
+            'Accept': ','.join(HEADERS),
             'Authorization': 'Bearer %s' % self.token,
         }
 
