@@ -73,8 +73,6 @@ class DefaultTriager:
         Triager().start()
     """
     ITERATION = 0
-    debug = False
-    cachedir_base = None
     BOTNAMES = C.DEFAULT_BOT_NAMES
     CLOSING_LABELS = []
 
@@ -109,10 +107,10 @@ class DefaultTriager:
         return parser
 
     def set_logger(self):
-        set_logger(debug=self.debug, logfile=self.logfile)
+        set_logger(debug=self.args.debug, logfile=self.args.logfile)
 
     def start(self):
-        if self.daemonize:
+        if self.args.daemonize:
             logging.info('starting daemonize loop')
             self.loop()
         else:
@@ -125,7 +123,7 @@ class DefaultTriager:
         while True:
             self.run()
             self.ITERATION += 1
-            interval = self.daemonize_interval
+            interval = self.args.daemonize_interval
             logging.info('sleep %ss (%sm)' % (interval, interval / 60))
             time.sleep(interval)
 
@@ -142,13 +140,13 @@ class DefaultTriager:
         action_meta = {'REDO': False}
 
         if actions.count() > 0:
-            if self.dump_actions:
+            if self.args.dump_actions:
                 self.dump_action_dict(iw, actions)
 
-            if self.dry_run:
+            if self.args.dry_run:
                 print("Dry-run specified, skipping execution of actions")
             else:
-                if self.force:
+                if self.args.force:
                     print("Running actions non-interactive as you forced.")
                     self.execute_actions(iw, actions)
                     return action_meta
@@ -163,7 +161,7 @@ class DefaultTriager:
                     # put the user into a breakpoint to do live debug
                     action_meta['REDO'] = True
                     import epdb; epdb.st()
-        elif self.always_pause:
+        elif self.args.always_pause:
             print("Skipping, but pause.")
             cont = input("Continue (Y/n/a/R/DEBUG)? ")
             if cont in ('a', 'A', 'n', 'N'):
