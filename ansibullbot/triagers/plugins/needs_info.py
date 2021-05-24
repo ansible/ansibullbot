@@ -4,19 +4,21 @@ import pytz
 import ansibullbot.constants as C
 
 
-def is_needsinfo(triager, issue):
+def is_needsinfo(iw, botnames=None):
+    if botnames is None:
+        botnames = []
     needs_info = False
 
-    for event in issue.history.history:
+    for event in iw.history.history:
         if needs_info and \
-                event['actor'] == issue.submitter and \
+                event['actor'] == iw.submitter and \
                 event['event'] == 'commented':
 
             needs_info = False
             continue
 
         # allow anyone to trigger needs_info
-        if event['actor'] in triager.BOTNAMES:
+        if event['actor'] in botnames:
             continue
 
         if event['event'] == 'labeled':

@@ -131,9 +131,6 @@ class AnsibleActions(DefaultActions):
 
 
 class AnsibleTriage(DefaultTriager):
-
-    BOTNAMES = C.DEFAULT_BOT_NAMES
-
     CLOSING_LABELS = ['bot_closed']
 
     ISSUE_TYPES = {
@@ -286,7 +283,7 @@ class AnsibleTriage(DefaultTriager):
                 'ansible-community',
             ]
             self._ansible_core_team = self.ghw.get_members('ansible', teams)
-        return [x for x in self._ansible_core_team if x not in self.BOTNAMES]
+        return [x for x in self._ansible_core_team if x not in C.DEFAULT_BOT_NAMES]
 
     def load_botmeta(self):
         if self.args.botmetafile is not None:
@@ -995,7 +992,7 @@ class AnsibleTriage(DefaultTriager):
                     # don't add manually removed label
                     if not iw.history.was_unlabeled(
                         'module',
-                        bots=self.BOTNAMES
+                        bots=C.DEFAULT_BOT_NAMES,
                     ):
                         actions.newlabel.append('module')
             else:
@@ -1003,7 +1000,7 @@ class AnsibleTriage(DefaultTriager):
                     # don't remove manually added label
                     if not iw.history.was_labeled(
                         'module',
-                        bots=self.BOTNAMES
+                        bots=C.DEFAULT_BOT_NAMES,
                     ):
                         actions.unlabel.append('module')
 
@@ -1030,14 +1027,14 @@ class AnsibleTriage(DefaultTriager):
                     # only add these if no c: labels have ever been changed by human
                     clabels = iw.history.get_changed_labels(
                         prefix='c:',
-                        bots=self.BOTNAMES
+                        bots=C.DEFAULT_BOT_NAMES,
                     )
 
                     if not clabels:
                         for cl in self.meta['component_labels']:
                             ul = iw.history.was_unlabeled(
                                 cl,
-                                bots=self.BOTNAMES
+                                bots=C.DEFAULT_BOT_NAMES,
                             )
                             if not ul and \
                                     cl not in iw.labels and \
@@ -1738,11 +1735,8 @@ class AnsibleTriage(DefaultTriager):
         self.meta['state'] = iw.state
         self.meta['submitter'] = iw.submitter
 
-        # extract template data
-        self.template_data = iw.template_data
-
         # set the issue type
-        ITYPE = self.template_data.get('issue type')
+        ITYPE = iw.template_data.get('issue type')
         if ITYPE in self.ISSUE_TYPES:
             self.meta['issue_type'] = ITYPE
         else:
@@ -1759,21 +1753,17 @@ class AnsibleTriage(DefaultTriager):
 
         # get ansible version
         if iw.is_issue():
-            self.meta['ansible_version'] = \
-                self.get_ansible_version_by_issue(iw)
+            self.meta['ansible_version'] = self.get_ansible_version_by_issue(iw)
         else:
             # use the submit date's current version
-            self.meta['ansible_version'] = \
-                self.version_indexer.version_by_date(iw.created_at)
+            self.meta['ansible_version'] = self.version_indexer.version_by_date(iw.created_at)
 
         # https://github.com/ansible/ansible/issues/21207
         if not self.meta['ansible_version']:
             # fallback to version by date
-            self.meta['ansible_version'] = \
-                self.version_indexer.version_by_date(iw.created_at)
+            self.meta['ansible_version'] = self.version_indexer.version_by_date(iw.created_at)
 
-        self.meta['ansible_label_version'] = \
-            get_version_major_minor(self.meta['ansible_version'])
+        self.meta['ansible_label_version'] = get_version_major_minor(self.meta['ansible_version'])
         logging.info('ansible version: %s' % self.meta['ansible_version'])
 
         # what is this?
@@ -1812,20 +1802,16 @@ class AnsibleTriage(DefaultTriager):
         # shipit?
         self.meta.update(
             get_needs_revision_facts(
-                self,
                 iw,
                 self.meta,
-                self.ci
+                self.ci,
+                self.ansible_core_team,
+                C.DEFAULT_BOT_NAMES,
             )
         )
 
         # needs_contributor?
-        self.meta.update(
-            get_needs_contributor_facts(
-                self,
-                iw,
-            )
-        )
+        self.meta.update(get_needs_contributor_facts(iw, C.DEFAULT_BOT_NAMES))
 
         # who needs to be notified or assigned?
         self.meta.update(get_notification_facts(iw, self.meta, botmeta=self.botmeta))
@@ -1836,7 +1822,7 @@ class AnsibleTriage(DefaultTriager):
         )
 
         # needsinfo?
-        self.meta['is_needs_info'] = is_needsinfo(self, iw)
+        self.meta['is_needs_info'] = is_needsinfo(iw, C.DEFAULT_BOT_NAMES)
         self.meta.update(self.process_comment_commands(iw, self.meta))
         self.meta.update(needs_info_template_facts(iw, self.meta))
         self.meta.update(needs_info_timeout_facts(iw, self.meta))
@@ -1855,13 +1841,13 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(
             get_shipit_facts(
                 iw, self.meta, self.botmeta['files'],
-                core_team=self.ansible_core_team, botnames=self.BOTNAMES
+                core_team=self.ansible_core_team, botnames=C.DEFAULT_BOT_NAMES,
             )
         )
         self.meta.update(get_review_facts(iw, self.meta))
 
         # bot_status needed?
-        self.meta.update(get_bot_status_facts(iw, self.module_indexer.all_maintainers, core_team=self.ansible_core_team, bot_names=self.BOTNAMES))
+        self.meta.update(get_bot_status_facts(iw, self.module_indexer.all_maintainers, core_team=self.ansible_core_team, bot_names=C.DEFAULT_BOT_NAMES))
 
         # who is this waiting on?
         self.meta.update(self.waiting_on(iw, self.meta))

@@ -24,7 +24,6 @@ import time
 
 from jinja2 import Environment, FileSystemLoader
 
-import ansibullbot.constants as C
 from ansibullbot.utils.logs import set_logger
 
 basepath = os.path.dirname(__file__).split('/')
@@ -73,7 +72,6 @@ class DefaultTriager:
         Triager().start()
     """
     ITERATION = 0
-    BOTNAMES = C.DEFAULT_BOT_NAMES
     CLOSING_LABELS = []
 
     def __init__(self, args=None):
