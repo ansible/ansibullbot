@@ -11,7 +11,7 @@ from ansibullbot.utils.timetools import strip_time_safely
 CI_STALE_DAYS = 7
 
 
-def get_needs_revision_facts(triager, issuewrapper, meta, ci):
+def get_needs_revision_facts(iw, meta, ci, core_team=None, botnames=None):
     # Thanks @adityacs for this PR. This PR requires revisions, either
     # because it fails to build or by reviewer request. Please make the
     # suggested revisions. When you are done, please comment with text
@@ -19,8 +19,10 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
 
     # a "dirty" mergeable_state can exist with "successfull" ci_state.
 
-    # short alias
-    iw = issuewrapper
+    if core_team is None:
+        core_team = []
+    if botnames is None:
+        botnames = []
 
     committer_count = None
     needs_revision = False
@@ -78,8 +80,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
     bpcs = iw.history.get_boilerplate_comments()
     bpcs = [x[0] for x in bpcs]
 
-    maintainers = [x for x in triager.ansible_core_team
-                   if x not in triager.BOTNAMES]
+    maintainers = [x for x in core_team if x not in botnames]
 
     maintainers += meta.get('component_maintainers', [])
 
@@ -135,7 +136,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
 
         for event in iw.history.history:
 
-            if event['actor'] in triager.BOTNAMES:
+            if event['actor'] in botnames:
                 continue
 
             if event['actor'] in maintainers and \
@@ -229,7 +230,7 @@ def get_needs_revision_facts(triager, issuewrapper, meta, ci):
             has_merge_commit_notification = False
         else:
             mc_comments = iw.history.search_user_comments(
-                triager.BOTNAMES,
+                botnames,
                 'boilerplate: merge_commit_notify'
             )
             last_mc_comment = mc_comments[-1]

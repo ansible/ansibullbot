@@ -1,8 +1,10 @@
-def get_needs_contributor_facts(triager, issuewrapper):
+def get_needs_contributor_facts(issuewrapper, botnames=None):
+    if botnames is None:
+        botnames = []
     needs_contributor = False
 
     for event in issuewrapper.history.history:
-        if event['actor'] in triager.BOTNAMES:
+        if event['actor'] in botnames:
             continue
 
         if event['event'] == 'labeled':

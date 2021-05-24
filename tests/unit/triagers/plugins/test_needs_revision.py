@@ -1,17 +1,13 @@
 import datetime
 import json
-import unittest
 from unittest import TestCase, mock
 
 import github
 import pytz
 
-from tests.utils.issue_mock import IssueMock
-from tests.utils.repo_mock import RepoMock
 from tests.utils.helpers import get_issue
 from ansibullbot.triagers.plugins.needs_revision import _changes_requested_by, get_needs_revision_facts, _get_review_state
 from ansibullbot.wrappers.issuewrapper import IssueWrapper
-from ansibullbot.wrappers.historywrapper import HistoryWrapper
 
 class ComponentMatcherMock:
 
@@ -28,15 +24,6 @@ class ModuleIndexerMock:
 
     def get_maintainers_for_namespace(self, namespace):
         return self.namespace_maintainers
-
-
-class AnsibleTriageMock:
-
-    BOTNAMES = ['ansibot', 'gregdek', 'robynbergeron']
-
-    @property
-    def ansible_core_team(self):
-        return ['bcoca']
 
 
 class CIMock:
@@ -81,7 +68,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta['component_maintainers'] = ['robinro']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, CIMock())
+                facts = get_needs_revision_facts(iw, self.meta, CIMock(), ['bcoca'], ['ansibot'])
 
                 self.assertFalse(facts['is_needs_revision'])
                 self.assertFalse(facts['stale_reviews'])
@@ -108,7 +95,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta['component_maintainers'] = ['mkrizek']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, CIMock())
+                facts = get_needs_revision_facts(iw, self.meta, CIMock(), ['bcoca'], ['ansibot'])
 
                 self.assertFalse(facts['is_needs_revision'])
 
@@ -134,7 +121,7 @@ class TestNeedsRevisionFacts(TestCase):
                     iw._history.merge_reviews(iw.reviews)
 
                 self.meta['component_maintainers'] = ['mkrizek', 'jctanner']
-                facts = get_needs_revision_facts(AnsibleTriageMock(), iw, self.meta, CIMock())
+                facts = get_needs_revision_facts(iw, self.meta, CIMock(), ['bcoca'], ['ansibot'])
 
                 self.assertTrue(facts['is_needs_revision'])
 
