@@ -811,12 +811,6 @@ class AnsibleTriage(DefaultTriager):
                 if 'merge_commit' in iw.labels:
                     actions.unlabel.append('merge_commit')
 
-        '''
-        # BAD PR
-        if iw.is_pullrequest() and self.meta['is_bad_pr']:
-            actions.cancel_ci = True
-        '''
-
         # @YOU IN COMMIT MSGS
         if iw.is_pullrequest():
             if self.meta['has_commit_mention']:
@@ -1830,7 +1824,18 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(get_bot_status_facts(iw, self.module_indexer.all_maintainers, core_team=self.ansible_core_team, bot_names=C.DEFAULT_BOT_NAMES))
 
         # who is this waiting on?
-        self.meta.update(self.waiting_on(iw, self.meta))
+        wo = 'maintainer'
+        if self.meta['is_needs_info']:
+            wo = iw.submitter
+        if iw.is_issue():
+            if self.meta['is_needs_contributor']:
+                wo = 'contributor'
+        else:
+            if self.meta['is_needs_revision'] or self.meta['is_needs_rebase']:
+                wo = iw.submitter
+            elif self.meta['is_core']:
+                wo = 'ansible'
+        self.meta.update({'waiting_on': wo})
 
         # community label manipulation
         self.meta.update(
@@ -1999,29 +2004,6 @@ class AnsibleTriage(DefaultTriager):
                         commands.remove(negative)
 
         return commands
-
-    def waiting_on(self, iw, meta):
-        if iw.is_issue():
-            if meta['is_needs_info']:
-                wo = iw.submitter
-            elif meta['is_needs_contributor']:
-                wo = 'contributor'
-            else:
-                wo = 'maintainer'
-        else:
-            if meta['is_needs_info']:
-                wo = iw.submitter
-            elif meta['is_needs_revision']:
-                wo = iw.submitter
-            elif meta['is_needs_rebase']:
-                wo = iw.submitter
-            else:
-                if meta['is_core']:
-                    wo = 'ansible'
-                else:
-                    wo = 'maintainer'
-
-        return {'waiting_on': wo}
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""
