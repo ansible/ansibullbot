@@ -1733,7 +1733,7 @@ class AnsibleTriage(DefaultTriager):
 
         # get ansible version
         if iw.is_issue():
-            self.meta['ansible_version'] = self.get_ansible_version_by_issue(iw)
+            self.meta['ansible_version'] = self.version_indexer.version_by_issue(iw)
         else:
             # use the submit date's current version
             self.meta['ansible_version'] = self.version_indexer.version_by_date(iw.created_at)
@@ -2042,48 +2042,6 @@ class AnsibleTriage(DefaultTriager):
                     wo = 'maintainer'
 
         return {'waiting_on': wo}
-
-    def get_ansible_version_by_issue(self, iw):
-        aversion = None
-
-        rawdata = iw.template_data.get('ansible version', '')
-        if rawdata:
-            aversion = self.version_indexer.strip_ansible_version(rawdata)
-
-        if not aversion or aversion == 'devel':
-            aversion = self.version_indexer.version_by_date(
-                iw.instance.created_at
-            )
-
-        if aversion:
-            if aversion.endswith('.'):
-                aversion += '0'
-
-        # re-run for versions ending with .x
-        if aversion:
-            if aversion.endswith('.x'):
-                aversion = self.version_indexer.strip_ansible_version(aversion)
-
-        if self.version_indexer.is_valid_version(aversion) and \
-                aversion is not None:
-            return aversion
-        else:
-
-            # try to go through the submitter's comments and look for the
-            # first one that specifies a valid version
-            cversion = None
-            for comment in iw.comments:
-                if comment['actor'] != iw.instance.user.login:
-                    continue
-                xver = self.version_indexer.strip_ansible_version(comment['body'])
-                if self.version_indexer.is_valid_version(xver):
-                    cversion = xver
-                    break
-
-            # use the comment version
-            aversion = cversion
-
-        return aversion
 
     def execute_actions(self, iw, actions):
         """Turns the actions into API calls"""

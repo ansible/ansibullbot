@@ -419,3 +419,44 @@ class AnsibleVersionIndexer:
             aversion = self.ansible_version_by_commit(acommit)
 
         return aversion
+
+    def version_by_issue(self, iw):
+        aversion = None
+
+        rawdata = iw.template_data.get('ansible version', '')
+        if rawdata:
+            aversion = self.strip_ansible_version(rawdata)
+
+        if not aversion or aversion == 'devel':
+            aversion = self.version_by_date(
+                iw.instance.created_at
+            )
+
+        if aversion:
+            if aversion.endswith('.'):
+                aversion += '0'
+
+        # re-run for versions ending with .x
+        if aversion:
+            if aversion.endswith('.x'):
+                aversion = self.strip_ansible_version(aversion)
+
+        if self.is_valid_version(aversion) and \
+                aversion is not None:
+            return aversion
+        else:
+            # try to go through the submitter's comments and look for the
+            # first one that specifies a valid version
+            cversion = None
+            for comment in iw.comments:
+                if comment['actor'] != iw.instance.user.login:
+                    continue
+                xver = self.strip_ansible_version(comment['body'])
+                if self.is_valid_version(xver):
+                    cversion = xver
+                    break
+
+            # use the comment version
+            aversion = cversion
+
+        return aversion
