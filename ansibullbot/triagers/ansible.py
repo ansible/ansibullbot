@@ -1,20 +1,7 @@
-# This is a triager for the combined repos that should have happend
-# in the 12-2016 timeframe.
-#   https://groups.google.com/forum/#!topic/ansible-devel/mIxqxXRsmCI
-#   https://groups.google.com/forum/#!topic/ansible-devel/iJouivmSSk4
-#   https://github.com/ansible/proposals/issues/30
-
 # Key features:
 #   * daemonize mode that can continuously loop and process w/out scripts
-#   * closed issues will also be processed (pygithub will kill ratelimits for
-#     this, so use a new caching+index tool)
-#   * open issues in ansible-modules-[core|extras] will be closed with a note
-#     about pr|issue mover
 #   * maintainers can be assigned to more than just the files in
 #     ansibullbot.ansible/modules
-#   * closed issues with active comments will be locked with msg about opening
-#     new
-#   * closed issues where submitter issues "reopen" command will be reopened
 #   * false positives on module issue detection can be corrected by a wide range
 #     of people
 #   * more people (not just maintainers) should have access to a subset of bot
@@ -123,7 +110,6 @@ class MetaDict(dict):
 class AnsibleActions(DefaultActions):
     def __init__(self):
         super().__init__()
-        self.close_migrated = False
         self.rebuild = False
         self.rebuild_failed = False
         self.cancel_ci = False
@@ -1164,12 +1150,6 @@ class AnsibleTriage(DefaultTriager):
             if self.meta['resolved_by_pr']['merged']:
                 actions.close = True
 
-        # migrated and source closed?
-        if self.meta['is_migrated']:
-            if 'github.com/ansible/ansible-' in self.meta['migrated_from']:
-                if self.meta['migrated_issue_state'] != 'closed':
-                    actions.close_migrated = True
-
         # bot_status
         if self.meta['needs_bot_status']:
             comment = self.render_boilerplate(
@@ -1766,9 +1746,6 @@ class AnsibleTriage(DefaultTriager):
         self.meta['ansible_label_version'] = get_version_major_minor(self.meta['ansible_version'])
         logging.info('ansible version: %s' % self.meta['ansible_version'])
 
-        # what is this?
-        self.meta['is_migrated'] = False
-
         # what component(s) is this about?
         self.meta.update(
             get_component_match_facts(
@@ -1919,19 +1896,6 @@ class AnsibleTriage(DefaultTriager):
         if 'is_bad_pr' not in self.meta:
             self.meta['is_bad_pr'] = False
 
-        if iw.migrated:
-            miw = iw._migrated_issue
-            self.meta['is_migrated'] = True
-            self.meta['migrated_from'] = to_text(miw)
-            try:
-                self.meta['migrated_issue_repo_path'] = miw.repo_full_name
-                self.meta['migrated_issue_number'] = miw.number
-                self.meta['migrated_issue_state'] = miw.state
-            except AttributeError:
-                self.meta['migrated_issue_repo_path'] = None
-                self.meta['migrated_issue_number'] = None
-                self.meta['migrated_issue_state'] = None
-
         # spam!
         self.meta.update(get_spam_facts(iw))
 
@@ -1946,12 +1910,6 @@ class AnsibleTriage(DefaultTriager):
         iw = issuewrapper
         iw._history = False
         iw.history
-
-        if iw.migrated:
-            mi = self.get_migrated_issue(iw.migrated_from)
-            if mi:
-                iw.history.merge_history(mi.history.history)
-                iw._migrated_issue = mi
 
         if iw.is_pullrequest():
             iw.history.merge_reviews(iw.reviews)
@@ -1969,59 +1927,6 @@ class AnsibleTriage(DefaultTriager):
                 return key
 
         return None
-
-    def get_migrated_issue(self, migrated_issue):
-        if migrated_issue.startswith('https://'):
-            miparts = migrated_issue.split('/')
-            minumber = int(miparts[-1])
-            minamespace = miparts[-4]
-            mirepo = miparts[-3]
-            mirepopath = minamespace + '/' + mirepo
-        elif '#' in migrated_issue:
-            miparts = migrated_issue.split('#')
-            minumber = int(miparts[-1])
-            mirepopath = miparts[0]
-        elif '/' in migrated_issue:
-            miparts = migrated_issue.split('/')
-            minumber = int(miparts[-1])
-            mirepopath = '/'.join(miparts[0:2])
-        else:
-            print(migrated_issue)
-            raise Exception('unknown url type for migrated issue')
-
-        # https://github.com/ansible/ansibullbot/issues/1303
-        try:
-            mw = self.get_issue_by_repopath_and_number(
-                mirepopath,
-                minumber
-            )
-        except Exception:
-            mw = None
-
-        return mw
-
-    def get_issue_by_repopath_and_number(self, repo_path, number):
-
-        # get the repo if not already fetched
-        if repo_path not in self.repos:
-            self.repos[repo_path] = {
-                'repo': self.ghw.get_repo(repo_path),
-                'issues': {}
-            }
-
-        mrepo = self.repos[repo_path]['repo']
-        missue = mrepo.get_issue(number)
-
-        if not missue:
-            return None
-
-        mw = IssueWrapper(
-            github=self.ghw,
-            repo=mrepo,
-            issue=missue,
-            cachedir=os.path.join(self.cachedir_base, repo_path)
-        )
-        return mw
 
     def process_comment_commands(self, issuewrapper, meta):
 
@@ -2186,14 +2091,6 @@ class AnsibleTriage(DefaultTriager):
         self.post_actions_to_receiver(iw, actions, self.processed_meta)
 
         super().execute_actions(iw, actions)
-
-        if actions.close_migrated:
-            mi = self.get_issue_by_repopath_and_number(
-                self.meta['migrated_issue_repo_path'],
-                self.meta['migrated_issue_number']
-            )
-            logging.info('close migrated: %s' % mi.html_url)
-            mi.instance.edit(state='closed')
 
         if actions.rebuild:
             runid = self.meta.get('ci_run_number')
