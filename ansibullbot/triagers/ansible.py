@@ -18,31 +18,20 @@ import os
 from copy import deepcopy
 from pprint import pprint
 
-import requests
-
-from ansibullbot._text_compat import to_bytes, to_text
-
 import ansibullbot.constants as C
 
-from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager
-from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
-
+from ansibullbot._text_compat import to_bytes, to_text
+from ansibullbot.errors import LabelWafflingError
 from ansibullbot.parsers.botmetadata import BotMetadataParser
-
+from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.git_tools import GitRepoWrapper
-from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.moduletools import ModuleIndexer
+from ansibullbot.utils.receiver_client import post_to_receiver
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
-from ansibullbot.utils.systemtools import run_command
-from ansibullbot.utils.receiver_client import post_to_receiver
-from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
-
-from ansibullbot.decorators.github import RateLimited
-from ansibullbot.errors import LabelWafflingError
+from ansibullbot.wrappers.issuewrapper import IssueWrapper
 
 from ansibullbot.triagers.plugins.backports import get_backport_facts
 from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
@@ -79,14 +68,6 @@ from ansibullbot.triagers.plugins.docs_info import get_docs_facts
 
 
 VALID_CI_PROVIDERS = frozenset(('azp',))
-
-
-# NOTE if we want to support more repos for the ansible triager
-# using --repos and/or --skiprepo all occurrences of hardcoded
-# "ansible/ansible" need to be fixed
-REPOS = [
-    'ansible/ansible',
-]
 
 
 class AnsibleActions(DefaultActions):
@@ -142,14 +123,9 @@ class AnsibleTriage(DefaultTriager):
     ]
 
     def __init__(self, args=None, update_checkouts=True):
-        super().__init__()
+        super().__init__(args)
 
-        parser = self.create_parser()
-        self.args = parser.parse_args(args)
-
-        ci_provider = self.args.ci
-
-        if ci_provider == 'azp':
+        if self.args.ci == 'azp':
             from ansibullbot.ci.azp import AzurePipelinesCI as ci_class
         else:
             raise ValueError(
@@ -159,54 +135,19 @@ class AnsibleTriage(DefaultTriager):
 
         self.ci = None
         self.ci_class = ci_class
+        self._ansible_core_team = None
+        self.automerge_on = False
 
-        self.cachedir_base = os.path.expanduser(self.args.cachedir_base)
-
-        self.set_logger()
-        logging.info('starting bot')
-
-        # wrap the connection
-        logging.info('creating api wrapper')
-        self.ghw = GithubWrapper(
-            url=C.DEFAULT_GITHUB_URL,
-            user=C.DEFAULT_GITHUB_USERNAME,
-            passw=C.DEFAULT_GITHUB_PASSWORD,
-            token=C.DEFAULT_GITHUB_TOKEN,
-            cachedir=self.cachedir_base
-        )
-
-        # get valid labels
         logging.info('getting labels')
         self.valid_labels = self.ghw.get_valid_labels("ansible/ansible")
 
-        self._ansible_core_team = None
-        self.botmeta = {}
-        self.automerge_on = False
-
-        self.cachedir_base = os.path.expanduser(self.cachedir_base)
-
-        # repo objects
-        self.repos = {}
-
-        # scraped summaries for all issues
-        self.issue_summaries = {}
-
-        logging.info('creating graphql client')
-        self.gqlc = GithubGraphQLClient(
-            C.DEFAULT_GITHUB_TOKEN,
-            server=C.DEFAULT_GITHUB_URL
-        )
-
-        # clone ansible/ansible
         logging.info('creating gitrepowrapper')
         repo = 'https://github.com/ansible/ansible'
         self.gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.args.ansible_commit, rebase=update_checkouts)
 
-        # load botmeta ... once!
-        logging.info('ansible triager loading botmeta')
-        self.load_botmeta()
+        logging.info('loading botmeta')
+        self.botmeta = self.load_botmeta()
 
-        # set the indexers
         logging.info('creating version indexer')
         self.version_indexer = AnsibleVersionIndexer(checkoutdir=self.gitrepo.checkoutdir)
 
@@ -229,14 +170,6 @@ class AnsibleTriage(DefaultTriager):
             use_galaxy=not self.args.ignore_galaxy
         )
 
-        # resume is just an overload for the start-at argument
-        resume = self.get_resume()
-        if resume:
-            if self.args.sort == 'desc':
-                self.args.start_at = resume['number'] - 1
-            else:
-                self.args.start_at = resume['number'] + 1
-
     @property
     def ansible_core_team(self):
         if self._ansible_core_team is None:
@@ -254,7 +187,7 @@ class AnsibleTriage(DefaultTriager):
         else:
             rdata = self.gitrepo.get_file_content('.github/BOTMETA.yml')
         logging.info('ansible triager [re]loading botmeta')
-        self.botmeta = BotMetadataParser.parse_yaml(rdata)
+        return BotMetadataParser.parse_yaml(rdata)
 
     def run(self):
         '''Primary execution method'''
@@ -470,71 +403,6 @@ class AnsibleTriage(DefaultTriager):
         ts2 = datetime.datetime.now()
         td = (ts2 - ts1).total_seconds()
         logging.info('triaged %s issues in %s seconds' % (icount, td))
-
-    def eval_pr_param(self, pr):
-        '''PR/ID can be a number, numberlist, script, jsonfile, or url'''
-
-        if isinstance(pr, list):
-            pass
-
-        elif pr.isdigit():
-            pr = int(pr)
-
-        elif pr.startswith('http'):
-            rr = requests.get(pr)
-            numbers = rr.json()
-            pr = numbers[:]
-
-        elif os.path.isfile(pr) and not os.access(pr, os.X_OK):
-            with open(pr) as f:
-                numbers = json.loads(f.read())
-            pr = numbers[:]
-
-        elif os.path.isfile(pr) and os.access(pr, os.X_OK):
-            # allow for scripts when trying to target spec issues
-            logging.info('executing %s' % pr)
-            (rc, so, se) = run_command(pr)
-            numbers = json.loads(to_text(so))
-            if numbers:
-                if isinstance(numbers[0], dict) and 'number' in numbers[0]:
-                    numbers = [x['number'] for x in numbers]
-                else:
-                    numbers = [int(x) for x in numbers]
-            logging.info(
-                '%s numbers after running script' % len(numbers)
-            )
-            pr = numbers[:]
-
-        elif ',' in pr:
-            numbers = [int(x) for x in pr.split(',')]
-            pr = numbers[:]
-
-        if not isinstance(pr, list):
-            pr = [pr]
-
-        return pr
-
-    def update_issue_summaries(self, issuenums=None, repopath=None):
-
-        if repopath:
-            repopaths = [repopath]
-        else:
-            repopaths = [x for x in REPOS]
-
-        for rp in repopaths:
-            if issuenums and len(issuenums) <= 10:
-                self.issue_summaries[repopath] = {}
-
-                for num in issuenums:
-                    # --pr is an alias to --id and can also be for issues
-                    node = self.gqlc.get_summary(rp, 'pullRequest', num)
-                    if node is None:
-                        node = self.gqlc.get_summary(rp, 'issue', num)
-                    if node is not None:
-                        self.issue_summaries[repopath][to_text(num)] = node
-            else:
-                self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
-
 
     def save_meta(self, issuewrapper, meta, actions):
         # save the meta+actions
@@ -1430,213 +1298,6 @@ class AnsibleTriage(DefaultTriager):
             data,
         )
 
-    def get_stale_numbers(self, reponame):
-        # https://github.com/ansible/ansibullbot/issues/458
-
-        stale = []
-        reasons = {}
-
-        for number, summary in self.issue_summaries[reponame].items():
-
-            if number in stale:
-                continue
-
-            if summary['state'] == 'closed':
-                continue
-
-            number = int(number)
-            mfile = os.path.join(
-                self.cachedir_base,
-                reponame,
-                'issues',
-                to_text(number),
-                'meta.json'
-            )
-
-            if not os.path.isfile(mfile):
-                reasons[number] = '%s missing' % mfile
-                stale.append(number)
-                continue
-
-            try:
-                with open(mfile, 'rb') as f:
-                    meta = json.load(f)
-            except ValueError as e:
-                logging.error('failed to parse %s: %s' % (to_text(mfile), to_text(e)))
-                os.remove(mfile)
-                reasons[number] = '%s missing' % mfile
-                stale.append(number)
-                continue
-
-            ts = meta['time']
-            ts = strip_time_safely(ts)
-            now = datetime.datetime.now()
-            delta = (now - ts).days
-
-            if delta > C.DEFAULT_STALE_WINDOW:
-                reasons[number] = '%s delta' % delta
-                stale.append(number)
-
-        stale = sorted({int(x) for x in stale})
-        if 10 >= len(stale) > 0:
-            logging.info('stale: %s' % ','.join([to_text(x) for x in stale]))
-
-        return stale
-
-    def collect_repos(self):
-        '''Populate the local cache of repos'''
-        logging.info('start collecting repos')
-        for repo in REPOS:
-            # skip repos based on args
-            if self.args.repo and self.args.repo != repo:
-                continue
-            if self.args.skiprepo:
-                if repo in self.args.skiprepo:
-                    continue
-
-            if self.args.pr:
-                numbers = self.eval_pr_param(self.args.pr)
-                self._collect_repo(repo, issuenums=numbers)
-            else:
-                self._collect_repo(repo)
-        logging.info('finished collecting issues')
-
-    @RateLimited
-    def _collect_repo(self, repo, issuenums=None):
-        '''Collect issues for an individual repo'''
-
-        logging.info('getting repo obj for %s' % repo)
-        if repo not in self.repos:
-            self.repos[repo] = {
-                'repo': self.ghw.get_repo(repo),
-                'issues': [],
-                'processed': [],
-                'since': None,
-                'stale': [],
-                'loopcount': 0
-            }
-        else:
-            # force a clean repo object to limit caching problems
-            self.repos[repo]['repo'] = \
-                self.ghw.get_repo(repo)
-            # clear the issues
-            self.repos[repo]['issues'] = {}
-            # increment the loopcount
-            self.repos[repo]['loopcount'] += 1
-
-        logging.info('getting issue objs for %s' % repo)
-        self.update_issue_summaries(repopath=repo, issuenums=issuenums)
-
-        issuecache = {}
-        numbers = self.issue_summaries[repo].keys()
-        numbers = {int(x) for x in numbers}
-        if issuenums:
-            numbers.intersection_update(issuenums)
-            numbers = list(numbers)
-        logging.info('%s known numbers' % len(numbers))
-
-        if self.args.daemonize:
-
-            if not self.repos[repo]['since']:
-                ts = [
-                    x[1]['updated_at'] for x in
-                    self.issue_summaries[repo].items()
-                    if x[1]['updated_at']
-                ]
-                ts += [
-                    x[1]['created_at'] for x in
-                    self.issue_summaries[repo].items()
-                    if x[1]['created_at']
-                ]
-                ts = sorted(set(ts))
-                if ts:
-                    self.repos[repo]['since'] = ts[-1]
-            else:
-                since = strip_time_safely(self.repos[repo]['since'])
-                api_since = self.repos[repo]['repo'].get_issues(since=since)
-
-                numbers = []
-                for x in api_since:
-                    number = x.number
-                    numbers.append(number)
-                    issuecache[number] = x
-
-                numbers = sorted({int(n) for n in numbers})
-                logging.info(
-                    '%s numbers after [api] since == %s' %
-                    (len(numbers), since)
-                )
-
-                for k, v in self.issue_summaries[repo].items():
-                    if v['created_at'] is None:
-                        # issue is closed and was never processed
-                        continue
-
-                    if v['created_at'] > self.repos[repo]['since']:
-                        numbers.append(k)
-
-                numbers = sorted({int(n) for n in numbers})
-                logging.info(
-                    '%s numbers after [www] since == %s' %
-                    (len(numbers), since)
-                )
-
-        if self.args.start_at and self.repos[repo]['loopcount'] == 0:
-            numbers = [x for x in numbers if x <= self.args.start_at]
-            logging.info('%s numbers after start-at' % len(numbers))
-
-        # Get stale numbers if not targeting
-        if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
-            logging.info('checking for stale numbers')
-            stale = self.get_stale_numbers(repo)
-            self.repos[repo]['stale'] = [int(x) for x in stale]
-            numbers += [int(x) for x in stale]
-            numbers = sorted(set(numbers))
-            logging.info('%s numbers after stale check' % len(numbers))
-
-        ################################################################
-        # PRE-FILTERING TO PREVENT EXCESSIVE API CALLS
-        ################################################################
-
-        # filter just the open numbers
-        if not self.args.only_closed and not self.args.ignore_state:
-            numbers = [
-                x for x in numbers
-                if (to_text(x) in self.issue_summaries[repo] and
-                self.issue_summaries[repo][to_text(x)]['state'] == 'open')
-            ]
-            logging.info('%s numbers after checking state' % len(numbers))
-
-        # filter by type
-        if self.args.only_issues:
-            numbers = [
-                x for x in numbers
-                if self.issue_summaries[repo][to_text(x)]['type'] == 'issue'
-            ]
-            logging.info('%s numbers after checking type' % len(numbers))
-        elif self.args.only_prs:
-            numbers = [
-                x for x in numbers
-                if self.issue_summaries[repo][to_text(x)]['type'] == 'pullrequest'
-            ]
-            logging.info('%s numbers after checking type' % len(numbers))
-
-        numbers = sorted({int(x) for x in numbers})
-        if self.args.sort == 'desc':
-            numbers = [x for x in reversed(numbers)]
-
-        if self.args.last and len(numbers) > self.args.last:
-            numbers = numbers[0 - self.args.last:]
-
-        # Use iterator to avoid requesting all issues upfront
-        self.repos[repo]['issues'] = RepoIssuesIterator(
-            self.repos[repo]['repo'],
-            numbers,
-            issuecache=issuecache
-        )
-
-        logging.info('getting repo objs for %s complete' % repo)
-
     def process(self, iw):
         '''Do initial processing of the issue'''
 
@@ -1986,37 +1647,14 @@ class AnsibleTriage(DefaultTriager):
         parser.description = "Triage issue and pullrequest queues for Ansible.\n" \
                              " (NOTE: only useful if you have commit access to" \
                              " the repo in question.)"
-        parser.add_argument("--repo", "-r", type=str, choices=REPOS,
-                            help="Github repo to triage (defaults to all)")
         parser.add_argument("--skip_no_update", action="store_true",
                             help="skip processing if updated_at hasn't changed")
         parser.add_argument("--collect_only", action="store_true",
                             help="stop after caching issues")
-        parser.add_argument("--sort", default='desc', choices=['asc', 'desc'],
-                            help="Direction to sort issues [desc=9-0 asc=0-9]")
-        parser.add_argument("--skiprepo", action='append',
-                            help="Github repo to skip triaging")
-        parser.add_argument("--only_prs", action="store_true",
-                            help="Triage pullrequests only")
-        parser.add_argument("--only_issues", action="store_true",
-                            help="Triage issues only")
-        parser.add_argument("--only_closed", action="store_true",
-                            help="Triage closed issues|prs only")
-        parser.add_argument("--ignore_state", action="store_true",
-                            help="Do not skip processing closed issues")
         parser.add_argument("--ignore_bot_broken", action="store_true",
                             help="Do not skip processing bot_broken|bot_skip issues")
         parser.add_argument("--ignore_module_commits", action="store_true",
                             help="Do not enumerate module commit logs")
-        parser.add_argument("--pr", "--id", type=str,
-                            help="Triage only the specified pr|issue (separated by commas)"
-        )
-        parser.add_argument("--start-at", type=int,
-                            help="Start triage at the specified pr|issue")
-        parser.add_argument("--resume", action="store_true", dest="resume_enabled",
-                            help="pickup right after where the bot last stopped")
-        parser.add_argument("--last", type=int,
-                            help="triage the last N issues or PRs")
         parser.add_argument('--commit', dest='ansible_commit',
                             help="Use a specific commit for the indexers")
         parser.add_argument('--ignore_galaxy', action='store_true',
@@ -2025,30 +1663,3 @@ class AnsibleTriage(DefaultTriager):
                             default=C.DEFAULT_CI_PROVIDER,
                             help="Specify a CI provider that repo uses")
         return parser
-
-    def get_resume(self):
-        '''Returns a dict with the last issue repo+number processed'''
-        if self.args.pr or not self.args.resume_enabled:
-            return
-
-        resume_file = os.path.join(self.cachedir_base, 'resume.json')
-        if not os.path.isfile(resume_file):
-            logging.error('Resume: %r not found', resume_file)
-            return None
-
-        logging.debug('Resume: read %r', resume_file)
-        with open(resume_file, 'r', encoding='utf-8') as f:
-            data = json.loads(f.read())
-        return data
-
-    def set_resume(self, repo, number):
-        if self.args.pr or not self.args.resume_enabled:
-            return
-
-        data = {
-            'repo': repo,
-            'number': number
-        }
-        resume_file = os.path.join(self.cachedir_base, 'resume.json')
-        with open(resume_file, 'w', encoding='utf-8') as f:
-            json.dump(data, f)
