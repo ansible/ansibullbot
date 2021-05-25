@@ -461,7 +461,7 @@ class AnsibleVersionIndexer:
 
         return aversion
 
-    def get_version_major_minor(vstring):
+    def get_version_major_minor(self, vstring):
         '''Return an X.Y version'''
         lver = LooseVersion(vstring)
         rval = '.'.join([to_text(x) for x in lver.version[0:2]])
