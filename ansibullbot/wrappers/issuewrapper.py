@@ -50,7 +50,7 @@ class IssueWrapper:
         self._committer_logins = False
         self._commits = False
         self._events = UnsetValue
-        self._history = False
+        self._history = UnsetValue
         self._labels = False
         self._merge_commits = False
         self._pr = False
@@ -468,8 +468,12 @@ class IssueWrapper:
 
     @property
     def history(self):
-        if self._history is False:
+        if self._history is UnsetValue:
             self._history = HistoryWrapper(self, cachedir=self.cachedir)
+
+            if self.is_pullrequest():
+                self._history.merge_reviews(self.reviews)
+                self._history.merge_commits(self.commits)
         return self._history
 
     @property
