@@ -217,11 +217,6 @@ class HistoryWrapper:
             self.history.append(event)
         self.history = sorted(self.history, key=itemgetter('created_at'))
 
-    def merge_history(self, oldhistory):
-        '''Combine history from another issue [migration]'''
-        self.history += oldhistory
-        self.history = sorted(self.history, key=itemgetter('created_at'))
-
     def _find_events_by_actor(self, eventname, actor, maxcount=1):
         matching_events = []
         for event in self.history:

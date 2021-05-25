@@ -53,9 +53,6 @@ class IssueWrapper:
         self._history = False
         self._labels = False
         self._merge_commits = False
-        self._migrated = None
-        self._migrated_from = None
-        self._migrated_issue = None
         self._pr = False
         self._pr_reviews = False
         self._repo_full_name = False
@@ -616,35 +613,6 @@ class IssueWrapper:
         else:
             logging.error('merge failed on %s - %s' % (self.number, merge_status.messsage))
             raise Exception('merge failed on %s - %s' % (self.number, merge_status.messsage))
-
-    @property
-    def migrated_from(self):
-        self.migrated
-        return self._migrated_from
-
-    @property
-    def migrated(self):
-        if self._migrated is None:
-            if self.body and 'Copied from original issue' in self.body:
-                self._migrated = True
-                idx = self.body.find('Copied from original issue')
-                msg = self.body[idx:]
-                try:
-                    migrated_issue = msg.split()[4]
-                except Exception as e:
-                    logging.error(e)
-                    raise Exception('split failed')
-                if migrated_issue.endswith('_'):
-                    migrated_issue = migrated_issue.rstrip('_')
-                self._migrated_from = migrated_issue
-            else:
-                for comment in self.comments:
-                    if comment['body'].lower().startswith('migrated from'):
-                        self._migrated = True
-                        bparts = comment['body'].split()
-                        self._migrated_from = bparts[2]
-                        break
-        return self._migrated
 
     @property
     def renamed_files(self):
