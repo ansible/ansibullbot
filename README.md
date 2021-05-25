@@ -20,8 +20,7 @@ usage: triage_ansible.py [-h] [--cachedir CACHEDIR_BASE] [--logfile LOGFILE]
                          [--repo {ansible/ansible}] [--skip_no_update]
                          [--collect_only] [--sort {asc,desc}]
                          [--skiprepo SKIPREPO] [--only_prs] [--only_issues]
-                         [--only_closed] [--safe_force]
-                         [--safe_force_script SAFE_FORCE_SCRIPT]
+                         [--only_closed]
                          [--ignore_state] [--ignore_bot_broken]
                          [--ignore_module_commits] [--pr PR]
                          [--start-at START_AT] [--resume] [--last LAST]
@@ -55,9 +54,6 @@ optional arguments:
   --only_prs            Triage pullrequests only
   --only_issues         Triage issues only
   --only_closed         Triage closed issues|prs only
-  --safe_force          Prompt only on specific actions
-  --safe_force_script SAFE_FORCE_SCRIPT
-                        Script to check safe force
   --ignore_state        Do not skip processing closed issues
   --ignore_bot_broken   Do not skip processing bot_broken|bot_skip issues
   --ignore_module_commits

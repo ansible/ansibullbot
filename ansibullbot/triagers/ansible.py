@@ -1440,43 +1440,6 @@ class AnsibleTriage(DefaultTriager):
             data,
         )
 
-    def apply_actions(self, iw, actions):
-        if self.args.safe_force:
-            self.check_safe_match(actions)
-        return super().apply_actions(iw, actions)
-
-    def check_safe_match(self, actions):
-
-        if self.args.safe_force_script:
-            with open(self.args.safe_force_script, 'rb') as f:
-                fdata = f.read()
-            self.force = bool(eval(fdata))
-            return self.force
-
-        safe = True
-
-        count = actions.count()
-        if count:
-            # all but needs_revision and needs_rebase labels are safe
-            labels = set(actions.newlabel + actions.unlabel)
-            if not labels.intersection(['needs_revision', 'needs_rebase']):
-                count -= len(actions.newlabel) + len(actions.unlabel)
-
-            # cc comment is safe
-            if actions.comments:
-                if len(actions.comments) == 1 and actions.comments[0].startswith('cc '):
-                    count -= len(actions.comments)
-
-            # assign is safe
-            if actions.assign:
-                count -= 1
-
-            safe = bool(count)
-
-        self.force = safe
-
-        return safe
-
     def get_stale_numbers(self, reponame):
         # https://github.com/ansible/ansibullbot/issues/458
 
@@ -2049,10 +2012,6 @@ class AnsibleTriage(DefaultTriager):
                             help="Triage issues only")
         parser.add_argument("--only_closed", action="store_true",
                             help="Triage closed issues|prs only")
-        parser.add_argument("--safe_force", action="store_true",
-                            help="Prompt only on specific actions")
-        parser.add_argument("--safe_force_script", type=str,
-                            help="Script to check safe force")
         parser.add_argument("--ignore_state", action="store_true",
                             help="Do not skip processing closed issues")
         parser.add_argument("--ignore_bot_broken", action="store_true",
