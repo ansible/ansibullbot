@@ -123,12 +123,6 @@ class AnsibleTriage(DefaultTriager):
 
     # modules having files starting like the key, will get the value label
     MODULE_NAMESPACE_LABELS = {
-        'cloud': "cloud",
-        'cloud/google': "gce",
-        'cloud/amazon': "aws",
-        'cloud/azure': "azure",
-        'cloud/openstack': "openstack",
-        'cloud/digital_ocean': "digital_ocean",
         'windows': "windows",
         'network': "networking"
     }
