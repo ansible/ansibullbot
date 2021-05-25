@@ -16,7 +16,6 @@ import logging
 import os
 
 from copy import deepcopy
-from distutils.version import LooseVersion
 from pprint import pprint
 
 import requests
@@ -88,13 +87,6 @@ VALID_CI_PROVIDERS = frozenset(('azp',))
 REPOS = [
     'ansible/ansible',
 ]
-
-
-def get_version_major_minor(vstring):
-    '''Return an X.Y version'''
-    lver = LooseVersion(vstring)
-    rval = '.'.join([to_text(x) for x in lver.version[0:2]])
-    return rval
 
 
 class MetaDict(dict):
@@ -1721,12 +1713,8 @@ class AnsibleTriage(DefaultTriager):
                 self.meta['issue_type'] = None
 
         # needed for bot status
-        if iw.is_issue():
-            self.meta['is_issue'] = True
-            self.meta['is_pullrequest'] = False
-        else:
-            self.meta['is_issue'] = False
-            self.meta['is_pullrequest'] = True
+        self.meta['is_issue'] = iw.is_issue()
+        self.meta['is_pullrequest'] = iw.is_pullrequest()
 
         # get ansible version
         if iw.is_issue():
@@ -1740,7 +1728,7 @@ class AnsibleTriage(DefaultTriager):
             # fallback to version by date
             self.meta['ansible_version'] = self.version_indexer.version_by_date(iw.created_at)
 
-        self.meta['ansible_label_version'] = get_version_major_minor(self.meta['ansible_version'])
+        self.meta['ansible_label_version'] = self.version_indexer.get_version_major_minor(self.meta['ansible_version'])
         logging.info('ansible version: %s' % self.meta['ansible_version'])
 
         # what component(s) is this about?
