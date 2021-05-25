@@ -102,7 +102,7 @@ class MockRepo:
         self.repo_path = repo_path
 
     def get_pullrequest(self, issueid):
-        return namedtuple('PullRequest', ['draft'])(draft=False)
+        return namedtuple('PullRequest', ['draft', 'get_reviews'])(draft=False, get_reviews=lambda: [])
 
 
 class GithubWrapperMock:
