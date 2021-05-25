@@ -89,16 +89,6 @@ REPOS = [
 ]
 
 
-class MetaDict(dict):
-    def __setitem__(self, key, val):
-        # https://github.com/ansible/ansible/issues/68640
-        dict.__setitem__(self, key, val)
-    def update(self, *args, **kwargs):
-        for k, v in dict(*args, **kwargs).items():
-            self[k] = v
-            self.__setitem__(k, v)
-
-
 class AnsibleActions(DefaultActions):
     def __init__(self):
         super().__init__()
@@ -1651,7 +1641,7 @@ class AnsibleTriage(DefaultTriager):
         '''Do initial processing of the issue'''
 
         # clear the actions+meta
-        self.meta = MetaDict()
+        self.meta = {}
 
         self.meta['state'] = iw.state
         self.meta['submitter'] = iw.submitter
