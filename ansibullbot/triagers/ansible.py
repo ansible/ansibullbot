@@ -446,8 +446,6 @@ class AnsibleTriage(DefaultTriager):
 
                     # force an update on the PR data
                     iw.update_pullrequest()
-                    # build the history
-                    self.build_history(iw)
 
                     actions = AnsibleActions()
                     self.process(iw)
@@ -1904,18 +1902,6 @@ class AnsibleTriage(DefaultTriager):
 
         # community working groups
         self.meta.update(get_community_workgroup_facts(iw, self.meta))
-
-    def build_history(self, issuewrapper):
-        '''Set the history and merge other event sources'''
-        iw = issuewrapper
-        iw._history = False
-        iw.history
-
-        if iw.is_pullrequest():
-            iw.history.merge_reviews(iw.reviews)
-            iw.history.merge_commits(iw.commits)
-
-        return iw
 
     def guess_issue_type(self, issuewrapper):
         iw = issuewrapper

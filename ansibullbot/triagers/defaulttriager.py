@@ -205,9 +205,6 @@ class DefaultTriager:
             if actions.merge:
                 iw.merge()
 
-        # FIXME why?
-        self.build_history(iw)
-
     def dump_action_dict(self, issue, actions):
         """Serialize the action dict to disk for quick(er) debugging"""
         fn = os.path.join('/tmp', 'actions', issue.repo_full_name, str(issue.number) + '.json')
