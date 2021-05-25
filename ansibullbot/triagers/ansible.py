@@ -1714,12 +1714,17 @@ class AnsibleTriage(DefaultTriager):
         self.meta['submitter'] = iw.submitter
 
         # set the issue type
-        ITYPE = iw.template_data.get('issue type')
-        if ITYPE in self.ISSUE_TYPES:
-            self.meta['issue_type'] = ITYPE
+        issue_type = iw.template_data.get('issue type')
+        if issue_type in self.ISSUE_TYPES:
+            self.meta['issue_type'] = issue_type
         else:
             # look for best match?
-            self.meta['issue_type'] = self.guess_issue_type(iw)
+            for key in self.ISSUE_TYPES.keys():
+                if iw.body and key in iw.body.lower():
+                    self.meta['issue_type'] = key
+                    break
+            else:
+                self.meta['issue_type'] = None
 
         # needed for bot status
         if iw.is_issue():
@@ -1902,17 +1907,6 @@ class AnsibleTriage(DefaultTriager):
 
         # community working groups
         self.meta.update(get_community_workgroup_facts(iw, self.meta))
-
-    def guess_issue_type(self, issuewrapper):
-        iw = issuewrapper
-
-        # body contains any known types?
-        body = iw.body
-        for key in self.ISSUE_TYPES.keys():
-            if body and key in body.lower():
-                return key
-
-        return None
 
     def process_comment_commands(self, issuewrapper, meta):
 
