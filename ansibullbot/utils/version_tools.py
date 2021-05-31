@@ -15,7 +15,7 @@ class AnsibleVersionIndexer:
     def __init__(self, checkoutdir):
         self.checkoutdir = checkoutdir
         self.VALIDVERSIONS = None
-        self.COMMITVERSIONS = None
+        self.commit_versions_cache = {}
         self.DATEVERSIONS = None
 
         self._get_versions()
@@ -324,63 +324,46 @@ class AnsibleVersionIndexer:
         return aversion
 
     def ansible_version_by_commit(self, commithash):
+        """
+        $ git branch --contains e620fed755a9c7e07df846b7deb32bbbf3164ac7
+        * devel
+        $ git branch -r --contains 6d9949698bd6a5693ef64cfde845c029f0e02b91 | egrep -e 'release' -e 'stable' | head
+         origin/release1.5.0
+         origin/release1.5.1
+         origin/release1.5.2
+         origin/release1.5.3
+         origin/release1.5.4
+         origin/release1.5.5
+         origin/release1.6.0
+         origin/release1.6.1
+         origin/release1.6.10
+         origin/release1.6.2
+        """
+        if commithash in self.commit_versions_cache:
+            return self.commit_versions_cache[commithash]
 
-        # $ git branch --contains e620fed755a9c7e07df846b7deb32bbbf3164ac7
-        # * devel
+        cmd = 'cd %s;git branch -r --contains %s' % (self.checkoutdir, commithash)
+        (rc, so, se) = run_command(cmd)
+        if rc != 0:
+            raise Exception("rc == %d from cmd = '%s'" % (rc, cmd))
 
-        #$ git branch -r --contains 6d9949698bd6a5693ef64cfde845c029f0e02b91 | egrep -e 'release' -e 'stable' | head
-        #  origin/release1.5.0
-        #  origin/release1.5.1
-        #  origin/release1.5.2
-        #  origin/release1.5.3
-        #  origin/release1.5.4
-        #  origin/release1.5.5
-        #  origin/release1.6.0
-        #  origin/release1.6.1
-        #  origin/release1.6.10
-        #  origin/release1.6.2
+        branches = [x.strip() for x in to_text(so).split('\n')]
 
-        '''
-        # make sure the checkout cache is still valid
-        self.update_checkout()
-        '''
-        if not self.COMMITVERSIONS:
-            self.COMMITVERSIONS = {}
-
-        if commithash in self.COMMITVERSIONS:
-            aversion = self.COMMITVERSIONS[commithash]
+        for branch in branches:
+            if branch.startswith(('origin/release', 'origin/stable')):
+                version = branch.split('/')[-1].replace('release', '').replace('stable-', '')
+                break
         else:
-
-            # get devel's version
-            devel_version = self._get_devel_version()
-
-            cmd = 'cd %s;' % self.checkoutdir
-            cmd += 'git branch -r --contains %s' % commithash
-            (rc, so, se) = run_command(cmd)
-            lines = (x.strip() for x in to_text(so).split('\n'))
-            lines = list(filter(bool, lines))
-
-            rlines = (x for x in lines
-                      if x.startswith(('origin/release', 'origin/stable')))
-            rlines = (x.split('/')[-1] for x in rlines)
-            rlines = (x.replace('release', '') for x in rlines)
-            rlines = [x.replace('stable-', '') for x in rlines]
-
-            if rc != 0:
-                logging.error("rc != 0")
-                raise Exception('bad returncode')
-
-            if len(rlines) > 0:
-                aversion = rlines[0]
+            for branch in branches:
+                if 'HEAD' in branch or branch.endswith('/devel'):
+                    version = self._get_devel_version()
+                    break
             else:
-                if 'HEAD' in lines[0] or lines[0].endswith('/devel'):
-                    aversion = devel_version
-                else:
-                    raise Exception('HEAD not found')
+                raise Exception('HEAD not found')
 
-            self.COMMITVERSIONS[commithash] = aversion
+        self.commit_versions_cache[commithash] = version
 
-        return aversion
+        return version
 
     def version_by_date(self, dateobj):
         if not self.DATEVERSIONS:
