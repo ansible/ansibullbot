@@ -1466,7 +1466,7 @@ class BotMockManager:
         self.mocks.append(patch('ansibullbot.decorators.github.requests', self.mr))
         self.mocks.append(patch('ansibullbot.parsers.botmetadata.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.triagers.ansible.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.triagers.ansible.requests', self.mr))
+        self.mocks.append(patch('ansibullbot.triagers.defaulttriager.requests', self.mr))
         self.mocks.append(patch('ansibullbot.triagers.plugins.contributors.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.triagers.plugins.needs_revision.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.triagers.plugins.shipit.logging', MockLogger))
