@@ -189,6 +189,40 @@ class AnsibleTriage(DefaultTriager):
         logging.info('ansible triager [re]loading botmeta')
         return BotMetadataParser.parse_yaml(rdata)
 
+    def _should_skip_issue(self, iw, repopath):
+        lmeta = self.load_meta(iw)
+
+        if not lmeta:
+            return False
+
+        if lmeta['updated_at'] != to_text(iw.updated_at.isoformat()):
+            return False
+
+        # re-check ansible/ansible after a window of time since the last check.
+        days_stale = (datetime.datetime.now() - strip_time_safely(lmeta['time'])).days
+        if days_stale > C.DEFAULT_STALE_WINDOW:
+            logging.info('!skipping: %s days since last check' % days_stale)
+            return False
+
+        if iw.is_pullrequest():
+            # always poll rebuilds till they are merged
+            if lmeta.get('needs_rebuild') or lmeta.get('admin_merge'):
+                return False
+
+            if to_text(iw.pullrequest.updated_at.isoformat()) > lmeta['updated_at']:
+                return False
+
+            # if last process time is older than last completion time on CI, we need
+            # to reprocess because the CI status has probabaly changed.
+            if self.ci.updated_at and self.ci.updated_at > strip_time_safely(lmeta['updated_at']):
+                return False
+
+        if iw.number in self.repos[repopath]['stale']:
+            return False
+
+        logging.info('skipping: no changes since last run')
+        return True
+
     def run(self):
         '''Primary execution method'''
 
@@ -293,65 +327,8 @@ class AnsibleTriage(DefaultTriager):
                         self.ci = None
 
                     if self.args.skip_no_update:
-                        lmeta = self.load_meta(iw)
-
-                        if lmeta:
-
-                            now = datetime.datetime.now()
-                            skip = False
-
-                            if lmeta['updated_at'] == to_text(iw.updated_at.isoformat()):
-                                skip = True
-
-                            if skip:
-                                if iw.is_pullrequest():
-                                    ua = to_text(iw.pullrequest.updated_at.isoformat())
-                                    if lmeta['updated_at'] < ua:
-                                        skip = False
-
-                            if skip:
-                                # re-check ansible/ansible after
-                                # a window of time since the last check.
-                                lt = lmeta['time']
-                                lt = strip_time_safely(lt)
-                                delta = (now - lt)
-                                delta = delta.days
-                                if delta > C.DEFAULT_STALE_WINDOW:
-                                    msg = '!skipping: %s' % delta
-                                    msg += ' days since last check'
-                                    logging.info(msg)
-                                    skip = False
-
-                            if skip:
-                                if iw.is_pullrequest():
-                                    # if last process time is older than
-                                    # last completion time on CI, we need
-                                    # to reprocess because the CI status has
-                                    # probabaly changed.
-                                    if self.ci.updated_at and \
-                                            self.ci.updated_at > strip_time_safely(lmeta['updated_at']):
-                                        skip = False
-
-                            # was this in the stale list?
-                            if skip:
-                                if iw.number in self.repos[repopath]['stale']:
-                                    skip = False
-
-                            # always poll rebuilds till they are merged
-                            if lmeta.get('needs_rebuild') or lmeta.get('admin_merge'):
-                                skip = False
-
-                            # do a final check on the timestamp in meta
-                            if skip:
-                                mts = strip_time_safely(lmeta['time'])
-                                delta = (now - mts).days
-                                if delta > C.DEFAULT_STALE_WINDOW:
-                                    skip = False
-
-                            if skip:
-                                msg = 'skipping: no changes since last run'
-                                logging.info(msg)
-                                continue
+                        if self._should_skip_issue(iw, repopath):
+                            continue
 
                     # force an update on the PR data
                     iw.update_pullrequest()
