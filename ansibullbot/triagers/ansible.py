@@ -189,7 +189,7 @@ class AnsibleTriage(DefaultTriager):
         logging.info('ansible triager [re]loading botmeta')
         return BotMetadataParser.parse_yaml(rdata)
 
-    def should_skip_issue(self, iw, repopath):
+    def _should_skip_issue(self, iw, repopath):
         lmeta = self.load_meta(iw)
 
         if not lmeta:
@@ -327,7 +327,7 @@ class AnsibleTriage(DefaultTriager):
                         self.ci = None
 
                     if self.args.skip_no_update:
-                        if self.should_skip_issue(iw, repopath):
+                        if self._should_skip_issue(iw, repopath):
                             continue
 
                     # force an update on the PR data
