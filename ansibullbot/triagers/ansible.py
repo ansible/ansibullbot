@@ -136,7 +136,6 @@ class AnsibleTriage(DefaultTriager):
         self.ci = None
         self.ci_class = ci_class
         self._ansible_core_team = None
-        self.automerge_on = False
 
         logging.info('getting labels')
         self.valid_labels = self.ghw.get_valid_labels("ansible/ansible")
@@ -225,7 +224,6 @@ class AnsibleTriage(DefaultTriager):
 
     def run(self):
         '''Primary execution method'''
-
         ts1 = datetime.datetime.now()
         icount = 0
 
@@ -245,12 +243,6 @@ class AnsibleTriage(DefaultTriager):
                 botmeta=self.botmeta,
             )
 
-        # is automerge allowed?
-        self.automerge_on = False
-        if self.botmeta.get('automerge'):
-            if self.botmeta['automerge'] in ['Yes', 'yes', 'y', True, 1]:
-                self.automerge_on = True
-
         # get all of the open issues [or just one]
         self.collect_repos()
 
@@ -269,22 +261,21 @@ class AnsibleTriage(DefaultTriager):
 
                 self.meta = {}
                 self.processed_meta = {}
-                number = issue.number
-                self.set_resume(repopath, number)
+                self.set_resume(repopath, issue.number)
 
                 # keep track of known issues
-                self.repos[repopath]['processed'].append(number)
+                self.repos[repopath]['processed'].append(issue.number)
 
                 if issue.state == 'closed' and not self.args.ignore_state:
-                    logging.info(to_text(number) + ' is closed, skipping')
+                    logging.info(str(issue.number) + ' is closed, skipping')
                     continue
 
                 if self.args.only_prs and 'pull' not in issue.html_url:
-                    logging.info(to_text(number) + ' is issue, skipping')
+                    logging.info(str(issue.number) + ' is issue, skipping')
                     continue
 
                 if self.args.only_issues and 'pull' in issue.html_url:
-                    logging.info(to_text(number) + ' is pullrequest, skipping')
+                    logging.info(str(issue.number) + ' is pullrequest, skipping')
                     continue
 
                 # users may want to re-run this issue after manual intervention
@@ -305,8 +296,8 @@ class AnsibleTriage(DefaultTriager):
                         logging.info('starting triage for %s' % issue.html_url)
                     else:
                         # if >1 get latest data
-                        logging.info('restarting triage for %s' % number)
-                        issue = repo.get_issue(number)
+                        logging.info('restarting triage for %s' % issue.number)
+                        issue = repo.get_issue(issue.number)
 
                     # clear redo
                     redo = False
@@ -333,10 +324,10 @@ class AnsibleTriage(DefaultTriager):
                     # force an update on the PR data
                     iw.update_pullrequest()
 
-                    actions = AnsibleActions()
                     self.process(iw)
 
                     # build up actions from the meta
+                    actions = AnsibleActions()
                     self.create_actions(iw, actions)
                     self.save_meta(iw, self.meta, actions)
 
@@ -654,7 +645,7 @@ class AnsibleTriage(DefaultTriager):
                     logging.info(self.meta['automerge_status'])
                     if 'automerge' not in iw.labels:
                         actions.newlabel.append('automerge')
-                    if self.automerge_on:
+                    if self.botmeta.get('automerge') in ['Yes', 'yes', 'y', True, 1]:
                         actions.merge = True
                 else:
                     logging.debug(self.meta['automerge_status'])

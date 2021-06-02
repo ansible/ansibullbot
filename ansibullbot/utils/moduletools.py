@@ -60,15 +60,10 @@ class ModuleIndexer:
         'imports': []
     }
 
-    def __init__(self, commits=True, blames=True, botmeta=None, maintainers=None, gh_client=None, cachedir='~/.ansibullbot/cache', gitrepo=None):
-        '''
-        Maintainers: defaultdict(dict) where keys are filepath and values are dict
-        gh_client: GraphQL GitHub client
-        '''
+    def __init__(self, commits=True, blames=True, botmeta=None, gh_client=None, cachedir='~/.ansibullbot/cache', gitrepo=None):
         self.get_commits = commits
         self.get_blames = blames
         botmeta = botmeta if botmeta else {}
-        self.maintainers = maintainers or {}
         self.gqlc = gh_client
         self.scraper_cache = os.path.expanduser(os.path.join(cachedir, 'ansible.modules.scraper'))
         self.gitrepo = gitrepo

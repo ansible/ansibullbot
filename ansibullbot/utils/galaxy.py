@@ -8,8 +8,6 @@ import requests
 from ansibullbot.utils.timetools import strip_time_safely
 
 
-GALAXY_BASE_URL = 'https://galaxy.ansible.com'
-
 BLACKLIST_PATHS = [
     '.github',
     '.github/FUNDING.yml',

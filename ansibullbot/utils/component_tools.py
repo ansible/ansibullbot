@@ -195,12 +195,11 @@ class AnsibleComponentMatcher:
         self.use_galaxy = use_galaxy
         self.botmeta = botmeta if botmeta else {'files': {}}
         self.email_cache = email_cache
-        self.commit = commit
 
         if gitrepo:
             self.gitrepo = gitrepo
         else:
-            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=self.REPO, commit=self.commit)
+            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=self.REPO, commit=commit)
 
         # we need to query galaxy for a few things ...
         if not use_galaxy:
@@ -211,7 +210,6 @@ class AnsibleComponentMatcher:
         self.strategy = None
         self.strategies = []
 
-        self.updated_at = None
         self.update()
 
     def update(self, email_cache=None, botmeta=None):
@@ -221,7 +219,6 @@ class AnsibleComponentMatcher:
             self.email_cache = email_cache
         self.index_files()
         self.cache_keywords()
-        self.updated_at = datetime.datetime.now()
 
     def get_module_meta(self, checkoutdir, filename):
 
