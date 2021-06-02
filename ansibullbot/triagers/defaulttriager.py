@@ -354,13 +354,8 @@ class DefaultTriager:
                 self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
 
     def get_stale_numbers(self, reponame):
-        # https://github.com/ansible/ansibullbot/issues/458
-
         stale = []
-        reasons = {}
-
         for number, summary in self.issue_summaries[reponame].items():
-
             if number in stale:
                 continue
 
@@ -377,7 +372,6 @@ class DefaultTriager:
             )
 
             if not os.path.isfile(mfile):
-                reasons[number] = '%s missing' % mfile
                 stale.append(number)
                 continue
 
@@ -387,17 +381,11 @@ class DefaultTriager:
             except ValueError as e:
                 logging.error('failed to parse %s: %s' % (to_text(mfile), to_text(e)))
                 os.remove(mfile)
-                reasons[number] = '%s missing' % mfile
                 stale.append(number)
                 continue
 
-            ts = meta['time']
-            ts = strip_time_safely(ts)
-            now = datetime.datetime.now()
-            delta = (now - ts).days
-
+            delta = (datetime.datetime.now() - strip_time_safely(meta['time'])).days
             if delta > C.DEFAULT_STALE_WINDOW:
-                reasons[number] = '%s delta' % delta
                 stale.append(number)
 
         stale = sorted({int(x) for x in stale})
@@ -409,7 +397,6 @@ class DefaultTriager:
     @RateLimited
     def _collect_repo(self, repo, issuenums=None):
         '''Collect issues for an individual repo'''
-
         logging.info('getting repo obj for %s' % repo)
         if repo not in self.repos:
             self.repos[repo] = {
@@ -462,9 +449,8 @@ class DefaultTriager:
 
                 numbers = []
                 for x in api_since:
-                    number = x.number
-                    numbers.append(number)
-                    issuecache[number] = x
+                    numbers.append(x.number)
+                    issuecache[x.number] = x
 
                 numbers = sorted({int(n) for n in numbers})
                 logging.info(

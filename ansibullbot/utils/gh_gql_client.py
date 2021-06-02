@@ -197,17 +197,7 @@ class GithubGraphQLClient:
         """
 
         templ = self.environment.from_string(QUERY_TEMPLATE)
-
-        # after: "$endCursor"
         after = None
-
-        '''
-        # first: 100
-        first = 'first: 100'
-        # states: OPEN
-        states = 'states: OPEN'
-        '''
-
         nodes = []
         pagecount = 0
         while True:
@@ -297,7 +287,6 @@ class GithubGraphQLClient:
         node['type'] = node_type
 
     def get_usernames_from_filename_blame(self, owner, repo, branch, filepath):
-
         template = self.environment.from_string(QUERY_TEMPLATE_BLAME)
         committers = defaultdict(set)
         emailmap = {}
