@@ -125,24 +125,6 @@ class GithubGraphQLClient:
 
         return issues
 
-    def get_last_number(self, repo_path):
-        """Return the very last issue/pr number opened for a repo
-        """
-        owner = repo_path.split('/', 1)[0]
-        repo = repo_path.split('/', 1)[1]
-
-        isummaries = self.get_summaries(owner, repo, otype='issues',
-                                        last='last: 1', first=None, states=None,
-                                        paginate=False)
-        psummaries = self.get_summaries(owner, repo, otype='pullRequests',
-                                        last='last: 1', first=None, states=None,
-                                        paginate=False)
-
-        if isummaries[-1]['number'] > psummaries[-1]['number']:
-            return isummaries[-1]['number']
-        else:
-            return psummaries[-1]['number']
-
     def get_all_summaries(self, owner, repo):
         """Collect all the summary data for issues and pullreuests
 
@@ -347,13 +329,3 @@ class GithubGraphQLClient:
             raise requests.exceptions.InvalidSchema(
                 'Error(s) from graphql: %s' % msgs)
         return response
-
-
-###################################
-# TESTING ...
-###################################
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    client = GithubGraphQLClient(C.DEFAULT_GITHUB_TOKEN)
-    summaries = client.get_all_summaries('ansible', 'ansible')
-    ln = client.get_last_number('ansible/ansible')
