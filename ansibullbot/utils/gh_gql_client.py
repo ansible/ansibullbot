@@ -12,8 +12,6 @@ from tenacity import retry, wait_random, stop_after_attempt
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 
-import ansibullbot.constants as C
-
 
 QUERY_FIELDS = """
 id

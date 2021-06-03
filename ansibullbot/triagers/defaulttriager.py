@@ -325,26 +325,19 @@ class DefaultTriager:
 
         return pr
 
-    def update_issue_summaries(self, issuenums=None, repopath=None):
+    def update_issue_summaries(self, repopath=None, issuenums=None):
+        if issuenums and len(issuenums) <= 10:
+            self.issue_summaries[repopath] = {}
 
-        if repopath:
-            repopaths = [repopath]
+            for num in issuenums:
+                # --pr is an alias to --id and can also be for issues
+                node = self.gqlc.get_summary(repopath, 'pullRequest', num)
+                if node is None:
+                    node = self.gqlc.get_summary(repopath, 'issue', num)
+                if node is not None:
+                    self.issue_summaries[repopath][to_text(num)] = node
         else:
-            repopaths = [x for x in REPOS]
-
-        for rp in repopaths:
-            if issuenums and len(issuenums) <= 10:
-                self.issue_summaries[repopath] = {}
-
-                for num in issuenums:
-                    # --pr is an alias to --id and can also be for issues
-                    node = self.gqlc.get_summary(rp, 'pullRequest', num)
-                    if node is None:
-                        node = self.gqlc.get_summary(rp, 'issue', num)
-                    if node is not None:
-                        self.issue_summaries[repopath][to_text(num)] = node
-            else:
-                self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
+            self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(repopath)
 
     def get_stale_numbers(self, reponame):
         stale = []
