@@ -26,7 +26,6 @@ from ansibullbot.parsers.botmetadata import BotMetadataParser
 from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
-from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.receiver_client import post_to_receiver
 from ansibullbot.utils.timetools import strip_time_safely
@@ -122,7 +121,7 @@ class AnsibleTriage(DefaultTriager):
         'close_me'
     ]
 
-    def __init__(self, args=None, update_checkouts=True):
+    def __init__(self, args=None):
         super().__init__(args)
 
         if self.args.ci == 'azp':
@@ -137,38 +136,6 @@ class AnsibleTriage(DefaultTriager):
         self.ci_class = ci_class
         self._ansible_core_team = None
 
-        logging.info('getting labels')
-        self.valid_labels = self.ghw.get_valid_labels("ansible/ansible")
-
-        logging.info('creating gitrepowrapper')
-        repo = 'https://github.com/ansible/ansible'
-        self.gitrepo = GitRepoWrapper(cachedir=self.cachedir_base, repo=repo, commit=self.args.ansible_commit, rebase=update_checkouts)
-
-        logging.info('loading botmeta')
-        self.botmeta = self.load_botmeta()
-
-        logging.info('creating version indexer')
-        self.version_indexer = AnsibleVersionIndexer(checkoutdir=self.gitrepo.checkoutdir)
-
-        logging.info('creating module indexer')
-        self.module_indexer = ModuleIndexer(
-            botmeta=self.botmeta,
-            gh_client=self.gqlc,
-            cachedir=self.cachedir_base,
-            gitrepo=self.gitrepo,
-            commits=not self.args.ignore_module_commits
-        )
-
-        logging.info('creating component matcher')
-        self.component_matcher = AnsibleComponentMatcher(
-            cachedir=self.cachedir_base,
-            gitrepo=self.gitrepo,
-            botmeta=self.botmeta,
-            email_cache=self.module_indexer.emails_cache,
-            usecache=True,
-            use_galaxy=not self.args.ignore_galaxy
-        )
-
     @property
     def ansible_core_team(self):
         if self._ansible_core_team is None:
@@ -179,12 +146,12 @@ class AnsibleTriage(DefaultTriager):
             self._ansible_core_team = self.ghw.get_members('ansible', teams)
         return [x for x in self._ansible_core_team if x not in C.DEFAULT_BOT_NAMES]
 
-    def load_botmeta(self):
+    def load_botmeta(self, gitrepo):
         if self.args.botmetafile is not None:
             with open(self.args.botmetafile, 'rb') as f:
                 rdata = f.read()
         else:
-            rdata = self.gitrepo.get_file_content('.github/BOTMETA.yml')
+            rdata = gitrepo.get_file_content('.github/BOTMETA.yml')
         logging.info('ansible triager [re]loading botmeta')
         return BotMetadataParser.parse_yaml(rdata)
 
@@ -225,23 +192,6 @@ class AnsibleTriage(DefaultTriager):
     def run(self):
         '''Primary execution method'''
         ts1 = datetime.datetime.now()
-        icount = 0
-
-        if self.ITERATION > 0:
-            # update on each run to pull in new data
-            logging.info('updating checkout')
-            self.gitrepo.update()
-
-            self.load_botmeta()
-
-            logging.info('updating module indexer')
-            self.module_indexer.update(botmeta=self.botmeta)
-
-            logging.info('updating component matcher')
-            self.component_matcher.update(
-                email_cache=self.module_indexer.emails_cache,
-                botmeta=self.botmeta,
-            )
 
         # get all of the open issues [or just one]
         self.collect_repos()
@@ -250,9 +200,36 @@ class AnsibleTriage(DefaultTriager):
         if self.args.collect_only:
             return
 
+        icount = 0
         for repopath, repodata in self.repos.copy().items():
             repo = repodata['repo']
             cachedir = os.path.join(self.cachedir_base, repopath)
+
+            logging.info('loading botmeta')
+            self.botmeta = self.load_botmeta(repodata['gitrepo'])
+
+            logging.info('creating version indexer')
+            self.version_indexer = AnsibleVersionIndexer(checkoutdir=repodata['gitrepo'].checkoutdir)
+
+            logging.info('creating module indexer')
+            self.module_indexer = ModuleIndexer(
+                botmeta=self.botmeta,
+                gh_client=self.gqlc,
+                cachedir=self.cachedir_base,
+                gitrepo=repodata['gitrepo'],
+                commits=not self.args.ignore_module_commits
+            )
+
+            logging.info('creating component matcher')
+            self.component_matcher = AnsibleComponentMatcher(
+                cachedir=self.cachedir_base,
+                gitrepo=repodata['gitrepo'],
+                botmeta=self.botmeta,
+                email_cache=self.module_indexer.emails_cache,
+                usecache=True,
+                use_galaxy=not self.args.ignore_galaxy
+            )
+
             for issue in repodata['issues']:
                 if issue is None:
                     continue
@@ -308,7 +285,7 @@ class AnsibleTriage(DefaultTriager):
                         repo=repo,
                         issue=issue,
                         cachedir=cachedir,
-                        gitrepo=self.gitrepo,
+                        gitrepo=repodata['gitrepo'],
                     )
 
                     if iw.is_pullrequest():
@@ -324,11 +301,11 @@ class AnsibleTriage(DefaultTriager):
                     # force an update on the PR data
                     iw.update_pullrequest()
 
-                    self.process(iw)
+                    self.process(iw, repodata['labels'])
 
                     # build up actions from the meta
                     actions = AnsibleActions()
-                    self.create_actions(iw, actions)
+                    self.create_actions(iw, actions, repodata['labels'])
                     self.save_meta(iw, self.meta, actions)
 
                     # DEBUG!
@@ -454,7 +431,7 @@ class AnsibleTriage(DefaultTriager):
         with open(mfile, 'w', encoding='utf-8') as f:
             json.dump(meta, f)
 
-    def create_actions(self, iw, actions):
+    def create_actions(self, iw, actions, valid_labels):
         '''Parse facts and make actions from them'''
         # bot_broken + bot_skip bypass all actions
         if not self.args.ignore_bot_broken:
@@ -755,7 +732,7 @@ class AnsibleTriage(DefaultTriager):
                         if label in self.MODULE_NAMESPACE_LABELS:
                             label = self.MODULE_NAMESPACE_LABELS[label]
 
-                        if label and label in self.valid_labels and \
+                        if label and label in valid_labels and \
                                 label not in iw.labels and \
                                 not iw.history.was_unlabeled(label):
                             actions.newlabel.append(label)
@@ -834,7 +811,7 @@ class AnsibleTriage(DefaultTriager):
         if self.meta['is_pullrequest'] and self.meta['is_backport']:
             version = self.version_indexer.strip_ansible_version(self.meta['base_ref'])
             if version:
-                for label in self.valid_labels:
+                for label in valid_labels:
                     if label.startswith('affects_'):
                         if label.endswith(version):
                             if label not in iw.labels:
@@ -862,7 +839,7 @@ class AnsibleTriage(DefaultTriager):
             if iw.is_pullrequest() and not self.meta.get('merge_commits'):
                 fmap_labels = self.component_matcher.get_labels_for_files(iw.files)
                 for label in fmap_labels:
-                    if label in self.valid_labels and label not in iw.labels:
+                    if label in valid_labels and label not in iw.labels:
                         # do not re-add these labels
                         if not iw.history.was_unlabeled(label):
                             actions.newlabel.append(label)
@@ -1266,7 +1243,7 @@ class AnsibleTriage(DefaultTriager):
             data,
         )
 
-    def process(self, iw):
+    def process(self, iw, valid_labels):
         '''Do initial processing of the issue'''
 
         # clear the actions+meta
@@ -1312,7 +1289,7 @@ class AnsibleTriage(DefaultTriager):
             get_component_match_facts(
                 iw,
                 self.component_matcher,
-                self.valid_labels
+                valid_labels
             )
         )
 
@@ -1407,7 +1384,7 @@ class AnsibleTriage(DefaultTriager):
                 iw,
                 self.module_indexer.all_maintainers,
                 core_team=self.ansible_core_team,
-                valid_labels=self.valid_labels
+                valid_labels=valid_labels
             )
         )
 

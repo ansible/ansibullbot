@@ -542,7 +542,7 @@ class IssueWrapper:
         if not self.incoming_repo_exists:
             return True
 
-        return self.incoming_repo_slug != 'ansible/ansible'
+        return self.incoming_repo_slug != self.repo.repo.full_name
 
     @RateLimited
     def get_commit_files(self, commit):

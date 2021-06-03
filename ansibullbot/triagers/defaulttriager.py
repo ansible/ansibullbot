@@ -30,6 +30,7 @@ from ansibullbot import constants as C
 from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
+from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.logs import set_logger
 from ansibullbot.utils.systemtools import run_command
@@ -67,12 +68,6 @@ class DefaultActions:
         return count
 
 
-# FIXME remove this as a part of removing hardcoded repo
-REPOS = [
-    'ansible/ansible',
-]
-
-
 class DefaultTriager:
     """
     How to use:
@@ -87,7 +82,6 @@ class DefaultTriager:
     def main():
         Triager().start()
     """
-    ITERATION = 0
     CLOSING_LABELS = []
 
     def __init__(self, args=None):
@@ -144,7 +138,7 @@ class DefaultTriager:
         parser.add_argument("--pause", "-p", action="store_true", dest="always_pause", help="Always pause between prs|issues")
         parser.add_argument("--pr", "--id", type=str, help="Triage only the specified pr|issue (separated by commas)")
         parser.add_argument("--resume", action="store_true", dest="resume_enabled", help="pickup right after where the bot last stopped")
-        parser.add_argument("--repo", "-r", type=str, choices=REPOS, help="Github repo to triage (defaults to all)")
+        parser.add_argument("--repo", "-r", type=str, help="Github repo to triage (defaults to all)")
         parser.add_argument("--skiprepo", action='append', help="Github repo to skip triaging")
         parser.add_argument("--start-at", type=int, help="Start triage at the specified pr|issue")
         parser.add_argument("--sort", default='desc', choices=['asc', 'desc'], help="Direction to sort issues [desc=9-0 asc=0-9]")
@@ -166,7 +160,6 @@ class DefaultTriager:
         """Call the run method in a defined interval"""
         while True:
             self.run()
-            self.ITERATION += 1
             interval = self.args.daemonize_interval
             logging.info('sleep %ss (%sm)' % (interval, interval / 60))
             time.sleep(interval)
@@ -332,26 +325,19 @@ class DefaultTriager:
 
         return pr
 
-    def update_issue_summaries(self, issuenums=None, repopath=None):
+    def update_issue_summaries(self, repopath=None, issuenums=None):
+        if issuenums and len(issuenums) <= 10:
+            self.issue_summaries[repopath] = {}
 
-        if repopath:
-            repopaths = [repopath]
+            for num in issuenums:
+                # --pr is an alias to --id and can also be for issues
+                node = self.gqlc.get_summary(repopath, 'pullRequest', num)
+                if node is None:
+                    node = self.gqlc.get_summary(repopath, 'issue', num)
+                if node is not None:
+                    self.issue_summaries[repopath][to_text(num)] = node
         else:
-            repopaths = [x for x in REPOS]
-
-        for rp in repopaths:
-            if issuenums and len(issuenums) <= 10:
-                self.issue_summaries[repopath] = {}
-
-                for num in issuenums:
-                    # --pr is an alias to --id and can also be for issues
-                    node = self.gqlc.get_summary(rp, 'pullRequest', num)
-                    if node is None:
-                        node = self.gqlc.get_summary(rp, 'issue', num)
-                    if node is not None:
-                        self.issue_summaries[repopath][to_text(num)] = node
-            else:
-                self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(rp)
+            self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(repopath)
 
     def get_stale_numbers(self, reponame):
         stale = []
@@ -399,18 +385,28 @@ class DefaultTriager:
         '''Collect issues for an individual repo'''
         logging.info('getting repo obj for %s' % repo)
         if repo not in self.repos:
+            gitrepo = GitRepoWrapper(
+                cachedir=self.cachedir_base,
+                repo=f'https://github.com/{repo}',
+                commit=self.args.ansible_commit,
+            )
             self.repos[repo] = {
                 'repo': self.ghw.get_repo(repo),
                 'issues': [],
                 'processed': [],
                 'since': None,
                 'stale': [],
-                'loopcount': 0
+                'loopcount': 0,
+                'labels': self.ghw.get_valid_labels(repo),
+                'gitrepo': gitrepo,
             }
         else:
             # force a clean repo object to limit caching problems
-            self.repos[repo]['repo'] = \
-                self.ghw.get_repo(repo)
+            logging.info('updating repo')
+            self.repos[repo]['repo'] = self.ghw.get_repo(repo)
+            logging.info('updating checkout')
+            self.repos[repo]['gitrepo'].update()
+
             # clear the issues
             self.repos[repo]['issues'] = {}
             # increment the loopcount
@@ -531,7 +527,7 @@ class DefaultTriager:
     def collect_repos(self):
         '''Populate the local cache of repos'''
         logging.info('start collecting repos')
-        for repo in REPOS:
+        for repo in C.DEFAULT_GITHUB_REPOS:
             # skip repos based on args
             if self.args.repo and self.args.repo != repo:
                 continue

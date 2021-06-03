@@ -1,5 +1,4 @@
 import copy
-import datetime
 import json
 import logging
 import os
@@ -12,7 +11,6 @@ from Levenshtein import jaro_winkler
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.extractors import ModuleExtractor
 from ansibullbot.utils.galaxy import GalaxyQueryTool
-from ansibullbot.utils.git_tools import GitRepoWrapper
 
 
 MODULES_FLATTEN_MAP = {
@@ -100,9 +98,7 @@ def make_prefixes(filename):
 
 class AnsibleComponentMatcher:
 
-    botmeta = {}
     GALAXY_MANIFESTS = {}
-    REPO = 'https://github.com/ansible/ansible'
     STOPWORDS = ['ansible', 'core', 'plugin']
     STOPCHARS = ['"', "'", '(', ')', '?', '*', '`', ',', ':', '?', '-']
     BLACKLIST = ['new module', 'new modules']
@@ -189,19 +185,14 @@ class AnsibleComponentMatcher:
         'winrm': 'lib/ansible/plugins/connection/winrm.py'
     }
 
-    def __init__(self, gitrepo=None, botmeta=None, usecache=False, cachedir=None, commit=None, email_cache=None, use_galaxy=False):
+    def __init__(self, gitrepo=None, botmeta=None, usecache=False, cachedir=None, email_cache=None, use_galaxy=False):
+        self.gitrepo = gitrepo
         self.usecache = usecache
         self.cachedir = cachedir
         self.use_galaxy = use_galaxy
         self.botmeta = botmeta if botmeta else {'files': {}}
         self.email_cache = email_cache
 
-        if gitrepo:
-            self.gitrepo = gitrepo
-        else:
-            self.gitrepo = GitRepoWrapper(cachedir=cachedir, repo=self.REPO, commit=commit)
-
-        # we need to query galaxy for a few things ...
         if not use_galaxy:
             self.GQT = None
         else:

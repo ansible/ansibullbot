@@ -327,7 +327,7 @@ class AzurePipelinesCI(BaseCI):
                 'system.pullRequest.mergedAt': '',
                 'system.pullRequest.sourceBranch': self._iw._pr.head.ref,
                 'system.pullRequest.targetBranch': self._iw._pr.base.ref,
-                'system.pullRequest.sourceRepositoryUri': 'https://github.com/ansible/ansible',
+                'system.pullRequest.sourceRepositoryUri': 'https://github.com/' + self._iw.repo.repo.full_name ,
                 'system.pullRequest.sourceCommitId': self._iw._pr.head.sha,
             }),
         })

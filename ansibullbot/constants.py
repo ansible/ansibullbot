@@ -259,6 +259,15 @@ DEFAULT_GITHUB_TOKEN = get_config(
     value_type='string'
 )
 
+DEFAULT_GITHUB_REPOS = get_config(
+    p,
+    DEFAULTS,
+    'github_repos',
+    '%s_GITHUB_REPOS' % PROG_NAME.upper(),
+    ['ansible/ansible'],
+    value_type='list'
+)
+
 DEFAULT_CI_PROVIDER = get_config(
     p,
     DEFAULTS,
