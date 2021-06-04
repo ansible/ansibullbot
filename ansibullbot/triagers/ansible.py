@@ -134,17 +134,6 @@ class AnsibleTriage(DefaultTriager):
 
         self.ci = None
         self.ci_class = ci_class
-        self._ansible_core_team = None
-
-    @property
-    def ansible_core_team(self):
-        if self._ansible_core_team is None:
-            teams = [
-                'ansible-commit',
-                'ansible-community',
-            ]
-            self._ansible_core_team = self.ghw.get_members('ansible', teams)
-        return [x for x in self._ansible_core_team if x not in C.DEFAULT_BOT_NAMES]
 
     def load_botmeta(self, gitrepo):
         if self.args.botmetafile is not None:
@@ -1320,7 +1309,7 @@ class AnsibleTriage(DefaultTriager):
                 iw,
                 self.meta,
                 self.ci,
-                self.ansible_core_team,
+                self.maintainer_team,
                 C.DEFAULT_BOT_NAMES,
             )
         )
@@ -1356,13 +1345,13 @@ class AnsibleTriage(DefaultTriager):
         self.meta.update(
             get_shipit_facts(
                 iw, self.meta, self.botmeta['files'],
-                core_team=self.ansible_core_team, botnames=C.DEFAULT_BOT_NAMES,
+                maintainer_team=self.maintainer_team, botnames=C.DEFAULT_BOT_NAMES,
             )
         )
         self.meta.update(get_review_facts(iw, self.meta))
 
         # bot_status needed?
-        self.meta.update(get_bot_status_facts(iw, self.module_indexer.all_maintainers, core_team=self.ansible_core_team, bot_names=C.DEFAULT_BOT_NAMES))
+        self.meta.update(get_bot_status_facts(iw, self.module_indexer.all_maintainers, maintainer_team=self.maintainer_team, bot_names=C.DEFAULT_BOT_NAMES))
 
         # who is this waiting on?
         wo = 'maintainer'
@@ -1383,7 +1372,7 @@ class AnsibleTriage(DefaultTriager):
             get_label_command_facts(
                 iw,
                 self.module_indexer.all_maintainers,
-                core_team=self.ansible_core_team,
+                maintainer_team=self.maintainer_team,
                 valid_labels=valid_labels
             )
         )
@@ -1393,7 +1382,7 @@ class AnsibleTriage(DefaultTriager):
             get_waffling_overrides(
                 iw,
                 self.module_indexer.all_maintainers,
-                core_team=self.ansible_core_team,
+                maintainer_team=self.maintainer_team,
             )
         )
 
@@ -1416,7 +1405,7 @@ class AnsibleTriage(DefaultTriager):
             get_rebuild_merge_facts(
                 iw,
                 self.meta,
-                self.ansible_core_team,
+                self.maintainer_team,
                 self.ci,
             )
         )

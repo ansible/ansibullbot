@@ -219,7 +219,7 @@ def get_review_facts(issuewrapper, meta):
     return rfacts
 
 
-def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames=[]):
+def get_shipit_facts(issuewrapper, inmeta, botmeta_files, maintainer_team=[], botnames=[]):
     """ Count shipits by maintainers/community/other """
 
     # supershipit - maintainers with isolated commit access
@@ -308,12 +308,12 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames
             supershipiteers_byuser[ss].append(cm['repo_filename'])
 
     maintainers = meta.get('component_maintainers', [])
-    maintainers = replace_ansible(maintainers, core_team, bots=botnames)
+    maintainers = replace_ansible(maintainers, maintainer_team, bots=botnames)
 
     # community is the other maintainers in the same namespace
     community = meta.get('component_namespace_maintainers', [])
     community = [x for x in community if x != 'ansible' and
-                 x not in core_team and
+                 x not in maintainer_team and
                  x != 'DEPRECATED']
 
     # shipit tallies
@@ -359,7 +359,7 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames
         # historical shipits (keep track of all of them, even if reset)
         shipits_historical.add(actor)
 
-        if actor in core_team and is_rebuild_merge(body):
+        if actor in maintainer_team and is_rebuild_merge(body):
             rebuild_merge = True
             logging.info('%s shipit [rebuild_merge]' % actor)
         else:
@@ -370,7 +370,7 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames
             supershipiteers_voted.add(actor)
 
         # ansible shipits
-        if actor in core_team:
+        if actor in maintainer_team:
             if actor not in shipit_actors:
                 ansible_shipits += 1
                 shipit_actors.append(actor)
@@ -398,7 +398,7 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, core_team=[], botnames
         continue
 
     # submitters should count if they are core team/maintainers/community
-    if iw.submitter in core_team:
+    if iw.submitter in maintainer_team:
         if iw.submitter not in shipit_actors:
             ansible_shipits += 1
             shipit_actors.append(iw.submitter)

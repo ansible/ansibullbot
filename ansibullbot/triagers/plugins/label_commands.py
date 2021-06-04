@@ -1,4 +1,4 @@
-def get_label_command_facts(issuewrapper, all_maintainers, core_team=[], valid_labels=[]):
+def get_label_command_facts(issuewrapper, all_maintainers, maintainer_team=[], valid_labels=[]):
     add_labels = []
     del_labels = []
 
@@ -41,7 +41,7 @@ def get_label_command_facts(issuewrapper, all_maintainers, core_team=[], valid_l
     whitelist += [x for x in valid_labels if x.startswith('m:')]
 
     iw = issuewrapper
-    maintainers = [x for x in core_team]
+    maintainers = [x for x in maintainer_team]
     maintainers += all_maintainers
     maintainers = sorted(set(maintainers))
 
@@ -91,11 +91,11 @@ def get_label_command_facts(issuewrapper, all_maintainers, core_team=[], valid_l
     return fact
 
 
-def get_waffling_overrides(issuewrapper, all_maintainers, core_team=[]):
+def get_waffling_overrides(issuewrapper, all_maintainers, maintainer_team=[]):
     overrides = []
 
     iw = issuewrapper
-    maintainers = [x for x in core_team]
+    maintainers = [x for x in maintainer_team]
     maintainers += all_maintainers
     maintainers = sorted(set(maintainers))
 

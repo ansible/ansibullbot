@@ -58,7 +58,7 @@ def _get_last_command(iw, command, username):
 
 
 # https://github.com/ansible/ansibullbot/issues/640
-def get_rebuild_merge_facts(iw, meta, core_team, ci):
+def get_rebuild_merge_facts(iw, meta, maintainer_team, ci):
     rbmerge_meta = {
         'needs_rebuild': meta.get('needs_rebuild', False),
         'needs_rebuild_all': meta.get('needs_rebuild_all', False),
@@ -77,7 +77,7 @@ def get_rebuild_merge_facts(iw, meta, core_team, ci):
     if meta['is_needs_rebase']:
         return rbmerge_meta
 
-    last_command = _get_last_command(iw, 'rebuild_merge', core_team)
+    last_command = _get_last_command(iw, 'rebuild_merge', maintainer_team)
 
     if last_command is None:
         return rbmerge_meta
