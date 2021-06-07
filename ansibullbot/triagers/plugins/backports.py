@@ -9,7 +9,7 @@ def get_backport_facts(issuewrapper):
     if not iw.is_pullrequest():
         return bfacts
 
-    if iw.pullrequest.base.ref != 'devel':
+    if iw.pullrequest.base.ref not in ['devel', 'main', 'master']:
         bfacts['is_backport'] = True
         bfacts['base_ref'] = iw.pullrequest.base.ref
 
