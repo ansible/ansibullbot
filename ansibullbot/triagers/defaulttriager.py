@@ -130,7 +130,7 @@ class DefaultTriager:
             for team in teams:
                 _org, _team = team.split('/')
                 self._maintainer_team.extend(self.ghw.get_members(_org, _team))
-        return list(set(sorted([x for x in self._maintainer_team if x not in C.DEFAULT_BOT_NAMES])))
+        return sorted(set(self._maintainer_team).difference(C.DEFAULT_BOT_NAMES)))
 
     @classmethod
     def create_parser(cls):
