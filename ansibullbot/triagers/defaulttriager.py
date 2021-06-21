@@ -118,6 +118,20 @@ class DefaultTriager:
             server=C.DEFAULT_GITHUB_URL
         )
 
+        self._maintainer_team = None
+
+    @property
+    def maintainer_team(self):
+        # Note: this assumes that the token used by the bot has access to check
+        # team privileges across potentially more than one organization
+        if self._maintainer_team is None:
+            self._maintainer_team = []
+            teams = C.DEFAULT_GITHUB_MAINTAINERS
+            for team in teams:
+                _org, _team = team.split('/')
+                self._maintainer_team.extend(self.ghw.get_members(_org, _team))
+        return sorted(set(self._maintainer_team).difference(C.DEFAULT_BOT_NAMES))
+
     @classmethod
     def create_parser(cls):
         parser = argparse.ArgumentParser()

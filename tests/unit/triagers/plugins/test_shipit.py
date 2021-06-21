@@ -229,7 +229,7 @@ class TestSuperShipit(unittest.TestCase):
                 {'repo_filename': 'foo', 'supershipit': ['jane', 'doe']}
             ]
         }
-        sfacts = get_shipit_facts(IW, meta, {}, core_team=['coreperson'])
+        sfacts = get_shipit_facts(IW, meta, {}, maintainer_team=['coreperson'])
         assert not sfacts['supershipit']
         assert not sfacts['shipit']
         assert not sfacts['supershipit']
@@ -388,8 +388,8 @@ class TestShipitRebuildMerge(unittest.TestCase):
                 {'repo_filename': 'foo', 'maintainers': ['jane', 'doe']}
             ]
         }
-        core_team = ['x']
-        sfacts = get_shipit_facts(IW, meta, {}, core_team=core_team)
+        maintainer_team = ['x']
+        sfacts = get_shipit_facts(IW, meta, {}, maintainer_team=maintainer_team)
 
         assert sfacts['shipit']
         assert not sfacts['supershipit']
@@ -418,8 +418,8 @@ class TestShipitRebuildMerge(unittest.TestCase):
                 {'repo_filename': 'foo', 'maintainers': ['jane', 'doe']}
             ]
         }
-        core_team = ['x']
-        sfacts = get_shipit_facts(IW, meta, {}, core_team=core_team)
+        maintainer_team = ['x']
+        sfacts = get_shipit_facts(IW, meta, {}, maintainer_team=maintainer_team)
 
         assert not sfacts['shipit']
         assert not sfacts['supershipit']
@@ -458,7 +458,7 @@ class TestShipitFacts(unittest.TestCase):
             _meta['component_maintainers'] = []
             _meta['component_namespace_maintainers'] = ['LinusU', 'mscherer']
 
-            facts = get_shipit_facts(iw, _meta, {}, core_team=['bcoca'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, _meta, {}, maintainer_team=['bcoca'], botnames=['ansibot'])
 
             self.assertEqual(iw.submitter, 'mscherer')
             self.assertEqual(['LinusU', 'mscherer'], facts['community_usernames'])
@@ -468,7 +468,7 @@ class TestShipitFacts(unittest.TestCase):
             self.assertEqual(facts['shipit_count_community'], 1)   # LinusU, mscherer
             self.assertFalse(facts['shipit'])
 
-    def test_submitter_is_core_team_and_maintainer(self):
+    def test_submitter_is_maintainer_team_and_maintainer(self):
         """
         Submitter is a namespace maintainer *and* a core team member: approval
         must be automatically added
@@ -481,7 +481,7 @@ class TestShipitFacts(unittest.TestCase):
             _meta['component_maintainers'] = []
             _meta['component_namespace_maintainers'] = ['LinusU']
 
-            facts = get_shipit_facts(iw, _meta, {}, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, _meta, {}, maintainer_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
             self.assertEqual(iw.submitter, 'mscherer')
             self.assertEqual(['LinusU'], facts['community_usernames'])
@@ -495,7 +495,7 @@ class TestShipitFacts(unittest.TestCase):
         datafile = 'tests/fixtures/shipit/1_issue.yml'
         statusfile = 'tests/fixtures/shipit/1_prstatus.json'
         with get_issue(datafile, statusfile) as iw:
-            facts = get_shipit_facts(iw, meta, {}, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, meta, {}, maintainer_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
             self.assertEqual(iw.submitter, 'mscherer')
             self.assertFalse(facts['community_usernames'])
@@ -581,7 +581,7 @@ class TestOwnerPR(unittest.TestCase):
             meta = self.meta.copy()
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
             self.assertEqual(iw.submitter, 'ElsA')
             self.assertTrue(facts['owner_pr'])
@@ -613,7 +613,7 @@ class TestOwnerPR(unittest.TestCase):
             iw.gitrepo.files.append('lib/ansible/modules/foo/bar.py')
 
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')
         self.assertTrue(facts['owner_pr'])
@@ -645,7 +645,7 @@ class TestOwnerPR(unittest.TestCase):
             iw.gitrepo = GitRepoWrapperMock()
 
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')
         self.assertFalse(facts['owner_pr'])
@@ -694,7 +694,7 @@ class TestOwnerPR(unittest.TestCase):
         meta = self.meta.copy()
         iw._commits = []
         meta.update(get_component_match_facts(iw, CM, []))
-        facts = get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+        facts = get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca', 'mscherer'], botnames=['ansibot'])
         shutil.rmtree(cachedir)
 
         self.assertEqual(iw.submitter, 'ElsA')
@@ -744,7 +744,7 @@ class TestOwnerPR(unittest.TestCase):
 
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')
         self.assertFalse(facts['owner_pr'])
@@ -790,7 +790,7 @@ class TestOwnerPR(unittest.TestCase):
                 MockFile('lib/ansible/module_utils/baz/bar.py')
             ]
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca'], botnames=['ansibot'])
 
         self.assertEqual(iw.submitter, 'mscherer')
         self.assertFalse(facts['owner_pr'])
@@ -827,7 +827,7 @@ class TestOwnerPR(unittest.TestCase):
             meta = self.meta.copy()
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            facts = get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca', 'mscherer'], botnames=['ansibot'])
+            facts = get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca', 'mscherer'], botnames=['ansibot'])
 
             self.assertEqual(iw.submitter, 'ElsA')
             self.assertTrue(facts['owner_pr'])
@@ -872,7 +872,7 @@ class TestReviewFacts(unittest.TestCase):
             meta = self.meta.copy()
             iw._commits = []
             meta.update(get_component_match_facts(iw, CM, []))
-            meta.update(get_shipit_facts(iw, meta, botmeta_files, core_team=['bcoca'], botnames=['ansibot']))
+            meta.update(get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca'], botnames=['ansibot']))
             facts = get_review_facts(iw, meta)
 
         self.assertTrue(facts['community_review'])

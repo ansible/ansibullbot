@@ -268,6 +268,16 @@ DEFAULT_GITHUB_REPOS = get_config(
     value_type='list'
 )
 
+# The maintainer teams including the organization where the team is located
+DEFAULT_GITHUB_MAINTAINERS = get_config(
+    p,
+    DEFAULTS,
+    'github_maintainers',
+    '%s_GITHUB_MAINTAINERS' % PROG_NAME.upper(),
+    ['ansible/ansible-commit', 'ansible/ansible-community'],
+    value_type='list'
+)
+
 DEFAULT_CI_PROVIDER = get_config(
     p,
     DEFAULTS,
