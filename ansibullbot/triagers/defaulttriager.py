@@ -192,7 +192,7 @@ class DefaultTriager:
 
         if actions.count() > 0:
             if self.args.dump_actions:
-                self.dump_action_dict(iw, actions)
+                self.dump_action_dict(iw, actions.__dict__)
 
             if self.args.dry_run:
                 print("Dry-run specified, skipping execution of actions")
