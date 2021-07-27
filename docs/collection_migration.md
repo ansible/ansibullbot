@@ -8,7 +8,7 @@ Here are some links to read through and familiarize yourself with ...
 * [Docs on using collections](https://docs.ansible.com/ansible/devel/user_guide/collections_using.html)
 * [Docs on developing collections](https://docs.ansible.com/ansible/devel/dev_guide/developing_collections.html)
 * [Docs on contributing to collections](https://docs.ansible.com/ansible/devel/community/contributing_maintained_collections.html)
-* [Main ansible-collections org README](https://github.com/ansible-collections/overview/blob/master/README.rst)
+* [Main ansible-collections org README](https://github.com/ansible-collections/overview/blob/devel/README.rst)
 
 ## Why is ansibot directing me here?
 

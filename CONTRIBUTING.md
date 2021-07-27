@@ -14,7 +14,7 @@ Ansibullbot is compatible with Python 3.8+.
 5. Create the log file:
     * either add `--log path/to/file.log` to the `triage_ansible.py` below
     * or use `sudo touch /var/log/ansibullbot.log && sudo chmod 777 /var/log/ansibullbot.log`
-6. Create the config file, copy [`examples/ansibullbot.cfg`](https://github.com/ansible/ansibullbot/blob/master/examples/ansibullbot.cfg) to one of these paths:
+6. Create the config file, copy [`examples/ansibullbot.cfg`](https://github.com/ansible/ansibullbot/blob/devel/examples/ansibullbot.cfg) to one of these paths:
     * `~/.ansibullbot.cfg`
     * `$CWD/ansibullot.cfg`
     * `/etc/ansibullot/ansibullbot.cfg`
