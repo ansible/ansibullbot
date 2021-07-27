@@ -1,36 +1,36 @@
 [submodule "playbooks/roles/ansibullbot"]
 	path = playbooks/roles/ansibullbot
 	url = https://github.com/samdoran/ansible-role-ansibullbot.git
-    branch = 2.2.5
+    branch = 2.2.6
 [submodule "playbooks/roles/firewall"]
 	path = playbooks/roles/firewall
 	url = https://github.com/samdoran/ansible-role-firewall.git
-    branch = 2.1.1
+    branch = 2.1.2
 [submodule "playbooks/roles/repo_epel"]
 	path = playbooks/roles/repo_epel
 	url = https://github.com/samdoran/ansible-role-repo-epel.git
-    branch = 1.2.1
+    branch = 1.2.2
 [submodule "playbooks/roles/ansibullbot_instance"]
 	path = playbooks/roles/ansibullbot_instance
 	url = https://github.com/samdoran/ansible-role-ansibullbot-instance.git
-    branch = 3.1.0
+    branch = 3.1.2
 [submodule "playbooks/roles/mongodb"]
 	path = playbooks/roles/mongodb
 	url = https://github.com/samdoran/ansible-role-mongodb.git
-    branch = 1.1.1
+    branch = 1.1.2
 [submodule "playbooks/roles/fail2ban"]
 	path = playbooks/roles/fail2ban
 	url = https://github.com/samdoran/ansible-role-fail2ban.git
-    branch = 1.0.2
+    branch = 1.0.3
 [submodule "playbooks/roles/yum_cron"]
 	path = playbooks/roles/yum_cron
 	url = https://github.com/samdoran/ansible-role-yum-cron.git
-    branch = 1.2.0
+    branch = 1.2.1
 [submodule "playbooks/roles/caddy"]
 	path = playbooks/roles/caddy
 	url = https://github.com/samdoran/ansible-role-caddy.git
-    branch = 2.1.0
+    branch = 2.1.1
 [submodule "playbooks/roles/authorized_keys"]
 	path = playbooks/roles/authorized_keys
 	url = https://github.com/samdoran/ansible-role-authorized-keys.git
-    branch = 1.0.1
+    branch = 1.0.2
