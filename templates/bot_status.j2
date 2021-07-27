@@ -12,17 +12,17 @@ maintainers: {{ component['maintainers']|join(' ') }}
 
 **waiting_on**: {{ waiting_on }}
 {% if is_issue %}
-[needs_info](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
+[needs_info](https://github.com/ansible/ansibullbot/blob/devel/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
 {% else %}
 {% if change_requested %}
 changes_requested_by: {{ change_requested|join(' ') }}
 {% else %}
 changes_requested_by: null
 {% endif %}
-[needs_info](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
-[needs_revision](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_revision): {{ is_needs_revision }}
-[needs_rebase](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-needs_rebase): {{ is_needs_rebase }}
-[merge_commits](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md#label-merge_commit): {{ merge_commits }}
+[needs_info](https://github.com/ansible/ansibullbot/blob/devel/ISSUE_HELP.md#label-needs_info): {{ is_needs_info }}
+[needs_revision](https://github.com/ansible/ansibullbot/blob/devel/ISSUE_HELP.md#label-needs_revision): {{ is_needs_revision }}
+[needs_rebase](https://github.com/ansible/ansibullbot/blob/devel/ISSUE_HELP.md#label-needs_rebase): {{ is_needs_rebase }}
+[merge_commits](https://github.com/ansible/ansibullbot/blob/devel/ISSUE_HELP.md#label-merge_commit): {{ merge_commits }}
 too many files or commits: {{ is_bad_pr }}
 mergeable_state: {{ mergeable_state }}
 ci_status: {{ ci_state }}
@@ -43,5 +43,5 @@ automerge: {{ automerge_status }}
 {% endif %}
 </details>
 
-[click here for bot help](https://github.com/ansible/ansibullbot/blob/master/ISSUE_HELP.md)
+[click here for bot help](https://github.com/ansible/ansibullbot/blob/devel/ISSUE_HELP.md)
 <!--- boilerplate: bot_status --->
