@@ -1,0 +1,23 @@
+html_url: https://github.com/ansible/ansible/pull/21313
+number: 21313
+github_repo: ansible
+submitter: sommersoft
+created_at: 2016-02-18T17:37:01Z
+title: Test
+body: |
+    test docs_info
+events:
+    - event: committed
+      created_at: 2017-12-10T17:24:02Z
+      id: 1
+      actor:
+        login: web-flow
+        name: GitHub
+      files:
+        - filename: docs/docsite/index.rst
+          status: modified
+          patch: |
+            @@ -2,2 +2,2 @@
+            -   index
+            +   api
+          src_filepath: tests/fixtures/docs_info/files/docsite_index.rst
