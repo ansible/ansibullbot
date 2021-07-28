@@ -102,7 +102,7 @@ class AzurePipelinesCI(BaseCI):
             cache_file = os.path.join(self._cachedir, u'timeline_%s.pickle' % self.build_id)
 
             url = TIMELINE_URL_FMT % self.build_id
-            resp = fetch(url)
+            resp = fetch(url, timeout=TIMEOUT)
             if resp is None:
                 raise Exception('Unable to GET %s' % url)
 
@@ -180,7 +180,7 @@ class AzurePipelinesCI(BaseCI):
                     logging.info('fetching artifacts: stale, no previous data')
 
                 url = ARTIFACTS_URL_FMT % self.build_id
-                resp = fetch(url)
+                resp = fetch(url, timeout=TIMEOUT)
                 if resp is None:
                     raise Exception('Unable to GET %s' % url)
 
@@ -213,7 +213,7 @@ class AzurePipelinesCI(BaseCI):
             else:
                 logging.info('fetching artifacts: stale, no previous data')
 
-            resp = fetch(url, stream=True)
+            resp = fetch(url, timeout=TIMEOUT, stream=True)
             if resp is None:
                 raise Exception('Unable to GET %s' % url)
 
