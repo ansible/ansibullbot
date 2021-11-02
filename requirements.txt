@@ -1,14 +1,10 @@
 -c constraints.txt
 
-fuzzywuzzy
 jinja2
-logzero
 pygithub
 python-Levenshtein
-pytz
 PyYAML
 requests
-requests_cache
 sentry-sdk
 sqlalchemy
 tenacity
