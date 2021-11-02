@@ -6,8 +6,6 @@ import subprocess
 import tempfile
 import uuid
 
-import pytz
-
 from unittest.mock import patch
 from urllib.parse import urlparse
 
@@ -118,10 +116,7 @@ from urllib.parse import urlparse
 
 
 def get_timestamp():
-    ts = datetime.datetime.utcnow()
-    ats = pytz.utc.localize(ts)
-    rts = ats.isoformat().split('.')[0] + 'Z'
-    return rts
+    return datetime.datetime.now(datetime.timezone.utc).isoformat().split('.')[0] + 'Z'
 
 
 def get_custom_timestamp(months=-1, days=-1):

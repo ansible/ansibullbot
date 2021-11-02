@@ -1,6 +1,6 @@
 import datetime
 import logging
-import pytz
+
 import ansibullbot.constants as C
 
 
@@ -104,19 +104,11 @@ def needs_info_timeout_facts(iw, meta):
     if 'needs_info' not in iw.labels:
         return nif
 
-    la = iw.history.label_last_applied('needs_info')
-
-    # https://github.com/ansible/ansibullbot/issues/1254
-    if la is None:
-        # iterate and log event event in history so we can debug this problem
-        for ide,event in enumerate(iw.history.history):
-            logging.debug('history (%s): %s' % (ide,  event))
-
     lr = iw.history.label_last_removed('needs_info')
     ni_bpd = iw.history.last_date_for_boilerplate('needs_info_base')
     md_bpd = iw.history.last_date_for_boilerplate('issue_missing_data')
 
-    now = pytz.utc.localize(datetime.datetime.now())
+    now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=datetime.timezone.utc)
 
     # use the most recent date among the two templates
     bpd = None
@@ -153,8 +145,15 @@ def needs_info_timeout_facts(iw, meta):
             if len(bp_comments_found) == 0:
                 nif['needs_info_action'] = 'warn'
     else:
-        delta = (now - la).days
-        if delta > NI_WARN:
-            nif['needs_info_action'] = 'warn'
+        la = iw.history.label_last_applied('needs_info')
+        # https://github.com/ansible/ansibullbot/issues/1254
+        if la is None:
+            # iterate and log event event in history so we can debug this problem
+            for ide,event in enumerate(iw.history.history):
+                logging.debug('history (%s): %s' % (ide,  event))
+        else:
+            delta = (now - la).days
+            if delta > NI_WARN:
+                nif['needs_info_action'] = 'warn'
 
     return nif

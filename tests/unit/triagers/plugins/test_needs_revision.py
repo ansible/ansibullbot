@@ -3,7 +3,6 @@ import json
 from unittest import TestCase, mock
 
 import github
-import pytz
 
 from tests.utils.helpers import get_issue
 from ansibullbot.triagers.plugins.needs_revision import _changes_requested_by, get_needs_revision_facts, _get_review_state
@@ -244,5 +243,4 @@ class TestReviewMethods(TestCase):
 
     @staticmethod
     def make_time(data):
-        time = datetime.datetime.strptime(data, '%Y-%m-%dT%H:%M:%SZ')
-        return pytz.utc.localize(time)
+        return datetime.datetime.strptime(data, '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc)

@@ -5,10 +5,9 @@ import os.path
 import pickle
 import re
 
+from datetime import timezone
 from io import BytesIO
 from zipfile import ZipFile
-
-import pytz
 
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_bytes
@@ -62,8 +61,8 @@ class AzurePipelinesCI(BaseCI):
         if self.state and self.build_id and self.jobs:
             self.last_run = {
                 'state': self.state,
-                'created_at': pytz.utc.localize(self.created_at),
-                'updated_at': pytz.utc.localize(self.updated_at),
+                'created_at': self.created_at.replace(tzinfo=timezone.utc),
+                'updated_at': self.updated_at.replace(tzinfo=timezone.utc),
                 'run_id': self.build_id,
             }
 
