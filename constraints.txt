@@ -62,8 +62,6 @@ pytest-cov==3.0.0
     # via -r test-requirements.txt
 pytest-sugar==0.9.4
     # via -r test-requirements.txt
-python-levenshtein==0.12.2
-    # via -r requirements.txt
 pyyaml==6.0
     # via
     #   -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
