@@ -80,8 +80,6 @@ six==1.16.0
     # via pynacl
 sqlalchemy==1.4.26
     # via -r requirements.txt
-tenacity==8.0.1
-    # via -r requirements.txt
 termcolor==1.1.0
     # via pytest-sugar
 toml==0.10.2

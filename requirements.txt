@@ -7,6 +7,5 @@ PyYAML
 requests
 sentry-sdk
 sqlalchemy
-tenacity
 
 -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
