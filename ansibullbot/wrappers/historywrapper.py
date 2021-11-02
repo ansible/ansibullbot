@@ -5,8 +5,6 @@ import pickle
 
 from operator import itemgetter
 
-import pytz
-
 import ansibullbot.constants as C
 from ansibullbot.utils.timetools import strip_time_safely
 
@@ -162,7 +160,7 @@ class HistoryWrapper:
         for idx, x in enumerate(comments):
             ca = x['created_at']
             if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
-                ca = pytz.utc.localize(x['created_at'])
+                ca = x['created_at'].replace(tzinfo=datetime.timezone.utc)
             nc = {'body': x['body'], 'created_at': ca, 'user': {'login': x['actor']}}
             comments[idx] = nc
         return comments
@@ -175,7 +173,7 @@ class HistoryWrapper:
             except Exception:
                 # IncompletableObject: 400 "Returned object contains no URL"
                 event['actor'] = str(xc.committer)
-            event['created_at'] = pytz.utc.localize(xc.commit.committer.date)
+            event['created_at'] = xc.commit.committer.date.replace(tzinfo=datetime.timezone.utc)
             event['event'] = 'committed'
             event['message'] = xc.commit.message
             self.history.append(event)
@@ -207,7 +205,7 @@ class HistoryWrapper:
 
             event['id'] = review['id']
             event['actor'] = review['user']['login']
-            event['created_at'] = pytz.utc.localize(strip_time_safely(review['submitted_at']))
+            event['created_at'] = strip_time_safely(review['submitted_at']).replace(tzinfo=datetime.timezone.utc)
             if 'commit_id' in review:
                 event['commit_id'] = review['commit_id']
             else:

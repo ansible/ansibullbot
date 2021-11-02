@@ -1,6 +1,6 @@
 import datetime
 import logging
-import pytz
+
 import ansibullbot.constants as C
 
 
@@ -116,7 +116,7 @@ def needs_info_timeout_facts(iw, meta):
     ni_bpd = iw.history.last_date_for_boilerplate('needs_info_base')
     md_bpd = iw.history.last_date_for_boilerplate('issue_missing_data')
 
-    now = pytz.utc.localize(datetime.datetime.now())
+    now = datetime.datetime.now(datetime.timezone.utc)
 
     # use the most recent date among the two templates
     bpd = None

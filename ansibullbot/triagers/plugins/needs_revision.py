@@ -1,8 +1,6 @@
 import datetime
 import logging
 
-import pytz
-
 from ansibullbot.errors import NoCIError
 from ansibullbot.triagers.plugins.shipit import is_approval
 from ansibullbot.utils.timetools import strip_time_safely
@@ -269,7 +267,7 @@ def get_needs_revision_facts(iw, meta, ci, maintainer_team=None, botnames=None):
     # stale reviews
     if user_reviews:
 
-        now = pytz.utc.localize(datetime.datetime.now())
+        now = datetime.datetime.now(datetime.timezone.utc)
         commits = [x for x in iw.history.history if x['event'] == 'committed']
         lc_date = commits[-1]['created_at']
 
@@ -349,7 +347,7 @@ def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
         if review['state'] == 'CHANGES_REQUESTED':
             if actor in shipits:
                 review_time = strip_time_safely(review['submitted_at'])
-                review_time = pytz.utc.localize(review_time)
+                review_time = review_time.replace(tzinfo=datetime.timezone.utc)
                 shipit_time = shipits[actor]
                 if review_time < shipit_time:
                     # ignore review older than shipit
@@ -358,7 +356,7 @@ def _changes_requested_by(user_reviews, shipits, last_commit, ready_for_review):
 
             if ready_for_review:
                 review_time = strip_time_safely(review['submitted_at'])
-                review_time = pytz.utc.localize(review_time)
+                review_time = review_time.replace(tzinfo=datetime.timezone.utc)
                 if review['commit_id'] != last_commit and review_time < ready_for_review:
                     # ignore review older than ready_for_review comment wrote by submitter
                     # but only if the pull request has been updated (meaning the

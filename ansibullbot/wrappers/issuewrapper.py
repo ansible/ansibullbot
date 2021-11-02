@@ -22,8 +22,6 @@ import pickle
 import re
 import time
 
-import pytz
-
 import ansibullbot.constants as C
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.utils.extractors import get_template_data
@@ -124,7 +122,7 @@ class IssueWrapper:
             if isinstance(dd['created_at'], str):
                 dd['created_at'] = strip_time_safely(dd['created_at'])
 
-            event['created_at'] = pytz.utc.localize(dd['created_at'])
+            event['created_at'] = dd['created_at'].replace(tzinfo=datetime.timezone.utc)
 
             if dd['event'] in ['labeled', 'unlabeled']:
                 event['label'] = dd.get('label', {}).get('name', None)
