@@ -1,14 +1,15 @@
 # https://developer.github.com/v4/explorer/
 # https://developer.github.com/v4/guides/forming-calls/
 
-import jinja2
 import json
 import logging
+import time
 import requests
 from collections import defaultdict
 from operator import itemgetter
 
-from tenacity import retry, wait_random, stop_after_attempt
+import jinja2
+
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 
@@ -315,15 +316,26 @@ class GithubGraphQLClient:
             committers[github_id] = list(commits)
         return committers, emailmap
 
-    @retry(wait=wait_random(min=1, max=2), stop=stop_after_attempt(5))
     def requests(self, payload):
-        response = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
-        response.raise_for_status()
-        # GitHub GraphQL will happily return a 200 result with errors. One
-        # must dig through the data to see if there were errors.
-        errors = response.json().get('errors')
-        if errors:
-            msgs = ', '.join([e['message'] for e in errors])
-            raise requests.exceptions.InvalidSchema(
-                'Error(s) from graphql: %s' % msgs)
-        return response
+        exc = None
+        for i in range(5):
+            response = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+            try:
+                response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+                exc = e
+                time.sleep(2)
+                continue
+
+            # GitHub GraphQL will happily return a 200 result with errors. One
+            # must dig through the data to see if there were errors.
+            errors = response.json().get('errors')
+            if errors:
+                msgs = ', '.join([e['message'] for e in errors])
+                exc = requests.exceptions.InvalidSchema('Error(s) from graphql: %s' % msgs)
+                time.sleep(2)
+                continue
+
+            return response
+
+        raise exc
