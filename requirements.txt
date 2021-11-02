@@ -2,7 +2,6 @@
 
 jinja2
 pygithub
-python-Levenshtein
 PyYAML
 requests
 sentry-sdk

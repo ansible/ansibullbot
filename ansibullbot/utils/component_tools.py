@@ -1,12 +1,11 @@
 import copy
+import difflib
 import json
 import logging
 import os
 import re
 
 from collections import OrderedDict
-
-from Levenshtein import jaro_winkler
 
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.extractors import ModuleExtractor
@@ -1518,8 +1517,8 @@ class AnsibleComponentMatcher:
                 vname = v['name']
                 if not isinstance(vname, str):
                     vname = to_text(vname)
-                jw = jaro_winkler(vname, _pattern)
-                if jw > .9:
+                close_ratio = difflib.SequenceMatcher(None, vname, _pattern).quick_ratio()
+                if close_ratio > .9:
                     candidates.append((jw, k))
             for candidate in candidates:
                 matches.append(self.MODULES[candidate[1]])
