@@ -391,7 +391,7 @@ class ModuleExtractor:
     def __init__(self, filepath, filedata=None, email_cache=None):
         self.filepath = filepath
         self._FILEDATA = filedata
-        self.email_cache = email_cache
+        self.email_cache = email_cache or {}
 
     @property
     def filedata(self):
