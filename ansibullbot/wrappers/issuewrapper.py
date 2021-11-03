@@ -22,6 +22,8 @@ import pickle
 import re
 import time
 
+import requests
+
 import ansibullbot.constants as C
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.utils.extractors import get_template_data
@@ -270,6 +272,9 @@ class IssueWrapper:
     def remove_comment_by_id(self, commentid):
         if not isinstance(commentid, int):
             raise Exception("commentIds must be integers!")
+        if not any(x for x in (x for x in self.history.history if x['event'] == 'commented') if x['id'] == commentid):
+            raise Exception("Invalid comment ID")
+
         comment_url = os.path.join(
             C.DEFAULT_GITHUB_URL,
             'repos',
@@ -278,11 +283,17 @@ class IssueWrapper:
             'comments',
             str(commentid)
         )
-        current_data = self.github.get_request(comment_url)
-        if current_data and current_data.get('message') != 'Not Found':
-            ok = self.github.delete_request(comment_url)
-            if not ok:
-                raise Exception("failed to delete commentid %s for %s" % (commentid, self.html_url))
+
+        resp = requests.delete(
+            comment_url,
+            headers={
+                'Accept': 'application/json',
+                'Authorization': 'Bearer %s' % C.DEFAULT_GITHUB_TOKEN
+            }
+        )
+
+        if not resp.ok:
+            raise Exception("failed to delete commentid %s for %s" % (commentid, self.html_url))
 
     @property
     def assignees(self):
