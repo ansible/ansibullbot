@@ -2,8 +2,6 @@ import copy
 import logging
 import os
 import pickle
-import re
-import yaml
 
 from sqlalchemy import create_engine
 from sqlalchemy import Column
@@ -13,6 +11,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 from ansibullbot._text_compat import to_text
+from ansibullbot.utils.extractors import ModuleExtractor
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
 
@@ -384,7 +383,7 @@ class ModuleIndexer:
             if v['filepath'] is None:
                 continue
             mfile = os.path.join(self.gitrepo.checkoutdir, v['filepath'])
-            authors = self.get_module_authors(mfile)
+            authors = ModuleExtractor(mfile, email_cache=self.emails_cache).get_module_authors()
             self.modules[k]['authors'] = authors
 
             # authors are maintainers by -default-
@@ -471,96 +470,6 @@ class ModuleIndexer:
         }
 
         return tdata
-
-    def get_module_authors(self, module_file):
-        """Grep the authors out of the module docstrings"""
-
-        if not os.path.exists(module_file):
-            return []
-
-        documentation = b''
-        inphase = False
-
-        with open(module_file, 'rb') as f:
-            for line in f:
-                if b'DOCUMENTATION' in line:
-                    inphase = True
-                    continue
-                if line.strip().endswith((b"'''", b'"""')):
-                    break
-                if inphase:
-                    documentation += line
-
-        if not documentation:
-            return []
-
-        # clean out any other yaml besides author to save time
-        inphase = False
-        author_lines = ''
-        doc_lines = to_text(documentation).split('\n')
-        for idx, x in enumerate(doc_lines):
-            if x.startswith('author'):
-                inphase = True
-            if inphase and not x.strip().startswith(('-', 'author')):
-                break
-            if inphase:
-                author_lines += x + '\n'
-
-        if not author_lines:
-            return []
-
-        try:
-            ydata = yaml.safe_load(author_lines)
-        except Exception as e:
-            print(e)
-            return []
-
-        # quit early if the yaml was not valid
-        if not ydata:
-            return []
-
-        # quit if the key was not found
-        if 'author' not in ydata:
-            return []
-
-        if not isinstance(ydata['author'], list):
-            ydata['author'] = [ydata['author']]
-
-        authors = []
-        for author in ydata['author']:
-            github_ids = self.extract_github_id(author)
-            if github_ids:
-                authors.extend(github_ids)
-        return authors
-
-    def extract_github_id(self, author):
-        authors = set()
-
-        if author is None:
-            return []
-        if 'ansible core team' in author.lower():
-            authors.add('ansible')
-        elif '@' in author:
-            # match github ids but not emails
-            authors.update(re.findall(r'(?<!\w)@([\w-]+)(?![\w.])', author))
-        elif 'github.com/' in author:
-            # {'author': 'Henrique Rodrigues (github.com/Sodki)'}
-            idx = author.find('github.com/')
-            author = author[idx+11:]
-            authors.add(author.replace(')', ''))
-        elif '(' in author and len(author.split()) == 3:
-            # Mathieu Bultel (matbu)
-            idx = author.find('(')
-            author = author[idx+1:]
-            authors.add(author.replace(')', ''))
-
-        # search for emails
-        for email in re.findall(r'[<(]([^@]+@[^)>]+)[)>]', author):
-            github_id = self.emails_cache.get(email)
-            if github_id:
-                authors.add(github_id)
-
-        return list(authors)
 
     def set_module_imports(self):
         for k, v in self.modules.items():

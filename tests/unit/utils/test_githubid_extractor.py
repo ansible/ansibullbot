@@ -1,19 +1,11 @@
 import unittest
-from ansibullbot.utils.moduletools import ModuleIndexer
 
-
-class ModuleIndexerMock:
-    def __init__(self, *args, **kwargs):
-        self.emails_cache = {}
+from ansibullbot.utils.extractors import ModuleExtractor
 
 
 class TestGitHubIdExtractor(unittest.TestCase):
-
-    def setUp(self):
-        self.indexer = ModuleIndexerMock()
-        self.extract = ModuleIndexer.extract_github_id.__get__(self.indexer, ModuleIndexer)
-
     def test_extract(self):
+        ME = ModuleExtractor('')
         authors = [
             (None, []),  # Testing for None, which should return an empty list,
             ('#- "Hai Cao <t-haicao@microsoft.com>"', []),  # Commented out author line should return an empty list
@@ -28,22 +20,26 @@ class TestGitHubIdExtractor(unittest.TestCase):
         ]
 
         for line, githubids in authors:
-            self.assertEqual(set(githubids), set(self.extract(line)))
+            self.assertEqual(set(githubids), set(ME.extract_github_id(line)))
 
     def test_notfound(self):
+        ME = ModuleExtractor('')
         authors = [
             'firstname lastname',
             'First Last (name@domain.example)',
         ]
 
         for line in authors:
-            self.assertFalse(self.extract(line))
+            self.assertFalse(ME.extract_github_id(line))
 
     def test_extract_email(self):
-        self.indexer.emails_cache = {
-            'first@last.example': 'github',
-            'last@domain.example': 'github2',
-        }
+        ME = ModuleExtractor(
+            '',
+            email_cache={
+                'first@last.example': 'github',
+                'last@domain.example': 'github2',
+            }
+        )
 
         authors = [
             ('First-Name Last (first@last.example)', ['github']),  # known email
@@ -53,4 +49,4 @@ class TestGitHubIdExtractor(unittest.TestCase):
         ]
 
         for line, githubids in authors:
-            self.assertEqual(set(githubids), set(self.extract(line)))
+            self.assertEqual(set(githubids), set(ME.extract_github_id(line)))
