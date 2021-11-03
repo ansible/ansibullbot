@@ -48,32 +48,6 @@ class GithubWrapper:
             )
 
     @RateLimited
-    def get_members(self, org, teams):
-        members = set()
-
-        gh_org = self.get_org(org)
-        for team in gh_org.get_teams():
-            if team.name in teams:
-                for member in team.get_members():
-                    members.add(member.login)
-
-        return sorted(members)
-
-    @RateLimited
-    def get_valid_labels(self, repo):
-        return [l.name for l in self.get_repo(repo).labels]
-
-    @RateLimited
-    def get_org(self, org):
-        org = self.gh.get_organization(org)
-        return org
-
-    @RateLimited
-    def get_repo(self, repo_path):
-        repo = RepoWrapper(self.gh, repo_path, cachedir=self.cachedir)
-        return repo
-
-    @RateLimited
     def get_cached_request(self, url):
         '''Use a combination of sqlite and ondisk caching to GET an api resource'''
         url_parts = url.split('/')
@@ -158,16 +132,6 @@ class GithubWrapper:
                 data.update(_data)
 
         return data
-
-    @RateLimited
-    def delete_request(self, url):
-        headers = {
-            'Accept': ','.join(HEADERS),
-            'Authorization': 'Bearer %s' % self.token,
-        }
-
-        rr = requests.delete(url, headers=headers)
-        return rr.ok
 
 
 class RepoWrapper:
@@ -281,12 +245,12 @@ class RepoWrapper:
     @RateLimited
     def load_update_fetch(self, property_name):
         '''Fetch a get() property for an object'''
-
         edata = None
         events = []
         updated = None
         update = False
         write_cache = False
+
         self.repo.update()
 
         pfile = os.path.join(self.cachedir, '%s.pickle' % property_name)

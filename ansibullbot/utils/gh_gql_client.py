@@ -1,6 +1,3 @@
-# https://developer.github.com/v4/explorer/
-# https://developer.github.com/v4/guides/forming-calls/
-
 import json
 import logging
 import time
@@ -14,6 +11,22 @@ import requests
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
 
+
+QUERY_TEAM_MEMBERS_TEMPLATE = """
+{
+    organization(login: "$login") {
+      team(slug: "$slug") {
+        members {
+          edges {
+            node {
+              login
+            }
+          }
+        }
+      }
+    }
+}
+"""
 
 QUERY_FIELDS = """
 id
@@ -98,6 +111,17 @@ class GithubGraphQLClient:
             'Accept': 'application/json',
             'Authorization': 'Bearer %s' % self.token,
         }
+
+    def get_members(self, org, team):
+        query = Template(QUERY_TEAM_MEMBERS_TEMPLATE).substitute(login=org, slug=team)
+        resp = requests.post(self.baseurl, headers=self.headers, data=json.dumps({'query': query}))
+        if not resp.ok:
+            raise Exception
+        data = resp.json()
+        if not data:
+            raise Exception
+        edges = data.get('data', {}).get('organization', {}).get('team', {}).get('members', {}).get('edges', [])
+        return sorted(set((e.get('node', {}).get('login') for e in edges)))
 
     def get_issue_summaries(self, repo_url):
         """Return a dict of all issue summaries with numbers as keys

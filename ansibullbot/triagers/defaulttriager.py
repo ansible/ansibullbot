@@ -35,7 +35,7 @@ from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.logs import set_logger
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
-from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
+from ansibullbot.wrappers.ghapiwrapper import GithubWrapper, RepoWrapper
 
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath[::-1].index('ansibullbot')
@@ -129,7 +129,7 @@ class DefaultTriager:
             teams = C.DEFAULT_GITHUB_MAINTAINERS
             for team in teams:
                 _org, _team = team.split('/')
-                self._maintainer_team.extend(self.ghw.get_members(_org, _team))
+                self._maintainer_team.extend(self.gqlc.get_members(_org, _team))
         return sorted(set(self._maintainer_team).difference(C.DEFAULT_BOT_NAMES))
 
     @classmethod
@@ -398,6 +398,8 @@ class DefaultTriager:
     def _collect_repo(self, repo, issuenums=None):
         '''Collect issues for an individual repo'''
         logging.info('getting repo obj for %s' % repo)
+        repo_obj = RepoWrapper(self.ghw.gh, repo, cachedir=self.cachedir_base)
+
         if repo not in self.repos:
             gitrepo = GitRepoWrapper(
                 cachedir=self.cachedir_base,
@@ -405,19 +407,20 @@ class DefaultTriager:
                 commit=self.args.ansible_commit,
             )
             self.repos[repo] = {
-                'repo': self.ghw.get_repo(repo),
+                'repo': repo_obj,
                 'issues': [],
                 'processed': [],
                 'since': None,
                 'stale': [],
                 'loopcount': 0,
-                'labels': self.ghw.get_valid_labels(repo),
+                'labels': [l.name for l in repo_obj.labels],
                 'gitrepo': gitrepo,
             }
         else:
             # force a clean repo object to limit caching problems
             logging.info('updating repo')
-            self.repos[repo]['repo'] = self.ghw.get_repo(repo)
+            self.repos[repo]['repo'] = repo_obj
+
             logging.info('updating checkout')
             self.repos[repo]['gitrepo'].update()
 
