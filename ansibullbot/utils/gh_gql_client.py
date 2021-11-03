@@ -4,11 +4,12 @@
 import json
 import logging
 import time
-import requests
+
 from collections import defaultdict
 from operator import itemgetter
+from string import Template
 
-import jinja2
+import requests
 
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
@@ -28,8 +29,8 @@ repository {
 
 QUERY_TEMPLATE = """
 {
-    repository(owner:"{{ OWNER }}", name:"{{ REPO }}") {
-        {{ OBJECT_TYPE }}({{ OBJECT_PARAMS }}) {
+    repository(owner:"$owner", name:"$repo") {
+        $object_type($object_params) {
             pageInfo {
                 startCursor
                 endCursor
@@ -38,7 +39,7 @@ QUERY_TEMPLATE = """
             }
             edges {
                 node {
-                {{ FIELDS }}
+                $fields
                 }
             }
         }
@@ -48,9 +49,9 @@ QUERY_TEMPLATE = """
 
 QUERY_TEMPLATE_SINGLE_NODE = """
 {
-    repository(owner:"{{ OWNER }}", name:"{{ REPO }}") {
-          {{ OBJECT_TYPE }}({{ OBJECT_PARAMS }}){
-            {{ FIELDS }}
+    repository(owner:"$owner", name:"$repo") {
+          $object_type($object_params){
+            $fields
         }
     }
 }
@@ -58,12 +59,12 @@ QUERY_TEMPLATE_SINGLE_NODE = """
 
 QUERY_TEMPLATE_BLAME = """
 query {
-  repository(owner: "{{ OWNER }}", name: "{{ REPO }}") {
+  repository(owner: "$owner", name: "$repo") {
     ... on Repository {
-      ref(qualifiedName: "{{ BRANCH }}") {
+      ref(qualifiedName: "$branch") {
         target {
           ... on Commit {
-            blame(path: "{{ PATH }}") {
+            blame(path: "$path") {
               ranges {
                 commit {
                   oid
@@ -97,7 +98,6 @@ class GithubGraphQLClient:
             'Accept': 'application/json',
             'Authorization': 'Bearer %s' % self.token,
         }
-        self.environment = jinja2.Environment()
 
     def get_issue_summaries(self, repo_url):
         """Return a dict of all issue summaries with numbers as keys
@@ -177,7 +177,7 @@ class GithubGraphQLClient:
 
         """
 
-        templ = self.environment.from_string(QUERY_TEMPLATE)
+        templ = Template(QUERY_TEMPLATE)
         after = None
         nodes = []
         pagecount = 0
@@ -186,10 +186,9 @@ class GithubGraphQLClient:
                           (owner, repo, otype, pagecount, len(nodes)))
 
             issueparams = ', '.join([x for x in [states, first, last, after] if x])
-            query = templ.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS=issueparams, FIELDS=QUERY_FIELDS)
+            query = templ.substitute(owner=owner, repo=repo, object_type=otype, object_params=issueparams, fields=QUERY_FIELDS)
 
             payload = {
-                #u'query': to_bytes(query, 'ascii', 'ignore').strip(),
                 'query': to_text(query, 'ascii', 'ignore').strip(),
                 'variables': '{}',
                 'operationName': None
@@ -232,9 +231,9 @@ class GithubGraphQLClient:
         owner = repo_url.split('/', 1)[0]
         repo = repo_url.split('/', 1)[1]
 
-        template = self.environment.from_string(QUERY_TEMPLATE_SINGLE_NODE)
+        template = Template(QUERY_TEMPLATE_SINGLE_NODE)
 
-        query = template.render(OWNER=owner, REPO=repo, OBJECT_TYPE=otype, OBJECT_PARAMS='number: %s' % number, FIELDS=QUERY_FIELDS)
+        query = template.substitute(owner=owner, repo=repo, object_type=otype, object_params='number: %s' % number, fields=QUERY_FIELDS)
 
         payload = {
             'query': to_bytes(query, 'ascii', 'ignore').strip(),
@@ -268,11 +267,11 @@ class GithubGraphQLClient:
         node['type'] = node_type
 
     def get_usernames_from_filename_blame(self, owner, repo, branch, filepath):
-        template = self.environment.from_string(QUERY_TEMPLATE_BLAME)
+        template = Template(QUERY_TEMPLATE_BLAME)
         committers = defaultdict(set)
         emailmap = {}
 
-        query = template.render(OWNER=owner, REPO=repo, BRANCH=branch, PATH=filepath)
+        query = template.substitute(owner=owner, repo=repo, branch=branch, path=filepath)
 
         payload = {
             'query': to_text(
