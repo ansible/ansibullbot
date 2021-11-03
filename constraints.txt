@@ -11,15 +11,11 @@ certifi==2021.10.8
     #   requests
     #   sentry-sdk
 cffi==1.15.0
-    # via
-    #   cryptography
-    #   pynacl
+    # via pynacl
 charset-normalizer==2.0.7
     # via requests
 coverage==6.1.1
     # via pytest-cov
-cryptography==35.0.0
-    # via -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
 deprecated==1.2.13
     # via pygithub
 greenlet==1.1.2
@@ -29,14 +25,11 @@ idna==3.3
 iniconfig==1.1.1
     # via pytest
 jinja2==3.0.2
-    # via
-    #   -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
-    #   -r requirements.txt
+    # via -r requirements.txt
 markupsafe==2.0.1
     # via jinja2
 packaging==21.2
     # via
-    #   -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
     #   pytest
     #   pytest-sugar
 pluggy==1.0.0
@@ -63,15 +56,11 @@ pytest-cov==3.0.0
 pytest-sugar==0.9.4
     # via -r test-requirements.txt
 pyyaml==6.0
-    # via
-    #   -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
-    #   -r requirements.txt
+    # via -r requirements.txt
 requests==2.26.0
     # via
     #   -r requirements.txt
     #   pygithub
-resolvelib==0.5.4
-    # via -r https://raw.githubusercontent.com/ansible/ansible/devel/requirements.txt
 sentry-sdk==1.4.3
     # via -r requirements.txt
 six==1.16.0
@@ -90,6 +79,3 @@ urllib3==1.26.7
     #   sentry-sdk
 wrapt==1.13.3
     # via deprecated
-
-# The following packages are considered to be unsafe in a requirements file:
-# setuptools
