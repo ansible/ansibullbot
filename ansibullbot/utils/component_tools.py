@@ -1512,15 +1512,12 @@ class AnsibleComponentMatcher:
             _pattern = pattern
             if not isinstance(_pattern, str):
                 _pattern = to_text(_pattern)
-            candidates = []
             for k, v in self.MODULES.items():
                 vname = v['name']
                 if not isinstance(vname, str):
                     vname = to_text(vname)
                 close_ratio = difflib.SequenceMatcher(None, vname, _pattern).quick_ratio()
                 if close_ratio > .9:
-                    candidates.append((jw, k))
-            for candidate in candidates:
-                matches.append(self.MODULES[candidate[1]])
+                    matches.append(self.MODULES[k])
 
         return matches
