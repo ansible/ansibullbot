@@ -232,18 +232,6 @@ class AnsibleTriage(DefaultTriager):
                 # keep track of known issues
                 self.repos[repopath]['processed'].append(issue.number)
 
-                if issue.state == 'closed' and not self.args.ignore_state:
-                    logging.info(str(issue.number) + ' is closed, skipping')
-                    continue
-
-                if self.args.only_prs and 'pull' not in issue.html_url:
-                    logging.info(str(issue.number) + ' is issue, skipping')
-                    continue
-
-                if self.args.only_issues and 'pull' in issue.html_url:
-                    logging.info(str(issue.number) + ' is pullrequest, skipping')
-                    continue
-
                 # users may want to re-run this issue after manual intervention
                 redo = True
 
