@@ -409,7 +409,6 @@ class DefaultTriager:
             self.repos[repo] = {
                 'repo': repo_obj,
                 'issues': [],
-                'processed': [],
                 'since': None,
                 'stale': [],
                 'loopcount': 0,

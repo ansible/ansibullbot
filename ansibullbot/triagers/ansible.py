@@ -190,7 +190,7 @@ class AnsibleTriage(DefaultTriager):
             return
 
         icount = 0
-        for repopath, repodata in self.repos.copy().items():
+        for repopath, repodata in self.repos.items():
             repo = repodata['repo']
             cachedir = os.path.join(self.cachedir_base, repopath)
 
@@ -228,9 +228,6 @@ class AnsibleTriage(DefaultTriager):
                 self.meta = {}
                 self.processed_meta = {}
                 self.set_resume(repopath, issue.number)
-
-                # keep track of known issues
-                self.repos[repopath]['processed'].append(issue.number)
 
                 # users may want to re-run this issue after manual intervention
                 redo = True
@@ -320,7 +317,7 @@ class AnsibleTriage(DefaultTriager):
 
                 its2 = datetime.datetime.now()
                 td = (its2 - its1).total_seconds()
-                logging.info('finished triage for %s in %ss' % (to_text(iw), td))
+                logging.info('finished triage for %s in %ss' % (str(issue.number), td))
 
         ts2 = datetime.datetime.now()
         td = (ts2 - ts1).total_seconds()
