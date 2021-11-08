@@ -492,9 +492,8 @@ class DefaultTriager:
         # Get stale numbers if not targeting
         if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
             logging.info('checking for stale numbers')
-            stale = self.get_stale_numbers(repo)
-            self.repos[repo]['stale'] = [int(x) for x in stale]
-            numbers += [int(x) for x in stale]
+            self.repos[repo]['stale'] = [int(x) for x in self.get_stale_numbers(repo)]
+            numbers.extend(self.repos[repo]['stale'])
             numbers = sorted(set(numbers))
             logging.info('%s numbers after stale check' % len(numbers))
 
@@ -502,16 +501,14 @@ class DefaultTriager:
         # PRE-FILTERING TO PREVENT EXCESSIVE API CALLS
         ################################################################
 
-        # filter just the open numbers
-        if not self.args.only_closed and not self.args.ignore_state:
+        if not self.args.ignore_state:
+            issues_state = 'closed' if self.args.only_closed else 'open'
             numbers = [
                 x for x in numbers
-                if (to_text(x) in self.issue_summaries[repo] and
-                self.issue_summaries[repo][to_text(x)]['state'] == 'open')
+                if self.issue_summaries[repo].get(str(x), {}).get('state') == issues_state
             ]
             logging.info('%s numbers after checking state' % len(numbers))
 
-        # filter by type
         if self.args.only_issues:
             numbers = [
                 x for x in numbers
