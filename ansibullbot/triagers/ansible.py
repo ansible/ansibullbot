@@ -148,9 +148,7 @@ class AnsibleTriage(DefaultTriager):
         if iw.number in self.repos[iw.repo_full_name]['stale']:
             return False
 
-        lmeta = self.load_meta(iw.repo_full_name, str(iw.number))
-
-        if not lmeta:
+        if not (lmeta := self.load_meta(iw.repo_full_name, str(iw.number))):
             return False
 
         meta_updated_at = strip_time_safely(lmeta['updated_at'])
@@ -232,7 +230,6 @@ class AnsibleTriage(DefaultTriager):
                 its1 = datetime.datetime.now()
 
                 while redo:
-
                     # use the loopcount to check new data
                     loopcount += 1
 

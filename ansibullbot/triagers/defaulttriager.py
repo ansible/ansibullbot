@@ -362,15 +362,15 @@ class DefaultTriager:
             number,
             'meta.json'
         )
+        meta = {}
         try:
             with open(mfile, 'rb') as f:
                 meta = json.load(f)
         except ValueError as e:
             logging.error("Could not load json from '%s' because: '%s'. Removing the file...", mfile, e)
             os.remove(mfile)
-            return {}
         except OSError as e:
-            return {}
+            pass
         return meta
 
     def get_stale_numbers(self, reponame: str) -> t.List[int]:
@@ -433,14 +433,12 @@ class DefaultTriager:
         self.update_issue_summaries(repopath=repo, issuenums=issuenums)
 
         issuecache = {}
-        numbers = self.issue_summaries[repo].keys()
-        numbers = [int(x) for x in numbers]
+        numbers = [int(x) for x in self.issue_summaries[repo].keys()]
         if issuenums:
             numbers = list(set(numbers).intersection_update(issuenums))
         logging.info('%s known numbers' % len(numbers))
 
         if self.args.daemonize:
-
             if not self.repos[repo]['since']:
                 ts = [
                     x[1]['updated_at'] for x in
