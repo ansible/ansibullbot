@@ -97,7 +97,7 @@ class DefaultTriager:
         self.args = parser.parse_args(args)
 
         logging.info('starting bot')
-        self.set_logger()
+        set_logger(debug=self.args.debug, logfile=self.args.logfile)
 
         self.cachedir_base = os.path.expanduser(self.args.cachedir_base)
         self.repos = {}
@@ -165,25 +165,18 @@ class DefaultTriager:
         parser.add_argument("--sort", default='desc', choices=['asc', 'desc'], help="Direction to sort issues [desc=9-0 asc=0-9]")
         return parser
 
-    def set_logger(self):
-        set_logger(debug=self.args.debug, logfile=self.args.logfile)
-
     def start(self):
         if self.args.daemonize:
             logging.info('starting daemonize loop')
-            self.loop()
+            while True:
+                self.run()
+                interval = self.args.daemonize_interval
+                logging.info('sleep %ss (%sm)' % (interval, interval / 60))
+                time.sleep(interval)
         else:
             logging.info('starting single run')
             self.run()
         logging.info('stopping bot')
-
-    def loop(self):
-        """Call the run method in a defined interval"""
-        while True:
-            self.run()
-            interval = self.args.daemonize_interval
-            logging.info('sleep %ss (%sm)' % (interval, interval / 60))
-            time.sleep(interval)
 
     @abc.abstractmethod
     def run(self):
@@ -300,7 +293,6 @@ class DefaultTriager:
 
     def eval_pr_param(self, pr):
         """PR/ID can be a number, numberlist, script, jsonfile, or url"""
-
         if isinstance(pr, list):
             pass
 
