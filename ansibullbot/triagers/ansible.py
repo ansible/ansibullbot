@@ -23,7 +23,7 @@ import ansibullbot.constants as C
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.errors import LabelWafflingError
 from ansibullbot.parsers.botmetadata import BotMetadataParser
-from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager
+from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, render_boilerplate
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.moduletools import ModuleIndexer
@@ -452,7 +452,7 @@ class AnsibleTriage(DefaultTriager):
                     'pr_type': pr_type,
                     'pr_submitter': iw.submitter,
                 }
-                comment = self.render_boilerplate(
+                comment = render_boilerplate(
                     tvars, boilerplate='incoming_ref_missing',
                 )
                 actions.comments.append(comment)
@@ -464,7 +464,7 @@ class AnsibleTriage(DefaultTriager):
 
             if not iw.from_fork:
                 tvars = {'submitter': iw.submitter}
-                comment = self.render_boilerplate(tvars, boilerplate='fork')
+                comment = render_boilerplate(tvars, boilerplate='fork')
                 actions.comments.append(comment)
                 actions.close = True
                 actions.cancel_ci = True
@@ -477,7 +477,7 @@ class AnsibleTriage(DefaultTriager):
                 tvars = {
                     'meta': self.meta
                 }
-                comment = self.render_boilerplate(
+                comment = render_boilerplate(
                     tvars, boilerplate='components_banner'
                 )
                 if comment not in actions.comments:
@@ -534,7 +534,7 @@ class AnsibleTriage(DefaultTriager):
         if iw.is_pullrequest():
             if self.meta['merge_commits']:
                 if not self.meta['has_merge_commit_notification']:
-                    comment = self.render_boilerplate(
+                    comment = render_boilerplate(
                         self.meta,
                         boilerplate='merge_commit_notify'
                     )
@@ -552,7 +552,7 @@ class AnsibleTriage(DefaultTriager):
             if self.meta['has_commit_mention']:
                 if not self.meta['has_commit_mention_notification']:
 
-                    comment = self.render_boilerplate(
+                    comment = render_boilerplate(
                         self.meta,
                         boilerplate='commit_msg_mentions'
                     )
@@ -588,7 +588,7 @@ class AnsibleTriage(DefaultTriager):
         if iw.is_pullrequest() and not self.meta['is_bad_pr']:
             if needs_community_review(self.meta):
 
-                comment = self.render_boilerplate(
+                comment = render_boilerplate(
                     self.meta,
                     boilerplate='community_shipit_notify'
                 )
@@ -601,7 +601,7 @@ class AnsibleTriage(DefaultTriager):
                 last_comment_date = iw.history.last_date_for_boilerplate('bad_pr')
 
                 if not last_comment_date:
-                    comment = self.render_boilerplate(
+                    comment = render_boilerplate(
                         tvars={'submitter': iw.submitter, 'is_bad_pr_reason': self.meta['is_bad_pr_reason']},
                         boilerplate='bad_pr'
                     )
@@ -638,7 +638,7 @@ class AnsibleTriage(DefaultTriager):
                 }
 
                 try:
-                    comment = self.render_boilerplate(
+                    comment = render_boilerplate(
                         tvars,
                         boilerplate='shippable_test_result'
                     )
@@ -804,7 +804,7 @@ class AnsibleTriage(DefaultTriager):
                     'missing_sections': self.meta['template_missing_sections']
                 }
 
-                comment = self.render_boilerplate(
+                comment = render_boilerplate(
                     tvars,
                     boilerplate='issue_missing_data'
                 )
@@ -838,7 +838,7 @@ class AnsibleTriage(DefaultTriager):
                 }
                 tvars.update(self.meta)
 
-                comment = self.render_boilerplate(
+                comment = render_boilerplate(
                     tvars,
                     boilerplate='needs_info_base'
                 )
@@ -851,7 +851,7 @@ class AnsibleTriage(DefaultTriager):
                 tvars = {
                     'notify': self.meta['to_notify'],
                 }
-                comment = self.render_boilerplate(tvars, boilerplate='notify')
+                comment = render_boilerplate(tvars, boilerplate='notify')
                 if comment not in actions.comments:
                     actions.comments.append(comment)
 
@@ -880,7 +880,7 @@ class AnsibleTriage(DefaultTriager):
 
         # bot_status
         if self.meta['needs_bot_status']:
-            comment = self.render_boilerplate(
+            comment = render_boilerplate(
                 self.meta,
                 boilerplate='bot_status'
             )
@@ -1023,7 +1023,7 @@ class AnsibleTriage(DefaultTriager):
                     tvars = {
                         'submitter': iw.submitter
                     }
-                    comment = self.render_boilerplate(
+                    comment = render_boilerplate(
                         tvars, boilerplate='multiple_module_notify'
                     )
                     if comment not in actions.comments:
@@ -1052,7 +1052,7 @@ class AnsibleTriage(DefaultTriager):
             # should be fine to post just once, hopefully nobody will continue
             # with the PR after this comment...
             if not iw.history.last_date_for_boilerplate('test_support_plugins'):
-                comment = self.render_boilerplate(
+                comment = render_boilerplate(
                     self.meta,
                     boilerplate='test_support_plugins'
                 )
@@ -1107,7 +1107,7 @@ class AnsibleTriage(DefaultTriager):
 
         # https://github.com/ansible/ansibullbot/issues/820
         if self.meta.get('wg', {}).get('needs_notification'):
-            comment = self.render_boilerplate(
+            comment = render_boilerplate(
                 self.meta,
                 boilerplate='community_workgroups'
             )
@@ -1145,7 +1145,7 @@ class AnsibleTriage(DefaultTriager):
                 actions.close = True
                 actions.newlabel.append('bot_closed')
                 if self.meta.get('needs_collection_redirect'):
-                    comment = self.render_boilerplate(
+                    comment = render_boilerplate(
                         self.meta,
                         boilerplate='collection_migration'
                     )

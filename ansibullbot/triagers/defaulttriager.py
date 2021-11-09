@@ -28,7 +28,6 @@ import requests
 from jinja2 import Environment, FileSystemLoader
 
 from ansibullbot import constants as C
-from ansibullbot._text_compat import to_text
 from ansibullbot.decorators.github import RateLimited
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.utils.git_tools import GitRepoWrapper
@@ -38,12 +37,16 @@ from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.wrappers.ghapiwrapper import GithubWrapper, RepoWrapper
 
+
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath[::-1].index('ansibullbot')
 libindex = (len(basepath) - 1) - libindex
 basepath = '/'.join(basepath[0:libindex])
-loader = FileSystemLoader(os.path.join(basepath, 'templates'))
-environment = Environment(loader=loader, trim_blocks=True)
+
+_environment = Environment(
+    loader=FileSystemLoader(os.path.join(basepath, 'templates')),
+    trim_blocks=True
+)
 
 
 class DefaultActions:
@@ -69,6 +72,10 @@ class DefaultActions:
         return count
 
 
+def render_boilerplate(tvars: t.Dict[str, t.Any], boilerplate: str) -> str:
+    return _environment.get_template(f'{boilerplate}.j2').render(**tvars)
+
+
 class DefaultTriager:
     """
     How to use:
@@ -90,10 +97,9 @@ class DefaultTriager:
         self.args = parser.parse_args(args)
 
         logging.info('starting bot')
-        self.set_logger()
+        set_logger(debug=self.args.debug, logfile=self.args.logfile)
 
         self.cachedir_base = os.path.expanduser(self.args.cachedir_base)
-        self.issue_summaries = {}
         self.repos = {}
 
         # resume is just an overload for the start-at argument
@@ -159,34 +165,22 @@ class DefaultTriager:
         parser.add_argument("--sort", default='desc', choices=['asc', 'desc'], help="Direction to sort issues [desc=9-0 asc=0-9]")
         return parser
 
-    def set_logger(self):
-        set_logger(debug=self.args.debug, logfile=self.args.logfile)
-
     def start(self):
         if self.args.daemonize:
             logging.info('starting daemonize loop')
-            self.loop()
+            while True:
+                self.run()
+                interval = self.args.daemonize_interval
+                logging.info('sleep %ss (%sm)' % (interval, interval / 60))
+                time.sleep(interval)
         else:
             logging.info('starting single run')
             self.run()
         logging.info('stopping bot')
 
-    def loop(self):
-        """Call the run method in a defined interval"""
-        while True:
-            self.run()
-            interval = self.args.daemonize_interval
-            logging.info('sleep %ss (%sm)' % (interval, interval / 60))
-            time.sleep(interval)
-
     @abc.abstractmethod
     def run(self):
         pass
-
-    def render_boilerplate(self, tvars, boilerplate=None):
-        template = environment.get_template('%s.j2' % boilerplate)
-        comment = template.render(**tvars)
-        return comment
 
     def apply_actions(self, iw, actions):
         action_meta = {'REDO': False}
@@ -271,7 +265,7 @@ class DefaultTriager:
             f.write(json.dumps(actions, indent=2, sort_keys=True))
 
     def get_resume(self):
-        '''Returns a dict with the last issue repo+number processed'''
+        """Returns a dict with the last issue repo+number processed"""
         if self.args.pr or not self.args.resume_enabled:
             return
 
@@ -298,8 +292,7 @@ class DefaultTriager:
             json.dump(data, f)
 
     def eval_pr_param(self, pr):
-        '''PR/ID can be a number, numberlist, script, jsonfile, or url'''
-
+        """PR/ID can be a number, numberlist, script, jsonfile, or url"""
         if isinstance(pr, list):
             pass
 
@@ -320,7 +313,7 @@ class DefaultTriager:
             # allow for scripts when trying to target spec issues
             logging.info('executing %s' % pr)
             (rc, so, se) = run_command(pr)
-            numbers = json.loads(to_text(so))
+            numbers = json.loads(str(so))
             if numbers:
                 if isinstance(numbers[0], dict) and 'number' in numbers[0]:
                     numbers = [x['number'] for x in numbers]
@@ -340,20 +333,6 @@ class DefaultTriager:
 
         return pr
 
-    def update_issue_summaries(self, repopath=None, issuenums=None):
-        if issuenums and len(issuenums) <= 10:
-            self.issue_summaries[repopath] = {}
-
-            for num in issuenums:
-                # --pr is an alias to --id and can also be for issues
-                node = self.gqlc.get_summary(repopath, 'pullRequest', num)
-                if node is None:
-                    node = self.gqlc.get_summary(repopath, 'issue', num)
-                if node is not None:
-                    self.issue_summaries[repopath][to_text(num)] = node
-        else:
-            self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(repopath)
-
     def load_meta(self, reponame: str, number: str) -> t.Dict[str, t.Any]:
         mfile = os.path.join(
             self.cachedir_base,
@@ -369,13 +348,13 @@ class DefaultTriager:
         except ValueError as e:
             logging.error("Could not load json from '%s' because: '%s'. Removing the file...", mfile, e)
             os.remove(mfile)
-        except OSError as e:
+        except OSError:
             pass
         return meta
 
-    def get_stale_numbers(self, reponame: str) -> t.List[int]:
+    def get_stale_numbers(self, reponame: str, issue_summaries: t.Dict[str, t.Dict[str, t.Any]]) -> t.List[int]:
         stale = []
-        for number, summary in self.issue_summaries[reponame].items():
+        for number, summary in issue_summaries.items():
             if number in stale:
                 continue
             if summary['state'] == 'closed':
@@ -397,7 +376,7 @@ class DefaultTriager:
 
     @RateLimited
     def _collect_repo(self, repo, issuenums=None):
-        '''Collect issues for an individual repo'''
+        """Collect issues for an individual repo"""
         logging.info('getting repo obj for %s' % repo)
         repo_obj = RepoWrapper(self.ghw.gh, repo, cachedir=self.cachedir_base)
 
@@ -430,24 +409,34 @@ class DefaultTriager:
             self.repos[repo]['loopcount'] += 1
 
         logging.info('getting issue objs for %s' % repo)
-        self.update_issue_summaries(repopath=repo, issuenums=issuenums)
+        issue_summaries = {}
+        if issuenums and len(issuenums) <= 10:
+            for num in issuenums:
+                for object_type in ('pullRequest', 'issue'):
+                    node = self.gqlc.get_summary(repo, object_type, num)
+                    if node is not None:
+                        issue_summaries[str(num)] = node
+                        break
+        else:
+            issue_summaries = self.gqlc.get_issue_summaries(repo)
 
         issuecache = {}
-        numbers = [int(x) for x in self.issue_summaries[repo].keys()]
+        numbers = [int(x) for x in issue_summaries.keys()]
         if issuenums:
-            numbers = list(set(numbers).intersection_update(issuenums))
+            number = set(numbers).intersection_update(issuenums)
+            numbers = list(numbers)
         logging.info('%s known numbers' % len(numbers))
 
         if self.args.daemonize:
             if not self.repos[repo]['since']:
                 ts = [
                     x[1]['updated_at'] for x in
-                    self.issue_summaries[repo].items()
+                    issue_summaries.items()
                     if x[1]['updated_at']
                 ]
                 ts += [
                     x[1]['created_at'] for x in
-                    self.issue_summaries[repo].items()
+                    issue_summaries.items()
                     if x[1]['created_at']
                 ]
                 ts = sorted(set(ts))
@@ -468,7 +457,7 @@ class DefaultTriager:
                     (len(numbers), since)
                 )
 
-                for k, v in self.issue_summaries[repo].items():
+                for k, v in issue_summaries.items():
                     if v['created_at'] is None:
                         # issue is closed and was never processed
                         continue
@@ -489,7 +478,7 @@ class DefaultTriager:
         # Get stale numbers if not targeting
         if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
             logging.info('checking for stale numbers')
-            self.repos[repo]['stale'] = [int(x) for x in self.get_stale_numbers(repo)]
+            self.repos[repo]['stale'] = [int(x) for x in self.get_stale_numbers(repo, issue_summaries)]
             numbers.extend(self.repos[repo]['stale'])
             numbers = sorted(set(numbers))
             logging.info('%s numbers after stale check' % len(numbers))
@@ -502,20 +491,20 @@ class DefaultTriager:
             issues_state = 'closed' if self.args.only_closed else 'open'
             numbers = [
                 x for x in numbers
-                if self.issue_summaries[repo].get(str(x), {}).get('state') == issues_state
+                if issue_summaries.get(str(x), {}).get('state') == issues_state
             ]
             logging.info('%s numbers after checking state' % len(numbers))
 
         if self.args.only_issues:
             numbers = [
                 x for x in numbers
-                if self.issue_summaries[repo][to_text(x)]['type'] == 'issue'
+                if issue_summaries[str(x)]['type'] == 'issue'
             ]
             logging.info('%s numbers after checking type' % len(numbers))
         elif self.args.only_prs:
             numbers = [
                 x for x in numbers
-                if self.issue_summaries[repo][to_text(x)]['type'] == 'pullrequest'
+                if issue_summaries[str(x)]['type'] == 'pullrequest'
             ]
             logging.info('%s numbers after checking type' % len(numbers))
 
@@ -536,7 +525,7 @@ class DefaultTriager:
         logging.info('getting repo objs for %s complete' % repo)
 
     def collect_repos(self):
-        '''Populate the local cache of repos'''
+        """Populate the local cache of repos"""
         logging.info('start collecting repos')
         for repo in C.DEFAULT_GITHUB_REPOS:
             # skip repos based on args
