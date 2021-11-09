@@ -423,7 +423,8 @@ class DefaultTriager:
         issuecache = {}
         numbers = [int(x) for x in issue_summaries.keys()]
         if issuenums:
-            number = set(numbers).intersection_update(issuenums)
+            numbers = set(numbers)
+            numbers.intersection_update(issuenums)
             numbers = list(numbers)
         logging.info('%s known numbers' % len(numbers))
 
