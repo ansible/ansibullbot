@@ -144,36 +144,29 @@ class AnsibleTriage(DefaultTriager):
         logging.info('ansible triager [re]loading botmeta')
         return BotMetadataParser.parse_yaml(rdata)
 
-    def _should_skip_issue(self, iw, repopath):
-        lmeta = self.load_meta(iw)
+    def _should_skip_issue(self, iw):
+        if iw.number in self.repos[iw.repo_full_name]['stale']:
+            return False
+
+        lmeta = self.load_meta(iw.repo_full_name, str(iw.number))
 
         if not lmeta:
             return False
 
-        if lmeta['updated_at'] != to_text(iw.updated_at.isoformat()):
-            return False
+        meta_updated_at = strip_time_safely(lmeta['updated_at'])
 
-        # re-check ansible/ansible after a window of time since the last check.
-        days_stale = (datetime.datetime.now() - strip_time_safely(lmeta['time'])).days
-        if days_stale > C.DEFAULT_STALE_WINDOW:
-            logging.info('!skipping: %s days since last check' % days_stale)
+        if meta_updated_at != iw.updated_at:
             return False
 
         if iw.is_pullrequest():
-            # always poll rebuilds till they are merged
             if lmeta.get('needs_rebuild') or lmeta.get('admin_merge'):
                 return False
 
-            if to_text(iw.pullrequest.updated_at.isoformat()) > lmeta['updated_at']:
+            if iw.pullrequest.updated_at > meta_updated_at:
                 return False
 
-            # if last process time is older than last completion time on CI, we need
-            # to reprocess because the CI status has probabaly changed.
-            if self.ci.updated_at and self.ci.updated_at > strip_time_safely(lmeta['updated_at']):
+            if self.ci.updated_at and self.ci.updated_at > meta_updated_at:
                 return False
-
-        if iw.number in self.repos[repopath]['stale']:
-            return False
 
         logging.info('skipping: no changes since last run')
         return True
@@ -268,9 +261,8 @@ class AnsibleTriage(DefaultTriager):
                     else:
                         self.ci = None
 
-                    if self.args.skip_no_update:
-                        if self._should_skip_issue(iw, repopath):
-                            continue
+                    if self.args.skip_no_update and self._should_skip_issue(iw):
+                        continue
 
                     # force an update on the PR data
                     iw.update_pullrequest()
@@ -377,22 +369,6 @@ class AnsibleTriage(DefaultTriager):
             dmeta_copy
         )
         self.processed_meta = dmeta_copy.copy()
-
-    def load_meta(self, issuewrapper):
-        mfile = os.path.join(
-            issuewrapper.full_cachedir,
-            'meta.json'
-        )
-        meta = {}
-        if os.path.isfile(mfile):
-            try:
-                with open(mfile, 'rb') as f:
-                    meta = json.load(f)
-            except ValueError as e:
-                logging.error("Could not load json from '%s' because: '%s'. Removing the file...", f.name, e)
-                os.remove(mfile)
-                return {}
-        return meta
 
     def dump_meta(self, issuewrapper, meta):
         mfile = os.path.join(
