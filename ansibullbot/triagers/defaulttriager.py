@@ -22,6 +22,7 @@ import logging
 import os
 import sys
 import time
+import typing as t
 
 import requests
 from jinja2 import Environment, FileSystemLoader
@@ -353,44 +354,44 @@ class DefaultTriager:
         else:
             self.issue_summaries[repopath] = self.gqlc.get_issue_summaries(repopath)
 
-    def get_stale_numbers(self, reponame):
+    def load_meta(self, reponame: str, number: str) -> t.Dict[str, t.Any]:
+        mfile = os.path.join(
+            self.cachedir_base,
+            reponame,
+            'issues',
+            number,
+            'meta.json'
+        )
+        meta = {}
+        try:
+            with open(mfile, 'rb') as f:
+                meta = json.load(f)
+        except ValueError as e:
+            logging.error("Could not load json from '%s' because: '%s'. Removing the file...", mfile, e)
+            os.remove(mfile)
+        except OSError as e:
+            pass
+        return meta
+
+    def get_stale_numbers(self, reponame: str) -> t.List[int]:
         stale = []
         for number, summary in self.issue_summaries[reponame].items():
             if number in stale:
                 continue
-
             if summary['state'] == 'closed':
                 continue
 
-            number = int(number)
-            mfile = os.path.join(
-                self.cachedir_base,
-                reponame,
-                'issues',
-                to_text(number),
-                'meta.json'
-            )
-
-            if not os.path.isfile(mfile):
-                stale.append(number)
+            if not (meta := self.load_meta(reponame, number)):
+                stale.append(int(number))
                 continue
 
-            try:
-                with open(mfile, 'rb') as f:
-                    meta = json.load(f)
-            except ValueError as e:
-                logging.error('failed to parse %s: %s' % (to_text(mfile), to_text(e)))
-                os.remove(mfile)
-                stale.append(number)
-                continue
+            days_stale = (datetime.datetime.now() - strip_time_safely(meta['time'])).days
+            if days_stale > C.DEFAULT_STALE_WINDOW:
+                stale.append(int(number))
 
-            delta = (datetime.datetime.now() - strip_time_safely(meta['time'])).days
-            if delta > C.DEFAULT_STALE_WINDOW:
-                stale.append(number)
-
-        stale = sorted({int(x) for x in stale})
+        stale = sorted(stale)
         if 10 >= len(stale) > 0:
-            logging.info('stale: %s' % ','.join([to_text(x) for x in stale]))
+            logging.info('stale: %s' % stale)
 
         return stale
 
@@ -432,15 +433,12 @@ class DefaultTriager:
         self.update_issue_summaries(repopath=repo, issuenums=issuenums)
 
         issuecache = {}
-        numbers = self.issue_summaries[repo].keys()
-        numbers = {int(x) for x in numbers}
+        numbers = [int(x) for x in self.issue_summaries[repo].keys()]
         if issuenums:
-            numbers.intersection_update(issuenums)
-            numbers = list(numbers)
+            numbers = list(set(numbers).intersection_update(issuenums))
         logging.info('%s known numbers' % len(numbers))
 
         if self.args.daemonize:
-
             if not self.repos[repo]['since']:
                 ts = [
                     x[1]['updated_at'] for x in
