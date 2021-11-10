@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from ansibullbot.decorators.github import get_rate_limit
+from ansibullbot.utils.github import get_rate_limit
 
 
 class RequestsResponseMock:

@@ -7,7 +7,7 @@ import pytest
 
 from tests.utils.componentmocks import BotMockManager
 
-from ansibullbot.triagers.ansible import AnsibleTriage
+from ansibullbot.ansibletriager import AnsibleTriager
 
 
 class TestIdempotence:
@@ -65,7 +65,7 @@ class TestIdempotence:
             # add needs info issue
             mm.issuedb.add_issue(body="I don't like issue templates!", login='clouddev')
 
-            AT = AnsibleTriage(args=bot_args)
+            AT = AnsibleTriager(args=bot_args)
             for x in range(0, 2):
                 print('################################################################')
                 print('                     START RUN')

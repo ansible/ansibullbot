@@ -1,6 +1,6 @@
 import pytest
 
-from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_command_facts
+from ansibullbot.plugins import get_rebuild_command_facts
 
 from tests.utils.helpers import get_issue
 

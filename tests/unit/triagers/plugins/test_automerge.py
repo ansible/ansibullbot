@@ -1,6 +1,6 @@
 import unittest
 
-from ansibullbot.triagers.plugins.shipit import get_automerge_facts
+from ansibullbot.plugins import get_automerge_facts
 
 
 class HistoryWrapperMock:

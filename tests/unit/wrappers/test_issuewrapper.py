@@ -5,7 +5,7 @@ import tempfile
 
 from unittest import mock
 
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.issuewrapper import IssueWrapper
 
 
 class GithubIssueMock:

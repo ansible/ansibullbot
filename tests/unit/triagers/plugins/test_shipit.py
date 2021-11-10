@@ -9,12 +9,12 @@ import pytest
 
 from tests.utils.issue_mock import IssueMock
 from tests.utils.helpers import get_issue
-from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
-from ansibullbot.triagers.plugins.shipit import get_automerge_facts
-from ansibullbot.triagers.plugins.shipit import get_review_facts
-from ansibullbot.triagers.plugins.shipit import get_shipit_facts
-from ansibullbot.triagers.plugins.shipit import is_approval
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.plugins import get_component_match_facts
+from ansibullbot.plugins import get_automerge_facts
+from ansibullbot.plugins import get_review_facts
+from ansibullbot.plugins import get_shipit_facts
+from ansibullbot.plugins import is_approval
+from ansibullbot.issuewrapper import IssueWrapper
 
 
 class ComponentMatcherMock:

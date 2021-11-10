@@ -2,7 +2,7 @@ import os
 import shutil
 import unittest
 
-from ansibullbot.parsers.botmetadata import BotMetadataParser
+from ansibullbot.utils.botmetadata import BotMetadataParser
 
 EXAMPLE1 = """
 ---

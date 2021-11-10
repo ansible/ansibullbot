@@ -25,10 +25,10 @@ import time
 import requests
 
 import ansibullbot.constants as C
-from ansibullbot.decorators.github import RateLimited
+from ansibullbot.utils.github import RateLimited
 from ansibullbot.utils.extractors import get_template_data
 from ansibullbot.utils.timetools import strip_time_safely
-from ansibullbot.wrappers.historywrapper import HistoryWrapper
+from ansibullbot.historywrapper import HistoryWrapper
 
 
 class UnsetValue:

@@ -14,7 +14,7 @@ import traceback
 from requests.exceptions import ReadTimeout
 
 from ansibullbot._text_compat import to_text
-from ansibullbot.errors import RateLimitError
+from ansibullbot.exceptions import RateLimitError
 from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
 import ansibullbot.constants as C

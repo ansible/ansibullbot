@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from ansibullbot.wrappers.historywrapper import HistoryWrapper
+from ansibullbot.historywrapper import HistoryWrapper
 
 
 class IssueMock:

@@ -19,17 +19,15 @@ from __future__ import print_function
 
 import datetime
 import json
-import logging
 import os
 import sys
 import tempfile
-import time
 
 from itertools import zip_longest
 from multiprocessing import Process
 
 from logzero import logger
-from ansibullbot.triagers.ansible import AnsibleTriage
+from ansibullbot.ansibletriager import AnsibleTriager
 
 
 def run_triage_worker(numbers):
@@ -46,7 +44,7 @@ def run_triage_worker(numbers):
     args.append('--id=%s' % tfn)
     logger.info(args)
 
-    triager = AnsibleTriage(args=args, update_checkouts=False)
+    triager = AnsibleTriager(args=args, update_checkouts=False)
     triager.run()
 
     os.remove(tfn)
@@ -67,7 +65,7 @@ def main():
     #AnsibleTriage(args=sys.argv[1:]).start()
 
     # init just creates all the tools ...
-    parent = AnsibleTriage(args=sys.argv[1:])
+    parent = AnsibleTriager(args=sys.argv[1:])
 
     # collect_repos() gets all the issues to be triaged ...
     parent.collect_repos()

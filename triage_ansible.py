@@ -20,7 +20,7 @@ from __future__ import print_function
 import logging
 import sys
 
-from ansibullbot.triagers.ansible import AnsibleTriage
+from ansibullbot.ansibletriager import AnsibleTriager
 from ansibullbot.utils.sentry import initialize_sentry
 
 
@@ -38,7 +38,7 @@ def main():
     initialize_sentry()
 
     # Run the triager ...
-    AnsibleTriage(args=sys.argv[1:]).start()
+    AnsibleTriager(args=sys.argv[1:]).start()
 
 
 if __name__ == "__main__":

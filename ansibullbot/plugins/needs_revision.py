@@ -1,8 +1,8 @@
 import datetime
 import logging
 
-from ansibullbot.errors import NoCIError
-from ansibullbot.triagers.plugins.shipit import is_approval
+from ansibullbot.exceptions import NoCIError
+from ansibullbot.plugins.shipit import is_approval
 from ansibullbot.utils.timetools import strip_time_safely
 
 

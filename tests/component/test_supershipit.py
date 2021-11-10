@@ -8,7 +8,7 @@ import yaml
 from tests.utils.componentmocks import BotMockManager
 from tests.utils.componentmocks import get_custom_timestamp
 
-from ansibullbot.triagers.ansible import AnsibleTriage
+from ansibullbot.ansibletriager import AnsibleTriager
 
 
 class TestSuperShipit:
@@ -77,7 +77,7 @@ class TestSuperShipit:
             mm.issuedb.add_issue_file('test/sanity/ignore.txt', number=2, additions=1, created_at=ts)
             mm.issuedb.add_issue_comment('shipit', login='jiffy', number=2)
 
-            AT = AnsibleTriage(args=bot_args)
+            AT = AnsibleTriager(args=bot_args)
             AT.run()
 
             # /tmp/ansibot.test.isxYlS/ansible/ansible/issues/1/meta.json                

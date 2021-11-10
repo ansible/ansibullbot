@@ -3,8 +3,8 @@ import tempfile
 
 from unittest.mock import patch, Mock
 
-from ansibullbot.errors import RateLimitError
-from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
+from ansibullbot.exceptions import RateLimitError
+from ansibullbot.ghapiwrapper import GithubWrapper
 
 
 response_mock = Mock()

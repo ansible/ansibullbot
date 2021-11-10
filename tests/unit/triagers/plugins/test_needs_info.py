@@ -3,7 +3,7 @@ import unittest
 
 from unittest import mock
 
-from ansibullbot.triagers.plugins import needs_info
+from ansibullbot.plugins import needs_info
 from tests.utils.helpers import get_issue
 
 

@@ -10,8 +10,8 @@ from github import Github
 
 import ansibullbot.constants as C
 
-from ansibullbot.decorators.github import RateLimited
-from ansibullbot.errors import RateLimitError
+from ansibullbot.utils.github import RateLimited
+from ansibullbot.exceptions import RateLimitError
 from ansibullbot.utils.file_tools import read_gzip_json_file, write_gzip_json_file
 from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
