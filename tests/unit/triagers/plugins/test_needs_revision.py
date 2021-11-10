@@ -5,8 +5,8 @@ from unittest import TestCase, mock
 import github
 
 from tests.utils.helpers import get_issue
-from ansibullbot.triagers.plugins.needs_revision import _changes_requested_by, get_needs_revision_facts, _get_review_state
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.plugins.needs_revision import _changes_requested_by, get_needs_revision_facts, _get_review_state
+from ansibullbot.issuewrapper import IssueWrapper
 
 class ComponentMatcherMock:
 

@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from ansibullbot.decorators.github import get_rate_limit
+from ansibullbot.utils.github import get_rate_limit
 
 
 class RequestsResponseMock:
@@ -18,12 +18,12 @@ def SleepMock(duration):
     pass
 
 
-@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_USERNAME', 'bob')
-@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_PASSWORD', '12345')
-@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_TOKEN', 'abcde12345')
-@patch('ansibullbot.decorators.github.C.DEFAULT_GITHUB_URL', None)
-@patch('ansibullbot.decorators.github.time.sleep', SleepMock)
-@patch('ansibullbot.decorators.github.requests.get')
+@patch('ansibullbot.utils.github.C.DEFAULT_GITHUB_USERNAME', 'bob')
+@patch('ansibullbot.utils.github.C.DEFAULT_GITHUB_PASSWORD', '12345')
+@patch('ansibullbot.utils.github.C.DEFAULT_GITHUB_TOKEN', 'abcde12345')
+@patch('ansibullbot.utils.github.C.DEFAULT_GITHUB_URL', None)
+@patch('ansibullbot.utils.github.time.sleep', SleepMock)
+@patch('ansibullbot.utils.github.requests.get')
 def test_get_rate_limit(mock_requests_get):
 
     '''Basic check of get_rate_limit api'''

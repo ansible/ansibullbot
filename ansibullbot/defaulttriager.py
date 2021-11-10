@@ -28,14 +28,14 @@ import requests
 from jinja2 import Environment, FileSystemLoader
 
 from ansibullbot import constants as C
-from ansibullbot.decorators.github import RateLimited
+from ansibullbot.utils.github import RateLimited
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.utils.git_tools import GitRepoWrapper
 from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.logs import set_logger
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
-from ansibullbot.wrappers.ghapiwrapper import GithubWrapper, RepoWrapper
+from ansibullbot.ghapiwrapper import GithubWrapper, RepoWrapper
 
 
 basepath = os.path.dirname(__file__).split('/')

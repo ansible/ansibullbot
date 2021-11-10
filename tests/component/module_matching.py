@@ -2,7 +2,7 @@ import json
 import unittest
 
 from ansibullbot._text_compat import to_text
-from ansibullbot.triagers.ansible import AnsibleTriage
+from ansibullbot.ansibletriager import AnsibleTriager
 from ansibullbot.utils.extractors import extract_template_data
 
 class TestModuleMatching(unittest.TestCase):
@@ -12,7 +12,7 @@ class TestModuleMatching(unittest.TestCase):
 
         print('')
 
-        AT = AnsibleTriage(args={})
+        AT = AnsibleTriager(args={})
 
         jfile = 'tests/fixtures/issue_template_meta.json'
         with open(jfile, 'rb') as f:

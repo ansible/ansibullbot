@@ -3,8 +3,8 @@ import tempfile
 
 from unittest.mock import patch, Mock
 
-from ansibullbot.errors import RateLimitError
-from ansibullbot.wrappers.ghapiwrapper import GithubWrapper
+from ansibullbot.exceptions import RateLimitError
+from ansibullbot.ghapiwrapper import GithubWrapper
 
 
 response_mock = Mock()
@@ -16,8 +16,8 @@ requests = Mock()
 requests.get.side_effect = lambda url, headers: response_mock
 
 
-@patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
-@patch('ansibullbot.wrappers.ghapiwrapper.requests', requests)
+@patch('ansibullbot.utils.github.C.DEFAULT_RATELIMIT', False)
+@patch('ansibullbot.ghapiwrapper.requests', requests)
 def test_get_request_rate_limited():
     GithubWrapper._connect = lambda *args: None
     gw = GithubWrapper(token=12345, cachedir=tempfile.mkdtemp())

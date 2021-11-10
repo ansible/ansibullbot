@@ -1,12 +1,11 @@
 from contextlib import contextmanager
-import json
 import shutil
 import tempfile
 
 from tests.utils.issue_mock import IssueMock
 from tests.utils.repo_mock import RepoMock
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
-from ansibullbot.wrappers.historywrapper import HistoryWrapper
+from ansibullbot.issuewrapper import IssueWrapper
+from ansibullbot.historywrapper import HistoryWrapper
 
 @contextmanager
 def get_issue(datafile, statusfile):

@@ -1,6 +1,6 @@
 import unittest
 
-from ansibullbot.triagers.plugins.needs_contributor import get_needs_contributor_facts
+from ansibullbot.plugins.needs_contributor import get_needs_contributor_facts
 from tests.utils.helpers import get_issue
 
 

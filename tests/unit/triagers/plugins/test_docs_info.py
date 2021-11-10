@@ -1,6 +1,6 @@
 import pytest
 
-from ansibullbot.triagers.plugins.docs_info import get_docs_facts
+from ansibullbot.plugins.docs_info import get_docs_facts
 from tests.utils.issue_mock import IssueMock
 
 datafiles = (

@@ -21,49 +21,49 @@ from pprint import pprint
 import ansibullbot.constants as C
 
 from ansibullbot._text_compat import to_bytes, to_text
-from ansibullbot.errors import LabelWafflingError
-from ansibullbot.parsers.botmetadata import BotMetadataParser
-from ansibullbot.triagers.defaulttriager import DefaultActions, DefaultTriager, render_boilerplate
+from ansibullbot.exceptions import LabelWafflingError
+from ansibullbot.utils.botmetadata import BotMetadataParser
+from ansibullbot.defaulttriager import DefaultActions, DefaultTriager, render_boilerplate
 from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.receiver_client import post_to_receiver
 from ansibullbot.utils.timetools import strip_time_safely
 from ansibullbot.utils.version_tools import AnsibleVersionIndexer
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.issuewrapper import IssueWrapper
 
-from ansibullbot.triagers.plugins.backports import get_backport_facts
-from ansibullbot.triagers.plugins.botstatus import get_bot_status_facts
-from ansibullbot.triagers.plugins.ci_rebuild import get_ci_facts
-from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_facts
-from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_command_facts
-from ansibullbot.triagers.plugins.ci_rebuild import get_rebuild_merge_facts
-from ansibullbot.triagers.plugins.community_workgroups import get_community_workgroup_facts
-from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
-from ansibullbot.triagers.plugins.collection_facts import get_collection_facts
-from ansibullbot.triagers.plugins.cross_references import get_cross_reference_facts
-from ansibullbot.triagers.plugins.filament import get_filament_facts
-from ansibullbot.triagers.plugins.label_commands import get_label_command_facts
-from ansibullbot.triagers.plugins.label_commands import get_waffling_overrides
-from ansibullbot.triagers.plugins.needs_contributor import get_needs_contributor_facts
-from ansibullbot.triagers.plugins.needs_info import is_needsinfo
-from ansibullbot.triagers.plugins.needs_info import needs_info_template_facts
-from ansibullbot.triagers.plugins.needs_info import needs_info_timeout_facts
-from ansibullbot.triagers.plugins.needs_revision import get_needs_revision_facts
-from ansibullbot.triagers.plugins.needs_revision import get_ci_run_facts
-from ansibullbot.triagers.plugins.contributors import get_contributor_facts
-from ansibullbot.triagers.plugins.notifications import get_notification_facts
-from ansibullbot.triagers.plugins.shipit import get_automerge_facts
-from ansibullbot.triagers.plugins.shipit import get_review_facts
-from ansibullbot.triagers.plugins.shipit import get_shipit_facts
-from ansibullbot.triagers.plugins.shipit import get_submitter_facts
-from ansibullbot.triagers.plugins.shipit import needs_community_review
-from ansibullbot.triagers.plugins.small_patch import get_small_patch_facts
-from ansibullbot.triagers.plugins.spam import get_spam_facts
-from ansibullbot.triagers.plugins.test_support_plugins import get_test_support_plugins_facts
-from ansibullbot.triagers.plugins.traceback import get_traceback_facts
-from ansibullbot.triagers.plugins.deprecation import get_deprecation_facts
-from ansibullbot.triagers.plugins.docs_info import get_docs_facts
+from ansibullbot.plugins.backports import get_backport_facts
+from ansibullbot.plugins.botstatus import get_bot_status_facts
+from ansibullbot.plugins.ci_rebuild import get_ci_facts
+from ansibullbot.plugins.ci_rebuild import get_rebuild_facts
+from ansibullbot.plugins.ci_rebuild import get_rebuild_command_facts
+from ansibullbot.plugins.ci_rebuild import get_rebuild_merge_facts
+from ansibullbot.plugins.community_workgroups import get_community_workgroup_facts
+from ansibullbot.plugins.component_matching import get_component_match_facts
+from ansibullbot.plugins.collection_facts import get_collection_facts
+from ansibullbot.plugins.cross_references import get_cross_reference_facts
+from ansibullbot.plugins.filament import get_filament_facts
+from ansibullbot.plugins.label_commands import get_label_command_facts
+from ansibullbot.plugins.label_commands import get_waffling_overrides
+from ansibullbot.plugins.needs_contributor import get_needs_contributor_facts
+from ansibullbot.plugins.needs_info import is_needsinfo
+from ansibullbot.plugins.needs_info import needs_info_template_facts
+from ansibullbot.plugins.needs_info import needs_info_timeout_facts
+from ansibullbot.plugins.needs_revision import get_needs_revision_facts
+from ansibullbot.plugins.needs_revision import get_ci_run_facts
+from ansibullbot.plugins.contributors import get_contributor_facts
+from ansibullbot.plugins.notifications import get_notification_facts
+from ansibullbot.plugins.shipit import get_automerge_facts
+from ansibullbot.plugins.shipit import get_review_facts
+from ansibullbot.plugins.shipit import get_shipit_facts
+from ansibullbot.plugins.shipit import get_submitter_facts
+from ansibullbot.plugins.shipit import needs_community_review
+from ansibullbot.plugins.small_patch import get_small_patch_facts
+from ansibullbot.plugins.spam import get_spam_facts
+from ansibullbot.plugins.test_support_plugins import get_test_support_plugins_facts
+from ansibullbot.plugins.traceback import get_traceback_facts
+from ansibullbot.plugins.deprecation import get_deprecation_facts
+from ansibullbot.plugins.docs_info import get_docs_facts
 
 
 VALID_CI_PROVIDERS = frozenset(('azp',))
@@ -78,7 +78,7 @@ class AnsibleActions(DefaultActions):
         self.cancel_ci_branch = False
 
 
-class AnsibleTriage(DefaultTriager):
+class AnsibleTriager(DefaultTriager):
     CLOSING_LABELS = ['bot_closed']
 
     ISSUE_TYPES = {

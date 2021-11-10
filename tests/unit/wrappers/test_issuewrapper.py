@@ -5,7 +5,7 @@ import tempfile
 
 from unittest import mock
 
-from ansibullbot.wrappers.issuewrapper import IssueWrapper
+from ansibullbot.issuewrapper import IssueWrapper
 
 
 class GithubIssueMock:
@@ -35,7 +35,7 @@ class GithubRepoWrapperMock:
         self.repo = GithubRepoMock()
 
 
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
+@mock.patch('ansibullbot.utils.github.C.DEFAULT_RATELIMIT', False)
 def test_get_events():
     '''Check basic event fetching and caching'''
     with tempfile.TemporaryDirectory() as cachedir:
@@ -64,7 +64,7 @@ def test_get_events():
         assert os.path.exists(os.path.join(cachedir, 'issues', '1', 'timeline_data.json'))
 
 
-@mock.patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
+@mock.patch('ansibullbot.utils.github.C.DEFAULT_RATELIMIT', False)
 def test_get_events_bad_cache_invalidate():
     '''Prevent bad data from leaking into events'''
     with tempfile.TemporaryDirectory() as cachedir:

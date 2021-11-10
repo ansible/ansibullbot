@@ -15,7 +15,7 @@ from ansibullbot.utils.component_tools import AnsibleComponentMatcher
 from ansibullbot.utils.file_tools import FileIndexer
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.utils.moduletools import ModuleIndexer
-from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
+from ansibullbot.plugins.component_matching import get_component_match_facts
 
 from pprint import pprint
 

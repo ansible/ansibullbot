@@ -30,8 +30,8 @@ import logging
 import os
 import shutil
 
-from ansibullbot.triagers.ansible import AnsibleTriage
-from ansibullbot.triagers.plugins.component_matching import get_component_match_facts
+from ansibullbot.ansibletriager import AnsibleTriager
+from ansibullbot.plugins.component_matching import get_component_match_facts
 
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath[::-1].index('ansibullbot')
@@ -82,7 +82,7 @@ class IssueMock:
         }
 
 
-class AnsibleSupportReport(AnsibleTriage):
+class AnsibleSupportReport(AnsibleTriager):
 
     def __init__(self):
         super().__init__()
@@ -90,7 +90,7 @@ class AnsibleSupportReport(AnsibleTriage):
     @classmethod
     def create_parser(cls):
 
-        parser = AnsibleTriage.create_parser()
+        parser = AnsibleTriager.create_parser()
 
         # report specific
         parser.add_argument("--dest", required=True,

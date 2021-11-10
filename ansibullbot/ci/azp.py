@@ -12,7 +12,7 @@ from zipfile import ZipFile
 import ansibullbot.constants as C
 from ansibullbot._text_compat import to_bytes
 from ansibullbot.ci.base import BaseCI
-from ansibullbot.errors import NoCIError
+from ansibullbot.exceptions import NoCIError
 from ansibullbot.utils.net_tools import fetch
 from ansibullbot.utils.timetools import strip_time_safely
 
