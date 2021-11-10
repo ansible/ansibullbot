@@ -16,8 +16,8 @@ requests = Mock()
 requests.get.side_effect = lambda url, headers: response_mock
 
 
-@patch('ansibullbot.decorators.github.C.DEFAULT_RATELIMIT', False)
-@patch('ansibullbot.wrappers.ghapiwrapper.requests', requests)
+@patch('ansibullbot.utils.github.C.DEFAULT_RATELIMIT', False)
+@patch('ansibullbot.ghapiwrapper.requests', requests)
 def test_get_request_rate_limited():
     GithubWrapper._connect = lambda *args: None
     gw = GithubWrapper(token=12345, cachedir=tempfile.mkdtemp())
