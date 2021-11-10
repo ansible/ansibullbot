@@ -153,9 +153,6 @@ class RepoWrapper:
         repo = self.gh.get_repo(repo_path)
         return repo
 
-    def get_rate_limit(self):
-        return self.gh.get_rate_limit().raw_data
-
     @RateLimited
     def get_issue(self, number):
         while True:
