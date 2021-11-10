@@ -1,6 +1,6 @@
 import pytest
 
-from ansibullbot.plugins import get_rebuild_merge_facts
+from ansibullbot.plugins.ci_rebuild import get_rebuild_merge_facts
 from tests.utils.helpers import get_issue
 
 

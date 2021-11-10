@@ -1,6 +1,6 @@
 import pytest
 
-from ansibullbot.plugins import get_notification_facts
+from ansibullbot.plugins.notifications import get_notification_facts
 from tests.utils.helpers import get_issue
 from tests.utils.repo_mock import RepoMock
 

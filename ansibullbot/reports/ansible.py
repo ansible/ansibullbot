@@ -31,7 +31,7 @@ import os
 import shutil
 
 from ansibullbot.ansibletriager import AnsibleTriager
-from ansibullbot.plugins import get_component_match_facts
+from ansibullbot.plugins.component_matching import get_component_match_facts
 
 basepath = os.path.dirname(__file__).split('/')
 libindex = basepath[::-1].index('ansibullbot')
