@@ -252,7 +252,7 @@ class HistoryWrapper:
     def get_component_commands(self, command_key='!component'):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
-        events = self._find_events_by_actor('commented', None)
+        events = self._find_events_by_actor('commented', None, maxcount=999)
         events = [x for x in events if x['actor'] not in C.DEFAULT_BOT_NAMES]
 
         for event in events:
@@ -364,8 +364,7 @@ class HistoryWrapper:
 
     def get_boilerplate_comments(self, dates=False, content=True):
         boilerplates = []
-        comments = self._find_events_by_actor('commented', None)
-        comments = [x for x in comments if x['actor'] in C.DEFAULT_BOT_NAMES]
+        comments = self._find_events_by_actor('commented', C.DEFAULT_BOT_NAMES, maxcount=999)
 
         for comment in comments:
             if not comment.get('body'):
