@@ -1,28 +1,29 @@
-import unittest
-
 from ansibullbot.plugins.needs_contributor import get_needs_contributor_facts
-from tests.utils.helpers import get_issue
 
 
-class TestNeedsContributorFacts(unittest.TestCase):
+def test_needs_contributor_command():
+    events = [
+        {'event': 'labeled', 'label': 'needs_info', 'actor': 'mkrizek'},
+        {'event': 'commented', 'body': 'Something something needs_contributor something something\n', 'actor': 'mkrizek'},
+    ]
 
-    def setUp(self):
-        self.statusfile = 'tests/fixtures/needs_contributor/0_prstatus.json'
+    facts = get_needs_contributor_facts(events, ['ansibot'])
+    assert facts['is_needs_contributor']
 
-    def test_needs_contributor_command(self):
-        datafile = 'tests/fixtures/needs_contributor/0_issue.yml'
-        with get_issue(datafile, self.statusfile) as iw:
-            facts = get_needs_contributor_facts(iw, ['ansibot'])
-            self.assertTrue(facts['is_needs_contributor'])
 
-    def test_not_needs_contributor_command(self):
-        datafile = 'tests/fixtures/needs_contributor/1_issue.yml'
-        with get_issue(datafile, self.statusfile) as iw:
-            facts = get_needs_contributor_facts(iw, ['ansibot'])
-            self.assertFalse(facts['is_needs_contributor'])
+def test_not_needs_contributor_command():
+    events = [
+        {'event': 'commented', 'body': 'Something something !needs_contributor something something\n','actor': 'mkrizek'},
+    ]
 
-    def test_waiting_on_contributor_label(self):
-        datafile = 'tests/fixtures/needs_contributor/2_issue.yml'
-        with get_issue(datafile, self.statusfile) as iw:
-            facts = get_needs_contributor_facts(iw, ['ansibot'])
-            self.assertTrue(facts['is_needs_contributor'])
+    facts = get_needs_contributor_facts(events, ['ansibot'])
+    assert not facts['is_needs_contributor']
+
+
+def test_waiting_on_contributor_label():
+    events = [
+        {'event': 'labeled', 'label': 'waiting_on_contributor', 'actor': 'mkrizek'},
+    ]
+
+    facts = get_needs_contributor_facts(events, ['ansibot'])
+    assert facts['is_needs_contributor']

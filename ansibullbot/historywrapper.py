@@ -2,7 +2,7 @@ import datetime
 import logging
 import os
 import pickle
-
+from collections.abc import Sequence
 from operator import itemgetter
 
 import ansibullbot.constants as C
@@ -15,71 +15,30 @@ class HistoryWrapper:
     This class will join the events and comments of an issue into
     an object that allows the user to make basic queries without
     having to iterate through events manually.
-
-    Constructor Examples:
-        hwrapper = HistoryWrapper(IssueWrapper)
-        hwrapper = HistoryWrapper(PullRequestWrapper)
-
-    https://developer.github.com/v3/issues/timeline/
     """
 
     SCHEMA_VERSION = 1.2
-    BOTNAMES = C.DEFAULT_BOT_NAMES
 
-    def __init__(self, issue, usecache=True, cachedir=None):
-        self.issue = issue
+    def __init__(self, events, labels, last_updated, usecache=True, cachedir=None):
+        self.labels = labels
+        self.last_updated = last_updated
+        self.cachedir = cachedir
+
         self._waffled_labels = None
-
-        if issue.repo_full_name not in cachedir and 'issues' not in cachedir:
-            self.cachefile = os.path.join(
-                cachedir,
-                issue.repo_full_name,
-                'issues',
-                str(issue.instance.number),
-                'history.pickle'
-            )
-        elif issue.repo_full_name not in cachedir:
-            self.cachefile = os.path.join(
-                cachedir,
-                issue.repo_full_name,
-                'issues',
-                str(issue.instance.number),
-                'history.pickle'
-            )
-        elif 'issues' not in cachedir:
-            self.cachefile = os.path.join(
-                cachedir,
-                'issues',
-                str(issue.instance.number),
-                'history.pickle'
-            )
-        else:
-            self.cachefile = os.path.join(
-                cachedir,
-                str(issue.instance.number),
-                'history.pickle'
-            )
-
-        self.cachedir = os.path.join(
-            cachedir,
-            os.path.dirname(self.cachefile)
-        )
-        if 'issues' not in self.cachedir:
-            logging.error(self.cachedir)
-            raise Exception
+        self.cachefile = os.path.join(cachedir, 'history.pickle')
 
         if usecache:
             cache = self._load_cache()
 
             if not self.validate_cache(cache):
                 logging.info('history cache invalidated, rebuilding')
-                self.history = self.issue.events
+                self.history = events
                 self._dump_cache()
             else:
                 logging.info('use cached history')
                 self.history = cache['history']
         else:
-            self.history = self.issue.events
+            self.history = events
 
         self.history = sorted(self.history, key=itemgetter('created_at'))
 
@@ -101,17 +60,17 @@ class HistoryWrapper:
             logging.info('history cache schema version behind')
             return False
 
-        if cache['updated_at'] < self.issue.instance.updated_at:
+        if cache['updated_at'] < self.last_updated:
             logging.info('history cache behind issue')
             return False
 
         # FIXME the cache is getting wiped out by cross-refences,
         #       so keeping this around as a failsafe
-        if len(cache['history']) < (len([x for x in cache['history'] if x['event'] == 'commented']) + len(self.issue.labels)):
+        if len(cache['history']) < (len([x for x in cache['history'] if x['event'] == 'commented']) + len(self.labels)):
             return False
 
         # FIXME label events seem to go missing, so force a rebuild
-        if 'needs_info' in self.issue.labels:
+        if 'needs_info' in self.labels:
             le = [x for x in cache['history'] if x['event'] == 'labeled' and x['label'] == 'needs_info']
             if not le:
                 return False
@@ -144,7 +103,7 @@ class HistoryWrapper:
 
         cachedata = {
             'version': self.SCHEMA_VERSION,
-            'updated_at': self.issue.instance.updated_at,
+            'updated_at': self.last_updated,
             'history': self.history
         }
 
@@ -154,16 +113,6 @@ class HistoryWrapper:
         except Exception as e:
             logging.error(e)
             raise
-
-    def get_json_comments(self):
-        comments = self.issue.comments[:]
-        for idx, x in enumerate(comments):
-            ca = x['created_at']
-            if not (hasattr(ca, 'tzinfo') and ca.tzinfo):
-                ca = x['created_at'].replace(tzinfo=datetime.timezone.utc)
-            nc = {'body': x['body'], 'created_at': ca, 'user': {'login': x['actor']}}
-            comments[idx] = nc
-        return comments
 
     def merge_commits(self, commits):
         for xc in commits:
@@ -215,16 +164,16 @@ class HistoryWrapper:
             self.history.append(event)
         self.history = sorted(self.history, key=itemgetter('created_at'))
 
-    def _find_events_by_actor(self, eventname, actor, maxcount=1):
+    def _find_events_by_actor(self, eventname, actor=None, maxcount=1):
+        if actor is not None and not isinstance(actor, Sequence):
+            actor = [actor]
+
         matching_events = []
         for event in self.history:
             if event['event'] == eventname or not eventname:
-                # allow actor to be a list or a string or None
                 if actor is None:
                     matching_events.append(event)
-                elif type(actor) != list and event['actor'] == actor:
-                    matching_events.append(event)
-                elif type(actor) == list and event['actor'] in actor:
+                elif event['actor'] in actor:
                     matching_events.append(event)
                 if len(matching_events) == maxcount:
                     break
@@ -273,7 +222,7 @@ class HistoryWrapper:
         events = comments + labels + unlabels
         events = sorted(events, key=itemgetter('created_at'))
         for event in events:
-            if event['actor'] in self.BOTNAMES:
+            if event['actor'] in C.DEFAULT_BOT_NAMES:
                 continue
             if event['event'] == 'commented':
                 for y in command_keys:
@@ -303,8 +252,8 @@ class HistoryWrapper:
     def get_component_commands(self, command_key='!component'):
         """Given a list of phrase keys, return a list of phrases used"""
         commands = []
-        events = self.get_json_comments()
-        events = [x for x in events if x['user']['login'] not in self.BOTNAMES]
+        events = self._find_events_by_actor('commented', None)
+        events = [x for x in events if x['actor'] not in C.DEFAULT_BOT_NAMES]
 
         for event in events:
             if event.get('body'):
@@ -415,9 +364,8 @@ class HistoryWrapper:
 
     def get_boilerplate_comments(self, dates=False, content=True):
         boilerplates = []
-
-        comments = self.get_json_comments()
-        comments = [x for x in comments if x['user']['login'] in self.BOTNAMES] 
+        comments = self._find_events_by_actor('commented', None)
+        comments = [x for x in comments if x['actor'] in C.DEFAULT_BOT_NAMES]
 
         for comment in comments:
             if not comment.get('body'):
@@ -462,7 +410,7 @@ class HistoryWrapper:
             return None
 
     def get_changed_labels(self, prefix=None, bots=None):
-        '''make a list of labels that have been set/unset'''
+        """make a list of labels that have been set/unset"""
         if bots is None:
             bots = []
         labeled = []
@@ -479,7 +427,7 @@ class HistoryWrapper:
 
     def label_is_waffling(self, label, limit=20):
         """ detect waffling on labels """
-        #https://github.com/ansible/ansibullbot/issues/672
+        # https://github.com/ansible/ansibullbot/issues/672
         if self._waffled_labels is None:
             self._waffled_labels = {}
             history = [x['label'] for x in self.history if 'label' in x]
