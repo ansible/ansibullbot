@@ -6,37 +6,8 @@ import pytest
 from ansibullbot.historywrapper import HistoryWrapper
 
 
-class IssueMock:
-    number = 1
-
-
-class IssueWrapperMock:
-
-    _events = []
-    _comments = []
-    _reactions = []
-
-    def __init__(self):
-        self.instance = IssueMock()
-        self.repo_full_name = 'ansible/ansible'
-
-    @property
-    def events(self):
-        return self._events
-
-    @property
-    def comments(self):
-        return self._comments
-
-    @property
-    def reactions(self):
-        return self._reactions
-
-
 def test_get_component_commands():
-    iw = IssueWrapperMock()
-
-    iw._comments = [
+    events = [
         {
             'id': 1,
             'actor': 'jimi-c',
@@ -45,10 +16,9 @@ def test_get_component_commands():
             'created_at': datetime.datetime.utcnow(),
         }
     ]
-    iw._events = iw._comments
 
     cachedir = tempfile.mkdtemp()
-    hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+    hw = HistoryWrapper(events, [], datetime.datetime.utcnow(), cachedir=cachedir, usecache=False)
     hw.BOTNAMES = []
 
     events = hw._find_events_by_actor('commented', None)
@@ -59,9 +29,7 @@ def test_get_component_commands():
 
 
 def test_get_no_component_commands():
-    iw = IssueWrapperMock()
-
-    iw._comments = [
+    events = [
         {
             'id': 1,
             'actor': 'jimi-c',
@@ -70,10 +38,9 @@ def test_get_no_component_commands():
             'created_at': datetime.datetime.utcnow(),
         }
     ]
-    iw._events = iw._comments
 
     cachedir = tempfile.mkdtemp()
-    hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+    hw = HistoryWrapper(events, [], datetime.datetime.utcnow(), cachedir=cachedir, usecache=False)
     hw.BOTNAMES = []
 
     events = hw._find_events_by_actor('commented', None)
@@ -105,14 +72,8 @@ def test_ignore_events_without_dates_on_last_methods():
         {'event': 'unlabeled', 'actor': 'ansibot', 'label': 'needs_info'},
     ]
 
-    iw = IssueWrapperMock()
-    for event in events:
-        if event['event'] == 'comment':
-            iw._comments.append(event)
-        iw._events.append(event)
-
     cachedir = tempfile.mkdtemp()
-    hw = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+    hw = HistoryWrapper(events, [], datetime.datetime.utcnow(), cachedir=cachedir, usecache=False)
     hw.BOTNAMES = ['ansibot']
 
     res = []

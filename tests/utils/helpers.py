@@ -22,14 +22,13 @@ def get_issue(datafile, statusfile):
         # disable this completely
         iw.load_update_fetch_files = lambda: []
         # hook in here to avoid github api calls
-        iw._get_timeline = lambda: issue.events
+        iw._events = iw._parse_events(issue.events)
         iw._commits = issue.commits
 
         # pre-create history to avoid github api calls
-        history = HistoryWrapper(iw, cachedir=cachedir, usecache=False)
+        history = HistoryWrapper(iw.events, iw.labels, iw.updated_at, cachedir=cachedir, usecache=False)
         iw._history = history
 
-        # merge_commits(self, commits)
         if issue.commits:
             iw._history.merge_commits(issue.commits)
 

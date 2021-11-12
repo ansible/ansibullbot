@@ -8,22 +8,6 @@ from tests.utils.helpers import get_issue
 from ansibullbot.plugins.needs_revision import _changes_requested_by, get_needs_revision_facts, _get_review_state
 from ansibullbot.issuewrapper import IssueWrapper
 
-class ComponentMatcherMock:
-
-    expected_results = []
-
-    def match(self, issuewrapper):
-        return self.expected_results
-
-
-class ModuleIndexerMock:
-
-    def __init__(self, namespace_maintainers):
-        self.namespace_maintainers = namespace_maintainers
-
-    def get_maintainers_for_namespace(self, namespace):
-        return self.namespace_maintainers
-
 
 class CIMock:
     def __init__(self):

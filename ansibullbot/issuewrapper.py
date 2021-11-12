@@ -478,7 +478,7 @@ class IssueWrapper:
     @property
     def history(self):
         if self._history is UnsetValue:
-            self._history = HistoryWrapper(self, cachedir=self.cachedir)
+            self._history = HistoryWrapper(self.events, self.labels, self.updated_at, cachedir=self.full_cachedir)
 
             if self.is_pullrequest():
                 self._history.merge_reviews(self.reviews)

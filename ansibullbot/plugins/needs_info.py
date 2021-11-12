@@ -41,7 +41,6 @@ def is_needsinfo(iw, botnames=None):
 
 
 def needs_info_template_facts(iw, meta):
-
     nifacts = {
         'template_missing': False,
         'template_missing_sections': [],
@@ -87,8 +86,7 @@ def needs_info_template_facts(iw, meta):
     return nifacts
 
 
-def needs_info_timeout_facts(iw, meta):
-
+def needs_info_timeout_facts(history, meta):
     # warn at 30 days
     NI_WARN = int(C.DEFAULT_NEEDS_INFO_WARN)
     # close at 60 days
@@ -101,12 +99,12 @@ def needs_info_timeout_facts(iw, meta):
     if not meta['is_needs_info']:
         return nif
 
-    if 'needs_info' not in iw.labels:
+    if 'needs_info' not in history.labels:
         return nif
 
-    lr = iw.history.label_last_removed('needs_info')
-    ni_bpd = iw.history.last_date_for_boilerplate('needs_info_base')
-    md_bpd = iw.history.last_date_for_boilerplate('issue_missing_data')
+    lr = history.label_last_removed('needs_info')
+    ni_bpd = history.last_date_for_boilerplate('needs_info_base')
+    md_bpd = history.last_date_for_boilerplate('issue_missing_data')
 
     now = datetime.datetime.now(datetime.timezone.utc).replace(tzinfo=datetime.timezone.utc)
 
@@ -128,7 +126,7 @@ def needs_info_timeout_facts(iw, meta):
 
     if bpd:
         # fix multiple warnings
-        bp_comments = iw.history.get_boilerplate_comments()
+        bp_comments = history.get_boilerplate_comments()
         bp_comments_found = [c for c in bp_comments if c[0] == 'needs_info_base']
 
         delta = (now - bpd).days
@@ -145,11 +143,11 @@ def needs_info_timeout_facts(iw, meta):
             if len(bp_comments_found) == 0:
                 nif['needs_info_action'] = 'warn'
     else:
-        la = iw.history.label_last_applied('needs_info')
+        la = history.label_last_applied('needs_info')
         # https://github.com/ansible/ansibullbot/issues/1254
         if la is None:
             # iterate and log event event in history so we can debug this problem
-            for ide,event in enumerate(iw.history.history):
+            for ide, event in enumerate(history.history):
                 logging.debug('history (%s): %s' % (ide,  event))
         else:
             delta = (now - la).days

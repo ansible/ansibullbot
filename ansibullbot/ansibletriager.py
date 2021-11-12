@@ -1273,7 +1273,7 @@ class AnsibleTriager(DefaultTriager):
         )
 
         # needs_contributor?
-        self.meta.update(get_needs_contributor_facts(iw, C.DEFAULT_BOT_NAMES))
+        self.meta.update(get_needs_contributor_facts(iw.history.history, C.DEFAULT_BOT_NAMES))
 
         # who needs to be notified or assigned?
         self.meta.update(get_notification_facts(iw, self.meta, botmeta=self.botmeta))
@@ -1287,7 +1287,7 @@ class AnsibleTriager(DefaultTriager):
         self.meta['is_needs_info'] = is_needsinfo(iw, C.DEFAULT_BOT_NAMES)
         self.meta.update(self.process_comment_commands(iw, self.meta))
         self.meta.update(needs_info_template_facts(iw, self.meta))
-        self.meta.update(needs_info_timeout_facts(iw, self.meta))
+        self.meta.update(needs_info_timeout_facts(iw.history, self.meta))
 
         # who is this person?
         self.meta.update(
