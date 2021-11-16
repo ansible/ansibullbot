@@ -29,7 +29,7 @@ from ansibullbot.utils.extractors import extract_pr_number_from_comment
 from ansibullbot.utils.moduletools import ModuleIndexer
 from ansibullbot.utils.receiver_client import post_to_receiver
 from ansibullbot.utils.timetools import strip_time_safely
-from ansibullbot.utils.version_tools import AnsibleVersionIndexer
+from ansibullbot.utils.version_tools import AnsibleVersionIndexer, get_version_major_minor
 from ansibullbot.issuewrapper import IssueWrapper
 
 from ansibullbot.plugins.backports import get_backport_facts
@@ -1220,15 +1220,9 @@ class AnsibleTriager(DefaultTriager):
         if iw.is_issue():
             self.meta['ansible_version'] = self.version_indexer.version_by_issue(iw)
         else:
-            # use the submit date's current version
-            self.meta['ansible_version'] = self.version_indexer.version_by_date(iw.created_at)
+            self.meta['ansible_version'] = self.version_indexer.version_by_commit(iw.pullrequest.base.sha)
 
-        # https://github.com/ansible/ansible/issues/21207
-        if not self.meta['ansible_version']:
-            # fallback to version by date
-            self.meta['ansible_version'] = self.version_indexer.version_by_date(iw.created_at)
-
-        self.meta['ansible_label_version'] = self.version_indexer.get_version_major_minor(self.meta['ansible_version'])
+        self.meta['ansible_label_version'] = get_version_major_minor(self.meta['ansible_version'])
         logging.info('ansible version: %s' % self.meta['ansible_version'])
 
         # what component(s) is this about?
