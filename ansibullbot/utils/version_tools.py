@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 import typing as t
@@ -9,12 +8,12 @@ from ansibullbot.utils.timetools import strip_time_safely
 
 
 # from distutils.version.StrictVersion
-version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
+_version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
                         re.VERBOSE | re.ASCII)
 
 
-def _is_valid_version(self, vstring):
-    match = self.version_re.match(vstring)
+def _is_valid_version(vstring):
+    match = _version_re.match(vstring)
     if not match:
         return False
     return True
