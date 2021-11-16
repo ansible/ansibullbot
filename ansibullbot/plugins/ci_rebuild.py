@@ -1,3 +1,6 @@
+import datetime
+
+
 def get_ci_facts(iw, ci):
     cifacts = {
         'ci_run_number': None
@@ -77,9 +80,12 @@ def get_rebuild_merge_facts(iw, meta, maintainer_team, ci):
     if meta['is_needs_rebase']:
         return rbmerge_meta
 
-    last_command = _get_last_command(iw, 'rebuild_merge', maintainer_team)
+    epoch = datetime.datetime(1970, 1 ,1, tzinfo=datetime.timezone.utc)
+    last_command = _get_last_command(iw, 'rebuild_merge', maintainer_team) or epoch
+    alias = _get_last_command(iw, '/rebuild_merge', maintainer_team) or epoch
+    last_command = max(last_command, alias)
 
-    if last_command is None:
+    if last_command == epoch:
         return rbmerge_meta
 
     # new commits should reset everything
