@@ -1,4 +1,3 @@
-import logging
 import os
 import re
 import typing as t
@@ -13,7 +12,7 @@ version_re = re.compile(r'^(\d+) \. (\d+) (\. (\d+))? ([ab](\d+))?$',
                         re.VERBOSE | re.ASCII)
 
 
-def _is_valid_version(self, vstring):
+def _is_valid_version(vstring):
     match = self.version_re.match(vstring)
     if not match:
         return False
