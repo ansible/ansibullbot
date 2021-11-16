@@ -1475,7 +1475,6 @@ class BotMockManager:
         self.mocks.append(patch('ansibullbot.utils.net_tools.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.timetools.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.version_tools.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.issuewrapper.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.historywrapper.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.ghapiwrapper.logging', MockLogger))
