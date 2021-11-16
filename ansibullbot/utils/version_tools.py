@@ -20,7 +20,13 @@ def _is_valid_version(vstring):
 
 
 def get_version_major_minor(version: str) -> str:
-    return version.rsplit('.', 2)[0]
+    dots = version.count('.')
+    if dots > 1:
+        return version.rsplit('.', 2)[0]
+    elif dots == 1:
+        return version
+    else:
+        raise AssertionError(f'version == {version}')
 
 
 class AnsibleVersionIndexer:
