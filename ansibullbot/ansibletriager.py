@@ -1218,7 +1218,10 @@ class AnsibleTriager(DefaultTriager):
 
         # get ansible version
         if iw.is_issue():
-            self.meta['ansible_version'] = self.version_indexer.version_by_issue(iw)
+            try:
+                self.meta['ansible_version'] = self.version_indexer.version_by_issue(iw)
+            except ValueError:
+                self.meta['ansible_version'] = self.version_indexer.version_by_date(iw.created_at)
         else:
             self.meta['ansible_version'] = self.version_indexer.version_by_commit(iw.pullrequest.base.sha)
 

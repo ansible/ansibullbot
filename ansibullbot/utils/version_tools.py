@@ -300,8 +300,8 @@ class AnsibleVersionIndexer:
             return version
 
         for comment in iw.history.get_user_comments(iw.submitter):
-            found_version = self.strip_ansible_version(comment['body'])
-            if self.is_valid_version(found_version):
+            found_version = self.strip_ansible_version(comment)
+            if found_version and self.is_valid_version(found_version):
                 return found_version
 
         raise ValueError('version by issue %d not found' % iw.number)
