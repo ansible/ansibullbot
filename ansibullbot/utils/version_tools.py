@@ -19,14 +19,11 @@ def _is_valid_version(vstring):
     return True
 
 
-def get_version_major_minor(version: str) -> str:
-    dots = version.count('.')
-    if dots > 1:
-        return version.rsplit('.', 2)[0]
-    elif dots == 1:
-        return version
-    else:
-        raise AssertionError(f'version == {version}')
+def get_version_major_minor(vstring: str) -> str:
+    # assumes already validated version
+    if '.' not in vstring:
+        raise AssertionError(f'version == {vstring}')
+    return '.'.join(vstring.split('.')[0:2])
 
 
 class AnsibleVersionIndexer:
