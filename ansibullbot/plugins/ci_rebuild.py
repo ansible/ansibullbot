@@ -40,6 +40,9 @@ def get_rebuild_facts(iw, meta, force=False):
         if not meta['shipit']:
             return rbmeta
 
+        if meta['ci_state'] == 'pending':
+            return rbmeta
+
     rbmeta['needs_rebuild'] = True
     rbmeta['needs_rebuild_all'] = True
 
