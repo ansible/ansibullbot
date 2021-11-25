@@ -10,6 +10,7 @@ import requests
 
 from ansibullbot._text_compat import to_bytes, to_text
 from ansibullbot.utils.receiver_client import post_to_receiver
+from ansibullbot.utils.timetools import strip_time_safely
 
 
 QUERY_TEAM_MEMBERS_TEMPLATE = """
@@ -28,31 +29,30 @@ QUERY_TEAM_MEMBERS_TEMPLATE = """
 }
 """
 
-QUERY_FIELDS = """
-id
-url
-number
-state
-createdAt
-updatedAt
-repository {
-    nameWithOwner
-}
-"""
 
 QUERY_TEMPLATE = """
 {
     repository(owner:"$owner", name:"$repo") {
         $object_type($object_params) {
             pageInfo {
-                startCursor
                 endCursor
                 hasNextPage
-                hasPreviousPage
             }
             edges {
                 node {
-                $fields
+                    id
+                    url
+                    number
+                    state
+                    createdAt
+                    updatedAt
+                    repository {
+                        nameWithOwner
+                    }
+                    timelineItems(last:1, itemTypes: [CROSS_REFERENCED_EVENT]) {
+                        updatedAt
+                    }
+                    $subquery
                 }
             }
         }
@@ -64,10 +64,44 @@ QUERY_TEMPLATE_SINGLE_NODE = """
 {
     repository(owner:"$owner", name:"$repo") {
           $object_type($object_params){
-            $fields
+              id
+              url
+              number
+              state
+              createdAt
+              updatedAt
+              repository {
+                  nameWithOwner
+              }
+              timelineItems(last:1, itemTypes: [CROSS_REFERENCED_EVENT]) {
+                  updatedAt
+              }
+              $subquery
         }
     }
 }
+"""
+
+SUBQUERY_CI_UPDATED_AT = """
+      commits(last:1) {
+        nodes {
+          commit {
+            checkSuites(last:1) {
+              nodes {
+                status
+                conclusion
+                createdAt
+                updatedAt
+                id
+                app {
+                  slug
+                  id
+                }
+              }
+            }
+          }
+        }
+      }
 """
 
 QUERY_TEMPLATE_BLAME = """
@@ -210,7 +244,11 @@ class GithubGraphQLClient:
                           (owner, repo, otype, pagecount, len(nodes)))
 
             issueparams = ', '.join([x for x in [states, first, last, after] if x])
-            query = templ.substitute(owner=owner, repo=repo, object_type=otype, object_params=issueparams, fields=QUERY_FIELDS)
+            if otype == 'pullRequest':
+                subquery = SUBQUERY_CI_UPDATED_AT
+            else:
+                subquery = ''
+            query = templ.substitute(owner=owner, repo=repo, object_type=otype, object_params=issueparams, subquery=subquery)
 
             payload = {
                 'query': to_text(query, 'ascii', 'ignore').strip(),
@@ -256,8 +294,12 @@ class GithubGraphQLClient:
         repo = repo_url.split('/', 1)[1]
 
         template = Template(QUERY_TEMPLATE_SINGLE_NODE)
+        if otype == 'pullRequest':
+            subquery = SUBQUERY_CI_UPDATED_AT
+        else:
+            subquery = ''
 
-        query = template.substitute(owner=owner, repo=repo, object_type=otype, object_params='number: %s' % number, fields=QUERY_FIELDS)
+        query = template.substitute(owner=owner, repo=repo, object_type=otype, object_params='number: %s' % number, subquery=subquery)
 
         payload = {
             'query': to_bytes(query, 'ascii', 'ignore').strip(),
@@ -278,6 +320,15 @@ class GithubGraphQLClient:
         return node
 
     def update_node(self, node, node_type, owner, repo):
+        updated_ats = [node['updatedAt'], node['timelineItems']['updatedAt']]
+        if node_type == 'pullRequest':
+            ci = node.get('commits', {}).get('nodes', [{}])[0].get('commit', {}).get('checkSuites', {}).get('nodes', {})[0]
+
+            updated_ats.append(ci['updatedAt'])
+
+        node['updatedAt'] = str(
+            max((strip_time_safely(u) for u in updated_ats)).isoformat()+'Z'
+        )
         node['state'] = node['state'].lower()
         node['created_at'] = node.get('createdAt')
         node['updated_at'] = node.get('updatedAt')

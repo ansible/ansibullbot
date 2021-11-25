@@ -459,11 +459,11 @@ class DefaultTriager:
                 )
 
                 for k, v in issue_summaries.items():
-                    if v['created_at'] is None:
+                    if v['updated_at'] is None:
                         # issue is closed and was never processed
                         continue
 
-                    if v['created_at'] > self.repos[repo]['since']:
+                    if v['updated_at'] > self.repos[repo]['since']:
                         numbers.append(k)
 
                 numbers = sorted({int(n) for n in numbers})
@@ -522,6 +522,7 @@ class DefaultTriager:
             numbers,
             issuecache=issuecache
         )
+        self.repos[repo]['summaries'] = issue_summaries
 
         logging.info('getting repo objs for %s complete' % repo)
 

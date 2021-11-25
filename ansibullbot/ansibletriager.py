@@ -144,39 +144,30 @@ class AnsibleTriager(DefaultTriager):
         logging.info('ansible triager [re]loading botmeta')
         return BotMetadataParser.parse_yaml(rdata)
 
-    def _should_skip_issue(self, iw):
-        if iw.number in self.repos[iw.repo_full_name]['stale']:
+    def _should_skip_issue(self, summary):
+        number = str(summary['number'])
+        reponame = summary['repository']['nameWithOwner']
+
+        if number in self.repos[reponame]['stale']:
             return False
 
-        if not (lmeta := self.load_meta(iw.repo_full_name, str(iw.number))):
+        if not (lmeta := self.load_meta(reponame, number)):
             return False
 
-        meta_updated_at = strip_time_safely(lmeta['updated_at'])
-
-        if meta_updated_at != iw.updated_at:
+        if strip_time_safely(lmeta['updated_at']) != strip_time_safely(summary['updated_at']):
             return False
 
-        if iw.is_pullrequest():
-            if lmeta.get('needs_rebuild') or lmeta.get('admin_merge'):
-                return False
+        if summary['type'] == 'pullRequest' and (lmeta.get('needs_rebuild') or lmeta.get('admin_merge')):
+            return False
 
-            if iw.pullrequest.updated_at > meta_updated_at:
-                return False
-
-            if self.ci.updated_at and self.ci.updated_at > meta_updated_at:
-                return False
-
-        logging.info('skipping: no changes since last run')
         return True
 
     def run(self):
         '''Primary execution method'''
         ts1 = datetime.datetime.now()
 
-        # get all of the open issues [or just one]
         self.collect_repos()
 
-        # stop here if we're just collecting issues to populate cache
         if self.args.collect_only:
             return
 
@@ -220,16 +211,14 @@ class AnsibleTriager(DefaultTriager):
                 self.processed_meta = {}
                 self.set_resume(repopath, issue.number)
 
-                # users may want to re-run this issue after manual intervention
-                redo = True
-
                 # keep track of how many times this isssue has been re-done
                 loopcount = 0
 
-                # time each issue
                 its1 = datetime.datetime.now()
-
+                redo = True
                 while redo:
+                    redo = False
+
                     # use the loopcount to check new data
                     loopcount += 1
 
@@ -240,8 +229,9 @@ class AnsibleTriager(DefaultTriager):
                         logging.info('restarting triage for %s' % issue.number)
                         issue = repo.get_issue(issue.number)
 
-                    # clear redo
-                    redo = False
+                    if self.args.skip_no_update and self._should_skip_issue(repodata['summaries'][str(issue.number)]):
+                        logging.info('skipping: no changes since last run')
+                        continue
 
                     # create the wrapper on each loop iteration
                     iw = IssueWrapper(
@@ -251,15 +241,12 @@ class AnsibleTriager(DefaultTriager):
                         cachedir=cachedir,
                         gitrepo=repodata['gitrepo'],
                     )
-
+                    iw.updated_at = strip_time_safely(repodata['summaries'][str(issue.number)]['updated_at'])
                     if iw.is_pullrequest():
                         logging.info('creating CI wrapper')
                         self.ci = self.ci_class(self.cachedir_base, iw)
                     else:
                         self.ci = None
-
-                    if self.args.skip_no_update and self._should_skip_issue(iw):
-                        continue
 
                     # force an update on the PR data
                     iw.update_pullrequest()
@@ -299,7 +286,6 @@ class AnsibleTriager(DefaultTriager):
 
                     pprint(vars(actions))
 
-                    # do the actions
                     action_meta = self.apply_actions(iw, actions)
                     if action_meta['REDO']:
                         redo = True

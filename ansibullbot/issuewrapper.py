@@ -62,6 +62,7 @@ class IssueWrapper:
         self.full_cachedir = os.path.join(self.cachedir, 'issues', str(self.number))
         self._renamed_files = None
         self._pullrequest_check_runs = None
+        self._updated_at = UnsetValue
 
     @property
     def url(self):
@@ -220,7 +221,7 @@ class IssueWrapper:
         if edata:
             updated = edata[0]
             events = edata[1]
-            if updated < self.instance.updated_at:
+            if updated < self.updated_at:
                 update = True
                 write_cache = True
 
@@ -345,12 +346,20 @@ class IssueWrapper:
 
     @property
     def updated_at(self):
+        if self._updated_at is not UnsetValue:
+            return self._updated_at
+
         # this is a hack to fix unit tests
         if self.instance is not None:
             if self.instance.updated_at is not None:
-                return self.instance.updated_at
+                self._updated_at = self.instance.updated_at
+                return self._updated_at
 
         return datetime.datetime.utcnow()
+
+    @updated_at.setter
+    def updated_at(self, value):
+        self._updated_at = value
 
     @property
     def closed_at(self):
