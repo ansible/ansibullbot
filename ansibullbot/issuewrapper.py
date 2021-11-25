@@ -220,7 +220,7 @@ class IssueWrapper:
         if edata:
             updated = edata[0]
             events = edata[1]
-            if updated < self.instance.updated_at:
+            if updated < self.updated_at:
                 update = True
                 write_cache = True
 
