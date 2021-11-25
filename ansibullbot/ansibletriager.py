@@ -241,7 +241,7 @@ class AnsibleTriager(DefaultTriager):
                         cachedir=cachedir,
                         gitrepo=repodata['gitrepo'],
                     )
-
+                    iw.updated_at = strip_time_safely(repodata['summaries'][str(issue.number)]['updated_at'])
                     if iw.is_pullrequest():
                         logging.info('creating CI wrapper')
                         self.ci = self.ci_class(self.cachedir_base, iw)
