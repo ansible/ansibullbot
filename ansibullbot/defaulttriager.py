@@ -96,8 +96,8 @@ class DefaultTriager:
         parser = self.create_parser()
         self.args = parser.parse_args(args)
 
-        logging.info('starting bot')
         set_logger(debug=self.args.debug, logfile=self.args.logfile)
+        logging.info('starting bot')
 
         self.cachedir_base = os.path.expanduser(self.args.cachedir_base)
         self.repos = {}
