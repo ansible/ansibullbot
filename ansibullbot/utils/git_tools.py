@@ -89,7 +89,7 @@ class GitRepoWrapper:
             logging.debug(cmd)
             (rc, so, se) = run_command(cmd, env={'GIT_TERMINAL_PROMPT': 0, 'GIT_ASKPASS': '/bin/echo'})
             logging.debug('rc: %s' % rc)
-            print(to_text(so) + to_text(se))
+            logging.debug(to_text(so) + to_text(se))
 
             if rc != 0:
                 os.makedirs(self.checkoutdir)
@@ -129,7 +129,7 @@ class GitRepoWrapper:
             logging.debug(cmd)
             (rc, so, se) = run_command(cmd, env={'GIT_TERMINAL_PROMPT': 0, 'GIT_ASKPASS': '/bin/echo'})
             so = to_text(so)
-            print(so + to_text(se))
+            logging.debug(so + to_text(se))
 
             # If rebase failed, recreate the checkout
             if rc != 0:

@@ -231,7 +231,7 @@ class ModuleIndexer:
             if not os.path.isfile(pfile):
                 refresh = True
             else:
-                print(pfile)
+                logging.debug(pfile)
                 with open(pfile, 'rb') as f:
                     pdata = pickle.load(f)
                 if pdata[0] == mtime:
@@ -372,7 +372,7 @@ class ModuleIndexer:
                     login = commit['email'].split('@')[0]
                     self.emails_cache[commit['email']] = login
                 if not login:
-                    print('unknown: {}'.format(commit['email']))
+                    logging.debug('unknown: {}'.format(commit['email']))
                 self.commits[k][idc]['login'] = self.emails_cache.get(login)
 
     def set_maintainers(self):
