@@ -30,7 +30,6 @@ class TestIdempotence:
                 #'--only_issues',
                 '--ignore_module_commits',
                 '--cachedir=%s' % mm.cachedir,
-                '--logfile=%s' % os.path.join(mm.cachedir, 'bot.log'),
                 '--no_since',
                 #'--id=2',
                 #'--id=1',

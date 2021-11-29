@@ -1358,52 +1358,6 @@ class MockRequestsResponse:
         return self.rdata
 
 
-class MockLogger:
-    INFO = 'info'
-    DEBUG = 'debug'
-
-    @staticmethod
-    def info(message):
-        print('INFO %s' % message)
-
-    @staticmethod
-    def debug(message):
-        print('DEBUG %s' % message)
-
-    @staticmethod
-    def warn(message):
-        print('WARNING %s' % message)
-
-    @staticmethod
-    def warning(message):
-        print('WARNING %s' % message)
-
-    @staticmethod
-    def error(message):
-        print('ERROR %s ' % message)
-
-    @staticmethod
-    def Formatter(format_string):
-        return None
-
-    @staticmethod
-    def getLogger(*args, **kwargs):
-        return MockLogger()
-
-    def setLevel(self, level):
-        self.level = level
-
-    def addHandler(self, handler):
-        pass
-
-    @staticmethod
-    def StreamHandler():
-        return MockLogger()
-
-    def setFormatter(self, formatter):
-        pass
-
-
 class BotMockManager:
 
     mocks = []
@@ -1411,7 +1365,6 @@ class BotMockManager:
     cachedir = None
     mr = None
     mrs = None
-    ml = None
 
     def __init__(self):
         #self.mocks = []
@@ -1452,32 +1405,12 @@ class BotMockManager:
         # MOCK ALL THE THINGS!
         self.mr = MockRequests(self.issuedb)
         self.mrs = MockRequestsSession(self.issuedb)
-        self.ml = MockLogger
 
         self.mocks.append(patch('ansibullbot.utils.github.C.DEFAULT_RATELIMIT', False))
         self.mocks.append(patch('ansibullbot.utils.github.C.DEFAULT_GITHUB_USERNAME', 'ansibot'))
         self.mocks.append(patch('ansibullbot.utils.github.C.DEFAULT_GITHUB_TOKEN', 'abc1234'))
         self.mocks.append(patch('github.Requester.requests', self.mr))
         self.mocks.append(patch('ansibullbot.utils.github.requests', self.mr))
-        self.mocks.append(patch('ansibullbot.utils.botmetadata.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.ansibletriager.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.defaulttriager.requests', self.mr))
-        self.mocks.append(patch('ansibullbot.plugins.contributors.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.plugins.needs_revision.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.plugins.shipit.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.defaulttriager.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.component_tools.logging', MockLogger))
-        #self.mocks.append(patch('ansibullbot.utils.component_tools.requests', self.mr))
-        self.mocks.append(patch('ansibullbot.utils.extractors.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.gh_gql_client.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.git_tools.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.moduletools.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.net_tools.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.sqlite_utils.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.utils.timetools.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.issuewrapper.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.historywrapper.logging', MockLogger))
-        self.mocks.append(patch('ansibullbot.ghapiwrapper.logging', MockLogger))
         self.mocks.append(patch('ansibullbot.utils.gh_gql_client.requests', self.mr))
         self.mocks.append(patch('ansibullbot.ghapiwrapper.requests', self.mr))
 
