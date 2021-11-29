@@ -1,34 +1,21 @@
 import logging
+import logging.handlers
 import os
-
-from logging.handlers import WatchedFileHandler
 
 
 def set_logger(debug=False, logfile=None):
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
-    logFormatter = \
-            logging.Formatter("%(asctime)s %(levelname)s %(process)d %(filename)s:%(funcName)s:%(lineno)d %(message)s")
-    rootLogger = logging.getLogger()
+    formatter = logging.Formatter(
+        "%(asctime)s %(levelname)s %(process)d %(filename)s:%(funcName)s:%(lineno)d %(message)s"
+    )
 
-    if debug:
-        logging.level = logging.DEBUG
-        rootLogger.setLevel(logging.DEBUG)
-    else:
-        logging.level = logging.INFO
-        rootLogger.setLevel(logging.INFO)
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
 
     if logfile:
-        try:
-            logdir = os.path.dirname(logfile)
-            if logdir and not os.path.isdir(logdir):
-                os.makedirs(logdir)
-            fileHandler = WatchedFileHandler(logfile)
-            fileHandler.setFormatter(logFormatter)
-            rootLogger.addHandler(fileHandler)
-        except Exception:
-            pass
-
-    consoleHandler = logging.StreamHandler()
-    consoleHandler.setFormatter(logFormatter)
-    rootLogger.addHandler(consoleHandler)
-
+        file_handler = logging.handlers.WatchedFileHandler(logfile)
+        file_handler.setFormatter(formatter)
+        root_logger.addHandler(file_handler)

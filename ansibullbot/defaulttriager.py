@@ -150,7 +150,7 @@ class DefaultTriager:
         parser.add_argument("--dry-run", "-n", action="store_true", help="Don't make any changes")
         parser.add_argument("--dump_actions", action="store_true", help="serialize the actions to disk [/tmp/actions]")
         parser.add_argument("--force", "-f", action="store_true", help="Do not ask questions")
-        parser.add_argument("--logfile", type=str, default='/var/log/ansibullbot.log', help="Send logging to this file")
+        parser.add_argument("--logfile", type=str, help="Send logging to this file")
         parser.add_argument("--ignore_state", action="store_true", help="Do not skip processing closed issues")
         parser.add_argument("--last", type=int, help="triage the last N issues or PRs")
         parser.add_argument("--only_closed", action="store_true", help="Triage closed issues|prs only")
