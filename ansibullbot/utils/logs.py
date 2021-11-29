@@ -1,6 +1,5 @@
 import logging
 import logging.handlers
-import os
 
 
 def set_logger(debug=False, logfile=None):
