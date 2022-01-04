@@ -242,7 +242,7 @@ class AnsibleVersionIndexer:
         if commithash in self.commit_versions_cache:
             return self.commit_versions_cache[commithash]
 
-        rc, stdout, _ = run_command('cd %s;git branch -r --contains %s' % (self.checkoutdir, commithash))
+        rc, stdout, cmd = run_command('cd %s;git branch -r --contains %s' % (self.checkoutdir, commithash))
         if rc != 0:
             raise Exception("rc == %d from cmd = '%s'" % (rc, cmd))
 
