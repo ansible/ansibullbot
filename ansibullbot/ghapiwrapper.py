@@ -158,7 +158,7 @@ class RepoWrapper:
         while True:
             try:
                 issue = self.load_issue(number)
-                if issue:
+                if issue and C.DEFAULT_GITHUB_TOKEN in issue._requester._Requester__authorizationHeader:
                     if issue.update():
                         self.save_issue(issue)
                 else:
