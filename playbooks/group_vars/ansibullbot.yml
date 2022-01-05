@@ -71,6 +71,7 @@ authorized_keys:
 
   - user: centos
     comment: sdoran@aws_work
+    state: absent
     key:
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfJ88NuTDKSpYq+wrDCd+AKg2l1jqg0qgXxjiNXwaEUOUllb5II0uin7xh/6jl9hLRbwVO\
       e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
@@ -98,6 +99,7 @@ authorized_keys:
 
   - user: "{{ ansibullbot_user }}"
     comment: sdoran@aws_work
+    state: absent
     key:
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfJ88NuTDKSpYq+wrDCd+AKg2l1jqg0qgXxjiNXwaEUOUllb5II0uin7xh/6jl9hLRbwVO\
       e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
