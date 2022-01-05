@@ -8,6 +8,7 @@ botinstance_volume_size: 200
 botinstance_type: t3.xlarge
 botinstance_ssh_keys:
   - name: sdoran@aws_work
+    state: absent
     key_material:
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfJ88NuTDKSpYq+wrDCd+AKg2l1jqg0qgXxjiNXwaEUOUllb5II0uin7xh/6jl9hLRbwVO\
       e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
