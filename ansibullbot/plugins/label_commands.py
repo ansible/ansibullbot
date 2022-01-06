@@ -1,4 +1,8 @@
-def get_label_command_facts(issuewrapper, all_maintainers, maintainer_team=[], valid_labels=[]):
+def get_label_command_facts(issuewrapper, all_maintainers, maintainer_team=None, valid_labels=None):
+    if valid_labels is None:
+        valid_labels = []
+    if maintainer_team is None:
+        maintainer_team = []
     add_labels = []
     del_labels = []
 
@@ -91,7 +95,9 @@ def get_label_command_facts(issuewrapper, all_maintainers, maintainer_team=[], v
     return fact
 
 
-def get_waffling_overrides(issuewrapper, all_maintainers, maintainer_team=[]):
+def get_waffling_overrides(issuewrapper, all_maintainers, maintainer_team=None):
+    if maintainer_team is None:
+        maintainer_team = []
     overrides = []
 
     iw = issuewrapper

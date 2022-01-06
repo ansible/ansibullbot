@@ -1,4 +1,8 @@
-def get_bot_status_facts(issuewrapper, all_maintainers, maintainer_team=[], bot_names=[]):
+def get_bot_status_facts(issuewrapper, all_maintainers, maintainer_team=None, bot_names=None):
+    if bot_names is None:
+        bot_names = []
+    if maintainer_team is None:
+        maintainer_team = []
     iw = issuewrapper
     bs = False
     for ev in iw.history.history:
