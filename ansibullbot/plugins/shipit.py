@@ -3,8 +3,10 @@ import logging
 from fnmatch import fnmatch
 
 
-def replace_ansible(maintainers, ansible_members, bots=[]):
+def replace_ansible(maintainers, ansible_members, bots=None):
     '''Replace -ansible- with the -humans- in the org'''
+    if bots is None:
+        bots = []
     newlist = []
     for m in maintainers:
         if m != 'ansible':
@@ -219,7 +221,7 @@ def get_review_facts(issuewrapper, meta):
     return rfacts
 
 
-def get_shipit_facts(issuewrapper, inmeta, botmeta_files, maintainer_team=[], botnames=[]):
+def get_shipit_facts(issuewrapper, inmeta, botmeta_files, maintainer_team=None, botnames=None):
     """ Count shipits by maintainers/community/other """
 
     # supershipit - maintainers with isolated commit access
@@ -227,6 +229,10 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, maintainer_team=[], bo
     # community - people who maintain file(s) in the same directory
     # other - anyone else who comments with shipit/+1/LGTM
 
+    if botnames is None:
+        botnames = []
+    if maintainer_team is None:
+        maintainer_team = []
     meta = inmeta.copy()
     iw = issuewrapper
     nmeta = {
