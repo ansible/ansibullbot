@@ -1147,6 +1147,25 @@ class AnsibleTriager(DefaultTriager):
             for commentid in self.meta['spam_comment_ids']:
                 actions.uncomment.append(commentid)
 
+        # auto close
+        # FIXME the below condition will change to either:
+        #  * "waiting_on_contributor labeled more than X months ago" or
+        #  * "has waiting_on_contributor and issue created more that X months ago"
+        #  once we test auto-closing the ones from 2015 (2016, 2017, ?).
+        # TODO Should has_pr and/or recent activity be taken into account?
+        # TODO Should bot warn a week/month before auto-closing?
+        # TODO Auto-close PRs as well?
+        if iw.is_issue() and 'waiting_on_contributor' in iw.labels and iw.created_at.year == 2015:
+            # Waiting for Godot!
+            actions.close = True
+            actions.newlabel.append('bot_closed')
+            actions.comments.append(
+                render_boilerplate(
+                    self.meta,
+                    boilerplate='waiting_on_contributor_close'
+                )
+            )
+
         actions.newlabel = sorted({to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.newlabel})
         actions.unlabel = sorted({to_text(to_bytes(x, 'ascii'), 'ascii') for x in actions.unlabel})
 
