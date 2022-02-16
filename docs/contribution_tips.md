@@ -28,7 +28,7 @@ virtualenv venv
 source venv/bin/activate
 pip install -r requirements.txt
 PYTHONPATH=. bin/github-test-proxy --help
-PYTHONPATH=. bin/github-test-proxy proxy --debug --token=<GITHUBAPITOKEN> --shippable_token=<SHIPPABLETOKEN> --fixtures=/tmp/gproxy/fixtures --deltas=/tmp/gproxy/deltas
+PYTHONPATH=. bin/github-test-proxy proxy --debug --token=<GITHUBAPITOKEN> --fixtures=/tmp/gproxy/fixtures --deltas=/tmp/gproxy/deltas
 ```
 
 
