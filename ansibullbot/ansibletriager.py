@@ -929,6 +929,9 @@ class AnsibleTriager(DefaultTriager):
         if self.meta['is_backport']:
             if 'backport' not in iw.labels:
                 actions.newlabel.append('backport')
+        else:
+            if 'backport' in iw.labels:
+                actions.unlabel.append('backport')
 
         # https://github.com/ansible/ansibullbot/issues/29
         if self.meta['deprecated']:
