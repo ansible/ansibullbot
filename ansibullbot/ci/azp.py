@@ -346,6 +346,10 @@ class AzurePipelinesCI(BaseCI):
         self.rebuild(run_id, failed_only=True)
 
     def cancel(self, run_id):
+        if self.state != 'pending':
+            logging.info('Could not cancel CI as it is not running')
+            return
+
         stages_in_progress = (
             s['identifier'] for s in self.stages if s['state'] != 'completed'
         )
