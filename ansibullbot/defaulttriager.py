@@ -354,19 +354,20 @@ class DefaultTriager:
 
     def get_stale_numbers(self, reponame: str, issue_summaries: t.Dict[str, t.Dict[str, t.Any]]) -> t.List[int]:
         stale = []
-        for number, summary in issue_summaries.items():
+        for summary in issue_summaries.values():
+            number = summary['number']
             if number in stale:
                 continue
             if summary['state'] == 'closed':
                 continue
 
-            if not (meta := self.load_meta(reponame, number)):
-                stale.append(int(number))
+            if not (meta := self.load_meta(reponame, str(number))):
+                stale.append(number)
                 continue
 
             days_stale = (datetime.datetime.now() - strip_time_safely(meta['time'])).days
             if days_stale > C.DEFAULT_STALE_WINDOW:
-                stale.append(int(number))
+                stale.append(number)
 
         stale = sorted(stale)
         if 10 >= len(stale) > 0:
@@ -479,7 +480,7 @@ class DefaultTriager:
         # Get stale numbers if not targeting
         if self.args.daemonize and self.repos[repo]['loopcount'] > 0:
             logging.info('checking for stale numbers')
-            self.repos[repo]['stale'] = [int(x) for x in self.get_stale_numbers(repo, issue_summaries)]
+            self.repos[repo]['stale'] = self.get_stale_numbers(repo, issue_summaries)
             numbers.extend(self.repos[repo]['stale'])
             numbers = sorted(set(numbers))
             logging.info('%s numbers after stale check' % len(numbers))
