@@ -145,13 +145,12 @@ class AnsibleTriager(DefaultTriager):
         return BotMetadataParser.parse_yaml(rdata)
 
     def _should_skip_issue(self, summary):
-        number = str(summary['number'])
         reponame = summary['repository']['nameWithOwner']
 
-        if number in self.repos[reponame]['stale']:
+        if summary['number'] in self.repos[reponame]['stale']:
             return False
 
-        if not (lmeta := self.load_meta(reponame, number)):
+        if not (lmeta := self.load_meta(reponame, str(summary['number']))):
             return False
 
         if strip_time_safely(lmeta['updated_at']) != strip_time_safely(summary['updated_at']):
