@@ -239,6 +239,10 @@ class DefaultTriager:
                     logging.info('action: label - ' + newlabel)
                     iw.add_label(label=newlabel)
 
+            for unlabel in actions.unlabel:
+                logging.info('action: unlabel - ' + unlabel)
+                iw.remove_label(label=unlabel)
+
             logging.info('action: close')
             iw.instance.edit(state='closed')
 

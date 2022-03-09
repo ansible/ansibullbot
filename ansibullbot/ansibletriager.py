@@ -1161,6 +1161,7 @@ class AnsibleTriager(DefaultTriager):
             # Waiting for Godot!
             actions.close = True
             actions.newlabel.append('bot_closed')
+            actions.unlabel.append('waiting_on_contributor')
             actions.comments.append(
                 render_boilerplate(
                     self.meta,
