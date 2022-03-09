@@ -1157,7 +1157,7 @@ class AnsibleTriager(DefaultTriager):
         # TODO Should has_pr and/or recent activity be taken into account?
         # TODO Should bot warn a week/month before auto-closing?
         # TODO Auto-close PRs as well?
-        if iw.is_issue() and 'waiting_on_contributor' in iw.labels and iw.created_at.year == 2015:
+        if iw.is_issue() and 'waiting_on_contributor' in iw.labels and iw.created_at.year == 2016:
             # Waiting for Godot!
             actions.close = True
             actions.newlabel.append('bot_closed')
