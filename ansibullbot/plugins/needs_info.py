@@ -87,9 +87,7 @@ def needs_info_template_facts(iw, meta):
 
 
 def needs_info_timeout_facts(history, meta):
-    # warn at 30 days
     NI_WARN = int(C.DEFAULT_NEEDS_INFO_WARN)
-    # close at 60 days
     NI_EXPIRE = int(C.DEFAULT_NEEDS_INFO_EXPIRE - C.DEFAULT_NEEDS_INFO_WARN)
 
     nif = {
