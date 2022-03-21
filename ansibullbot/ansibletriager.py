@@ -909,6 +909,13 @@ class AnsibleTriager(DefaultTriager):
             if self.meta['is_docs_only']:
                 if label_name not in iw.labels:
                     actions.newlabel.append(label_name)
+
+                if not iw.history.last_date_for_boilerplate('docs_team_info'):
+                    comment = render_boilerplate(
+                        self.meta,
+                        boilerplate='docs_team_info'
+                    )
+                    actions.comments.append(comment)
             else:
                 if label_name in iw.labels:
                     actions.unlabel.append(label_name)
