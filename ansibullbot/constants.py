@@ -287,6 +287,15 @@ DEFAULT_CI_PROVIDER = get_config(
     value_type='string'
 )
 
+DEFAULT_WAITING_ON_CONTRIBUTOR_EXPIRE = get_config(
+    p,
+    DEFAULTS,
+    'waiting_on_contributor_expire',
+    '%s_WAITING_ON_CONTRIBUTOR_EXPIRE' % PROG_NAME.upper(),
+    365,
+    value_type='int'
+)
+
 DEFAULT_NEEDS_INFO_WARN = get_config(
     p,
     'needs_info',
