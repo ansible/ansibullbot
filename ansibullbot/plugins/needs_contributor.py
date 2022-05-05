@@ -18,11 +18,11 @@ def get_needs_contributor_facts(events, botnames=None):
                 continue
 
         if event['event'] == 'commented':
-            if '!needs_contributor' in event['body']:
+            if '!needs_contributor' in event['body'] or '!waiting_on_contributor' in event['body']:
                 needs_contributor = False
                 continue
 
-            if 'needs_contributor' in event['body'] and '!needs_contributor' not in event['body']:
+            if 'needs_contributor' in event['body'] or 'waiting_on_contributor' in event['body']:
                 needs_contributor = True
                 continue
 

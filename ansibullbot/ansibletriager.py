@@ -118,7 +118,9 @@ class AnsibleTriager(DefaultTriager):
         'shipit',
         '!shipit',
         'duplicate_of',
-        'close_me'
+        'close_me',
+        'waiting_on_contributor',
+        '!waiting_on_contributor',
     ]
 
     def __init__(self, args=None):
@@ -1424,6 +1426,8 @@ class AnsibleTriager(DefaultTriager):
         vcommands.remove('!needs_revision')
         vcommands.remove('needs_contributor')
         vcommands.remove('!needs_contributor')
+        vcommands.remove('waiting_on_contributor')
+        vcommands.remove('!waiting_on_contributor')
 
         iw = issuewrapper
 
