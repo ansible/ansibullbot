@@ -120,6 +120,7 @@ class AnsibleTriager(DefaultTriager):
         'duplicate_of',
         'close_me',
         'waiting_on_contributor',
+        '!waiting_on_contributor',
     ]
 
     def __init__(self, args=None):
