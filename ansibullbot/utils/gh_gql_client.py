@@ -321,7 +321,7 @@ class GithubGraphQLClient:
 
     def update_node(self, node, node_type, owner, repo):
         updated_ats = [node['updatedAt'], node['timelineItems']['updatedAt']]
-        if node_type == 'pullRequest':
+        if node_type == 'pullrequest':
             ci = node.get('commits', {}).get('nodes', [{}])[0].get('commit', {}).get('checkSuites', {}).get('nodes', {})
             if ci:
                 updated_ats.append(ci[0]['updatedAt'])
