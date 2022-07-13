@@ -244,7 +244,7 @@ class GithubGraphQLClient:
                           (owner, repo, otype, pagecount, len(nodes)))
 
             issueparams = ', '.join([x for x in [states, first, last, after] if x])
-            if otype == 'pullRequest':
+            if otype == 'pullRequests':
                 subquery = SUBQUERY_CI_UPDATED_AT
             else:
                 subquery = ''
