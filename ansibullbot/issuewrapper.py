@@ -44,24 +44,23 @@ class IssueWrapper:
         self.cachedir = cachedir
         self.gitrepo = gitrepo
 
-        self.meta = {}
         self._assignees = UnsetValue
-        self._committer_emails = False
-        self._committer_logins = False
-        self._commits = False
+        self._committer_emails = UnsetValue
+        self._committer_logins = UnsetValue
+        self._commits = UnsetValue
         self._events = UnsetValue
         self._history = UnsetValue
-        self._labels = False
+        self._labels = UnsetValue
         self._merge_commits = UnsetValue
-        self._pr = False
-        self._pr_reviews = False
-        self._repo_full_name = False
-        self._template_data = None
-        self._pull_raw = None
-        self._pr_files = None
+        self._pr = UnsetValue
+        self._pr_reviews = UnsetValue
+        self._repo_full_name = UnsetValue
+        self._template_data = UnsetValue
+        self._pull_raw = UnsetValue
+        self._pr_files = UnsetValue
         self.full_cachedir = os.path.join(self.cachedir, 'issues', str(self.number))
-        self._renamed_files = None
-        self._pullrequest_check_runs = None
+        self._renamed_files = UnsetValue
+        self._pullrequest_check_runs = UnsetValue
         self._updated_at = UnsetValue
 
     @property
@@ -250,7 +249,7 @@ class IssueWrapper:
 
     @property
     def template_data(self):
-        if self._template_data is None:
+        if self._template_data is UnsetValue:
             self._template_data = get_template_data(self)
         return self._template_data
 
@@ -323,7 +322,7 @@ class IssueWrapper:
     def repo_full_name(self):
         '''return the <org>/<repo> string'''
         # prefer regex over making GET calls
-        if self._repo_full_name is False:
+        if self._repo_full_name is UnsetValue:
             try:
                 url = self.url
                 full_name = re.search(r'repos\/\w+\/\w+\/', url).group()
@@ -397,7 +396,7 @@ class IssueWrapper:
 
     @property
     def pullrequest(self):
-        if not self._pr:
+        if self._pr is UnsetValue:
             logging.debug('@pullrequest.get_pullrequest #%s' % self.number)
             self._pr = self.repo.get_pullrequest(self.number)
         return self._pr
@@ -406,14 +405,14 @@ class IssueWrapper:
         if self.is_pullrequest():
             # the underlying call is wrapper with ratelimited ...
             self._pr = self.repo.get_pullrequest(self.number)
-            self._pr_reviews = False
+            self._pr_reviews = UnsetValue
             self._merge_commits = UnsetValue
-            self._committer_emails = False
+            self._committer_emails = UnsetValue
 
     @property
     @RateLimited
     def pullrequest_check_runs(self):
-        if self._pullrequest_check_runs is None:
+        if self._pullrequest_check_runs is UnsetValue:
             logging.info('fetching pull request check runs')
             self._pullrequest_check_runs = self.commits[-1].get_check_runs()
         return self._pullrequest_check_runs
@@ -421,14 +420,14 @@ class IssueWrapper:
     @property
     @RateLimited
     def pullrequest_raw_data(self):
-        if not self._pull_raw:
+        if self._pull_raw is UnsetValue:
             logging.info('@pullrequest_raw_data')
             self._pull_raw = self.pullrequest.raw_data
         return self._pull_raw
 
     @property
     def pr_files(self):
-        if self._pr_files is None:
+        if self._pr_files is UnsetValue:
             self._pr_files = self.load_update_fetch_files()
         return self._pr_files
 
@@ -467,13 +466,13 @@ class IssueWrapper:
 
     @property
     def labels(self):
-        if self._labels is False:
+        if self._labels is UnsetValue:
             self._labels = [x for x in self.get_labels()]
         return self._labels
 
     @property
     def reviews(self):
-        if self._pr_reviews is False:
+        if self._pr_reviews is UnsetValue:
             self._pr_reviews = [r.raw_data for r in self.pullrequest.get_reviews()]
 
         # https://github.com/ansible/ansibullbot/issues/881
@@ -497,7 +496,9 @@ class IssueWrapper:
     @property
     @RateLimited
     def commits(self):
-        if self._commits is False and self.is_pullrequest():
+        if not self.is_pullrequest():
+            return []
+        if self._commits is UnsetValue:
             self._commits = [x for x in self.pullrequest.get_commits()]
         return self._commits
 
@@ -574,7 +575,7 @@ class IssueWrapper:
 
     @property
     def committer_emails(self):
-        if self._committer_emails is False:
+        if self._committer_emails is UnsetValue:
             self._committer_emails = []
             for commit in self.commits:
                 self.committer_emails.append(commit.commit.author.email)
@@ -582,7 +583,7 @@ class IssueWrapper:
 
     @property
     def committer_logins(self):
-        if self._committer_logins is False:
+        if self._committer_logins is UnsetValue:
             self._committer_logins = []
             for commit in self.commits:
                 self._committer_logins.append(self.get_commit_login(commit))
@@ -618,7 +619,7 @@ class IssueWrapper:
     @property
     def renamed_files(self):
         ''' A map of renamed files to prevent other code from thinking these are new files '''
-        if self._renamed_files is not None:
+        if self._renamed_files is not UnsetValue:
             return self._renamed_files
 
         self._renamed_files = {}
