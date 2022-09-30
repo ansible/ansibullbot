@@ -1,22 +1,17 @@
-import json
 import logging
 import os
 import pickle
-import requests
 import shutil
 from datetime import datetime
 
+import requests
 from github import Github
 
 import ansibullbot.constants as C
 
 from ansibullbot.utils.github import RateLimited
 from ansibullbot.exceptions import RateLimitError
-from ansibullbot.utils.file_tools import read_gzip_json_file, write_gzip_json_file
-from ansibullbot.utils.sqlite_utils import AnsibullbotDatabase
 
-
-ADB = AnsibullbotDatabase()
 
 HEADERS = [
     'application/json',
@@ -46,65 +41,6 @@ class GithubWrapper:
                 login_or_token=user,
                 password=passw
             )
-
-    @RateLimited
-    def get_cached_request(self, url):
-        '''Use a combination of sqlite and ondisk caching to GET an api resource'''
-        url_parts = url.split('/')
-
-        cdf = os.path.join(self.cached_requests_dir, url.replace('https://', '') + '.json.gz')
-        cdd = os.path.dirname(cdf)
-        if not os.path.exists(cdd):
-            os.makedirs(cdd)
-
-        # FIXME - commits are static and can always be used from cache.
-        if url_parts[-2] == 'commits' and os.path.exists(cdf):
-            return read_gzip_json_file(cdf)
-
-        headers = {
-            'Accept': ','.join(HEADERS),
-            'Authorization': 'Bearer %s' % self.token,
-        }
-
-        meta = ADB.get_github_api_request_meta(url, token=self.token)
-        if meta is None:
-            meta = {}
-
-        # https://developer.github.com/v3/#conditional-requests
-        etag = meta.get('etag')
-        if etag and os.path.exists(cdf):
-            headers['If-None-Match'] = etag
-
-        rr = requests.get(url, headers=headers)
-
-        if rr.status_code == 304:
-            # not modified
-            with open(cdf) as f:
-                data = json.loads(f.read())
-        else:
-            data = rr.json()
-
-            # handle ratelimits ...
-            if isinstance(data, dict) and data.get('message'):
-                if data['message'].lower().startswith('api rate limit exceeded'):
-                    raise RateLimitError()
-
-            # cache data to disk
-            logging.debug('write %s' % cdf)
-            write_gzip_json_file(cdf, data)
-
-        # save the meta
-        ADB.set_github_api_request_meta(url, rr.headers, cdf, token=self.token)
-
-        # pagination
-        if hasattr(rr, 'links') and rr.links and rr.links.get('next'):
-            _data = self.get_request(rr.links['next']['url'])
-            if isinstance(data, list):
-                data += _data
-            else:
-                data.update(_data)
-
-        return data
 
     @RateLimited
     def get_request(self, url):

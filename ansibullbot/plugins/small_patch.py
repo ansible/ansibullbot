@@ -31,13 +31,14 @@ def get_small_patch_facts(iw):
     small_chunks_changed = 0
 
     for commit in iw.commits:
-        if iw.get_commit_files(commit) is None:
+        files = getattr(commit, 'files')
+        if files is None:
             # "Sorry, this diff is temporarily unavailable due to heavy server load."
             # Preserve small_patch label to prevent potential waffling
             sfacts['is_small_patch'] = 'small_patch' in iw.labels
             return sfacts
 
-        for changed_file in iw.get_commit_files(commit):
+        for changed_file in files:
 
             if isinstance(changed_file, dict):
                 changed_file = CommitFile(changed_file)
