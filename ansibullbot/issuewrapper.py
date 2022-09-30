@@ -52,7 +52,7 @@ class IssueWrapper:
         self._events = UnsetValue
         self._history = UnsetValue
         self._labels = False
-        self._merge_commits = False
+        self._merge_commits = UnsetValue
         self._pr = False
         self._pr_reviews = False
         self._repo_full_name = False
@@ -407,7 +407,7 @@ class IssueWrapper:
             # the underlying call is wrapper with ratelimited ...
             self._pr = self.repo.get_pullrequest(self.number)
             self._pr_reviews = False
-            self._merge_commits = False
+            self._merge_commits = UnsetValue
             self._committer_emails = False
 
     @property
@@ -495,17 +495,11 @@ class IssueWrapper:
         return self._history
 
     @property
-    def commits(self):
-        if self._commits is False:
-            self._commits = self.get_commits()
-        return self._commits
-
     @RateLimited
-    def get_commits(self):
-        if not self.is_pullrequest():
-            return None
-        commits = [x for x in self.pullrequest.get_commits()]
-        return commits
+    def commits(self):
+        if self._commits is False and self.is_pullrequest():
+            self._commits = [x for x in self.pullrequest.get_commits()]
+        return self._commits
 
     @property
     def mergeable(self):
@@ -562,35 +556,20 @@ class IssueWrapper:
 
         return self.incoming_repo_slug != self.repo.repo.full_name
 
-    @RateLimited
-    def get_commit_files(self, commit):
-        cdata = self.github.get_cached_request(commit.url)
-        files = cdata.get('files', [])
-        return files
-
-    @RateLimited
     def get_commit_login(self, commit):
-        cdata = self.github.get_cached_request(commit.url)
-
         # https://github.com/ansible/ansibullbot/issues/1265
         # some commits are created from outside github and have no assocatied login
-        if ('author' in cdata and cdata['author'] is None) or \
-            ('author' not in cdata):
-            return ''
-        login = cdata['author']['login']
-
-        return login
+        if (author := getattr(commit, 'author')) is not None:
+            return getattr(author, 'login', '')
+        return ''
 
     @property
-    @RateLimited
     def merge_commits(self):
-        # https://api.github.com/repos/ansible/ansible/pulls/91/commits
-        if self._merge_commits is False:
-            self._merge_commits = []
-            for commit in self.commits:
-                commit_data = self.github.get_cached_request(commit.url)
-                if len(commit_data['parents']) > 1 or commit_data['commit']['message'].startswith('Merge branch'):
-                    self._merge_commits.append(commit)
+        if self._merge_commits is UnsetValue:
+            self._merge_commits = [
+                c for c in self.commits
+                if len(c.parents) > 1 or c.commit.message.startswith('Merge branch')
+            ]
         return self._merge_commits
 
     @property
@@ -606,7 +585,7 @@ class IssueWrapper:
         if self._committer_logins is False:
             self._committer_logins = []
             for commit in self.commits:
-                self.committer_logins.append(self.get_commit_login(commit))
+                self._committer_logins.append(self.get_commit_login(commit))
         return self._committer_logins
 
     def merge(self):

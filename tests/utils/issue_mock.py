@@ -87,9 +87,6 @@ class IssueMock:
             self._commits.append(commit)
         return self._commits
 
-    def get_commit_files(self, commit):
-        return commit.files
-
     @property
     def comments(self):
         return self.get_events()
@@ -179,10 +176,6 @@ class IssueMock:
 
     def set_labels(self, *labels):
         self.calls.append(('set_labels', labels))
-
-    def get_commits(self):
-        self.calls.append('get_commits')
-        return self.commits
 
     def is_pullrequest(self):
         return 'pull' in self.html_url
