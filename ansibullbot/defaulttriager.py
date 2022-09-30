@@ -31,7 +31,6 @@ from ansibullbot import constants as C
 from ansibullbot.utils.github import RateLimited
 from ansibullbot.utils.gh_gql_client import GithubGraphQLClient
 from ansibullbot.utils.git_tools import GitRepoWrapper
-from ansibullbot.utils.iterators import RepoIssuesIterator
 from ansibullbot.utils.logs import set_logger
 from ansibullbot.utils.systemtools import run_command
 from ansibullbot.utils.timetools import strip_time_safely
@@ -521,12 +520,8 @@ class DefaultTriager:
         if self.args.last and len(numbers) > self.args.last:
             numbers = numbers[0 - self.args.last:]
 
-        # Use iterator to avoid requesting all issues upfront
-        self.repos[repo]['issues'] = RepoIssuesIterator(
-            self.repos[repo]['repo'],
-            numbers,
-            issuecache=issuecache
-        )
+        self.repos[repo]['numbers'] = numbers
+        self.repos[repo]['issuecache'] = issuecache
         self.repos[repo]['summaries'] = issue_summaries
 
         logging.info('getting repo objs for %s complete' % repo)

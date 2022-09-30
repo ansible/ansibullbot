@@ -202,10 +202,9 @@ class AnsibleTriager(DefaultTriager):
                 use_galaxy=not self.args.ignore_galaxy
             )
 
-            for issue in repodata['issues']:
-                if issue is None:
-                    continue
-
+            for issue in (
+                repodata['issuecache'].get(n, repodata['repo'].get_issue(n)) for n in repodata['numbers']
+            ):
                 icount += 1
 
                 self.meta = {}
