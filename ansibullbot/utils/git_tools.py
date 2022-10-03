@@ -179,6 +179,7 @@ class GitRepoWrapper:
                 fp = fp.replace('./', '', 1)
                 self._files.append(fp)
 
+    # NOTE not used, see the get_submitter_facts function in plugins/shipit.py
     def get_files_by_commit(self, commit):
         if commit not in self.files_by_commit:
             cmd = f'cd {self.checkoutdir}; git show --pretty="" --name-only {commit}'
@@ -190,6 +191,7 @@ class GitRepoWrapper:
 
         return filenames
 
+    # NOTE not used, see the get_submitter_facts function in plugins/shipit.py
     def get_commits_by_email(self, email):
         '''Map an email(s) to a total num of commits and total by file'''
         if self.commits_by_email is None:
