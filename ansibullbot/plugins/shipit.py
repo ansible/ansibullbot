@@ -500,6 +500,12 @@ def get_supported_by(meta):
     return supported_by
 
 
+# NOTE this function is too expensive for submitters with many commits and
+# therefore is not currently used some form of caching needs to be introduced
+# in order to not waste resources on re-counting the commits per each issue
+# processing.
+# Currently this function is not used due to the above. The facts themselves
+# were not used directly by the bot prior to removing a call to this function.
 def get_submitter_facts(issuewrapper, meta, emails_cache, component_matcher):
     '''Summary stats of submitter's commit history'''
     sfacts = {
