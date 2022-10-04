@@ -479,12 +479,6 @@ class AnsibleTriager(DefaultTriager):
         if 'needs_triage' not in iw.labels and not iw.history.was_unlabeled('needs_triage') and not iw.history.was_unlabeled('triage'):
             actions.newlabel.append('needs_triage')
 
-        # legacy "triage" -> "needs_triage"
-        if 'triage' in iw.labels:
-            if 'needs_triage' not in iw.labels:
-                actions.newlabel.append('needs_triage')
-            actions.unlabel.append('triage')
-
         # owner PRs
         if iw.is_pullrequest():
             if self.meta['owner_pr']:
