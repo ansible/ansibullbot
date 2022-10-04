@@ -2,7 +2,6 @@
 
 {% for component in component_matches %}
 {{ '[' + component['repo_filename'] + '](' + 'https://github.com/ansible/ansible/blob/devel/' + component['repo_filename'] + ')'}}
-support: {{ component['support'] }}
 maintainers: {{ component['maintainers']|join(' ') }}
 
 {% endfor %}

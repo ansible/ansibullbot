@@ -70,7 +70,6 @@ def get_collection_facts(iw, component_matcher, meta):
     if fqcns and not has_core_files and (not list([x for x in cmap.values() if not x])) and not is_backport:
 
         cfacts['needs_collection_redirect'] = True
-        cfacts['component_support'] = ['community']
 
         if not iw.history.last_date_for_boilerplate('collection_migration'):
             cfacts['needs_collection_boilerplate'] = True
@@ -83,7 +82,6 @@ def get_collection_facts(iw, component_matcher, meta):
                 missing.add(k)
         if not missing:
             cfacts['needs_collection_redirect'] = True
-            cfacts['component_support'] = ['community']
 
             if not iw.history.last_date_for_boilerplate('collection_migration'):
                 cfacts['needs_collection_boilerplate'] = True

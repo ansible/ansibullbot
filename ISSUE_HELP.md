@@ -170,9 +170,6 @@ Label | Scope | Prevent automerge | Description
 **<a name="label-bug">bug</a>** | issues pull requests | no | Added to issues or pull requests reporting/fixing bugs.
 **<a name="label-c:_name_">c:_name_</a>** | issues pull requests | no | Categorize issues or pull requests by their relevant source code files.
 **<a name="label-ci_verified">ci_verified</a>** | pull requests | yes | Identify pull requests for which CI failed. A pull request must successfully pass CI in order to be merged.
-**<a name="label-committer_review">committer_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [certified](#certified) review workflow.
-**<a name="label-community_review">community_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [community](#community) review workflow.
-**<a name="label-core_review">core_review</a>** | pull requests | no | In order to be merged, these pull requests must follow the [core](#core) review workflow.
 **<a name="label-docs">docs</a>** | issues pull requests | no | Identify issues or pull requests related to documentation.
 **<a name="label-docsite_pr">docsite_pr</a>** | pull requests | no | Identify pull requests created through documentation's "Edit on GitHub" link
 **<a name="label-easyfix">easyfix</a>** | issue or pull requests | no | Identify easy entrance point for people who are looking to start contributing.
