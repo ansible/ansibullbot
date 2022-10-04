@@ -235,6 +235,7 @@ class TestSuperShipit(unittest.TestCase):
         assert not sfacts['shipit_actors_other']
         assert sfacts['shipit_actors'] == ['coreperson']
 
+    @pytest.mark.skip(reason="automerge is disabled now")
     def test_automerge_community_only(self):
         # automerge should only be allowed if the support is 100% community
         IW = IssueWrapperMock('ansible', 'ansible', 1)
