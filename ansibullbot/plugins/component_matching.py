@@ -19,7 +19,6 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
         'is_module_util': False,
         'is_plugin': False,
         'is_new_plugin': False,
-        'is_core': False,
         'is_multi_module': False,
         'module_match': None,
         'component': None,
@@ -31,7 +30,6 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
         'component_maintainers': [],
         'component_namespace_maintainers': [],
         'component_notifiers': [],
-        'component_support': [],
         'component_scm': None,
         'component_collection': None,
         'needs_component_message': False,
@@ -80,11 +78,6 @@ def get_component_match_facts(iw, component_matcher, valid_labels):
         for y in x['labels']:
             if y in valid_labels and y not in cmeta['component_labels']:
                 cmeta['component_labels'].append(y)
-
-    # Need to reduce the set support field ...
-    cmeta['component_support'] = sorted({x['support'] for x in CM_MATCHES})
-    if cmeta['component_support'] != ['community']:
-        cmeta['is_core'] = True
 
     # Reduce the set of maintainers
     for x in CM_MATCHES:

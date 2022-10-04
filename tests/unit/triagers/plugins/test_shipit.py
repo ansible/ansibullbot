@@ -11,7 +11,6 @@ from tests.utils.issue_mock import IssueMock
 from tests.utils.helpers import get_issue
 from ansibullbot.plugins.component_matching import get_component_match_facts
 from ansibullbot.plugins.shipit import get_automerge_facts
-from ansibullbot.plugins.shipit import get_review_facts
 from ansibullbot.plugins.shipit import get_shipit_facts
 from ansibullbot.plugins.shipit import is_approval
 from ansibullbot.issuewrapper import IssueWrapper
@@ -236,6 +235,7 @@ class TestSuperShipit(unittest.TestCase):
         assert not sfacts['shipit_actors_other']
         assert sfacts['shipit_actors'] == ['coreperson']
 
+    @pytest.mark.skip(reason="automerge is disabled now")
     def test_automerge_community_only(self):
         # automerge should only be allowed if the support is 100% community
         IW = IssueWrapperMock('ansible', 'ansible', 1)
@@ -248,7 +248,6 @@ class TestSuperShipit(unittest.TestCase):
             'is_new_module': False,
             'is_needs_rebase': False,
             'is_needs_revision': False,
-            'component_support': ['core', 'community'],
             'is_backport': False,
             'merge_commits': False,
             'has_commit_mention': False,
@@ -265,8 +264,6 @@ class TestSuperShipit(unittest.TestCase):
             ]
         }
         meta2 = copy.deepcopy(meta1)
-        meta2['component_support'] = ['community', 'community']
-        meta2['component_matches'][0]['support'] = 'community'
 
         afacts1 = get_automerge_facts(IW, meta1.copy())
         afacts2 = get_automerge_facts(IW, meta2.copy())
@@ -833,53 +830,6 @@ class TestOwnerPR(unittest.TestCase):
             self.assertTrue(facts['owner_pr'])
 
 
-class TestReviewFacts(unittest.TestCase):
-
-    def setUp(self):
-        self.meta = {
-            'is_needs_revision': False,  # always set by needs_revision plugin (get_needs_revision_facts)
-            'is_needs_rebase': False,
-            'is_needs_info': False,  # set by needs_info_template_facts
-        }
-
-    def test_review_facts_are_defined_module_utils(self):
-        botmeta_files = {
-            'lib/ansible/module_utils': {'support': 'community'},
-            'lib/ansible/modules/foo/bar.py': {'maintainers': ['ElsA', 'ZaZa']},
-            'lib/ansible/module_utils/baz/bar.py': {'maintainers': ['TiTi', 'mscherer']},
-        }
-        datafile = 'tests/fixtures/shipit/2_issue.yml'
-        statusfile = 'tests/fixtures/shipit/2_prstatus.json'
-        with get_issue(datafile, statusfile) as iw:
-            iw._pr_files = [MockFile('lib/ansible/module_utils/foo/bar.py')]
-            # need to give the wrapper a list of known files to compare against
-            iw.gitrepo = GitRepoWrapperMock()
-            iw.gitrepo.files.append('lib/ansible/modules/foo/bar.py')
-
-            # predefine what the matcher is going to return
-            CM = ComponentMatcherMock()
-            CM.expected_results = [
-                {
-                    'repo_filename': 'lib/ansible/module_utils/foo/bar.py',
-                    'labels': [],
-                    'support': None,
-                    'maintainers': ['ElsA', 'Oliver'],
-                    'notify': ['ElsA', 'Oliver'],
-                    'ignore': [],
-                }
-            ]
-
-            meta = self.meta.copy()
-            iw._commits = []
-            meta.update(get_component_match_facts(iw, CM, []))
-            meta.update(get_shipit_facts(iw, meta, botmeta_files, maintainer_team=['bcoca'], botnames=['ansibot']))
-            facts = get_review_facts(iw, meta)
-
-        self.assertTrue(facts['community_review'])
-        self.assertFalse(facts['core_review'])
-        self.assertFalse(facts['committer_review'])
-
-
 class TestAutomergeFacts(unittest.TestCase):
 
     def test_automerge_changelog_fragment(self):
@@ -894,7 +844,6 @@ class TestAutomergeFacts(unittest.TestCase):
             'is_new_module': False,
             'is_needs_rebase': False,
             'is_needs_revision': False,
-            'component_support': ['community'],
             'is_backport': False,
             'merge_commits': False,
             'has_commit_mention': False,
@@ -928,7 +877,6 @@ class TestAutomergeFacts(unittest.TestCase):
             'is_new_module': False,
             'is_needs_rebase': False,
             'is_needs_revision': False,
-            'component_support': ['community'],
             'is_backport': False,
             'merge_commits': False,
             'has_commit_mention': False,
@@ -963,7 +911,6 @@ class TestAutomergeFacts(unittest.TestCase):
             'is_new_module': False,
             'is_needs_rebase': False,
             'is_needs_revision': False,
-            'component_support': ['community'],
             'is_backport': False,
             'merge_commits': False,
             'has_commit_mention': False,

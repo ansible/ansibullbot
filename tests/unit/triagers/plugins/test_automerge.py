@@ -94,7 +94,6 @@ class TestAutomergeFacts(unittest.TestCase):
                     'support': 'community'
                 }
             ],
-            'component_support': ['community']
         }
         meta['module_match'] = meta['component_matches'][:]
         amfacts = get_automerge_facts(IW, meta)
@@ -130,7 +129,6 @@ class TestAutomergeFacts(unittest.TestCase):
                     'support': 'community'
                 }
             ],
-            'component_support': ['community']
         }
         meta['module_match'] = meta['component_matches'][:]
         amfacts = get_automerge_facts(IW, meta)

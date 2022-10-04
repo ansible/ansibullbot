@@ -54,7 +54,6 @@ from ansibullbot.plugins.needs_revision import get_ci_run_facts
 from ansibullbot.plugins.contributors import get_contributor_facts
 from ansibullbot.plugins.notifications import get_notification_facts
 from ansibullbot.plugins.shipit import get_automerge_facts
-from ansibullbot.plugins.shipit import get_review_facts
 from ansibullbot.plugins.shipit import get_shipit_facts
 from ansibullbot.plugins.shipit import needs_community_review
 from ansibullbot.plugins.small_patch import get_small_patch_facts
@@ -494,15 +493,6 @@ class AnsibleTriager(DefaultTriager):
             else:
                 if 'owner_pr' in iw.labels:
                     actions.unlabel.append('owner_pr')
-
-        # REVIEWS
-        for rtype in ['core_review', 'committer_review', 'community_review']:
-            if self.meta[rtype]:
-                if rtype not in iw.labels:
-                    actions.newlabel.append(rtype)
-            else:
-                if rtype in iw.labels:
-                    actions.unlabel.append(rtype)
 
         # WIPs
         if iw.is_pullrequest():
@@ -985,25 +975,6 @@ class AnsibleTriager(DefaultTriager):
                     if 'needs_maintainer' in iw.labels:
                         actions.unlabel.append('needs_maintainer')
 
-        # https://github.com/ansible/ansibullbot/issues/608
-        if not self.meta['is_bad_pr']:
-            if not self.meta.get('component_support'):
-                cs_labels = ['support:core']
-            else:
-                cs_labels = []
-                for sb in self.meta.get('component_support'):
-                    if sb is None:
-                        sb = 'core'
-                    cs_label = 'support:%s' % sb
-                    cs_labels.append(cs_label)
-            for cs_label in cs_labels:
-                if cs_label not in iw.labels:
-                    actions.newlabel.append(cs_label)
-            other_cs_labels = [x for x in iw.labels if x.startswith('support:')]
-            for ocs_label in other_cs_labels:
-                if ocs_label not in cs_labels:
-                    actions.unlabel.append(ocs_label)
-
         if not self.meta['stale_reviews']:
             if 'stale_review' in iw.labels:
                 actions.unlabel.append('stale_review')
@@ -1305,7 +1276,6 @@ class AnsibleTriager(DefaultTriager):
                 maintainer_team=self.maintainer_team, botnames=C.DEFAULT_BOT_NAMES,
             )
         )
-        self.meta.update(get_review_facts(iw, self.meta))
 
         # bot_status needed?
         self.meta.update(get_bot_status_facts(iw, self.module_indexer.all_maintainers, maintainer_team=self.maintainer_team, bot_names=C.DEFAULT_BOT_NAMES))
@@ -1320,7 +1290,7 @@ class AnsibleTriager(DefaultTriager):
         else:
             if self.meta['is_needs_revision'] or self.meta['is_needs_rebase']:
                 wo = iw.submitter
-            elif self.meta['is_core']:
+            else:
                 wo = 'ansible'
         self.meta.update({'waiting_on': wo})
 

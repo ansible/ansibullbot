@@ -130,9 +130,6 @@ def get_automerge_facts(issuewrapper, meta):
                 # other file modified, pull-request must be checked by an human
                 return create_ameta(False, 'automerge !module file(s) test failed')
 
-        if meta.get('component_support') != ['community']:
-            return create_ameta(False, 'automerge community support test failed')
-
     return create_ameta(True, 'automerge tests passed')
 
 
@@ -167,58 +164,11 @@ def needs_community_review(meta):
     if not mm:
         return False
 
-    if meta['component_support'] != ['community']:
-        return False
-
     # expensive call done earlier in processing
     if not meta['notify_community_shipit']:
         return False
 
     return True
-
-
-def get_review_facts(issuewrapper, meta):
-    # Thanks @jpeck-resilient for this new module. When this module
-    # receives 'shipit' comments from two community members and any
-    # 'needs_revision' comments have been resolved, we will mark for
-    # inclusion
-
-    # pr is a module
-    # pr owned by community or is new
-    # pr owned by ansible
-
-    rfacts = {
-        'core_review': False,
-        'community_review': False,
-        'committer_review': False,
-    }
-
-    iw = issuewrapper
-    if not iw.is_pullrequest():
-        return rfacts
-    if iw.wip:
-        return rfacts
-    if meta['shipit']:
-        return rfacts
-    if meta['is_needs_info']:
-        return rfacts
-    if meta['is_needs_revision']:
-        return rfacts
-    if meta['is_needs_rebase']:
-        return rfacts
-
-    supported_by = get_supported_by(meta)
-
-    if supported_by == 'community':
-        rfacts['community_review'] = True
-    elif supported_by in ['core', 'network']:
-        rfacts['core_review'] = True
-    elif supported_by in ['curated', 'certified']:
-        rfacts['committer_review'] = True
-    else:
-        raise Exception(f'unknown supported_by type: {supported_by}')
-
-    return rfacts
 
 
 def get_shipit_facts(issuewrapper, inmeta, botmeta_files, maintainer_team=None, botnames=None):
@@ -474,30 +424,6 @@ def get_shipit_facts(issuewrapper, inmeta, botmeta_files, maintainer_team=None, 
                     logging.info('%s is not governed by supershipit' % cm_file)
 
     return nmeta
-
-
-def get_supported_by(meta):
-    # http://docs.ansible.com/ansible/modules_support.html
-    # certified: maintained by the community and reviewed by Ansible core team.
-    # community: maintained by the community at large.
-    # core: maintained by the ansible core team.
-    # network: maintained by the ansible network team.
-
-    supported_by = 'core'
-    if not meta.get('component_support'):
-        return supported_by
-    if len(meta.get('component_support', [])) == 1 and meta['component_support'][0]:
-        return meta['component_support'][0]
-    elif None in meta.get('component_support', []):
-        supported_by = 'community'
-    elif 'core' in meta.get('component_support', []):
-        supported_by = 'core'
-    elif 'network' in meta.get('component_support', []):
-        supported_by = 'network'
-    elif 'certified' in meta.get('component_support', []):
-        supported_by = 'certified'
-
-    return supported_by
 
 
 # NOTE this function is too expensive for submitters with many commits and
