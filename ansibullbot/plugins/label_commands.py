@@ -1,34 +1,11 @@
-def get_label_command_facts(issuewrapper, all_maintainers, maintainer_team=None, valid_labels=None):
+import itertools
+
+
+def get_label_command_facts(iw, all_maintainers, maintainer_team=None, valid_labels=None):
     if valid_labels is None:
         valid_labels = []
     if maintainer_team is None:
         maintainer_team = []
-    add_labels = []
-    del_labels = []
-
-    namespace_labels = [
-        'aci',
-        'avi',
-        'aws',
-        'azure',
-        'cloud',
-        'cloudstack',
-        'digital_ocean',
-        'docker',
-        'f5',
-        'gce',
-        'infoblox',
-        'jboss',
-        'meraki',
-        'netapp',
-        'networking',
-        'nxos',
-        'openstack',
-        'ovirt',
-        'ucs',
-        'vmware',
-        'windows',
-    ]
 
     whitelist = [
         'docsite_pr',
@@ -37,18 +14,15 @@ def get_label_command_facts(issuewrapper, all_maintainers, maintainer_team=None,
         'needs_triage',
         'needs_verified',
         'test',
+        'networking',
+        'windows',
     ]
+    whitelist.extend([x for x in valid_labels if x.startswith(('affects_', 'c:', 'm:'))])
 
-    whitelist += namespace_labels
-    whitelist += [x for x in valid_labels if x.startswith('affects_')]
-    whitelist += [x for x in valid_labels if x.startswith('c:')]
-    whitelist += [x for x in valid_labels if x.startswith('m:')]
+    maintainers = set(maintainer_team).union(all_maintainers)
 
-    iw = issuewrapper
-    maintainers = [x for x in maintainer_team]
-    maintainers += all_maintainers
-    maintainers = sorted(set(maintainers))
-
+    add_labels = []
+    del_labels = []
     # iterate through the description and comments and look for label commands
     for ev in iw.history.history:
         if ev['actor'] in maintainers and ev['event'] == 'commented':
@@ -77,34 +51,27 @@ def get_label_command_facts(issuewrapper, all_maintainers, maintainer_team=None,
 
     # prevent waffling on label actions
     #   https://github.com/ansible/ansibullbot/issues/672
-    managed = sorted(set(add_labels + del_labels))
-    for ml in managed:
+    for ml in sorted(set(add_labels + del_labels)):
         if iw.history.label_is_waffling(ml, limit=5):
             if ml in add_labels:
                 add_labels.remove(ml)
             if ml in del_labels:
                 del_labels.remove(ml)
 
-    fact = {
+    return {
         'label_cmds': {
             'add': add_labels,
             'del': del_labels
         }
     }
 
-    return fact
 
-
-def get_waffling_overrides(issuewrapper, all_maintainers, maintainer_team=None):
+def get_waffling_overrides(iw, all_maintainers, maintainer_team=None):
     if maintainer_team is None:
         maintainer_team = []
+
+    maintainers = set(maintainer_team).union(all_maintainers)
     overrides = []
-
-    iw = issuewrapper
-    maintainers = [x for x in maintainer_team]
-    maintainers += all_maintainers
-    maintainers = sorted(set(maintainers))
-
     for ev in iw.history.history:
         if ev['actor'] in maintainers and ev['event'] == 'commented':
             if '!waffling' in ev.get('body', ''):
@@ -117,8 +84,6 @@ def get_waffling_overrides(issuewrapper, all_maintainers, maintainer_team=None):
                         if thislabel not in overrides:
                             overrides.append(thislabel)
 
-    fact = {
+    return {
         'label_waffling_overrides': overrides
     }
-
-    return fact
