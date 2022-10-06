@@ -1,6 +1,3 @@
-import itertools
-
-
 def get_label_command_facts(iw, all_maintainers, maintainer_team=None, valid_labels=None):
     if valid_labels is None:
         valid_labels = []
