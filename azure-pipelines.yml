@@ -5,7 +5,7 @@ pr:
   - devel
 
 pool:
-  vmImage: 'ubuntu-18.04'
+  vmImage: 'ubuntu-20.04'
 
 jobs:
   - job: python
