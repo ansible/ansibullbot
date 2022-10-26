@@ -5,7 +5,7 @@ pr:
   - devel
 
 pool:
-  vmImage: 'ubuntu-18.04'
+  vmImage: 'ubuntu-20.04'
 
 jobs:
   - job: python
@@ -20,6 +20,8 @@ jobs:
           python_version: 3.9
         3.10:
           python_version: 3.10
+        3.11:
+          python_version: 3.11
     steps:
       - task: UsePythonVersion@0
         inputs:
