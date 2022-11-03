@@ -1,5 +1,5 @@
 import unittest
-from ansibullbot.utils.extractors import extract_template_data
+from ansibullbot.utils.extractors import _extract_template_data
 
 
 class TestTemplateExtraction(unittest.TestCase):
@@ -15,7 +15,7 @@ class TestTemplateExtraction(unittest.TestCase):
         body = '\r\n'.join(body)
         issue_class = 'issue'
         sections = ['ONE', 'TWO', 'THREE']
-        tdata = extract_template_data(
+        tdata = _extract_template_data(
             body, issue_class=issue_class, sections=sections
         )
         assert tdata.get('one') == 'section one'
@@ -36,7 +36,7 @@ class TestTemplateExtraction(unittest.TestCase):
         body = '\r\n'.join(body)
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
-        tdata = extract_template_data(
+        tdata = _extract_template_data(
             body, issue_class=issue_class, sections=sections
         )
         assert tdata.get('ansible version') == '1.9.x'
@@ -59,7 +59,7 @@ class TestTemplateExtraction(unittest.TestCase):
         body = '\r\n'.join(body)
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
-        tdata = extract_template_data(
+        tdata = _extract_template_data(
             body, issue_class=issue_class, sections=sections
         )
         assert tdata.get('ansible version') == '1.9.x'
@@ -83,7 +83,7 @@ class TestTemplateExtraction(unittest.TestCase):
         body = '\r\n'.join(body)
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
-        tdata = extract_template_data(
+        tdata = _extract_template_data(
             body, issue_class=issue_class, sections=sections
         )
         assert tdata.get('ansible version') == '1.9.x'
@@ -111,7 +111,7 @@ class TestTemplateExtraction(unittest.TestCase):
         body = '\r\n'.join(body)
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
-        tdata = extract_template_data(
+        tdata = _extract_template_data(
             body, issue_class=issue_class, sections=sections
         )
 
@@ -138,7 +138,7 @@ class TestTemplateExtraction(unittest.TestCase):
         body = '\r\n'.join(body)
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
-        tdata = extract_template_data(
+        tdata = _extract_template_data(
             body, issue_class=issue_class, sections=sections
         )
         assert tdata.get('ansible version') == '1.9.x'

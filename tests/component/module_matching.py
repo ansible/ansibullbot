@@ -3,7 +3,7 @@ import unittest
 
 from ansibullbot._text_compat import to_text
 from ansibullbot.ansibletriager import AnsibleTriager
-from ansibullbot.utils.extractors import extract_template_data
+from ansibullbot.utils.extractors import _extract_template_data
 
 class TestModuleMatching(unittest.TestCase):
 
@@ -31,7 +31,7 @@ class TestModuleMatching(unittest.TestCase):
             print(v['html_url'])
 
             # extract fields from the body
-            td = extract_template_data(
+            td = _extract_template_data(
                 v['body'],
                 issue_class=None
             )

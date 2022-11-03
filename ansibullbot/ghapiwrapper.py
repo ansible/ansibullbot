@@ -223,10 +223,3 @@ class RepoWrapper:
                     pickle.dump(edata, f)
 
         return events
-
-    @RateLimited
-    def get_file_contents(self, filepath):
-        try:
-            return self.repo.get_file_contents(filepath)
-        except Exception:
-            pass

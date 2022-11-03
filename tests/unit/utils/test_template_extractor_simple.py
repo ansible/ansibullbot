@@ -1,5 +1,5 @@
 import unittest
-from ansibullbot.utils.extractors import extract_template_data
+from ansibullbot.utils.extractors import _extract_template_data
 
 
 class TestTemplateExtractionSimple(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestTemplateExtractionSimple(unittest.TestCase):
             ''
         ]
         body = '\r\n'.join(body)
-        tdata = extract_template_data(body)
+        tdata = _extract_template_data(body)
 
         assert 'component name' in tdata
         assert tdata['component name'] == 'vcenter_license'
