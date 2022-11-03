@@ -1,4 +1,7 @@
 import unittest
+
+import pytest
+
 from ansibullbot.utils.extractors import _extract_template_data
 
 
@@ -45,6 +48,7 @@ class TestTemplateExtraction(unittest.TestCase):
         assert tdata.get('component_raw') == 'widget module'
         assert tdata.get('summary') == 'the widget module does not work for me!!!'
 
+    @pytest.mark.skip(reason="with github yml templates we do not have to support fuzzy section finding in templates")
     def test_2(self):
         body = [
             '*** issue type ***:',
