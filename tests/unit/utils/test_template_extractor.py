@@ -16,7 +16,7 @@ class TestTemplateExtraction(unittest.TestCase):
         issue_class = 'issue'
         sections = ['ONE', 'TWO', 'THREE']
         tdata = _extract_template_data(
-            body, issue_class=issue_class, sections=sections
+            body, issue_class=issue_class
         )
         assert tdata.get('one') == 'section one'
         assert tdata.get('two') == 'section two'
@@ -37,7 +37,7 @@ class TestTemplateExtraction(unittest.TestCase):
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = _extract_template_data(
-            body, issue_class=issue_class, sections=sections
+            body, issue_class=issue_class
         )
         assert tdata.get('ansible version') == '1.9.x'
         assert tdata.get('issue type') == 'bug report'
@@ -60,7 +60,7 @@ class TestTemplateExtraction(unittest.TestCase):
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = _extract_template_data(
-            body, issue_class=issue_class, sections=sections
+            body, issue_class=issue_class
         )
         assert tdata.get('ansible version') == '1.9.x'
         assert tdata.get('issue type') == 'bug report'
@@ -84,7 +84,7 @@ class TestTemplateExtraction(unittest.TestCase):
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = _extract_template_data(
-            body, issue_class=issue_class, sections=sections
+            body, issue_class=issue_class
         )
         assert tdata.get('ansible version') == '1.9.x'
         assert tdata.get('issue type') == 'bug report'
@@ -112,7 +112,7 @@ class TestTemplateExtraction(unittest.TestCase):
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = _extract_template_data(
-            body, issue_class=issue_class, sections=sections
+            body, issue_class=issue_class
         )
 
         #import epdb; epdb.st()
@@ -139,7 +139,7 @@ class TestTemplateExtraction(unittest.TestCase):
         issue_class = 'issue'
         sections = ['ISSUE TYPE', 'COMPONENT NAME', 'ANSIBLE VERSION', 'SUMMARY']
         tdata = _extract_template_data(
-            body, issue_class=issue_class, sections=sections
+            body, issue_class=issue_class
         )
         assert tdata.get('ansible version') == '1.9.x'
         assert tdata.get('issue type') == 'bug report'
