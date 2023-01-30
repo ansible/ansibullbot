@@ -81,6 +81,9 @@ class IssueWrapper:
     def _parse_events(self, events):
         processed_events = []
         for event_no, dd in enumerate(events):
+            if dd is None:
+                continue
+
             if dd['event'] == 'committed':
                 # FIXME
                 # commits are added through HistoryWrapper.merge_commits()
