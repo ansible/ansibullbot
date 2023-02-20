@@ -148,7 +148,7 @@ class GithubGraphQLClient:
 
     def get_members(self, org, team):
         query = Template(QUERY_TEAM_MEMBERS_TEMPLATE).substitute(login=org, slug=team)
-        resp = requests.post(self.baseurl, headers=self.headers, data=json.dumps({'query': query}))
+        resp = self.post_request({'query': query})
         if not resp.ok:
             raise Exception
         data = resp.json()
@@ -255,7 +255,7 @@ class GithubGraphQLClient:
                 'variables': '{}',
                 'operationName': None
             }
-            rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+            rr = self.post_request(payload)
             if not rr.ok:
                 break
             data = rr.json()
@@ -308,7 +308,7 @@ class GithubGraphQLClient:
         }
         payload['query'] = to_text(payload['query'], 'ascii')
 
-        rr = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
+        rr = self.post_request(payload)
         data = rr.json()
 
         node = data['data']['repository'][otype]
@@ -356,7 +356,7 @@ class GithubGraphQLClient:
             'variables': '{}',
             'operationName': None
         }
-        response = self.requests(payload)
+        response = self.post_request(payload)
         data = response.json()
 
         nodes = data['data']['repository']['ref']['target']['blame']['ranges']
@@ -390,9 +390,9 @@ class GithubGraphQLClient:
             committers[github_id] = list(commits)
         return committers, emailmap
 
-    def requests(self, payload):
+    def post_request(self, payload):
         exc = None
-        for i in range(5):
+        for i in range(3):
             response = requests.post(self.baseurl, headers=self.headers, data=json.dumps(payload))
             try:
                 response.raise_for_status()
