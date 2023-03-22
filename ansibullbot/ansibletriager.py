@@ -55,7 +55,6 @@ from ansibullbot.plugins.contributors import get_contributor_facts
 from ansibullbot.plugins.notifications import get_notification_facts
 from ansibullbot.plugins.shipit import get_automerge_facts
 from ansibullbot.plugins.shipit import get_shipit_facts
-from ansibullbot.plugins.shipit import needs_community_review
 from ansibullbot.plugins.small_patch import get_small_patch_facts
 from ansibullbot.plugins.spam import get_spam_facts
 from ansibullbot.plugins.test_support_plugins import get_test_support_plugins_facts
@@ -552,18 +551,6 @@ class AnsibleTriager(DefaultTriager):
                     actions.unlabel.append('shipit')
                 if 'automerge' in iw.labels:
                     actions.unlabel.append('automerge')
-
-        # NAMESPACE MAINTAINER NOTIFY
-        if iw.is_pullrequest() and not self.meta['is_bad_pr']:
-            if needs_community_review(self.meta):
-
-                comment = render_boilerplate(
-                    self.meta,
-                    boilerplate='community_shipit_notify'
-                )
-
-                if comment and comment not in actions.comments:
-                    actions.comments.append(comment)
 
         if iw.is_pullrequest() and self.meta['is_bad_pr']:
             if self.meta['is_bad_pr_reason']:
