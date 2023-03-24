@@ -767,7 +767,7 @@ class AnsibleTriager(DefaultTriager):
 
                 actions.comments.append(comment)
 
-            if self.meta['template_missing_sections']:
+            if self.meta['template_missing_sections'] and iw.submitter not in self.maintainer_team:
                 if 'needs_template' not in iw.labels:
                     actions.newlabel.append('needs_template')
 
