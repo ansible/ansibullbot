@@ -274,7 +274,7 @@ DEFAULT_GITHUB_MAINTAINERS = get_config(
     DEFAULTS,
     'github_maintainers',
     '%s_GITHUB_MAINTAINERS' % PROG_NAME.upper(),
-    ['ansible/ansible-commit', 'ansible/ansible-community'],
+    ['ansible/ansible-commit'],
     value_type='list'
 )
 
