@@ -80,6 +80,14 @@ authorized_keys:
       lrOCinTtySBz0eX75fbttyyGTYKGc4v8ZFDjFAxEl1ZxFmMP30LbCnAyc4Q2CQYp8BS1xxww9BXDQe+v91Z9NwYQNYTFDP0nMPh+yQOJdlSA\
       1ZBZIAtH/Z92Uz0CwgFZLeAaWXBxwKO3IezLGLTboojr9m1Fm3/sCPSSHK9SURB4iAopdOXNW7Q=="
 
+  - user: centos
+    comment: sivel@redhat.com
+    key:
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGsiS4JuBQPN6YlP03nlJcRhItrw/E3+7URQZdoEdcm/15/aSo9kilDF9M+zFRPui8uOo\
+      FHZ3Lw9Inuozmj1z1iIIFf5UVCT/AOuU/mtupLf4b5+qhNVUkyGrjTM3ASEJT1d4fEjyLBuuki829sGHMgYecxTF1A/fWGleyn0TVoxW2ZFS\
+      kVMckNe7ik3YvKCF1iaGn2oybc5nDTScApMuUyUc4ADl4+AN70/ipJl7FpTmVbVdSI4Kanq8vP2nREzhGVK/RsUhdKrJyy44KZJLl+Z2GSG7\
+      8hQOanfrVWctz0TusJjySqcysAxVaJAjYLrKubSs1oXpEpFAOEhWoSHjd"
+
   - user: "{{ ansibullbot_user }}"
     comment: mkrizek@x240
     key:
@@ -96,3 +104,11 @@ authorized_keys:
       e/CjD+tjbb7IAuno6B/Nx4CqybArYv7w+GHH0fSrpLpojGzuO9IJ/p1Rxw7vum5INAQ9tPHScF2CwoANsYpmU1sgC+lzd3frobTOsQ9Gj/jE\
       h6I2Ugvm3N0Xjd4IA2788zsmOD/viHQt47AVOqFGhkyt/QlFdxw2MqUevkQiEmIv46aZkSLMtcsoLa/q63tCVaEl8vRRWhUVei8fvs5mVcPu\
       Jzq8jV92mtU+JUzh+SRpKynUsQKME4OB3OgUpTtpZvAJONWY4NS8P9t5"
+
+  - user: "{{ ansibullbot_user }}"
+    comment: sivel@redhat.com
+    key:
+      "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDGsiS4JuBQPN6YlP03nlJcRhItrw/E3+7URQZdoEdcm/15/aSo9kilDF9M+zFRPui8uOo\
+      FHZ3Lw9Inuozmj1z1iIIFf5UVCT/AOuU/mtupLf4b5+qhNVUkyGrjTM3ASEJT1d4fEjyLBuuki829sGHMgYecxTF1A/fWGleyn0TVoxW2ZFS\
+      kVMckNe7ik3YvKCF1iaGn2oybc5nDTScApMuUyUc4ADl4+AN70/ipJl7FpTmVbVdSI4Kanq8vP2nREzhGVK/RsUhdKrJyy44KZJLl+Z2GSG7\
+      8hQOanfrVWctz0TusJjySqcysAxVaJAjYLrKubSs1oXpEpFAOEhWoSHjd"
